@@ -1,0 +1,21 @@
+review:
+  summary: true
+  suggestions: true
+  security: true
+  performance: true
+  style: true
+  tests: true
+  documentation: true
+  complexity: true
+  bug_risk: true
+
+general:
+  language: en
+  max_comments: 20
+  min_severity: info
+  exclude_paths:
+    - 'node_modules/**'
+    - '.next/**'
+    - 'dist/**'
+    - '*.lock'
+    - 'public/**'

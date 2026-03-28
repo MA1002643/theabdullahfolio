@@ -1,17 +1,19 @@
-import { Inter } from "next/font/google";
-import "./globals.css";
-import clsx from "clsx";
-import FireFliesBackground from "@/components/FireFliesBackground";
-import { Toaster } from "sonner";
-import LoaderWrapper from "@/components/loaderWrapper";
+import { Inter } from 'next/font/google';
+import './globals.css';
+import clsx from 'clsx';
+import FireFliesBackground from '@/components/FireFliesBackground';
+import { Toaster } from 'sonner';
+import LoaderWrapper from '@/components/loaderWrapper';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+  subsets: ['latin'],
+  variable: '--font-inter',
 });
 
 export const metadata = {
-  title: "Muhammad Abdullah",
+  title: 'Muhammad Abdullah',
   description: "Muhammad Abdullah's Personal Portfolio",
 };
 
@@ -21,12 +23,12 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="icon" type="image/png" href="/background/logo.png" />
       </head>
-      <body className={clsx(inter.variable, "bg-background text-foreground")}>
-        <LoaderWrapper>
-          {children}
-        </LoaderWrapper>
+      <body className={clsx(inter.variable, 'bg-background text-foreground')}>
+        <LoaderWrapper>{children}</LoaderWrapper>
         <FireFliesBackground />
         <Toaster position="top-right" />
+        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
