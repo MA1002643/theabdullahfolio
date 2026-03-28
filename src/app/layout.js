@@ -17,6 +17,12 @@ export const metadata = {
   description: "Muhammad Abdullah's Personal Portfolio",
 };
 
+/**
+ * Root application layout that provides the HTML structure, global font/theme classes, and site-wide UI/providers.
+ *
+ * Renders a favicon link in the document head and a body that applies the Inter font variable and theme classes; the body contains the LoaderWrapper (wrapping the page children), FireFliesBackground, Toaster (top-right), SpeedInsights, and Analytics.
+ * @returns {JSX.Element} The root HTML and body structure for the application.
+ */
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
