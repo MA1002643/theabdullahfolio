@@ -8,9 +8,9 @@ const ItemLayout = ({ children, className }) => {
       initial={{ scale: 0 }}
       whileInView={{ scale: 1 }}
       transition={{ duration: 0.5 }}
-      viewport={{ once: true }}
+      viewport={{ once: false }}
       className={clsx(
-        "custom-bg p-6 sm:p-8 rounded-xl flex items-center justify-center space-y-8",
+        "custom-bg-abt p-6 sm:p-8 rounded-xl flex items-center justify-center space-y-8",
         className
       )}
     >

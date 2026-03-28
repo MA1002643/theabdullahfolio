@@ -1,3 +1,6 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Istok+Web:ital,wght@0,400;0,700;1,400;1,700&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,16 +19,321 @@
     animation-play-state: paused;
   }
 
+  .custom-bg-abt {
+    @apply border border-solid;
+    border-color: #ffcd5bcc;
+    /* golden border */
+    background-color: #00000020;
+    /* subtle transparent dark bg */
+    backdrop-filter: blur(6px);
+    /* neon blur */
+    box-shadow:
+      0 0 0px #ff8400,
+      0 0 0px #ffaa2a,
+      0 0 6px orangered;
+    /* neon shadows */
+    transition: box-shadow 0.3s ease-in-out;
+  }
+
+  .custom-bg-abt:hover {
+    box-shadow:
+      0 0 1px #ff8400,
+      0 0 2px #ffaa2a,
+      0 0 8px orangered;
+  }
+
   .custom-bg {
-    @apply border border-solid border-accent/30 bg-background/20 shadow-glass-inset backdrop-blur-[6px] hover:shadow-glass-sm;
+    @apply border border-solid;
+    border-color: #ff6d05;
+    background-color: rgb(var(--background) / 0.2);
+    backdrop-filter: blur(6px);
+    box-shadow: 
+      inset 0 0 10px rgba(255, 255, 255, 0.05),
+      0 0 15px rgba(255, 109, 5, 0.3),
+      0 0 25px rgba(255, 109, 5, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .custom-bg:hover {
+    border-color: #ff6d05;
+    box-shadow: 
+      inset 0 0 10px rgba(255, 255, 255, 0.05),
+      0 0 20px rgba(255, 109, 5, 0.8),
+      0 0 35px rgba(255, 109, 5, 0.5),
+      0 0 50px rgba(255, 109, 5, 0.3);
+  }
+
+  .custom-bg-2 {
+    @apply border border-solid;
+    border-color: rgba(155, 89, 182, 0.3);
+    /* amethyst-neon color */
+    background-color: rgb(var(--background) / 0.2);
+    backdrop-filter: blur(6px);
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+  }
+
+  .text-stroke-neon {
+    -webkit-text-stroke: 2px #eab53e;
+    /* stroke thickness + neon color */
+    /* text-stroke: 2px #eab53e; */
+    /* fallback */
+  }
+
+  .text-shadow-neon-orange {
+    text-shadow: 0 0 4px #ffb03a, 0 0 10px #b16612;
+    color: #f9d174;
+  }
+
+  .text-shadow-neon-light-orange {
+    text-shadow: 0 0 4px #d1970e, 0 0 10px #b16612;
+    color: #d3b883;
+  }
+
+  .behind-glow {
+    filter:
+      drop-shadow(0 0 10px rgba(255, 106, 0, 0.8)) drop-shadow(0 0 20px rgba(255, 106, 0, 0.6)) drop-shadow(0 0 30px rgba(255, 90, 0, 0.4));
+  }
+
+  .text-glow-stroke-neon {
+    font-family: "Varela Round", sans-serif;
+    --color: #ffffffcf;
+    --stroke: #ffffff;
+    --blur: 5rem 133px;
+    letter-spacing: 2px;
+    color: #000e1700;
+    -webkit-text-stroke: 3px #ff6d05;
+    /* Outer-only glow (subtle) */
+    filter:
+      drop-shadow(0 0 10px rgba(255, 106, 0, 0.8)) drop-shadow(0 0 20px rgba(255, 106, 0, 0.6)) drop-shadow(0 0 30px rgba(255, 90, 0, 0.4));
+
+    transition: filter 0.3s ease;
+  }
+
+  .text-glow-neon {
+    font-family: "Varela Round", sans-serif;
+    letter-spacing: 2px;
+    color: #ff6a00;
+    /* main neon color */
+    -webkit-text-stroke: 1px #ffb347;
+    /* soft bright edge */
+
+    /* glowing aura around the text */
+    text-shadow:
+      0 0 4px #ff7b00,
+      0 0 8px #ff8c1a,
+      0 0 16px #ff9f33,
+      0 0 24px rgba(255, 106, 0, 0.8),
+      0 0 40px rgba(255, 106, 0, 0.6);
+
+    transition: text-shadow 0.3s ease, color 0.3s ease;
+  }
+
+  #about.text-glow-stroke-neon {
+    font-family: "Varela Round", sans-serif;
+    /* font-weight: 400; */
+    --color: #ffffffcf;
+    --stroke: #ffffff;
+    --blur: 5rem 133px;
+    letter-spacing: 4px;
+    /* text-align: end; */
+    color: #000e1700;
+    -webkit-text-stroke: .8px #ffd17e;
+    /* filter: drop-shadow(0 0 1px #d48419) drop-shadow(0 0 1px #ffaa2abe) drop-shadow(0 0 1px orangered) drop-shadow(0 0 3px rgba(255, 166, 0, 0.397)) drop-shadow(0 0 1px rgba(255, 68, 0, 0.329)); */
+    /* text-shadow: 0 0 2px #ffaa2a, 0 0 3px yellow, 0 0 3px orange, 0 0 6px orangered; */
+    /* text-shadow: 0 0 1px #ffd2ab, 0 0 1px #DFB851, 0 0 1px #ff8400cf, 0 0 2px #ffbd00fc, 0 0 4px #ff7a1c; */
+    filter:
+      drop-shadow(0 0 0.2px white) drop-shadow(0 0 0.8px black) drop-shadow(0 0 1px rgba(255, 68, 0, 0.753)) drop-shadow(0 0 0px #eab53e) drop-shadow(0 0 3px orangered) drop-shadow(0 0 14px rgba(255, 94, 0, 0.37));
+  }
+
+  #date {
+    font-family: "Varela Round", sans-serif;
+    /* filter: drop-shadow(0 0 1px #d48419) drop-shadow(0 0 1px #ffaa2abe) drop-shadow(0 0 1px orangered) drop-shadow(0 0 3px rgba(255, 166, 0, 0.397)) drop-shadow(0 0 1px rgba(255, 68, 0, 0.329)); */
+    /* text-shadow: 0 0 2px #ffaa2a, 0 0 3px yellow, 0 0 3px orange, 0 0 6px orangered; */
+    /* text-shadow: 0 0 1px #ffd2ab, 0 0 1px #DFB851, 0 0 1px #ff8400cf, 0 0 2px #ffbd00fc, 0 0 4px #ff7a1c; */
+    /* filter:
+    drop-shadow(0 0 0px white) drop-shadow(0 0 0px black) drop-shadow(0 0 0px #eab53e) drop-shadow(0 0 3px rgba(255, 68, 0, 0.404))
+     drop-shadow(0 0 14px rgba(255, 94, 0, 0.37)); */
+  }
+
+  .theme-shadow {
+    filter:
+      drop-shadow(0 0 0.2px rgba(255, 255, 255, 0.575)) drop-shadow(0 0 0.8px rgba(0, 0, 0, 0.562)) drop-shadow(0 0 0px #eab63e6b) drop-shadow(0 0 14px rgba(255, 94, 0, 0.281));
+  }
+
+  .text-glow-stroke-purple {
+    --tw-text-opacity: 1;
+    color: rgb(252 131 255 / var(--tw-text-opacity, 1));
+    text-shadow: 0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7;
+    letter-spacing: 4px;
+  }
+
+  /* glowing borderline under laptop  */
+  .borderline {
+    border: 1px solid #ff6d05;
+    box-shadow: 0 0 3px #ff6d05e0, 0 0 5px #ff6d05e0, 0 0 8px #ff6d05, 0 0 4px #ff6d05e0;
+  }
+
+
+  .borderline2 {
+    border: .3px solid #ff6d05;
+    /* solid border */
+    box-shadow:
+      0 0 2px #ff6d05e0, 0 0 2px #ffbd0345, 0 0 2px #ff6d05e0, 0 0 1px #ff6d05e0;
+  }
+
+  .borderline3 {
+    border: .1px solid #ff6d05;
+    /* solid border */
+    box-shadow:
+      0 0 1px #ff6d05, 0 0 4px #ffbd0300, 0 0 2px #ff6d05, 0 0 2px #fde59ce0;
+  }
+
+  .laptop {
+    transition: transform 0.4s ease-in-out, filter 0.4s ease-in-out;
+    /* adjust time as needed */
+  }
+
+  .laptop.active {
+    transform: scale(1.05);
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  .laptop:hover {
+    transform: scale(1.05);
+    animation: glow 2s ease-in-out infinite;
+  }
+
+}
+
+
+@keyframes bounce-shake {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+
+  75% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg);
   }
 }
+
+.hover\\:animate-bounce-shake:hover {
+  animation: bounce-shake 0.6s ease;
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 #ff6d05) drop-shadow(0 0 0 #ff6d05);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 2px #ff6d05e0) drop-shadow(0 0 3px #ff6d05e1);
+  }
+}
+
+@keyframes glitter-shimmer {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  100% {
+    background-position: 200% 0%;
+  }
+}
+
+.glitter-text {
+  font-weight: 300;
+  letter-spacing: 4px;
+  font-size: 3rem;
+  text-transform: uppercase;
+
+  /* 🎨 Use an image instead of a gradient */
+  background-image: url('../../public/glitter.jpg');
+  /* replace with your own */
+  background-size: 200% auto;
+  background-position: 0% 0%;
+  background-repeat: repeat;
+
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+
+  /* ✨ Animate the shimmer */
+  /* animation: glitter-shimmer 4s linear infinite; */
+
+  /* 🔥 Outer glow like before */
+  text-shadow:
+    0 0 5px #ff55f7,
+    0 0 10px #ff55f7,
+    0 0 20px #ff55f7;
+}
+
+.glitter-bg {
+  background: linear-gradient(135deg, #ff55f7 0%, #ff82ff 25%, #ffbdfc 50%, #ff55f7 75%, #ff55f7 100%);
+  background-size: 200% 200%;
+  animation: glitter-shimmer 6s ease infinite;
+  box-shadow:
+    0 0 10px rgba(255, 85, 247, 0.4),
+    0 0 20px rgba(255, 85, 247, 0.3),
+    0 0 40px rgba(255, 85, 247, 0.2);
+  border: 1px solid rgba(255, 85, 247, 0.4);
+  border-radius: 1rem;
+}
+
+
 
 @keyframes move {
   0% {
     transform: translate(0, 0);
   }
+
   100% {
     transform: translate(100px, 100px);
   }
+}
+
+/* 0 0 2px #ffaa2a, 0 0 3px yellow, 0 0 3px orange, 0 0 6px orangered; */
+/* filter: drop-shadow(0 0 0.3px #ffbd22b4) drop-shadow(0 0 0.7px #ffbc03a1) drop-shadow(0 0 .8px #ff84003f); */
+/* .icon-glow {
+  filter: drop-shadow(0 0 0.3px #ffaa2a) drop-shadow(0 0 0.7px yellow) drop-shadow(0 0 .4px orange);
+  transition: filter 0.3s ease-in-out;
+} */
+.icon-glow {
+  filter:
+    drop-shadow(0 0 0.2px white) drop-shadow(0 0 0.8px black) drop-shadow(0 0 1px rgba(86, 18, 0, 3.753)) drop-shadow(0 0 0px #f7ba48) drop-shadow(0 0 1px orangered) drop-shadow(0 0 6px rgba(55, 94, 0, 0.37));
+  /* drop-shadow(0 0 3px #eab63e85)   
+    drop-shadow(0 0 .2px orangered)   
+    drop-shadow(0 0 0px rgba(255, 255, 0, 0.39))     
+    drop-shadow(0 0 0px rgba(255, 166, 0, 0.397))      
+    drop-shadow(0 0 0px rgba(255, 68, 0, 0.329)); */
+  transition: filter 0.3s ease-in-out;
+}
+
+html {
+  scrollbar-color: #ff6d05 #222;
+  scrollbar-width: thin;
+}
+
+.perspective-3d {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+/* For the laptop screen div specifically */
+.laptop-scroll {
+  scrollbar-width: none;
 }
