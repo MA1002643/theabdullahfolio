@@ -1,5 +1,14 @@
 review:
+  profile: assertive
   summary: true
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  sequence_diagrams: true
+  review_details: true
+  related_issues: true
+  related_prs: true
+  assess_linked_issues: true
+  estimate_code_review_effort: true
   suggestions: true
   security: true
   performance: true
@@ -8,6 +17,19 @@ review:
   documentation: true
   complexity: true
   bug_risk: true
+  path_instructions:
+    - path: 'src/**'
+      instructions: 'Focus on architecture, modular design, dependency management, scalability, and maintainability.'
+    - path: 'src/app/(sub pages)/**'
+      instructions: 'Emphasize Next.js client/server boundary checks and hydration-safe patterns.'
+    - path: 'src/components/project-detail/**'
+      instructions: 'Prioritize animation performance, reduced-motion accessibility, hydration safety, and cleanup of animation side effects.'
+    - path: 'src/app/api/**'
+      instructions: 'Focus on input validation, error handling, secure defaults, and consistent response shapes.'
+    - path: 'src/utils/**'
+      instructions: 'Focus on purity, testability, edge cases, and avoiding hidden coupling.'
+
+tone_instructions: 'Provide architectural insights on system design, scalability, long-term maintainability, and clean architecture.'
 
 general:
   language: en
