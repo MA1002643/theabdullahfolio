@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Toaster, toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -22,6 +22,7 @@ const item = {
 
 export default function Form() {
   const [launch, setLaunch] = useState('idle');
+  const emailResultRef = useRef(null);
   const {
     register,
     handleSubmit,
@@ -40,11 +41,14 @@ export default function Form() {
       if (res.ok && data?.success) {
         toast.success('Form submitted successfully!');
         reset();
+        return true;
       } else {
         toast.error(data?.error || 'Error submitting form');
+        return false;
       }
     } catch (error) {
       toast.error('Error submitting form');
+      return false;
     }
   };
 
@@ -57,7 +61,7 @@ export default function Form() {
     };
 
     setLaunch('rocket'); // start rocket phase
-    sendEmail(templateParams);
+    emailResultRef.current = sendEmail(templateParams);
   };
 
   return (
@@ -86,7 +90,7 @@ export default function Form() {
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? 'name-error' : undefined}
             {...register('name', {
-              required: 'Name is required!',
+              required: 'Full Name is required!',
               minLength: {
                 value: 3,
                 message: 'Name should be at least 3 characters long.',
@@ -97,6 +101,8 @@ export default function Form() {
         </motion.div>
         {errors.name && (
           <span
+            id="name-error"
+            role="alert"
             className="inline-block self-start"
             style={{ color: '#ff6d05' }}
           >
@@ -112,12 +118,16 @@ export default function Form() {
             name="email"
             type="email"
             placeholder="Email"
-            {...register('email', { required: 'This field is required!' })}
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? 'email-error' : undefined}
+            {...register('email', { required: 'Email is required!' })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
         </motion.div>
         {errors.email && (
           <span
+            id="email-error"
+            role="alert"
             className="inline-block self-start"
             style={{ color: '#ff6d05' }}
           >
@@ -133,12 +143,16 @@ export default function Form() {
             name="subject"
             type="text"
             placeholder="Subject"
-            {...register('subject', { required: 'This field is required!' })}
+            aria-invalid={Boolean(errors.subject)}
+            aria-describedby={errors.subject ? 'subject-error' : undefined}
+            {...register('subject', { required: 'Subject is required!' })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
         </motion.div>
         {errors.subject && (
           <span
+            id="subject-error"
+            role="alert"
             className="inline-block self-start"
             style={{ color: '#ff6d05' }}
           >
@@ -171,6 +185,8 @@ export default function Form() {
         </motion.div>
         {errors.message && (
           <span
+            id="message-error"
+            role="alert"
             className="inline-block self-start"
             style={{ color: '#ff6d05' }}
           >
@@ -202,7 +218,10 @@ export default function Form() {
               animate={{ y: -500, opacity: 0 }}
               transition={{ duration: 1.4, ease: 'easeIn', delay: 0.6 }}
               className="relative flex flex-col items-center"
-              onAnimationComplete={() => setLaunch('check')}
+              onAnimationComplete={async () => {
+                const success = await emailResultRef.current;
+                setLaunch(success ? 'check' : 'idle');
+              }}
             >
               {/* 🚀 Rocket Body */}
               <motion.div
