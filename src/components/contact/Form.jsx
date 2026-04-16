@@ -86,7 +86,7 @@ export default function Form() {
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? 'name-error' : undefined}
             {...register('name', {
-              required: 'This field is required!',
+              required: 'Name is required!',
               minLength: {
                 value: 3,
                 message: 'Name should be at least 3 characters long.',
@@ -160,7 +160,7 @@ export default function Form() {
             aria-invalid={Boolean(errors.message)}
             aria-describedby={errors.message ? 'message-error' : undefined}
             {...register('message', {
-              required: 'This field is required!',
+              required: 'Message is required!',
               maxLength: {
                 value: 500,
                 message: 'Message should be less than 500 characters',
