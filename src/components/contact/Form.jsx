@@ -21,33 +21,36 @@ const item = {
 };
 
 export default function Form() {
-  const [launch, setLaunch] = useState(false);
+  const [launch, setLaunch] = useState('idle');
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
   } = useForm();
 
   const sendEmail = async (params) => {
     try {
-      const res = await fetch(`/api/send-mail`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(params)
-        });
+      const res = await fetch(`/api/send-mail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
       const data = await res.json();
-      if (data.success) {
-        toast.success("Form submitted successfully!")
-      } else { toast.error("Error submitting form") }
+      if (res.ok && data?.success) {
+        toast.success('Form submitted successfully!');
+        reset();
+        return true;
+      }
+      toast.error(data?.error || 'Error submitting form');
+      return false;
     } catch (error) {
-      toast.error("Error submitting form")
+      toast.error('Error submitting form');
+      return false;
     }
-    reset();
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     const templateParams = {
       subject: data.subject,
       name: data.name,
@@ -55,8 +58,9 @@ export default function Form() {
       message: data.message,
     };
 
-    setLaunch("rocket"); // start rocket phase
-    sendEmail(templateParams);
+    setLaunch('sending');
+    const isSuccess = await sendEmail(templateParams);
+    setLaunch(isSuccess ? 'rocket' : 'idle');
   };
 
   return (
@@ -80,18 +84,20 @@ export default function Form() {
             name="name"
             type="text"
             placeholder="Full Name"
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? 'name-error' : undefined}
             {...register('name', {
               required: 'This field is required!',
               minLength: {
                 value: 3,
-                message: 'Name should be atleast 3 characters long.',
+                message: 'Name should be at least 3 characters long.',
               },
             })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg focus:outline-none focus:ring-2 focus:ring-accent/50 hover:shadow-[0_0_15px_#5c0099]"
           />
         </motion.div>
         {errors.name && (
-          <span className="inline-block self-start" style={{ color: '#ff6d05' }}>
+          <span id="name-error" role="alert" className="inline-block self-start" style={{ color: '#ff6d05' }}>
             {errors.name.message}
           </span>
         )}
@@ -102,12 +108,14 @@ export default function Form() {
             name="email"
             type="email"
             placeholder="Email"
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? 'email-error' : undefined}
             {...register('email', { required: 'This field is required!' })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg focus:outline-none focus:ring-2 focus:ring-accent/50 hover:shadow-[0_0_15px_#5c0099]"
           />
         </motion.div>
         {errors.email && (
-          <span className="inline-block self-start" style={{ color: '#ff6d05' }}>
+          <span id="email-error" role="alert" className="inline-block self-start" style={{ color: '#ff6d05' }}>
             {errors.email.message}
           </span>
         )}
@@ -118,12 +126,14 @@ export default function Form() {
             name="subject"
             type="text"
             placeholder="Subject"
+            aria-invalid={Boolean(errors.subject)}
+            aria-describedby={errors.subject ? 'subject-error' : undefined}
             {...register('subject', { required: 'This field is required!' })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg focus:outline-none focus:ring-2 focus:ring-accent/50 hover:shadow-[0_0_15px_#5c0099]"
           />
         </motion.div>
         {errors.subject && (
-          <span className="inline-block self-start" style={{ color: '#ff6d05' }}>
+          <span id="subject-error" role="alert" className="inline-block self-start" style={{ color: '#ff6d05' }}>
             {errors.subject.message}
           </span>
         )}
@@ -133,6 +143,8 @@ export default function Form() {
             id="message"
             name="message"
             placeholder="Message"
+            aria-invalid={Boolean(errors.message)}
+            aria-describedby={errors.message ? 'message-error' : undefined}
             {...register('message', {
               required: 'This field is required!',
               maxLength: {
@@ -148,7 +160,7 @@ export default function Form() {
           />
         </motion.div>
         {errors.message && (
-          <span className="inline-block self-start" style={{ color: '#ff6d05' }}>
+          <span id="message-error" role="alert" className="inline-block self-start" style={{ color: '#ff6d05' }}>
             {errors.message.message}
           </span>
         )}
@@ -160,33 +172,34 @@ export default function Form() {
         /> */}
 
         <AnimatePresence mode="wait">
-          {!launch ? (
+          {launch === 'idle' || launch === 'sending' ? (
             <motion.input
               key="submit"
               type="submit"
-              value="SEND MESSAGE!"
+              value={launch === 'sending' ? 'SENDING...' : 'SEND MESSAGE!'}
+              disabled={launch === 'sending'}
               className="cursor-pointer py-2 px-6 rounded-full custom-bg-abt text-shadow-neon-light-orange font-semibold tracking-wide shadow-sm hover:shadow-[0_0_20px_rgba(255,109,5,0.6)] transition-all duration-300"
               whileHover={{ scale: 1.08, y: -2 }}
               whileTap={{ scale: 0.95 }}
               initial={{ scale: 1 }}
             />
-          ) : launch === "rocket" ? (
+          ) : launch === 'rocket' ? (
             <motion.div
               key="rocket"
               initial={{ scale: 1, opacity: 1, y: 0 }}
               animate={{ y: -500, opacity: 0 }}
-              transition={{ duration: 1.4, ease: "easeIn", delay: 0.6 }}
+              transition={{ duration: 1.4, ease: 'easeIn', delay: 0.6 }}
               className="relative flex flex-col items-center"
-              onAnimationComplete={() => setLaunch("check")}
+              onAnimationComplete={() => setLaunch('check')}
             >
               {/* 🚀 Rocket Body */}
               <motion.div
                 initial={{ rotate: 0 }}
                 animate={{
                   x: [0, -3, 3, -3, 3, 0],
-                  rotate: [0, -2, 2, -2, 2, 0]
+                  rotate: [0, -2, 2, -2, 2, 0],
                 }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
+                transition={{ duration: 0.6, ease: 'easeInOut' }}
                 className="relative w-10 h-20 bg-gradient-to-b from-gray-100 via-gray-300 to-gray-500 rounded-t-full rounded-b-lg border-2 border-gray-400 shadow-[0_0_20px_rgba(255,109,5,0.6)]"
               >
                 {/* Rocket Nose Cone */}
@@ -204,10 +217,10 @@ export default function Form() {
                 {/* Flame/Exhaust */}
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0.8 }}
-                  animate={{ 
-                    scale: [1, 1.4, 1.2, 1.5, 1], 
+                  animate={{
+                    scale: [1, 1.4, 1.2, 1.5, 1],
                     opacity: [1, 0.8, 0.9, 0.7, 1],
-                    scaleY: [1, 1.3, 1.1, 1.4, 1]
+                    scaleY: [1, 1.3, 1.1, 1.4, 1],
                   }}
                   transition={{ repeat: Infinity, duration: 0.2 }}
                   className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-8 h-12 bg-gradient-to-b from-yellow-300 via-orange-500 to-red-600 rounded-full blur-sm shadow-[0_0_20px_rgba(255,165,0,0.8)]"
@@ -217,12 +230,12 @@ export default function Form() {
               {/* Glowing Trail */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8, height: 0 }}
-                animate={{ 
-                  opacity: [0, 0.9, 0.7, 0.5, 0], 
+                animate={{
+                  opacity: [0, 0.9, 0.7, 0.5, 0],
                   scale: [0.8, 1, 1.2, 1.3, 1],
-                  height: [0, 100, 200, 300, 400]
+                  height: [0, 100, 200, 300, 400],
                 }}
-                transition={{ duration: 1.8, ease: "easeOut" }}
+                transition={{ duration: 1.8, ease: 'easeOut' }}
                 className="absolute top-16 left-1/2 -translate-x-1/2 w-6 bg-gradient-to-b from-orange-400 via-orange-600 to-transparent blur-xl rounded-full shadow-[0_0_30px_rgba(255,109,5,0.8)]"
               />
             </motion.div>
@@ -232,16 +245,16 @@ export default function Form() {
               initial={{ scale: 0, opacity: 0, rotate: -180 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
               exit={{ scale: 0, opacity: 0 }}
-              transition={{ duration: 0.5, ease: "backOut" }}
+              transition={{ duration: 0.5, ease: 'backOut' }}
               className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-green-300 shadow-[0_0_25px_rgba(34,197,94,0.8),0_0_50px_rgba(34,197,94,0.4)]"
               onAnimationComplete={() => {
-                setTimeout(() => setLaunch(false), 2000); // show for 2 seconds
+                setTimeout(() => setLaunch('idle'), 2000); // show for 2 seconds
               }}
             >
               <motion.span 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                 className="text-white text-4xl font-bold"
               >
                 ✓
