@@ -37,15 +37,15 @@ export default function Form() {
         body: JSON.stringify(params),
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data?.success) {
         toast.success('Form submitted successfully!');
+        reset();
       } else {
-        toast.error('Error submitting form');
+        toast.error(data?.error || 'Error submitting form');
       }
     } catch (error) {
       toast.error('Error submitting form');
     }
-    reset();
   };
 
   const onSubmit = (data) => {
