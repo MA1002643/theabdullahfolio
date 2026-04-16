@@ -21,7 +21,7 @@ const item = {
 };
 
 export default function Form() {
-  const [launch, setLaunch] = useState(false);
+  const [launch, setLaunch] = useState('idle');
   const {
     register,
     handleSubmit,
@@ -48,7 +48,7 @@ export default function Form() {
     }
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     const templateParams = {
       subject: data.subject,
       name: data.name,
@@ -83,11 +83,13 @@ export default function Form() {
             name="name"
             type="text"
             placeholder="Full Name"
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? 'name-error' : undefined}
             {...register('name', {
               required: 'This field is required!',
               minLength: {
                 value: 3,
-                message: 'Name should be atleast 3 characters long.',
+                message: 'Name should be at least 3 characters long.',
               },
             })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
@@ -110,6 +112,8 @@ export default function Form() {
             name="email"
             type="email"
             placeholder="Email"
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? 'email-error' : undefined}
             {...register('email', { required: 'This field is required!' })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
@@ -131,6 +135,8 @@ export default function Form() {
             name="subject"
             type="text"
             placeholder="Subject"
+            aria-invalid={Boolean(errors.subject)}
+            aria-describedby={errors.subject ? 'subject-error' : undefined}
             {...register('subject', { required: 'This field is required!' })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
@@ -151,6 +157,8 @@ export default function Form() {
             id="message"
             name="message"
             placeholder="Message"
+            aria-invalid={Boolean(errors.message)}
+            aria-describedby={errors.message ? 'message-error' : undefined}
             {...register('message', {
               required: 'This field is required!',
               maxLength: {
@@ -181,7 +189,7 @@ export default function Form() {
         /> */}
 
         <AnimatePresence mode="wait">
-          {!launch ? (
+          {launch === 'idle' || launch === 'sending' ? (
             <motion.input
               key="submit"
               type="submit"
@@ -254,7 +262,7 @@ export default function Form() {
               transition={{ duration: 0.5, ease: 'backOut' }}
               className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-green-300 bg-gradient-to-br from-green-400 to-green-600 shadow-[0_0_25px_rgba(34,197,94,0.8),0_0_50px_rgba(34,197,94,0.4)]"
               onAnimationComplete={() => {
-                setTimeout(() => setLaunch(false), 2000); // show for 2 seconds
+                setTimeout(() => setLaunch('idle'), 2000); // show for 2 seconds
               }}
             >
               <motion.span
