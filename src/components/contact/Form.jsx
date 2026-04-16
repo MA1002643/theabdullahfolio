@@ -178,6 +178,7 @@ export default function Form() {
               type="submit"
               value={launch === 'sending' ? 'SENDING...' : 'SEND MESSAGE!'}
               disabled={launch === 'sending'}
+              aria-busy={launch === 'sending'}
               className="cursor-pointer py-2 px-6 rounded-full custom-bg-abt text-shadow-neon-light-orange font-semibold tracking-wide shadow-sm hover:shadow-[0_0_20px_rgba(255,109,5,0.6)] transition-all duration-300"
               whileHover={{ scale: 1.08, y: -2 }}
               whileTap={{ scale: 0.95 }}
