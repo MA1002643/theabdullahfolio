@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 
 function escapeHtml(str) {
-  return str
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -11,11 +11,22 @@ function escapeHtml(str) {
 
 export async function POST(req) {
   try {
-    const { name, email, subject, message } = await req.json();
+    let { name, email, subject, message } = await req.json();
+    name = typeof name === 'string' ? name.trim() : '';
+    email = typeof email === 'string' ? email.trim() : '';
+    subject = typeof subject === 'string' ? subject.trim() : '';
+    message = typeof message === 'string' ? message.trim() : '';
 
     if (!name || !email || !subject || !message) {
       return new Response(
         JSON.stringify({ error: 'All fields are required.' }),
+        { status: 400 },
+      );
+    }
+
+    if (name.length > 100 || subject.length > 200 || message.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: 'Input exceeds maximum allowed length.' }),
         { status: 400 },
       );
     }
