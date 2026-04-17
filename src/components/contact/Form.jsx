@@ -210,9 +210,15 @@ export default function Form() {
               value={launch === 'sending' ? 'SENDING...' : 'SEND MESSAGE!'}
               disabled={launch === 'sending'}
               aria-busy={launch === 'sending'}
-              className="custom-bg-abt text-shadow-neon-light-orange cursor-pointer rounded-full px-6 py-2 font-semibold tracking-wide shadow-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,109,5,0.6)]"
-              whileHover={{ scale: 1.08, y: -2 }}
-              whileTap={{ scale: 0.95 }}
+              className={`custom-bg-abt text-shadow-neon-light-orange rounded-full px-6 py-2 font-semibold tracking-wide shadow-sm transition-all duration-300 ${
+                launch === 'sending'
+                  ? 'cursor-not-allowed opacity-60'
+                  : 'cursor-pointer hover:shadow-[0_0_20px_rgba(255,109,5,0.6)]'
+              }`}
+              whileHover={
+                launch === 'sending' ? undefined : { scale: 1.08, y: -2 }
+              }
+              whileTap={launch === 'sending' ? undefined : { scale: 0.95 }}
               initial={{ scale: 1 }}
             />
           ) : launch === 'rocket' ? (
