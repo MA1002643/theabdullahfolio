@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Toaster, toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -22,7 +22,6 @@ const item = {
 
 export default function Form() {
   const [launch, setLaunch] = useState('idle');
-  const emailResultRef = useRef(null);
   const {
     register,
     handleSubmit,
@@ -53,6 +52,8 @@ export default function Form() {
   };
 
   const onSubmit = async (data) => {
+    if (launch !== 'idle') return;
+
     const templateParams = {
       subject: data.subject,
       name: data.name,
@@ -60,8 +61,9 @@ export default function Form() {
       message: data.message,
     };
 
-    setLaunch('rocket'); // start rocket phase
-    emailResultRef.current = sendEmail(templateParams);
+    setLaunch('sending');
+    const success = await sendEmail(templateParams);
+    setLaunch(success ? 'rocket' : 'idle');
   };
 
   return (
@@ -205,7 +207,9 @@ export default function Form() {
             <motion.input
               key="submit"
               type="submit"
-              value="SEND MESSAGE!"
+              value={launch === 'sending' ? 'SENDING...' : 'SEND MESSAGE!'}
+              disabled={launch === 'sending'}
+              aria-busy={launch === 'sending'}
               className="custom-bg-abt text-shadow-neon-light-orange cursor-pointer rounded-full px-6 py-2 font-semibold tracking-wide shadow-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,109,5,0.6)]"
               whileHover={{ scale: 1.08, y: -2 }}
               whileTap={{ scale: 0.95 }}
@@ -218,10 +222,7 @@ export default function Form() {
               animate={{ y: -500, opacity: 0 }}
               transition={{ duration: 1.4, ease: 'easeIn', delay: 0.6 }}
               className="relative flex flex-col items-center"
-              onAnimationComplete={async () => {
-                const success = await emailResultRef.current;
-                setLaunch(success ? 'check' : 'idle');
-              }}
+              onAnimationComplete={() => setLaunch('check')}
             >
               {/* 🚀 Rocket Body */}
               <motion.div
