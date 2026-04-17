@@ -38,15 +38,21 @@ export default function Form() {
       });
       const data = await res.json();
       if (res.ok && data?.success) {
-        toast.success('Form submitted successfully!');
+        toast.success('Message sent successfully!', {
+          icon: '✅',
+        });
         reset();
         return true;
       } else {
-        toast.error(data?.error || 'Error submitting form');
+        toast.error(data?.error || 'Failed to send message', {
+          icon: '⚠️',
+        });
         return false;
       }
     } catch (error) {
-      toast.error('Error submitting form');
+      toast.error('Failed to send message', {
+        icon: '⚠️',
+      });
       return false;
     }
   };
@@ -68,7 +74,25 @@ export default function Form() {
 
   return (
     <>
-      <Toaster richColors position="top-center" />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: 'rgba(27, 27, 27, 0.2)',
+            backdropFilter: 'blur(6px)',
+            color: 'rgb(255, 109, 5)',
+            border: '1px solid rgba(155, 89, 182, 0.3)',
+            boxShadow: 'inset 0 0 10px rgba(255, 255, 255, 0.05)',
+            fontFamily: 'var(--font-varela-round)',
+          },
+          classNames: {
+            success:
+              '[&]:!border-[#00e676] [&]:!shadow-[0_0_12px_rgba(0,230,118,0.5),0_0_24px_rgba(0,230,118,0.2)]',
+            error:
+              '[&]:!border-[#ff1744] [&]:!shadow-[0_0_12px_rgba(255,23,68,0.5),0_0_24px_rgba(255,23,68,0.2)]',
+          },
+        }}
+      />
       <motion.form
         variants={container}
         initial="hidden"
@@ -88,6 +112,7 @@ export default function Form() {
             id="name"
             name="name"
             type="text"
+            autoComplete="name"
             placeholder="Full Name"
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? 'name-error' : undefined}
@@ -119,6 +144,7 @@ export default function Form() {
             id="email"
             name="email"
             type="email"
+            autoComplete="email"
             placeholder="Email"
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? 'email-error' : undefined}
@@ -206,7 +232,10 @@ export default function Form() {
           {launch === 'idle' || launch === 'sending' ? (
             <motion.input
               key="submit"
+              id="submit-btn"
+              name="submit"
               type="submit"
+              aria-label="Send message"
               value={launch === 'sending' ? 'SENDING...' : 'SEND MESSAGE!'}
               disabled={launch === 'sending'}
               aria-busy={launch === 'sending'}
