@@ -1,5 +1,14 @@
 import nodemailer from 'nodemailer';
 
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function POST(req) {
   try {
     const { name, email, subject, message } = await req.json();
@@ -7,6 +16,14 @@ export async function POST(req) {
     if (!name || !email || !subject || !message) {
       return new Response(
         JSON.stringify({ error: 'All fields are required.' }),
+        { status: 400 },
+      );
+    }
+
+    // Reject inputs containing CR/LF to prevent header injection
+    if (/[\r\n]/.test(name) || /[\r\n]/.test(subject)) {
+      return new Response(
+        JSON.stringify({ error: 'Input contains invalid characters.' }),
         { status: 400 },
       );
     }
@@ -20,27 +37,43 @@ export async function POST(req) {
     }
 
     // Verify email deliverability via Abstract Email Reputation API
-    const abstractRes = await fetch(
-      `https://emailreputation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_API_KEY}&email=${encodeURIComponent(email)}`,
-    );
-    if (abstractRes.ok) {
-      const validation = await abstractRes.json();
-      if (validation.email_deliverability?.status === 'undeliverable') {
-        return new Response(
-          JSON.stringify({
-            error:
-              'This email address does not exist or cannot receive emails.',
-          }),
-          { status: 400 },
+    if (process.env.ABSTRACT_API_KEY) {
+      const controller = new AbortController();
+      const timeoutMs = 5000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const abstractRes = await fetch(
+          `https://emailreputation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_API_KEY}&email=${encodeURIComponent(email)}`,
+          { signal: controller.signal },
         );
-      }
-      if (validation.email_quality?.is_disposable) {
-        return new Response(
-          JSON.stringify({
-            error: 'Disposable email addresses are not allowed.',
-          }),
-          { status: 400 },
-        );
+
+        if (abstractRes.ok) {
+          const validation = await abstractRes.json();
+          if (validation.email_deliverability?.status === 'undeliverable') {
+            return new Response(
+              JSON.stringify({
+                error:
+                  'This email address does not exist or cannot receive emails.',
+              }),
+              { status: 400 },
+            );
+          }
+          if (validation.email_quality?.is_disposable) {
+            return new Response(
+              JSON.stringify({
+                error: 'Disposable email addresses are not allowed.',
+              }),
+              { status: 400 },
+            );
+          }
+        } else {
+          console.warn('Abstract API non-ok:', abstractRes.status);
+        }
+      } catch (abstractErr) {
+        console.warn('Skipping Abstract email reputation check:', abstractErr);
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
@@ -57,16 +90,17 @@ export async function POST(req) {
 
     // 📧 Send email
     await transporter.sendMail({
-      from: `"${name}" <${process.env.SMTP_USER}>`,
-      replyTo: `"${name}" <${email}>`,
+      from: { name: 'ma.codes Contact Form', address: process.env.SMTP_USER },
+      replyTo: { name, address: email },
       to: process.env.RECEIVER_EMAIL, // your inbox
-      subject: `${subject} (ma.codes contact form)`,
+      subject: `${subject.slice(0, 200)} (ma.codes contact form)`,
+      text: `From: ${name} <${email}>\nFull Name: ${name}\n\nMessage:\n${message}`,
       html: `
         <div style="font-family:Arial, sans-serif; line-height:1.6;">
-          <p><strong>From:</strong> ${name} &lt;${email}&gt;</p>
-          <p><strong>Full Name:</strong> ${name}</p>
+          <p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
+          <p><strong>Full Name:</strong> ${escapeHtml(name)}</p>
           <p><strong>Message:</strong></p>
-          <p>${message}</p>
+          <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
         </div>
       `,
     });

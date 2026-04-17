@@ -3,6 +3,7 @@ import './globals.css';
 import clsx from 'clsx';
 import FireFliesBackground from '@/components/FireFliesBackground';
 import LoaderWrapper from '@/components/loaderWrapper';
+import GlobalToaster from '@/components/GlobalToaster';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -25,7 +26,7 @@ export const metadata = {
 /**
  * Root application layout that provides the HTML structure, global font/theme classes, and site-wide UI/providers.
  *
- * Renders a favicon link in the document head and a body that applies the Inter font variable and theme classes; the body contains the LoaderWrapper (wrapping the page children), FireFliesBackground, SpeedInsights, and Analytics.
+ * Renders a favicon link in the document head and a body that applies the Inter font variable and theme classes; the body contains the LoaderWrapper (wrapping the page children), GlobalToaster, FireFliesBackground, SpeedInsights, and Analytics.
  * @returns {JSX.Element} The root HTML and body structure for the application.
  */
 export default function RootLayout({ children }) {
@@ -42,6 +43,7 @@ export default function RootLayout({ children }) {
         )}
       >
         <LoaderWrapper>{children}</LoaderWrapper>
+        <GlobalToaster />
         <FireFliesBackground />
         <SpeedInsights />
         <Analytics />
