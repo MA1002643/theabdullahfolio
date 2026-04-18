@@ -17,6 +17,13 @@ export async function POST(req) {
     subject = typeof subject === 'string' ? subject.trim() : '';
     message = typeof message === 'string' ? message.trim() : '';
 
+    const subjectSuffix = ' (ma.codes contact form)';
+    const maxSubjectLength = 200;
+    const maxRawSubjectLength = Math.max(
+      0,
+      maxSubjectLength - subjectSuffix.length,
+    );
+
     if (!name || !email || !subject || !message) {
       return new Response(
         JSON.stringify({ error: 'All fields are required.' }),
@@ -24,25 +31,33 @@ export async function POST(req) {
       );
     }
 
-    if (name.length > 100 || subject.length > 200 || message.length > 2000) {
-      return new Response(
-        JSON.stringify({ error: 'Input exceeds maximum allowed length.' }),
-        { status: 400 },
+    const validationErrors = [];
+    if (name.length > 100)
+      validationErrors.push(
+        'Full Name exceeds maximum allowed length (100 characters).',
       );
-    }
+    if (subject.length > maxRawSubjectLength)
+      validationErrors.push(
+        `Subject exceeds maximum allowed length (${maxRawSubjectLength} characters).`,
+      );
+    if (message.length > 2000)
+      validationErrors.push(
+        'Message exceeds maximum allowed length (2000 characters).',
+      );
 
     // Reject inputs containing CR/LF to prevent header injection
     if (/[\r\n]/.test(name) || /[\r\n]/.test(subject)) {
-      return new Response(
-        JSON.stringify({ error: 'Input contains invalid characters.' }),
-        { status: 400 },
-      );
+      validationErrors.push('Input contains invalid characters.');
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return new Response(JSON.stringify({ error: 'Invalid email format.' }), {
+      validationErrors.push('Invalid email format.');
+    }
+
+    if (validationErrors.length > 0) {
+      return new Response(JSON.stringify({ errors: validationErrors }), {
         status: 400,
       });
     }
@@ -89,10 +104,17 @@ export async function POST(req) {
     }
 
     // 🔒 Set up transporter using your SMTP credentials
+    const smtpPort = Number(process.env.SMTP_PORT) || 587;
+    const smtpSecureFromEnv = process.env.SMTP_SECURE;
+    const smtpSecure =
+      typeof smtpSecureFromEnv === 'string'
+        ? smtpSecureFromEnv.toLowerCase() === 'true'
+        : smtpPort === 465;
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST, // e.g. "smtp.gmail.com"
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false, // true for 465, false for others
+      port: smtpPort,
+      secure: smtpSecure,
       auth: {
         user: process.env.SMTP_USER, // your email
         pass: process.env.SMTP_PASS, // app password or SMTP password
@@ -100,11 +122,13 @@ export async function POST(req) {
     });
 
     // 📧 Send email
+    const emailSubject = `${subject.slice(0, maxRawSubjectLength)}${subjectSuffix}`;
+
     await transporter.sendMail({
       from: { name: 'ma.codes Contact Form', address: process.env.SMTP_USER },
       replyTo: { name, address: email },
       to: process.env.RECEIVER_EMAIL, // your inbox
-      subject: `${subject.slice(0, 200)} (ma.codes contact form)`,
+      subject: emailSubject,
       text: `From: ${name} <${email}>\nFull Name: ${name}\n\nMessage:\n${message}`,
       html: `
         <div style="font-family:Arial, sans-serif; line-height:1.6;">

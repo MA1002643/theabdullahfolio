@@ -41,12 +41,12 @@ export default function Form() {
         toast.success('Message sent successfully!', {
           icon: '✅',
         });
-        reset();
         return true;
       } else {
-        toast.error(data?.error || 'Failed to send message', {
-          icon: '⚠️',
-        });
+        const messages = data?.errors ?? [
+          data?.error ?? 'Failed to send message',
+        ];
+        messages.forEach((msg) => toast.error(msg, { icon: '⚠️' }));
         return false;
       }
     } catch (error) {
@@ -69,7 +69,18 @@ export default function Form() {
 
     setLaunch('sending');
     const success = await sendEmail(templateParams);
-    setLaunch(success ? 'rocket' : 'idle');
+    if (success) {
+      setLaunch('rocket');
+      // Deterministic state machine: timeouts aligned with animation durations
+      // Rocket: 0.6s delay + 1.4s fly-up = ~2s, Checkmark: 0.5s enter + 2s display
+      setTimeout(() => setLaunch('check'), 2000);
+      setTimeout(() => {
+        reset(); // called outside handleSubmit stack so isSubmitted is fully cleared
+        setLaunch('idle');
+      }, 4500);
+    } else {
+      setLaunch('idle');
+    }
   };
 
   return (
@@ -238,7 +249,6 @@ export default function Form() {
               animate={{ y: -500, opacity: 0 }}
               transition={{ duration: 1.4, ease: 'easeIn', delay: 0.6 }}
               className="relative flex flex-col items-center"
-              onAnimationComplete={() => setLaunch('check')}
             >
               {/* 🚀 Rocket Body */}
               <motion.div
@@ -293,9 +303,6 @@ export default function Form() {
               exit={{ scale: 0, opacity: 0 }}
               transition={{ duration: 0.5, ease: 'backOut' }}
               className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-green-300 bg-gradient-to-br from-green-400 to-green-600 shadow-[0_0_25px_rgba(34,197,94,0.8),0_0_50px_rgba(34,197,94,0.4)]"
-              onAnimationComplete={() => {
-                setTimeout(() => setLaunch('idle'), 2000); // show for 2 seconds
-              }}
             >
               <motion.span
                 initial={{ scale: 0 }}
