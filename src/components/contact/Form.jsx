@@ -114,6 +114,10 @@ export default function Form() {
                 value: 3,
                 message: 'Name should be at least 3 characters long.',
               },
+              maxLength: {
+                value: 100,
+                message: 'Name should be at most 100 characters long.',
+              },
             })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
