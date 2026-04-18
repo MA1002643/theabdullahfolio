@@ -43,9 +43,7 @@ export default function Form() {
         });
         return true;
       } else {
-        const messages = data?.errors ?? [
-          data?.error ?? 'Failed to send message',
-        ];
+        const messages = data?.errors ?? ['Failed to send message'];
         messages.forEach((msg) => toast.error(msg, { icon: '⚠️' }));
         return false;
       }
@@ -169,7 +167,14 @@ export default function Form() {
             placeholder="Subject"
             aria-invalid={Boolean(errors.subject)}
             aria-describedby={errors.subject ? 'subject-error' : undefined}
-            {...register('subject', { required: 'Subject is required!' })}
+            {...register('subject', {
+              required: 'Subject is required!',
+              maxLength: {
+                // Keep in sync with maxRawSubjectLength in api/send-mail/route.js
+                value: 175,
+                message: 'Subject should be at most 175 characters long.',
+              },
+            })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
         </motion.div>
