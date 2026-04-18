@@ -18,20 +18,16 @@ export async function POST(req) {
     message = typeof message === 'string' ? message.trim() : '';
 
     const subjectSuffix = ' (ma.codes contact form)';
-    const maxSubjectLength = 200;
-    const maxRawSubjectLength = Math.max(
-      0,
-      maxSubjectLength - subjectSuffix.length,
-    );
-
-    if (!name || !email || !subject || !message) {
-      return new Response(
-        JSON.stringify({ error: 'All fields are required.' }),
-        { status: 400 },
-      );
-    }
+    // Keep in sync with client-side maxLength in Form.jsx (subject field)
+    const maxRawSubjectLength = 175;
+    const maxSubjectLength = maxRawSubjectLength + subjectSuffix.length;
 
     const validationErrors = [];
+    if (!name) validationErrors.push('Full Name is required.');
+    if (!email) validationErrors.push('Email is required.');
+    if (!subject) validationErrors.push('Subject is required.');
+    if (!message) validationErrors.push('Message is required.');
+
     if (name.length > 100)
       validationErrors.push(
         'Full Name exceeds maximum allowed length (100 characters).',

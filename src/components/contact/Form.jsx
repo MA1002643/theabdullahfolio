@@ -27,7 +27,7 @@ export default function Form() {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm({ criteriaMode: 'all' });
+  } = useForm();
 
   const sendEmail = async (params) => {
     try {
@@ -43,9 +43,7 @@ export default function Form() {
         });
         return true;
       } else {
-        const messages = data?.errors ?? [
-          data?.error ?? 'Failed to send message',
-        ];
+        const messages = data?.errors ?? ['Failed to send message'];
         messages.forEach((msg) => toast.error(msg, { icon: '⚠️' }));
         return false;
       }
@@ -172,6 +170,7 @@ export default function Form() {
             {...register('subject', {
               required: 'Subject is required!',
               maxLength: {
+                // Keep in sync with maxRawSubjectLength in api/send-mail/route.js
                 value: 175,
                 message: 'Subject should be at most 175 characters long.',
               },
