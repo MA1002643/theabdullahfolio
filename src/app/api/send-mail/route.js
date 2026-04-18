@@ -56,14 +56,9 @@ export async function POST(req) {
       validationErrors.push('Invalid email format.');
     }
 
-    if (validationErrors.length > 0) {
-      return new Response(JSON.stringify({ errors: validationErrors }), {
-        status: 400,
-      });
-    }
-
     // Verify email deliverability via Abstract Email Reputation API
-    if (process.env.ABSTRACT_API_KEY) {
+    // Runs alongside other checks so all errors are collected together
+    if (process.env.ABSTRACT_API_KEY && emailRegex.test(email)) {
       const controller = new AbortController();
       const timeoutMs = 5000;
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -77,20 +72,13 @@ export async function POST(req) {
         if (abstractRes.ok) {
           const validation = await abstractRes.json();
           if (validation.email_deliverability?.status === 'undeliverable') {
-            return new Response(
-              JSON.stringify({
-                error:
-                  'This email address does not exist or cannot receive emails.',
-              }),
-              { status: 400 },
+            validationErrors.push(
+              'This email address does not exist or cannot receive emails.',
             );
           }
           if (validation.email_quality?.is_disposable) {
-            return new Response(
-              JSON.stringify({
-                error: 'Disposable email addresses are not allowed.',
-              }),
-              { status: 400 },
+            validationErrors.push(
+              'Disposable email addresses are not allowed.',
             );
           }
         } else {
@@ -101,6 +89,12 @@ export async function POST(req) {
       } finally {
         clearTimeout(timeoutId);
       }
+    }
+
+    if (validationErrors.length > 0) {
+      return new Response(JSON.stringify({ errors: validationErrors }), {
+        status: 400,
+      });
     }
 
     // 🔒 Set up transporter using your SMTP credentials
@@ -146,7 +140,10 @@ export async function POST(req) {
     );
   } catch (err) {
     console.error('Error sending email:', err);
-    return new Response(JSON.stringify({ error: 'Failed to send email.' }), {
+    const message = err?.responseCode
+      ? `Mail server rejected the request (code ${err.responseCode}).`
+      : 'Failed to send email. Please try again later.';
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
     });
   }
