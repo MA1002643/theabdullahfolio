@@ -1,53 +1,153 @@
-import nodemailer from "nodemailer";
+import nodemailer from 'nodemailer';
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export async function POST(req) {
-    try {
-        const { name, email, subject, message } = await req.json();
+  try {
+    let { name, email, subject, message } = await req.json();
+    name = typeof name === 'string' ? name.trim() : '';
+    email = typeof email === 'string' ? email.trim() : '';
+    subject = typeof subject === 'string' ? subject.trim() : '';
+    message = typeof message === 'string' ? message.trim() : '';
 
-        if (!name || !email || !subject || !message) {
+    const subjectSuffix = ' (ma.codes contact form)';
+    const maxSubjectLength = 200;
+    const maxRawSubjectLength = Math.max(
+      0,
+      maxSubjectLength - subjectSuffix.length,
+    );
+
+    if (!name || !email || !subject || !message) {
+      return new Response(
+        JSON.stringify({ error: 'All fields are required.' }),
+        { status: 400 },
+      );
+    }
+
+    const validationErrors = [];
+    if (name.length > 100)
+      validationErrors.push(
+        'Full Name exceeds maximum allowed length (100 characters).',
+      );
+    if (subject.length > maxRawSubjectLength)
+      validationErrors.push(
+        `Subject exceeds maximum allowed length (${maxRawSubjectLength} characters).`,
+      );
+    if (message.length > 2000)
+      validationErrors.push(
+        'Message exceeds maximum allowed length (2000 characters).',
+      );
+
+    // Reject inputs containing CR/LF to prevent header injection
+    if (/[\r\n]/.test(name) || /[\r\n]/.test(subject)) {
+      validationErrors.push('Input contains invalid characters.');
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      validationErrors.push('Invalid email format.');
+    }
+
+    if (validationErrors.length > 0) {
+      return new Response(JSON.stringify({ errors: validationErrors }), {
+        status: 400,
+      });
+    }
+
+    // Verify email deliverability via Abstract Email Reputation API
+    if (process.env.ABSTRACT_API_KEY) {
+      const controller = new AbortController();
+      const timeoutMs = 5000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const abstractRes = await fetch(
+          `https://emailreputation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_API_KEY}&email=${encodeURIComponent(email)}`,
+          { signal: controller.signal },
+        );
+
+        if (abstractRes.ok) {
+          const validation = await abstractRes.json();
+          if (validation.email_deliverability?.status === 'undeliverable') {
             return new Response(
-                JSON.stringify({ error: "All fields are required." }),
-                { status: 400 }
+              JSON.stringify({
+                error:
+                  'This email address does not exist or cannot receive emails.',
+              }),
+              { status: 400 },
             );
+          }
+          if (validation.email_quality?.is_disposable) {
+            return new Response(
+              JSON.stringify({
+                error: 'Disposable email addresses are not allowed.',
+              }),
+              { status: 400 },
+            );
+          }
+        } else {
+          console.warn('Abstract API non-ok:', abstractRes.status);
         }
+      } catch (abstractErr) {
+        console.warn('Skipping Abstract email reputation check:', abstractErr);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
 
-        // 🔒 Set up transporter using your SMTP credentials
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST, // e.g. "smtp.gmail.com"
-            port: Number(process.env.SMTP_PORT) || 587,
-            secure: false, // true for 465, false for others
-            auth: {
-                user: process.env.SMTP_USER, // your email
-                pass: process.env.SMTP_PASS, // app password or SMTP password
-            },
-        });
+    // 🔒 Set up transporter using your SMTP credentials
+    const smtpPort = Number(process.env.SMTP_PORT) || 587;
+    const smtpSecureFromEnv = process.env.SMTP_SECURE;
+    const smtpSecure =
+      typeof smtpSecureFromEnv === 'string'
+        ? smtpSecureFromEnv.toLowerCase() === 'true'
+        : smtpPort === 465;
 
-        // 📧 Send email
-        await transporter.sendMail({
-            from: `"Portfolio Form" <${process.env.SMTP_USER}>`,
-            to: process.env.RECEIVER_EMAIL, // your inbox
-            subject: `📩 New Message: ${subject}`,
-            html: `
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST, // e.g. "smtp.gmail.com"
+      port: smtpPort,
+      secure: smtpSecure,
+      auth: {
+        user: process.env.SMTP_USER, // your email
+        pass: process.env.SMTP_PASS, // app password or SMTP password
+      },
+    });
+
+    // 📧 Send email
+    const emailSubject = `${subject.slice(0, maxRawSubjectLength)}${subjectSuffix}`;
+
+    await transporter.sendMail({
+      from: { name: 'ma.codes Contact Form', address: process.env.SMTP_USER },
+      replyTo: { name, address: email },
+      to: process.env.RECEIVER_EMAIL, // your inbox
+      subject: emailSubject,
+      text: `From: ${name} <${email}>\nFull Name: ${name}\n\nMessage:\n${message}`,
+      html: `
         <div style="font-family:Arial, sans-serif; line-height:1.6;">
-          <h2>New Message from Portfolio Form</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Subject:</strong> ${subject}</p>
+          <p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
+          <p><strong>Full Name:</strong> ${escapeHtml(name)}</p>
           <p><strong>Message:</strong></p>
-          <p>${message}</p>
+          <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
         </div>
       `,
-        });
+    });
 
-        return new Response(
-            JSON.stringify({ success: true, message: "Email sent successfully!" }),
-            { status: 200 }
-        );
-    } catch (err) {
-        console.error("Error sending email:", err);
-        return new Response(
-            JSON.stringify({ error: "Failed to send email." }),
-            { status: 500 }
-        );
-    }
+    return new Response(
+      JSON.stringify({ success: true, message: 'Email sent successfully!' }),
+      { status: 200 },
+    );
+  } catch (err) {
+    console.error('Error sending email:', err);
+    return new Response(JSON.stringify({ error: 'Failed to send email.' }), {
+      status: 500,
+    });
+  }
 }

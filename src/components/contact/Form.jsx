@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const container = {
@@ -38,15 +38,21 @@ export default function Form() {
       });
       const data = await res.json();
       if (res.ok && data?.success) {
-        toast.success('Form submitted successfully!');
-        reset();
+        toast.success('Message sent successfully!', {
+          icon: '✅',
+        });
         return true;
       } else {
-        toast.error(data?.error || 'Error submitting form');
+        const messages = data?.errors ?? [
+          data?.error ?? 'Failed to send message',
+        ];
+        messages.forEach((msg) => toast.error(msg, { icon: '⚠️' }));
         return false;
       }
     } catch (error) {
-      toast.error('Error submitting form');
+      toast.error('Failed to send message', {
+        icon: '⚠️',
+      });
       return false;
     }
   };
@@ -63,12 +69,22 @@ export default function Form() {
 
     setLaunch('sending');
     const success = await sendEmail(templateParams);
-    setLaunch(success ? 'rocket' : 'idle');
+    if (success) {
+      setLaunch('rocket');
+      // Deterministic state machine: timeouts aligned with animation durations
+      // Rocket: 0.6s delay + 1.4s fly-up = ~2s, Checkmark: 0.5s enter + 2s display
+      setTimeout(() => setLaunch('check'), 2000);
+      setTimeout(() => {
+        reset(); // called outside handleSubmit stack so isSubmitted is fully cleared
+        setLaunch('idle');
+      }, 4500);
+    } else {
+      setLaunch('idle');
+    }
   };
 
   return (
     <>
-      <Toaster richColors position="top-center" />
       <motion.form
         variants={container}
         initial="hidden"
@@ -88,6 +104,7 @@ export default function Form() {
             id="name"
             name="name"
             type="text"
+            autoComplete="name"
             placeholder="Full Name"
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? 'name-error' : undefined}
@@ -96,6 +113,10 @@ export default function Form() {
               minLength: {
                 value: 3,
                 message: 'Name should be at least 3 characters long.',
+              },
+              maxLength: {
+                value: 100,
+                message: 'Name should be at most 100 characters long.',
               },
             })}
             className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
@@ -119,6 +140,7 @@ export default function Form() {
             id="email"
             name="email"
             type="email"
+            autoComplete="email"
             placeholder="Email"
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? 'email-error' : undefined}
@@ -206,7 +228,10 @@ export default function Form() {
           {launch === 'idle' || launch === 'sending' ? (
             <motion.input
               key="submit"
+              id="submit-btn"
+              name="submit"
               type="submit"
+              aria-label="Send message"
               value={launch === 'sending' ? 'SENDING...' : 'SEND MESSAGE!'}
               disabled={launch === 'sending'}
               aria-busy={launch === 'sending'}
@@ -228,7 +253,6 @@ export default function Form() {
               animate={{ y: -500, opacity: 0 }}
               transition={{ duration: 1.4, ease: 'easeIn', delay: 0.6 }}
               className="relative flex flex-col items-center"
-              onAnimationComplete={() => setLaunch('check')}
             >
               {/* 🚀 Rocket Body */}
               <motion.div
@@ -283,9 +307,6 @@ export default function Form() {
               exit={{ scale: 0, opacity: 0 }}
               transition={{ duration: 0.5, ease: 'backOut' }}
               className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-green-300 bg-gradient-to-br from-green-400 to-green-600 shadow-[0_0_25px_rgba(34,197,94,0.8),0_0_50px_rgba(34,197,94,0.4)]"
-              onAnimationComplete={() => {
-                setTimeout(() => setLaunch('idle'), 2000); // show for 2 seconds
-              }}
             >
               <motion.span
                 initial={{ scale: 0 }}
