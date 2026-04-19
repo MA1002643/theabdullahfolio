@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -22,11 +22,20 @@ const item = {
 
 function FormContent({ onReset }) {
   const [launch, setLaunch] = useState('idle');
+  const timersRef = useRef([]);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
+
+  useEffect(() => {
+    return () => timersRef.current.forEach(clearTimeout);
+  }, []);
+
+  const schedule = (cb, ms) => {
+    timersRef.current.push(setTimeout(cb, ms));
+  };
 
   const sendEmail = async (params) => {
     try {
@@ -70,11 +79,11 @@ function FormContent({ onReset }) {
       setLaunch('rocket');
       // Deterministic state machine: timeouts aligned with animation durations
       // Rocket: 0.6s delay + 1.4s fly-up = ~2s, Checkmark: 0.5s enter + 2s display
-      setTimeout(() => setLaunch('check'), 2000);
+      schedule(() => setLaunch('check'), 2000);
       // Remount the entire form component to get a fresh useForm() instance.
       // This avoids the known issue where reset() inside handleSubmit's callback
       // gets its state overridden by handleSubmit's finally block.
-      setTimeout(() => onReset(), 4500);
+      schedule(onReset, 4500);
     } else {
       setLaunch('idle');
     }
