@@ -20,13 +20,12 @@ const item = {
   show: { scale: 1 },
 };
 
-export default function Form() {
+function FormContent({ onReset }) {
   const [launch, setLaunch] = useState('idle');
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
   } = useForm();
 
   const sendEmail = async (params) => {
@@ -72,10 +71,10 @@ export default function Form() {
       // Deterministic state machine: timeouts aligned with animation durations
       // Rocket: 0.6s delay + 1.4s fly-up = ~2s, Checkmark: 0.5s enter + 2s display
       setTimeout(() => setLaunch('check'), 2000);
-      setTimeout(() => {
-        reset(); // called outside handleSubmit stack so isSubmitted is fully cleared
-        setLaunch('idle');
-      }, 4500);
+      // Remount the entire form component to get a fresh useForm() instance.
+      // This avoids the known issue where reset() inside handleSubmit's callback
+      // gets its state overridden by handleSubmit's finally block.
+      setTimeout(() => onReset(), 4500);
     } else {
       setLaunch('idle');
     }
@@ -98,7 +97,7 @@ export default function Form() {
           <label htmlFor="name" className="sr-only">
             Full Name
           </label>
-          <motion.input
+          <input
             id="name"
             name="name"
             type="text"
@@ -134,7 +133,7 @@ export default function Form() {
           <label htmlFor="email" className="sr-only">
             Email
           </label>
-          <motion.input
+          <input
             id="email"
             name="email"
             type="email"
@@ -160,7 +159,7 @@ export default function Form() {
           <label htmlFor="subject" className="sr-only">
             Subject
           </label>
-          <motion.input
+          <input
             id="subject"
             name="subject"
             type="text"
@@ -192,7 +191,7 @@ export default function Form() {
           <label htmlFor="message" className="sr-only">
             Message
           </label>
-          <motion.textarea
+          <textarea
             id="message"
             name="message"
             placeholder="Message"
@@ -327,4 +326,11 @@ export default function Form() {
       </motion.form>
     </>
   );
+}
+
+// Wrapper that remounts FormContent via key after a successful send.
+// This gives useForm() a completely fresh instance — no stale state.
+export default function Form() {
+  const [formKey, setFormKey] = useState(0);
+  return <FormContent key={formKey} onReset={() => setFormKey((k) => k + 1)} />;
 }
