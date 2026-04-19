@@ -62,7 +62,7 @@ export async function POST(req) {
       try {
         const abstractRes = await fetch(
           `https://emailreputation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_API_KEY}&email=${encodeURIComponent(email)}`,
-          { signal: controller.signal },
+          { signal: controller.signal, cache: 'no-store' },
         );
 
         if (abstractRes.ok) {
