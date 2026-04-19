@@ -203,6 +203,7 @@ function FormContent({ onReset }) {
           <textarea
             id="message"
             name="message"
+            rows={5}
             placeholder="Message"
             aria-invalid={Boolean(errors.message)}
             aria-describedby={errors.message ? 'message-error' : undefined}
@@ -217,7 +218,7 @@ function FormContent({ onReset }) {
                 message: 'Message should be more than 50 characters',
               },
             })}
-            className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
+            className="custom-bg-2 w-full resize-y rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
         </motion.div>
         {errors.message && (
