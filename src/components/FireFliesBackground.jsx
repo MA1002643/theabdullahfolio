@@ -1,45 +1,72 @@
-"use client";
-import React, { useEffect, useState } from "react";
+'use client';
+import React, { useEffect, useRef, useState } from 'react';
 
-const createFirefly = () => ({
-  id: Math.random(),
-  top: `${Math.random() * 100}%`,
-  left: `${Math.random() * 100}%`,
-  animationDuration: `${Math.random() * 5 + 5}s`,
-});
+const getMaxParticles = (width) => {
+  if (width < 768) return 18;
+  if (width < 1024) return 28;
+  return 40;
+};
+
+const SPAWN_INTERVAL = 400;
+
+const createFirefly = () => {
+  const lifeDur = 3.5 + Math.random() * 3.5; // 3.5-7s total lifecycle
+  const size = 8 + Math.random() * 4; // 8-12px
+
+  return {
+    id: Math.random(),
+    top: `${Math.random() * 100}%`,
+    left: `${Math.random() * 100}%`,
+    style: {
+      '--life-dur': `${lifeDur}s`,
+      width: `${size}px`,
+      height: `${size}px`,
+    },
+  };
+};
 
 const FireFliesBackground = () => {
   const [fireflies, setFireflies] = useState([]);
+  const maxRef = useRef(20);
 
   useEffect(() => {
-    const addFireflyPeriodically = () => {
-      const newFirefly = createFirefly();
-      setFireflies((currentFireflies) => [
-        ...currentFireflies.slice(-14),
-        newFirefly,
-      ]);
+    const update = () => {
+      maxRef.current = getMaxParticles(window.innerWidth);
     };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
-    const interval = setInterval(addFireflyPeriodically, 1000);
-
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFireflies((prev) => {
+        const cap = maxRef.current;
+        const next = [...prev, createFirefly()];
+        return next.length > cap ? next.slice(-cap) : next;
+      });
+    }, SPAWN_INTERVAL);
     return () => clearInterval(interval);
   }, []);
 
+  // Remove firefly from state when its animation ends
+  const handleAnimationEnd = (id) => {
+    setFireflies((prev) => prev.filter((f) => f.id !== id));
+  };
+
   return (
-    <div className="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden ">
-      {fireflies.map((firefly) => {
-        return (
-          <div
-            key={firefly.id}
-            className="absolute roudned-full w-[10px] h-[10px] bg-firefly-radial"
-            style={{
-              top: firefly.top,
-              left: firefly.left,
-              animation: `move ${firefly.animationDuration} infinite alternate`,
-            }}
-          ></div>
-        );
-      })}
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
+    >
+      {fireflies.map((f) => (
+        <div
+          key={f.id}
+          className="firefly-life absolute rounded-full bg-firefly-radial"
+          style={{ top: f.top, left: f.left, ...f.style }}
+          onAnimationEnd={() => handleAnimationEnd(f.id)}
+        />
+      ))}
     </div>
   );
 };
