@@ -3,7 +3,6 @@ import Image from 'next/image';
 import bg from '../../public/background/home-bg.png';
 import laptop from '../../public/background/laptop.png';
 import Navigation from '@/components/navigation';
-import FireFliesBackground from '@/components/FireFliesBackground';
 import { useState } from 'react';
 
 export default function Home() {
@@ -20,9 +19,6 @@ export default function Home() {
         sizes="100vw"
         className="absolute inset-0 object-cover object-center opacity-80 blur-[0.2px]"
       />
-
-      {/* Fireflies ambient layer — between bg image and gradient overlay */}
-      <FireFliesBackground />
 
       {/* Dark gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
