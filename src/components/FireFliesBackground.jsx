@@ -58,7 +58,7 @@ const FireFliesBackground = () => {
   useEffect(() => {
     if (prefersReducedMotion) {
       setFireflies(
-        Array.from({ length: REDUCED_MOTION_STATIC_COUNT }, (_, i) =>
+        Array.from({ length: REDUCED_MOTION_STATIC_COUNT }, () =>
           createFirefly(nextIdRef.current++),
         ),
       );
