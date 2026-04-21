@@ -320,13 +320,44 @@
   border-radius: 1rem;
 }
 
-@keyframes move {
-  0% {
-    transform: translate(0, 0);
-  }
+/* ── Firefly keyframes ────────────────────────────────── */
 
+@keyframes firefly-life {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  /* first bright */
+  15% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  /* dim */
+  45% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  /* second bright */
+  65% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  /* fade out */
   100% {
-    transform: translate(100px, 100px);
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.firefly-life {
+  animation: firefly-life var(--life-dur, 3s) ease-in-out forwards;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .firefly-life {
+    animation: none;
+    opacity: 0.5;
   }
 }
 
