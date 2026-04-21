@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../../../public/background/logo.png';
 import Image from 'next/image';
 
-export default function LeaderWrapper({ children }) {
+export default function LoaderWrapper({ children }) {
   const [progress, setProgress] = useState(0);
   const [showLoader, setShowLoader] = useState(true);
   const [showStartBtn, setShowStartBtn] = useState(false);
