@@ -8,7 +8,7 @@ export default function SubPagesLayout({ children }) {
   const isDynamicProjectPage =
     pathname.startsWith('/projects/') && pathname !== '/projects';
   return (
-    <main className="relative z-[2] flex min-h-screen flex-col justify-center px-2 py-2 md:px-16 md:py-20">
+    <main className="flex min-h-screen flex-col justify-center px-2 py-2 md:px-16 md:py-20">
       {/* Conditional Button */}
       {isDynamicProjectPage ? <ProjectsBtn /> : <HomeBtn />}
       {children}

@@ -82,7 +82,7 @@ const FireFliesBackground = () => {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[1] overflow-hidden"
+      className="pointer-events-none fixed inset-0 -z-[30] overflow-hidden"
     >
       {fireflies.map((f) => (
         <div

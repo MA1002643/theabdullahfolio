@@ -17,11 +17,11 @@ export default function Home() {
         fill
         quality={100}
         sizes="100vw"
-        className="absolute inset-0 object-cover object-center opacity-80 blur-[0.2px]"
+        className="absolute inset-0 -z-50 object-cover object-center opacity-80 blur-[0.2px]"
       />
 
       {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+      <div className="absolute inset-0 -z-40 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
       <main className="relative z-10 flex h-full flex-col items-center overflow-x-hidden">
         {/* HEADLINE */}
@@ -48,17 +48,17 @@ export default function Home() {
             />
             {/* glowing borderline under laptop */}
             <div
-              className="-neon borderline absolute mt-16 h-[150px] w-[150px] animate-ripple-neon rounded-full sm:h-[200px] sm:w-[200px] md:h-[280px] md:w-[280px] lg:h-[340px] lg:w-[340px]"
+              className="borderline absolute mt-16 h-[150px] w-[150px] animate-ripple-neon rounded-full sm:h-[200px] sm:w-[200px] md:h-[280px] md:w-[280px] lg:h-[340px] lg:w-[340px]"
               style={{ transform: 'perspective(600px) rotateX(80deg)' }}
             />
 
             <div
-              className="-neon borderline2 absolute mt-16 h-[220px] w-[220px] animate-ripple-neon rounded-full sm:h-[300px] sm:w-[300px] md:h-[400px] md:w-[400px] lg:h-[460px] lg:w-[460px]"
+              className="borderline2 absolute mt-16 h-[220px] w-[220px] animate-ripple-neon rounded-full sm:h-[300px] sm:w-[300px] md:h-[400px] md:w-[400px] lg:h-[460px] lg:w-[460px]"
               style={{ transform: 'perspective(600px) rotateX(80deg)' }}
             />
 
             <div
-              className="-neon borderline3 absolute mt-16 h-[320px] w-[320px] animate-ripple-neon rounded-full sm:h-[460px] sm:w-[460px] md:h-[600px] md:w-[600px] lg:h-[600px] lg:w-[600px]"
+              className="borderline3 absolute mt-16 h-[320px] w-[320px] animate-ripple-neon rounded-full sm:h-[460px] sm:w-[460px] md:h-[600px] md:w-[600px] lg:h-[600px] lg:w-[600px]"
               style={{ transform: 'perspective(600px) rotateX(80deg)' }}
             />
           </div>
