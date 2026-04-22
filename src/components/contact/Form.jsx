@@ -9,15 +9,26 @@ const container = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.3,
-      delayChildren: 0.2,
+      staggerChildren: 0.45,
+      delayChildren: 0.3,
     },
   },
 };
 
 const item = {
-  hidden: { scale: 0 },
-  show: { scale: 1 },
+  hidden: { opacity: 0, scale: 0.85 },
+  show: {
+    opacity: 1,
+    scale: [0.85, 1.06, 0.97, 1.02, 1],
+    transition: {
+      opacity: { duration: 0.4, ease: 'easeOut' },
+      scale: {
+        times: [0, 0.35, 0.55, 0.75, 1],
+        duration: 0.6,
+        ease: 'easeInOut',
+      },
+    },
+  },
 };
 
 function FormContent({ onReset }) {
