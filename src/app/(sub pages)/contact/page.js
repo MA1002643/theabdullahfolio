@@ -43,7 +43,6 @@ export default function Contact() {
           </p>
         </div>
         <div className="flex w-full justify-center gap-6">
-          {/* <Details /> */}
           <Form />
         </div>
       </article>
