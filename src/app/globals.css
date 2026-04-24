@@ -393,3 +393,18 @@ html {
 .laptop-scroll {
   scrollbar-width: none;
 }
+
+/* ── Home button control island ───────────────────────── */
+.control-island {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+  z-index: 120;
+}
+
+/* Suppress hover-only tooltip UI on touch devices */
+@media not all and (hover: hover) and (pointer: fine) {
+  .desktop-hover-only {
+    display: none !important;
+  }
+}

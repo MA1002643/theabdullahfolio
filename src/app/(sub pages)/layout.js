@@ -1,5 +1,5 @@
 'use client';
-import HomeBtn from '@/components/qualifications/HomeBtn';
+import HomeBtn from '@/components/HomeBtn';
 import ProjectsBtn from '@/components/ProjectsBtn';
 import { usePathname } from 'next/navigation';
 
@@ -8,7 +8,7 @@ export default function SubPagesLayout({ children }) {
   const isDynamicProjectPage =
     pathname.startsWith('/projects/') && pathname !== '/projects';
   return (
-    <main className="flex min-h-screen flex-col justify-center px-2 py-2 md:px-16 md:py-20">
+    <main className="flex min-h-screen flex-col justify-center px-2 pt-20 pb-2 md:px-16 md:py-20">
       {/* Conditional Button */}
       {isDynamicProjectPage ? <ProjectsBtn /> : <HomeBtn />}
       {children}
