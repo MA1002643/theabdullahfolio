@@ -9,7 +9,7 @@ import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
 
 const AboutDetails = () => {
-  // Github Username — override via NEXT_PUBLIC_GITHUB_USERNAME when forking.
+  // GitHub Username — override via NEXT_PUBLIC_GITHUB_USERNAME when forking.
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
   const repo = "github-readme-stats";
 

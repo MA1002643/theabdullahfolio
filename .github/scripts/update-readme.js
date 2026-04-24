@@ -137,13 +137,13 @@ const QUALITY_BADGES = `<p align="center">
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.17-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-${v.syncDate}-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-${v.syncDate.replace(/-/g, '--')}-ff6d05?style=flat-square" alt="Last synced" />
 </p>`;
 
 const STACK_CORE = `<p>
-  <img src="https://img.shields.io/badge/Next.js-${v.nextMinor}-black?style=flat-square&logo=next.js" />
-  <img src="https://img.shields.io/badge/React-${v.react}-61DAFB?style=flat-square&logo=react&logoColor=black" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-${v.tailwindMinor}-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/Next.js-${v.nextMinor}-black?style=flat-square&logo=next.js" alt="Next.js ${v.nextMinor}" />
+  <img src="https://img.shields.io/badge/React-${v.react}-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React ${v.react}" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-${v.tailwindMinor}-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS ${v.tailwindMinor}" />
 </p>
 
 | Technology | Version | Role |
@@ -153,10 +153,10 @@ const STACK_CORE = `<p>
 | [Tailwind CSS](https://tailwindcss.com/) | \`^${v.tailwindMinor}\` | Utility-first styling, custom ember / amethyst / night theme |`;
 
 const STACK_3D = `<p>
-  <img src="https://img.shields.io/badge/Three.js-${v.threeLabel}-000000?style=flat-square&logo=threedotjs" />
-  <img src="https://img.shields.io/badge/@react--three/fiber-${v.fiber}-white?style=flat-square" />
-  <img src="https://img.shields.io/badge/@react--three/drei-${v.drei}-white?style=flat-square" />
-  <img src="https://img.shields.io/badge/Framer_Motion-${v.framerMinor}-FF0055?style=flat-square&logo=framer" />
+  <img src="https://img.shields.io/badge/Three.js-${v.threeLabel}-000000?style=flat-square&logo=threedotjs" alt="Three.js ${v.threeLabel}" />
+  <img src="https://img.shields.io/badge/@react--three/fiber-${v.fiber}-white?style=flat-square" alt="@react-three/fiber ${v.fiber}" />
+  <img src="https://img.shields.io/badge/@react--three/drei-${v.drei}-white?style=flat-square" alt="@react-three/drei ${v.drei}" />
+  <img src="https://img.shields.io/badge/Framer_Motion-${v.framerMinor}-FF0055?style=flat-square&logo=framer" alt="Framer Motion ${v.framerMinor}" />
 </p>
 
 | Technology | Version | Role |

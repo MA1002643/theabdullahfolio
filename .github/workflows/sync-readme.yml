@@ -10,12 +10,6 @@ on:
       - 'package-lock.json'
       - '.github/scripts/update-readme.js'
   workflow_dispatch:
-    inputs:
-      force:
-        description: 'Force sync even if package.json unchanged'
-        required: false
-        default: 'false'
-        type: boolean
 
 # Prevent concurrent README commits from stacking up
 concurrency:

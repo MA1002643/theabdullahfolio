@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.17-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026-04-24-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-2026--04--24-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -69,9 +69,9 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 
 <!-- STACK-CORE:START -->
 <p>
-  <img src="https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js" />
-  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-3.3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js" alt="Next.js 14.2" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3.3" />
 </p>
 
 | Technology | Version | Role |
@@ -85,10 +85,10 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 
 <!-- STACK-3D:START -->
 <p>
-  <img src="https://img.shields.io/badge/Three.js-r162-000000?style=flat-square&logo=threedotjs" />
-  <img src="https://img.shields.io/badge/@react--three/fiber-8.18-white?style=flat-square" />
-  <img src="https://img.shields.io/badge/@react--three/drei-9.122-white?style=flat-square" />
-  <img src="https://img.shields.io/badge/Framer_Motion-11.18-FF0055?style=flat-square&logo=framer" />
+  <img src="https://img.shields.io/badge/Three.js-r162-000000?style=flat-square&logo=threedotjs" alt="Three.js r162" />
+  <img src="https://img.shields.io/badge/@react--three/fiber-8.18-white?style=flat-square" alt="@react-three/fiber 8.18" />
+  <img src="https://img.shields.io/badge/@react--three/drei-9.122-white?style=flat-square" alt="@react-three/drei 9.122" />
+  <img src="https://img.shields.io/badge/Framer_Motion-11.18-FF0055?style=flat-square&logo=framer" alt="Framer Motion 11.18" />
 </p>
 
 | Technology | Version | Role |
@@ -228,9 +228,6 @@ theabdullahfolio/
 │   │   └── sync-readme.yml             # Auto-sync README versions on merge to main
 │   └── scripts/
 │       └── update-readme.js            # README automation script
-├── docs/
-│   ├── preview.gif                     # Hero walkthrough GIF (record with Kap, ≤ 5 MB)
-│   └── screenshots/                    # Static fallback screenshots
 ├── .env.example                        # Placeholder environment variables
 ├── next.config.mjs                     # CSP headers, image config
 ├── tailwind.config.js                  # Custom ember / amethyst / night palette
