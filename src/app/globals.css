@@ -400,8 +400,6 @@ html {
   top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
   left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
   z-index: 120;
-  pointer-events: auto;
-  touch-action: manipulation;
 }
 
 /* Suppress hover-only tooltip UI on touch devices */
