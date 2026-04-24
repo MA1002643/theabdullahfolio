@@ -1,0 +1,82 @@
+name: Sync README
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Only run when dependency versions could have changed
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/scripts/update-readme.js'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force sync even if package.json unchanged'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Prevent concurrent README commits from stacking up
+concurrency:
+  group: sync-readme
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Sync README metadata
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use the default GITHUB_TOKEN — no PAT required
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Fetch full history so the bot commit lands on the real branch tip
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Run README update script
+        run: node .github/scripts/update-readme.js
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet README.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "README.md is already up to date — nothing to commit."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "README.md has changes — committing."
+          fi
+
+      - name: Commit and push updated README
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: sync README dependency versions [skip ci]"
+          git push
+
+      - name: Write job summary
+        if: always()
+        run: |
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            echo "### ✅ README synced" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Dependency versions and last-synced date updated automatically." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ℹ️ README already up to date" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No version changes detected — no commit was made." >> "$GITHUB_STEP_SUMMARY"
+          fi

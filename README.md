@@ -1,1 +1,410 @@
-# PersonalWebsite
+<div align="center">
+  <img src="public/background/logo.png" alt="theabdullahfolio" width="90" />
+  <h1>theabdullahfolio</h1>
+  <p><em>A cinematic, 3D-powered developer portfolio built with Next.js 14</em></p>
+</div>
+
+<!-- HERO-BADGES:START -->
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Three.js-r162-000000?style=for-the-badge&logo=threedotjs&logoColor=white" alt="Three.js" />
+  <img src="https://img.shields.io/badge/Framer_Motion-11-FF0055?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
+</p>
+<!-- HERO-BADGES:END -->
+
+<!-- QUALITY-BADGES:START -->
+<p align="center">
+  <img src="https://img.shields.io/badge/license-Proprietary-ff6d05?style=flat-square" alt="Proprietary License" />
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
+  <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
+  <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.17-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/last_synced-2026-04-24-ff6d05?style=flat-square" alt="Last synced" />
+</p>
+<!-- QUALITY-BADGES:END -->
+
+---
+
+<div align="center">
+  <a href="YOUR_LIVE_URL">
+    <img src="docs/preview.gif" alt="Portfolio walkthrough — home, projects, about, contact" width="720" />
+  </a>
+  <br /><br />
+  <a href="YOUR_LIVE_URL">
+    <img src="https://img.shields.io/badge/%F0%9F%94%97_Live_Demo-View_Portfolio-ff6d05?style=for-the-badge" alt="Live Demo" />
+  </a>
+</div>
+
+---
+
+## ✨ Overview
+
+**theabdullahfolio** is a cinematic developer portfolio that blends **Three.js 3D scenes**, **Framer Motion orchestration**, and **Next.js 14 App Router** into a single, performance-tuned experience. Every page tells a story — from the trigonometric orbital navigation ring on the home screen to the procedurally generated laptop keyboard in each project detail view.
+
+Built without a UI template or design kit, this project demonstrates deep frontend engineering: generative 3D graphics, real-time GitHub data via GraphQL, physics-based spring animations, and hardened Content Security Policy headers — all deployed on the edge.
+
+---
+
+## 🎯 Highlights
+
+| Feature | Detail |
+|---------|--------|
+| **Orbital Navigation** | Trigonometric button ring with 5-breakpoint responsive layout, staggered reveal, infinite rotation loop |
+| **3D Project Viewer** | Interactive Three.js scene — procedural laptop model with canvas-generated keyboard texture, 40+ mesh objects, auto-rotate orbit controls |
+| **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
+| **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
+| **Animated GitHub Stats** | Live GraphQL API → animated SVG ring progress, `requestAnimationFrame` counters, diff-based change detection with 5-min polling |
+| **Rocket Contact Form** | Multi-phase submit animation — shake → flame flicker → fly-up trail → checkmark spring, integrated with Nodemailer SMTP |
+| **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
+| **Ambient Fireflies** | Generative particle system with randomised spawn, duration, and drift paths |
+| **Cinematic Loader** | SVG `stroke-dashoffset` progress ring, percentage counter, `localStorage` first-visit gate |
+| **Security Headers** | Full CSP policy, `frame-ancestors 'none'`, `upgrade-insecure-requests` via `next.config.mjs` |
+
+---
+
+## 🛠 Tech Stack
+
+### Core
+
+<!-- STACK-CORE:START -->
+<p>
+  <img src="https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
+</p>
+
+| Technology | Version | Role |
+|------------|---------|------|
+| [Next.js](https://nextjs.org/) | `^14.2` | App Router, server components, API routes, metadata API |
+| [React](https://react.dev/) | `^18` | UI primitives, hooks, concurrent features |
+| [Tailwind CSS](https://tailwindcss.com/) | `^3.3` | Utility-first styling, custom ember / amethyst / night theme |
+<!-- STACK-CORE:END -->
+
+### 3D & Animation
+
+<!-- STACK-3D:START -->
+<p>
+  <img src="https://img.shields.io/badge/Three.js-r162-000000?style=flat-square&logo=threedotjs" />
+  <img src="https://img.shields.io/badge/@react--three/fiber-8.18-white?style=flat-square" />
+  <img src="https://img.shields.io/badge/@react--three/drei-9.122-white?style=flat-square" />
+  <img src="https://img.shields.io/badge/Framer_Motion-11.18-FF0055?style=flat-square&logo=framer" />
+</p>
+
+| Technology | Version | Role |
+|------------|---------|------|
+| [Three.js](https://threejs.org/) | `^0.162` | WebGL 3D scene rendering |
+| [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) | `^8.18` | React reconciler for Three.js |
+| [@react-three/drei](https://github.com/pmndrs/drei) | `^9.122` | OrbitControls, Environment presets, HTML overlays |
+| [Framer Motion](https://www.framer.com/motion/) | `^11.18` | AnimatePresence, scroll transforms, spring physics, stagger orchestration |
+<!-- STACK-3D:END -->
+
+### Data & Integration
+
+<!-- STACK-DATA:START -->
+| Technology | Version | Role |
+|------------|---------|------|
+| GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
+| [Nodemailer](https://nodemailer.com/) | `^7.0` | SMTP email delivery for the contact form |
+| [react-hook-form](https://react-hook-form.com/) | `^7.61` | Form state management and validation |
+| [@vercel/analytics](https://vercel.com/analytics) | `^2.0` | Real-user performance monitoring |
+| [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | `^2.0` | Core Web Vitals tracking |
+<!-- STACK-DATA:END -->
+
+### UI & Utilities
+
+<!-- STACK-UI:START -->
+| Technology | Version | Role |
+|------------|---------|------|
+| [Lucide React](https://lucide.dev/) | `^0.344.0` | Primary icon system |
+| [React Icons](https://react-icons.github.io/react-icons/) | `^5.5` | Extended icon library |
+| [Sonner](https://sonner.emilkowal.ski/) | `^1.7` | Toast notification system |
+| [clsx](https://github.com/lukeed/clsx) | `^2.1` | Conditional class name utility |
+| [Sharp](https://sharp.pixelplumbing.com/) | `^0.34` | Server-side image optimisation pipeline |
+<!-- STACK-UI:END -->
+
+---
+
+## 🏗 Architecture
+
+```mermaid
+graph TD
+    Browser([Browser]) --> AppRouter
+
+    subgraph AppRouter["Next.js 14 App Router"]
+        Root["Root layout.js<br/>─────────────<br/>Inter font · FireFlies<br/>Toaster · Analytics"]
+
+        Root --> Home["Home page.js<br/>─────────────<br/>Orbital Nav Ring<br/>Floating 3D Laptop<br/>Neon Ripples"]
+
+        Root --> SubLayout["Sub Pages layout.js<br/>─────────────<br/>HomeBtn · ProjectsBtn<br/>conditional routing"]
+
+        SubLayout --> About["/about<br/>GitHub Stats<br/>Skills Grid<br/>Language Chart"]
+        SubLayout --> Projects["/projects<br/>Category Filter<br/>AnimatePresence Grid"]
+        SubLayout --> ProjectDetail["/projects/[id]<br/>Three.js Scene<br/>Aurora Parallax<br/>Boot Sequence"]
+        SubLayout --> Qualifications["/qualifications<br/>3D CSS Carousel<br/>Certificate Cards"]
+        SubLayout --> Contact["/contact<br/>Rocket Form<br/>Nodemailer SMTP"]
+
+        Root --> API["API Routes"]
+        API --> GHStats["/api/github-stats<br/>GraphQL + Cache<br/>Rank Calculator"]
+        API --> SendMail["/api/send-mail<br/>SMTP Handler"]
+    end
+
+    About -- "GraphQL poll 5min" --> GHStats
+    Contact -- "POST" --> SendMail
+    SendMail -- "SMTP" --> Email([Email Inbox])
+    GHStats -- "GraphQL" --> GitHub([GitHub API])
+```
+
+```mermaid
+graph LR
+    subgraph Rendering["Rendering Layers"]
+        R1["Three.js WebGL<br/>Canvas"]
+        R2["Framer Motion<br/>DOM Animations"]
+        R3["Tailwind CSS<br/>Utility Classes"]
+    end
+
+    subgraph Data["Data Layer"]
+        D1["GitHub GraphQL<br/>Live Stats"]
+        D2["Nodemailer<br/>SMTP"]
+        D3["localStorage<br/>First-visit Gate"]
+    end
+
+    subgraph Perf["Performance"]
+        P1["Route-based<br/>Code Splitting"]
+        P2["Sharp<br/>Image Pipeline"]
+        P3["10-min<br/>API Cache"]
+        P4["next/font<br/>Self-hosted"]
+    end
+
+    subgraph Security["Security"]
+        S1["CSP Headers"]
+        S2["frame-ancestors none"]
+        S3["upgrade-insecure-requests"]
+    end
+```
+
+---
+
+## 📁 Project Structure
+
+```text
+theabdullahfolio/
+├── public/
+│   └── background/logo.png
+├── src/
+│   ├── app/
+│   │   ├── layout.js                   # Root layout — Inter font, FireFlies, Toaster, Analytics
+│   │   ├── page.js                     # Home — orbital nav, floating laptop, neon ripples
+│   │   ├── data.js                     # Central data store — projects array, nav button config
+│   │   ├── globals.css                 # Custom keyframes, glow utilities, CSS theme vars
+│   │   ├── (sub pages)/
+│   │   │   ├── layout.js               # Sub-page shell — conditional HomeBtn / ProjectsBtn
+│   │   │   ├── about/page.js           # GitHub stats, skills grid, language breakdown
+│   │   │   ├── projects/page.js        # Category-filtered project list with stagger
+│   │   │   ├── projects/[id]/page.js   # 3D scene — laptop model, aurora, boot sequence
+│   │   │   ├── contact/page.js         # Rocket-animated contact form + Nodemailer
+│   │   │   └── qualifications/page.js  # 3D carousel with certificate cards
+│   │   └── api/
+│   │       ├── github-stats/route.js   # GraphQL → cached stats + rank calculation
+│   │       └── send-mail/route.js      # SMTP email handler
+│   ├── components/
+│   │   ├── navigation/                 # Orbital ring — trig positioning, 5 breakpoints
+│   │   ├── project-detail/             # 3D laptop, aurora parallax, boot sequence, lantern sweep
+│   │   ├── about/                      # Animated counters, SVG progress ring, diff tracking
+│   │   ├── projects/                   # Filtered grid with AnimatePresence transitions
+│   │   ├── contact/                    # Multi-phase rocket form, react-hook-form
+│   │   ├── qualifications/             # 3D CSS carousel with category tabs
+│   │   ├── loaderWrapper/              # SVG progress ring, first-visit gate
+│   │   ├── FireFliesBackground.jsx     # Ambient generative particle system
+│   │   ├── HomeBtn.jsx                 # Fixed, mobile-safe navigation control
+│   │   └── ProjectsBtn.jsx             # Back button for dynamic project routes
+│   └── utils/
+│       ├── rankCalculator.js           # GitHub developer rank algorithm
+│       ├── diffChanges.js              # State diff detection for live stat updates
+│       └── emoji.js                    # Emoji name-to-symbol resolution
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml                      # Lint + build check on every push / PR
+│   │   └── sync-readme.yml             # Auto-sync README versions on merge to main
+│   └── scripts/
+│       └── update-readme.js            # README automation script
+├── docs/
+│   ├── preview.gif                     # Hero walkthrough GIF (record with Kap, ≤ 5 MB)
+│   └── screenshots/                    # Static fallback screenshots
+├── .env.example                        # Placeholder environment variables
+├── next.config.mjs                     # CSP headers, image config
+├── tailwind.config.js                  # Custom ember / amethyst / night palette
+└── package.json
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js** ≥ 18.17
+- **npm** / **yarn** / **pnpm**
+- A [GitHub Personal Access Token](https://github.com/settings/tokens) with `read:user` and `read:org` scopes
+- SMTP credentials — Gmail [App Password](https://support.google.com/accounts/answer/185833) recommended
+
+### Installation
+
+```bash
+# 1. Clone
+git clone https://github.com/MA1002643/theabdullahfolio.git
+cd theabdullahfolio
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment
+cp .env.example .env.local
+# Open .env.local and fill in your tokens
+```
+
+### Environment Variables
+
+```env
+# GitHub Stats API
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GITHUB_USERNAME=MA1002643
+
+# Contact Form (Nodemailer SMTP)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+EMAIL_TO=recipient@example.com
+```
+
+### Commands
+
+```bash
+npm run dev      # Dev server → http://localhost:3000
+npm run build    # Production build
+npm run start    # Serve production build locally
+npm run lint     # ESLint check
+```
+
+---
+
+## ⚡ Performance & Security
+
+<details>
+<summary><strong>Content Security Policy</strong> — applied to every route via <code>next.config.mjs</code></summary>
+<br />
+
+```text
+default-src         'self'
+script-src          'self' 'unsafe-eval' 'unsafe-inline'
+style-src           'self' 'unsafe-inline' https://fonts.googleapis.com
+font-src            'self' https://fonts.gstatic.com data:
+img-src             'self' data: blob: https:
+connect-src         'self' https:
+frame-src           'self'
+object-src          'none'
+base-uri            'self'
+form-action         'self'
+frame-ancestors     'none'
+upgrade-insecure-requests
+```
+
+</details>
+
+<details>
+<summary><strong>Performance Optimisations</strong></summary>
+<br />
+
+| Optimisation | Implementation |
+|---|---|
+| **Image pipeline** | Sharp — automatic WebP / AVIF conversion |
+| **Font loading** | `next/font` self-hosted Inter, zero layout shift |
+| **Code splitting** | Route-based automatic splitting; Three.js loaded only on `/projects/[id]` |
+| **API caching** | 10-min in-memory cache on `/api/github-stats` to reduce GitHub API round trips |
+| **Analytics** | Vercel Speed Insights + Web Analytics for real-user Core Web Vitals |
+
+</details>
+
+---
+
+## 🎨 Design System
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `night-950` | `#01050b` | Page backgrounds |
+| `night-900` | `#030c18` | Card backgrounds |
+| `ember-neon` | `#eab53e` | Primary neon accent, borders, glows |
+| `ember-core` | `#b16612` | Inner glow core |
+| `neon-700` | `#ff6d05` | Firefly radial, CTA highlights |
+| `amethyst-neon` | `#fc83ff` | Subtitle glow, secondary accent |
+| `ember-halo` | `#fcf699` | Outer glow halos |
+| `foreground` | `rgb(225 225 225)` | Body text |
+| `muted` | `rgb(115 115 115)` | Secondary / placeholder text |
+
+**Custom CSS utilities:** `text-glow-stroke-neon` · `text-glow-stroke-purple` · `custom-bg` · `custom-bg-abt` · `glitter-text` · `icon-glow` · `behind-glow` · `borderline` · `control-island`
+
+---
+
+## 🎬 Animation Inventory
+
+<details>
+<summary><strong>View all 13 custom animations</strong></summary>
+<br />
+
+| Animation | Technique | Location |
+|-----------|-----------|----------|
+| Orbital rotation | `requestAnimationFrame` + trigonometry | `navigation/index.jsx` |
+| Floating laptop | `useFrame` sin-wave (Three.js render loop) | `project-detail/laptop-model.jsx` |
+| Aurora parallax | `useScroll` + `useTransform` + mouse tilt | `project-detail/aurora-bg.jsx` |
+| Boot sequence | Sequential `clipPath` chunk reveals | `project-detail/boot-on-sequence.jsx` |
+| Rocket launch | Multi-phase: shake → flame → fly → checkmark | `contact/Form.jsx` |
+| Stat counters | `requestAnimationFrame` interpolation | `about/StatsCard.jsx` |
+| SVG rank ring | `stroke-dashoffset` spring animation | `about/StatsCard.jsx` |
+| Firefly drift | `@keyframes` with randomised duration + paths | `FireFliesBackground.jsx` |
+| Loader progress | SVG `stroke-dashoffset` + percentage counter | `loaderWrapper/index.jsx` |
+| Stagger reveals | `staggerChildren` Framer Motion variants | Multiple components |
+| 3D carousel | CSS `perspective` + `translateZ` + `rotateY` | `qualifications/Carousel.jsx` |
+| Glowing project name | Bloom ring scale + random flicker interval | `project-detail/glowing-project-name.jsx` |
+| Neon ripples | `animate-ripple-neon` on `rotateX(80deg)` plane | `app/page.js` |
+
+</details>
+
+---
+
+## 📦 Deployment
+
+Optimised for **Vercel** — zero additional configuration required.
+
+```bash
+# Via Vercel CLI
+npx vercel --prod
+```
+
+Or connect the GitHub repository to [vercel.com](https://vercel.com) for automatic preview + production deployments on every push.
+
+> **Required:** Set all environment variables in the Vercel dashboard under **Settings → Environment Variables** before your first production deploy.
+
+---
+
+## 🙏 Acknowledgements
+
+- [Poimandres](https://github.com/pmndrs) — `@react-three/fiber` & `@react-three/drei`
+- [Framer](https://www.framer.com/motion/) — animation engine
+- [Lucide](https://lucide.dev/) — icon system
+- [Shields.io](https://shields.io/) — README badges
+- [Mermaid](https://mermaid.js.org/) — architecture diagrams
+
+## 📄 Licence
+
+This project is proprietary software. All rights reserved by **Muhammad Abdullah**. See [LICENSE](LICENSE) for full terms. No part of this codebase may be copied, reused, or redistributed without express written permission.
+
+---
+
+<p align="center">
+  <strong>© 2026 Muhammad Abdullah</strong><br>
+  Developed with 💙 using Next.js, React and JavaScript<br>
+  <a href="#top"><img alt="Back to Top" src="https://img.shields.io/badge/Back_to_Top-0A0A0A?style=for-the-badge"></a>
+</p>
