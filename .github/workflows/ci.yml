@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+      - 'fix/**'
+      - 'docs/**'
+      - 'chore/**'
+  pull_request:
+    branches:
+      - main
+
+# Cancel in-progress runs on the same branch when a new push arrives
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    # Honor [skip ci] in commit messages (e.g. bot-authored README sync commits).
+    # head_commit is null for pull_request events, so PR CI is unaffected.
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+
+    strategy:
+      matrix:
+        node-version: ['18', '20']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        id: lint
+        run: npm run lint
+
+      - name: Build
+        id: build
+        run: npm run build
+        env:
+          # Stub secrets so the build does not fail on missing env vars.
+          # Names must match src/app/api/send-mail/route.js and github-stats/route.js.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+          SMTP_HOST: smtp.example.com
+          SMTP_PORT: '587'
+          SMTP_USER: ci@example.com
+          SMTP_PASS: placeholder
+          RECEIVER_EMAIL: ci@example.com
+
+      - name: Write job summary
+        if: always()
+        env:
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          status_icon() {
+            case "$1" in
+              success) echo "✅ passed" ;;
+              failure) echo "❌ failed" ;;
+              skipped) echo "⏭️ skipped" ;;
+              cancelled) echo "🚫 cancelled" ;;
+              *) echo "— not run" ;;
+            esac
+          }
+          {
+            echo "### CI result — Node ${{ matrix.node-version }}"
+            echo ""
+            echo "| Step   | Status |"
+            echo "|--------|--------|"
+            echo "| Lint   | $(status_icon "$LINT_OUTCOME") |"
+            echo "| Build  | $(status_icon "$BUILD_OUTCOME") |"
+          } >> "$GITHUB_STEP_SUMMARY"
