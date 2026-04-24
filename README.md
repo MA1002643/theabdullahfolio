@@ -1,3 +1,5 @@
+<a id="top"></a>
+
 <div align="center">
   <img src="public/background/logo.png" alt="theabdullahfolio" width="90" />
   <h1>theabdullahfolio</h1>
@@ -29,11 +31,7 @@
 ---
 
 <div align="center">
-  <a href="YOUR_LIVE_URL">
-    <img src="docs/preview.gif" alt="Portfolio walkthrough — home, projects, about, contact" width="720" />
-  </a>
-  <br /><br />
-  <a href="YOUR_LIVE_URL">
+  <a href="https://ma.codes/">
     <img src="https://img.shields.io/badge/%F0%9F%94%97_Live_Demo-View_Portfolio-ff6d05?style=for-the-badge" alt="Live Demo" />
   </a>
 </div>
@@ -269,15 +267,18 @@ cp .env.example .env.local
 
 ```env
 # GitHub Stats API
-GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-GITHUB_USERNAME=MA1002643
+GITHUB_TOKEN=your-github-personal-access-token
+NEXT_PUBLIC_GITHUB_USERNAME=MA1002643
 
 # Contact Form (Nodemailer SMTP)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-app-password
-EMAIL_TO=recipient@example.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+RECEIVER_EMAIL=recipient@example.com
+# Optional
+# SMTP_SECURE=true                # force TLS on/off (auto when SMTP_PORT=465)
+# ABSTRACT_API_KEY=...            # email reputation check via abstractapi.com
 ```
 
 ### Commands

@@ -21,6 +21,9 @@ jobs:
   lint-and-build:
     name: Lint & Build
     runs-on: ubuntu-latest
+    # Honor [skip ci] in commit messages (e.g. bot-authored README sync commits).
+    # head_commit is null for pull_request events, so PR CI is unaffected.
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
 
     strategy:
       matrix:
@@ -40,26 +43,43 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
+        id: lint
         run: npm run lint
 
       - name: Build
+        id: build
         run: npm run build
         env:
-          # Stub secrets so the build does not fail on missing env vars
+          # Stub secrets so the build does not fail on missing env vars.
+          # Names must match src/app/api/send-mail/route.js and github-stats/route.js.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_USERNAME: MA1002643
-          EMAIL_HOST: smtp.example.com
-          EMAIL_PORT: '587'
-          EMAIL_USER: ci@example.com
-          EMAIL_PASS: placeholder
-          EMAIL_TO: ci@example.com
+          NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+          SMTP_HOST: smtp.example.com
+          SMTP_PORT: '587'
+          SMTP_USER: ci@example.com
+          SMTP_PASS: placeholder
+          RECEIVER_EMAIL: ci@example.com
 
       - name: Write job summary
         if: always()
+        env:
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
         run: |
-          echo "### CI result — Node ${{ matrix.node-version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Step   | Status |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|--------|--------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Lint   | ${{ job.status == 'success' && '✅ passed' || '❌ failed' }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Build  | ${{ job.status == 'success' && '✅ passed' || '❌ failed' }} |" >> "$GITHUB_STEP_SUMMARY"
+          status_icon() {
+            case "$1" in
+              success) echo "✅ passed" ;;
+              failure) echo "❌ failed" ;;
+              skipped) echo "⏭️ skipped" ;;
+              cancelled) echo "🚫 cancelled" ;;
+              *) echo "— not run" ;;
+            esac
+          }
+          {
+            echo "### CI result — Node ${{ matrix.node-version }}"
+            echo ""
+            echo "| Step   | Status |"
+            echo "|--------|--------|"
+            echo "| Lint   | $(status_icon "$LINT_OUTCOME") |"
+            echo "| Build  | $(status_icon "$BUILD_OUTCOME") |"
+          } >> "$GITHUB_STEP_SUMMARY"

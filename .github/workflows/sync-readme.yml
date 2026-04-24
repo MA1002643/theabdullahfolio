@@ -62,11 +62,25 @@ jobs:
       - name: Commit and push updated README
         if: steps.diff.outputs.changed == 'true'
         run: |
+          set -euo pipefail
+          branch="${GITHUB_REF_NAME}"
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
           git commit -m "docs: sync README dependency versions [skip ci]"
-          git push
+          # Retry to handle the race where main advances during this job.
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:$branch"; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Failed to push README update after 3 attempts." >&2
+              exit 1
+            fi
+            echo "Push rejected (branch moved); rebasing and retrying ($attempt/3)..."
+            git fetch origin "$branch"
+            git rebase "origin/$branch"
+          done
 
       - name: Write job summary
         if: always()
