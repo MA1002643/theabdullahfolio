@@ -1,1 +1,1 @@
-export { default } from "@/components/HomeBtn";
+export { default } from '@/components/HomeBtn';
