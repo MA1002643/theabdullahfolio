@@ -20,6 +20,9 @@ jobs:
   sync:
     name: Sync README metadata
     runs-on: ubuntu-latest
+    # README sync targets main; ignore dispatches from other refs to avoid
+    # generating a PR whose source/base diverge.
+    if: github.ref_name == github.event.repository.default_branch
 
     permissions:
       contents: write
