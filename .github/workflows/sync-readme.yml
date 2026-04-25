@@ -23,15 +23,11 @@ jobs:
 
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        with:
-          # Use the default GITHUB_TOKEN — no PAT required
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # Fetch full history so the bot commit lands on the real branch tip
-          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -47,44 +43,58 @@ jobs:
         run: |
           if git diff --quiet README.md; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "README.md is already up to date — nothing to commit."
+            echo "README.md is already up to date — nothing to do."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "README.md has changes — committing."
+            echo "README.md has changes — opening PR."
           fi
 
-      - name: Commit and push updated README
+      - name: Open / update README sync PR
         if: steps.diff.outputs.changed == 'true'
-        run: |
-          set -euo pipefail
-          branch="${GITHUB_REF_NAME}"
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git commit -m "docs: sync README dependency versions [skip ci]"
-          # Retry to handle the race where main advances during this job.
-          for attempt in 1 2 3; do
-            if git push origin "HEAD:$branch"; then
-              exit 0
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "Failed to push README update after 3 attempts." >&2
-              exit 1
-            fi
-            echo "Push rejected (branch moved); rebasing and retrying ($attempt/3)..."
-            git fetch origin "$branch"
-            git rebase "origin/$branch"
-          done
+        id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'docs: sync README dependency versions'
+          title: 'docs: sync README dependency versions'
+          body: |
+            Automated sync from `.github/scripts/update-readme.js` — refreshes dependency badges, version tables, and the last-synced date.
+
+            - Triggered by: `${{ github.event_name }}` on `${{ github.ref_name }}`
+            - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Merging this PR updates `README.md` only; no application code is touched.
+          branch: bot/sync-readme
+          base: main
+          delete-branch: true
+          author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+          committer: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+          labels: |
+            documentation
+            automated
 
       - name: Write job summary
         if: always()
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+          PR_OPERATION: ${{ steps.pr.outputs.pull-request-operation }}
         run: |
           if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
-            echo "### ✅ README synced" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Dependency versions and last-synced date updated automatically." >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "### ✅ README sync PR ready"
+              echo ""
+              if [ -n "${PR_NUMBER:-}" ]; then
+                echo "- PR: [#${PR_NUMBER}](${PR_URL})"
+                echo "- Action: \`${PR_OPERATION:-unchanged}\`"
+              else
+                echo "Diff detected but no PR was created — check the previous step for details."
+              fi
+            } >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "### ℹ️ README already up to date" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "No version changes detected — no commit was made." >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "### ℹ️ README already up to date"
+              echo ""
+              echo "No version changes detected — no PR was opened."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
