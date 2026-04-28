@@ -1,0 +1,247 @@
+{
+  "sia-certificate": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "b1-certificate": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "cctv-certificate": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "handcuff-certificate": {
+    "width": 1280,
+    "height": 1600,
+    "aspectRatio": 0.8
+  },
+  "get-licensed-cyber-security": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "get-licensed-fire-marshal": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "get-licensed-risk-assessment": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "get-licensed-mental-health": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "get-licensed-workplace-hs": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "office-safety-essentials": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "emergency-first-aid-at-work": {
+    "width": 1200,
+    "height": 1600,
+    "aspectRatio": 0.75
+  },
+  "social-housing-intro": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "awareness-health-safety": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "confidentiality-workplace": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "coroners-inquest-front-line": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "cyber-security-awareness-ma": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "edi-employees": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "level-1-safeguarding": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "mental-health-awareness-ma": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "sexual-harassment-workplace": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "gdpr-essentials-ma": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "code-of-ethics-2022-ii": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "act-awareness-elearning": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "act-for-education": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "act-security-elearning": {
+    "width": 1131,
+    "height": 1600,
+    "aspectRatio": 0.7069
+  },
+  "data-ethics-data-driven-decisions": {
+    "width": 1600,
+    "height": 1236,
+    "aspectRatio": 1.2945
+  },
+  "gdpr-compliance-essential": {
+    "width": 1600,
+    "height": 1236,
+    "aspectRatio": 1.2945
+  },
+  "sustainability-cloud-strategy": {
+    "width": 1600,
+    "height": 1236,
+    "aspectRatio": 1.2945
+  },
+  "intellectual-property-trade-secrets": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "sa-cyber-security": {
+    "width": 1600,
+    "height": 1131,
+    "aspectRatio": 1.4147
+  },
+  "unisys-data-privacy-2022": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "unisys-respectful-workplace-2022": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "unisys-data-privacy-2023-v2": {
+    "width": 1130,
+    "height": 1600,
+    "aspectRatio": 0.7063
+  },
+  "certificate-misc": {
+    "width": 1600,
+    "height": 900,
+    "aspectRatio": 1.7778
+  },
+  "attendance-certificate": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "Attitude-to-learning-certificate": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "bcs-level-2-ecdl-certificate-it-appliction-skills-(qcf)": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "behaviour-certificate": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "enrichment-certificate": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "gcse-english": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "gcse-maths": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "learner-voice-award-2020-2021": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "lockdown-legend-certificate": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "ocnlr-entry-level-certificate-in-digital-skills-entry-3": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "ocnlr-level-1-certificate-in-digital-skills": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "pearson-btec-level-3-extended-diploma": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "professionalism-certificate": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "touch-type-read-and-spell-computer-course": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  },
+  "volunteering-award-2018-2019": {
+    "width": 1131,
+    "height": 1599,
+    "aspectRatio": 0.7073
+  }
+}
