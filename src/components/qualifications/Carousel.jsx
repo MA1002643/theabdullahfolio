@@ -9,13 +9,17 @@ import DIMS from './_dimensions.json';
 const RENDER_WINDOW = 4;
 
 // Look up the aspect ratio for an image path like "/qualifications/foo.webp".
-// Falls back to A4 portrait so a missing entry never crashes the layout.
+// Derived from width/height so a single source of truth in the JSON can't
+// drift out of sync. Falls back to A4 portrait if the entry is missing or
+// malformed so the layout never crashes.
 const aspectFor = (img) => {
   const slug = img
     .split('/')
     .pop()
     .replace(/\.webp$/, '');
-  return DIMS[slug]?.aspectRatio ?? 0.71;
+  const dims = DIMS[slug];
+  if (dims?.width && dims?.height) return dims.width / dims.height;
+  return 0.71;
 };
 
 const CATEGORY_TREE = {
@@ -33,7 +37,7 @@ const CARDS = [
     title: 'BCS Level 2 ECDL Certificate',
     category: 'Education',
     sub: 'School',
-    img: '/qualifications/bcs-level-2-ecdl-certificate-it-appliction-skills-(qcf).webp',
+    img: '/qualifications/bcs-level-2-ecdl-certificate-it-application-skills-(qcf).webp',
   },
 
   // Education > College
@@ -522,6 +526,7 @@ const Carousel3D = () => {
               key={cat}
               type="button"
               aria-pressed={isActive}
+              aria-disabled={isEmpty || undefined}
               title={isEmpty ? `No qualifications in ${cat} yet` : undefined}
               onClick={() => handleParentClick(cat)}
               className={`${tabClasses(isActive)} ${isEmpty ? 'opacity-40' : ''}`}
@@ -544,6 +549,7 @@ const Carousel3D = () => {
                 key={sub}
                 type="button"
                 aria-pressed={isActive}
+                aria-disabled={isEmpty || undefined}
                 title={isEmpty ? `No qualifications in ${sub} yet` : undefined}
                 onClick={() => handleSubClick(sub)}
                 className={`${tabClasses(isActive)} ${isEmpty ? 'opacity-40' : ''}`}

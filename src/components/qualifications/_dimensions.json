@@ -1,247 +1,198 @@
 {
   "sia-certificate": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "b1-certificate": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "cctv-certificate": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "handcuff-certificate": {
     "width": 1280,
-    "height": 1600,
-    "aspectRatio": 0.8
+    "height": 1600
   },
   "get-licensed-cyber-security": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "get-licensed-fire-marshal": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "get-licensed-risk-assessment": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "get-licensed-mental-health": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "get-licensed-workplace-hs": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "office-safety-essentials": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "emergency-first-aid-at-work": {
     "width": 1200,
-    "height": 1600,
-    "aspectRatio": 0.75
+    "height": 1600
   },
   "social-housing-intro": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "awareness-health-safety": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "confidentiality-workplace": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "coroners-inquest-front-line": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "cyber-security-awareness-ma": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "edi-employees": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "level-1-safeguarding": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "mental-health-awareness-ma": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "sexual-harassment-workplace": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "gdpr-essentials-ma": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "code-of-ethics-2022-ii": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "act-awareness-elearning": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "act-for-education": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "act-security-elearning": {
     "width": 1131,
-    "height": 1600,
-    "aspectRatio": 0.7069
+    "height": 1600
   },
   "data-ethics-data-driven-decisions": {
     "width": 1600,
-    "height": 1236,
-    "aspectRatio": 1.2945
+    "height": 1236
   },
   "gdpr-compliance-essential": {
     "width": 1600,
-    "height": 1236,
-    "aspectRatio": 1.2945
+    "height": 1236
   },
   "sustainability-cloud-strategy": {
     "width": 1600,
-    "height": 1236,
-    "aspectRatio": 1.2945
+    "height": 1236
   },
   "intellectual-property-trade-secrets": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "sa-cyber-security": {
     "width": 1600,
-    "height": 1131,
-    "aspectRatio": 1.4147
+    "height": 1131
   },
   "unisys-data-privacy-2022": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "unisys-respectful-workplace-2022": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "unisys-data-privacy-2023-v2": {
     "width": 1130,
-    "height": 1600,
-    "aspectRatio": 0.7063
+    "height": 1600
   },
   "certificate-misc": {
     "width": 1600,
-    "height": 900,
-    "aspectRatio": 1.7778
+    "height": 900
   },
   "attendance-certificate": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "Attitude-to-learning-certificate": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
-  "bcs-level-2-ecdl-certificate-it-appliction-skills-(qcf)": {
+  "bcs-level-2-ecdl-certificate-it-application-skills-(qcf)": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "behaviour-certificate": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "enrichment-certificate": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "gcse-english": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "gcse-maths": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "learner-voice-award-2020-2021": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "lockdown-legend-certificate": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "ocnlr-entry-level-certificate-in-digital-skills-entry-3": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "ocnlr-level-1-certificate-in-digital-skills": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "pearson-btec-level-3-extended-diploma": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "professionalism-certificate": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "touch-type-read-and-spell-computer-course": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   },
   "volunteering-award-2018-2019": {
     "width": 1131,
-    "height": 1599,
-    "aspectRatio": 0.7073
+    "height": 1599
   }
 }
