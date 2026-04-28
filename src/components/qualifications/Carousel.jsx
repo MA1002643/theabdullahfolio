@@ -385,7 +385,13 @@ const CARDS = [
 // CARDS on every render. parent[cat] gives the total per parent category;
 // sub[`${cat}/${sub}`] gives the per-subcategory total.
 const COUNTS = (() => {
-  const parent = { All: CARDS.length };
+  // Seed every declared parent at 0 so a freshly added category in
+  // CATEGORY_TREE without any cards yet still reads as empty (instead of
+  // returning undefined and slipping past the empty-tab guard).
+  const parent = Object.fromEntries(
+    PARENT_CATEGORIES.map((category) => [category, 0]),
+  );
+  parent.All = CARDS.length;
   const sub = {};
   for (const card of CARDS) {
     parent[card.category] = (parent[card.category] || 0) + 1;
