@@ -524,7 +524,7 @@ const Carousel3D = () => {
               aria-pressed={isActive}
               title={isEmpty ? `No qualifications in ${cat} yet` : undefined}
               onClick={() => handleParentClick(cat)}
-              className={tabClasses(isActive)}
+              className={`${tabClasses(isActive)} ${isEmpty ? 'opacity-40' : ''}`}
               {...tabHandlers(isActive)}
             >
               {cat}
@@ -546,7 +546,7 @@ const Carousel3D = () => {
                 aria-pressed={isActive}
                 title={isEmpty ? `No qualifications in ${sub} yet` : undefined}
                 onClick={() => handleSubClick(sub)}
-                className={tabClasses(isActive)}
+                className={`${tabClasses(isActive)} ${isEmpty ? 'opacity-40' : ''}`}
                 {...tabHandlers(isActive)}
               >
                 {sub}
@@ -592,6 +592,15 @@ const Carousel3D = () => {
             // get a moderate bump on desktop.
             const imgW = `min(var(--cert-w-cap), calc(${ar} * var(--cert-cap)))`;
             const imgH = `min(calc(var(--cert-w-cap) / ${ar}), var(--cert-cap))`;
+            // Match `sizes` to the actual rendered width so Next/Image
+            // doesn't fetch an oversized srcset entry. Portrait cards
+            // are height-bound (width = ar × cert-cap, ~40-50vh), so
+            // expressing it as vh prevents the 70vw default from
+            // pulling a much larger image than the slot needs.
+            const imgSizes =
+              ar < 1
+                ? '(max-width: 768px) 40vh, 50vh'
+                : '(max-width: 768px) 90vw, 70vw';
             // Uniform slot width via the --slot-vh CSS var (set on
             // the carousel container, breakpoint-aware). Every
             // card sits at offset × var(--slot-vh) regardless of
@@ -661,8 +670,18 @@ const Carousel3D = () => {
                         src={card.img}
                         alt={card.title}
                         fill
-                        sizes="(max-width: 768px) 90vw, 70vw"
-                        priority={absOffset === 0}
+                        sizes={imgSizes}
+                        // Every card that survives the RENDER_WINDOW
+                        // guard is in a visible position. The 3D
+                        // translateZ on side cards confuses Next/Image's
+                        // intersection-observer lazy loader (it thinks
+                        // they're offscreen and never fetches them
+                        // until layout recalculates), so we mark them
+                        // all priority to force an eager fetch with
+                        // high fetchpriority. Next will log a dev-only
+                        // warning about multiple priority images; that
+                        // warning doesn't ship to production.
+                        priority
                         className="rounded-lg object-contain"
                       />
                       {/* Subtle ember tint to tie cards
