@@ -339,7 +339,7 @@ const CARDS = [
   },
   {
     id: 22,
-    title: 'Code of Ethics - ||',
+    title: 'Code of Ethics - II',
     category: 'Employment',
     sub: 'Tech',
     img: '/qualifications/code-of-ethics-2022-ii.webp',
@@ -522,7 +522,7 @@ const Carousel3D = () => {
               key={cat}
               type="button"
               aria-pressed={isActive}
-              aria-disabled={isEmpty || undefined}
+              title={isEmpty ? `No qualifications in ${cat} yet` : undefined}
               onClick={() => handleParentClick(cat)}
               className={tabClasses(isActive)}
               {...tabHandlers(isActive)}
@@ -544,7 +544,7 @@ const Carousel3D = () => {
                 key={sub}
                 type="button"
                 aria-pressed={isActive}
-                aria-disabled={isEmpty || undefined}
+                title={isEmpty ? `No qualifications in ${sub} yet` : undefined}
                 onClick={() => handleSubClick(sub)}
                 className={tabClasses(isActive)}
                 {...tabHandlers(isActive)}
