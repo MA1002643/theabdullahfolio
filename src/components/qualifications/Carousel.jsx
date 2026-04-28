@@ -6,7 +6,11 @@ import DIMS from './_dimensions.json';
 
 // Cards beyond this offset from the active card are skipped entirely —
 // keeps DOM and image fetches bounded regardless of category size.
-const RENDER_WINDOW = 4;
+// Set to 3 so the mount window matches the visibility window: every
+// rendered card is at least partly visible (opacity 0.55 at the edge),
+// and nothing past the visible window stays in the DOM as an
+// opacity-0 ghost.
+const RENDER_WINDOW = 3;
 
 // Look up the aspect ratio for an image path like "/qualifications/foo.webp".
 // Derived from width/height so a single source of truth in the JSON can't
@@ -526,7 +530,6 @@ const Carousel3D = () => {
               key={cat}
               type="button"
               aria-pressed={isActive}
-              aria-disabled={isEmpty || undefined}
               title={isEmpty ? `No qualifications in ${cat} yet` : undefined}
               onClick={() => handleParentClick(cat)}
               className={`${tabClasses(isActive)} ${isEmpty ? 'opacity-40' : ''}`}
@@ -549,7 +552,6 @@ const Carousel3D = () => {
                 key={sub}
                 type="button"
                 aria-pressed={isActive}
-                aria-disabled={isEmpty || undefined}
                 title={isEmpty ? `No qualifications in ${sub} yet` : undefined}
                 onClick={() => handleSubClick(sub)}
                 className={`${tabClasses(isActive)} ${isEmpty ? 'opacity-40' : ''}`}
