@@ -671,17 +671,14 @@ const Carousel3D = () => {
                         alt={card.title}
                         fill
                         sizes={imgSizes}
-                        // Every card that survives the RENDER_WINDOW
-                        // guard is in a visible position. The 3D
-                        // translateZ on side cards confuses Next/Image's
-                        // intersection-observer lazy loader (it thinks
-                        // they're offscreen and never fetches them
-                        // until layout recalculates), so we mark them
-                        // all priority to force an eager fetch with
-                        // high fetchpriority. Next will log a dev-only
-                        // warning about multiple priority images; that
-                        // warning doesn't ship to production.
-                        priority
+                        // Only the centered card is the LCP candidate,
+                        // so only it gets priority (high fetchpriority +
+                        // preload). Near neighbours load eager so
+                        // they're ready before the user clicks next,
+                        // without competing with the centered card for
+                        // bandwidth. Far neighbours stay lazy.
+                        priority={absOffset === 0}
+                        loading={absOffset <= 2 ? 'eager' : 'lazy'}
                         className="rounded-lg object-contain"
                       />
                       {/* Subtle ember tint to tie cards
