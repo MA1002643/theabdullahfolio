@@ -4,13 +4,16 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import DIMS from './_dimensions.json';
 
-// Cards beyond this offset from the active card are skipped entirely —
-// keeps DOM and image fetches bounded regardless of category size.
-// Set to 3 so the mount window matches the visibility window: every
-// rendered card is at least partly visible (opacity 0.55 at the edge),
-// and nothing past the visible window stays in the DOM as an
-// opacity-0 ghost.
+// Visibility/mount thresholds for the carousel. Stored as named
+// constants so the opacity/pointer-events logic below stays in sync
+// with the mount logic — bumping RENDER_WINDOW won't accidentally
+// leave invisible-but-mounted ghost cards.
+//
+//   absOffset 0..OPAQUE_WINDOW : fully visible, opacity 1
+//   absOffset RENDER_WINDOW    : edge of the wheel, opacity 0.55
+//   absOffset > RENDER_WINDOW  : not rendered at all
 const RENDER_WINDOW = 3;
+const OPAQUE_WINDOW = 2;
 
 // Look up the aspect ratio for an image path like "/qualifications/foo.webp".
 // Derived from width/height so a single source of truth in the JSON can't
@@ -487,33 +490,48 @@ const Carousel3D = () => {
     setActiveSub(sub);
   };
 
-  const tabClasses = (isActive) =>
-    // !text-... overrides .glitter-text's hardcoded font-size: 3rem so the
-    // inactive tabs don't balloon to 48px on mobile while the active one
-    // stays at 1rem. bg/border/padding resets undo the native <button>
-    // chrome so the tabs still read as text.
-    `bg-transparent border-0 p-0 transition !text-[1rem] md:!text-[1.2rem] font-semibold uppercase cursor-pointer ${
-      isActive
-        ? 'text-glow-stroke-neon'
-        : 'glitter-text !tracking-normal !text-shadow-none'
-    }`;
+  const tabClasses = () =>
+    // bg/border/padding resets undo the native <button> chrome so the
+    // tabs still read as text. Both states inherit the page font;
+    // colour/stroke comes from inline style below so the active tab
+    // picks up the title's neon palette without inheriting its font
+    // family from .text-glow-stroke-neon.
+    `bg-transparent border-0 p-0 transition !text-[1rem] md:!text-[1.2rem] font-semibold uppercase cursor-pointer`;
 
   const tabHandlers = (isActive) => ({
-    style: {
-      textShadow: isActive
-        ? 'none'
-        : '0 0 2px #ff55f7, 0 0 4px #ff55f7, 0 0 6px #ff55f7',
-    },
+    style: isActive
+      ? {
+          // Solid orange fill (page-title palette) — keeps the same
+          // font shape as inactive tabs since both use plain colour
+          // fills, no stroke. Three-layer shadow matches the spread
+          // of the subtitle's neon halo so it's clearly visible.
+          color: '#ff6d05',
+          textShadow:
+            '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)',
+        }
+      : {
+          // Subtitle palette: pink fill with the exact same three-
+          // layer halo the page subtitle uses, for a noticeable glow.
+          color: '#fc83ff',
+          textShadow:
+            '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7',
+        },
     onMouseEnter: (e) => {
-      if (!isActive) {
+      if (isActive) {
         e.currentTarget.style.textShadow =
-          '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7, 0 0 30px #ff55f7';
+          '0 0 6px #ff6d05, 0 0 14px #ff6d05, 0 0 26px rgba(255, 106, 0, 0.8)';
+      } else {
+        e.currentTarget.style.textShadow =
+          '0 0 6px #ff55f7, 0 0 14px #ff55f7, 0 0 26px #ff55f7';
       }
     },
     onMouseLeave: (e) => {
-      if (!isActive) {
+      if (isActive) {
         e.currentTarget.style.textShadow =
-          '0 0 2px #ff55f7, 0 0 4px #ff55f7, 0 0 6px #ff55f7';
+          '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)';
+      } else {
+        e.currentTarget.style.textShadow =
+          '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7';
       }
     },
   });
@@ -532,7 +550,7 @@ const Carousel3D = () => {
               aria-pressed={isActive}
               title={isEmpty ? `No qualifications in ${cat} yet` : undefined}
               onClick={() => handleParentClick(cat)}
-              className={`${tabClasses(isActive)} ${isEmpty ? 'opacity-40' : ''}`}
+              className={`${tabClasses()} ${isEmpty ? 'opacity-40' : ''}`}
               {...tabHandlers(isActive)}
             >
               {cat}
@@ -554,7 +572,7 @@ const Carousel3D = () => {
                 aria-pressed={isActive}
                 title={isEmpty ? `No qualifications in ${sub} yet` : undefined}
                 onClick={() => handleSubClick(sub)}
-                className={`${tabClasses(isActive)} ${isEmpty ? 'opacity-40' : ''}`}
+                className={`${tabClasses()} ${isEmpty ? 'opacity-40' : ''}`}
                 {...tabHandlers(isActive)}
               >
                 {sub}
@@ -640,11 +658,17 @@ const Carousel3D = () => {
                   // past the window is invisible — and that's
                   // exactly where the wrap sweep happens, so
                   // the loop reads as seamless.
+                  // Cards within OPAQUE_WINDOW are fully opaque; the
+                  // single edge card at RENDER_WINDOW fades to 0.55 to
+                  // sell the wheel rolling off into space. Anything
+                  // further than RENDER_WINDOW would never render here
+                  // (the early return above unmounts it), so the final
+                  // 0 branch is just defensive.
                   opacity: !hasAnimated
                     ? 0
-                    : absOffset <= 2
+                    : absOffset <= OPAQUE_WINDOW
                       ? 1
-                      : absOffset === 3
+                      : absOffset === RENDER_WINDOW
                         ? 0.55
                         : 0,
                   filter: `brightness(${1 - absOffset * 0.18})`,
@@ -652,7 +676,7 @@ const Carousel3D = () => {
                   // as a single wheel — no staggered ripple.
                   transition:
                     'transform 650ms ease-in-out, opacity 400ms ease-in-out',
-                  pointerEvents: absOffset > 3 ? 'none' : 'auto',
+                  pointerEvents: absOffset > RENDER_WINDOW ? 'none' : 'auto',
                 }}
               >
                 {/* === IMAGE + REFLECTION SECTION === */}
@@ -701,8 +725,15 @@ const Carousel3D = () => {
                     </a>
                   </div>
 
-                  {/* Certificate Title + Reflection */}
-                  <div className="custom-bg-abt relative mt-3 w-full rounded-lg border p-3 text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg">
+                  {/* Certificate Title + Reflection.
+                      min-h reserves space for 2 lines of text-lg
+                      (line-height 1.75rem × 2 + p-3 padding ≈ 5rem)
+                      so the title block stays the same visual height
+                      whether the title wraps or not — keeping the gap
+                      to the Prev/Next buttons constant on mobile and
+                      tablet. flex centring keeps single-line titles
+                      vertically aligned inside the reserved space. */}
+                  <div className="custom-bg-abt relative mt-3 flex min-h-[5rem] w-full items-center justify-center rounded-lg border p-3 text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg">
                     <h3 className="text-shadow-neon-light-orange relative z-10 text-center text-lg font-semibold tracking-wide">
                       {card.title}
                     </h3>
