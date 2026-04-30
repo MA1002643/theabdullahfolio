@@ -620,12 +620,12 @@ const Carousel3D = () => {
             const imgH = `min(calc(var(--cert-w-cap) / ${ar}), var(--cert-cap))`;
             // Match `sizes` to the actual rendered width so Next/Image
             // doesn't fetch an oversized srcset entry. Portrait cards
-            // are height-bound (width = ar × cert-cap, ~40-50vh), so
-            // expressing it as vh prevents the 70vw default from
-            // pulling a much larger image than the slot needs.
+            // are height-bound (width ≈ ar × cert-cap), so a narrower
+            // vw value prevents the 70vw default from pulling a much
+            // larger image than the slot actually needs.
             const imgSizes =
               ar < 1
-                ? '(max-width: 768px) 40vh, 50vh'
+                ? '(max-width: 768px) 40vw, 48vw'
                 : '(max-width: 768px) 90vw, 70vw';
             // Uniform slot width via the --slot-vh CSS var (set on
             // the carousel container, breakpoint-aware). Every
@@ -711,7 +711,7 @@ const Carousel3D = () => {
                         // bandwidth. Far neighbours stay lazy.
                         priority={absOffset === 0}
                         loading={absOffset <= 2 ? 'eager' : 'lazy'}
-                        className="rounded-lg object-contain"
+                        className="rounded-lg object-cover"
                       />
                       {/* Subtle ember tint to tie cards
                                                 into the page palette. Lives
