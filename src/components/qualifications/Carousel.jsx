@@ -754,6 +754,7 @@ const Carousel3D = () => {
         <div className="relative mb-4 mt-3 flex flex-col items-center md:mt-10">
           <div className="z-10 flex gap-6">
             <button
+              type="button"
               onClick={prevSlide}
               className="custom-bg-abt text-shadow-neon-light-orange rounded-lg px-4 py-2"
               style={{ textShadow: 'none' }}
@@ -761,6 +762,7 @@ const Carousel3D = () => {
               Prev
             </button>
             <button
+              type="button"
               onClick={nextSlide}
               className="custom-bg-abt text-shadow-neon-light-orange rounded-lg px-4 py-2"
               style={{ textShadow: 'none' }}
