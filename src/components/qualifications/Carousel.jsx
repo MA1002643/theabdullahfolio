@@ -618,14 +618,15 @@ const Carousel3D = () => {
             // get a moderate bump on desktop.
             const imgW = `min(var(--cert-w-cap), calc(${ar} * var(--cert-cap)))`;
             const imgH = `min(calc(var(--cert-w-cap) / ${ar}), var(--cert-cap))`;
-            // Match `sizes` to the actual rendered width so Next/Image
-            // doesn't fetch an oversized srcset entry. Portrait cards
-            // are height-bound (width ≈ ar × cert-cap), so a narrower
-            // vw value prevents the 70vw default from pulling a much
-            // larger image than the slot actually needs.
+            // Match `sizes` to the actual rendered width. Portrait cards
+            // are height-bound (width ≈ ar × cert-cap), but on tall
+            // viewports that can approach the --cert-w-cap upper bound,
+            // so we use the cap as a conservative ceiling — undershooting
+            // here makes Next/Image pick a too-small srcset entry and
+            // upscale it (blurry).
             const imgSizes =
               ar < 1
-                ? '(max-width: 768px) 40vw, 48vw'
+                ? '(max-width: 768px) 90vw, 50vw'
                 : '(max-width: 768px) 90vw, 70vw';
             // Uniform slot width via the --slot-vh CSS var (set on
             // the carousel container, breakpoint-aware). Every
