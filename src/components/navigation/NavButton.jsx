@@ -38,7 +38,7 @@ const getIcon = (icon, small = false) => {
   }
 };
 
-const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index }) => {
+const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index, visible = true }) => {
 
   // xs-mobile two-column layout button
   if (isMobileColumn) {
@@ -47,9 +47,16 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.6 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.35, delay, type: 'tween', ease: 'easeOut' }}
-        className="cursor-pointer"
+        // Drive the reveal from the parent's `visible` prop instead of
+        // relying on the component being mounted/unmounted. The button
+        // is always in the DOM (so its layout space is reserved from
+        // the start), and only its opacity/scale change when it should
+        // appear. While invisible, disable pointer events so the
+        // not-yet-revealed buttons aren't accidentally clickable.
+        animate={visible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
+        transition={{ duration: 0.35, delay: visible ? delay : 0, type: 'tween', ease: 'easeOut' }}
+        className={`cursor-pointer ${visible ? '' : 'pointer-events-none'}`}
+        aria-hidden={!visible}
       >
         <a
           href={link}
