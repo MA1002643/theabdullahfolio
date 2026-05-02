@@ -466,13 +466,16 @@ function RelativeTime({ iso }) {
 }
 
 function formatRelative(ms) {
-  const sec = Math.max(1, Math.round(ms / 1000));
+  // Floor (not round) so we never claim more elapsed time than has
+  // actually passed — e.g. 59m31s should still read "59m ago", not
+  // "1h ago".
+  const sec = Math.max(1, Math.floor(ms / 1000));
   if (sec < 60) return `${sec}s ago`;
-  const min = Math.round(sec / 60);
+  const min = Math.floor(sec / 60);
   if (min < 60) return `${min}m ago`;
-  const hr = Math.round(min / 60);
+  const hr = Math.floor(min / 60);
   if (hr < 24) return `${hr}h ago`;
-  return `${Math.round(hr / 24)}d ago`;
+  return `${Math.floor(hr / 24)}d ago`;
 }
 
 // Loading state. Mirrors the real header layout exactly so the swap to
