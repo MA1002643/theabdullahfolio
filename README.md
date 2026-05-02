@@ -401,7 +401,7 @@ The chip displays one of five states, ordered by precedence:
 | `LIVE` | **LIVE** + green pulsing dot | Any commit, PR, or issue updated in the last 2 hours |
 | `IN_PROGRESS` | **IN PROGRESS** | Project board has cards in **In Progress**, or there are open PRs |
 | `PLANNING` | **PLANNING** | Open issues exist but no open PRs and no recent activity |
-| `IDLE` | **MAINTENANCE** | No activity in the last 48 hours |
+| `IDLE` | **MAINTENANCE** | No active `SHIPPING`/`LIVE` signal, no open PRs or issues, and no cards in **In Progress** |
 
 When `SHIPPING` is active **and** there's also active In Progress work, the message rotates between "Just shipped #X …" and "Actively working on N tasks — #Y …" every 10 seconds (Pattern D).
 

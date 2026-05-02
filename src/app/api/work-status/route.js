@@ -99,7 +99,7 @@ export async function GET(request) {
       'GitHub token not configured — falling back to maintenance mode.',
     );
     cache.write(payload);
-    return jsonResponse(payload, 'FALLBACK');
+    return jsonResponse(payload, 'FALLBACK', { bust });
   }
 
   try {
@@ -159,23 +159,30 @@ export async function GET(request) {
     };
 
     cache.write(payload);
-    return jsonResponse(payload, 'MISS');
+    return jsonResponse(payload, 'MISS', { bust });
   } catch (err) {
     console.error('work-status error:', err);
     // Serve stale cache if we have it — better than a broken header.
     const stale = cache.readStale();
     if (stale) {
-      return jsonResponse(stale, 'STALE');
+      return jsonResponse(stale, 'STALE', { bust });
     }
     const payload = buildIdlePayload();
-    return jsonResponse(payload, 'FALLBACK');
+    return jsonResponse(payload, 'FALLBACK', { bust });
   }
 }
 
-const jsonResponse = (payload, cacheStatus) =>
+// `bust` responses must NOT be stored by shared caches — otherwise a
+// second `?bust=1` within the 30s s-maxage window would be served from
+// the edge and never reach the origin, defeating the whole point of the
+// bust. Normal responses keep the public/s-maxage caching so the edge
+// shields the origin between polls.
+const jsonResponse = (payload, cacheStatus, { bust = false } = {}) =>
   NextResponse.json(payload, {
     headers: {
-      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      'Cache-Control': bust
+        ? 'private, no-store, must-revalidate'
+        : 'public, s-maxage=30, stale-while-revalidate=60',
       'X-Cache-Status': cacheStatus,
     },
   });
@@ -224,7 +231,6 @@ async function fetchRepoActivity() {
             number
             title
             updatedAt
-            isDraft
           }
         }
         issues(states: OPEN, first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
@@ -233,7 +239,6 @@ async function fetchRepoActivity() {
             number
             title
             updatedAt
-            labels(first: 5) { nodes { name } }
           }
         }
         defaultBranchRef {
@@ -241,9 +246,7 @@ async function fetchRepoActivity() {
             ... on Commit {
               history(first: 100) {
                 nodes {
-                  oid
                   committedDate
-                  messageHeadline
                 }
               }
             }
@@ -275,7 +278,6 @@ async function fetchRepoActivity() {
     title: pr.title,
     updatedAt: pr.updatedAt,
     state: 'open',
-    isDraft: pr.isDraft,
   }));
 
   const issues = (repo.issues?.nodes ?? []).map((i) => ({
@@ -283,14 +285,11 @@ async function fetchRepoActivity() {
     title: i.title,
     updatedAt: i.updatedAt,
     state: 'open',
-    labels: (i.labels?.nodes ?? []).map((l) => l.name),
   }));
 
   const commits = (repo.defaultBranchRef?.target?.history?.nodes ?? []).map(
     (c) => ({
-      oid: c.oid,
       committedAt: c.committedDate,
-      message: c.messageHeadline,
     }),
   );
 

@@ -100,9 +100,9 @@ export function computeWorkSignal({
   //   LIVE           — any commit / PR / issue update in last 2h
   //   IN_PROGRESS    — project In Progress column has cards, OR open PRs
   //   PLANNING       — only open issues, no PRs / project cards
-  //   IDLE           — fallthrough: nothing active. Includes both "no
-  //                    activity at all" and "activity > 48h ago but
-  //                    nothing currently open" — both correctly read as
+  //   IDLE           — fallthrough: no recent activity in the 2h LIVE
+  //                    window and nothing currently open (no in-progress
+  //                    project cards, open PRs, or open issues), i.e.
   //                    "no work in flight right now".
   let state;
   if (hasRecentlyShipped) {
