@@ -752,7 +752,7 @@ const Carousel3D = () => {
 
       {/* Next / Prev Buttons + Reflection */}
       {filteredCards.length > 0 && (
-        <div className="relative mb-4 mt-3 flex flex-col items-center md:mt-10">
+        <div className="relative mb-4 mt-[clamp(1rem,4vh,2.5rem)] flex flex-col items-center">
           <div className="z-10 flex gap-6">
             <button
               type="button"
