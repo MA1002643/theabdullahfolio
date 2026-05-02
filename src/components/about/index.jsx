@@ -177,7 +177,16 @@ const AboutDetails = () => {
             " col-span-full lg:col-span-8 row-span-2 flex-col items-start"
           }
         >
-          <h2 className="text-xl md:text-2xl text-left w-full capitalize text-shadow-neon-orange">
+          <h2
+            className="text-xl md:text-2xl text-left w-full capitalize"
+            style={{
+              color: '#ffb347',
+              textShadow: 'none',
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale',
+              textRendering: 'geometricPrecision',
+            }}
+          >
             Architect of Enchantment
           </h2>
           <p style={{ textShadow: "none" }} className="font-light text-xs sm:text-sm md:text-base text-shadow-neon-light-orange">
