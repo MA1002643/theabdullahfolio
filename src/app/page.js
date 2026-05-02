@@ -25,11 +25,11 @@ export default function Home() {
       <div className="absolute inset-0 -z-40 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
       <main className="relative z-10 flex h-full flex-col items-center overflow-x-hidden">
-        {/* Live maintenance header (issue #24) — slim status bar above the hero */}
-        <div
-          className="z-50 w-full px-2 pt-2 sm:px-4 sm:pt-3 md:px-8 md:pt-4 lg:px-12"
-          style={{ paddingTop: 'max(env(safe-area-inset-top), 0.5rem)' }}
-        >
+        {/* Live maintenance header (issue #24) — slim status bar above the hero.
+            Top padding combines the safe-area inset (for notched/dynamic-island
+            devices) with the breakpoint baseline so the responsive spacing
+            still applies on devices without a safe area. */}
+        <div className="z-50 w-full px-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] sm:px-4 sm:pt-[calc(env(safe-area-inset-top)+0.75rem)] md:px-8 md:pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-12">
           <LiveMaintenanceHeader />
         </div>
 

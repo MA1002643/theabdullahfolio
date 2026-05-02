@@ -10,10 +10,10 @@ import {
 // Live Maintenance Header (issue #24).
 //
 // Renders the current development state of MA1002643/theabdullahfolio:
-// fetches /api/work-status on mount, polls every 90s while the tab is
-// visible, slows polling when hidden, and animates state/message/counter
-// transitions. All animations restrict to transform/opacity/filter and
-// respect prefers-reduced-motion.
+// fetches /api/work-status on mount, polls every 30s while the tab is
+// visible (and every 15 min when hidden), and animates state, message,
+// and counter transitions. All animations are restricted to
+// transform/opacity/filter and respect prefers-reduced-motion.
 
 // Polling cadence aligned to the 30s server cache so GitHub Project
 // column moves (which don't fire repo webhooks) become visible within
@@ -79,18 +79,33 @@ export default function LiveMaintenanceHeader() {
   const [compressed, setCompressed] = useState(false);
   const reduceMotion = useReducedMotion();
   const prevConfidenceRef = useRef(0);
+  // Guard against overlapping polls (mount + interval + visibilitychange
+  // can all fire fetchStatus). The id sequence ensures only the most
+  // recent request's result is allowed to call setState; the abort
+  // controller cancels the in-flight request when a newer one starts.
+  const latestRequestId = useRef(0);
+  const abortRef = useRef(null);
 
   const fetchStatus = useCallback(async () => {
+    const requestId = ++latestRequestId.current;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const res = await fetch('/api/work-status', { cache: 'no-store' });
+      const res = await fetch('/api/work-status', {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
       if (!res.ok) throw new Error(`status ${res.status}`);
       const json = await res.json();
-      setData(json);
-      setError(false);
+      if (requestId === latestRequestId.current) {
+        setData(json);
+        setError(false);
+      }
     } catch {
-      setError(true);
+      if (requestId === latestRequestId.current) setError(true);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequestId.current) setLoading(false);
     }
   }, []);
 
@@ -120,6 +135,7 @@ export default function LiveMaintenanceHeader() {
     return () => {
       clearInterval(timer);
       document.removeEventListener('visibilitychange', handleVisibility);
+      abortRef.current?.abort();
     };
   }, [fetchStatus]);
 
@@ -179,19 +195,41 @@ export default function LiveMaintenanceHeader() {
 
   const isInitialLoading = loading && !data;
 
+  // Stable announcement string for screen readers — updates only when
+  // genuinely new API data arrives, NOT when the visible message rotates
+  // every 10 seconds. The visible <motion.section> is intentionally not a
+  // live region (role="region" + aria-live="off") so the rotation doesn't
+  // trigger repeated announcements.
+  const srAnnouncement =
+    data?.message && data?.headline
+      ? `${data.headline}. ${data.message}`
+      : data?.message ?? '';
+
   return (
     <motion.section
-      role="status"
-      aria-live="polite"
+      role="region"
+      aria-live="off"
       aria-busy={isInitialLoading}
       aria-label="Live maintenance status"
       variants={reduceMotion ? undefined : containerVariants}
       initial={reduceMotion ? false : 'hidden'}
-      whileInView="visible"
+      whileInView={reduceMotion ? undefined : 'visible'}
       viewport={{ once: false, amount: 0.3 }}
       className={`custom-bg-abt relative isolate mx-auto w-full max-w-[min(100%,1400px)] overflow-hidden rounded-xl px-[clamp(0.5rem,1.8vw,1.25rem)] transition-[padding] duration-200 ${compressed ? 'py-[clamp(0.3rem,1vw,0.6rem)]' : 'py-[clamp(0.4rem,1.4vw,0.85rem)]'} ${isInitialLoading ? 'header-loading' : ''}`}
     >
-      {/* Layer E: ambient sheen + noise. Both kept under 0.2 opacity. */}
+      {/* Screen-reader-only live announcer. Holds the canonical
+                primary message; only changes when /api/work-status returns a
+                different payload, so AT users hear updates exactly once per
+                real change instead of every rotation tick. */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {srAnnouncement}
+      </div>
+
+      {/* Layer E: ambient sheen + noise. Both kept low-impact to protect
+                text contrast — the sheen wrapper is at opacity-60, but its
+                underlying gradient stops use rgba(...,0.18), so its
+                effective contribution is ≈0.6 × 0.18 ≈ 0.11. The noise is
+                a flat opacity-[0.15] over a near-white turbulence svg. */}
       <div
         aria-hidden
         className="status-sheen pointer-events-none absolute inset-0 -z-10 opacity-60"
@@ -287,7 +325,9 @@ export default function LiveMaintenanceHeader() {
 
       {error && (
         <p className="mt-2 text-xs text-amber-300/80" role="alert">
-          Live status temporarily unavailable. Showing the latest snapshot.
+          {data
+            ? 'Live status temporarily unavailable. Showing the latest snapshot.'
+            : 'Live status temporarily unavailable. Showing maintenance fallback.'}
         </p>
       )}
     </motion.section>
@@ -436,30 +476,66 @@ function formatRelative(ms) {
 }
 
 // Loading state. Mirrors the real header layout exactly so the swap to
-// content doesn't cause a layout shift. Each block fades + scales in
-// with a 60ms stagger, matching the cadence the loaded content uses, so
-// the load → ready transition reads as one continuous choreography.
+// content doesn't cause a layout shift. Two code paths:
+//   - reduceMotion: a plain opacity fade with no variant chain (passing
+//     "hidden"/"visible" labels with variants={undefined} would fail to
+//     resolve and warn in dev).
+//   - normal: container variants + staggerChildren so chip / message /
+//     counters fan in one after another.
 function HeaderSkeleton({ reduceMotion }) {
-  const skeletonContainer = reduceMotion
-    ? undefined
-    : {
-        hidden: { opacity: 0 },
-        visible: {
-          opacity: 1,
-          transition: { staggerChildren: 0.06, delayChildren: 0.05 },
-        },
-      };
-  const skeletonChild = reduceMotion
-    ? undefined
-    : {
-        hidden: { opacity: 0, scale: 0.92, y: 4 },
-        visible: {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          transition: { duration: 0.35, ease: 'easeOut' },
-        },
-      };
+  const skeletonBlocks = (
+    <>
+      {/* chip skeleton — same dimensions as StateChip */}
+      <SkeletonBlock
+        reduceMotion={reduceMotion}
+        className="header-skeleton h-7 w-[5.5rem] shrink-0 rounded-full sm:h-9 sm:w-[7rem]"
+      />
+
+      {/* message skeleton — two stacked lines (80% + 55% widths) */}
+      <SkeletonBlock
+        reduceMotion={reduceMotion}
+        className="min-w-0 flex-1 space-y-1.5"
+      >
+        <div className="header-skeleton h-3 w-[80%] rounded sm:h-4" />
+        <div className="header-skeleton h-3 w-[55%] rounded sm:h-4" />
+      </SkeletonBlock>
+
+      {/* counter skeletons — only on sm+ to mirror the real layout */}
+      <SkeletonBlock
+        reduceMotion={reduceMotion}
+        className="hidden flex-wrap items-center gap-x-3 gap-y-1 sm:flex"
+      >
+        <div className="header-skeleton h-3 w-12 rounded" />
+        <div className="header-skeleton h-3 w-14 rounded" />
+        <div className="header-skeleton h-3 w-20 rounded" />
+        <div className="header-skeleton h-3 w-20 rounded" />
+      </SkeletonBlock>
+    </>
+  );
+
+  if (reduceMotion) {
+    return (
+      <motion.div
+        key="skeleton"
+        initial={false}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.12 }}
+        className="flex flex-row items-center gap-2 sm:gap-3 md:gap-4"
+        aria-hidden
+      >
+        {skeletonBlocks}
+      </motion.div>
+    );
+  }
+
+  const skeletonContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.06, delayChildren: 0.05 },
+    },
+  };
 
   return (
     <motion.div
@@ -467,36 +543,33 @@ function HeaderSkeleton({ reduceMotion }) {
       variants={skeletonContainer}
       initial="hidden"
       animate="visible"
-      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
-      transition={{ duration: reduceMotion ? 0.12 : 0.25 }}
+      exit={{ opacity: 0, scale: 0.97 }}
+      transition={{ duration: 0.25 }}
       className="flex flex-row items-center gap-2 sm:gap-3 md:gap-4"
       aria-hidden
     >
-      {/* chip skeleton — same dimensions as StateChip */}
-      <motion.div
-        variants={skeletonChild}
-        className="header-skeleton h-7 w-[5.5rem] shrink-0 rounded-full sm:h-9 sm:w-[7rem]"
-      />
+      {skeletonBlocks}
+    </motion.div>
+  );
+}
 
-      {/* message skeleton — two stacked lines (75% + 50% widths) */}
-      <motion.div
-        variants={skeletonChild}
-        className="min-w-0 flex-1 space-y-1.5"
-      >
-        <div className="header-skeleton h-3 w-[80%] rounded sm:h-4" />
-        <div className="header-skeleton h-3 w-[55%] rounded sm:h-4" />
-      </motion.div>
+const skeletonChildVariants = {
+  hidden: { opacity: 0, scale: 0.92, y: 4 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: 'easeOut' },
+  },
+};
 
-      {/* counter skeletons — only on sm+ to mirror the real layout */}
-      <motion.div
-        variants={skeletonChild}
-        className="hidden flex-wrap items-center gap-x-3 gap-y-1 sm:flex"
-      >
-        <div className="header-skeleton h-3 w-12 rounded" />
-        <div className="header-skeleton h-3 w-14 rounded" />
-        <div className="header-skeleton h-3 w-20 rounded" />
-        <div className="header-skeleton h-3 w-20 rounded" />
-      </motion.div>
+function SkeletonBlock({ reduceMotion, className, children }) {
+  if (reduceMotion) {
+    return <div className={className}>{children}</div>;
+  }
+  return (
+    <motion.div variants={skeletonChildVariants} className={className}>
+      {children}
     </motion.div>
   );
 }

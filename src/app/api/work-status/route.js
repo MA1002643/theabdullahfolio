@@ -34,12 +34,58 @@ const TOKEN = process.env.GITHUB_TOKEN;
 // Falls back to the main token when not set so single-token setups still work.
 const PROJECT_TOKEN = process.env.GITHUB_PROJECT_TOKEN ?? process.env.GITHUB_TOKEN;
 
+// Cap each GraphQL round-trip so a slow GitHub doesn't stall the handler
+// for the entire function timeout — surface the failure to the catch in
+// GET, which serves stale cache or the deterministic fallback.
+const GITHUB_TIMEOUT_MS = 5000;
+
+async function fetchGitHubGraphQL(token, body) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GITHUB_TIMEOUT_MS);
+  try {
+    return await fetch(GITHUB_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+      // Bypass any framework-level fetch cache; our in-memory cache is the
+      // single source of truth and is invalidated on webhook delivery.
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const bust = searchParams.get('bust') === '1';
+  const bustRequested = searchParams.get('bust') === '1';
+
+  // Cache-bust is privileged: it forces a fresh GitHub fetch and would
+  // otherwise let any unauthenticated caller amplify our outgoing API
+  // traffic (potentially exhausting GitHub or OpenAI rate limits).
+  // Vercel Cron Jobs automatically include `Authorization: Bearer
+  // ${CRON_SECRET}` on the request, so the scheduled cron in vercel.json
+  // still works once CRON_SECRET is set in the project's env vars.
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = request.headers.get('authorization') ?? '';
+  const bustAuthorized =
+    Boolean(cronSecret) && authHeader === `Bearer ${cronSecret}`;
+
+  if (bustRequested && !bustAuthorized) {
+    return NextResponse.json(
+      { error: 'unauthorized cache bust' },
+      { status: 401 },
+    );
+  }
+
+  const bust = bustRequested && bustAuthorized;
 
   if (!bust) {
     const fresh = cache.read();
@@ -207,19 +253,9 @@ async function fetchRepoActivity() {
     }
   `;
 
-  const response = await fetch(GITHUB_API, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${TOKEN}`,
-    },
-    body: JSON.stringify({
-      query,
-      variables: { owner: REPO_OWNER, name: REPO_NAME },
-    }),
-    // Bypass any framework-level fetch cache; our in-memory cache is the
-    // single source of truth and is invalidated on webhook delivery.
-    cache: 'no-store',
+  const response = await fetchGitHubGraphQL(TOKEN, {
+    query,
+    variables: { owner: REPO_OWNER, name: REPO_NAME },
   });
 
   if (!response.ok) {
@@ -320,17 +356,9 @@ async function fetchProjectActivity() {
     }
   `;
 
-  const response = await fetch(GITHUB_API, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${PROJECT_TOKEN}`,
-    },
-    body: JSON.stringify({
-      query,
-      variables: { login: PROJECT_OWNER, number: PROJECT_NUMBER },
-    }),
-    cache: 'no-store',
+  const response = await fetchGitHubGraphQL(PROJECT_TOKEN, {
+    query,
+    variables: { login: PROJECT_OWNER, number: PROJECT_NUMBER },
   });
 
   if (response.status === 401 || response.status === 403 || response.status === 404) {

@@ -414,6 +414,7 @@ Add these to `.env.local` for local development and to your Vercel project for p
 | `GITHUB_TOKEN` | yes | Read-only PAT used by `/api/work-status` to query open PRs, open issues, and recent commits. Fine-grained or classic both work. Without this, the header falls back to the deterministic maintenance message. |
 | `GITHUB_PROJECT_TOKEN` | recommended | Optional separate **classic** PAT with `read:project` + `public_repo` used only for the Projects v2 query. Falls back to `GITHUB_TOKEN` if unset. Needed because fine-grained PATs don't currently expose user-owned project read access. |
 | `GITHUB_WEBHOOK_SECRET` | yes (in production) | HMAC secret used by `/api/github-webhook` to validate `X-Hub-Signature-256`. Webhook deliveries with a missing or invalid signature are rejected. |
+| `CRON_SECRET` | yes (in production) | Bearer token required to invoke `/api/work-status?bust=1`. Vercel Cron Jobs automatically include `Authorization: Bearer ${CRON_SECRET}` on scheduled requests. Without it, the cache-bust query param returns 401 — preventing unauthenticated callers from amplifying GitHub/OpenAI traffic. |
 | `WORK_STATUS_AI_ENABLED` | no | When set to `true`, the API attempts to rewrite the deterministic message via OpenAI before returning it. Default: disabled. |
 | `OPENAI_API_KEY` | only if AI is enabled | Required when `WORK_STATUS_AI_ENABLED=true`. The AI path always falls back to the deterministic message on error. |
 
@@ -442,7 +443,7 @@ Four layers keep the header fresh on Vercel:
 - **Server cache** — in-memory cache holds responses for 30 seconds. Bounds GitHub API calls regardless of traffic; one fetch per 30s window per Vercel region.
 - **Webhook** — invalidates the cache immediately on real GitHub events (`push`, `pull_request`, `issues`).
 - **Client polling** — the component re-fetches every 30 seconds while the tab is visible, and every 15 minutes when hidden (Page Visibility API). The 30s rate aligns with the server cache so column-board moves become visible within ~30s.
-- **Cron fallback** — `vercel.json` schedules `/api/work-status?bust=1` hourly as a backstop in case webhook delivery is delayed.
+- **Cron fallback** — `vercel.json` schedules `/api/work-status?bust=1` once daily as a backstop in case webhook delivery is delayed. (Vercel Hobby plans cap cron jobs at one execution per day; Pro plans can use a tighter cadence if desired.)
 
 Worst-case GitHub API usage with these settings is ~120 GraphQL calls per token per hour — about 7–12 % of the 5,000-point/hour rate limit per token, leaving plenty of headroom.
 

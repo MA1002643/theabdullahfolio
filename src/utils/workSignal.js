@@ -15,7 +15,6 @@ export const WORK_STATES = Object.freeze({
 
 const HOUR_MS = 60 * 60 * 1000;
 const LIVE_WINDOW_MS = 2 * HOUR_MS;
-const IDLE_WINDOW_MS = 48 * HOUR_MS;
 
 const safeDate = (value) => {
   if (!value) return null;
@@ -85,9 +84,6 @@ export function computeWorkSignal({
   );
 
   const lastActivity = mostRecent(lastPrUpdate, lastIssueUpdate, lastCommit);
-  const lastActivityAgeMs = lastActivity
-    ? nowMs - lastActivity.getTime()
-    : Number.POSITIVE_INFINITY;
 
   const hasRecentCommit = lastCommit && nowMs - lastCommit.getTime() <= LIVE_WINDOW_MS;
   const hasRecentPrOrIssue =
@@ -99,25 +95,26 @@ export function computeWorkSignal({
   const hasRecentlyShipped =
     Array.isArray(shippedItems) && shippedItems.length > 0;
 
-  // Precedence: SHIPPING wins over everything because a recent ship is
-  // the most concrete "what's happening" signal. LIVE for sub-2h
-  // commit/PR/issue activity. Then project In Progress, then any open
-  // PRs, then issues, then idle.
+  // Precedence (top to bottom — first match wins):
+  //   SHIPPING       — Done items closed in last 48h (most concrete signal)
+  //   LIVE           — any commit / PR / issue update in last 2h
+  //   IN_PROGRESS    — project In Progress column has cards, OR open PRs
+  //   PLANNING       — only open issues, no PRs / project cards
+  //   IDLE           — fallthrough: nothing active. Includes both "no
+  //                    activity at all" and "activity > 48h ago but
+  //                    nothing currently open" — both correctly read as
+  //                    "no work in flight right now".
   let state;
   if (hasRecentlyShipped) {
     state = WORK_STATES.SHIPPING;
   } else if (hasRecentCommit || hasRecentPrOrIssue) {
     state = WORK_STATES.LIVE;
-  } else if (hasProjectInProgress) {
-    state = WORK_STATES.IN_PROGRESS;
-  } else if (prCount > 0) {
+  } else if (hasProjectInProgress || prCount > 0) {
     state = WORK_STATES.IN_PROGRESS;
   } else if (issueCount > 0) {
     state = WORK_STATES.PLANNING;
-  } else if (lastActivityAgeMs > IDLE_WINDOW_MS) {
-    state = WORK_STATES.IDLE;
   } else {
-    state = WORK_STATES.IN_PROGRESS;
+    state = WORK_STATES.IDLE;
   }
 
   // Project-board items are authoritative when present — they reflect the
@@ -233,7 +230,14 @@ export function buildMessage(signal) {
     if (activePrs > 0) {
       return `Work in progress on ${pluralize(activePrs, 'pull request')}${describeTop(topItems)}.`;
     }
-    return `Work in progress on ${pluralize(activeIssues, 'open task')}${describeTop(topItems)}.`;
+    if (activeIssues > 0) {
+      return `Work in progress on ${pluralize(activeIssues, 'open task')}${describeTop(topItems)}.`;
+    }
+    // Defensive: with the current state precedence, IN_PROGRESS implies at
+    // least one of {projectInProgressCount, activePrs} is > 0, so this
+    // line is unreachable. Kept so any future precedence shift can't
+    // surface "0 open tasks" to users.
+    return 'Work is in progress on this website.';
   }
 
   if (state === WORK_STATES.PLANNING) {
@@ -247,13 +251,7 @@ export function buildMessage(signal) {
 // no second story worth rotating to. The client cycles between the
 // primary `message` and this `secondaryMessage` every ~10 seconds.
 export function buildSecondaryMessage(signal) {
-  const {
-    state,
-    topItems,
-    shippedItems = [],
-    projectInProgressCount = 0,
-    recentlyShippedCount = 0,
-  } = signal;
+  const { state, topItems, projectInProgressCount = 0 } = signal;
 
   // Only rotate when SHIPPING is active AND there's also active work.
   // Other states either don't have a meaningful "and also" story, or the
