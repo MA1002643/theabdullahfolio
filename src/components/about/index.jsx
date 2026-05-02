@@ -177,7 +177,16 @@ const AboutDetails = () => {
             " col-span-full lg:col-span-8 row-span-2 flex-col items-start"
           }
         >
-          <h2 className="text-xl md:text-2xl text-left w-full capitalize text-shadow-neon-orange">
+          <h2
+            className="text-xl md:text-2xl text-left w-full capitalize"
+            style={{
+              color: '#ffb347',
+              WebkitTextStroke: '0.5px #ff8c1a',
+              filter:
+                'drop-shadow(0 0 6px rgba(255, 140, 26, 0.55)) drop-shadow(0 0 14px rgba(255, 140, 26, 0.32))',
+              textShadow: 'none',
+            }}
+          >
             Architect of Enchantment
           </h2>
           <p style={{ textShadow: "none" }} className="font-light text-xs sm:text-sm md:text-base text-shadow-neon-light-orange">
