@@ -387,6 +387,81 @@ Or connect the GitHub repository to [vercel.com](https://vercel.com) for automat
 
 ---
 
+## 🛰️ Live Maintenance Header
+
+The home page renders a real-time development status header that reads activity from this repository **and** the linked Projects v2 board (`MA1002643/theabdullahfolio` and `users/MA1002643/projects/3` only — never any other repo or project).
+
+### What the header shows
+
+The chip displays one of five states, ordered by precedence:
+
+| State | Chip label | When it fires |
+| --- | --- | --- |
+| `SHIPPING` | **SHIPPING** + green pulsing dot | Items moved to the project board's **Done** column whose underlying issue/PR was closed in the last 48h |
+| `LIVE` | **LIVE** + green pulsing dot | Any commit, PR, or issue updated in the last 2 hours |
+| `IN_PROGRESS` | **IN PROGRESS** | Project board has cards in **In Progress**, or there are open PRs |
+| `PLANNING` | **PLANNING** | Open issues exist but no open PRs and no recent activity |
+| `IDLE` | **MAINTENANCE** | No activity in the last 48 hours |
+
+When `SHIPPING` is active **and** there's also active In Progress work, the message rotates between "Just shipped #X …" and "Actively working on N tasks — #Y …" every 10 seconds (Pattern D).
+
+### Required environment variables
+
+Add these to `.env.local` for local development and to your Vercel project for production:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `GITHUB_TOKEN` | yes | Read-only PAT used by `/api/work-status` to query open PRs, open issues, and recent commits. Fine-grained or classic both work. Without this, the header falls back to the deterministic maintenance message. |
+| `GITHUB_PROJECT_TOKEN` | recommended | Optional separate **classic** PAT with `read:project` + `public_repo` used only for the Projects v2 query. Falls back to `GITHUB_TOKEN` if unset. Needed because fine-grained PATs don't currently expose user-owned project read access. |
+| `GITHUB_WEBHOOK_SECRET` | yes (in production) | HMAC secret used by `/api/github-webhook` to validate `X-Hub-Signature-256`. Webhook deliveries with a missing or invalid signature are rejected. |
+| `WORK_STATUS_AI_ENABLED` | no | When set to `true`, the API attempts to rewrite the deterministic message via OpenAI before returning it. Default: disabled. |
+| `OPENAI_API_KEY` | only if AI is enabled | Required when `WORK_STATUS_AI_ENABLED=true`. The AI path always falls back to the deterministic message on error. |
+
+### Token scopes
+
+- **Fine-grained PAT for `GITHUB_TOKEN`**: Repository permissions → Contents: Read, Issues: Read, Pull requests: Read, Metadata: Read. Scope to `theabdullahfolio` only.
+- **Classic PAT for `GITHUB_PROJECT_TOKEN`**: `read:project` + `public_repo` (or `repo` if the repo is private). User-owned Projects v2 boards aren't accessible via fine-grained PATs today, hence the second token.
+
+### GitHub webhook setup
+
+In `Settings → Webhooks` on the `theabdullahfolio` repository:
+
+1. **Payload URL:** `https://<your-domain>/api/github-webhook`
+2. **Content type:** `application/json` *(critical — `application/x-www-form-urlencoded` breaks HMAC verification)*
+3. **Secret:** must match `GITHUB_WEBHOOK_SECRET` byte-for-byte
+4. **Events:** `push`, `pull_request`, `issues` (optionally `issue_comment`)
+
+The webhook validates the signature, ignores events from any other repository, and busts the in-memory cache so the next client poll receives fresh data.
+
+> **Note:** GitHub Projects v2 column moves don't fire repository webhooks (they fire `projects_v2_item` events at the org level only). Column moves are picked up via the 30-second cache TTL + client polling instead — see *Refresh strategy* below.
+
+### Refresh strategy
+
+Four layers keep the header fresh on Vercel:
+
+- **Server cache** — in-memory cache holds responses for 30 seconds. Bounds GitHub API calls regardless of traffic; one fetch per 30s window per Vercel region.
+- **Webhook** — invalidates the cache immediately on real GitHub events (`push`, `pull_request`, `issues`).
+- **Client polling** — the component re-fetches every 30 seconds while the tab is visible, and every 15 minutes when hidden (Page Visibility API). The 30s rate aligns with the server cache so column-board moves become visible within ~30s.
+- **Cron fallback** — `vercel.json` schedules `/api/work-status?bust=1` hourly as a backstop in case webhook delivery is delayed.
+
+Worst-case GitHub API usage with these settings is ~120 GraphQL calls per token per hour — about 7–12 % of the 5,000-point/hour rate limit per token, leaving plenty of headroom.
+
+If the GitHub API is unreachable or returns an error, the endpoint serves the most recent successful payload (`X-Cache-Status: STALE`) before degrading to the deterministic maintenance message.
+
+### UI choreography
+
+The header is a single status bar at the top of the home page (above the hero) and uses three layered animation systems:
+
+- **Container entrance** — `whileInView` 0 → 1 scale pop-in (matching the About page's ItemLayout). Re-fires when the section enters the viewport, so navigating back to `/` from another page replays the entrance.
+- **Loading skeleton** — shimmer-sweep placeholder with the same dimensions as the live content, so there's no layout shift on data load. Crossfades to real content via `AnimatePresence`.
+- **Pulsing dot** — a green `live-dot` (`#22c55e`) that fades in and out every 2.8s with timed holds at both extremes for a "lazy breathing" feel. Active during `SHIPPING` and `LIVE` states.
+
+Counter values (PRs / Issues / Pushes 24h) animate from 0 to the target on mount with a piecewise curve: linear "fast tick" to 75% of the value, then a cubic ease-out for the final 25%. Total duration scales with the delta (1.1–2.2s).
+
+The "Updated Xs ago" stamp uses an adaptive tick rate — 1s while showing seconds, 30s for minutes, 1 min for hours, 1 hour for days — so the seconds counter ticks up smoothly without wasting renders on stale displays.
+
+All looping animations stop under `prefers-reduced-motion: reduce`.
+
 ## 🙏 Acknowledgements
 
 - [Poimandres](https://github.com/pmndrs) — `@react-three/fiber` & `@react-three/drei`

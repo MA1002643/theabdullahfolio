@@ -3,6 +3,7 @@ import Image from 'next/image';
 import bg from '../../public/background/home-bg.png';
 import laptop from '../../public/background/laptop.png';
 import Navigation from '@/components/navigation';
+import LiveMaintenanceHeader from '@/components/home/LiveMaintenanceHeader';
 import { useState } from 'react';
 
 export default function Home() {
@@ -24,17 +25,26 @@ export default function Home() {
       <div className="absolute inset-0 -z-40 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
       <main className="relative z-10 flex h-full flex-col items-center overflow-x-hidden">
+        {/* Live maintenance header (issue #24) — slim status bar above the hero */}
+        <div
+          className="z-50 w-full px-2 pt-2 sm:px-4 sm:pt-3 md:px-8 md:pt-4 lg:px-12"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 0.5rem)' }}
+        >
+          <LiveMaintenanceHeader />
+        </div>
+
         {/* HEADLINE */}
-        <div className="z-50 pb-8 pt-14 text-center md:pb-12 lg:pb-16">
-          <h1 className="text-glow-stroke-neon text-center text-[3rem] font-[500] uppercase leading-none text-transparent md:text-[4rem] lg:text-[5rem]">
+        <div className="z-40 pb-2 pt-3 text-center sm:pt-5 md:pb-4 md:pt-6 lg:pb-6 lg:pt-8">
+          <h1 className="text-glow-stroke-neon text-center text-[2.6rem] font-[500] uppercase leading-none text-transparent sm:text-[3rem] md:text-[4rem] lg:text-[5rem]">
             Muhammad
             <br /> Abdullah
           </h1>
 
-          <h2 className="text-glow-stroke-purple mt-1 text-[1.2rem] font-light uppercase leading-snug text-amethyst-neon md:text-[1.4rem] lg:text-[1.6rem]">
+          <h2 className="text-glow-stroke-purple mt-1 text-[1rem] font-light uppercase leading-snug text-amethyst-neon sm:text-[1.2rem] md:text-[1.4rem] lg:text-[1.6rem]">
             Software Engineer
           </h2>
         </div>
+
         <div className="relative z-10 flex w-full flex-1 items-center justify-center">
           {/* Wrapper for laptop + rings */}
           <div className="relative flex items-center justify-center">
