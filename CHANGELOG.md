@@ -31,7 +31,7 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: changes shipped by the Repository Governance & Templates Suite (PR #81, closes #23)._
+_Scope: changes shipped by the Repository Governance & Templates Suite — pull request [#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing issue [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)._
 
 ### Added
 
