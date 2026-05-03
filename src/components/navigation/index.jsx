@@ -89,39 +89,53 @@ const Navigation = ({ setHovered, hovered }) => {
     const rightBtns = BtnList.slice(4, 8);
     return (
       <>
-        {/* Left column: About, Projects, Qualifications, Contact */}
-        <div className="fixed left-1/3 top-1/2 -translate-y-1/2 -translate-x-1/2 z-50 flex flex-col gap-3">
-          {leftBtns.map((btn, idx) =>
-            visibleButtons.includes(btn.label) ? (
-              <NavButton
-                key={btn.label}
-                x={0}
-                y={0}
-                {...btn}
-                setHovered={setHovered}
-                hovered={hovered}
-                isMobileColumn
-                index={idx}
-              />
-            ) : null
-          )}
+        {/* Left column: About, Projects, Qualifications, Contact.
+            `absolute` (not `fixed`) so the column centers vertically on
+            the laptop's parent flex line rather than on the viewport —
+            keeps the icons aligned with the laptop regardless of where
+            the header/headline push the laptop on different screens. */}
+        <div className="absolute left-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4">
+          {/* Always render all 4 buttons so the column reserves its full
+              height from t=0. The reveal is done via the `visible` prop,
+              which only animates opacity/scale (transforms don't affect
+              layout), so earlier pairs don't get pushed around as later
+              pairs appear. */}
+          {leftBtns.map((btn, idx) => (
+            <NavButton
+              key={btn.label}
+              x={0}
+              y={0}
+              {...btn}
+              setHovered={setHovered}
+              hovered={hovered}
+              isMobileColumn
+              index={idx}
+              visible={visibleButtons.includes(btn.label)}
+            />
+          ))}
         </div>
-        {/* Right column: Github, My Past, LinkedIn, Resume */}
-        <div className="fixed right-1/3 top-1/2 -translate-y-1/2 translate-x-1/2 z-50 flex flex-col gap-3">
-          {rightBtns.map((btn, idx) =>
-            visibleButtons.includes(btn.label) ? (
-              <NavButton
-                key={btn.label}
-                x={0}
-                y={0}
-                {...btn}
-                setHovered={setHovered}
-                hovered={hovered}
-                isMobileColumn
-                index={idx + 4}
-              />
-            ) : null
-          )}
+        {/* Right column: GitHub, My Past, LinkedIn, Resume.
+            Mirrors the left column (also `absolute` so it tracks the
+            laptop's vertical center, not the viewport's). */}
+        <div className="absolute right-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4">
+          {/* Same always-render pattern as the left column. */}
+          {rightBtns.map((btn, idx) => (
+            <NavButton
+              key={btn.label}
+              x={0}
+              y={0}
+              {...btn}
+              setHovered={setHovered}
+              hovered={hovered}
+              isMobileColumn
+              // Use the pair index (0-3), not the absolute button index
+              // (4-7), so each right-side button gets the same framer-motion
+              // delay as its left-side partner — they appear truly together
+              // instead of the right one trailing by ~320ms.
+              index={idx}
+              visible={visibleButtons.includes(btn.label)}
+            />
+          ))}
         </div>
       </>
     );

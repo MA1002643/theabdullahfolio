@@ -29,7 +29,7 @@ export default function Home() {
             Top padding combines the safe-area inset (for notched/dynamic-island
             devices) with the breakpoint baseline so the responsive spacing
             still applies on devices without a safe area. */}
-        <div className="z-50 w-full px-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] sm:px-4 sm:pt-[calc(env(safe-area-inset-top)+0.75rem)] md:px-8 md:pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-12">
+        <div className="z-50 w-full px-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] max-[479px]:pt-[calc(env(safe-area-inset-top)+1.75rem)] sm:px-4 sm:pt-[calc(env(safe-area-inset-top)+0.75rem)] md:px-8 md:pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-12">
           <LiveMaintenanceHeader />
         </div>
 

@@ -38,7 +38,7 @@ const getIcon = (icon, small = false) => {
   }
 };
 
-const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index }) => {
+const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index, visible = true }) => {
 
   // xs-mobile two-column layout button
   if (isMobileColumn) {
@@ -47,15 +47,25 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.6 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.35, delay, type: 'tween', ease: 'easeOut' }}
-        className="cursor-pointer"
+        // Drive the reveal from the parent's `visible` prop instead of
+        // relying on the component being mounted/unmounted. The button
+        // is always in the DOM (so its layout space is reserved from
+        // the start), and only its opacity/scale change when it should
+        // appear. While invisible: pointer-events-none blocks mouse,
+        // tabIndex={-1} removes it from the keyboard tab order, and
+        // aria-hidden hides it from the AT tree — together that makes
+        // the not-yet-revealed buttons truly inert.
+        animate={visible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
+        transition={{ duration: 0.35, delay: visible ? delay : 0, type: 'tween', ease: 'easeOut' }}
+        className={`cursor-pointer ${visible ? '' : 'pointer-events-none'}`}
+        aria-hidden={!visible}
       >
         <a
           href={link}
           target={newTab ? '_blank' : '_self'}
           aria-label={label}
           name={label}
+          tabIndex={visible ? 0 : -1}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           className="group nav-button custom-bg flex items-center justify-center rounded-full transition-all duration-300"
