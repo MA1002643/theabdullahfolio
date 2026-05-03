@@ -1,0 +1,72 @@
+name: 📚 Documentation improvement
+description: Track gaps, inaccuracies, or expansions for any markdown or in-code documentation.
+title: "docs: <short description>"
+labels: ["documentation", "needs-triage"]
+assignees: ["MA1002643"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For documentation work — README content, governance files, contributing guide, or in-code comments that mislead or are missing. For implementation requests use the feature template instead.
+
+  - type: input
+    id: location
+    attributes:
+      label: Doc location
+      description: File path or URL. If it's in-code, include the line number.
+      placeholder: "README.md, CONTRIBUTING.md#prerequisites, src/utils/workSignal.js:103"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of issue
+      options:
+        - Missing — content that should exist doesn't
+        - Inaccurate — content exists but is wrong / out of date
+        - Unclear — content exists but is hard to follow
+        - Duplicate — same info repeated in multiple places
+        - Broken link / reference
+        - Style / formatting only
+    validations:
+      required: true
+
+  - type: textarea
+    id: gap
+    attributes:
+      label: Gap identified
+      description: What's missing, wrong, or unclear? Quote the current text if applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested text changes
+      description: Proposed wording. Markdown is fine — paste a diff or a rewritten passage.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Primary audience for this doc
+      description: Who is this content for? Helps calibrate tone and depth.
+      options:
+        - New contributor (just landed in the repo)
+        - Returning contributor / reviewer
+        - Maintainer
+        - End user / visitor
+        - Recruiter / portfolio reviewer
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Related issues, why this matters, where you got stuck if you tried following the current docs.
+    validations:
+      required: false

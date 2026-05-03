@@ -1,0 +1,94 @@
+# Issue triage automation.
+#
+# Issue templates already apply their own labels (bug, enhancement, ui-ux,
+# documentation, security-redirect) and assign the maintainer, so this
+# workflow's job is the things templates can't do:
+#
+#   1. Greet first-time contributors when they open an issue or PR, so they
+#      know the repo is alive and what to expect next.
+#   2. Auto-label PRs by the path globs they touch (matches the area
+#      ownership in CODEOWNERS / MAINTAINERS.md).
+#
+# Permissions are set narrowly per job — only the scopes each step needs.
+
+name: Issue triage
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    # `opened`           — initial PR creation; needed for both jobs.
+    # `synchronize`      — fired on every new commit pushed to the PR;
+    #                      the changed-file set can grow or shrink, so
+    #                      labels must re-run to stay in sync.
+    # `reopened`         — closed PR reopened; same staleness risk as
+    #                      synchronize.
+    # `ready_for_review` — draft → ready transition; reviewers see the
+    #                      PR for the first time, labels should be fresh.
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  welcome-first-time-contributor:
+    # First-interaction welcome only makes sense on the initial open —
+    # don't re-greet on subsequent commits or reopens. `github.event.action`
+    # is `'opened'` for both `issues.opened` and `pull_request_target.opened`,
+    # so this single condition covers both surfaces.
+    if: github.event.action == 'opened'
+    name: Welcome first-time contributors
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Post welcome comment on first issue / PR
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 Thanks for opening your first issue here.
+
+            A few quick pointers so this gets resolved fast:
+
+            - Most issue templates automatically apply a `needs-triage`
+              label so the maintainer can find this. Expect a response
+              within ~7 days ([MAINTAINERS.md](https://github.com/${{ github.repository }}/blob/main/MAINTAINERS.md#availability-and-response-expectations)).
+            - If you opened this for a security vulnerability, please
+              **delete this issue** and use a [private security advisory](https://github.com/${{ github.repository }}/security/advisories/new)
+              instead. Public issues for vulnerabilities give attackers a
+              head start.
+            - For general questions, see [SUPPORT.md](https://github.com/${{ github.repository }}/blob/main/.github/SUPPORT.md).
+
+            If you'd like to know how decisions are made on this project,
+            see [GOVERNANCE.md](https://github.com/${{ github.repository }}/blob/main/GOVERNANCE.md).
+          pr-message: |
+            👋 Thanks for opening your first pull request here.
+
+            Before review:
+
+            - Make sure every section of the PR template is filled in.
+            - `npm run lint` and `npm run build` should both pass — CI
+              will check these.
+            - For UI changes, screenshots at desktop, tablet, **and**
+              mobile (≤ 479px) make review much faster.
+
+            CodeRabbit will leave automated review comments shortly. The
+            maintainer will follow up — typical turnaround is within
+            7 days per [MAINTAINERS.md](https://github.com/${{ github.repository }}/blob/main/MAINTAINERS.md#availability-and-response-expectations).
+
+  label-pr-by-area:
+    # Only PRs need path-based labelling; issues are labelled by template.
+    if: github.event_name == 'pull_request_target'
+    name: Label PR by changed paths
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Apply labels matching paths in .github/labeler.yml
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          # If .github/labeler.yml is missing the action exits cleanly
+          # rather than failing — safe to enable before that file lands.
+          configuration-path: .github/labeler.yml
+          sync-labels: true

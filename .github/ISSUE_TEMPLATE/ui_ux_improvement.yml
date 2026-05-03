@@ -1,0 +1,107 @@
+name: 🎨 UI / UX improvement
+description: Visual or interaction refinement — animation timing, layout polish, motion behaviour, responsiveness.
+title: "ui: <short description>"
+labels: ["ui-ux", "needs-triage"]
+assignees: ["MA1002643"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For visual/interaction refinements where the feature works but doesn't feel right yet — animations, layout polish, hover states, motion timing, breakpoint behaviour. For "this is broken" use the bug template; for "this should exist" use the feature request.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checks
+      options:
+        - label: I've reproduced this against the latest commit on `main`.
+          required: true
+        - label: I've searched existing issues and this isn't a duplicate.
+          required: true
+        - label: The feature works — this is about polish, not a defect.
+          required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current UI / UX problem
+      description: What feels off right now? Be specific — "the entrance feels rushed" beats "it's bad."
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired behaviour
+      description: How should it look or feel instead? Reference timings, easings, layouts, spacings if you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motion
+    attributes:
+      label: Motion / animation expectations
+      description: Specific timing (ms), easing curves, sequencing, stagger behaviour. State explicitly if motion-reduce should bypass the animation.
+      placeholder: |
+        - Duration: 350ms
+        - Easing: ease-out
+        - Stagger: 80ms between children
+        - Reduced motion: opacity-only fade, no transform
+    validations:
+      required: false
+
+  - type: dropdown
+    id: breakpoints
+    attributes:
+      label: Affected breakpoints
+      description: Which viewports does this proposal apply to? Select all that should change.
+      multiple: true
+      options:
+        - Mobile narrow (≤ 479px) — the project's xs threshold
+        - Mobile wide (480px – 639px)
+        - Tablet (640px – 1023px)
+        - Desktop (≥ 1024px)
+    validations:
+      required: true
+
+  - type: textarea
+    id: responsiveness
+    attributes:
+      label: Responsiveness requirements
+      description: Should the change scale with viewport (e.g. via clamp/vh/vw)? Should specific sizes be fixed? Should anything stay identical across breakpoints?
+    validations:
+      required: false
+
+  - type: textarea
+    id: accessibility
+    attributes:
+      label: Accessibility considerations
+      description: Contrast against the warm/dark backgrounds, screen-reader announcements, keyboard tab order, focus visibility, prefers-reduced-motion handling.
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Reference screenshots / videos
+      description: Drop annotated images or short clips. Side-by-side current-vs-desired is ideal.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: no_regression
+    attributes:
+      label: No-regression checklist
+      description: Confirm the change won't break the existing visual language.
+      options:
+        - label: Doesn't change the warm-orange / amethyst neon palette.
+          required: false
+        - label: Doesn't break the live-header rotation cadence.
+          required: false
+        - label: Doesn't change the laptop's vertical centering relative to the viewport.
+          required: false
+        - label: Doesn't introduce text-shadow on any element where it was deliberately removed.
+          required: false
+        - label: Respects `prefers-reduced-motion` for any new animation.
+          required: false

@@ -1,0 +1,70 @@
+# CODEOWNERS — path-level review ownership.
+#
+# GitHub uses this file to auto-request reviews on pull requests. The owner
+# of every path that a PR touches is added as a reviewer automatically.
+#
+# Rules (most-specific match wins):
+#   *               <owner>          fallback for everything
+#   /path/          <owner>          everything in /path/ and below
+#   /path/file.ext  <owner>          one specific file
+#   *.ext           <owner>          all files with this extension, anywhere
+#
+# Mirrors the ownership table in MAINTAINERS.md. If you change ownership of
+# an area, update both files.
+
+# ─── Default ownership ──────────────────────────────────────────────────────
+# Everything not otherwise specified falls to the maintainer.
+*                                       @MA1002643
+
+# ─── Application code ───────────────────────────────────────────────────────
+/src/                                   @MA1002643
+/src/app/                               @MA1002643
+/src/app/api/                           @MA1002643
+/src/app/globals.css                    @MA1002643
+
+/src/components/about/                  @MA1002643
+/src/components/home/                   @MA1002643
+/src/components/navigation/             @MA1002643
+/src/components/projects/               @MA1002643
+/src/components/project-detail/         @MA1002643
+/src/components/qualifications/         @MA1002643
+/src/components/contact/                @MA1002643
+
+/src/utils/                             @MA1002643
+
+# ─── Static assets ──────────────────────────────────────────────────────────
+/public/                                @MA1002643
+
+# ─── Repository governance & community health ──────────────────────────────
+# Changes to these files imply policy / process implications — see
+# GOVERNANCE.md for the approval rules that apply.
+/LICENSE                                @MA1002643
+/CODE_OF_CONDUCT.md                     @MA1002643
+/CONTRIBUTING.md                        @MA1002643
+/SECURITY.md                            @MA1002643
+/GOVERNANCE.md                          @MA1002643
+/MAINTAINERS.md                         @MA1002643
+/CHANGELOG.md                           @MA1002643
+/RELEASE_TEMPLATE.md                    @MA1002643
+/README.md                              @MA1002643
+
+/.github/                               @MA1002643
+/.github/CODEOWNERS                     @MA1002643
+/.github/ISSUE_TEMPLATE/                @MA1002643
+/.github/PULL_REQUEST_TEMPLATE.md       @MA1002643
+/.github/SUPPORT.md                     @MA1002643
+/.github/coderabbit.yml                 @MA1002643
+/.github/workflows/                     @MA1002643
+
+# ─── Build, deploy, dependency manifests ────────────────────────────────────
+/package.json                           @MA1002643
+/package-lock.json                      @MA1002643
+/next.config.mjs                        @MA1002643
+/next.config.js                         @MA1002643
+/tailwind.config.js                     @MA1002643
+/postcss.config.mjs                     @MA1002643
+/postcss.config.js                      @MA1002643
+/jsconfig.json                          @MA1002643
+/tsconfig.json                          @MA1002643
+/.eslintrc.json                         @MA1002643
+/vercel.json                            @MA1002643

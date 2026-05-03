@@ -1,0 +1,110 @@
+# Stale issue / PR cleanup.
+#
+# Marks issues and PRs as stale after a period of inactivity, then closes
+# them after a further grace period. Critical / security / pinned items
+# are exempt.
+#
+# Cadence: daily at 03:30 UTC. Off-peak so it doesn't compete with
+# on-demand workflows for runners.
+
+name: Stale
+
+on:
+  schedule:
+    # Every day at 03:30 UTC.
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+    # Allow manual runs from the Actions tab for ad-hoc cleanup.
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark and close stale items
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # ─── Cadence ──────────────────────────────────────────────────
+          # Issues: mark stale after 60 days, close 14 days later.
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          # PRs: tighter cadence — branches accumulate fast.
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+
+          # ─── Labels & messages ────────────────────────────────────────
+          stale-issue-label: stale
+          stale-pr-label: stale
+          stale-issue-message: |
+            This issue has been inactive for 60 days. It will be closed
+            in 14 days unless there is further activity (a comment, a
+            referencing PR, or removing the `stale` label).
+
+            If this is still relevant, leave a quick comment with
+            current status. If it's superseded or no longer reproducible,
+            feel free to close it.
+          close-issue-message: |
+            Closing this issue due to extended inactivity. If the
+            underlying problem still exists, please reopen with fresh
+            reproduction steps against the latest commit on `main`.
+          stale-pr-message: |
+            This pull request has been inactive for 30 days. It will be
+            closed in 14 days unless there is further activity.
+
+            If you'd like to keep it open, push a commit, leave a comment,
+            or remove the `stale` label.
+          close-pr-message: |
+            Closing this pull request due to extended inactivity. The
+            branch is preserved and the PR can be reopened by pushing
+            new commits.
+
+          # ─── Exemptions ───────────────────────────────────────────────
+          # Items with any of these labels are NEVER marked stale or
+          # auto-closed. Adding labels here is the standard way to opt
+          # something out of stale management.
+          exempt-issue-labels: >-
+            security,
+            security-redirect,
+            critical,
+            pinned,
+            major-change,
+            in-progress,
+            needs-discussion,
+            help-wanted,
+            good-first-issue
+          exempt-pr-labels: >-
+            security,
+            critical,
+            pinned,
+            in-progress,
+            needs-discussion
+
+          # Milestones often track multi-week work; assigned milestones
+          # mean someone has committed to ship it. Don't auto-stale those.
+          exempt-all-milestones: true
+
+          # ─── Behaviour ────────────────────────────────────────────────
+          # Any activity on a stale item — a comment, edit, label change,
+          # assignee change, or commit — removes the `stale` label and
+          # restarts the inactivity clock. The action can't distinguish a
+          # substantive update from a drive-by ping; this is a deliberate
+          # trade-off in favour of false-negatives (something that should
+          # have stayed stale stays open) over false-positives (something
+          # that's actively being worked on gets auto-closed). Manually
+          # re-add `stale` if a comment is just noise.
+          remove-stale-when-updated: true
+          remove-issue-stale-when-updated: true
+          remove-pr-stale-when-updated: true
+
+          # Cap how many items the action processes per run so a backlog
+          # doesn't surprise-close everything in one go on first
+          # activation.
+          operations-per-run: 100
+
+          # Run in the order an actual human would: oldest first.
+          ascending: true

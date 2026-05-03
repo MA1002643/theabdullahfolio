@@ -1,0 +1,115 @@
+name: ✨ Feature request
+description: Propose a new feature or enhancement with a clear value statement.
+title: "feat: <short description>"
+labels: ["enhancement", "needs-triage"]
+assignees: ["MA1002643"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing an improvement. Strong feature requests start with a real user-facing problem, not a solution looking for a problem. Walk through the fields below to make the case.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checks
+      options:
+        - label: I've searched existing issues and this proposal isn't a duplicate.
+          required: true
+        - label: This is a feature/enhancement request, not a bug report.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What user-facing problem does this solve? Lead with the user's experience, not the implementation.
+      placeholder: "When viewing the site on mobile in landscape mode, the laptop image overflows the viewport and the icons clip into it."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would the feature work from a user's perspective?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches could solve this? Why is the proposed one preferred?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: Which area of the project does this primarily touch?
+      options:
+        - UI / visual design
+        - Animation / motion
+        - API route
+        - Performance
+        - Accessibility (a11y)
+        - Developer experience (DX)
+        - Documentation
+        - Build / CI
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (suggested)
+      description: How urgent does this feel to the reporter? Final priority is set during triage.
+      options:
+        - Low — nice to have, no near-term need
+        - Medium — meaningful improvement, not blocking
+        - High — clear value, should ship soon
+        - Critical — needed before next major release
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: user_impact
+    attributes:
+      label: User impact
+      description: Who benefits and how? Roughly how many users / sessions are affected?
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical considerations
+      description: New dependencies, breaking changes, performance trade-offs, accessibility implications, SEO impact, etc.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: Concrete, verifiable conditions that mean this is "done."
+      value: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] No regression on existing pages at desktop, tablet, and mobile (≤ 479px).
+        - [ ] Documentation updated if behaviour changes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References / inspiration
+      description: Links to similar implementations, design references, screenshots, related issues.
+    validations:
+      required: false

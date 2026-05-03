@@ -1,0 +1,175 @@
+name: 🐛 Bug report
+description: A reproducible defect in the deployed site or local dev environment.
+title: "bug: <short description>"
+labels: ["bug", "needs-triage"]
+assignees: ["MA1002643"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. The more concrete and reproducible this report is, the faster it gets fixed. Please fill in every required field.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checks
+      description: Confirm before continuing.
+      options:
+        - label: I've reproduced this against the latest commit on `main` (not just an old deploy).
+          required: true
+        - label: I've searched existing issues and this isn't a duplicate.
+          required: true
+        - label: This is a defect (something broken), not a feature request or design improvement.
+          required: true
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence describing what's broken.
+      placeholder: "Live header shows 'MAINTENANCE' on prod even when GitHub has open PRs."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happens? Include exact wording of any error or unexpected output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: A numbered list someone else can follow to see the same bug.
+      value: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How bad is it?
+      options:
+        - Low — cosmetic, no functional impact
+        - Medium — feature works but with noticeable issues
+        - High — feature broken or wrong on a key user path
+        - Critical — site down, data loss, security implication, or blocks every user
+      default: 1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope / affected area
+      description: Which part of the site is affected?
+      multiple: true
+      options:
+        - Home page
+        - About page
+        - Projects index
+        - Project detail page
+        - Qualifications page
+        - Contact page
+        - Live maintenance header
+        - Navigation (orbital / mobile column)
+        - API route — work-status
+        - API route — github-stats
+        - API route — github-webhook
+        - API route — send-mail
+        - Build / CI / deployment
+        - Documentation
+        - Other (describe in summary)
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & version
+      placeholder: "Chrome 138, Safari 18, Firefox 130, etc."
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS & version
+      placeholder: "macOS 15.4, Windows 11 24H2, iOS 18.1, etc."
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device / form factor
+      placeholder: "MacBook Pro 14\" (desktop), iPhone 14 Pro (mobile, ≤479px), iPad Air (tablet)"
+    validations:
+      required: true
+
+  - type: input
+    id: viewport
+    attributes:
+      label: Viewport width when bug occurred
+      description: Especially relevant for layout bugs. Use DevTools' device toolbar if needed.
+      placeholder: "412px (Pixel 7), 1280px, etc."
+    validations:
+      required: false
+
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots / video
+      description: |
+        Drop images or short clips here. For UI bugs, this is usually the fastest signal.
+
+        ⚠️ **Before uploading:** crop or blur anything that shows API keys, session tokens, personal data (real emails, addresses, names of non-public people), or internal infrastructure details.
+    validations:
+      required: false
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Browser console output
+      description: |
+        Open DevTools → Console. Paste any errors or warnings shown when the bug occurs. Wrap in triple backticks.
+
+        ⚠️ **Redact before pasting:** auth headers (`Authorization: Bearer …`), cookies, API keys in request URLs, and any personal data (real emails, user IDs, IP addresses). Replace sensitive values with `[REDACTED]`.
+    validations:
+      required: false
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of done
+      description: How will we verify this is fixed?
+      value: |
+        - [ ] Steps above no longer reproduce the bug.
+        - [ ] No regression on the affected scope at desktop, tablet, and mobile (≤ 479px).
+        - [ ] No new console errors or warnings introduced.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help — when the bug started, related PRs, suspected root cause, attempted workarounds.
+    validations:
+      required: false
