@@ -68,8 +68,8 @@ Targets, not guarantees:
 
 Critical-severity security reports are prioritised over everything else.
 During heavy work cycles or holidays, responses may slip — see
-[GOVERNANCE.md](GOVERNANCE.md) for how the project handles maintainer
-unavailability.
+[Maintainer unavailability in GOVERNANCE.md](GOVERNANCE.md#maintainer-unavailability)
+for how planned and unplanned absences are handled.
 
 ## Becoming a collaborator
 

@@ -38,7 +38,7 @@ the maintainer's discretion to mark coherent release boundaries.
   `MAINTAINERS.md`, `CHANGELOG.md`, `RELEASE_TEMPLATE.md`, full
   `.github/ISSUE_TEMPLATE/` set (bug, feature, UI/UX, docs, security
   redirect), `PULL_REQUEST_TEMPLATE.md`, `SUPPORT.md`, `CODEOWNERS`,
-  `FUNDING.yml`, and stale + issue-triage workflows.
+  and stale + issue-triage workflows.
 - Live maintenance header (`LiveMaintenanceHeader`) with `/api/work-status`
   endpoint, GitHub-Projects-driven state computation, optional OpenAI
   message refinement, and 30-second polling cadence.

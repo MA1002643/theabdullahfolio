@@ -147,6 +147,72 @@ Personal disputes — as opposed to technical disagreements — are out of scope
 for this document. Those are governed by the
 [Code of Conduct](CODE_OF_CONDUCT.md) and its enforcement procedures.
 
+## Maintainer unavailability
+
+This is a part-time, single-maintainer project. The maintainer takes regular
+time off and occasionally drops out of the loop for a week or more during
+heavy work cycles, illness, or travel. This section sets expectations for
+what happens during those windows.
+
+### Planned absences
+
+For absences expected to last **longer than one week**, the maintainer will:
+
+1. Pin a GitHub issue titled `Notice: maintainer offline YYYY-MM-DD → YYYY-MM-DD`
+   with the date range and any partial-coverage info.
+2. Apply the `pinned` label so the stale workflow's exemption keeps it
+   surfaced for the duration.
+
+Issues and PRs continue to accept submissions during this window — they
+simply aren't triaged or reviewed until the maintainer returns.
+
+### Unplanned absences
+
+Without prior notice, the response-target table in
+[MAINTAINERS.md](MAINTAINERS.md) silently slips. Reporters who haven't
+received an acknowledgement after **2x the published target** can assume an
+unplanned absence is in effect. No escalation path exists beyond patience —
+this is a deliberate trade-off of running the project solo.
+
+### Critical security during absences
+
+Security reports continue to land in `team@ma.codes` and the GitHub Security
+Advisory queue regardless of maintainer availability. Acknowledgement
+timeline may slip, but no security report is silently dropped — the email
+alias and advisory queue both persist incoming reports until they're read.
+
+If a reporter believes a critical vulnerability is being actively exploited
+and no acknowledgement has arrived after **7 calendar days**, GitHub's
+responsible-disclosure window in [SECURITY.md](SECURITY.md) gives them a
+documented path to escalate.
+
+### Site availability during absences
+
+The deployed site at [ma.codes](https://ma.codes) continues to function
+without maintainer intervention. The Vercel deployment, edge cache, and
+GitHub Actions (CI, stale management, issue triage workflow) all run
+autonomously. The live maintenance header continues to reflect actual
+GitHub activity via the daily cron in `vercel.json`. Visitors notice no
+disruption.
+
+### Permanent unavailability
+
+If the maintainer becomes permanently unable to maintain the project —
+including succession on death or long-term incapacity — the project's
+intent is one of:
+
+1. **Hand off** to a designated successor, named in
+   [MAINTAINERS.md](MAINTAINERS.md) under "Active maintainers" if/when one
+   exists.
+2. **Sunset** the repository: remove production deployments, archive the
+   GitHub repo with a final notice in the README explaining its
+   maintained-until date, leave the source available under the existing
+   [LICENSE](LICENSE).
+
+No formal succession plan is in place today. This section will be updated
+when one is established, following the **licensing / governance changes**
+row of the approval table above.
+
 ## Amending this document
 
 Changes to this file follow the **licensing / governance changes** row of the
