@@ -33,12 +33,21 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ### Added
 
-- Repository governance and community-health suite: `LICENSE`,
-  `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`, `GOVERNANCE.md`,
-  `MAINTAINERS.md`, `CHANGELOG.md`, `RELEASE_TEMPLATE.md`, full
-  `.github/ISSUE_TEMPLATE/` set (bug, feature, UI/UX, docs, security
-  redirect), `PULL_REQUEST_TEMPLATE.md`, `SUPPORT.md`, `CODEOWNERS`,
-  and stale + issue-triage workflows.
+- Repository governance and community-health suite: `CODE_OF_CONDUCT.md`,
+  `CONTRIBUTING.md`, `SECURITY.md`, `GOVERNANCE.md`, `MAINTAINERS.md`,
+  `CHANGELOG.md`, `RELEASE_TEMPLATE.md`, full `.github/ISSUE_TEMPLATE/`
+  set (bug, feature, UI/UX, docs, security redirect),
+  `PULL_REQUEST_TEMPLATE.md`, `SUPPORT.md`, `CODEOWNERS`, and stale +
+  issue-triage workflows. The existing proprietary `LICENSE` was kept
+  unchanged.
+- `GOVERNANCE.md` "Maintainer unavailability" section documenting
+  planned and unplanned absences, security-report continuity during
+  absences, site availability under autopilot, and a hand-off / sunset
+  framework for permanent unavailability.
+- `SECURITY.md` "Escalation if reports go unanswered" section with
+  three time-tiered recourse paths (7-day alternate-channel contact,
+  30-day CERT/CC coordination, 90-day responsible-disclosure window)
+  and a 48-hour compressed timeline for active-exploitation cases.
 - Live maintenance header (`LiveMaintenanceHeader`) with `/api/work-status`
   endpoint, GitHub-Projects-driven state computation, optional OpenAI
   message refinement, and 30-second polling cadence.
@@ -48,6 +57,17 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ### Changed
 
+- Maintainer contact channel migrated from a personal Gmail to
+  `team@ma.codes` (a Cloudflare Email Routing alias forwarding to the
+  maintainer's inbox). Updated in `SECURITY.md` and `CODE_OF_CONDUCT.md`.
+- GitHub label inventory standardised: 22 new labels added (status /
+  triage, severity, the `area:*` family covering every owned directory,
+  plus `dependencies` and `config`), and four spaced labels renamed to
+  dash form (`good first issue` → `good-first-issue`, `help wanted` →
+  `help-wanted`, `in progress` → `in-progress`, `review needed` →
+  `review-needed`) for consistency with workflow references. The
+  `enhancement` label description was clarified to differentiate it
+  from the kept-as-distinct `feature` label.
 - Architect-of-Enchantment heading reworked for cleaner zoomed-in
   rendering: warm-orange fill, font-smoothing properties, no text-shadow
   per design constraint.
@@ -57,6 +77,19 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ### Fixed
 
+- Breakpoint range definitions unified across `CONTRIBUTING.md`,
+  `PULL_REQUEST_TEMPLATE.md`, and `.github/ISSUE_TEMPLATE/ui_ux_improvement.yml` —
+  previously `CONTRIBUTING.md` said `tablet (≤ 768px)` while the
+  templates said `tablet (640–1023px)`.
+- `.github/ISSUE_TEMPLATE/ui_ux_improvement.yml` `breakpoints` field
+  converted from `checkboxes` (with invalid block-level
+  `validations.required`) to `dropdown` with `multiple: true` so GitHub
+  accepts the form schema.
+- `.github/workflows/issue-triage.yml` `pull_request_target` triggers
+  expanded from `[opened]` to `[opened, synchronize, reopened, ready_for_review]`
+  so path-based PR labels stay in sync with the latest diff across the
+  PR lifetime, with the welcome job gated by `github.event.action == 'opened'`
+  to avoid re-greeting on every push.
 - `/api/work-status` and `/api/github-webhook` GraphQL fetches now use
   `AbortController`-based timeouts so a slow GitHub upstream can't burn
   the function's full execution window.
