@@ -51,16 +51,17 @@ body:
     validations:
       required: false
 
-  - type: checkboxes
+  - type: dropdown
     id: breakpoints
     attributes:
       label: Affected breakpoints
-      description: Which viewports does this proposal apply to? Tick all that should change.
+      description: Which viewports does this proposal apply to? Select all that should change.
+      multiple: true
       options:
-        - label: Mobile narrow (≤ 479px) — the project's xs threshold
-        - label: Mobile wide (480px – 639px)
-        - label: Tablet (640px – 1023px)
-        - label: Desktop (≥ 1024px)
+        - Mobile narrow (≤ 479px) — the project's xs threshold
+        - Mobile wide (480px – 639px)
+        - Tablet (640px – 1023px)
+        - Desktop (≥ 1024px)
     validations:
       required: true
 
