@@ -77,6 +77,31 @@ Resolution targets by severity:
 
 These are targets, not guarantees — complex issues may take longer.
 
+## Escalation if reports go unanswered
+
+The response targets above are best-effort, set by a single part-time
+maintainer. If they slip significantly, you have recourse — this section
+documents the path.
+
+| Time since report | Recommended action |
+| --- | --- |
+| **7 days, no acknowledgement** | Try the alternate channel — email if you used the advisory queue first, advisory queue if you used email. Combined silence on both usually means the maintainer is offline; see [Maintainer unavailability in GOVERNANCE.md](GOVERNANCE.md#maintainer-unavailability). |
+| **30 days, no triage** | Add a polite follow-up comment on the original advisory. For vulnerabilities that affect users beyond this site (e.g. an exploitable pattern in a dependency), you may also coordinate with a CERT/CC — your national cyber-security agency or CISA — who can apply institutional pressure for a response. |
+| **90 days, no fix** | The industry-norm responsible-disclosure window. You're within professional norms to publicly disclose. We ask that you (a) give the maintainer at least 24 hours' notice of the disclosure date, (b) limit the public post to what users need to assess and mitigate risk — don't publish weaponised exploit code, and (c) credit the report and fix history fairly. |
+
+**Active exploitation in the wild** compresses every timeline above. Mark
+the report `URGENT — active exploitation` in the subject line or advisory
+title and use **both** channels simultaneously. If no response arrives
+within **48 hours** at that severity, you may proceed with public
+disclosure on a much shorter timeline than the 90-day norm.
+
+The maintainer's commitment in return for this escalation framework: every
+report received via the documented channels is logged on receipt; nothing
+is silently dropped. If you've followed the escalation steps and still
+believe your report has been ignored, that is a bug in this policy — open
+an issue against the policy itself (not the underlying vulnerability) so
+it can be improved.
+
 ## Disclosure Policy
 
 This project follows **coordinated disclosure**:

@@ -181,10 +181,11 @@ Advisory queue regardless of maintainer availability. Acknowledgement
 timeline may slip, but no security report is silently dropped — the email
 alias and advisory queue both persist incoming reports until they're read.
 
-If a reporter believes a critical vulnerability is being actively exploited
-and no acknowledgement has arrived after **7 calendar days**, GitHub's
-responsible-disclosure window in [SECURITY.md](SECURITY.md) gives them a
-documented path to escalate.
+If reports go unanswered, the [escalation section in SECURITY.md](SECURITY.md#escalation-if-reports-go-unanswered)
+documents the recourse — alternate-channel contact at the 7-day mark,
+coordinated escalation through a CERT/CC at 30 days, and the
+industry-norm 90-day responsible-disclosure window. Active-exploitation
+cases compress those timelines to a 48-hour window.
 
 ### Site availability during absences
 
