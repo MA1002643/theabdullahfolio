@@ -89,9 +89,14 @@ jobs:
           exempt-all-milestones: true
 
           # ─── Behaviour ────────────────────────────────────────────────
-          # Don't reset the staleness clock on a comment that doesn't add
-          # new information — but DO reset on label or assignee changes
-          # (those signal active triage).
+          # Any activity on a stale item — a comment, edit, label change,
+          # assignee change, or commit — removes the `stale` label and
+          # restarts the inactivity clock. The action can't distinguish a
+          # substantive update from a drive-by ping; this is a deliberate
+          # trade-off in favour of false-negatives (something that should
+          # have stayed stale stays open) over false-positives (something
+          # that's actively being worked on gets auto-closed). Manually
+          # re-add `stale` if a comment is just noise.
           remove-stale-when-updated: true
           remove-issue-stale-when-updated: true
           remove-pr-stale-when-updated: true

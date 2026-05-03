@@ -68,7 +68,7 @@ Always branch off `main`. Never push directly to `main` — use a PR.
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 <type>(<scope>): <summary>
 
 <optional body>
@@ -78,7 +78,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 Examples:
 
-```
+```text
 feat(home): add live maintenance header polling /api/work-status
 fix(navigation): align mobile icons to laptop center, not viewport
 chore(deps): bump framer-motion to 11.x
@@ -119,7 +119,7 @@ A PR is ready to merge when:
 - [ ] `npm run lint` passes with no new warnings.
 - [ ] `npm run build` succeeds.
 - [ ] Browser console shows no new errors or warnings on affected pages.
-- [ ] Mobile (≤ 479px), tablet (≤ 768px), and desktop layouts all verified.
+- [ ] Verified at desktop (≥ 1024px), tablet (640–1023px), and mobile (≤ 479px) breakpoints.
 - [ ] Accessibility quick-check done (keyboard tab order, screen-reader labels).
 - [ ] Documentation updated where behavior or APIs change.
 - [ ] CodeRabbit + maintainer review approved.

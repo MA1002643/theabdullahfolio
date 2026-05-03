@@ -17,10 +17,23 @@ on:
   issues:
     types: [opened]
   pull_request_target:
-    types: [opened]
+    # `opened`           — initial PR creation; needed for both jobs.
+    # `synchronize`      — fired on every new commit pushed to the PR;
+    #                      the changed-file set can grow or shrink, so
+    #                      labels must re-run to stay in sync.
+    # `reopened`         — closed PR reopened; same staleness risk as
+    #                      synchronize.
+    # `ready_for_review` — draft → ready transition; reviewers see the
+    #                      PR for the first time, labels should be fresh.
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   welcome-first-time-contributor:
+    # First-interaction welcome only makes sense on the initial open —
+    # don't re-greet on subsequent commits or reopens. `github.event.action`
+    # is `'opened'` for both `issues.opened` and `pull_request_target.opened`,
+    # so this single condition covers both surfaces.
+    if: github.event.action == 'opened'
     name: Welcome first-time contributors
     runs-on: ubuntu-latest
     permissions:
@@ -36,9 +49,9 @@ jobs:
 
             A few quick pointers so this gets resolved fast:
 
-            - You should see a `needs-triage` label on this issue — that's
-              automatic. The maintainer will respond within ~7 days
-              ([MAINTAINERS.md](https://github.com/${{ github.repository }}/blob/main/MAINTAINERS.md#availability-and-response-expectations)).
+            - Most issue templates automatically apply a `needs-triage`
+              label so the maintainer can find this. Expect a response
+              within ~7 days ([MAINTAINERS.md](https://github.com/${{ github.repository }}/blob/main/MAINTAINERS.md#availability-and-response-expectations)).
             - If you opened this for a security vulnerability, please
               **delete this issue** and use a [private security advisory](https://github.com/${{ github.repository }}/security/advisories/new)
               instead. Public issues for vulnerabilities give attackers a

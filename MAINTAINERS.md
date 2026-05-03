@@ -12,7 +12,7 @@ ownership in a machine-readable form GitHub uses to auto-request reviews.
 - **GitHub:** [@MA1002643](https://github.com/MA1002643)
 - **Role:** Maintainer (sole — see [GOVERNANCE.md](GOVERNANCE.md))
 - **Contact:** [team@ma.codes](mailto:team@ma.codes)
-- **Time zone:** GMT (UK)
+- **Time zone:** Europe/London (UTC±00:00 in winter, UTC+01:00 in summer)
 - **Availability:** Part-time, evenings and weekends (this is a personal
   project alongside other commitments).
 
