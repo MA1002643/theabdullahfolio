@@ -7,7 +7,7 @@ Title format: `vX.Y.Z — short, evocative tag`
 Tag format:   `vX.Y.Z`
 -->
 
-# vX.Y.Z — <short, evocative tag>
+# vX.Y.Z — `<short, evocative tag>`
 
 _Released YYYY-MM-DD_
 
