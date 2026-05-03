@@ -31,6 +31,8 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
+_Scope: changes shipped by the Repository Governance & Templates Suite (PR #81, closes #23)._
+
 ### Added
 
 - Repository governance and community-health suite: `CODE_OF_CONDUCT.md`,
@@ -48,12 +50,6 @@ the maintainer's discretion to mark coherent release boundaries.
   three time-tiered recourse paths (7-day alternate-channel contact,
   30-day CERT/CC coordination, 90-day responsible-disclosure window)
   and a 48-hour compressed timeline for active-exploitation cases.
-- Live maintenance header (`LiveMaintenanceHeader`) with `/api/work-status`
-  endpoint, GitHub-Projects-driven state computation, optional OpenAI
-  message refinement, and 30-second polling cadence.
-- xs-mobile (`≤ 479px`) two-column navigation with mirrored pair-based
-  reveal animation and pointer-events / tab-index gating during the
-  reveal.
 
 ### Changed
 
@@ -68,12 +64,6 @@ the maintainer's discretion to mark coherent release boundaries.
   `review-needed`) for consistency with workflow references. The
   `enhancement` label description was clarified to differentiate it
   from the kept-as-distinct `feature` label.
-- Architect-of-Enchantment heading reworked for cleaner zoomed-in
-  rendering: warm-orange fill, font-smoothing properties, no text-shadow
-  per design constraint.
-- Mobile navigation columns now anchor to the laptop's parent flex
-  container (not the viewport) so they auto-track the laptop's vertical
-  centre across screen heights.
 
 ### Fixed
 
@@ -90,19 +80,6 @@ the maintainer's discretion to mark coherent release boundaries.
   so path-based PR labels stay in sync with the latest diff across the
   PR lifetime, with the welcome job gated by `github.event.action == 'opened'`
   to avoid re-greeting on every push.
-- `/api/work-status` and `/api/github-webhook` GraphQL fetches now use
-  `AbortController`-based timeouts so a slow GitHub upstream can't burn
-  the function's full execution window.
-- `LiveMaintenanceHeader` polling protected against out-of-order responses
-  by combining a request-id sequence with `AbortController` cancellation.
-- `formatRelative()` switched from `Math.round` to `Math.floor` so
-  "X minutes ago" never overstates elapsed time (e.g. 59m31s no longer
-  reads as "1h ago").
-- `?bust=1` responses on `/api/work-status` now return
-  `Cache-Control: private, no-store, must-revalidate` so the edge cache
-  doesn't replay a stale bust within the 30-second window.
-- `top-[calc(50%-2vh)]` Tailwind arbitrary value corrected to
-  `top-[calc(50%_-_2vh)]` for spec-compliant CSS `calc()` syntax.
 
 ### Security
 
