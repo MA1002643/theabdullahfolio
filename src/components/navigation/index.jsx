@@ -94,7 +94,7 @@ const Navigation = ({ setHovered, hovered }) => {
             the laptop's parent flex line rather than on the viewport —
             keeps the icons aligned with the laptop regardless of where
             the header/headline push the laptop on different screens. */}
-        <div className="absolute left-2.5 top-[calc(50%-2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4">
+        <div className="absolute left-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4">
           {/* Always render all 4 buttons so the column reserves its full
               height from t=0. The reveal is done via the `visible` prop,
               which only animates opacity/scale (transforms don't affect
@@ -114,10 +114,10 @@ const Navigation = ({ setHovered, hovered }) => {
             />
           ))}
         </div>
-        {/* Right column: Github, My Past, LinkedIn, Resume.
+        {/* Right column: GitHub, My Past, LinkedIn, Resume.
             Mirrors the left column (also `absolute` so it tracks the
             laptop's vertical center, not the viewport's). */}
-        <div className="absolute right-2.5 top-[calc(50%-2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4">
+        <div className="absolute right-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4">
           {/* Same always-render pattern as the left column. */}
           {rightBtns.map((btn, idx) => (
             <NavButton
