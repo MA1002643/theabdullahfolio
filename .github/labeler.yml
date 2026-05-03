@@ -1,0 +1,95 @@
+# Configuration for actions/labeler@v5.
+#
+# Each top-level key is a label name. The value is a list of path globs;
+# when a PR touches a matching file, the label is applied automatically.
+#
+# Labels mirror the area ownership in MAINTAINERS.md so triage and
+# CODEOWNERS stay aligned.
+
+area:home:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/app/page.js'
+          - 'src/app/layout.js'
+          - 'src/components/home/**'
+
+area:about:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/app/(sub pages)/about/**'
+          - 'src/components/about/**'
+
+area:projects:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/app/(sub pages)/projects/**'
+          - 'src/components/projects/**'
+          - 'src/components/project-detail/**'
+
+area:qualifications:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/app/(sub pages)/qualifications/**'
+          - 'src/components/qualifications/**'
+
+area:contact:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/app/(sub pages)/contact/**'
+          - 'src/components/contact/**'
+
+area:navigation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/components/navigation/**'
+
+area:api:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/app/api/**'
+
+area:utils:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/utils/**'
+
+area:styling:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/app/globals.css'
+          - 'tailwind.config.js'
+          - 'postcss.config.*'
+
+area:assets:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'public/**'
+
+area:ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/labeler.yml'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'CHANGELOG.md'
+          - 'GOVERNANCE.md'
+          - 'MAINTAINERS.md'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'next.config.*'
+          - 'jsconfig.json'
+          - 'tsconfig.json'
+          - '.eslintrc.json'
+          - 'vercel.json'

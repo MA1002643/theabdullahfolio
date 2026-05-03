@@ -1,0 +1,81 @@
+name: 🔒 Security report (read first — do not file public issues for vulnerabilities)
+description: This form exists to redirect you. Real security reports go through SECURITY.md, not the public issue tracker.
+title: "[DO NOT USE FOR VULNERABILITIES]"
+labels: ["security-redirect"]
+assignees: ["MA1002643"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # ⚠️ Stop — do not file a public issue for a security vulnerability
+
+        Public GitHub issues are visible to everyone the moment they're filed. That gives attackers a head start before a fix can ship.
+
+        ## How to actually report a vulnerability
+
+        Choose one of these private channels:
+
+        ### 1. GitHub Security Advisory (preferred)
+
+        → **[Open a private advisory](https://github.com/MA1002643/theabdullahfolio/security/advisories/new)**
+
+        Visible only to the maintainer and people you choose to invite.
+
+        ### 2. Email
+
+        → **team@ma.codes** with `SECURITY` in the subject line.
+
+        Full details — what to include, response timelines, disclosure policy, out-of-scope items — are in [SECURITY.md](https://github.com/MA1002643/theabdullahfolio/blob/main/SECURITY.md).
+
+        ---
+
+        ## When this form is appropriate
+
+        Only fill in the fields below if your report is **not actually a vulnerability** — for example, you're proposing a security-flavoured improvement (rate limiting, CSP tightening, dependency hygiene) that has no exploit and is safe to discuss publicly. If in doubt, use the private channels above.
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: This is **not** an exploitable vulnerability or sensitive disclosure. (If it is, close this form and use SECURITY.md instead.)
+          required: true
+        - label: I've read SECURITY.md and confirmed this can be discussed publicly.
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Hardening proposal — improve defence-in-depth, no known exploit
+        - Dependency hygiene — outdated package with no known active CVE
+        - Documentation gap — SECURITY.md unclear or missing info
+        - Other safe-to-discuss security topic
+    validations:
+      required: true
+
+  - type: input
+    id: area
+    attributes:
+      label: Affected area
+      placeholder: "Headers (CSP), API route /api/work-status, dependency X, etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential impact
+      description: What's the worst plausible outcome if this stays unaddressed? (If your honest answer mentions a working exploit or sensitive data, stop and use SECURITY.md.)
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Any references, threat-model framing, or links that help triage.
+    validations:
+      required: false

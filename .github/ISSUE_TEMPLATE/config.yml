@@ -1,0 +1,16 @@
+# GitHub uses this file to configure the "New issue" page. Setting
+# blank_issues_enabled to false forces every reporter into one of the
+# structured forms in this directory — keeps the issue tracker tidy and
+# triage-friendly. The contact_links surface is for routing reporters
+# away from the tracker for cases that don't belong there.
+
+blank_issues_enabled: false
+
+contact_links:
+  - name: 🔒 Security vulnerability
+    url: https://github.com/MA1002643/theabdullahfolio/security/advisories/new
+    about: Report a security issue privately via GitHub Security Advisories. Do not file a public issue for vulnerabilities.
+
+  - name: 💬 Question or general support
+    url: https://github.com/MA1002643/theabdullahfolio/blob/main/.github/SUPPORT.md
+    about: Check SUPPORT.md for where to ask questions, find docs, and get help.
