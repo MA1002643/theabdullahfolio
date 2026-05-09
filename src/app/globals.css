@@ -18,6 +18,12 @@
     animation-play-state: paused;
   }
 
+  .loader-percent {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    font-feature-settings: 'tnum';
+  }
+
   .custom-bg-abt {
     @apply border border-solid;
     border-color: #ffcd5bcc;

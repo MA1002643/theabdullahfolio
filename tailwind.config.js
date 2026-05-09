@@ -124,6 +124,29 @@ module.exports = {
           "75%": { transform: "translateY(-6px) rotate(-2deg)" },
           "100%": { transform: "translateY(0) rotate(0deg)" },
         },
+        "logo-pulse-glow": {
+          "0%": {
+            transform: "scale(1)",
+            filter: "drop-shadow(0 0 0px #ff6d05)",
+          },
+          "50%": {
+            transform: "scale(1.12)",
+            filter:
+              "drop-shadow(0 0 30px #ff6d05) drop-shadow(0 0 60px rgba(255,109,5,0.5))",
+          },
+          "100%": {
+            transform: "scale(1.02)",
+            filter: "drop-shadow(0 0 8px #ff6d05)",
+          },
+        },
+        "ring-dissolve": {
+          "0%": { opacity: "1", transform: "rotate(-90deg) scale(1)" },
+          "100%": { opacity: "0", transform: "rotate(-90deg) scale(1.15)" },
+        },
+        "logo-breathe": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.03)" },
+        },
       },
       animation: {
         "spin-slow": "spin 40s linear infinite",
@@ -133,6 +156,9 @@ module.exports = {
         "wiggle": "wiggle 1.5s ease-in-out infinite",
         "glow-ring": "glow-ring 3s ease-in-out infinite",
         "lift-shake": "lift-shake 0.6s ease-in-out",
+        "logo-pulse-glow": "logo-pulse-glow 0.4s ease-out forwards",
+        "ring-dissolve": "ring-dissolve 0.3s ease-out forwards",
+        "logo-breathe": "logo-breathe 2s ease-in-out infinite",
       },
     },
   },
