@@ -107,6 +107,17 @@ export default function LoaderWrapper({ children }) {
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  // Lock body scroll while the loader is up so the page behind it can't be
+  // dragged/scrolled during the wipe. Restores prior overflow on unmount.
+  useEffect(() => {
+    if (!showLoader) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showLoader]);
+
   useEffect(() => {
     const hasSeen = localStorage.getItem('loaderSeen');
     const fromSameSite = document.referrer.includes(window.location.hostname);
@@ -182,6 +193,12 @@ export default function LoaderWrapper({ children }) {
 
   return (
     <>
+      {/* Page mounts behind the loader from the first render. The overlay
+          (z-9999) covers it during loading and the radial wipe genuinely
+          reveals the real page underneath — heavy work like Three.js init
+          can also warm up while the loader plays. */}
+      {children}
+
       <AnimatePresence>
         {showLoader && (
           <motion.div
@@ -203,7 +220,7 @@ export default function LoaderWrapper({ children }) {
             <div className="relative flex h-72 w-72 items-center justify-center">
               <motion.svg
                 className="absolute h-full w-full"
-                style={{ transform: 'rotate(-90deg)' }}
+                style={{ rotate: -90 }}
                 animate={
                   phase === 'pulse' || phase === 'fadeOut'
                     ? { opacity: 0, scale: 1.15 }
@@ -281,7 +298,8 @@ export default function LoaderWrapper({ children }) {
                     }
                   >
                     <Image
-                      alt="logo"
+                      alt=""
+                      aria-hidden="true"
                       width={1000}
                       height={1000}
                       src={logo}
@@ -354,7 +372,6 @@ export default function LoaderWrapper({ children }) {
         )}
       </AnimatePresence>
 
-      {!showLoader && children}
     </>
   );
 }
