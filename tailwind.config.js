@@ -124,6 +124,10 @@ module.exports = {
           "75%": { transform: "translateY(-6px) rotate(-2deg)" },
           "100%": { transform: "translateY(0) rotate(0deg)" },
         },
+        "logo-breathe": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.03)" },
+        },
       },
       animation: {
         "spin-slow": "spin 40s linear infinite",
@@ -133,6 +137,7 @@ module.exports = {
         "wiggle": "wiggle 1.5s ease-in-out infinite",
         "glow-ring": "glow-ring 3s ease-in-out infinite",
         "lift-shake": "lift-shake 0.6s ease-in-out",
+        "logo-breathe": "logo-breathe 2s ease-in-out infinite",
       },
     },
   },
