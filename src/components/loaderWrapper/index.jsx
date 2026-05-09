@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AnimatePresence,
   animate as fmAnimate,
   motion,
   useMotionTemplate,
   useMotionValue,
+  useMotionValueEvent,
+  useReducedMotion,
   useTransform,
 } from 'framer-motion';
 import logo from '../../../public/background/logo.png';
@@ -15,23 +17,19 @@ import {
   COUNT_DURATION_MS,
   EMBER_CORE,
   FADE_OUT_DURATION_MS,
-  INCREMENT_PER_TICK,
   PAUSE_BEFORE_PULSE_MS,
   PULSE_DURATION_MS,
-  REDUCED_INCREMENT_PER_TICK,
-  TICK_INTERVAL_MS,
+  REDUCED_COUNT_DURATION_MS,
 } from './constants';
 
 const RING_RADIUS = 135;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 const PARTICLE_COUNT = 8;
 
-// Ease-out cubic curve. The counter accelerates through 0–70% then decelerates
-// into 100% — feels alive instead of mechanical.
-function easedIncrement(currentProgress, baseIncrement) {
-  const easeFactor = 1 - Math.pow(currentProgress / 100, 3);
-  return baseIncrement * (0.5 + easeFactor * 1.5);
-}
+// easeOutCubic, expressed as a function so framer-motion's animate() can use it
+// directly. t=0 → 0, t=1 → 1; derivative is large at the start and approaches
+// zero at the end — counter feels energetic and settles deliberately.
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
 function makeBurst() {
   return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
@@ -49,21 +47,45 @@ function makeBurst() {
 }
 
 export default function LoaderWrapper({ children }) {
-  const [progress, setProgress] = useState(0);
   const [showLoader, setShowLoader] = useState(true);
   // 'counting' | 'pulse' | 'fadeOut' | 'done'
   const [phase, setPhase] = useState('counting');
   const [particles, setParticles] = useState([]);
   const [farthestCornerPx, setFarthestCornerPx] = useState(0);
-  const reducedMotionRef = useRef(false);
+  // Display string only — re-rendered when the visible value changes.
+  const [displayProgress, setDisplayProgress] = useState('0,0');
+  // useReducedMotion is reactive — resolves on the first client render via
+  // matchMedia, so prefers-reduced-motion users get the simpler path even on
+  // initial paint. Returns null during SSR; we treat that as "no preference".
+  const prefersReducedMotion = useReducedMotion() ?? false;
 
-  // Radial reveal for the exit wipe. Held outside React state so its
-  // per-frame animation never re-renders the tree.
+  // Progress is a motion value, so the ~50fps sweep updates the SVG ring,
+  // stroke colour, and counter glow directly via Framer Motion — no React
+  // re-render per frame. Only displayProgress (the visible text) goes through
+  // setState, and only when its formatted value actually changes.
+  const progress = useMotionValue(0);
+
+  const ringStroke = useTransform(
+    progress,
+    (p) => `hsl(25, 100%, ${35 + p * 0.2}%)`,
+  );
+  const ringDashOffset = useTransform(
+    progress,
+    (p) => RING_CIRCUMFERENCE * (1 - Math.min(p, 100) / 100),
+  );
+  const glowSize = useTransform(progress, (p) => 4 + p * 0.12);
+  const glowSpread = useTransform(progress, (p) => p * 0.3);
+  const counterGlow = useMotionTemplate`0 0 ${glowSize}px ${EMBER_CORE}, 0 0 ${glowSpread}px rgba(255, 109, 5, 0.33)`;
+
+  useMotionValueEvent(progress, 'change', (v) => {
+    const next = Math.min(v, 100).toFixed(1).replace('.', ',');
+    setDisplayProgress((prev) => (prev === next ? prev : next));
+  });
+
+  // Radial reveal for the exit wipe.
   const revealRadius = useMotionValue(0);
   const maskImage = useMotionTemplate`radial-gradient(circle at 50% 50%, transparent ${revealRadius}%, black calc(${revealRadius}% + 5%))`;
 
-  // Diameter the portal ring needs to track the mask edge precisely
-  // (mask % is relative to the farthest viewport corner from center).
   const ringDiameter = useTransform(
     revealRadius,
     (r) => `${(r / 100) * farthestCornerPx * 2}px`,
@@ -94,85 +116,66 @@ export default function LoaderWrapper({ children }) {
       return;
     }
 
-    const prefersReducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    reducedMotionRef.current = prefersReducedMotion;
-
-    const baseIncrement = prefersReducedMotion
-      ? REDUCED_INCREMENT_PER_TICK
-      : INCREMENT_PER_TICK;
+    const targetDuration = prefersReducedMotion
+      ? REDUCED_COUNT_DURATION_MS
+      : COUNT_DURATION_MS;
 
     let pulseTimeout;
     let fadeTimeout;
     let unmountTimeout;
 
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(interval);
-          if (reducedMotionRef.current) {
-            pulseTimeout = setTimeout(() => {
-              setPhase('fadeOut');
-              fadeTimeout = setTimeout(() => {
-                localStorage.setItem('loaderSeen', 'true');
-                setShowLoader(false);
-                setPhase('done');
-              }, FADE_OUT_DURATION_MS);
-            }, PAUSE_BEFORE_PULSE_MS);
-            return 100;
-          }
-          pulseTimeout = setTimeout(() => {
-            setPhase('pulse');
-            setParticles(makeBurst());
-            fadeTimeout = setTimeout(() => {
-              setPhase('fadeOut');
-              unmountTimeout = setTimeout(() => {
-                localStorage.setItem('loaderSeen', 'true');
-                setShowLoader(false);
-                setPhase('done');
-              }, FADE_OUT_DURATION_MS);
-            }, PULSE_DURATION_MS);
-          }, PAUSE_BEFORE_PULSE_MS);
-          return 100;
-        }
-        const next = p + easedIncrement(p, baseIncrement);
-        return next >= 100 ? 100 : next;
-      });
-    }, TICK_INTERVAL_MS);
+    const finishCount = () => {
+      if (prefersReducedMotion) {
+        pulseTimeout = setTimeout(() => {
+          setPhase('fadeOut');
+          fadeTimeout = setTimeout(() => {
+            localStorage.setItem('loaderSeen', 'true');
+            setShowLoader(false);
+            setPhase('done');
+          }, FADE_OUT_DURATION_MS);
+        }, PAUSE_BEFORE_PULSE_MS);
+        return;
+      }
+      pulseTimeout = setTimeout(() => {
+        setPhase('pulse');
+        setParticles(makeBurst());
+        fadeTimeout = setTimeout(() => {
+          setPhase('fadeOut');
+          unmountTimeout = setTimeout(() => {
+            localStorage.setItem('loaderSeen', 'true');
+            setShowLoader(false);
+            setPhase('done');
+          }, FADE_OUT_DURATION_MS);
+        }, PULSE_DURATION_MS);
+      }, PAUSE_BEFORE_PULSE_MS);
+    };
+
+    const controls = fmAnimate(progress, 100, {
+      duration: targetDuration / 1000,
+      ease: easeOutCubic,
+      onComplete: finishCount,
+    });
 
     return () => {
-      clearInterval(interval);
+      controls.stop();
       clearTimeout(pulseTimeout);
       clearTimeout(fadeTimeout);
       clearTimeout(unmountTimeout);
     };
-  }, []);
+  }, [progress, prefersReducedMotion]);
 
   // Drive the radial wipe when fadeOut begins.
   useEffect(() => {
-    if (phase !== 'fadeOut' || reducedMotionRef.current) return;
+    if (phase !== 'fadeOut' || prefersReducedMotion) return;
     const controls = fmAnimate(revealRadius, 150, {
       duration: FADE_OUT_DURATION_MS / 1000,
       ease: [0.65, 0, 0.35, 1],
     });
     return () => controls.stop();
-  }, [phase, revealRadius]);
+  }, [phase, revealRadius, prefersReducedMotion]);
 
-  const displayProgress = Math.min(progress, 100)
-    .toFixed(1)
-    .replace('.', ',');
-
-  const ringStroke = `hsl(25, 100%, ${35 + progress * 0.2}%)`;
-  const counterGlow = `0 0 ${4 + progress * 0.12}px ${EMBER_CORE}, 0 0 ${
-    progress * 0.3
-  }px rgba(255, 109, 5, 0.33)`;
-
-  // Wipe is "live" from when fadeOut starts and through the brief AnimatePresence
-  // exit window — keeping the mask applied is what prevents a grey flash, since
-  // a fading-but-still-black overlay would otherwise wash the page.
   const wipeActive =
-    (phase === 'fadeOut' || phase === 'done') && !reducedMotionRef.current;
+    (phase === 'fadeOut' || phase === 'done') && !prefersReducedMotion;
   const overlayMaskStyle = wipeActive
     ? { maskImage, WebkitMaskImage: maskImage }
     : null;
@@ -187,11 +190,11 @@ export default function LoaderWrapper({ children }) {
             initial={{ opacity: 1 }}
             animate={{
               opacity:
-                phase === 'fadeOut' && reducedMotionRef.current ? 0 : 1,
+                phase === 'fadeOut' && prefersReducedMotion ? 0 : 1,
             }}
             exit={{ opacity: 0 }}
             transition={{
-              duration: reducedMotionRef.current
+              duration: prefersReducedMotion
                 ? FADE_OUT_DURATION_MS / 1000
                 : 0,
             }}
@@ -208,7 +211,7 @@ export default function LoaderWrapper({ children }) {
                 }
                 transition={{ duration: 0.3, ease: 'easeOut' }}
               >
-                <circle
+                <motion.circle
                   cx="50%"
                   cy="50%"
                   r={RING_RADIUS}
@@ -217,10 +220,7 @@ export default function LoaderWrapper({ children }) {
                   strokeLinecap="round"
                   fill="none"
                   strokeDasharray={RING_CIRCUMFERENCE}
-                  strokeDashoffset={
-                    RING_CIRCUMFERENCE * (1 - Math.min(progress, 100) / 100)
-                  }
-                  style={{ transition: 'stroke-dashoffset 0.05s linear' }}
+                  strokeDashoffset={ringDashOffset}
                 />
               </motion.svg>
 
@@ -252,7 +252,7 @@ export default function LoaderWrapper({ children }) {
                             'drop-shadow(0 0 8px #ff6d05)',
                           ],
                         }
-                      : phase === 'fadeOut' && !reducedMotionRef.current
+                      : phase === 'fadeOut' && !prefersReducedMotion
                         ? {
                             scale: 3.4,
                             opacity: 0,
@@ -275,7 +275,7 @@ export default function LoaderWrapper({ children }) {
                 >
                   <div
                     className={
-                      phase === 'counting' && !reducedMotionRef.current
+                      phase === 'counting' && !prefersReducedMotion
                         ? 'animate-logo-breathe'
                         : ''
                     }
@@ -290,7 +290,7 @@ export default function LoaderWrapper({ children }) {
                     />
                   </div>
 
-                  {phase === 'pulse' && !reducedMotionRef.current && (
+                  {phase === 'pulse' && !prefersReducedMotion && (
                     <div
                       className="pointer-events-none absolute inset-0"
                       aria-hidden="true"
