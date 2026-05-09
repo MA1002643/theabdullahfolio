@@ -53,7 +53,7 @@ export default function LoaderWrapper({ children }) {
   const [particles, setParticles] = useState([]);
   const [farthestCornerPx, setFarthestCornerPx] = useState(0);
   // Display string only — re-rendered when the visible value changes.
-  const [displayProgress, setDisplayProgress] = useState('0,0');
+  const [displayProgress, setDisplayProgress] = useState('0.0');
   // useReducedMotion is reactive — resolves on the first client render via
   // matchMedia, so prefers-reduced-motion users get the simpler path even on
   // initial paint. Returns null during SSR; we treat that as "no preference".
@@ -78,7 +78,7 @@ export default function LoaderWrapper({ children }) {
   const counterGlow = useMotionTemplate`0 0 ${glowSize}px ${EMBER_CORE}, 0 0 ${glowSpread}px rgba(255, 109, 5, 0.33)`;
 
   useMotionValueEvent(progress, 'change', (v) => {
-    const next = Math.min(v, 100).toFixed(1).replace('.', ',');
+    const next = Math.min(v, 100).toFixed(1);
     setDisplayProgress((prev) => (prev === next ? prev : next));
   });
 
@@ -358,6 +358,3 @@ export default function LoaderWrapper({ children }) {
     </>
   );
 }
-
-// Total sequence: COUNT_DURATION + PAUSE + PULSE + FADE_OUT
-//                  ≈ 2400 + 200 + 400 + 350 = ~3.35s
