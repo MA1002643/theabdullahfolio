@@ -36,7 +36,12 @@ const Navigation = ({ setHovered, hovered }) => {
       } else {
         setScreenSize('desktop');
         setRadius(170);
-        setMultiplier({ x: 2.5, y: 1.2 });
+        // multiplier.y kept low (was 1.2) so the bottom of the orbit
+        // stays within the flex row's bottom edge on shorter desktop
+        // viewports (e.g. 1024×600 laptops). Page can't scroll
+        // (overflow-clip on <main>) so any vertical overflow is
+        // permanently clipped — keep the orbit conservative.
+        setMultiplier({ x: 2.5, y: 0.7 });
       }
     };
 
@@ -143,7 +148,16 @@ const Navigation = ({ setHovered, hovered }) => {
 
   // Orbital layout for 480px and above
   return (
-    <div className="absolute z-0 flex h-1/2 w-full items-center justify-center mx-auto">
+    // `inset-0` spans the wrapper across the full flex row so the orbit
+    // center coincides with the laptop center (`items-center` on the row).
+    // Previously `h-1/2` with no top/bottom anchored the wrapper to the top
+    // half of the row, which placed the orbit center at ~25% — buttons at
+    // the bottom of the rotation (y = +204px on desktop) then ran past the
+    // row's bottom edge and were clipped by `<main>`'s `overflow-clip`.
+    // No `contain:layout` needed: the scrollHeight-jitter fix lives on
+    // `<main>` (overflow-clip), and adding it here also creates a new
+    // stacking context which complicates the laptop/orbit z-ordering.
+    <div className="absolute inset-0 z-0 flex items-center justify-center">
       <div className="relative flex w-max items-center justify-center mx-auto">
         {BtnList.map((btn, index) => {
           const angleDeg = index * angleIncrement + rotation;

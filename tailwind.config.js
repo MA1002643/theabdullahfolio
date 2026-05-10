@@ -98,11 +98,17 @@ module.exports = {
           // dragging the static headline above into the apparent motion.
           // These reduced values keep the laptop feeling "alive" while
           // staying below the threshold where surrounding UI gets coupled.
+          //
+          // Filter syncs the same ember drop-shadow used by the hover/active
+          // `glow` keyframe to the up-phase of the float, so the laptop
+          // appears to "ignite" at the apex and cool back to nothing at rest.
           "0%, 100%": {
             transform: "translateY(0) rotateX(0deg) rotateZ(0deg) scale(1)",
+            filter: "drop-shadow(0 0 0 #ff6d05) drop-shadow(0 0 0 #ff6d05)",
           },
           "50%": {
             transform: "translateY(-6px) rotateX(6deg) rotateZ(-0.5deg) scale(1.02)",
+            filter: "drop-shadow(0 0 2px #ff6d05e0) drop-shadow(0 0 3px #ff6d05e1)",
           },
         },
         "wiggle": {

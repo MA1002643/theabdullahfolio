@@ -24,7 +24,13 @@ export default function Home() {
       {/* Dark gradient overlay */}
       <div className="absolute inset-0 -z-40 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
-      <main className="relative z-10 flex h-full flex-col items-center overflow-x-hidden">
+      {/* `overflow-clip` removes scroll-container semantics in both axes —
+          no scrollTop/scrollHeight, so the laptop float and ring scale
+          can't drive a scroll-anchor adjustment that drags the headline.
+          Trade-off: the page can't scroll, so the orbital nav's vertical
+          reach (Navigation `multiplier.y`) is sized to fit within the
+          remaining flex-row height across supported desktop viewports. */}
+      <main className="relative z-10 flex h-full flex-col items-center overflow-clip">
         {/* Live maintenance header (issue #24) — slim status bar above the hero.
             Top padding combines the safe-area inset (for notched/dynamic-island
             devices) with the breakpoint baseline so the responsive spacing
@@ -33,18 +39,17 @@ export default function Home() {
           <LiveMaintenanceHeader />
         </div>
 
-        {/* HEADLINE — pinned to its own GPU layer so the headline's
-            sub-pixel rounding is independent of the laptop float-laptop
-            keyframe's frame schedule. Without this, the laptop's
-            transform interpolation could drag the headline's drop-shadow
-            layer through 0.5–1px sub-pixel jitter synced to the bob. */}
+        {/* HEADLINE — promoted to its own GPU compositor layer via
+            `transform-gpu` so the headline's sub-pixel rounding is
+            independent of the laptop float-laptop keyframe's frame
+            schedule. The arbitrary `[backface-visibility:hidden]` is the
+            WebKit incantation that prevents the layer from collapsing
+            back into the parent. We deliberately do NOT add
+            `will-change: transform` — this element never animates, so
+            keeping it perpetually warmed would just waste compositor
+            memory. */}
         <div
-          className="z-40 pb-2 pt-3 text-center sm:pt-5 md:pb-4 md:pt-6 lg:pb-6 lg:pt-8"
-          style={{
-            transform: 'translate3d(0, 0, 0)',
-            willChange: 'transform',
-            backfaceVisibility: 'hidden',
-          }}
+          className="z-40 transform-gpu pb-2 pt-3 text-center [backface-visibility:hidden] sm:pt-5 md:pb-4 md:pt-6 lg:pb-6 lg:pt-8"
         >
           <h1 className="text-glow-stroke-neon text-center text-[2.6rem] font-[500] uppercase leading-none text-transparent sm:text-[3rem] md:text-[4rem] lg:text-[5rem]">
             Muhammad
@@ -57,7 +62,12 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 flex w-full flex-1 items-center justify-center">
-          {/* Wrapper for laptop + rings */}
+          {/* Wrapper for laptop + rings. NO `contain:layout` here — that
+              would establish a stacking context, trapping the laptop's
+              `z-20` inside the wrapper and letting the orbital nav (z-0,
+              later in DOM) paint on top of the laptop. The drift fix
+              already lives on `<main>` via `overflow-clip`, so layout
+              containment here is unnecessary. */}
           <div className="relative flex items-center justify-center">
             {/* Laptop */}
             <Image
