@@ -93,11 +93,16 @@ module.exports = {
           },
         },
         "float-laptop": {
+          // Vertical excursion + scale + perspective tilt of a 22-30rem mass
+          // were past the vection threshold at iPad/laptop breakpoints,
+          // dragging the static headline above into the apparent motion.
+          // These reduced values keep the laptop feeling "alive" while
+          // staying below the threshold where surrounding UI gets coupled.
           "0%, 100%": {
-            transform: "translateY(0) rotateX(0deg) rotateZ(0deg)",
+            transform: "translateY(0) rotateX(0deg) rotateZ(0deg) scale(1)",
           },
           "50%": {
-            transform: "translateY(-20px) rotateX(18deg) rotateZ(-1deg) scale(1.1)",
+            transform: "translateY(-6px) rotateX(6deg) rotateZ(-0.5deg) scale(1.02)",
           },
         },
         "wiggle": {

@@ -33,8 +33,19 @@ export default function Home() {
           <LiveMaintenanceHeader />
         </div>
 
-        {/* HEADLINE */}
-        <div className="z-40 pb-2 pt-3 text-center sm:pt-5 md:pb-4 md:pt-6 lg:pb-6 lg:pt-8">
+        {/* HEADLINE — pinned to its own GPU layer so the headline's
+            sub-pixel rounding is independent of the laptop float-laptop
+            keyframe's frame schedule. Without this, the laptop's
+            transform interpolation could drag the headline's drop-shadow
+            layer through 0.5–1px sub-pixel jitter synced to the bob. */}
+        <div
+          className="z-40 pb-2 pt-3 text-center sm:pt-5 md:pb-4 md:pt-6 lg:pb-6 lg:pt-8"
+          style={{
+            transform: 'translate3d(0, 0, 0)',
+            willChange: 'transform',
+            backfaceVisibility: 'hidden',
+          }}
+        >
           <h1 className="text-glow-stroke-neon text-center text-[2.6rem] font-[500] uppercase leading-none text-transparent sm:text-[3rem] md:text-[4rem] lg:text-[5rem]">
             Muhammad
             <br /> Abdullah

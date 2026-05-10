@@ -563,3 +563,12 @@ html {
     animation: none !important;
   }
 }
+
+/* Vestibular safety — users who request reduced motion should never see
+   the homepage laptop float. Pins it perfectly still. */
+@media (prefers-reduced-motion: reduce) {
+  .laptop,
+  .animate-float-laptop {
+    animation: none !important;
+  }
+}
