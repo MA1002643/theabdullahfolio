@@ -38,9 +38,11 @@ const Navigation = ({ setHovered, hovered }) => {
         setRadius(170);
         // multiplier.y kept low (was 1.2) so the bottom of the orbit
         // stays within the flex row's bottom edge on shorter desktop
-        // viewports (e.g. 1024×600 laptops). Page can't scroll
-        // (overflow-clip on <main>) so any vertical overflow is
-        // permanently clipped — keep the orbit conservative.
+        // viewports (e.g. 1024×600 laptops). The page is a zero-scroll
+        // hero (outer wrapper in src/app/page.js is `h-screen
+        // overflow-hidden`), so anything past the viewport is clipped
+        // permanently with no scroll fallback — keep the orbit
+        // conservative so all eight buttons stay visible.
         setMultiplier({ x: 2.5, y: 0.7 });
       }
     };
@@ -153,10 +155,13 @@ const Navigation = ({ setHovered, hovered }) => {
     // Previously `h-1/2` with no top/bottom anchored the wrapper to the top
     // half of the row, which placed the orbit center at ~25% — buttons at
     // the bottom of the rotation (y = +204px on desktop) then ran past the
-    // row's bottom edge and were clipped by `<main>`'s `overflow-clip`.
-    // No `contain:layout` needed: the scrollHeight-jitter fix lives on
-    // `<main>` (overflow-clip), and adding it here also creates a new
-    // stacking context which complicates the laptop/orbit z-ordering.
+    // row's bottom edge. The page is a zero-scroll hero (outer wrapper is
+    // `h-screen overflow-hidden`), so any overflow is permanently clipped
+    // at the page boundary — the orbit must fit within the visible flex
+    // row, which is enforced by `multiplier.y = 0.7` on desktop above.
+    // No `contain:layout` needed: drift isn't a scroll-anchoring issue
+    // here (no scroll container exists), and adding it would create a new
+    // stacking context that complicates the laptop/orbit z-ordering.
     <div className="absolute inset-0 z-0 flex items-center justify-center">
       <div className="relative flex w-max items-center justify-center mx-auto">
         {BtnList.map((btn, index) => {

@@ -24,22 +24,22 @@ export default function Home() {
       {/* Dark gradient overlay */}
       <div className="absolute inset-0 -z-40 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
-      {/* Two-part drift defense that still respects zoom / short-viewport
-          UX:
-          1. `overflow-x-hidden` clips the orbital nav's horizontal
-             translation on narrow screens. The cross axis (`overflow-y`)
-             computes to `auto`, so the page stays scrollable when high
-             zoom or large-text settings push content past the viewport
-             — required for accessibility.
-          2. `[overflow-anchor:none]` disables the browser's scroll-anchor
-             adjustment. That's the mechanism that turned the laptop
-             float / ring scale's per-frame `scrollHeight` oscillation
-             into a ~6px `scrollTop` jitter and dragged the headline.
-             Anchoring off ⇒ animations can't move the viewport.
-          The orbital nav's `multiplier.y` is also sized so content fits
-          without scrolling on common desktop viewports — the scrollbar
-          is a fallback for zoom/short heights, not the everyday state. */}
-      <main className="relative z-10 flex h-full flex-col items-center overflow-x-hidden [overflow-anchor:none]">
+      {/* Zero-scroll hero by design: the outer wrapper is
+          `h-screen overflow-hidden`, so this page never produces a
+          scroll container. The orbital nav's `multiplier.y` is sized
+          conservatively (see Navigation) so all eight buttons stay
+          within the flex row on supported viewports — no scroll
+          fallback is needed.
+
+          No `overflow-x-hidden` / `overflow-anchor: none` here
+          because there's no scroll container for the laptop float
+          and ring scale to perturb in the first place. Headline
+          drift (the original concern of this PR) is prevented at the
+          GPU-layer level via `transform-gpu` + `[backface-visibility:hidden]`
+          on the headline block below — that promotes the headline to
+          its own compositor layer so its sub-pixel rounding is
+          independent of the laptop float keyframe's frame schedule. */}
+      <main className="relative z-10 flex h-full flex-col items-center">
         {/* Live maintenance header (issue #24) — slim status bar above the hero.
             Top padding combines the safe-area inset (for notched/dynamic-island
             devices) with the breakpoint baseline so the responsive spacing
@@ -74,9 +74,13 @@ export default function Home() {
           {/* Wrapper for laptop + rings. NO `contain:layout` here — that
               would establish a stacking context, trapping the laptop's
               `z-20` inside the wrapper and letting the orbital nav (z-0,
-              later in DOM) paint on top of the laptop. The drift fix
-              already lives on `<main>` via `overflow-clip`, so layout
-              containment here is unnecessary. */}
+              later in DOM) paint on top of the laptop. Containment also
+              isn't needed for drift prevention: the page is a zero-scroll
+              hero (outer wrapper is `h-screen overflow-hidden`), so there's
+              no scroll container for the rings' transform-extended bounding
+              boxes to perturb, and headline drift itself is handled at the
+              GPU-layer level on the headline block above (transform-gpu +
+              backface-visibility:hidden). */}
           <div className="relative flex items-center justify-center">
             {/* Laptop */}
             <Image
