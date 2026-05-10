@@ -24,13 +24,22 @@ export default function Home() {
       {/* Dark gradient overlay */}
       <div className="absolute inset-0 -z-40 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
-      {/* `overflow-clip` removes scroll-container semantics in both axes —
-          no scrollTop/scrollHeight, so the laptop float and ring scale
-          can't drive a scroll-anchor adjustment that drags the headline.
-          Trade-off: the page can't scroll, so the orbital nav's vertical
-          reach (Navigation `multiplier.y`) is sized to fit within the
-          remaining flex-row height across supported desktop viewports. */}
-      <main className="relative z-10 flex h-full flex-col items-center overflow-clip">
+      {/* Two-part drift defense that still respects zoom / short-viewport
+          UX:
+          1. `overflow-x-hidden` clips the orbital nav's horizontal
+             translation on narrow screens. The cross axis (`overflow-y`)
+             computes to `auto`, so the page stays scrollable when high
+             zoom or large-text settings push content past the viewport
+             — required for accessibility.
+          2. `[overflow-anchor:none]` disables the browser's scroll-anchor
+             adjustment. That's the mechanism that turned the laptop
+             float / ring scale's per-frame `scrollHeight` oscillation
+             into a ~6px `scrollTop` jitter and dragged the headline.
+             Anchoring off ⇒ animations can't move the viewport.
+          The orbital nav's `multiplier.y` is also sized so content fits
+          without scrolling on common desktop viewports — the scrollbar
+          is a fallback for zoom/short heights, not the everyday state. */}
+      <main className="relative z-10 flex h-full flex-col items-center overflow-x-hidden [overflow-anchor:none]">
         {/* Live maintenance header (issue #24) — slim status bar above the hero.
             Top padding combines the safe-area inset (for notched/dynamic-island
             devices) with the breakpoint baseline so the responsive spacing
