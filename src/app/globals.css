@@ -565,10 +565,17 @@ html {
 }
 
 /* Vestibular safety — users who request reduced motion should never see
-   the homepage laptop float. Pins it perfectly still. */
+   the homepage laptop float, hover-scale, or active-scale. The base
+   `.laptop` rule sets a transform transition and the hover/active states
+   apply `scale(1.05)`; killing `animation` alone leaves those motions
+   live, so we also pin transition/transform on the relevant selectors. */
 @media (prefers-reduced-motion: reduce) {
   .laptop,
-  .animate-float-laptop {
+  .animate-float-laptop,
+  .laptop:hover,
+  .laptop.active {
     animation: none !important;
+    transform: none !important;
+    transition: none !important;
   }
 }
