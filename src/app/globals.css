@@ -563,3 +563,225 @@ html {
     animation: none !important;
   }
 }
+
+/* ── 404 / not-found page ─────────────────────────────────
+   Custom 404 page for issue #39. Standalone immersive screen
+   with a glitching "404", CSS-only drifting particles, and a
+   radial-vignette void background. Kept in globals.css (not a
+   CSS module) because: (1) the glitch effect uses ::before /
+   ::after pseudo-elements driven by a `data-text` attribute,
+   which can't be expressed in inline styles or Tailwind, and
+   (2) particle keyframes need to be globally available to the
+   inline `animation-duration` / `animation-delay` props on
+   each particle element. */
+
+.not-found-bg {
+  /* Subtle off-centre vignette draws the eye toward the
+     vertical-mid-upper area where the "404" sits, leaving the
+     rest darker so particles feel like they're drifting through
+     deeper space at the edges.
+
+     Gradient uses the brand's dark tones — ember-950 (#1b100f,
+     a warm near-black) at the centre fading to night-950
+     (#01050b, the cool deep-blue-black) at the edges — so the
+     void reads as the same universe as the rest of the site
+     rather than a generic black box. */
+  background: radial-gradient(ellipse at 50% 40%, #1b100f 0%, #01050b 70%);
+  min-height: 100vh;
+}
+
+/* ── Glitch text ──
+   The "404" uses the site's SIGNATURE text style: transparent
+   fill, 3px ember-neon stroke, multi-layer ember drop-shadow
+   glow — the same `text-glow-stroke-neon` language as the
+   homepage "MUHAMMAD ABDULLAH" headline. Pulling that look in
+   verbatim means the 404 reads as the same brand voice, not a
+   separate decorative widget.
+
+   Three layers:
+   • The base `<h1>` carries the stroke + glow
+   • `::before` (amethyst-neon) — chromatic aberration shifted
+     left, clipped to the upper portion of the glyph
+   • `::after`  (ember-neon)    — shifted right, lower portion
+   Together they produce a CRT-corruption tri-tone whose
+   subtle continuous offset is barely visible at rest, but
+   amplifies during the scramble burst driven by GlitchText.jsx
+   (see `.glitch-text.scrambling`). */
+.glitch-text {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-varela-round), sans-serif;
+  font-size: clamp(7rem, 20vw, 15rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 4px;
+  color: transparent;
+  -webkit-text-stroke: 3px #ff6d05;
+  filter:
+    drop-shadow(0 0 10px rgba(255, 106, 0, 0.8))
+    drop-shadow(0 0 20px rgba(255, 106, 0, 0.6))
+    drop-shadow(0 0 30px rgba(255, 90, 0, 0.4));
+  transition: filter 0.3s ease;
+  animation: glitch-skew 4s infinite linear alternate-reverse;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* Pseudo layers also use transparent fill + their own stroke
+     colour, so the chromatic aberration reads as coloured
+     OUTLINES splitting from the orange base — not coloured
+     fills bleeding over the top. */
+  color: transparent;
+}
+
+.glitch-text::before {
+  -webkit-text-stroke: 2px #fc83ff;
+  animation: glitch-left 3s infinite linear alternate-reverse;
+  clip-path: inset(0 65% 0 0);
+}
+
+.glitch-text::after {
+  -webkit-text-stroke: 2px #eab53e;
+  animation: glitch-right 2.5s infinite linear alternate-reverse;
+  clip-path: inset(0 0 0 65%);
+}
+
+@keyframes glitch-left {
+  0%, 90% { transform: translate(0); }
+  91% { transform: translate(-4px, 2px); }
+  92% { transform: translate(2px, -1px); }
+  93% { transform: translate(-2px, 0); }
+  94%, 100% { transform: translate(0); }
+}
+
+@keyframes glitch-right {
+  0%, 88% { transform: translate(0); }
+  89% { transform: translate(3px, -2px); }
+  90% { transform: translate(-3px, 1px); }
+  91% { transform: translate(1px, 2px); }
+  92%, 100% { transform: translate(0); }
+}
+
+@keyframes glitch-skew {
+  0%, 87% { transform: skew(0deg); }
+  88% { transform: skew(0.5deg); }
+  89% { transform: skew(-0.3deg); }
+  90%, 100% { transform: skew(0deg); }
+}
+
+/* ── Scramble + resolve burst ──
+   While GlitchText.jsx is rapidly swapping the displayed digits
+   through random characters, `.scrambling` is applied: the
+   chromatic aberration ::before/::after layers shift more
+   aggressively (heavy CRT-corruption mode) and the base glow
+   destabilises. When the scramble resolves to "404", JS swaps
+   `.scrambling` for `.pulse-resolve` for 700ms — a single
+   bright glow surge that mimics the homepage ring ripple's
+   peak, giving the resolve real weight rather than just
+   stopping. */
+.glitch-text.scrambling {
+  animation: glitch-skew 0.15s infinite linear alternate-reverse;
+}
+.glitch-text.scrambling::before {
+  animation: glitch-scramble-left 0.18s infinite linear;
+}
+.glitch-text.scrambling::after {
+  animation: glitch-scramble-right 0.2s infinite linear;
+}
+
+.glitch-text.pulse-resolve {
+  animation: glitch-pulse 0.7s ease-out;
+}
+
+@keyframes glitch-scramble-left {
+  0%   { transform: translate(-6px, 3px); }
+  25%  { transform: translate(4px, -2px); }
+  50%  { transform: translate(-3px, 1px); }
+  75%  { transform: translate(5px, -3px); }
+  100% { transform: translate(-4px, 2px); }
+}
+
+@keyframes glitch-scramble-right {
+  0%   { transform: translate(5px, -2px); }
+  25%  { transform: translate(-4px, 3px); }
+  50%  { transform: translate(2px, -3px); }
+  75%  { transform: translate(-5px, 1px); }
+  100% { transform: translate(4px, -2px); }
+}
+
+@keyframes glitch-pulse {
+  0% {
+    filter:
+      drop-shadow(0 0 10px rgba(255, 106, 0, 0.8))
+      drop-shadow(0 0 20px rgba(255, 106, 0, 0.6))
+      drop-shadow(0 0 30px rgba(255, 90, 0, 0.4));
+    transform: scale(1);
+  }
+  30% {
+    filter:
+      drop-shadow(0 0 20px rgba(255, 109, 5, 1))
+      drop-shadow(0 0 40px rgba(255, 109, 5, 0.95))
+      drop-shadow(0 0 80px rgba(255, 109, 5, 0.7))
+      drop-shadow(0 0 120px rgba(252, 131, 255, 0.4));
+    transform: scale(1.04);
+  }
+  100% {
+    filter:
+      drop-shadow(0 0 10px rgba(255, 106, 0, 0.8))
+      drop-shadow(0 0 20px rgba(255, 106, 0, 0.6))
+      drop-shadow(0 0 30px rgba(255, 90, 0, 0.4));
+    transform: scale(1);
+  }
+}
+
+/* ── 404 amethyst firefly orbs ──
+   Layered ABOVE the global FireFliesBackground (which paints
+   ember orbs on every page). Same `firefly-life` lifecycle so
+   the breathing is in sympathy, but tinted amethyst — the
+   void-page signature. Each orb's radial gradient colour is
+   set inline via `--orb-color` so a small fraction can be
+   ember orbs for cohesion without forking the CSS. */
+.not-found-orb {
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    var(--orb-color, rgba(252, 131, 255, 0.55)) 0%,
+    transparent 100%
+  );
+  /* `infinite` so each orb cycles continuously; randomised
+     `animation-delay` per orb (set inline) means the field as
+     a whole feels organic, not synced. */
+  animation: firefly-life var(--life-dur, 5s) ease-in-out var(--life-delay, 0s) infinite;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch-text,
+  .glitch-text::before,
+  .glitch-text::after {
+    animation: none;
+    /* Stroke + glow remain (drop-shadow filter doesn't depend
+       on animation), so static readers still see a glowing
+       "404" — just without the periodic shake/scramble. */
+  }
+  .glitch-text.scrambling,
+  .glitch-text.scrambling::before,
+  .glitch-text.scrambling::after {
+    animation: none;
+  }
+  .glitch-text.pulse-resolve {
+    animation: none;
+  }
+  .not-found-orb {
+    animation: none;
+    opacity: 0.4;
+  }
+}

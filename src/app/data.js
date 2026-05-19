@@ -116,8 +116,13 @@ export const BtnList = [
     newTab: false,
   },
   {
+    // Intentionally routes to an unmatched path so Next.js renders the
+    // custom 404 (src/app/not-found.js) — the previous portfolio link
+    // is retired and the void aesthetic now stands in for it. If/when
+    // a real "My Past" page is added, create src/app/(sub pages)/my-past/
+    // and this entry will start resolving to it without any other change.
     label: 'My Past',
-    link: 'https://muhammadabdullah227.co.uk/',
+    link: '/my-past',
     icon: 'past',
     newTab: false,
   },
