@@ -121,17 +121,31 @@ function Scene() {
 
 export default function ThreeDScene({ params }) {
     const { id } = params
-    const project = projectsData.find((p) => p.id === parseInt(id))
+    // Strict integer-string check before lookup. Two reasons:
+    //   1. parseInt was permissive — parseInt("1abc", 10) === 1,
+    //      so /projects/1abc would silently resolve to project 1
+    //      with HTTP 200. Number("1abc") returns NaN instead, and
+    //      Number.isInteger(NaN) is false, so we notFound() it.
+    //   2. The `String(parsedId) === id` round-trip also rejects
+    //      non-canonical forms (/projects/01, /projects/1.0,
+    //      /projects/1e0) that Number() would otherwise accept —
+    //      every valid project has exactly ONE canonical URL,
+    //      preventing duplicate-content URLs from being indexed.
+    const parsedId = Number(id)
+    const isStrictInteger =
+        Number.isInteger(parsedId) && String(parsedId) === id
+    const project = isStrictInteger
+        ? projectsData.find((p) => p.id === parsedId)
+        : undefined
 
-    // Invalid / non-existent project id (e.g. /projects/9999 or
-    // /projects/abc → parseInt → NaN → find returns undefined).
-    // `notFound()` throws NEXT_NOT_FOUND which bubbles up to the
-    // nearest not-found boundary — in our case the root
-    // app/not-found.js, so the user lands on the void/glitch 404
-    // with the correct HTTP 404 status, and the analytics
-    // `404_hit` event fires automatically. Replaces the previous
-    // inline "Project not found." div which returned HTTP 200 and
-    // was indexable by search engines.
+    // Invalid / non-existent project id (e.g. /projects/9999,
+    // /projects/abc, /projects/1abc, /projects/01). `notFound()`
+    // throws NEXT_NOT_FOUND which bubbles up to the root
+    // app/not-found.js boundary, so the user lands on the void
+    // /glitch 404 with the correct HTTP 404 status, and the
+    // analytics `404_hit` event fires automatically. Replaces the
+    // previous inline "Project not found." div which returned
+    // HTTP 200 and was indexable by search engines.
     if (!project) {
         notFound()
     }
