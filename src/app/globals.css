@@ -600,13 +600,18 @@ html {
 
    Three layers:
    • The base `<h1>` carries the stroke + glow
-   • `::before` (amethyst-neon) — chromatic aberration shifted
-     left, clipped to the upper portion of the glyph
-   • `::after`  (ember-neon)    — shifted right, lower portion
-   Together they produce a CRT-corruption tri-tone whose
-   subtle continuous offset is barely visible at rest, but
-   amplifies during the scramble burst driven by GlitchText.jsx
-   (see `.glitch-text.scrambling`). */
+   • `::before` (amethyst-neon) — shifted left, clipped to the
+     LEFT 35% of the glyph (via `inset(0 65% 0 0)` — i.e.
+     hide the right 65%)
+   • `::after`  (ember-neon)    — shifted right, clipped to the
+     RIGHT 35% of the glyph (via `inset(0 0 0 65%)` — i.e.
+     hide the left 65%)
+   The two layers therefore overlap visually only in the middle
+   ~30% column of the glyph, where the base orange stroke shows
+   through. That horizontal split is the classic CRT chromatic
+   aberration: subtle continuous offset is barely visible at
+   rest, but amplifies during the scramble burst driven by
+   GlitchText.jsx (see `.glitch-text.scrambling`). */
 .glitch-text {
   position: relative;
   display: inline-block;

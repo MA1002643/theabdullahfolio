@@ -8,6 +8,7 @@ import { motion } from "framer-motion"
 import * as THREE from "three"
 import Image from "next/image"
 import { projectsData } from "@/app/data"
+import { notFound } from "next/navigation"
 import RealisticTree from "@/components/project-detail/tree-stump"
 import LaptopModel from "@/components/project-detail/laptop-model"
 import bg from "../../../../../public/background/home-bg.png"
@@ -122,12 +123,17 @@ export default function ThreeDScene({ params }) {
     const { id } = params
     const project = projectsData.find((p) => p.id === parseInt(id))
 
+    // Invalid / non-existent project id (e.g. /projects/9999 or
+    // /projects/abc → parseInt → NaN → find returns undefined).
+    // `notFound()` throws NEXT_NOT_FOUND which bubbles up to the
+    // nearest not-found boundary — in our case the root
+    // app/not-found.js, so the user lands on the void/glitch 404
+    // with the correct HTTP 404 status, and the analytics
+    // `404_hit` event fires automatically. Replaces the previous
+    // inline "Project not found." div which returned HTTP 200 and
+    // was indexable by search engines.
     if (!project) {
-        return (
-            <div className="w-full h-screen flex items-center justify-center bg-black text-[#ff6d05] text-3xl">
-                Project not found.
-            </div>
-        )
+        notFound()
     }
 
     return (

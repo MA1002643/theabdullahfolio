@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Home } from 'lucide-react';
 import Link from 'next/link';
 
@@ -13,13 +13,31 @@ import Link from 'next/link';
  * The entrance delay (1.2s) is intentionally last in the page's
  * staggered reveal — 404 → subtitles → button — so the button
  * appears once the user has had a moment to read the void.
+ *
+ * Reduced-motion users:
+ *   • Entrance: skip the slide/scale, button just appears (the
+ *     stagger across the rest of the page still reads, since it
+ *     uses delays via CSS transitions on opacity which are
+ *     reduced-motion-safe per Motion's a11y guidance).
+ *   • Pulsing ring: replaced with a static ring at low opacity
+ *     so the "portal" visual hint remains, but no infinite
+ *     transform/opacity oscillation runs.
  */
 export default function ReturnPortal() {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      // `initial={false}` makes framer render in the animate state
+      // with no transition — clean way to skip the entrance for
+      // reduced-motion users without losing the spec.
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1.2, duration: 0.5 }}
+      transition={
+        prefersReducedMotion
+          ? { duration: 0 }
+          : { delay: 1.2, duration: 0.5 }
+      }
       className="relative inline-block"
     >
       <Link
@@ -39,8 +57,16 @@ export default function ReturnPortal() {
         <motion.span
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-full border border-[#ff6d05]/20"
-          animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0, 0.3] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          animate={
+            prefersReducedMotion
+              ? { scale: 1, opacity: 0.25 }
+              : { scale: [1, 1.08, 1], opacity: [0.3, 0, 0.3] }
+          }
+          transition={
+            prefersReducedMotion
+              ? { duration: 0 }
+              : { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
+          }
         />
       </Link>
     </motion.div>

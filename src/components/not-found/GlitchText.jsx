@@ -134,23 +134,55 @@ export default function GlitchText({ text = '404', parallax }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+      // Same gating pattern as every other entrance on this page:
+      // reduced-motion users render directly at the `animate`
+      // target via `initial={false}`, no transition. Both `scale`
+      // and `y` would otherwise run a transform-based entrance,
+      // which is exactly what vestibular users want suppressed.
+      initial={
+        prefersReducedMotion
+          ? false
+          : { opacity: 0, scale: 0.8, y: 20 }
+      }
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-      style={transformStyle}
+      transition={
+        prefersReducedMotion
+          ? { duration: 0 }
+          : { duration: 0.6, ease: 'easeOut' }
+      }
       className="select-none"
-      // Keep a single accessible name on the live heading so
-      // assistive tech reads "404", not whatever random trio is
-      // currently mid-scramble.
-      aria-label={text}
     >
-      <h1
-        className={`glitch-text ${stateClass}`}
-        data-text={displayed}
-        aria-hidden="true"
-      >
-        {displayed}
-      </h1>
+      {/* The parallax transform lives on a NESTED wrapper, not on
+          the motion.div above, so framer-motion has exclusive
+          ownership of the outer element's `style.transform` for
+          its entrance animation (scale + y). If we set the
+          parallax on the same element framer animates, both
+          would be writing to the single `style.transform`
+          property — last write wins, and during the 0.6s entrance
+          + the 0.7s `.pulse-resolve` scale we'd see the parallax
+          clobber framer mid-animation (visible as a snap back to
+          parallax-only translation). With the parallax on its own
+          element, the browser stacks the transforms through the
+          DOM and they compose cleanly. */}
+      <div style={transformStyle}>
+        {/* Accessible name lives on the heading itself (not on the
+            wrappers above) so the <h1> stays in the document
+            outline and assistive tech can jump to it via the
+            headings rotor. `aria-label` overrides the visible text
+            content for AT, which is exactly what we want during a
+            scramble — the visible "#7$" never reaches a screen
+            reader; users always hear "404". The pseudo-element
+            chromatic layers read their content from `data-text`
+            so they continue to mirror the live visual without
+            affecting the announced name. */}
+        <h1
+          className={`glitch-text ${stateClass}`}
+          data-text={displayed}
+          aria-label={text}
+        >
+          {displayed}
+        </h1>
+      </div>
     </motion.div>
   );
 }
