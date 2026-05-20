@@ -32,14 +32,13 @@ const AboutDetails = () => {
   const [changedFields, setChangedFields] = useState([]);
 
   // Scroll-linked per-word reveal for the "Architect of Enchantment" paragraph.
-  // Progress is mapped directly off window scrollY against the paragraph's own
-  // document position, so it reads exactly 0 at first paint (full paragraph
-  // dim) on any viewport size, and reaches 1 once the user has scrolled the
-  // paragraph up to the top of the viewport.
+  // Both ends of the active scroll range are derived from the paragraph's own
+  // document offset so the animation tracks paragraph visibility, not raw
+  // page scroll.
   const paragraphRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
-  const [revealEnd, setRevealEnd] = useState(1000);
+  const [revealRange, setRevealRange] = useState({ start: 0, end: 1000 });
 
   useEffect(() => {
     const measure = () => {
@@ -47,19 +46,31 @@ const AboutDetails = () => {
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const docTop = rect.top + window.scrollY;
-      // Finish revealing when the paragraph centers in the viewport, so the
-      // last word lights up while the whole paragraph is still on screen.
-      // Minimum 200px keeps the per-word reveal perceivable on large screens
-      // where the paragraph is already past center at load.
-      const end = docTop + rect.height / 2 - window.innerHeight / 2;
-      setRevealEnd(Math.max(end, 200));
+      const vh = window.innerHeight;
+      // progress=0 anchor: scrollY at which the paragraph's top reaches 80%
+      // down the viewport (just entering the active area). Clamps to 0 when
+      // the paragraph already sits above that line at load.
+      const start = Math.max(docTop - vh * 0.8, 0);
+      // progress=1 anchor: whichever comes later of (a) scrollY at which the
+      // paragraph centers in the viewport — chosen so the whole paragraph is
+      // still on screen as the last word lights up — or (b) start + 200, a
+      // floor that keeps the active range wide enough for the per-word
+      // cadence to stay perceivable when the center anchor falls too close
+      // to start (e.g. tall viewports where the paragraph is already near
+      // center at load).
+      const end = Math.max(docTop + rect.height / 2 - vh / 2, start + 200);
+      setRevealRange({ start, end });
     };
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  const paragraphScrollProgress = useTransform(scrollY, [0, revealEnd], [0, 1]);
+  const paragraphScrollProgress = useTransform(
+    scrollY,
+    [revealRange.start, revealRange.end],
+    [0, 1]
+  );
 
   useEffect(() => {
     const projectCount = projectsData.length ?? 0
