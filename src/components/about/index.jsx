@@ -1,12 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
-import { animate, AnimatePresence, useInView, motion } from "framer-motion";
+import { animate, AnimatePresence, useInView, useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
 import { projectsData } from "@/app/data";
 import LanguagesCard from "./LanguagesCard";
 import GitHubStatsCard from "./StatsCard";
 import StreakStatsCard from "./StreakStatsCard";
 import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
+
+const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Join me as I continue to explore new spells and technologies to shape the future of the web.";
+const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
+
+const RevealWord = ({ children, progress, range, reducedMotion }) => {
+  const opacity = useTransform(progress, range, [0.15, 1]);
+  return (
+    <motion.span style={{ opacity: reducedMotion ? 1 : opacity }}>
+      {children}{" "}
+    </motion.span>
+  );
+};
 
 const AboutDetails = () => {
   // GitHub Username — override via NEXT_PUBLIC_GITHUB_USERNAME when forking.
@@ -18,6 +30,47 @@ const AboutDetails = () => {
   const [githubStats, setGithubStats] = useState(null)
   const [previousStats, setPreviousStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
+
+  // Scroll-linked per-word reveal for the "Architect of Enchantment" paragraph.
+  // Both ends of the active scroll range are derived from the paragraph's own
+  // document offset so the animation tracks paragraph visibility, not raw
+  // page scroll.
+  const paragraphRef = useRef(null);
+  const prefersReducedMotion = useReducedMotion();
+  const { scrollY } = useScroll();
+  const [revealRange, setRevealRange] = useState({ start: 0, end: 1000 });
+
+  useEffect(() => {
+    const measure = () => {
+      const el = paragraphRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const docTop = rect.top + window.scrollY;
+      const vh = window.innerHeight;
+      // progress=0 anchor: scrollY at which the paragraph's top reaches 80%
+      // down the viewport (just entering the active area). Clamps to 0 when
+      // the paragraph already sits above that line at load.
+      const start = Math.max(docTop - vh * 0.8, 0);
+      // progress=1 anchor: whichever comes later of (a) scrollY at which the
+      // paragraph centers in the viewport — chosen so the whole paragraph is
+      // still on screen as the last word lights up — or (b) start + 200, a
+      // floor that keeps the active range wide enough for the per-word
+      // cadence to stay perceivable when the center anchor falls too close
+      // to start (e.g. tall viewports where the paragraph is already near
+      // center at load).
+      const end = Math.max(docTop + rect.height / 2 - vh / 2, start + 200);
+      setRevealRange({ start, end });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  const paragraphScrollProgress = useTransform(
+    scrollY,
+    [revealRange.start, revealRange.end],
+    [0, 1]
+  );
 
   useEffect(() => {
     const projectCount = projectsData.length ?? 0
@@ -189,14 +242,21 @@ const AboutDetails = () => {
           >
             Architect of Enchantment
           </h2>
-          <p style={{ textShadow: "none" }} className="font-light text-xs sm:text-sm md:text-base text-shadow-neon-light-orange">
-            My journey in web development is powered by an array of mystical tools and
-            languages, with JavaScript casting the core of my enchantments. I wield frameworks like
-            React.js and Next.js with precision, crafting seamless portals (websites) that connect realms
-            (users) across the digital universe. The ancient arts of the Jamstack empower me to create
-            fast, secure, and dynamic experiences, while my design skills ensure every creation is not
-            only functional but visually captivating. Join me as I continue to explore new spells and
-            technologies to shape the future of the web.
+          <p
+            ref={paragraphRef}
+            style={{ textShadow: "none" }}
+            className="font-light text-xs sm:text-sm md:text-base text-shadow-neon-light-orange"
+          >
+            {ARCHITECT_WORDS.map((word, i) => (
+              <RevealWord
+                key={i}
+                progress={paragraphScrollProgress}
+                range={[i / ARCHITECT_WORDS.length, (i + 1) / ARCHITECT_WORDS.length]}
+                reducedMotion={prefersReducedMotion}
+              >
+                {word}
+              </RevealWord>
+            ))}
           </p>
         </ItemLayout>
 
