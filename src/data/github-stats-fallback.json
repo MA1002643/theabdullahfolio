@@ -75,16 +75,5 @@
             "color": "#f1e05a",
             "stars": 0
         }
-    },
-    "icons": [
-        "CSS",
-        "Dockerfile",
-        "HTML",
-        "JavaScript",
-        "PHP",
-        "Procfile",
-        "Shell",
-        "TypeScript",
-        "Vue"
-    ]
+    }
 }

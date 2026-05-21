@@ -242,7 +242,7 @@ theabdullahfolio/
 
 - **Node.js** ≥ 18.17
 - **npm** / **yarn** / **pnpm**
-- A [GitHub Personal Access Token](https://github.com/settings/tokens) with `read:user` and `read:org` scopes
+- A [GitHub Personal Access Token](https://github.com/settings/tokens) — see [GitHub Stats Integration](#github-stats-integration) below for the exact scopes required
 - SMTP credentials — Gmail [App Password](https://support.google.com/accounts/answer/185833) recommended
 
 ### Installation

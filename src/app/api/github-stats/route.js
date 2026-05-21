@@ -14,15 +14,13 @@ const REVALIDATE_SECONDS = 10 * 60;
 // start no longer costs a fresh round of GraphQL calls.
 const getCachedGithubStats = unstable_cache(
   async (username, repoName) => {
-    const [languages, stats, icons] = await Promise.all([
+    const [languages, stats] = await Promise.all([
       getAllLanguages(username),
       fetchGitHubStats(username, repoName),
-      getUserLanguages(username),
     ]);
     return {
       languages: languages.slice(0, 6),
       stats,
-      icons,
     };
   },
   ["github-stats"],
@@ -337,46 +335,3 @@ function computeStreaks(contributionCalendar) {
   return { currentStreak, longestStreak };
 }
 
-async function getUserLanguages(username) {
-  if (!username) throw new Error("Username is required");
-
-  const allLanguages = new Set();
-  let page = 1;
-
-  try {
-    while (true) {
-      // Fetch up to 100 repos per page
-      const repoRes = await fetch(
-        `https://api.github.com/users/${username}/repos?per_page=100&page=${page}`,
-        {
-          headers: {
-            Accept: "application/vnd.github.v3+json",
-            // Optionally add a GitHub token if hitting rate limits:
-            // Authorization: `token YOUR_GITHUB_TOKEN`,
-          },
-        }
-      );
-
-      if (!repoRes.ok) throw new Error(`GitHub API error: ${repoRes.statusText}`);
-      const repos = await repoRes.json();
-      if (repos.length === 0) break; // no more repos
-
-      // Get language data for each repo
-      const langRequests = repos.map(async (repo) => {
-        const langRes = await fetch(repo.languages_url);
-        if (langRes.ok) {
-          const langs = await langRes.json();
-          Object.keys(langs).forEach((lang) => allLanguages.add(lang));
-        }
-      });
-
-      await Promise.all(langRequests);
-      page++;
-    }
-
-    return Array.from(allLanguages).sort();
-  } catch (err) {
-    console.error("Error fetching languages:", err);
-    return [];
-  }
-}

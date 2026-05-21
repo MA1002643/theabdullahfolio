@@ -8,7 +8,8 @@ import StreakStatsCard from "./StreakStatsCard";
 import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
 
-const GITHUB_STATS_STORAGE_KEY = "ma1002643:github-stats:lastGood";
+const githubStatsStorageKey = (username, repo) =>
+  `github-stats:lastGood:${username}:${repo}`;
 
 const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Join me as I continue to explore new spells and technologies to shape the future of the web.";
 const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
@@ -204,16 +205,21 @@ const AboutDetails = () => {
 
     // Persist the last good payload so the next page load can hydrate
     // immediately from cache while the fresh fetch runs in the background.
-    try {
-      window.localStorage.setItem(
-        GITHUB_STATS_STORAGE_KEY,
-        JSON.stringify({
-          languages: data.languages || [],
-          stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: {} },
-        })
-      );
-    } catch {
-      // Quota exceeded or private mode — non-fatal.
+    // Skip when the API served the bundled fallback (`_fallback: true`),
+    // otherwise a transient upstream failure would overwrite genuine cached
+    // stats with stale snapshot data for every future cold load.
+    if (!data?._fallback) {
+      try {
+        window.localStorage.setItem(
+          githubStatsStorageKey(username, repo),
+          JSON.stringify({
+            languages: data.languages || [],
+            stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: {} },
+          })
+        );
+      } catch {
+        // Quota exceeded or private mode — non-fatal.
+      }
     }
   };
 
@@ -221,7 +227,7 @@ const AboutDetails = () => {
     // Hydrate from the previously cached payload so the stat cards never
     // render empty on a cold page load.
     try {
-      const cached = window.localStorage.getItem(GITHUB_STATS_STORAGE_KEY);
+      const cached = window.localStorage.getItem(githubStatsStorageKey(username, repo));
       if (cached) setGithubStats(JSON.parse(cached));
     } catch {
       // Ignore parse / access errors — the fresh fetch will populate state.
