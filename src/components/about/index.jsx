@@ -160,6 +160,13 @@ const AboutDetails = () => {
     }
 
     setGithubStats(prevStats => {
+      // If the API served the bundled fallback (upstream failure) and we
+      // already have real data on screen, keep that state — only let the
+      // fallback populate on a truly empty first load.
+      if (data._fallback && prevStats) {
+        return prevStats;
+      }
+
       // First-time load
       if (!prevStats) {
         return {
