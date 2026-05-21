@@ -8,6 +8,8 @@ import StreakStatsCard from "./StreakStatsCard";
 import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
 
+const GITHUB_STATS_STORAGE_KEY = "ma1002643:github-stats:lastGood";
+
 const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Join me as I continue to explore new spells and technologies to shape the future of the web.";
 const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
 
@@ -144,8 +146,17 @@ const AboutDetails = () => {
 
 
   const getGithubStats = async () => {
-    const res = await fetch(`/api/github-stats?username=${username}&repo=${repo}`);
-    const data = await res.json();
+    let data;
+    try {
+      const res = await fetch(`/api/github-stats?username=${username}&repo=${repo}`);
+      if (!res.ok) throw new Error(`github-stats API responded ${res.status}`);
+      data = await res.json();
+    } catch (err) {
+      // Keep whatever state we already have (localStorage hydrate or prior poll)
+      // so the cards never go blank on a transient fetch failure.
+      console.error("Failed to load GitHub stats:", err);
+      return;
+    }
 
     setGithubStats(prevStats => {
       // First-time load
@@ -190,16 +201,37 @@ const AboutDetails = () => {
 
       return updatedStats;
     });
+
+    // Persist the last good payload so the next page load can hydrate
+    // immediately from cache while the fresh fetch runs in the background.
+    try {
+      window.localStorage.setItem(
+        GITHUB_STATS_STORAGE_KEY,
+        JSON.stringify({
+          languages: data.languages || [],
+          stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: {} },
+        })
+      );
+    } catch {
+      // Quota exceeded or private mode — non-fatal.
+    }
   };
 
   useEffect(() => {
+    // Hydrate from the previously cached payload so the stat cards never
+    // render empty on a cold page load.
+    try {
+      const cached = window.localStorage.getItem(GITHUB_STATS_STORAGE_KEY);
+      if (cached) setGithubStats(JSON.parse(cached));
+    } catch {
+      // Ignore parse / access errors — the fresh fetch will populate state.
+    }
+
     getGithubStats();
 
-    // Fetch every 5 minutes instead of 8 seconds to respect cache and rate limits
-    const interval = setInterval(() => {
-      getGithubStats();
-    }, 5 * 60 * 1000); // 5 minutes = 300,000ms
-
+    // Poll every 10 minutes to match the API cache TTL (no point asking for
+    // fresh data more often than the server is willing to compute it).
+    const interval = setInterval(getGithubStats, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 

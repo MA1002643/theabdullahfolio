@@ -278,6 +278,33 @@ RECEIVER_EMAIL=recipient@example.com
 # ABSTRACT_API_KEY=...            # email reputation check via abstractapi.com
 ```
 
+### GitHub Stats Integration
+
+The `/about` page (Most Used Languages, GitHub Stats, Streaks, Repository card) is powered by `/api/github-stats`, a single GraphQL aggregator that runs against your own PAT instead of public unauthenticated requests.
+
+**1. Create the token** — [github.com/settings/tokens](https://github.com/settings/tokens). Either:
+- **Fine-grained PAT** (recommended) scoped to your account with *read-only* access to `Public repositories` (Metadata) and `Contents`.
+- **Classic PAT** with the `public_repo` scope.
+
+Set it as `GITHUB_TOKEN` in `.env.local`. The token is server-only — it is never exposed to the browser bundle (no `NEXT_PUBLIC_` prefix).
+
+**2. Caching behavior** — three layers protect the GitHub API from being hit on every request:
+
+| Layer | TTL | Where |
+|---|---|---|
+| Next.js Data Cache (`unstable_cache`) | 10 min | Survives serverless cold starts within a deployment |
+| CDN `s-maxage` / `stale-while-revalidate` / `stale-if-error` | 10 min / 5 min / 24 hr | Edge caches the response and serves stale on upstream errors |
+| `localStorage` last-good payload | until next successful fetch | Hydrates the stat cards on cold page loads so they never render empty |
+
+**3. Fallback on total failure** — if GitHub returns errors, the route serves the bundled snapshot at [src/data/github-stats-fallback.json](src/data/github-stats-fallback.json) with `X-Cache-Status: FALLBACK`. To refresh the snapshot, run the dev server, hit the API, and overwrite the file:
+
+```bash
+curl "http://localhost:3000/api/github-stats?username=YOUR_USERNAME&repo=YOUR_REPO" \
+  | python3 -m json.tool > src/data/github-stats-fallback.json
+```
+
+**4. Cache invalidation** — the Data Cache expires automatically every 10 minutes. To force a refresh sooner, redeploy or call `revalidateTag("github-stats")` from a Server Action.
+
 ### Commands
 
 ```bash
@@ -321,7 +348,7 @@ upgrade-insecure-requests
 | **Image pipeline** | Sharp — automatic WebP / AVIF conversion |
 | **Font loading** | `next/font` self-hosted Inter, zero layout shift |
 | **Code splitting** | Route-based automatic splitting; Three.js loaded only on `/projects/[id]` |
-| **API caching** | 10-min in-memory cache on `/api/github-stats` to reduce GitHub API round trips |
+| **API caching** | `/api/github-stats` wrapped in Next.js `unstable_cache` (10-min TTL, 5-min stale-while-revalidate, 24-hr stale-if-error) — persists across serverless cold starts and falls back to a bundled JSON snapshot on total upstream failure |
 | **Analytics** | Vercel Speed Insights + Web Analytics for real-user Core Web Vitals |
 
 </details>

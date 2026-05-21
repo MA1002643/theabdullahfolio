@@ -1,39 +1,37 @@
 import { parseGitHubText } from "@/utils/emoji";
 import { calculateRank } from "@/utils/rankCalculator";
+import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
+import fallbackStats from "@/data/github-stats-fallback.json";
 
 const GITHUB_API = "https://api.github.com/graphql";
-const TOKEN = process.env.GITHUB_TOKEN; // store this securely in your .env.local
+const TOKEN = process.env.GITHUB_TOKEN;
+const REVALIDATE_SECONDS = 10 * 60;
 
-// ===== IN-MEMORY CACHE =====
-const cache = new Map();
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
+// Aggregated GitHub fetcher wrapped in Next's persistent data cache. The
+// per-(username, repoName) cache key is derived from the runtime args; cached
+// payloads survive serverless cold starts within a deployment, so each cold
+// start no longer costs a fresh round of GraphQL calls.
+const getCachedGithubStats = unstable_cache(
+  async (username, repoName) => {
+    const [languages, stats, icons] = await Promise.all([
+      getAllLanguages(username),
+      fetchGitHubStats(username, repoName),
+      getUserLanguages(username),
+    ]);
+    return {
+      languages: languages.slice(0, 6),
+      stats,
+      icons,
+    };
+  },
+  ["github-stats"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["github-stats"] }
+);
 
-function getCachedData(key) {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log(`Cache HIT for key: ${key}`);
-    return cached.data;
-  }
-  console.log(`Cache MISS for key: ${key}`);
-  return null;
-}
-
-function setCachedData(key, data) {
-  cache.set(key, { data, timestamp: Date.now() });
-  console.log(`Cache SET for key: ${key}`);
-}
-
-// Cleanup old cache entries every 15 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of cache.entries()) {
-    if (now - value.timestamp > CACHE_DURATION) {
-      cache.delete(key);
-      console.log(`Cache EXPIRED and removed: ${key}`);
-    }
-  }
-}, 15 * 60 * 1000);
+const CACHE_HEADERS = {
+  "Cache-Control": `public, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=300, stale-if-error=86400`,
+};
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -47,45 +45,21 @@ export async function GET(request) {
     );
   }
 
-  // Create unique cache key
-  const cacheKey = `${username}-${repoName || 'default'}`;
-  
-  // Check cache first
-  const cachedData = getCachedData(cacheKey);
-  if (cachedData) {
-    return NextResponse.json(cachedData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
-        'X-Cache-Status': 'HIT',
-      },
-    });
-  }
-
   try {
-    const languages = await getAllLanguages(username);
-    const stats = await fetchGitHubStats(username, repoName);
-    const iconsLanguages = await getUserLanguages(username);
-    
-    const responseData = { 
-      languages: languages.slice(0, 6), 
-      stats, 
-      icons: iconsLanguages 
-    };
-    
-    // Store in cache
-    setCachedData(cacheKey, responseData);
-    
-    return NextResponse.json(responseData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
-        'X-Cache-Status': 'MISS',
-      },
-    });
+    const data = await getCachedGithubStats(username, repoName);
+    return NextResponse.json(data, { headers: CACHE_HEADERS });
   } catch (error) {
-    console.error("GitHub API Error:", error);
+    // Total upstream failure (rate limit, network, GraphQL error). Serve the
+    // bundled snapshot so the about page never renders empty stat cards.
+    console.error("GitHub stats fetch failed, serving fallback:", error);
     return NextResponse.json(
-      { error: "Failed to fetch GitHub language stats" },
-      { status: 500 }
+      { ...fallbackStats, _fallback: true },
+      {
+        headers: {
+          ...CACHE_HEADERS,
+          "X-Cache-Status": "FALLBACK",
+        },
+      }
     );
   }
 }

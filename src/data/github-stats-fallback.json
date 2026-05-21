@@ -1,0 +1,90 @@
+{
+    "languages": [
+        {
+            "language": "JavaScript",
+            "color": "#f1e05a",
+            "size": 480017,
+            "percentage": "57.18"
+        },
+        {
+            "language": "CSS",
+            "color": "#663399",
+            "size": 179934,
+            "percentage": "21.44"
+        },
+        {
+            "language": "HTML",
+            "color": "#e34c26",
+            "size": 117506,
+            "percentage": "14.00"
+        },
+        {
+            "language": "Vue",
+            "color": "#41b883",
+            "size": 58670,
+            "percentage": "6.99"
+        },
+        {
+            "language": "TypeScript",
+            "color": "#3178c6",
+            "size": 2785,
+            "percentage": "0.33"
+        },
+        {
+            "language": "Dockerfile",
+            "color": "#384d54",
+            "size": 500,
+            "percentage": "0.06"
+        }
+    ],
+    "stats": {
+        "user": {
+            "username": "MA1002643",
+            "name": "Muhammad Abdullah",
+            "createdAt": "Jul 23, 2021"
+        },
+        "stats": {
+            "commits": 1495,
+            "prs": 29,
+            "issues": 232,
+            "contributedTo": 10,
+            "followers": 6,
+            "stars": 1,
+            "totalContributions": 1800,
+            "level": "B-",
+            "percentile": "65.19"
+        },
+        "streaks": {
+            "totalContributions": {
+                "value": 250,
+                "dateRange": "May 18, 2025 - Present"
+            },
+            "currentStreak": {
+                "value": 252,
+                "dateRange": "Sep 12, 2025 - Present"
+            },
+            "longestStreak": {
+                "value": 252,
+                "dateRange": "Sep 12, 2025 - Present"
+            }
+        },
+        "repo": {
+            "title": "github-readme-stats",
+            "description": "\u26a1 Dynamically generated stats for your github readmes",
+            "language": "JavaScript",
+            "color": "#f1e05a",
+            "stars": 0
+        }
+    },
+    "icons": [
+        "CSS",
+        "Dockerfile",
+        "HTML",
+        "JavaScript",
+        "PHP",
+        "Procfile",
+        "Shell",
+        "TypeScript",
+        "Vue"
+    ]
+}
