@@ -1,39 +1,35 @@
 import { parseGitHubText } from "@/utils/emoji";
 import { calculateRank } from "@/utils/rankCalculator";
+import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
+import fallbackStats from "@/data/github-stats-fallback.json";
 
 const GITHUB_API = "https://api.github.com/graphql";
-const TOKEN = process.env.GITHUB_TOKEN; // store this securely in your .env.local
+const TOKEN = process.env.GITHUB_TOKEN;
+const REVALIDATE_SECONDS = 10 * 60;
 
-// ===== IN-MEMORY CACHE =====
-const cache = new Map();
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
+// Aggregated GitHub fetcher wrapped in Next's persistent data cache. The
+// per-(username, repoName) cache key is derived from the runtime args; cached
+// payloads survive serverless cold starts within a deployment, so each cold
+// start no longer costs a fresh round of GraphQL calls.
+const getCachedGithubStats = unstable_cache(
+  async (username, repoName) => {
+    const [languages, stats] = await Promise.all([
+      getAllLanguages(username),
+      fetchGitHubStats(username, repoName),
+    ]);
+    return {
+      languages: languages.slice(0, 6),
+      stats,
+    };
+  },
+  ["github-stats"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["github-stats"] }
+);
 
-function getCachedData(key) {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log(`Cache HIT for key: ${key}`);
-    return cached.data;
-  }
-  console.log(`Cache MISS for key: ${key}`);
-  return null;
-}
-
-function setCachedData(key, data) {
-  cache.set(key, { data, timestamp: Date.now() });
-  console.log(`Cache SET for key: ${key}`);
-}
-
-// Cleanup old cache entries every 15 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of cache.entries()) {
-    if (now - value.timestamp > CACHE_DURATION) {
-      cache.delete(key);
-      console.log(`Cache EXPIRED and removed: ${key}`);
-    }
-  }
-}, 15 * 60 * 1000);
+const CACHE_HEADERS = {
+  "Cache-Control": `public, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=300, stale-if-error=86400`,
+};
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -47,45 +43,31 @@ export async function GET(request) {
     );
   }
 
-  // Create unique cache key
-  const cacheKey = `${username}-${repoName || 'default'}`;
-  
-  // Check cache first
-  const cachedData = getCachedData(cacheKey);
-  if (cachedData) {
-    return NextResponse.json(cachedData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
-        'X-Cache-Status': 'HIT',
-      },
-    });
+  // `repoName` feeds a `String!` GraphQL variable; missing it would throw
+  // inside the cached fetcher and incorrectly trip the fallback branch below,
+  // so reject the malformed request up front.
+  if (!repoName) {
+    return NextResponse.json(
+      { error: "Missing 'repo' query parameter." },
+      { status: 400 }
+    );
   }
 
   try {
-    const languages = await getAllLanguages(username);
-    const stats = await fetchGitHubStats(username, repoName);
-    const iconsLanguages = await getUserLanguages(username);
-    
-    const responseData = { 
-      languages: languages.slice(0, 6), 
-      stats, 
-      icons: iconsLanguages 
-    };
-    
-    // Store in cache
-    setCachedData(cacheKey, responseData);
-    
-    return NextResponse.json(responseData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
-        'X-Cache-Status': 'MISS',
-      },
-    });
+    const data = await getCachedGithubStats(username, repoName);
+    return NextResponse.json(data, { headers: CACHE_HEADERS });
   } catch (error) {
-    console.error("GitHub API Error:", error);
+    // Total upstream failure (rate limit, network, GraphQL error). Serve the
+    // bundled snapshot so the about page never renders empty stat cards.
+    console.error("GitHub stats fetch failed, serving fallback:", error);
     return NextResponse.json(
-      { error: "Failed to fetch GitHub language stats" },
-      { status: 500 }
+      { ...fallbackStats, _fallback: true },
+      {
+        headers: {
+          ...CACHE_HEADERS,
+          "X-Cache-Status": "FALLBACK",
+        },
+      }
     );
   }
 }
@@ -363,46 +345,3 @@ function computeStreaks(contributionCalendar) {
   return { currentStreak, longestStreak };
 }
 
-async function getUserLanguages(username) {
-  if (!username) throw new Error("Username is required");
-
-  const allLanguages = new Set();
-  let page = 1;
-
-  try {
-    while (true) {
-      // Fetch up to 100 repos per page
-      const repoRes = await fetch(
-        `https://api.github.com/users/${username}/repos?per_page=100&page=${page}`,
-        {
-          headers: {
-            Accept: "application/vnd.github.v3+json",
-            // Optionally add a GitHub token if hitting rate limits:
-            // Authorization: `token YOUR_GITHUB_TOKEN`,
-          },
-        }
-      );
-
-      if (!repoRes.ok) throw new Error(`GitHub API error: ${repoRes.statusText}`);
-      const repos = await repoRes.json();
-      if (repos.length === 0) break; // no more repos
-
-      // Get language data for each repo
-      const langRequests = repos.map(async (repo) => {
-        const langRes = await fetch(repo.languages_url);
-        if (langRes.ok) {
-          const langs = await langRes.json();
-          Object.keys(langs).forEach((lang) => allLanguages.add(lang));
-        }
-      });
-
-      await Promise.all(langRequests);
-      page++;
-    }
-
-    return Array.from(allLanguages).sort();
-  } catch (err) {
-    console.error("Error fetching languages:", err);
-    return [];
-  }
-}
