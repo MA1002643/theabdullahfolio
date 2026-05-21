@@ -43,6 +43,16 @@ export async function GET(request) {
     );
   }
 
+  // `repoName` feeds a `String!` GraphQL variable; missing it would throw
+  // inside the cached fetcher and incorrectly trip the fallback branch below,
+  // so reject the malformed request up front.
+  if (!repoName) {
+    return NextResponse.json(
+      { error: "Missing 'repo' query parameter." },
+      { status: 400 }
+    );
+  }
+
   try {
     const data = await getCachedGithubStats(username, repoName);
     return NextResponse.json(data, { headers: CACHE_HEADERS });
