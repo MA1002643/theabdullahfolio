@@ -409,6 +409,14 @@
     animation: none;
     opacity: 0.5;
   }
+
+  /* Issue #22 animations: the badge shimmer sweep and repo-card breathing
+     glow are decorative-only — neither communicates state. Hold them at a
+     calm resting frame for users who opt out of motion. */
+  .badge-shimmer,
+  .repo-card-breathe {
+    animation: none;
+  }
 }
 
 /* 0 0 2px #ffaa2a, 0 0 3px yellow, 0 0 3px orange, 0 0 6px orangered; */

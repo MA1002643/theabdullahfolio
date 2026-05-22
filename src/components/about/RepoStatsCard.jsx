@@ -272,7 +272,9 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
     name = "",
     description = "",
     language = "Unknown",
-    languageColor = "#888",
+    // 6-digit hex; the `${languageColor}80` / `${languageColor}cc` alpha
+    // suffixes below produce invalid CSS (`#88880`) against a 3-digit color.
+    languageColor = "#888888",
     stars = 0,
     forks = 0,
     mergedPRs = 0,

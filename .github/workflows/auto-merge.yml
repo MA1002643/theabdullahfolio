@@ -17,7 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
-      - uses: actions/github-script@v7
+      # Pinned to the SHA that the `v7` tag resolved to (latest v7.x at time of
+      # pinning). Immutable SHA refs prevent a hijacked tag from injecting code
+      # into this workflow; bump alongside any future v7 → v8/v9 upgrade.
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             try {
