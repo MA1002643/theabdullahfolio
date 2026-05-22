@@ -8,8 +8,12 @@ on:
   pull_request:
     types: [opened, reopened, ready_for_review]
 
+# Least-privilege: `enableAutoMerge` is a PR-level mutation and only needs
+# `pull-requests: write`. Dropping `contents: write` denies the token the
+# ability to push commits, modify files, or cut releases — actions this
+# workflow never performs — shrinking the blast radius if the token is ever
+# compromised through a malicious dependency or pull_request_target misuse.
 permissions:
-  contents: write
   pull-requests: write
 
 jobs:

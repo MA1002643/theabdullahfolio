@@ -18,13 +18,19 @@
  * which produces the visible deceleration that makes the settle feel
  * intentional — for stat counters this reads as polish, not jank.
  *
- * @param {number} t - progress, clamped to 0..1
- * @returns {number} eased progress, 0..1
+ * @param {number} t - progress; clamped internally to 0..1
+ * @returns {number} eased progress in [0, 1]
  */
 export function fastStartSlowFinish(t) {
-  if (t < 0.25) {
-    return (t / 0.25) * 0.7;
+  // Clamp to honor the documented contract. Framer Motion passes this as an
+  // `ease` function and can call it with values like 1.0000001 at animation
+  // boundaries (or briefly negative under anticipation transitions). Without
+  // this, the sprint phase emits a negative result and the settle phase
+  // exceeds 1, producing a one-frame jitter at the start and end.
+  const x = t <= 0 ? 0 : t >= 1 ? 1 : t;
+  if (x < 0.25) {
+    return (x / 0.25) * 0.7;
   }
-  const localT = (t - 0.25) / 0.75;
+  const localT = (x - 0.25) / 0.75;
   return 0.7 + 0.3 * (1 - Math.pow(1 - localT, 3));
 }

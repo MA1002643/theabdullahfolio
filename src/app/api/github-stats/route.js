@@ -63,6 +63,15 @@ const CACHE_HEADERS = {
   "Cache-Control": `public, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=300, stale-if-error=86400`,
 };
 
+// The only username this endpoint will serve. Pinning to the site owner's
+// account closes a token/rate-limit exhaustion vector: without this guard, any
+// caller varying `?username=` triggers a fresh, expensive GraphQL chain (paged
+// repo languages + most-active scoring + repo detail fetch) against the
+// shared GITHUB_TOKEN and pollutes `unstable_cache` with junk entries.
+const ALLOWED_USERNAME = (
+  process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643"
+).toLowerCase();
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const username = searchParams.get("username");
@@ -71,6 +80,14 @@ export async function GET(request) {
     return NextResponse.json(
       { error: "Missing 'username' query parameter." },
       { status: 400 }
+    );
+  }
+
+  // GitHub usernames are case-insensitive, so normalize before comparing.
+  if (username.toLowerCase() !== ALLOWED_USERNAME) {
+    return NextResponse.json(
+      { error: "Username not allowed" },
+      { status: 403 }
     );
   }
 
@@ -371,8 +388,12 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
 // its own 24-hour cache layer since this query is expensive (paged contribution
 // breakdowns + per-repo commit history) and changes slowly.
 async function findMostActiveRepo(username) {
-  const query = `
-    query FindMostActiveRepo($username: String!) {
+  // Initial query: contributions in full + first page of owned repos.
+  // GitHub caps `*ContributionsByRepository` at maxRepositories: 100 with no
+  // cursor available, so contributions cannot be paged — that's a platform
+  // limit. `repositories` does expose pageInfo, so we paginate it below.
+  const initialQuery = `
+    query FindMostActiveRepo($username: String!, $after: String) {
       user(login: $username) {
         contributionsCollection {
           commitContributionsByRepository(maxRepositories: 100) {
@@ -392,7 +413,8 @@ async function findMostActiveRepo(username) {
             contributions { totalCount }
           }
         }
-        repositories(first: 100, ownerAffiliations: OWNER, isFork: false) {
+        repositories(first: 100, after: $after, ownerAffiliations: OWNER, isFork: false) {
+          pageInfo { hasNextPage endCursor }
           nodes {
             name
             owner { login }
@@ -409,19 +431,57 @@ async function findMostActiveRepo(username) {
     }
   `;
 
-  const res = await fetch(GITHUB_API, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables: { username } }),
-  });
+  // Cursor-only query for subsequent repo pages — skips the (expensive,
+  // already-fetched) contributions block so each extra page only costs the
+  // owned-repos slice.
+  const reposPageQuery = `
+    query FindMostActiveRepoReposPage($username: String!, $after: String!) {
+      user(login: $username) {
+        repositories(first: 100, after: $after, ownerAffiliations: OWNER, isFork: false) {
+          pageInfo { hasNextPage endCursor }
+          nodes {
+            name
+            owner { login }
+            defaultBranchRef {
+              target {
+                ... on Commit {
+                  history { totalCount }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
 
-  const json = await res.json();
-  if (json.errors) throw new Error(json.errors[0]?.message);
-  const user = json.data.user;
-  if (!user) throw new Error("User not found");
+  const gqlFetch = async (query, variables) => {
+    const res = await fetch(GITHUB_API, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+    const json = await res.json();
+    if (json.errors) throw new Error(json.errors[0]?.message);
+    if (!json.data?.user) throw new Error("User not found");
+    return json.data.user;
+  };
+
+  const user = await gqlFetch(initialQuery, { username, after: null });
+
+  // Collect every owned repo across pages so the history-depth tie-breaker
+  // covers users with >100 repos. For accounts with ≤100 repos the loop is
+  // skipped and the function still completes in a single round-trip.
+  const ownedRepos = [...user.repositories.nodes];
+  let { hasNextPage, endCursor } = user.repositories.pageInfo;
+  while (hasNextPage) {
+    const page = await gqlFetch(reposPageQuery, { username, after: endCursor });
+    ownedRepos.push(...page.repositories.nodes);
+    ({ hasNextPage, endCursor } = page.repositories.pageInfo);
+  }
 
   const excludeSet = mostActiveRepoExclude(username);
   // Key entries by `owner/name` (lowercased) so the same repo accumulates
@@ -442,8 +502,11 @@ async function findMostActiveRepo(username) {
     }
   };
 
-  // Weights chosen so PRs and reviews — the highest-effort engineering acts —
-  // outrank raw commits, which in turn outrank issues and ambient history.
+  // Weight tiers, from highest signal to lowest:
+  //   5 — PRs authored & PR reviews: the highest-effort engineering acts.
+  //   4 — commits: substantive but commonplace.
+  //   3 — issues: meaningful engagement but lower craft.
+  //   1 — ambient owned-repo history (added below, soft tie-breaker).
   for (const c of user.contributionsCollection.commitContributionsByRepository) {
     addScore(c.repository, 4, c.contributions.totalCount);
   }
@@ -454,11 +517,13 @@ async function findMostActiveRepo(username) {
     addScore(c.repository, 5, c.contributions.totalCount);
   }
   for (const c of user.contributionsCollection.pullRequestReviewContributionsByRepository) {
-    addScore(c.repository, 4, c.contributions.totalCount);
+    addScore(c.repository, 5, c.contributions.totalCount);
   }
   // Soft boost from total commit history on owned repos — helps a deep-history
-  // repo break ties when contribution counts converge.
-  for (const repo of user.repositories.nodes) {
+  // repo break ties when contribution counts converge. `ownedRepos` covers
+  // every owned, non-fork repo across pages, so users with >100 repos still
+  // get the full tie-breaker signal.
+  for (const repo of ownedRepos) {
     const commits = repo.defaultBranchRef?.target?.history?.totalCount || 0;
     addScore(repo, 1, commits);
   }

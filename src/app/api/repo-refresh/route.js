@@ -23,12 +23,14 @@ export async function GET(request) {
   }
 
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
-  // `https://${VERCEL_URL}` is always truthy even when VERCEL_URL is
-  // undefined (template literal evaluates to "https://undefined"), so the
+  // Server-only base URL — intentionally named `BASE_URL` (not the
+  // `NEXT_PUBLIC_*` prefix) so Next.js doesn't inline the value into client
+  // bundles. `https://${VERCEL_URL}` is always truthy even when VERCEL_URL
+  // is undefined (template literal evaluates to "https://undefined"), so the
   // VERCEL_URL branch needs an explicit existence check before the localhost
   // fallback can ever be reached.
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.BASE_URL ||
     (process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000");
@@ -39,9 +41,22 @@ export async function GET(request) {
     revalidateTag("github-stats");
     revalidateTag("most-active-repo");
 
+    // Bypass two distinct cache layers when warming:
+    //   1. `cache: "no-store"` + `Cache-Control: no-cache` request header
+    //      defeats the Vercel/edge CDN that would otherwise serve the response
+    //      built off `Cache-Control: s-maxage=600` set by /api/github-stats.
+    //   2. A timestamp query param produces a unique URL per cron run, so
+    //      even if a CDN ignores the header it cannot match a prior cache key.
+    // Without both, `revalidateTag` invalidates the inner unstable_cache but
+    // the warm-up fetch is served straight from the CDN, the route handler
+    // never runs, and the inner cache is never recomputed.
+    const cacheBust = Date.now();
     const res = await fetch(
-      `${baseUrl}/api/github-stats?username=${encodeURIComponent(username)}`,
-      { cache: "no-store" }
+      `${baseUrl}/api/github-stats?username=${encodeURIComponent(username)}&_=${cacheBust}`,
+      {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      }
     );
 
     if (!res.ok) {
