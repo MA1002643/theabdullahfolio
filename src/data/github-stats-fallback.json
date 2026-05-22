@@ -3,20 +3,20 @@
         {
             "language": "JavaScript",
             "color": "#f1e05a",
-            "size": 480017,
-            "percentage": "57.18"
+            "size": 480471,
+            "percentage": "57.21"
         },
         {
             "language": "CSS",
             "color": "#663399",
             "size": 179934,
-            "percentage": "21.44"
+            "percentage": "21.42"
         },
         {
             "language": "HTML",
             "color": "#e34c26",
             "size": 117506,
-            "percentage": "14.00"
+            "percentage": "13.99"
         },
         {
             "language": "Vue",
@@ -44,15 +44,15 @@
             "createdAt": "Jul 23, 2021"
         },
         "stats": {
-            "commits": 1495,
-            "prs": 29,
+            "commits": 1501,
+            "prs": 30,
             "issues": 232,
             "contributedTo": 10,
-            "followers": 6,
+            "followers": 5,
             "stars": 1,
-            "totalContributions": 1800,
+            "totalContributions": 1807,
             "level": "B-",
-            "percentile": "65.19"
+            "percentile": "65.40"
         },
         "streaks": {
             "totalContributions": {
@@ -69,11 +69,20 @@
             }
         },
         "repo": {
-            "title": "github-readme-stats",
-            "description": "\u26a1 Dynamically generated stats for your github readmes",
-            "language": "JavaScript",
-            "color": "#f1e05a",
-            "stars": 0
+            "name": "MA1002643",
+            "description": "A personal GitHub profile README repository that highlights my projects, skills, and developer journey.",
+            "language": "Unknown",
+            "languageColor": "#999",
+            "stars": 0,
+            "forks": 0,
+            "watchers": 0,
+            "openIssues": 0,
+            "closedIssues": 1,
+            "openPRs": 0,
+            "mergedPRs": 0,
+            "commitCount": 2844,
+            "pushedAt": "May 21",
+            "activityScore": 7791
         }
     }
 }

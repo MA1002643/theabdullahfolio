@@ -7,16 +7,36 @@ import fallbackStats from "@/data/github-stats-fallback.json";
 const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 const REVALIDATE_SECONDS = 10 * 60;
+const MOST_ACTIVE_REPO_REVALIDATE_SECONDS = 24 * 60 * 60;
+
+// Repos to skip when picking the "most active" feature repo. The profile-README
+// repo is excluded because every push there is a meta-edit of the about page
+// itself, which makes it artificially dominate the activity score.
+const MOST_ACTIVE_REPO_EXCLUDE = new Set(["MA1002643"]);
+
+// The "most active repository" selection is far more expensive than the rest
+// of the stats (it pages contribution breakdowns + per-repo commit history) and
+// changes slowly, so it gets its own cache layer with a 24-hour TTL. The
+// display-data cache continues to refresh every 10 minutes.
+const getCachedMostActiveRepo = unstable_cache(
+  async (username) => findMostActiveRepo(username),
+  ["most-active-repo"],
+  {
+    revalidate: MOST_ACTIVE_REPO_REVALIDATE_SECONDS,
+    tags: ["github-stats", "most-active-repo"],
+  }
+);
 
 // Aggregated GitHub fetcher wrapped in Next's persistent data cache. The
-// per-(username, repoName) cache key is derived from the runtime args; cached
-// payloads survive serverless cold starts within a deployment, so each cold
-// start no longer costs a fresh round of GraphQL calls.
+// repo name is resolved by the scoring algorithm before each fresh fetch and
+// cached separately at a 24-hour TTL — the display data still refreshes every
+// 10 minutes against whatever repo the algorithm last picked.
 const getCachedGithubStats = unstable_cache(
-  async (username, repoName) => {
+  async (username) => {
+    const mostActiveRepo = await getCachedMostActiveRepo(username);
     const [languages, stats] = await Promise.all([
       getAllLanguages(username),
-      fetchGitHubStats(username, repoName),
+      fetchGitHubStats(username, mostActiveRepo.name, mostActiveRepo.activityScore),
     ]);
     return {
       languages: languages.slice(0, 6),
@@ -34,7 +54,6 @@ const CACHE_HEADERS = {
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const username = searchParams.get("username");
-  const repoName = searchParams.get("repo");
 
   if (!username) {
     return NextResponse.json(
@@ -43,18 +62,8 @@ export async function GET(request) {
     );
   }
 
-  // `repoName` feeds a `String!` GraphQL variable; missing it would throw
-  // inside the cached fetcher and incorrectly trip the fallback branch below,
-  // so reject the malformed request up front.
-  if (!repoName) {
-    return NextResponse.json(
-      { error: "Missing 'repo' query parameter." },
-      { status: 400 }
-    );
-  }
-
   try {
-    const data = await getCachedGithubStats(username, repoName);
+    const data = await getCachedGithubStats(username);
     return NextResponse.json(data, { headers: CACHE_HEADERS });
   } catch (error) {
     // Total upstream failure (rate limit, network, GraphQL error). Serve the
@@ -156,7 +165,7 @@ async function getAllLanguages(username) {
     }));
 }
 
-async function fetchGitHubStats(username, repoName) {
+async function fetchGitHubStats(username, repoName, activityScore = 0) {
   const query = `
     query ($username: String!, $repoName: String!) {
       user(login: $username) {
@@ -182,7 +191,21 @@ async function fetchGitHubStats(username, repoName) {
         name
         description
         stargazerCount
+        forkCount
+        pushedAt
+        watchers { totalCount }
         primaryLanguage { name color }
+        issues(states: OPEN) { totalCount }
+        closedIssues: issues(states: CLOSED) { totalCount }
+        pullRequests(states: OPEN) { totalCount }
+        mergedPRs: pullRequests(states: MERGED) { totalCount }
+        defaultBranchRef {
+          target {
+            ... on Commit {
+              history { totalCount }
+            }
+          }
+        }
       }
     }
   `;
@@ -296,14 +319,124 @@ async function fetchGitHubStats(username, repoName) {
     },
     repo: repo
       ? {
-        title: parseGitHubText(repo.name),
+        name: repo.name,
         description: parseGitHubText(repo.description || "No description"),
         language: repo.primaryLanguage?.name || "Unknown",
-        color: repo.primaryLanguage?.color || "#999",
+        languageColor: repo.primaryLanguage?.color || "#999",
         stars: repo.stargazerCount,
+        forks: repo.forkCount,
+        watchers: repo.watchers?.totalCount || 0,
+        openIssues: repo.issues?.totalCount || 0,
+        closedIssues: repo.closedIssues?.totalCount || 0,
+        openPRs: repo.pullRequests?.totalCount || 0,
+        mergedPRs: repo.mergedPRs?.totalCount || 0,
+        commitCount: repo.defaultBranchRef?.target?.history?.totalCount || 0,
+        pushedAt: formatDate(repo.pushedAt),
+        activityScore,
       }
       : null,
   };
+}
+
+// Scores every repository the user has contributed to in the last year by
+// weighting commits, issues, PRs, reviews, and overall history depth — picks
+// the highest-scoring repo as the one to feature on the about page. Wrapped in
+// its own 24-hour cache layer since this query is expensive (paged contribution
+// breakdowns + per-repo commit history) and changes slowly.
+async function findMostActiveRepo(username) {
+  const query = `
+    query FindMostActiveRepo($username: String!) {
+      user(login: $username) {
+        contributionsCollection {
+          commitContributionsByRepository(maxRepositories: 100) {
+            repository { name }
+            contributions { totalCount }
+          }
+          issueContributionsByRepository(maxRepositories: 100) {
+            repository { name }
+            contributions { totalCount }
+          }
+          pullRequestContributionsByRepository(maxRepositories: 100) {
+            repository { name }
+            contributions { totalCount }
+          }
+          pullRequestReviewContributionsByRepository(maxRepositories: 100) {
+            repository { name }
+            contributions { totalCount }
+          }
+        }
+        repositories(first: 100, ownerAffiliations: OWNER, isFork: false) {
+          nodes {
+            name
+            defaultBranchRef {
+              target {
+                ... on Commit {
+                  history { totalCount }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const res = await fetch(GITHUB_API, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, variables: { username } }),
+  });
+
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message);
+  const user = json.data.user;
+  if (!user) throw new Error("User not found");
+
+  const scoreByRepo = new Map();
+  const addScore = (repoName, weight, count) => {
+    if (!repoName || !count) return;
+    if (MOST_ACTIVE_REPO_EXCLUDE.has(repoName)) return;
+    scoreByRepo.set(repoName, (scoreByRepo.get(repoName) || 0) + weight * count);
+  };
+
+  // Weights chosen so PRs and reviews — the highest-effort engineering acts —
+  // outrank raw commits, which in turn outrank issues and ambient history.
+  for (const c of user.contributionsCollection.commitContributionsByRepository) {
+    addScore(c.repository?.name, 4, c.contributions.totalCount);
+  }
+  for (const c of user.contributionsCollection.issueContributionsByRepository) {
+    addScore(c.repository?.name, 3, c.contributions.totalCount);
+  }
+  for (const c of user.contributionsCollection.pullRequestContributionsByRepository) {
+    addScore(c.repository?.name, 5, c.contributions.totalCount);
+  }
+  for (const c of user.contributionsCollection.pullRequestReviewContributionsByRepository) {
+    addScore(c.repository?.name, 4, c.contributions.totalCount);
+  }
+  // Soft boost from total commit history on owned repos — helps a deep-history
+  // repo break ties when contribution counts converge.
+  for (const repo of user.repositories.nodes) {
+    const commits = repo.defaultBranchRef?.target?.history?.totalCount || 0;
+    addScore(repo.name, 1, commits);
+  }
+
+  if (scoreByRepo.size === 0) {
+    throw new Error("No repository activity found for user");
+  }
+
+  let bestName = null;
+  let bestScore = -1;
+  for (const [name, score] of scoreByRepo) {
+    if (score > bestScore) {
+      bestName = name;
+      bestScore = score;
+    }
+  }
+
+  return { name: bestName, activityScore: bestScore };
 }
 
 function computeStreaks(contributionCalendar) {

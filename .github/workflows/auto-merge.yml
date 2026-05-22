@@ -1,0 +1,36 @@
+name: Enable Auto-Merge
+
+# Issue #22 / §12 — flips on auto-merge for every PR opened against main, so
+# once status checks pass and required reviewers approve, GitHub merges the PR
+# without a manual click. Branch-protection rules still apply: this only ARMS
+# auto-merge, it does not bypass review/check requirements.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable-auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.pulls.enableAutoMerge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                merge_method: "squash",
+              });
+              core.info(`Auto-merge enabled on #${context.payload.pull_request.number}`);
+            } catch (err) {
+              // Most common cause: repo has auto-merge disabled at the org/repo
+              // level, or branch protection is not configured. Surface the
+              // failure but do not fail the workflow run.
+              core.warning(`Could not enable auto-merge: ${err.message}`);
+            }

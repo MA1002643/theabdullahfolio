@@ -7,9 +7,10 @@ import GitHubStatsCard from "./StatsCard";
 import StreakStatsCard from "./StreakStatsCard";
 import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
+import { computeRepoDiff } from "@/utils/repoDiff";
 
-const githubStatsStorageKey = (username, repo) =>
-  `github-stats:lastGood:${username}:${repo}`;
+const githubStatsStorageKey = (username) =>
+  `github-stats:lastGood:${username}`;
 
 const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Join me as I continue to explore new spells and technologies to shape the future of the web.";
 const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
@@ -25,14 +26,16 @@ const RevealWord = ({ children, progress, range, reducedMotion }) => {
 
 const AboutDetails = () => {
   // GitHub Username — override via NEXT_PUBLIC_GITHUB_USERNAME when forking.
+  // The most-active repo is now picked server-side by /api/github-stats, so the
+  // hardcoded `repo` constant that used to live here is gone (issue #22).
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
-  const repo = "github-readme-stats";
 
   const [count, setCount] = useState(0);
   const [years, setYears] = useState(0);
   const [githubStats, setGithubStats] = useState(null)
   const [previousStats, setPreviousStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
+  const [repoDiffMessage, setRepoDiffMessage] = useState(null);
 
   // Scroll-linked per-word reveal for the "Architect of Enchantment" paragraph.
   // Both ends of the active scroll range are derived from the paragraph's own
@@ -149,7 +152,7 @@ const AboutDetails = () => {
   const getGithubStats = async () => {
     let data;
     try {
-      const res = await fetch(`/api/github-stats?username=${username}&repo=${repo}`);
+      const res = await fetch(`/api/github-stats?username=${username}`);
       if (!res.ok) throw new Error(`github-stats API responded ${res.status}`);
       data = await res.json();
     } catch (err) {
@@ -180,6 +183,12 @@ const AboutDetails = () => {
       console.log("Diffs", diffs);
 
       if (diffs.length === 0) return prevStats; // nothing changed
+
+      // Compute a human-readable diff for the repo card's update banner.
+      // computeRepoDiff returns null on the first-ever change cycle (no prev),
+      // suppressing a false-positive banner on the initial poll after load.
+      const repoMsg = computeRepoDiff(prevStats?.stats?.repo, data?.stats?.repo);
+      if (repoMsg) setRepoDiffMessage(repoMsg);
 
       setChangedFields(diffs);
       setPreviousStats(prevStats);
@@ -218,7 +227,7 @@ const AboutDetails = () => {
     if (!data?._fallback) {
       try {
         window.localStorage.setItem(
-          githubStatsStorageKey(username, repo),
+          githubStatsStorageKey(username),
           JSON.stringify({
             languages: data.languages || [],
             stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: {} },
@@ -234,7 +243,7 @@ const AboutDetails = () => {
     // Hydrate from the previously cached payload so the stat cards never
     // render empty on a cold page load.
     try {
-      const cached = window.localStorage.getItem(githubStatsStorageKey(username, repo));
+      const cached = window.localStorage.getItem(githubStatsStorageKey(username));
       if (cached) setGithubStats(JSON.parse(cached));
     } catch {
       // Ignore parse / access errors — the fresh fetch will populate state.
@@ -250,7 +259,10 @@ const AboutDetails = () => {
 
   useEffect(() => {
     if (changedFields.length > 0) {
-      const timer = setTimeout(() => setChangedFields([]), 4000);
+      const timer = setTimeout(() => {
+        setChangedFields([]);
+        setRepoDiffMessage(null);
+      }, 10000);
       return () => clearTimeout(timer);
     }
   }, [changedFields]);
@@ -408,7 +420,11 @@ const AboutDetails = () => {
 
 
         {githubStats?.stats?.repo && <ItemLayout className={" col-span-full lg:col-span-6 !p-0"}>
-          <ReadmeStatsCard data={githubStats.stats.repo} isUpdated={changedFields.includes("stats.repo")} />
+          <ReadmeStatsCard
+            data={githubStats.stats.repo}
+            isUpdated={changedFields.includes("stats.repo")}
+            diffMessage={repoDiffMessage}
+          />
         </ItemLayout>}
 
         {/* <ItemLayout className={"col-span-full"}>
