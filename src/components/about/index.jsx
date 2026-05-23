@@ -205,7 +205,8 @@ const AboutDetails = () => {
       }
 
       // --- Update nested stats fields selectively ---
-      if (diffs.includes("stats")) {
+      // `detectChanges` flattens to two-level keys (e.g. "stats.user"), so the bare "stats" is never emitted — match any "stats.*" instead.
+      if (diffs.some((d) => d === "stats" || d.startsWith("stats."))) {
         const prevNested = prevStats.stats || {};
         const newNested = data.stats || {};
 

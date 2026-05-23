@@ -25,23 +25,22 @@ export function computeRepoDiff(prev, next) {
   // new commits pushed" when switching from a long-history repo to a fresh
   // one). Announce only the switch.
   //
-  // Compare on `nameWithOwner` ("owner/name") when both sides have it, so
-  // two repos that share a leaf name under different owners (e.g.
-  // `acme/next.js` vs `vercel/next.js`) are correctly detected as a
-  // switch. Fall back to `name` when either side is missing the field —
-  // that covers legacy localStorage payloads serialized before the
-  // identifier was added to the API contract, where we still want a
-  // best-effort comparison rather than a forced false positive.
-  const prevId = prev.nameWithOwner ?? prev.name;
-  const nextId = next.nameWithOwner ?? next.name;
-  // Only announce a switch when we actually have a usable identifier for
-  // the new repo. Without the `nextId !== undefined` guard a malformed
-  // payload missing both `nameWithOwner` and `name` would render
-  // `Most active repository changed to "undefined"` — strictly worse than
-  // showing no banner. Falling through to the field-level diffs below also
-  // suppresses any meaningless deltas for the same payload, since those
-  // checks compare numeric fields that are similarly absent.
-  if (nextId !== undefined && prevId !== nextId) {
+  // Pick the identifier kind once per call so we always compare like-for-like.
+  // A per-side `??` would let legacy `prev.name` ("next.js") get compared
+  // against new `next.nameWithOwner` ("vercel/next.js") and announce a phantom
+  // switch on the first poll after a deploy that added the richer identifier.
+  // Use `nameWithOwner` only when both sides have it; otherwise both sides
+  // fall back to `name`. Trade-off: a true owner change against a legacy
+  // `prev` is undetectable here and gets suppressed — better than churn.
+  const useFullName = prev.nameWithOwner != null && next.nameWithOwner != null;
+  const prevId = useFullName ? prev.nameWithOwner : prev.name;
+  const nextId = useFullName ? next.nameWithOwner : next.name;
+  // Require both ids to be usable strings. `!= null` rejects both null and
+  // undefined in one check — a stray `null` would otherwise render
+  // `Most active repository changed to "null"`, strictly worse than no
+  // banner. Falling through to the field-level diffs below also suppresses
+  // any meaningless deltas for the same payload.
+  if (prevId != null && nextId != null && prevId !== nextId) {
     // Display the same identifier we compared on. Otherwise the message
     // can be ambiguous — "Most active repository changed to next.js" reads
     // identically whether the new repo is acme/next.js or vercel/next.js,
