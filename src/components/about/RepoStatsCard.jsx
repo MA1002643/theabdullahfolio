@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useAnimation, useInView } from "framer-motion";
+import { AnimatePresence, motion, useAnimation, useInView, useReducedMotion } from "framer-motion";
 import {
   Clock,
   GitCommitHorizontal,
@@ -51,6 +51,19 @@ const metricRowVariants = {
 
 // ----- Per-character title (blur-fade in) -----
 function AnimatedTitle({ text, play }) {
+  // Reduced-motion path: render a plain heading. The blur-fade-per-character
+  // effect is purely decorative, and the staggered blur(6px) → blur(0) ramp
+  // is exactly the kind of vestibular trigger the OS preference exists to
+  // avoid. No motion, no per-char wrappers, no DOM bloat.
+  const prefersReducedMotion = useReducedMotion();
+  if (prefersReducedMotion) {
+    return (
+      <h3 className="text-xl font-semibold text-shadow-neon-orange break-words">
+        {text}
+      </h3>
+    );
+  }
+
   const chars = Array.from(text);
   const container = {
     hidden: {},
@@ -265,6 +278,10 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
   // `once: false` lets the count-ups and entrance animations replay on every
   // scroll-in. `amount: 0.3` fires when ~30% of the card crosses the viewport.
   const isInView = useInView(ref, { amount: 0.3, once: false });
+  // Mirrors the CSS `prefers-reduced-motion` override in globals.css so the
+  // decorative pulse on the language-color dot also holds still for users
+  // who've opted out of motion.
+  const prefersReducedMotion = useReducedMotion();
 
   if (!data) return null;
 
@@ -361,16 +378,32 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
       <motion.div variants={childVariants} className="flex items-center gap-2 mb-4">
         <motion.div
           className="w-3 h-3 rounded-full flex-shrink-0"
-          style={{ backgroundColor: languageColor }}
-          animate={{
-            scale: [1, 1.35, 1],
-            boxShadow: [
-              `0 0 4px ${languageColor}80`,
-              `0 0 12px ${languageColor}cc`,
-              `0 0 4px ${languageColor}80`,
-            ],
+          style={{
+            backgroundColor: languageColor,
+            // Static, resting glow for reduced-motion mode — keeps the dot
+            // visually consistent with the animated state's midpoint instead
+            // of dropping to a flat, glowless circle.
+            ...(prefersReducedMotion && {
+              boxShadow: `0 0 4px ${languageColor}80`,
+            }),
           }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+          animate={
+            prefersReducedMotion
+              ? undefined
+              : {
+                  scale: [1, 1.35, 1],
+                  boxShadow: [
+                    `0 0 4px ${languageColor}80`,
+                    `0 0 12px ${languageColor}cc`,
+                    `0 0 4px ${languageColor}80`,
+                  ],
+                }
+          }
+          transition={
+            prefersReducedMotion
+              ? undefined
+              : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+          }
         />
         <span
           className="text-sm text-shadow-neon-light-orange font-light"
