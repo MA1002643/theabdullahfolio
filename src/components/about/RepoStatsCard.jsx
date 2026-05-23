@@ -197,7 +197,13 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
   const DURATION = 2000;
   // Final arc fill amount — also used as the resting state for the
   // reduced-motion branch so the arc paints at its destination immediately.
-  const finalOffset = circumference * (1 - Math.min(score / maxScore, 1));
+  // Derive from `target` (the same rounded + clamped value used for the
+  // displayed number) so the arc and the digits inside it always agree.
+  // Previously this used the raw `score`, which let a fractional
+  // `activityScore` (e.g. 869.1271) produce a slightly different arc fill
+  // than the displayed `869`. `target` is already in [0, maxScore], so
+  // the explicit `Math.min(...)` clamp is no longer needed.
+  const finalOffset = circumference * (1 - target / maxScore);
 
   // Arc fill: drives strokeDashoffset from "empty" to the final fill amount
   // using the same easing the numeric counters use, so the arc and the number

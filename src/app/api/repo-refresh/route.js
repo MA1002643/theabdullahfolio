@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import crypto from "node:crypto";
 
+// Pin to the Node runtime so `node:crypto` (used by `safeBearerEqual` for
+// constant-time bearer-token compare) is available. Matches the convention
+// used by every other crypto-touching route in this repo
+// (/api/github-webhook, /api/work-status). Without this an inadvertent move
+// to the Edge runtime would silently break the auth check at runtime —
+// crypto.timingSafeEqual isn't available in Edge.
+export const runtime = "nodejs";
+
 // Constant-time comparison of the bearer token against the expected secret.
 // Mirrors the HMAC verification in /api/github-webhook so secret-handling
 // stays consistent across the codebase. The length pre-check is required

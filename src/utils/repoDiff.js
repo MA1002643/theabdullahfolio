@@ -15,7 +15,17 @@ export function computeRepoDiff(prev, next) {
   // two different repositories — comparing them produces nonsense ("-2713
   // new commits pushed" when switching from a long-history repo to a fresh
   // one). Announce only the switch.
-  if (prev.name !== next.name) {
+  //
+  // Compare on `nameWithOwner` ("owner/name") when both sides have it, so
+  // two repos that share a leaf name under different owners (e.g.
+  // `acme/next.js` vs `vercel/next.js`) are correctly detected as a
+  // switch. Fall back to `name` when either side is missing the field —
+  // that covers legacy localStorage payloads serialized before the
+  // identifier was added to the API contract, where we still want a
+  // best-effort comparison rather than a forced false positive.
+  const prevId = prev.nameWithOwner ?? prev.name;
+  const nextId = next.nameWithOwner ?? next.name;
+  if (prevId !== nextId) {
     return `Most active repository changed to "${next.name}"`;
   }
 

@@ -52,16 +52,44 @@ async function githubGraphQL(query, variables) {
       signal: controller.signal,
     });
 
-    // Parse the body once. Non-2xx responses still return JSON for most
-    // GitHub error cases (401 Bad credentials, 403 rate limit, 502 upstream
-    // unavailable, etc.) but those have shape `{message: "..."}`, not the
-    // GraphQL `{data, errors}` shape — distinguish on `res.ok` so the
-    // surfaced error names the actual HTTP failure instead of "User not
-    // found", which buries the root cause.
-    const json = await res.json().catch(() => null);
+    // Read the body as text once, then attempt to parse it as JSON. Reading
+    // as text first lets us keep a copy of the raw bytes for diagnostics
+    // when parsing fails (you can't re-read a consumed Response body).
+    // Non-2xx responses still return JSON for most GitHub error cases (401
+    // Bad credentials, 403 rate limit, 502 upstream unavailable, etc.) but
+    // those have shape `{message: "..."}`, not the GraphQL `{data, errors}`
+    // shape — distinguish on `res.ok` so the surfaced error names the
+    // actual HTTP failure instead of "User not found", which buries the
+    // root cause.
+    const rawBody = await res.text();
+    // `parseSucceeded` distinguishes "JSON.parse threw" from "body was
+    // literally the JSON value `null`" (which parses successfully). Without
+    // this distinction the parse-failure branch below would false-positive
+    // on a valid `null` body and false-negative on `JSON.parse(rawBody) === null`.
+    let json;
+    let parseSucceeded = false;
+    try {
+      json = JSON.parse(rawBody);
+      parseSucceeded = true;
+    } catch {
+      // Handled below — branches on `parseSucceeded`.
+    }
+
     if (!res.ok) {
       const detail = json?.message || `HTTP ${res.status} ${res.statusText}`;
       throw new Error(`GitHub stats: GraphQL request failed (${detail})`);
+    }
+    // 2xx response but the body wasn't JSON — most commonly an HTML error
+    // page from an intermediate proxy, a Cloudflare challenge, or a
+    // captive-portal redirect that returned 200. Surface the root cause
+    // with a body snippet so the fallback logs are actually diagnosable
+    // instead of silently misreporting "User not found".
+    if (!parseSucceeded) {
+      const snippet = rawBody.slice(0, 200).replace(/\s+/g, " ").trim();
+      const truncated = rawBody.length > 200 ? "…" : "";
+      throw new Error(
+        `GitHub stats: GraphQL response was not valid JSON (HTTP ${res.status}, body: "${snippet}${truncated}")`
+      );
     }
     if (json?.errors) {
       throw new Error(json.errors[0]?.message || "GitHub GraphQL query failed");
@@ -285,6 +313,14 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
       }
       repository(owner: $repoOwner, name: $repoName) @include(if: $hasRepo) {
         name
+        # nameWithOwner (e.g. "vercel/next.js") is the disambiguation key
+        # used by computeRepoDiff. Without it, two different repos that
+        # happen to share a leaf name across different owners (e.g.
+        # "acme/next.js" and "vercel/next.js") look identical to the diff
+        # algorithm and a repo-switch wouldn't trigger the update banner.
+        # NOTE: do not use backticks in this comment — the surrounding
+        # template literal would terminate early and break the build.
+        nameWithOwner
         description
         stargazerCount
         forkCount
@@ -412,6 +448,11 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
     repo: repo
       ? {
         name: repo.name,
+        // Stable disambiguating identifier ("owner/name", lowercased by
+        // convention — though GitHub returns it case-preserved). Used by
+        // `computeRepoDiff` to detect a true repo switch even when two
+        // different repos share a leaf name under different owners.
+        nameWithOwner: repo.nameWithOwner,
         description: parseGitHubText(repo.description || "No description"),
         language: repo.primaryLanguage?.name || "Unknown",
         languageColor: repo.primaryLanguage?.color || "#999999",
