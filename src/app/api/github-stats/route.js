@@ -96,6 +96,19 @@ async function githubGraphQL(query, variables, timeoutMs) {
   // deadline — the precise bug that motivated this rewrite.
   const baseTimeout = timeoutMs ?? GITHUB_TIMEOUT_MS;
   const effectiveTimeout = Math.min(baseTimeout, remainingBudget(baseTimeout));
+  // Short-circuit when the budget is already exhausted. `setTimeout(..., 0)`
+  // queues the abort as a macrotask, so without this we'd still kick off a
+  // fetch that opens a TCP/TLS connection before the immediate abort fires.
+  // Throwing a `DOMException` named "AbortError" matches the shape `fetch`
+  // produces on a real abort, so the paginated callers' existing
+  // `err?.name === "AbortError"` catch path preserves partial results
+  // unchanged.
+  if (effectiveTimeout <= 0) {
+    throw new DOMException(
+      "GitHub stats: request budget exhausted before call",
+      "AbortError"
+    );
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), effectiveTimeout);
   try {
