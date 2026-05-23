@@ -249,7 +249,15 @@ async function getAllLanguages(username) {
   let endCursor = null;
   const languageStats = {};
 
-  while (hasNextPage) {
+  // Bounded pagination — mirrors the cap in `findMostActiveRepo`. Each page
+  // is 100 repos, so MAX_REPO_PAGES (10) covers up to ~1,000 owned repos
+  // and keeps the total wall-clock cost under (MAX_REPO_PAGES *
+  // GITHUB_TIMEOUT_MS) even in the degenerate case where every call hits
+  // its abort ceiling. Without the cap, a malformed pageInfo or a very
+  // long-tailed account could push the function past its serverless time
+  // limit, trapping users on the CDN's stale-if-error window.
+  let pages = 0;
+  while (hasNextPage && pages < MAX_REPO_PAGES) {
     const data = await githubGraphQL(query, { username, after: endCursor });
     const repoData = data.user.repositories;
     const repos = repoData.nodes;
@@ -266,6 +274,12 @@ async function getAllLanguages(username) {
 
     hasNextPage = repoData.pageInfo.hasNextPage;
     endCursor = repoData.pageInfo.endCursor;
+    pages += 1;
+  }
+  if (hasNextPage) {
+    console.warn(
+      `getAllLanguages: stopped paging at ${MAX_REPO_PAGES} pages. Language totals reflect approximately the first ${MAX_REPO_PAGES * 100} owned repos; tail repos are excluded.`
+    );
   }
 
   const totalSize = Object.values(languageStats).reduce(

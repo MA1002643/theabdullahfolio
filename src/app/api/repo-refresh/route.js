@@ -61,11 +61,19 @@ export async function GET(request) {
   // is undefined (template literal evaluates to "https://undefined"), so the
   // VERCEL_URL branch needs an explicit existence check before the localhost
   // fallback can ever be reached.
-  const baseUrl =
+  // Trim any trailing slash so the warm-up URL ("${baseUrl}/api/...") never
+  // ends up double-slashed when the operator sets BASE_URL to a value like
+  // "https://ma.codes/" — most CDNs treat `//api/...` differently from
+  // `/api/...` (some 301-redirect, some 404), either of which silently
+  // breaks the warm-up. `VERCEL_URL` and the localhost fallback never have
+  // a trailing slash, but normalizing once at the source makes the rule
+  // hold regardless of which branch produced the value.
+  const baseUrl = (
     process.env.BASE_URL ||
     (process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+      : "http://localhost:3000")
+  ).replace(/\/+$/, "");
 
   try {
     // Drop the cached payloads first so the next fetch goes straight to GitHub

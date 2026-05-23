@@ -26,7 +26,11 @@ export function computeRepoDiff(prev, next) {
   const prevId = prev.nameWithOwner ?? prev.name;
   const nextId = next.nameWithOwner ?? next.name;
   if (prevId !== nextId) {
-    return `Most active repository changed to "${next.name}"`;
+    // Display the same identifier we compared on. Otherwise the message
+    // can be ambiguous — "Most active repository changed to next.js" reads
+    // identically whether the new repo is acme/next.js or vercel/next.js,
+    // which is the precise ambiguity nameWithOwner exists to resolve.
+    return `Most active repository changed to "${nextId}"`;
   }
 
   // Normalize every numeric field through `Number(... ?? 0)` so the deltas
