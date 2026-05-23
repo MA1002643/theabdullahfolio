@@ -461,7 +461,7 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
         defaultBranchRef {
           target {
             ... on Commit {
-              history { totalCount }
+              history(first: 1) { totalCount }
             }
           }
         }
@@ -637,7 +637,7 @@ async function findMostActiveRepo(username) {
             defaultBranchRef {
               target {
                 ... on Commit {
-                  history { totalCount }
+                  history(first: 1) { totalCount }
                 }
               }
             }
@@ -661,7 +661,7 @@ async function findMostActiveRepo(username) {
             defaultBranchRef {
               target {
                 ... on Commit {
-                  history { totalCount }
+                  history(first: 1) { totalCount }
                 }
               }
             }
