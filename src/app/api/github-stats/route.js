@@ -70,7 +70,7 @@ function remainingBudget(fallbackMs) {
 // fields it needs; throws on aborted/timed-out requests, on auth/HTTP-level
 // failures (401, 403, 5xx), on GraphQL field-level errors, and on a missing
 // `user` field (every query in this module is user-rooted).
-async function githubGraphQL(query, variables, timeoutMs = GITHUB_TIMEOUT_MS) {
+async function githubGraphQL(query, variables, timeoutMs) {
   // Fail fast if the token is missing. Without this, the fetch sends
   // `Authorization: Bearer undefined`, GitHub returns 401 "Bad credentials",
   // and the downstream "User not found" branch buries the actual root
@@ -79,15 +79,16 @@ async function githubGraphQL(query, variables, timeoutMs = GITHUB_TIMEOUT_MS) {
     throw new Error("GitHub stats: GITHUB_TOKEN env var is not set");
   }
 
-  // `timeoutMs` lets paginating callers tighten the per-call ceiling to the
-  // remaining overall budget so a single slow call near the end of the loop
-  // can't blow past the helper's local cap. When omitted, fall back to the
-  // tighter of `GITHUB_TIMEOUT_MS` and the shared request deadline — that
-  // way single-shot callers (`fetchGitHubStats`, the initial call in
-  // findMostActiveRepo) automatically respect the cross-helper budget set
-  // by the GET handler without each having to thread the deadline through.
-  const effectiveTimeout =
-    timeoutMs ?? Math.min(GITHUB_TIMEOUT_MS, remainingBudget(GITHUB_TIMEOUT_MS));
+  // `timeoutMs` lets paginating callers tighten the per-call ceiling to a
+  // budget they computed locally; omitting it picks `GITHUB_TIMEOUT_MS`.
+  // Either way we cap by the shared request deadline so a single-shot
+  // caller (`fetchGitHubStats`, the initial findMostActiveRepo query) and
+  // an explicit-budget caller both honor the cross-helper ceiling without
+  // having to thread the deadline through their signatures. Without the
+  // outer Math.min, a stale default parameter would silently override the
+  // deadline — the precise bug that motivated this rewrite.
+  const baseTimeout = timeoutMs ?? GITHUB_TIMEOUT_MS;
+  const effectiveTimeout = Math.min(baseTimeout, remainingBudget(baseTimeout));
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), effectiveTimeout);
   try {
