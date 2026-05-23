@@ -28,10 +28,21 @@ permissions:
 jobs:
   enable-auto-merge:
     runs-on: ubuntu-latest
-    # `base_ref` is the target branch of the PR. Belt-and-braces with the
-    # trigger filter above — keeps the workflow harmless if `on.branches`
-    # is ever broadened or removed.
-    if: github.event.pull_request.draft == false && github.base_ref == 'main'
+    # Three guards, each independent:
+    #   1. `draft == false` — auto-merge can't be enabled on draft PRs anyway,
+    #      so don't burn an Actions minute to discover that.
+    #   2. `base_ref == 'main'` — belt-and-braces with the trigger filter
+    #      above; keeps the workflow harmless if `on.branches` is ever
+    #      broadened or removed.
+    #   3. `head.repo.full_name == github.repository` — skip PRs from forks.
+    #      `pull_request` events from forks run the workflow with a read-only
+    #      GITHUB_TOKEN, so `pulls.enableAutoMerge` would throw "Resource not
+    #      accessible by integration" and produce a noisy warning on every
+    #      external contribution. Filter them out before the API call.
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.base_ref == 'main' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       # Pinned to the SHA that the `v7` tag resolved to (latest v7.x at time of
       # pinning). Immutable SHA refs prevent a hijacked tag from injecting code

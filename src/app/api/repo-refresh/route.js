@@ -1,5 +1,29 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import crypto from "node:crypto";
+
+// Constant-time comparison of the bearer token against the expected secret.
+// Mirrors the HMAC verification in /api/github-webhook so secret-handling
+// stays consistent across the codebase. The length pre-check is required
+// because `crypto.timingSafeEqual` throws on mismatched buffer lengths —
+// but the length check itself is constant-time (one operation regardless
+// of how long the wrong-length input is), so it doesn't reintroduce a
+// length-based timing side-channel.
+function safeBearerEqual(headerValue, expectedSecret) {
+  if (typeof headerValue !== "string" || !headerValue.startsWith("Bearer ")) {
+    return false;
+  }
+  const provided = headerValue.slice("Bearer ".length);
+  if (provided.length !== expectedSecret.length) return false;
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(provided, "utf8"),
+      Buffer.from(expectedSecret, "utf8"),
+    );
+  } catch {
+    return false;
+  }
+}
 
 // Daily cron hit by Vercel at the schedule in vercel.json. Job: invalidate the
 // `github-stats` + `most-active-repo` cache tags and warm the cache by hitting
@@ -18,7 +42,7 @@ export async function GET(request) {
   }
 
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!safeBearerEqual(authHeader, cronSecret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

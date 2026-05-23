@@ -349,6 +349,17 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
       animate={isInView ? "visible" : "hidden"}
       className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg"
     >
+      {/* Screen-reader announcer for diff updates. Always mounted (the
+          AnimatePresence overlay would unmount this before the SR finished
+          reading it) and intentionally NOT gated on `isInView` — the visual
+          overlay is, but assistive tech users navigate non-spatially and
+          should hear the update whether they've "scrolled" to the card or
+          not. `aria-live="polite"` queues the announcement to the next
+          idle moment, which is right for non-critical stat updates. */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {isUpdated && diffMessage ? `Repository update: ${diffMessage}` : ""}
+      </div>
+
       <AnimatePresence>
         {isUpdated && isInView && diffMessage && (
           <motion.div
