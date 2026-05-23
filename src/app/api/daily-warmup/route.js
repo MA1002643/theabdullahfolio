@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
-import crypto from "node:crypto";
+import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
 
-// Pinned to Node so `node:crypto` (used by `safeBearerEqual`) is available —
-// same constraint as /api/repo-refresh and /api/work-status.
+// Pinned to Node so `node:crypto` (transitively used by `safeBearerEqual`)
+// is available — same constraint as /api/repo-refresh and /api/work-status.
 export const runtime = "nodejs";
 
 // The auth check below reads `request.headers`, which already opts this
@@ -10,34 +9,6 @@ export const runtime = "nodejs";
 // makes the intent explicit so a future refactor (e.g. moving auth into
 // middleware) can't silently restore static eligibility.
 export const dynamic = "force-dynamic";
-
-// Every response is a side-effect receipt — a cached 200 would mask a
-// skipped cron run. Helper mirrors the one in /api/repo-refresh.
-const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
-const noStoreJson = (body, init = {}) =>
-  NextResponse.json(body, {
-    ...init,
-    headers: { ...NO_STORE_HEADERS, ...(init.headers ?? {}) },
-  });
-
-// Constant-time bearer-token compare, duplicated from /api/repo-refresh.
-// Kept inline (not extracted to a util) to avoid a refactor outside this
-// task's scope. If a third consumer appears, that's the moment to extract.
-function safeBearerEqual(headerValue, expectedSecret) {
-  if (typeof headerValue !== "string" || !headerValue.startsWith("Bearer ")) {
-    return false;
-  }
-  const provided = headerValue.slice("Bearer ".length);
-  if (provided.length !== expectedSecret.length) return false;
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(provided, "utf8"),
-      Buffer.from(expectedSecret, "utf8"),
-    );
-  } catch {
-    return false;
-  }
-}
 
 // Hit a downstream cron endpoint with the bearer token the upstream Vercel
 // Cron caller gave us. Each downstream already handles its own cache-

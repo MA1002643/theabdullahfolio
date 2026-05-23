@@ -303,7 +303,17 @@ const AboutDetails = () => {
               delete repo.title;
             }
             if (repo.color !== undefined && repo.languageColor === undefined) {
-              repo.languageColor = repo.color;
+              // Expand 3-digit hex (#RGB) to 6-digit (#RRGGBB). RepoStatsCard
+              // builds alpha-suffixed CSS like `${languageColor}80`, which
+              // only yields a valid #RRGGBBAA when the input is 6 hex digits
+              // — a legacy `#999` would produce the invalid 5-char `#99980`
+              // and silently kill the glow. The live API has always emitted
+              // 6-digit hex, so this only covers payloads serialized before
+              // the field was renamed.
+              const shortHex = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(repo.color);
+              repo.languageColor = shortHex
+                ? `#${shortHex[1]}${shortHex[1]}${shortHex[2]}${shortHex[2]}${shortHex[3]}${shortHex[3]}`
+                : repo.color;
               delete repo.color;
             }
           }

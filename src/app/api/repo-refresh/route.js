@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import crypto from "node:crypto";
 
-// Pin to the Node runtime so `node:crypto` (used by `safeBearerEqual` for
-// constant-time bearer-token compare) is available. Matches the convention
-// used by every other crypto-touching route in this repo
-// (/api/github-webhook, /api/work-status). Without this an inadvertent move
-// to the Edge runtime would silently break the auth check at runtime —
-// crypto.timingSafeEqual isn't available in Edge.
+import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
+
+// Pin to the Node runtime so `node:crypto` (transitively used by
+// `safeBearerEqual` for constant-time bearer-token compare) stays
+// available. Matches the convention used by every other crypto-touching
+// route in this repo (/api/github-webhook, /api/work-status). Without
+// this an inadvertent move to the Edge runtime would silently break the
+// auth check — crypto.timingSafeEqual isn't available in Edge.
 export const runtime = "nodejs";
 
 // Belt-and-suspenders: the bearer-token check below already reads
@@ -17,39 +17,6 @@ export const runtime = "nodejs";
 // silently restore static eligibility and start serving a stale 200 from the
 // build cache instead of actually running the revalidate + warm-up.
 export const dynamic = "force-dynamic";
-
-// Every response from this route is a side-effect receipt — there's nothing
-// worth caching, and a cached 200 would mask a missed cron run. Applied to
-// all response paths via the helper below.
-const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
-const noStoreJson = (body, init = {}) =>
-  NextResponse.json(body, {
-    ...init,
-    headers: { ...NO_STORE_HEADERS, ...(init.headers ?? {}) },
-  });
-
-// Constant-time comparison of the bearer token against the expected secret.
-// Mirrors the HMAC verification in /api/github-webhook so secret-handling
-// stays consistent across the codebase. The length pre-check is required
-// because `crypto.timingSafeEqual` throws on mismatched buffer lengths —
-// but the length check itself is constant-time (one operation regardless
-// of how long the wrong-length input is), so it doesn't reintroduce a
-// length-based timing side-channel.
-function safeBearerEqual(headerValue, expectedSecret) {
-  if (typeof headerValue !== "string" || !headerValue.startsWith("Bearer ")) {
-    return false;
-  }
-  const provided = headerValue.slice("Bearer ".length);
-  if (provided.length !== expectedSecret.length) return false;
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(provided, "utf8"),
-      Buffer.from(expectedSecret, "utf8"),
-    );
-  } catch {
-    return false;
-  }
-}
 
 // Called by `/api/daily-warmup` (the scheduled cron entrypoint in
 // vercel.json, which orchestrates this route + the work-status bust) or

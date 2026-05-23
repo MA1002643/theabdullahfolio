@@ -13,6 +13,33 @@ import { useEffect, useRef, useState } from "react";
 
 import { fastStartSlowFinish } from "@/utils/animationCurves";
 
+// Convert a 3- or 6-digit hex color to an `rgba(r, g, b, a)` string. The
+// language-dot glow used to concat an alpha suffix onto `languageColor`
+// (e.g. `${color}80`), which only produced valid CSS against a 6-digit
+// hex — a 3-digit input would yield the invalid 5-char `#99980`. Going
+// through rgba covers both digit widths uniformly and degrades to a
+// neutral gray on malformed input so the glow style stays valid no
+// matter what reaches this component.
+function hexToRgba(hex, alpha) {
+  const fallback = `rgba(136, 136, 136, ${alpha})`;
+  if (typeof hex !== "string") return fallback;
+  const sixDigit = /^#([0-9a-f]{6})$/i.exec(hex);
+  const threeDigit = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  let r, g, b;
+  if (sixDigit) {
+    r = parseInt(sixDigit[1].slice(0, 2), 16);
+    g = parseInt(sixDigit[1].slice(2, 4), 16);
+    b = parseInt(sixDigit[1].slice(4, 6), 16);
+  } else if (threeDigit) {
+    r = parseInt(threeDigit[1] + threeDigit[1], 16);
+    g = parseInt(threeDigit[2] + threeDigit[2], 16);
+    b = parseInt(threeDigit[3] + threeDigit[3], 16);
+  } else {
+    return fallback;
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // ----- Card-level variants -----
 const cardVariants = {
   hidden: { opacity: 0, y: 56, scale: 0.97 },
@@ -363,8 +390,9 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
     name = "",
     description = "",
     language = "Unknown",
-    // 6-digit hex; the `${languageColor}80` / `${languageColor}cc` alpha
-    // suffixes below produce invalid CSS (`#88880`) against a 3-digit color.
+    // Any CSS color the API or a legacy localStorage payload supplies —
+    // the glow below routes through `hexToRgba`, which normalizes 3- and
+    // 6-digit hex and falls back to gray on anything else.
     languageColor = "#888888",
     stars = 0,
     forks = 0,
@@ -469,7 +497,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
             // visually consistent with the animated state's midpoint instead
             // of dropping to a flat, glowless circle.
             ...(prefersReducedMotion && {
-              boxShadow: `0 0 4px ${languageColor}80`,
+              boxShadow: `0 0 4px ${hexToRgba(languageColor, 0.5)}`,
             }),
           }}
           animate={
@@ -478,9 +506,9 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
               : {
                   scale: [1, 1.35, 1],
                   boxShadow: [
-                    `0 0 4px ${languageColor}80`,
-                    `0 0 12px ${languageColor}cc`,
-                    `0 0 4px ${languageColor}80`,
+                    `0 0 4px ${hexToRgba(languageColor, 0.5)}`,
+                    `0 0 12px ${hexToRgba(languageColor, 0.8)}`,
+                    `0 0 4px ${hexToRgba(languageColor, 0.5)}`,
                   ],
                 }
           }
