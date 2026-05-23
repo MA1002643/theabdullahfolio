@@ -304,8 +304,16 @@ Set it as `GITHUB_TOKEN` in `.env.local`. The token is server-only — it is nev
 **5. Fallback on total failure** — if GitHub returns errors, the route serves the bundled snapshot at [src/data/github-stats-fallback.json](src/data/github-stats-fallback.json) with `X-Cache-Status: FALLBACK` (HTTP 200, `_fallback: true`). The client preserves whatever real data it already had on screen rather than overwriting it with the snapshot. To refresh the snapshot, run the dev server, hit the API, and overwrite the file:
 
 ```bash
-curl "http://localhost:3000/api/github-stats?username=YOUR_USERNAME" \
-  | python3 -m json.tool > src/data/github-stats-fallback.json
+# Write to a tempfile first, then atomically move into place. A direct
+# `curl ... > src/data/github-stats-fallback.json` redirect truncates the
+# target file to 0 bytes *before* curl produces any output — `next dev`'s
+# HMR picks up the empty file and the route's `import fallbackStats` then
+# fails to parse it, so the very curl that was supposed to refresh the
+# snapshot starts hitting a broken endpoint and scrapes a 500 page back
+# into the file. The two-step form below avoids that race entirely.
+curl "http://localhost:3000/api/github-stats?username=YOUR_USERNAME" -o /tmp/fallback.json
+python3 -m json.tool /tmp/fallback.json > src/data/github-stats-fallback.json
+rm /tmp/fallback.json
 ```
 
 (Note: the `repo` query parameter no longer exists — the most-active repo is selected server-side.)

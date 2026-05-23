@@ -19,20 +19,36 @@ export function computeRepoDiff(prev, next) {
     return `Most active repository changed to "${next.name}"`;
   }
 
+  // Normalize every numeric field through `Number(... ?? 0)` so the deltas
+  // are always finite. Without this, an older cached `prev` payload that
+  // pre-dates a field (`forks`, `commitCount`, `mergedPRs`) would produce
+  // `number - undefined = NaN` and render "Stars increased by NaN" the
+  // first time the user lands on a build that introduces the new field.
+  // `?? 0` (not `|| 0`) preserves a legitimate 0 value; `Number(...)`
+  // coerces any future string-typed payload from the API into a number.
+  const prevStars = Number(prev.stars ?? 0);
+  const nextStars = Number(next.stars ?? 0);
+  const prevForks = Number(prev.forks ?? 0);
+  const nextForks = Number(next.forks ?? 0);
+  const prevCommits = Number(prev.commitCount ?? 0);
+  const nextCommits = Number(next.commitCount ?? 0);
+  const prevMergedPRs = Number(prev.mergedPRs ?? 0);
+  const nextMergedPRs = Number(next.mergedPRs ?? 0);
+
   const messages = [];
 
   // Stars and forks can legitimately move either direction (unstar, repo
   // ownership transfer, fork deletion), so report increases and decreases.
-  if (prev.stars !== next.stars) {
-    const delta = next.stars - prev.stars;
+  if (prevStars !== nextStars) {
+    const delta = nextStars - prevStars;
     messages.push(
-      `Stars ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)} (now ${next.stars})`
+      `Stars ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)} (now ${nextStars})`
     );
   }
-  if (prev.forks !== next.forks) {
-    const delta = next.forks - prev.forks;
+  if (prevForks !== nextForks) {
+    const delta = nextForks - prevForks;
     messages.push(
-      `Forks ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)} (now ${next.forks})`
+      `Forks ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)} (now ${nextForks})`
     );
   }
 
@@ -40,12 +56,12 @@ export function computeRepoDiff(prev, next) {
   // means history was rewritten or a PR was un-merged (effectively the
   // result of a force-push). Either way, surfacing a negative count as
   // "-5 new commits pushed" is misleading; suppress decreases entirely.
-  if (next.commitCount > prev.commitCount) {
-    const delta = next.commitCount - prev.commitCount;
+  if (nextCommits > prevCommits) {
+    const delta = nextCommits - prevCommits;
     messages.push(`${delta} new commit${delta !== 1 ? "s" : ""} pushed`);
   }
-  if (next.mergedPRs > prev.mergedPRs) {
-    const delta = next.mergedPRs - prev.mergedPRs;
+  if (nextMergedPRs > prevMergedPRs) {
+    const delta = nextMergedPRs - prevMergedPRs;
     messages.push(`${delta} PR${delta !== 1 ? "s" : ""} merged`);
   }
 

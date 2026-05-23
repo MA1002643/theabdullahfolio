@@ -44,15 +44,15 @@
             "createdAt": "Jul 23, 2021"
         },
         "stats": {
-            "commits": 1501,
-            "prs": 30,
+            "commits": 1502,
+            "prs": 31,
             "issues": 232,
             "contributedTo": 10,
             "followers": 5,
             "stars": 1,
-            "totalContributions": 1807,
+            "totalContributions": 1809,
             "level": "B-",
-            "percentile": "65.40"
+            "percentile": "65.13"
         },
         "streaks": {
             "totalContributions": {
@@ -60,29 +60,29 @@
                 "dateRange": "May 18, 2025 - Present"
             },
             "currentStreak": {
-                "value": 252,
-                "dateRange": "Sep 12, 2025 - Present"
+                "value": 0,
+                "dateRange": "No current streak"
             },
             "longestStreak": {
-                "value": 252,
-                "dateRange": "Sep 12, 2025 - Present"
+                "value": 253,
+                "dateRange": "Sep 12, 2025 - May 22"
             }
         },
         "repo": {
-            "name": "MA1002643",
-            "description": "A personal GitHub profile README repository that highlights my projects, skills, and developer journey.",
-            "language": "Unknown",
-            "languageColor": "#999999",
+            "name": "theabdullahfolio",
+            "description": "Next.js-powered portfolio with dynamic GitHub integrations, automated stats, neon UI, and cinematic motion design for professional branding.",
+            "language": "JavaScript",
+            "languageColor": "#f1e05a",
             "stars": 0,
             "forks": 0,
             "watchers": 0,
-            "openIssues": 0,
-            "closedIssues": 1,
-            "openPRs": 0,
-            "mergedPRs": 0,
-            "commitCount": 2844,
-            "pushedAt": "May 21",
-            "activityScore": 7791
+            "openIssues": 49,
+            "closedIssues": 16,
+            "openPRs": 2,
+            "mergedPRs": 33,
+            "commitCount": 133,
+            "pushedAt": "May 23",
+            "activityScore": 869.1271047983648
         }
     }
 }

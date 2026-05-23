@@ -8,12 +8,50 @@ const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 const REVALIDATE_SECONDS = 10 * 60;
 const MOST_ACTIVE_REPO_REVALIDATE_SECONDS = 24 * 60 * 60;
-// Per-request ceiling for GraphQL calls. Bounded so a slow GitHub response
-// can't push the route past serverless function limits (10 s on Hobby, 60 s
-// on Pro). When the abort fires, the call throws and the outer GET catch
-// serves the bundled fallback — far better than a hung function whose 24h
-// cache traps the next day of users behind an empty payload.
-const GITHUB_TIMEOUT_MS = 15000;
+// Per-request ceiling for GraphQL calls. Must stay strictly below the
+// serverless function timeout (10 s on Hobby, 60 s on Pro) so even a single
+// slow GitHub response can't push the route past the platform limit; the
+// default of 8 s gives ~2 s of headroom on Hobby for response parsing and
+// the rest of the handler. Tunable via `GITHUB_TIMEOUT_MS` for Pro plans
+// where the budget is larger. When the abort fires, the call throws and
+// the outer GET catch serves the bundled fallback — far better than a hung
+// function whose 24h cache traps the next day of users behind an empty
+// payload. Note: with pagination, multiple sequential calls can each
+// consume up to this much time, so the cap should also respect
+// roughly: TIMEOUT × expected pages ≤ function budget.
+const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
+
+// Single GitHub GraphQL entry point. Every call in this module goes through
+// here so the `GITHUB_TIMEOUT_MS` ceiling applies uniformly. Without this
+// centralization, a slow upstream on the languages or stats path could stall
+// the function past its serverless time budget while the most-active-repo
+// path (which used to be the only one with a timeout) returned cleanly.
+// Returns the GraphQL `data` block so each caller can destructure the
+// fields it needs; throws on aborted/timed-out requests, on GraphQL errors,
+// and on missing `user` (every query in this module is user-rooted).
+async function githubGraphQL(query, variables) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GITHUB_TIMEOUT_MS);
+  try {
+    const res = await fetch(GITHUB_API, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+      signal: controller.signal,
+    });
+    const json = await res.json();
+    if (json.errors) {
+      throw new Error(json.errors[0]?.message || "GitHub GraphQL query failed");
+    }
+    if (!json.data?.user) throw new Error("User not found");
+    return json.data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 // Hard cap on owned-repo pagination. Each page = 100 repos, so 10 pages
 // covers any realistic account (≤ 1,000 owned non-fork repos). Above this
 // we stop paging and log a warning — the contribution loops still see those
@@ -157,23 +195,8 @@ async function getAllLanguages(username) {
   const languageStats = {};
 
   while (hasNextPage) {
-    const response = await fetch(GITHUB_API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${TOKEN}`,
-      },
-      body: JSON.stringify({ query, variables: { username, after: endCursor } }),
-    });
-
-    const json = await response.json();
-
-    if (json.errors) {
-      console.error("GraphQL errors:", json.errors);
-      throw new Error("GitHub GraphQL query failed");
-    }
-
-    const repoData = json.data.user.repositories;
+    const data = await githubGraphQL(query, { username, after: endCursor });
+    const repoData = data.user.repositories;
     const repos = repoData.nodes;
 
     // Aggregate sizes
@@ -256,29 +279,15 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
     }
   `;
 
-  const res = await fetch(GITHUB_API, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query,
-      variables: {
-        username,
-        // When hasRepo is false these are inert placeholders that satisfy
-        // GraphQL's String! contract but never get resolved.
-        repoOwner: repoOwner || username,
-        repoName: repoName || username,
-        hasRepo,
-      },
-    }),
+  const data = await githubGraphQL(query, {
+    username,
+    // When hasRepo is false these are inert placeholders that satisfy
+    // GraphQL's String! contract but never get resolved.
+    repoOwner: repoOwner || username,
+    repoName: repoName || username,
+    hasRepo,
   });
-
-  const json = await res.json();
-  if (json.errors) throw new Error(json.errors[0]?.message);
-  const user = json.data.user;
-  if (!user) throw new Error("User not found");
+  const user = data.user;
 
   // today
   const today = new Date().toISOString().split("T")[0];
@@ -467,33 +476,8 @@ async function findMostActiveRepo(username) {
     }
   `;
 
-  const gqlFetch = async (query, variables) => {
-    // AbortController gives each call its own hard deadline so a slow or
-    // hung GitHub response can't compound across pages into a function-level
-    // timeout. The cleared timer in `finally` prevents stray aborts firing
-    // against a later fetch when reused inside a loop.
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), GITHUB_TIMEOUT_MS);
-    try {
-      const res = await fetch(GITHUB_API, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query, variables }),
-        signal: controller.signal,
-      });
-      const json = await res.json();
-      if (json.errors) throw new Error(json.errors[0]?.message);
-      if (!json.data?.user) throw new Error("User not found");
-      return json.data.user;
-    } finally {
-      clearTimeout(timer);
-    }
-  };
-
-  const user = await gqlFetch(initialQuery, { username, after: null });
+  const initialData = await githubGraphQL(initialQuery, { username, after: null });
+  const user = initialData.user;
 
   // Collect every owned repo across pages so the history-depth tie-breaker
   // covers users with >100 repos. For accounts with ≤100 repos the loop is
@@ -506,9 +490,9 @@ async function findMostActiveRepo(username) {
   let { hasNextPage, endCursor } = user.repositories.pageInfo;
   let pages = 1;
   while (hasNextPage && pages < MAX_REPO_PAGES) {
-    const page = await gqlFetch(reposPageQuery, { username, after: endCursor });
-    ownedRepos.push(...page.repositories.nodes);
-    ({ hasNextPage, endCursor } = page.repositories.pageInfo);
+    const pageData = await githubGraphQL(reposPageQuery, { username, after: endCursor });
+    ownedRepos.push(...pageData.user.repositories.nodes);
+    ({ hasNextPage, endCursor } = pageData.user.repositories.pageInfo);
     pages += 1;
   }
   if (hasNextPage) {
