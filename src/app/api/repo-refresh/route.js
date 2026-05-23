@@ -10,6 +10,24 @@ import crypto from "node:crypto";
 // crypto.timingSafeEqual isn't available in Edge.
 export const runtime = "nodejs";
 
+// Belt-and-suspenders: the bearer-token check below already reads
+// `request.headers`, which is a dynamic API and makes this route ineligible
+// for static caching in Next 14. Pinning `force-dynamic` makes that intent
+// explicit so a future refactor (e.g. moving auth into middleware) can't
+// silently restore static eligibility and start serving a stale 200 from the
+// build cache instead of actually running the revalidate + warm-up.
+export const dynamic = "force-dynamic";
+
+// Every response from this route is a side-effect receipt — there's nothing
+// worth caching, and a cached 200 would mask a missed cron run. Applied to
+// all response paths via the helper below.
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
+const noStoreJson = (body, init = {}) =>
+  NextResponse.json(body, {
+    ...init,
+    headers: { ...NO_STORE_HEADERS, ...(init.headers ?? {}) },
+  });
+
 // Constant-time comparison of the bearer token against the expected secret.
 // Mirrors the HMAC verification in /api/github-webhook so secret-handling
 // stays consistent across the codebase. The length pre-check is required
@@ -46,12 +64,12 @@ export async function GET(request) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     console.error("repo-refresh: CRON_SECRET is not set; refusing all requests");
-    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+    return noStoreJson({ error: "Server misconfigured" }, { status: 500 });
   }
 
   const authHeader = request.headers.get("authorization");
   if (!safeBearerEqual(authHeader, cronSecret)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return noStoreJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
@@ -113,7 +131,7 @@ export async function GET(request) {
         `repo-refresh: /api/github-stats returned ${res.status} ${res.statusText}`,
         detail
       );
-      return NextResponse.json(
+      return noStoreJson(
         {
           error: "Cache warm failed",
           upstreamStatus: res.status,
@@ -134,7 +152,7 @@ export async function GET(request) {
       console.warn(
         "repo-refresh: warm fetch returned bundled fallback (upstream GitHub failure)"
       );
-      return NextResponse.json(
+      return noStoreJson(
         {
           ok: false,
           degraded: true,
@@ -146,13 +164,13 @@ export async function GET(request) {
       );
     }
 
-    return NextResponse.json({
+    return noStoreJson({
       ok: true,
       repo: data?.stats?.repo?.name ?? null,
       activityScore: data?.stats?.repo?.activityScore ?? null,
     });
   } catch (err) {
     console.error("repo-refresh cron error:", err);
-    return NextResponse.json({ error: "Refresh failed" }, { status: 500 });
+    return noStoreJson({ error: "Refresh failed" }, { status: 500 });
   }
 }

@@ -79,17 +79,20 @@ function AnimatedTitle({ text, play }) {
     },
   };
   return (
+    // Per-char spans make some screen readers announce the title letter-by-letter; aria-label + aria-hidden chars restores a clean accessible name.
     <motion.h3
       variants={container}
       initial="hidden"
       animate={play ? "visible" : "hidden"}
       className="text-xl font-semibold text-shadow-neon-orange break-words"
+      aria-label={text}
     >
       {chars.map((c, i) => (
         <motion.span
           key={i}
           variants={charVariant}
           style={{ display: "inline-block" }}
+          aria-hidden="true"
         >
           {c === " " ? " " : c}
         </motion.span>
