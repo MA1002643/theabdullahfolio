@@ -8,6 +8,18 @@ const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 const REVALIDATE_SECONDS = 10 * 60;
 const MOST_ACTIVE_REPO_REVALIDATE_SECONDS = 24 * 60 * 60;
+// Per-request ceiling for GraphQL calls. Bounded so a slow GitHub response
+// can't push the route past serverless function limits (10 s on Hobby, 60 s
+// on Pro). When the abort fires, the call throws and the outer GET catch
+// serves the bundled fallback — far better than a hung function whose 24h
+// cache traps the next day of users behind an empty payload.
+const GITHUB_TIMEOUT_MS = 15000;
+// Hard cap on owned-repo pagination. Each page = 100 repos, so 10 pages
+// covers any realistic account (≤ 1,000 owned non-fork repos). Above this
+// we stop paging and log a warning — the contribution loops still see those
+// extra repos (via the *ContributionsByRepository fields, which GitHub caps
+// at 100 each), so the missing tier is only the soft history-depth boost.
+const MAX_REPO_PAGES = 10;
 
 // Derive the set of `owner/name` keys (lowercased) to skip when picking the
 // "most active" feature repo. The GitHub profile-README repo — the one whose
@@ -456,18 +468,29 @@ async function findMostActiveRepo(username) {
   `;
 
   const gqlFetch = async (query, variables) => {
-    const res = await fetch(GITHUB_API, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query, variables }),
-    });
-    const json = await res.json();
-    if (json.errors) throw new Error(json.errors[0]?.message);
-    if (!json.data?.user) throw new Error("User not found");
-    return json.data.user;
+    // AbortController gives each call its own hard deadline so a slow or
+    // hung GitHub response can't compound across pages into a function-level
+    // timeout. The cleared timer in `finally` prevents stray aborts firing
+    // against a later fetch when reused inside a loop.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GITHUB_TIMEOUT_MS);
+    try {
+      const res = await fetch(GITHUB_API, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+      });
+      const json = await res.json();
+      if (json.errors) throw new Error(json.errors[0]?.message);
+      if (!json.data?.user) throw new Error("User not found");
+      return json.data.user;
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
   const user = await gqlFetch(initialQuery, { username, after: null });
@@ -475,12 +498,23 @@ async function findMostActiveRepo(username) {
   // Collect every owned repo across pages so the history-depth tie-breaker
   // covers users with >100 repos. For accounts with ≤100 repos the loop is
   // skipped and the function still completes in a single round-trip.
+  // `MAX_REPO_PAGES` is the safety cap — if GitHub ever returns a malformed
+  // pageInfo (hasNextPage stuck true, endCursor unchanged), or an account
+  // legitimately has >1,000 owned repos, we stop here instead of looping
+  // forever and tripping the serverless time limit.
   const ownedRepos = [...user.repositories.nodes];
   let { hasNextPage, endCursor } = user.repositories.pageInfo;
-  while (hasNextPage) {
+  let pages = 1;
+  while (hasNextPage && pages < MAX_REPO_PAGES) {
     const page = await gqlFetch(reposPageQuery, { username, after: endCursor });
     ownedRepos.push(...page.repositories.nodes);
     ({ hasNextPage, endCursor } = page.repositories.pageInfo);
+    pages += 1;
+  }
+  if (hasNextPage) {
+    console.warn(
+      `findMostActiveRepo: stopped paging owned repos at ${MAX_REPO_PAGES} pages (${ownedRepos.length} repos). History-depth boost will not apply to repos beyond this point; contribution-based scoring is unaffected.`
+    );
   }
 
   const excludeSet = mostActiveRepoExclude(username);

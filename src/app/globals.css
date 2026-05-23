@@ -272,6 +272,14 @@
   }
 
   .repo-card-breathe {
+    /* Baseline shadow matching the 0%/100% keyframe of `repo-card-breathe`
+       above. The animation overrides this during playback, but it survives
+       when the animation is disabled (e.g. under `prefers-reduced-motion`
+       or in browsers that don't apply the keyframes), so the card still
+       reads with the intended resting glow instead of going flat. */
+    box-shadow:
+      0 0 6px rgba(255, 109, 5, 0.3),
+      0 0 14px rgba(255, 109, 5, 0.15);
     animation: repo-card-breathe 3s ease-in-out infinite;
   }
 }

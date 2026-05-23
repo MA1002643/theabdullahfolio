@@ -240,7 +240,13 @@ const AboutDetails = () => {
           githubStatsStorageKey(username),
           JSON.stringify({
             languages: data.languages || [],
-            stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: {} },
+            // `repo: null` (not `{}`) so the parent guard
+            // `githubStats?.stats?.repo` correctly suppresses the card on the
+            // next cold load when there's no qualifying activity. Must match
+            // the same default used by the in-memory first-load branch above
+            // — drifting these out of sync causes the hydrate to render an
+            // empty card the next time the user visits.
+            stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: null },
           })
         );
       } catch {
@@ -254,7 +260,23 @@ const AboutDetails = () => {
     // render empty on a cold page load.
     try {
       const cached = window.localStorage.getItem(githubStatsStorageKey(username));
-      if (cached) setGithubStats(JSON.parse(cached));
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Defensive normalize: older builds persisted `repo: {}` when there
+        // was no qualifying activity. An empty object is truthy and would
+        // slip past the `githubStats?.stats?.repo` guard and render a blank
+        // "Most Active Repository" card. Collapse any empty-object repo to
+        // null on the way in so the guard works regardless of which version
+        // last seeded the cache.
+        if (
+          parsed?.stats?.repo &&
+          typeof parsed.stats.repo === "object" &&
+          Object.keys(parsed.stats.repo).length === 0
+        ) {
+          parsed.stats.repo = null;
+        }
+        setGithubStats(parsed);
+      }
     } catch {
       // Ignore parse / access errors — the fresh fetch will populate state.
     }
