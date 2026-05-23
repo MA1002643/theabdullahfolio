@@ -58,14 +58,16 @@ const GITHUB_OVERALL_BUDGET_MS =
 // helper runs, so the store is never consulted.
 const deadlineStore = new AsyncLocalStorage();
 
-// Returns the milliseconds remaining until the request deadline if one is
-// set on the current async context, else the caller's local fallback. The
-// fallback exists so helpers stay correct when called outside the GET
-// handler (tests, ad-hoc scripts) without a deadline in flight.
+// Returns the milliseconds remaining under the tightest active budget. When
+// a request deadline is set on the current async context, the helper-local
+// `fallbackMs` is still honored as a co-equal ceiling — bumping
+// GITHUB_OVERALL_BUDGET_MS on a Pro plan must not silently override a
+// helper's own MAX_TOTAL_GITHUB_MS. When no deadline is in flight (tests,
+// ad-hoc scripts), only the local fallback applies.
 function remainingBudget(fallbackMs) {
   const store = deadlineStore.getStore();
   if (!store) return Math.max(0, fallbackMs);
-  return Math.max(0, store.deadline - Date.now());
+  return Math.max(0, Math.min(store.deadline - Date.now(), fallbackMs));
 }
 
 // Single GitHub GraphQL entry point. Every call in this module goes through

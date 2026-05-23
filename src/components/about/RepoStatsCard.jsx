@@ -134,6 +134,18 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
       setPulse(false);
       return;
     }
+    // Zero-target fast path: the easing produces 0 every frame, so the
+    // RAF loop would schedule ~120 frames over the full DURATION just to
+    // call setDisplay(0) repeatedly. React bails on identical state but
+    // the scheduled frames still run. Skip the loop entirely. We exclude
+    // `pulseOnComplete` here so the elite-landing pulse can still fire on
+    // a 0 metric if a caller ever wants it — rare, but the cost of the
+    // loop is only the timing delay in that case.
+    if (target === 0 && !pulseOnComplete) {
+      setDisplay(0);
+      setPulse(false);
+      return;
+    }
 
     let startTime = null;
     const tick = (ts) => {
@@ -245,6 +257,15 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
       return;
     }
     if (!isInView) {
+      setDisplayScore(0);
+      return;
+    }
+    // Zero-target fast path — same rationale as MetricRow's: the easing
+    // produces 0 every frame so the loop would just call setDisplayScore(0)
+    // ~120 times across the full DURATION. The arc effect above also
+    // resolves to `finalOffset = circumference` (fully empty) instantly,
+    // so neither half needs an animated sweep.
+    if (target === 0) {
       setDisplayScore(0);
       return;
     }
