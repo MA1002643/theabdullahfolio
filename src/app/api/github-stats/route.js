@@ -161,8 +161,15 @@ export async function GET(request) {
     );
   }
 
+  // Pass the canonical (lowercase) form downstream so callers can't multiply
+  // the `unstable_cache` entries by varying input casing (`MA1002643` vs
+  // `ma1002643` vs `Ma1002643`). `unstable_cache` hashes its function args
+  // into the cache key — without this normalization the allowlist would let
+  // a single approved user trigger N fresh GraphQL rebuilds, partially
+  // defeating the token/rate-limit-exhaustion protection that gating by
+  // username was supposed to provide.
   try {
-    const data = await getCachedGithubStats(username);
+    const data = await getCachedGithubStats(ALLOWED_USERNAME);
     return NextResponse.json(data, { headers: CACHE_HEADERS });
   } catch (error) {
     // Total upstream failure (rate limit, network, GraphQL error). Serve the
