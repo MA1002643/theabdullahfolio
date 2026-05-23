@@ -5,6 +5,13 @@ import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import fallbackStats from "@/data/github-stats-fallback.json";
 
+// Pin to Node so `node:async_hooks` (used by the shared-deadline
+// AsyncLocalStorage below) and any future Node-only API stay available.
+// Matches the convention in /api/repo-refresh and /api/work-status — every
+// route that touches a Node built-in pins this explicitly so a future move
+// to Edge can't silently break bundling.
+export const runtime = "nodejs";
+
 const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 const REVALIDATE_SECONDS = 10 * 60;
