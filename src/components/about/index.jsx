@@ -184,7 +184,6 @@ const AboutDetails = () => {
 
       // Detect top-level and nested changes
       const diffs = detectChanges(prevStats, data);
-      console.log("Diffs", diffs);
 
       if (diffs.length === 0) return prevStats; // nothing changed
 
@@ -290,18 +289,32 @@ const AboutDetails = () => {
 
       if (raw) {
         const parsed = JSON.parse(raw);
-        // Defensive normalize: older builds persisted `repo: {}` when there
-        // was no qualifying activity. An empty object is truthy and would
-        // slip past the `githubStats?.stats?.repo` guard and render a blank
-        // "Most Active Repository" card. Collapse any empty-object repo to
-        // null on the way in so the guard works regardless of which version
-        // last seeded the cache.
-        if (
-          parsed?.stats?.repo &&
-          typeof parsed.stats.repo === "object" &&
-          Object.keys(parsed.stats.repo).length === 0
-        ) {
-          parsed.stats.repo = null;
+        // Defensive normalizes for legacy payloads. Without these the cold-
+        // load hydrate would either render a wrong/empty card or trigger a
+        // false "Most active repository changed…" banner on the first poll
+        // (because `computeRepoDiff` compares hydrated `prev.name` —
+        // undefined under the old shape — against the live `next.name`).
+        const repo = parsed?.stats?.repo;
+        if (repo && typeof repo === "object") {
+          // Pre-most-active-repo build: `repo: {}` meant "no qualifying
+          // activity". An empty object is truthy and would slip past the
+          // `githubStats?.stats?.repo` guard.
+          if (Object.keys(repo).length === 0) {
+            parsed.stats.repo = null;
+          } else {
+            // Pre-most-active-repo build also used `title`/`color`; current
+            // shape uses `name`/`languageColor`. Re-key in-place so the
+            // destructure in RepoStatsCard reads the right fields and the
+            // first poll's diff doesn't false-positive on a renamed key.
+            if (repo.title !== undefined && repo.name === undefined) {
+              repo.name = repo.title;
+              delete repo.title;
+            }
+            if (repo.color !== undefined && repo.languageColor === undefined) {
+              repo.languageColor = repo.color;
+              delete repo.color;
+            }
+          }
         }
         setGithubStats(parsed);
       }
