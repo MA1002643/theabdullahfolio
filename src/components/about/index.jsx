@@ -259,9 +259,37 @@ const AboutDetails = () => {
     // Hydrate from the previously cached payload so the stat cards never
     // render empty on a cold page load.
     try {
-      const cached = window.localStorage.getItem(githubStatsStorageKey(username));
-      if (cached) {
-        const parsed = JSON.parse(cached);
+      const newKey = githubStatsStorageKey(username);
+      let raw = window.localStorage.getItem(newKey);
+
+      // Legacy key migration: prior to dropping the `:${repo}` suffix, the
+      // cache key was `github-stats:lastGood:${username}:${repo}` — one entry
+      // per repo the algorithm had ever selected. Existing visitors carry
+      // those entries forward, and without this scan they'd lose their cold-
+      // load hydration until the first network fetch returns. Find any
+      // legacy entry, promote it to the new key, and clear the old ones.
+      if (!raw) {
+        const legacyPrefix = `${newKey}:`;
+        const legacyKeys = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (k && k.startsWith(legacyPrefix)) legacyKeys.push(k);
+        }
+        if (legacyKeys.length > 0) {
+          // Any one of them will do — they're per-repo snapshots and the
+          // next 10-minute poll will overwrite with the live answer anyway.
+          raw = window.localStorage.getItem(legacyKeys[0]);
+          if (raw) {
+            window.localStorage.setItem(newKey, raw);
+          }
+          // Clean up all legacy entries (including ones we didn't read from)
+          // so localStorage doesn't accumulate stale per-repo snapshots.
+          for (const k of legacyKeys) window.localStorage.removeItem(k);
+        }
+      }
+
+      if (raw) {
+        const parsed = JSON.parse(raw);
         // Defensive normalize: older builds persisted `repo: {}` when there
         // was no qualifying activity. An empty object is truthy and would
         // slip past the `githubStats?.stats?.repo` guard and render a blank

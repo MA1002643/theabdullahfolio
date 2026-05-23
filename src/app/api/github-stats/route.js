@@ -341,7 +341,7 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
     followers,
   });
 
-  const repo = json.data.repository;
+  const repo = data.repository;
 
   return {
     user: {
