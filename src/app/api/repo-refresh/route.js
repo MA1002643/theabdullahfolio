@@ -51,10 +51,15 @@ function safeBearerEqual(headerValue, expectedSecret) {
   }
 }
 
-// Daily cron hit by Vercel at the schedule in vercel.json. Job: invalidate the
-// `github-stats` + `most-active-repo` cache tags and warm the cache by hitting
-// /api/github-stats once, so the first real user request after midnight is
-// instant. Authenticated via CRON_SECRET in the Authorization header.
+// Called by `/api/daily-warmup` (the scheduled cron entrypoint in
+// vercel.json, which orchestrates this route + the work-status bust) or
+// invoked manually with the bearer token to force a refresh outside the
+// daily schedule. Job: invalidate the `github-stats` + `most-active-repo`
+// cache tags and warm the cache by hitting /api/github-stats once, so the
+// first real user request after midnight is instant. Authenticated via
+// CRON_SECRET in the Authorization header — Vercel Cron forwards it on
+// the scheduled call, and `/api/daily-warmup` forwards the same header on
+// the orchestrated call.
 export async function GET(request) {
   // Read the secret once and guard explicitly. Without this, an unset
   // CRON_SECRET would let `Bearer undefined` pass as a valid credential —

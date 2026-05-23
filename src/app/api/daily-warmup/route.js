@@ -62,9 +62,11 @@ async function callInternal(baseUrl, path, cronSecret) {
   return { ok: res.ok, status: res.status, detail };
 }
 
-// Consolidated daily cron — replaces the prior two-cron config in
-// vercel.json (Hobby's per-day cron-count cap forced consolidation).
-// Runs the work-status bust and the repo-refresh warm-up in two
+// Consolidated daily cron — replaces the prior `/api/work-status?bust=1`
+// cron entry in vercel.json, now wrapping both the work-status bust and
+// the new repo-refresh warm-up under a single schedule. Consolidation is
+// driven by Hobby's per-day cron-count cap: a second standalone cron for
+// repo-refresh would silently never run on Hobby. Runs the two steps in
 // independent try/catches so a failure in one doesn't skip the other.
 // Sequential ordering keeps logs and failure modes readable; daily
 // cadence makes parallelism moot.
