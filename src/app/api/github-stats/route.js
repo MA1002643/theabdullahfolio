@@ -27,9 +27,18 @@ const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
 // the function past its serverless time budget while the most-active-repo
 // path (which used to be the only one with a timeout) returned cleanly.
 // Returns the GraphQL `data` block so each caller can destructure the
-// fields it needs; throws on aborted/timed-out requests, on GraphQL errors,
-// and on missing `user` (every query in this module is user-rooted).
+// fields it needs; throws on aborted/timed-out requests, on auth/HTTP-level
+// failures (401, 403, 5xx), on GraphQL field-level errors, and on a missing
+// `user` field (every query in this module is user-rooted).
 async function githubGraphQL(query, variables) {
+  // Fail fast if the token is missing. Without this, the fetch sends
+  // `Authorization: Bearer undefined`, GitHub returns 401 "Bad credentials",
+  // and the downstream "User not found" branch buries the actual root
+  // cause. Surfacing the real problem here saves debugging time.
+  if (!TOKEN) {
+    throw new Error("GitHub stats: GITHUB_TOKEN env var is not set");
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GITHUB_TIMEOUT_MS);
   try {
@@ -42,11 +51,22 @@ async function githubGraphQL(query, variables) {
       body: JSON.stringify({ query, variables }),
       signal: controller.signal,
     });
-    const json = await res.json();
-    if (json.errors) {
+
+    // Parse the body once. Non-2xx responses still return JSON for most
+    // GitHub error cases (401 Bad credentials, 403 rate limit, 502 upstream
+    // unavailable, etc.) but those have shape `{message: "..."}`, not the
+    // GraphQL `{data, errors}` shape — distinguish on `res.ok` so the
+    // surfaced error names the actual HTTP failure instead of "User not
+    // found", which buries the root cause.
+    const json = await res.json().catch(() => null);
+    if (!res.ok) {
+      const detail = json?.message || `HTTP ${res.status} ${res.statusText}`;
+      throw new Error(`GitHub stats: GraphQL request failed (${detail})`);
+    }
+    if (json?.errors) {
       throw new Error(json.errors[0]?.message || "GitHub GraphQL query failed");
     }
-    if (!json.data?.user) throw new Error("User not found");
+    if (!json?.data?.user) throw new Error("User not found");
     return json.data;
   } finally {
     clearTimeout(timer);
