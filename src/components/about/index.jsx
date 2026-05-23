@@ -303,13 +303,15 @@ const AboutDetails = () => {
               delete repo.title;
             }
             if (repo.color !== undefined && repo.languageColor === undefined) {
-              // Expand 3-digit hex (#RGB) to 6-digit (#RRGGBB). RepoStatsCard
-              // builds alpha-suffixed CSS like `${languageColor}80`, which
-              // only yields a valid #RRGGBBAA when the input is 6 hex digits
-              // — a legacy `#999` would produce the invalid 5-char `#99980`
-              // and silently kill the glow. The live API has always emitted
-              // 6-digit hex, so this only covers payloads serialized before
-              // the field was renamed.
+              // Expand 3-digit hex (#RGB) to 6-digit (#RRGGBB) so the
+              // hydrated shape matches what the live API now emits
+              // (always 6-digit). RepoStatsCard's `hexToRgba` already
+              // tolerates 3-digit at render time, so this normalization
+              // is belt-and-suspenders — its main purpose is keeping the
+              // stored repo shape consistent across the localStorage and
+              // network paths, which simplifies any future code that
+              // reads `repo.languageColor` directly without going through
+              // the card.
               const shortHex = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(repo.color);
               repo.languageColor = shortHex
                 ? `#${shortHex[1]}${shortHex[1]}${shortHex[2]}${shortHex[2]}${shortHex[3]}${shortHex[3]}`
@@ -395,22 +397,6 @@ const AboutDetails = () => {
         <ItemLayout
           className={" col-span-full xs:col-span-6 lg:col-span-4 text-accent"}
         >
-          <AnimatePresence>
-            {changedFields.includes('projects') && (
-              <motion.div
-                key="banner"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="absolute inset-0 flex items-center justify-center bg-orange-500/80 backdrop-blur-xl text-[#ff6d05] font-medium text-lg md:text-xl rounded-lg z-10"
-              >
-                <span className="">
-                  Data in this table has been updated
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
           <h1 className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl text-shadow-neon-orange">
             <Counter from={0} to={projectsData.length} plusIcon={false}></Counter>
             <p style={{ textShadow: "none" }} className="font-semibold text-base text-shadow-neon-light-orange">completed projects</p>
