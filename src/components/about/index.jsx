@@ -80,7 +80,14 @@ const AboutDetails = () => {
 
   useEffect(() => {
     const projectCount = projectsData.length ?? 0
-    if (count && count !== projectCount) setChangedFields("projects")
+    // Functional append (matching the "years" effect below) so `changedFields`
+    // stays an array — a prior `setChangedFields("projects")` here turned
+    // state into a string, after which the spread in the years effect
+    // (`[...prev, "years"]`) split it into individual characters and broke
+    // every downstream `.includes(...)` lookup.
+    if (count && count !== projectCount) {
+      setChangedFields(prev => prev.includes("projects") ? prev : [...prev, "projects"]);
+    }
     setCount(projectCount);
   }, [username]);
 
