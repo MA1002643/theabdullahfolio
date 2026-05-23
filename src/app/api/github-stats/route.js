@@ -20,6 +20,17 @@ const MOST_ACTIVE_REPO_REVALIDATE_SECONDS = 24 * 60 * 60;
 // consume up to this much time, so the cap should also respect
 // roughly: TIMEOUT × expected pages ≤ function budget.
 const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
+// Cumulative wall-clock budget across all GitHub calls in a single
+// `findMostActiveRepo` / `getAllLanguages` invocation. Per-call timeouts
+// alone aren't enough: with `MAX_REPO_PAGES = 10` and an 8 s per-call
+// ceiling, the theoretical worst case is 80 s, which would blow past the
+// Hobby 10 s function limit and force the route into the bundled fallback
+// for the next stale-if-error window. This bound puts a hard upper limit
+// on time spent paginating, regardless of per-page latency. Default 9 s
+// keeps ~1 s of headroom under Hobby; raise via env on Pro/Enterprise
+// where the function budget is larger.
+const MAX_TOTAL_GITHUB_MS =
+  Number(process.env.GITHUB_OVERALL_TIMEOUT_MS) || 9000;
 
 // Single GitHub GraphQL entry point. Every call in this module goes through
 // here so the `GITHUB_TIMEOUT_MS` ceiling applies uniformly. Without this
@@ -249,15 +260,26 @@ async function getAllLanguages(username) {
   let endCursor = null;
   const languageStats = {};
 
-  // Bounded pagination — mirrors the cap in `findMostActiveRepo`. Each page
-  // is 100 repos, so MAX_REPO_PAGES (10) covers up to ~1,000 owned repos
-  // and keeps the total wall-clock cost under (MAX_REPO_PAGES *
-  // GITHUB_TIMEOUT_MS) even in the degenerate case where every call hits
-  // its abort ceiling. Without the cap, a malformed pageInfo or a very
-  // long-tailed account could push the function past its serverless time
-  // limit, trapping users on the CDN's stale-if-error window.
+  // Bounded pagination — two independent stop conditions:
+  //   1. MAX_REPO_PAGES — covers up to ~1,000 owned repos (10 × 100). Stops
+  //      a long-tailed account or a malformed pageInfo loop from making
+  //      infinite calls.
+  //   2. MAX_TOTAL_GITHUB_MS — overall wall-clock budget. Even with the
+  //      page cap, MAX_REPO_PAGES × GITHUB_TIMEOUT_MS (10 × 8 s = 80 s)
+  //      exceeds typical serverless function limits. The wall-clock check
+  //      ensures we exit before the platform kills the function, leaving
+  //      time for response serialization and the route's own try/catch
+  //      to serve the bundled fallback if needed.
   let pages = 0;
+  const startTime = Date.now();
   while (hasNextPage && pages < MAX_REPO_PAGES) {
+    if (Date.now() - startTime >= MAX_TOTAL_GITHUB_MS) {
+      console.warn(
+        `getAllLanguages: overall budget of ${MAX_TOTAL_GITHUB_MS}ms exhausted after ${pages} pages; tail repos excluded from language totals.`
+      );
+      hasNextPage = false;
+      break;
+    }
     const data = await githubGraphQL(query, { username, after: endCursor });
     const repoData = data.user.repositories;
     const repos = repoData.nodes;
@@ -286,6 +308,16 @@ async function getAllLanguages(username) {
     (sum, lang) => sum + lang.size,
     0
   );
+
+  // Zero-total fast path: a brand-new account with no code in any owned repo,
+  // or an account whose repos all register a language with size 0, would
+  // otherwise produce `NaN%` (0 / 0) or `Infinity%` (size / 0). Returning an
+  // empty array is the truthful representation — "we have no language
+  // signal" — and lets the consumer skip the language card entirely instead
+  // of rendering rows with broken numerics.
+  if (totalSize === 0) {
+    return [];
+  }
 
   // Sort and convert to percentage
   return Object.entries(languageStats)
@@ -558,20 +590,35 @@ async function findMostActiveRepo(username) {
     }
   `;
 
+  // Track wall-clock from before the initial call so the budget covers the
+  // expensive contributions query too — not just pagination follow-ups.
+  const startTime = Date.now();
   const initialData = await githubGraphQL(initialQuery, { username, after: null });
   const user = initialData.user;
 
   // Collect every owned repo across pages so the history-depth tie-breaker
   // covers users with >100 repos. For accounts with ≤100 repos the loop is
   // skipped and the function still completes in a single round-trip.
-  // `MAX_REPO_PAGES` is the safety cap — if GitHub ever returns a malformed
-  // pageInfo (hasNextPage stuck true, endCursor unchanged), or an account
-  // legitimately has >1,000 owned repos, we stop here instead of looping
-  // forever and tripping the serverless time limit.
+  // Two independent stop conditions:
+  //   - MAX_REPO_PAGES: defends against malformed pageInfo (hasNextPage
+  //     stuck true, endCursor unchanged) and legitimate >1,000-repo
+  //     accounts.
+  //   - MAX_TOTAL_GITHUB_MS: overall wall-clock budget. Page cap alone
+  //     allows MAX_REPO_PAGES × GITHUB_TIMEOUT_MS (10 × 8 s = 80 s) worst
+  //     case, well past typical serverless function limits — this check
+  //     ensures we exit early enough to leave room for response serializa-
+  //     tion and the route's bundled-fallback path.
   const ownedRepos = [...user.repositories.nodes];
   let { hasNextPage, endCursor } = user.repositories.pageInfo;
   let pages = 1;
   while (hasNextPage && pages < MAX_REPO_PAGES) {
+    if (Date.now() - startTime >= MAX_TOTAL_GITHUB_MS) {
+      console.warn(
+        `findMostActiveRepo: overall budget of ${MAX_TOTAL_GITHUB_MS}ms exhausted after ${pages} pages (${ownedRepos.length} repos); remaining pages skipped.`
+      );
+      hasNextPage = false;
+      break;
+    }
     const pageData = await githubGraphQL(reposPageQuery, { username, after: endCursor });
     ownedRepos.push(...pageData.user.repositories.nodes);
     ({ hasNextPage, endCursor } = pageData.user.repositories.pageInfo);
@@ -699,7 +746,6 @@ function computeStreaks(contributionCalendar) {
     if (lastDay === today)
       currentStreak = { days: streak, start: streakStart, end: lastDay };
   }
-  console.log("Streaks", { currentStreak, longestStreak })
 
   return { currentStreak, longestStreak };
 }

@@ -1,12 +1,21 @@
 /**
  * Compute a human-readable change message for the most-active repo sub-object.
  *
- * Returns `null` on the first load (when `prev` is null) so the "data updated"
- * banner does not appear on a fresh page visit.
+ * Returns `null` when there's nothing meaningful to announce — including:
+ *   - first load (`prev` is null) so the banner doesn't appear on a fresh visit;
+ *   - the API reports no qualifying activity for this poll (`next` is null);
+ *   - both sides exist but no tracked field changed.
+ *
+ * Both arguments are nullable because the API path
+ * (`/api/github-stats` → `data.stats.repo`) is null whenever the scoring
+ * algorithm finds no qualifying repository, and the previous state can be
+ * either null (fresh load) or a populated snapshot (subsequent polls).
  *
  * @param {object|null} prev - previous repo snapshot, or null on first load
- * @param {object}      next - latest repo data
- * @returns {string|null}    - message to display, or null if nothing changed
+ * @param {object|null} next - latest repo data, or null when the API reports
+ *                             no qualifying activity for this poll
+ * @returns {string|null}    - message to display, or null when there's
+ *                             nothing to announce
  */
 export function computeRepoDiff(prev, next) {
   if (!prev || !next) return null;
@@ -25,7 +34,14 @@ export function computeRepoDiff(prev, next) {
   // best-effort comparison rather than a forced false positive.
   const prevId = prev.nameWithOwner ?? prev.name;
   const nextId = next.nameWithOwner ?? next.name;
-  if (prevId !== nextId) {
+  // Only announce a switch when we actually have a usable identifier for
+  // the new repo. Without the `nextId !== undefined` guard a malformed
+  // payload missing both `nameWithOwner` and `name` would render
+  // `Most active repository changed to "undefined"` — strictly worse than
+  // showing no banner. Falling through to the field-level diffs below also
+  // suppresses any meaningless deltas for the same payload, since those
+  // checks compare numeric fields that are similarly absent.
+  if (nextId !== undefined && prevId !== nextId) {
     // Display the same identifier we compared on. Otherwise the message
     // can be ambiguous — "Most active repository changed to next.js" reads
     // identically whether the new repo is acme/next.js or vercel/next.js,
