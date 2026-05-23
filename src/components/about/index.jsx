@@ -174,7 +174,11 @@ const AboutDetails = () => {
       if (!prevStats) {
         return {
           languages: data.languages || [],
-          stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: {} },
+          // `repo: null` (not `{}`) so the parent guard
+          // `githubStats?.stats?.repo` correctly suppresses the card when the
+          // API reports no qualifying activity. An empty object is truthy and
+          // would render a blank "Most Active Repository" card.
+          stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: null },
         };
       }
 
@@ -208,11 +212,17 @@ const AboutDetails = () => {
 
         updatedStats.stats = {
           ...prevNested,
-          // only overwrite changed parts
+          // only overwrite changed parts.
+          // `repo` uses ?? so a legitimate `null` (API reporting "no
+          // qualifying activity") is preserved instead of coerced to `{}` —
+          // the parent guard `githubStats?.stats?.repo` then suppresses an
+          // otherwise-blank card. The other fields stay on `||` because
+          // they're always object-shaped in practice and the empty-object
+          // fallback there is just a safety net.
           user: diffs.includes("stats.user") ? newNested.user || {} : prevNested.user,
           stats: diffs.includes("stats.stats") ? newNested.stats || {} : prevNested.stats,
           streaks: diffs.includes("stats.streaks") ? newNested.streaks || {} : prevNested.streaks,
-          repo: diffs.includes("stats.repo") ? newNested.repo || {} : prevNested.repo,
+          repo: diffs.includes("stats.repo") ? (newNested.repo ?? null) : prevNested.repo,
         };
       }
 

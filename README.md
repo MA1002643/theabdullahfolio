@@ -54,7 +54,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **3D Project Viewer** | Interactive Three.js scene — procedural laptop model with canvas-generated keyboard texture, 40+ mesh objects, auto-rotate orbit controls |
 | **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
-| **Animated GitHub Stats** | Live GraphQL API → animated SVG ring progress, `requestAnimationFrame` counters, diff-based change detection with 5-min polling |
+| **Animated GitHub Stats** | Live GraphQL API → animated SVG ring progress, `requestAnimationFrame` counters, diff-based change detection with 10-min polling |
 | **Rocket Contact Form** | Multi-phase submit animation — shake → flame flicker → fly-up trail → checkmark spring, integrated with Nodemailer SMTP |
 | **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
 | **Ambient Fireflies** | Generative particle system with randomised spawn, duration, and drift paths |
@@ -149,7 +149,7 @@ graph TD
         API --> SendMail["/api/send-mail<br/>SMTP Handler"]
     end
 
-    About -- "GraphQL poll 5min" --> GHStats
+    About -- "poll 10min" --> GHStats
     Contact -- "POST" --> SendMail
     SendMail -- "SMTP" --> Email([Email Inbox])
     GHStats -- "GraphQL" --> GitHub([GitHub API])
@@ -288,22 +288,31 @@ The `/about` page (Most Used Languages, GitHub Stats, Streaks, Repository card) 
 
 Set it as `GITHUB_TOKEN` in `.env.local`. The token is server-only — it is never exposed to the browser bundle (no `NEXT_PUBLIC_` prefix).
 
-**2. Caching behavior** — three layers protect the GitHub API from being hit on every request:
+**2. Most-active-repo selection** — the repository card is no longer hardcoded. `/api/github-stats` scores every repo the user contributed to in the last year (PRs/reviews × 5, commits × 4, issues × 3, ambient history × 1) and features the highest-scoring one, including externally-owned repos where you've done significant OSS work. The profile-README repo (the one named the same as the username) is always excluded because every push there is a meta-edit of the about page itself. Selection lives behind its own 24-hour `unstable_cache` layer since the scoring query is expensive and the answer changes slowly.
+
+**3. Username allowlist** — `/api/github-stats` only serves data for `NEXT_PUBLIC_GITHUB_USERNAME` (case-insensitive). Any other `?username=` returns `403 Username not allowed`, closing a token / rate-limit exhaustion vector where an attacker could vary the query param to flood the server's `GITHUB_TOKEN` quota with arbitrary lookups.
+
+**4. Caching behavior** — four layers protect the GitHub API from being hit on every request:
 
 | Layer | TTL | Where |
 |---|---|---|
-| Next.js Data Cache (`unstable_cache`) | 10 min | Survives serverless cold starts within a deployment |
+| Most-active-repo `unstable_cache` | 24 hr | The expensive scoring query is computed at most once per day per user |
+| Display-data `unstable_cache` | 10 min | The cheaper user/stats/streaks/repo-detail query refreshes every 10 minutes against the selected repo |
 | CDN `s-maxage` / `stale-while-revalidate` / `stale-if-error` | 10 min / 5 min / 24 hr | Edge caches the response and serves stale on upstream errors |
 | `localStorage` last-good payload | until next successful fetch | Hydrates the stat cards on cold page loads so they never render empty |
 
-**3. Fallback on total failure** — if GitHub returns errors, the route serves the bundled snapshot at [src/data/github-stats-fallback.json](src/data/github-stats-fallback.json) with `X-Cache-Status: FALLBACK`. To refresh the snapshot, run the dev server, hit the API, and overwrite the file:
+**5. Fallback on total failure** — if GitHub returns errors, the route serves the bundled snapshot at [src/data/github-stats-fallback.json](src/data/github-stats-fallback.json) with `X-Cache-Status: FALLBACK` (HTTP 200, `_fallback: true`). The client preserves whatever real data it already had on screen rather than overwriting it with the snapshot. To refresh the snapshot, run the dev server, hit the API, and overwrite the file:
 
 ```bash
-curl "http://localhost:3000/api/github-stats?username=YOUR_USERNAME&repo=YOUR_REPO" \
+curl "http://localhost:3000/api/github-stats?username=YOUR_USERNAME" \
   | python3 -m json.tool > src/data/github-stats-fallback.json
 ```
 
-**4. Cache invalidation** — the Data Cache expires automatically every 10 minutes. To force a refresh sooner, redeploy or call `revalidateTag("github-stats")` from a Server Action.
+(Note: the `repo` query parameter no longer exists — the most-active repo is selected server-side.)
+
+**6. Cache invalidation** — both `unstable_cache` layers expire automatically (10 min and 24 hr). To force a refresh sooner, you can either redeploy or call `revalidateTag("github-stats")` / `revalidateTag("most-active-repo")` from a Server Action. There's also a daily cron at `/api/repo-refresh` (defined in [vercel.json](vercel.json), schedule `0 1 * * *` UTC) that invalidates both tags and warms the cache by hitting `/api/github-stats` with a cache-busting query param so the first morning visitor lands on hot data.
+
+**7. Cron and warm-up env vars** — `/api/repo-refresh` is authenticated against `Authorization: Bearer ${CRON_SECRET}`, which Vercel Cron Jobs attaches automatically when `CRON_SECRET` is set in the project's environment variables. The optional `BASE_URL` env var (server-only — *not* `NEXT_PUBLIC_BASE_URL`, which would leak into client bundles) overrides the URL the cron's warm-up fetch hits; falls back to `https://${VERCEL_URL}` then `http://localhost:3000`.
 
 ### Commands
 
@@ -348,7 +357,7 @@ upgrade-insecure-requests
 | **Image pipeline** | Sharp — automatic WebP / AVIF conversion |
 | **Font loading** | `next/font` self-hosted Inter, zero layout shift |
 | **Code splitting** | Route-based automatic splitting; Three.js loaded only on `/projects/[id]` |
-| **API caching** | `/api/github-stats` wrapped in Next.js `unstable_cache` (10-min TTL, 5-min stale-while-revalidate, 24-hr stale-if-error) — persists across serverless cold starts and falls back to a bundled JSON snapshot on total upstream failure |
+| **API caching** | `/api/github-stats` wrapped in two `unstable_cache` layers — 24-hr for the most-active-repo selection, 10-min for the display-data refresh; both invalidated by tag on demand via the daily `/api/repo-refresh` cron. CDN response is also `s-maxage=10min` / `stale-while-revalidate=5min` / `stale-if-error=24hr`, with a bundled JSON snapshot served on total upstream failure |
 | **Analytics** | Vercel Speed Insights + Web Analytics for real-user Core Web Vitals |
 
 </details>
@@ -441,7 +450,8 @@ Add these to `.env.local` for local development and to your Vercel project for p
 | `GITHUB_TOKEN` | yes | Read-only PAT used by `/api/work-status` to query open PRs, open issues, and recent commits. Fine-grained or classic both work. Without this, the header falls back to the deterministic maintenance message. |
 | `GITHUB_PROJECT_TOKEN` | recommended | Optional separate **classic** PAT with `read:project` + `public_repo` used only for the Projects v2 query. Falls back to `GITHUB_TOKEN` if unset. Needed because fine-grained PATs don't currently expose user-owned project read access. |
 | `GITHUB_WEBHOOK_SECRET` | yes (in production) | HMAC secret used by `/api/github-webhook` to validate `X-Hub-Signature-256`. Webhook deliveries with a missing or invalid signature are rejected. |
-| `CRON_SECRET` | yes (in production) | Bearer token required to invoke `/api/work-status?bust=1`. Vercel Cron Jobs automatically include `Authorization: Bearer ${CRON_SECRET}` on scheduled requests. Without it, the cache-bust query param returns 401 — preventing unauthenticated callers from amplifying GitHub/OpenAI traffic. |
+| `CRON_SECRET` | yes (in production) | Bearer token required to invoke the cron-protected routes `/api/work-status?bust=1` and `/api/repo-refresh`. Vercel Cron Jobs automatically include `Authorization: Bearer ${CRON_SECRET}` on scheduled requests. Without it the routes return 401 (or 500 in the case of `/api/repo-refresh`, which now refuses to start if the secret is unset) — preventing unauthenticated callers from amplifying GitHub / OpenAI traffic or triggering cache rebuilds. |
+| `BASE_URL` | no | Optional. URL the `/api/repo-refresh` cron should hit for the post-invalidation warm-up fetch. Server-only — **not** the `NEXT_PUBLIC_` prefix, which would inline the value into client bundles. Falls back to `https://${VERCEL_URL}` (Vercel's auto-injected per-deployment URL) and finally `http://localhost:3000` in dev. |
 | `WORK_STATUS_AI_ENABLED` | no | When set to `true`, the API attempts to rewrite the deterministic message via OpenAI before returning it. Default: disabled. |
 | `OPENAI_API_KEY` | only if AI is enabled | Required when `WORK_STATUS_AI_ENABLED=true`. The AI path always falls back to the deterministic message on error. |
 

@@ -519,13 +519,32 @@ async function findMostActiveRepo(username) {
   for (const c of user.contributionsCollection.pullRequestReviewContributionsByRepository) {
     addScore(c.repository, 5, c.contributions.totalCount);
   }
-  // Soft boost from total commit history on owned repos — helps a deep-history
-  // repo break ties when contribution counts converge. `ownedRepos` covers
-  // every owned, non-fork repo across pages, so users with >100 repos still
-  // get the full tie-breaker signal.
+  // Tie-breaker: log-scaled boost from each owned repo's total commit history
+  // — but only for repos that already accrued contribution score above. Two
+  // independent constraints:
+  //
+  //   1. Gate on `scoreByRepo.has(key)`. Without this, a dormant deep-history
+  //      repo (zero recent activity, thousands of legacy commits) adds its
+  //      raw commit count to its score and trivially outranks a genuinely
+  //      active repo — directly contradicting the "most active" intent.
+  //   2. log10(commits + 1) scaling. Raw counts let history dominate
+  //      contribution scoring too: 5,000 historical commits × weight 1
+  //      (5,000) buries 50 recent commits × weight 4 (200). Log10 collapses
+  //      the range so a 1,000-commit history adds ~3 and a 10,000-commit
+  //      history adds ~4 — small enough to function as a tie-breaker
+  //      between similarly-active candidates rather than the dominant term.
+  //
+  // `ownedRepos` covers every owned, non-fork repo across pages, so users
+  // with >100 repos still get the tie-breaker signal where it applies.
   for (const repo of ownedRepos) {
+    const name = repo?.name;
+    const owner = repo?.owner?.login;
+    if (!name || !owner) continue;
+    const key = `${owner.toLowerCase()}/${name.toLowerCase()}`;
+    if (!scoreByRepo.has(key)) continue;
     const commits = repo.defaultBranchRef?.target?.history?.totalCount || 0;
-    addScore(repo, 1, commits);
+    if (commits <= 0) continue;
+    addScore(repo, 1, Math.log10(commits + 1));
   }
 
   // No qualifying activity is a valid state (fresh fork-user with no recent

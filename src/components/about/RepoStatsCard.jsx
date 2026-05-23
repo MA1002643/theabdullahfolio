@@ -99,11 +99,15 @@ function AnimatedTitle({ text, play }) {
 }
 
 // ----- Single metric row: count-up + optional post-count pulse -----
-function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOnComplete = false }) {
-  const [display, setDisplay] = useState(isDate ? value : 0);
+function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOnComplete = false, prefersReducedMotion = false }) {
+  // When reduced motion is requested, initialize the display directly at the
+  // target so the value reads instantly with no animated progression.
+  const target = isDate ? value : Number(value) || 0;
+  const [display, setDisplay] = useState(
+    isDate ? value : prefersReducedMotion ? target : 0
+  );
   const [pulse, setPulse] = useState(false);
   const rafRef = useRef(null);
-  const target = isDate ? value : Number(value) || 0;
   // 2 s gives the slow-settle phase room to breathe — at the previous 1.1 s
   // the settle phase compressed into ~800 ms and the elite landing felt rushed.
   const DURATION = 2000;
@@ -113,6 +117,13 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
 
     if (isDate) {
       setDisplay(value);
+      return;
+    }
+    // Reduced-motion: skip the RAF count-up entirely and land on the final
+    // value immediately. No pulse either — that's another motion event.
+    if (prefersReducedMotion) {
+      setDisplay(target);
+      setPulse(false);
       return;
     }
     if (!isInView) {
@@ -137,17 +148,19 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isInView, target, isDate, value, pulseOnComplete]);
+  }, [isInView, target, isDate, value, pulseOnComplete, prefersReducedMotion]);
 
   return (
     <motion.div
       variants={metricRowVariants}
-      whileHover={{ x: 5, transition: { duration: 0.18 } }}
+      // Hover transforms (`x: 5` slide, icon scale/rotate) are tiny but they
+      // are still motion. Skip them when the user has opted out.
+      whileHover={prefersReducedMotion ? undefined : { x: 5, transition: { duration: 0.18 } }}
       className="flex items-center justify-between gap-2 w-full px-2 py-1 rounded-md hover:bg-orange-500/5 transition-colors"
     >
       <div className="flex items-center gap-2 min-w-0">
         <motion.span
-          whileHover={{ scale: 1.25, rotate: 6 }}
+          whileHover={prefersReducedMotion ? undefined : { scale: 1.25, rotate: 6 }}
           transition={{ type: "spring", stiffness: 400 }}
           className="flex-shrink-0"
         >
@@ -172,22 +185,36 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
 }
 
 // ----- Activity score arc (SVG) -----
-function ActivityArc({ score, maxScore = 10000, isInView }) {
+function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion = false }) {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const controls = useAnimation();
   const target = Math.min(Math.round(score), maxScore);
-  const [displayScore, setDisplayScore] = useState(0);
+  // Initialize at the final value when reduced motion is requested so the
+  // displayed number is correct on the very first paint, no count-up.
+  const [displayScore, setDisplayScore] = useState(prefersReducedMotion ? target : 0);
   const rafRef = useRef(null);
   const DURATION = 2000;
+  // Final arc fill amount — also used as the resting state for the
+  // reduced-motion branch so the arc paints at its destination immediately.
+  const finalOffset = circumference * (1 - Math.min(score / maxScore, 1));
 
   // Arc fill: drives strokeDashoffset from "empty" to the final fill amount
   // using the same easing the numeric counters use, so the arc and the number
-  // inside it land together as a single elite gesture.
+  // inside it land together as a single elite gesture. Under reduced motion
+  // the same final offset is set with `duration: 0`, so the arc paints in
+  // place without any sweep.
   useEffect(() => {
+    if (prefersReducedMotion) {
+      controls.start({
+        strokeDashoffset: finalOffset,
+        transition: { duration: 0 },
+      });
+      return;
+    }
     if (isInView) {
       controls.start({
-        strokeDashoffset: circumference * (1 - Math.min(score / maxScore, 1)),
+        strokeDashoffset: finalOffset,
         transition: { duration: DURATION / 1000, ease: fastStartSlowFinish },
       });
     } else {
@@ -196,12 +223,18 @@ function ActivityArc({ score, maxScore = 10000, isInView }) {
         transition: { duration: 0.3 },
       });
     }
-  }, [isInView, score, maxScore, circumference, controls]);
+  }, [isInView, finalOffset, circumference, controls, prefersReducedMotion]);
 
   // Numeric count-up: identical sprint-then-settle behaviour as MetricRow.
+  // Skipped entirely under reduced motion — the score reads as the final
+  // value immediately.
   useEffect(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
+    if (prefersReducedMotion) {
+      setDisplayScore(target);
+      return;
+    }
     if (!isInView) {
       setDisplayScore(0);
       return;
@@ -222,7 +255,7 @@ function ActivityArc({ score, maxScore = 10000, isInView }) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isInView, target]);
+  }, [isInView, target, prefersReducedMotion]);
 
   return (
     <div className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -428,10 +461,10 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
           className="flex flex-col gap-1 w-full sm:w-auto sm:flex-1 sm:min-w-[200px]"
         >
           {metrics.map((m) => (
-            <MetricRow key={m.label} {...m} isInView={isInView} />
+            <MetricRow key={m.label} {...m} isInView={isInView} prefersReducedMotion={prefersReducedMotion} />
           ))}
         </motion.div>
-        <ActivityArc score={activityScore} isInView={isInView} />
+        <ActivityArc score={activityScore} isInView={isInView} prefersReducedMotion={prefersReducedMotion} />
       </motion.div>
     </motion.div>
   );
