@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { parseGitHubText } from "@/utils/emoji";
 import { calculateRank } from "@/utils/rankCalculator";
 import { unstable_cache } from "next/cache";
@@ -32,6 +33,34 @@ const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
 const MAX_TOTAL_GITHUB_MS =
   Number(process.env.GITHUB_OVERALL_TIMEOUT_MS) || 9000;
 
+// Request-scoped wall-clock budget covering the *entire* cold-miss chain —
+// `findMostActiveRepo` then `getAllLanguages` + `fetchGitHubStats` in
+// parallel. Per-helper budgets alone aren't enough: two sequential helpers
+// at MAX_TOTAL_GITHUB_MS each could blow past Hobby's 10 s function limit.
+// The daily /api/repo-refresh cron is the worst case — it intentionally
+// invalidates both unstable_cache layers and forces the full chain.
+// Default 9 s keeps total wall-clock under Hobby's 10 s even on a full cold
+// miss; raise via env on Pro/Enterprise where the function budget is larger.
+const GITHUB_OVERALL_BUDGET_MS =
+  Number(process.env.GITHUB_OVERALL_BUDGET_MS) || 9000;
+
+// AsyncLocalStorage propagates the request deadline through every helper
+// and through `unstable_cache`'s cache-miss invocation without polluting
+// function signatures or cache keys (a `deadline` param would force a fresh
+// key on every request and defeat the cache entirely). On cache hit no
+// helper runs, so the store is never consulted.
+const deadlineStore = new AsyncLocalStorage();
+
+// Returns the milliseconds remaining until the request deadline if one is
+// set on the current async context, else the caller's local fallback. The
+// fallback exists so helpers stay correct when called outside the GET
+// handler (tests, ad-hoc scripts) without a deadline in flight.
+function remainingBudget(fallbackMs) {
+  const store = deadlineStore.getStore();
+  if (!store) return Math.max(0, fallbackMs);
+  return Math.max(0, store.deadline - Date.now());
+}
+
 // Single GitHub GraphQL entry point. Every call in this module goes through
 // here so the `GITHUB_TIMEOUT_MS` ceiling applies uniformly. Without this
 // centralization, a slow upstream on the languages or stats path could stall
@@ -41,7 +70,7 @@ const MAX_TOTAL_GITHUB_MS =
 // fields it needs; throws on aborted/timed-out requests, on auth/HTTP-level
 // failures (401, 403, 5xx), on GraphQL field-level errors, and on a missing
 // `user` field (every query in this module is user-rooted).
-async function githubGraphQL(query, variables) {
+async function githubGraphQL(query, variables, timeoutMs = GITHUB_TIMEOUT_MS) {
   // Fail fast if the token is missing. Without this, the fetch sends
   // `Authorization: Bearer undefined`, GitHub returns 401 "Bad credentials",
   // and the downstream "User not found" branch buries the actual root
@@ -50,8 +79,17 @@ async function githubGraphQL(query, variables) {
     throw new Error("GitHub stats: GITHUB_TOKEN env var is not set");
   }
 
+  // `timeoutMs` lets paginating callers tighten the per-call ceiling to the
+  // remaining overall budget so a single slow call near the end of the loop
+  // can't blow past the helper's local cap. When omitted, fall back to the
+  // tighter of `GITHUB_TIMEOUT_MS` and the shared request deadline — that
+  // way single-shot callers (`fetchGitHubStats`, the initial call in
+  // findMostActiveRepo) automatically respect the cross-helper budget set
+  // by the GET handler without each having to thread the deadline through.
+  const effectiveTimeout =
+    timeoutMs ?? Math.min(GITHUB_TIMEOUT_MS, remainingBudget(GITHUB_TIMEOUT_MS));
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), GITHUB_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), effectiveTimeout);
   try {
     const res = await fetch(GITHUB_API, {
       method: "POST",
@@ -208,7 +246,14 @@ export async function GET(request) {
   // defeating the token/rate-limit-exhaustion protection that gating by
   // username was supposed to provide.
   try {
-    const data = await getCachedGithubStats(ALLOWED_USERNAME);
+    // Establish the request-scoped deadline once so every GraphQL call in
+    // the cold-miss chain (findMostActiveRepo → getAllLanguages + fetch-
+    // GitHubStats) shares a single wall-clock budget. Cache hits skip past
+    // the helpers entirely and never consult the store.
+    const deadline = Date.now() + GITHUB_OVERALL_BUDGET_MS;
+    const data = await deadlineStore.run({ deadline }, () =>
+      getCachedGithubStats(ALLOWED_USERNAME)
+    );
     return NextResponse.json(data, { headers: CACHE_HEADERS });
   } catch (error) {
     // Total upstream failure (rate limit, network, GraphQL error). Serve the
@@ -273,14 +318,42 @@ async function getAllLanguages(username) {
   let pages = 0;
   const startTime = Date.now();
   while (hasNextPage && pages < MAX_REPO_PAGES) {
-    if (Date.now() - startTime >= MAX_TOTAL_GITHUB_MS) {
+    // Defer to the shared request deadline when one is set (the GET handler
+    // always sets one); otherwise fall back to the helper-local budget so
+    // direct callers without a deadline in flight stay bounded.
+    const remaining = remainingBudget(MAX_TOTAL_GITHUB_MS - (Date.now() - startTime));
+    if (remaining <= 0) {
       console.warn(
-        `getAllLanguages: overall budget of ${MAX_TOTAL_GITHUB_MS}ms exhausted after ${pages} pages; tail repos excluded from language totals.`
+        `getAllLanguages: overall budget exhausted after ${pages} pages; tail repos excluded from language totals.`
       );
       hasNextPage = false;
       break;
     }
-    const data = await githubGraphQL(query, { username, after: endCursor });
+    // Cap each page's per-call timeout to whatever budget is left so a slow
+    // upstream near the end of the loop can't push total time past
+    // MAX_TOTAL_GITHUB_MS — the prior code only gated *before* starting a
+    // call, leaving an 8 s tail every iteration.
+    const perCallTimeout = Math.min(GITHUB_TIMEOUT_MS, remaining);
+    let data;
+    try {
+      data = await githubGraphQL(
+        query,
+        { username, after: endCursor },
+        perCallTimeout
+      );
+    } catch (err) {
+      // Distinguish budget-driven abort from real errors so partial results
+      // are preserved on the former and the latter still propagate to the
+      // route's bundled-fallback path.
+      if (err?.name === "AbortError") {
+        console.warn(
+          `getAllLanguages: page ${pages + 1} aborted at ${perCallTimeout}ms cap (overall budget exhausted); partial results retained.`
+        );
+        hasNextPage = false;
+        break;
+      }
+      throw err;
+    }
     const repoData = data.user.repositories;
     const repos = repoData.nodes;
 
@@ -592,8 +665,17 @@ async function findMostActiveRepo(username) {
 
   // Track wall-clock from before the initial call so the budget covers the
   // expensive contributions query too — not just pagination follow-ups.
+  // Pass the budget-capped timeout to the initial call so the entire
+  // function's worst-case wall-clock is `MAX_TOTAL_GITHUB_MS`, not
+  // `GITHUB_TIMEOUT_MS + MAX_TOTAL_GITHUB_MS`. An abort here unwinds
+  // findMostActiveRepo cleanly — no partial state worth preserving without
+  // the initial contributions block.
   const startTime = Date.now();
-  const initialData = await githubGraphQL(initialQuery, { username, after: null });
+  const initialData = await githubGraphQL(
+    initialQuery,
+    { username, after: null },
+    Math.min(GITHUB_TIMEOUT_MS, remainingBudget(MAX_TOTAL_GITHUB_MS))
+  );
   const user = initialData.user;
 
   // Collect every owned repo across pages so the history-depth tie-breaker
@@ -612,14 +694,35 @@ async function findMostActiveRepo(username) {
   let { hasNextPage, endCursor } = user.repositories.pageInfo;
   let pages = 1;
   while (hasNextPage && pages < MAX_REPO_PAGES) {
-    if (Date.now() - startTime >= MAX_TOTAL_GITHUB_MS) {
+    // Same shared-deadline-with-local-fallback pattern as getAllLanguages.
+    const remaining = remainingBudget(MAX_TOTAL_GITHUB_MS - (Date.now() - startTime));
+    if (remaining <= 0) {
       console.warn(
-        `findMostActiveRepo: overall budget of ${MAX_TOTAL_GITHUB_MS}ms exhausted after ${pages} pages (${ownedRepos.length} repos); remaining pages skipped.`
+        `findMostActiveRepo: overall budget exhausted after ${pages} pages (${ownedRepos.length} repos); remaining pages skipped.`
       );
       hasNextPage = false;
       break;
     }
-    const pageData = await githubGraphQL(reposPageQuery, { username, after: endCursor });
+    // Cap per-call timeout to the remaining overall budget — see the matching
+    // pattern in getAllLanguages for the rationale.
+    const perCallTimeout = Math.min(GITHUB_TIMEOUT_MS, remaining);
+    let pageData;
+    try {
+      pageData = await githubGraphQL(
+        reposPageQuery,
+        { username, after: endCursor },
+        perCallTimeout
+      );
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        console.warn(
+          `findMostActiveRepo: page ${pages + 1} aborted at ${perCallTimeout}ms cap (overall budget exhausted); ${ownedRepos.length} repos retained.`
+        );
+        hasNextPage = false;
+        break;
+      }
+      throw err;
+    }
     ownedRepos.push(...pageData.user.repositories.nodes);
     ({ hasNextPage, endCursor } = pageData.user.repositories.pageInfo);
     pages += 1;
