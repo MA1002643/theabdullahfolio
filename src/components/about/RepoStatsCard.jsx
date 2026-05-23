@@ -278,7 +278,18 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
             fill="transparent"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
+            // Initial offset depends on motion preference:
+            //   - Animated path: start empty (`circumference`) so the arc
+            //     can sweep up to `finalOffset` during the entrance.
+            //   - Reduced-motion path: start AT the final offset so the
+            //     arc is already filled on first paint. Without this, the
+            //     useAnimation effect below would only adjust the offset
+            //     after first paint, producing a single-frame flash of an
+            //     empty arc — exactly the kind of motion artifact users
+            //     who opted out of animation should not see.
+            initial={{
+              strokeDashoffset: prefersReducedMotion ? finalOffset : circumference,
+            }}
             animate={controls}
             style={{ rotate: -90, transformOrigin: "45px 45px" }}
           />
