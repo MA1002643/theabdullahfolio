@@ -33,7 +33,6 @@ const AboutDetails = () => {
   const [count, setCount] = useState(0);
   const [years, setYears] = useState(0);
   const [githubStats, setGithubStats] = useState(null)
-  const [previousStats, setPreviousStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
   const [repoDiffMessage, setRepoDiffMessage] = useState(null);
 
@@ -201,7 +200,6 @@ const AboutDetails = () => {
       if (repoMsg) setRepoDiffMessage(repoMsg);
 
       setChangedFields(diffs);
-      setPreviousStats(prevStats);
 
       // Start from existing state
       const updatedStats = { ...prevStats };
