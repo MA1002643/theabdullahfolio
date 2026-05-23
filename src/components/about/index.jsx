@@ -30,7 +30,6 @@ const AboutDetails = () => {
   // hardcoded `repo` constant that used to live here is gone (issue #22).
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
 
-  const [count, setCount] = useState(0);
   const [years, setYears] = useState(0);
   const [githubStats, setGithubStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
@@ -76,19 +75,6 @@ const AboutDetails = () => {
     [revealRange.start, revealRange.end],
     [0, 1]
   );
-
-  useEffect(() => {
-    const projectCount = projectsData.length ?? 0
-    // Functional append (matching the "years" effect below) so `changedFields`
-    // stays an array — a prior `setChangedFields("projects")` here turned
-    // state into a string, after which the spread in the years effect
-    // (`[...prev, "years"]`) split it into individual characters and broke
-    // every downstream `.includes(...)` lookup.
-    if (count && count !== projectCount) {
-      setChangedFields(prev => prev.includes("projects") ? prev : [...prev, "projects"]);
-    }
-    setCount(projectCount);
-  }, [username]);
 
   // Counter Animation...
   function Counter({ from, to, plusIcon = true }) {
@@ -416,7 +402,7 @@ const AboutDetails = () => {
             )}
           </AnimatePresence>
           <h1 className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl text-shadow-neon-orange">
-            <Counter from={0} to={count} plusIcon={false}></Counter>
+            <Counter from={0} to={projectsData.length} plusIcon={false}></Counter>
             <p style={{ textShadow: "none" }} className="font-semibold text-base text-shadow-neon-light-orange">completed projects</p>
           </h1>
         </ItemLayout>
