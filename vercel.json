@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/work-status?bust=1",
-      "schedule": "0 4 * * *"
+      "path": "/api/daily-warmup",
+      "schedule": "0 1 * * *"
     }
   ]
 }

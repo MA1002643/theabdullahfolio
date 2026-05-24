@@ -1,22 +1,224 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { parseGitHubText } from "@/utils/emoji";
 import { calculateRank } from "@/utils/rankCalculator";
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import fallbackStats from "@/data/github-stats-fallback.json";
 
+// Pin to Node so `node:async_hooks` (used by the shared-deadline
+// AsyncLocalStorage below) and any future Node-only API stay available.
+// Matches the convention in /api/repo-refresh and /api/work-status — every
+// route that touches a Node built-in pins this explicitly so a future move
+// to Edge can't silently break bundling.
+export const runtime = "nodejs";
+
 const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 const REVALIDATE_SECONDS = 10 * 60;
+const MOST_ACTIVE_REPO_REVALIDATE_SECONDS = 24 * 60 * 60;
+// Per-request ceiling for GraphQL calls. Must stay strictly below the
+// serverless function timeout (10 s on Hobby, 60 s on Pro) so even a single
+// slow GitHub response can't push the route past the platform limit; the
+// default of 8 s gives ~2 s of headroom on Hobby for response parsing and
+// the rest of the handler. Tunable via `GITHUB_TIMEOUT_MS` for Pro plans
+// where the budget is larger. When the abort fires, the call throws and
+// the outer GET catch serves the bundled fallback — far better than a hung
+// function whose 24h cache traps the next day of users behind an empty
+// payload. Note: with pagination, multiple sequential calls can each
+// consume up to this much time, so the cap should also respect
+// roughly: TIMEOUT × expected pages ≤ function budget.
+const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
+// Cumulative wall-clock budget across all GitHub calls in a single
+// `findMostActiveRepo` / `getAllLanguages` invocation. Per-call timeouts
+// alone aren't enough: with `MAX_REPO_PAGES = 10` and an 8 s per-call
+// ceiling, the theoretical worst case is 80 s, which would blow past the
+// Hobby 10 s function limit and force the route into the bundled fallback
+// for the next stale-if-error window. This bound puts a hard upper limit
+// on time spent paginating, regardless of per-page latency. Default 9 s
+// keeps ~1 s of headroom under Hobby; raise via env on Pro/Enterprise
+// where the function budget is larger.
+const MAX_TOTAL_GITHUB_MS =
+  Number(process.env.GITHUB_OVERALL_TIMEOUT_MS) || 9000;
+
+// Request-scoped wall-clock budget covering the *entire* cold-miss chain —
+// `findMostActiveRepo` then `getAllLanguages` + `fetchGitHubStats` in
+// parallel. Per-helper budgets alone aren't enough: two sequential helpers
+// at MAX_TOTAL_GITHUB_MS each could blow past Hobby's 10 s function limit.
+// The daily /api/repo-refresh cron is the worst case — it intentionally
+// invalidates both unstable_cache layers and forces the full chain.
+// Default 9 s keeps total wall-clock under Hobby's 10 s even on a full cold
+// miss; raise via env on Pro/Enterprise where the function budget is larger.
+const GITHUB_OVERALL_BUDGET_MS =
+  Number(process.env.GITHUB_OVERALL_BUDGET_MS) || 9000;
+
+// AsyncLocalStorage propagates the request deadline through every helper
+// and through `unstable_cache`'s cache-miss invocation without polluting
+// function signatures or cache keys (a `deadline` param would force a fresh
+// key on every request and defeat the cache entirely). On cache hit no
+// helper runs, so the store is never consulted.
+const deadlineStore = new AsyncLocalStorage();
+
+// Returns the milliseconds remaining under the tightest active budget. When
+// a request deadline is set on the current async context, the helper-local
+// `fallbackMs` is still honored as a co-equal ceiling — bumping
+// GITHUB_OVERALL_BUDGET_MS on a Pro plan must not silently override a
+// helper's own MAX_TOTAL_GITHUB_MS. When no deadline is in flight (tests,
+// ad-hoc scripts), only the local fallback applies.
+function remainingBudget(fallbackMs) {
+  const store = deadlineStore.getStore();
+  if (!store) return Math.max(0, fallbackMs);
+  return Math.max(0, Math.min(store.deadline - Date.now(), fallbackMs));
+}
+
+// Single GitHub GraphQL entry point. Every call in this module goes through
+// here so the `GITHUB_TIMEOUT_MS` ceiling applies uniformly. Without this
+// centralization, a slow upstream on the languages or stats path could stall
+// the function past its serverless time budget while the most-active-repo
+// path (which used to be the only one with a timeout) returned cleanly.
+// Returns the GraphQL `data` block so each caller can destructure the
+// fields it needs; throws on aborted/timed-out requests, on auth/HTTP-level
+// failures (401, 403, 5xx), on GraphQL field-level errors, and on a missing
+// `user` field (every query in this module is user-rooted).
+async function githubGraphQL(query, variables, timeoutMs) {
+  // Fail fast if the token is missing. Without this, the fetch sends
+  // `Authorization: Bearer undefined`, GitHub returns 401 "Bad credentials",
+  // and the downstream "User not found" branch buries the actual root
+  // cause. Surfacing the real problem here saves debugging time.
+  if (!TOKEN) {
+    throw new Error("GitHub stats: GITHUB_TOKEN env var is not set");
+  }
+
+  // `timeoutMs` lets paginating callers tighten the per-call ceiling to a
+  // budget they computed locally; omitting it picks `GITHUB_TIMEOUT_MS`.
+  // Either way we cap by the shared request deadline so a single-shot
+  // caller (`fetchGitHubStats`, the initial findMostActiveRepo query) and
+  // an explicit-budget caller both honor the cross-helper ceiling without
+  // having to thread the deadline through their signatures. Without the
+  // outer Math.min, a stale default parameter would silently override the
+  // deadline — the precise bug that motivated this rewrite.
+  const baseTimeout = timeoutMs ?? GITHUB_TIMEOUT_MS;
+  const effectiveTimeout = Math.min(baseTimeout, remainingBudget(baseTimeout));
+  // Short-circuit when the budget is already exhausted. `setTimeout(..., 0)`
+  // queues the abort as a macrotask, so without this we'd still kick off a
+  // fetch that opens a TCP/TLS connection before the immediate abort fires.
+  // Throwing a `DOMException` named "AbortError" matches the shape `fetch`
+  // produces on a real abort, so the paginated callers' existing
+  // `err?.name === "AbortError"` catch path preserves partial results
+  // unchanged.
+  if (effectiveTimeout <= 0) {
+    throw new DOMException(
+      "GitHub stats: request budget exhausted before call",
+      "AbortError"
+    );
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), effectiveTimeout);
+  try {
+    const res = await fetch(GITHUB_API, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+      signal: controller.signal,
+    });
+
+    // Read the body as text once, then attempt to parse it as JSON. Reading
+    // as text first lets us keep a copy of the raw bytes for diagnostics
+    // when parsing fails (you can't re-read a consumed Response body).
+    // Non-2xx responses still return JSON for most GitHub error cases (401
+    // Bad credentials, 403 rate limit, 502 upstream unavailable, etc.) but
+    // those have shape `{message: "..."}`, not the GraphQL `{data, errors}`
+    // shape — distinguish on `res.ok` so the surfaced error names the
+    // actual HTTP failure instead of "User not found", which buries the
+    // root cause.
+    const rawBody = await res.text();
+    // `parseSucceeded` distinguishes "JSON.parse threw" from "body was
+    // literally the JSON value `null`" (which parses successfully). Without
+    // this distinction the parse-failure branch below would false-positive
+    // on a valid `null` body and false-negative on `JSON.parse(rawBody) === null`.
+    let json;
+    let parseSucceeded = false;
+    try {
+      json = JSON.parse(rawBody);
+      parseSucceeded = true;
+    } catch {
+      // Handled below — branches on `parseSucceeded`.
+    }
+
+    if (!res.ok) {
+      const detail = json?.message || `HTTP ${res.status} ${res.statusText}`;
+      throw new Error(`GitHub stats: GraphQL request failed (${detail})`);
+    }
+    // 2xx response but the body wasn't JSON — most commonly an HTML error
+    // page from an intermediate proxy, a Cloudflare challenge, or a
+    // captive-portal redirect that returned 200. Surface the root cause
+    // with a body snippet so the fallback logs are actually diagnosable
+    // instead of silently misreporting "User not found".
+    if (!parseSucceeded) {
+      const snippet = rawBody.slice(0, 200).replace(/\s+/g, " ").trim();
+      const truncated = rawBody.length > 200 ? "…" : "";
+      throw new Error(
+        `GitHub stats: GraphQL response was not valid JSON (HTTP ${res.status}, body: "${snippet}${truncated}")`
+      );
+    }
+    if (json?.errors) {
+      throw new Error(json.errors[0]?.message || "GitHub GraphQL query failed");
+    }
+    if (!json?.data?.user) throw new Error("User not found");
+    return json.data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+// Hard cap on owned-repo pagination. Each page = 100 repos, so 10 pages
+// covers any realistic account (≤ 1,000 owned non-fork repos). Above this
+// we stop paging and log a warning — the contribution loops still see those
+// extra repos (via the *ContributionsByRepository fields, which GitHub caps
+// at 100 each), so the missing tier is only the soft history-depth boost.
+const MAX_REPO_PAGES = 10;
+
+// Derive the set of `owner/name` keys (lowercased) to skip when picking the
+// "most active" feature repo. The GitHub profile-README repo — the one whose
+// owner AND name both match the username — is always excluded, because every
+// push there is a meta-edit of the about page itself and would otherwise
+// artificially dominate the activity score. Keying by `owner/name` (not just
+// `name`) means an unrelated repo with a coincidentally matching name owned
+// by someone else is still scored normally.
+const mostActiveRepoExclude = (username) => {
+  const u = username.toLowerCase();
+  return new Set([`${u}/${u}`]);
+};
+
+// The "most active repository" selection is far more expensive than the rest
+// of the stats (it pages contribution breakdowns + per-repo commit history) and
+// changes slowly, so it gets its own cache layer with a 24-hour TTL. The
+// display-data cache continues to refresh every 10 minutes.
+const getCachedMostActiveRepo = unstable_cache(
+  async (username) => findMostActiveRepo(username),
+  ["most-active-repo"],
+  {
+    revalidate: MOST_ACTIVE_REPO_REVALIDATE_SECONDS,
+    tags: ["github-stats", "most-active-repo"],
+  }
+);
 
 // Aggregated GitHub fetcher wrapped in Next's persistent data cache. The
-// per-(username, repoName) cache key is derived from the runtime args; cached
-// payloads survive serverless cold starts within a deployment, so each cold
-// start no longer costs a fresh round of GraphQL calls.
+// repo name is resolved by the scoring algorithm before each fresh fetch and
+// cached separately at a 24-hour TTL — the display data still refreshes every
+// 10 minutes against whatever repo the algorithm last picked.
 const getCachedGithubStats = unstable_cache(
-  async (username, repoName) => {
+  async (username) => {
+    const mostActiveRepo = await getCachedMostActiveRepo(username);
     const [languages, stats] = await Promise.all([
       getAllLanguages(username),
-      fetchGitHubStats(username, repoName),
+      fetchGitHubStats(
+        username,
+        mostActiveRepo?.owner ?? null,
+        mostActiveRepo?.name ?? null,
+        mostActiveRepo?.activityScore ?? 0
+      ),
     ]);
     return {
       languages: languages.slice(0, 6),
@@ -31,10 +233,18 @@ const CACHE_HEADERS = {
   "Cache-Control": `public, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=300, stale-if-error=86400`,
 };
 
+// The only username this endpoint will serve. Pinning to the site owner's
+// account closes a token/rate-limit exhaustion vector: without this guard, any
+// caller varying `?username=` triggers a fresh, expensive GraphQL chain (paged
+// repo languages + most-active scoring + repo detail fetch) against the
+// shared GITHUB_TOKEN and pollutes `unstable_cache` with junk entries.
+const ALLOWED_USERNAME = (
+  process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643"
+).toLowerCase();
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const username = searchParams.get("username");
-  const repoName = searchParams.get("repo");
 
   if (!username) {
     return NextResponse.json(
@@ -43,18 +253,30 @@ export async function GET(request) {
     );
   }
 
-  // `repoName` feeds a `String!` GraphQL variable; missing it would throw
-  // inside the cached fetcher and incorrectly trip the fallback branch below,
-  // so reject the malformed request up front.
-  if (!repoName) {
+  // GitHub usernames are case-insensitive, so normalize before comparing.
+  if (username.toLowerCase() !== ALLOWED_USERNAME) {
     return NextResponse.json(
-      { error: "Missing 'repo' query parameter." },
-      { status: 400 }
+      { error: "Username not allowed" },
+      { status: 403 }
     );
   }
 
+  // Pass the canonical (lowercase) form downstream so callers can't multiply
+  // the `unstable_cache` entries by varying input casing (`MA1002643` vs
+  // `ma1002643` vs `Ma1002643`). `unstable_cache` hashes its function args
+  // into the cache key — without this normalization the allowlist would let
+  // a single approved user trigger N fresh GraphQL rebuilds, partially
+  // defeating the token/rate-limit-exhaustion protection that gating by
+  // username was supposed to provide.
   try {
-    const data = await getCachedGithubStats(username, repoName);
+    // Establish the request-scoped deadline once so every GraphQL call in
+    // the cold-miss chain (findMostActiveRepo → getAllLanguages + fetch-
+    // GitHubStats) shares a single wall-clock budget. Cache hits skip past
+    // the helpers entirely and never consult the store.
+    const deadline = Date.now() + GITHUB_OVERALL_BUDGET_MS;
+    const data = await deadlineStore.run({ deadline }, () =>
+      getCachedGithubStats(ALLOWED_USERNAME)
+    );
     return NextResponse.json(data, { headers: CACHE_HEADERS });
   } catch (error) {
     // Total upstream failure (rate limit, network, GraphQL error). Serve the
@@ -106,24 +328,56 @@ async function getAllLanguages(username) {
   let endCursor = null;
   const languageStats = {};
 
-  while (hasNextPage) {
-    const response = await fetch(GITHUB_API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${TOKEN}`,
-      },
-      body: JSON.stringify({ query, variables: { username, after: endCursor } }),
-    });
-
-    const json = await response.json();
-
-    if (json.errors) {
-      console.error("GraphQL errors:", json.errors);
-      throw new Error("GitHub GraphQL query failed");
+  // Bounded pagination — two independent stop conditions:
+  //   1. MAX_REPO_PAGES — covers up to ~1,000 owned repos (10 × 100). Stops
+  //      a long-tailed account or a malformed pageInfo loop from making
+  //      infinite calls.
+  //   2. MAX_TOTAL_GITHUB_MS — overall wall-clock budget. Even with the
+  //      page cap, MAX_REPO_PAGES × GITHUB_TIMEOUT_MS (10 × 8 s = 80 s)
+  //      exceeds typical serverless function limits. The wall-clock check
+  //      ensures we exit before the platform kills the function, leaving
+  //      time for response serialization and the route's own try/catch
+  //      to serve the bundled fallback if needed.
+  let pages = 0;
+  const startTime = Date.now();
+  while (hasNextPage && pages < MAX_REPO_PAGES) {
+    // Defer to the shared request deadline when one is set (the GET handler
+    // always sets one); otherwise fall back to the helper-local budget so
+    // direct callers without a deadline in flight stay bounded.
+    const remaining = remainingBudget(MAX_TOTAL_GITHUB_MS - (Date.now() - startTime));
+    if (remaining <= 0) {
+      console.warn(
+        `getAllLanguages: overall budget exhausted after ${pages} pages; tail repos excluded from language totals.`
+      );
+      hasNextPage = false;
+      break;
     }
-
-    const repoData = json.data.user.repositories;
+    // Cap each page's per-call timeout to whatever budget is left so a slow
+    // upstream near the end of the loop can't push total time past
+    // MAX_TOTAL_GITHUB_MS — the prior code only gated *before* starting a
+    // call, leaving an 8 s tail every iteration.
+    const perCallTimeout = Math.min(GITHUB_TIMEOUT_MS, remaining);
+    let data;
+    try {
+      data = await githubGraphQL(
+        query,
+        { username, after: endCursor },
+        perCallTimeout
+      );
+    } catch (err) {
+      // Distinguish budget-driven abort from real errors so partial results
+      // are preserved on the former and the latter still propagate to the
+      // route's bundled-fallback path.
+      if (err?.name === "AbortError") {
+        console.warn(
+          `getAllLanguages: page ${pages + 1} aborted at ${perCallTimeout}ms cap (overall budget exhausted); partial results retained.`
+        );
+        hasNextPage = false;
+        break;
+      }
+      throw err;
+    }
+    const repoData = data.user.repositories;
     const repos = repoData.nodes;
 
     // Aggregate sizes
@@ -138,12 +392,28 @@ async function getAllLanguages(username) {
 
     hasNextPage = repoData.pageInfo.hasNextPage;
     endCursor = repoData.pageInfo.endCursor;
+    pages += 1;
+  }
+  if (hasNextPage) {
+    console.warn(
+      `getAllLanguages: stopped paging at ${MAX_REPO_PAGES} pages. Language totals reflect approximately the first ${MAX_REPO_PAGES * 100} owned repos; tail repos are excluded.`
+    );
   }
 
   const totalSize = Object.values(languageStats).reduce(
     (sum, lang) => sum + lang.size,
     0
   );
+
+  // Zero-total fast path: a brand-new account with no code in any owned repo,
+  // or an account whose repos all register a language with size 0, would
+  // otherwise produce `NaN%` (0 / 0) or `Infinity%` (size / 0). Returning an
+  // empty array is the truthful representation — "we have no language
+  // signal" — and lets the consumer skip the language card entirely instead
+  // of rendering rows with broken numerics.
+  if (totalSize === 0) {
+    return [];
+  }
 
   // Sort and convert to percentage
   return Object.entries(languageStats)
@@ -156,9 +426,14 @@ async function getAllLanguages(username) {
     }));
 }
 
-async function fetchGitHubStats(username, repoName) {
+async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0) {
+  // `hasRepo` gates the `repository` field via @include. When false, the
+  // placeholder owner/name strings are never resolved against GitHub —
+  // GraphQL still needs non-null values to satisfy the `String!` variable
+  // contract, but @include(if: false) short-circuits before evaluation.
+  const hasRepo = Boolean(repoOwner && repoName);
   const query = `
-    query ($username: String!, $repoName: String!) {
+    query ($username: String!, $repoOwner: String!, $repoName: String!, $hasRepo: Boolean!) {
       user(login: $username) {
         name
         login
@@ -178,28 +453,46 @@ async function fetchGitHubStats(username, repoName) {
           }
         }
       }
-      repository(owner: $username, name: $repoName) {
+      repository(owner: $repoOwner, name: $repoName) @include(if: $hasRepo) {
         name
+        # nameWithOwner (e.g. "vercel/next.js") is the disambiguation key
+        # used by computeRepoDiff. Without it, two different repos that
+        # happen to share a leaf name across different owners (e.g.
+        # "acme/next.js" and "vercel/next.js") look identical to the diff
+        # algorithm and a repo-switch wouldn't trigger the update banner.
+        # NOTE: do not use backticks in this comment — the surrounding
+        # template literal would terminate early and break the build.
+        nameWithOwner
         description
         stargazerCount
+        forkCount
+        pushedAt
+        watchers { totalCount }
         primaryLanguage { name color }
+        issues(states: OPEN) { totalCount }
+        closedIssues: issues(states: CLOSED) { totalCount }
+        pullRequests(states: OPEN) { totalCount }
+        mergedPRs: pullRequests(states: MERGED) { totalCount }
+        defaultBranchRef {
+          target {
+            ... on Commit {
+              history(first: 1) { totalCount }
+            }
+          }
+        }
       }
     }
   `;
 
-  const res = await fetch(GITHUB_API, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables: { username, repoName } }),
+  const data = await githubGraphQL(query, {
+    username,
+    // When hasRepo is false these are inert placeholders that satisfy
+    // GraphQL's String! contract but never get resolved.
+    repoOwner: repoOwner || username,
+    repoName: repoName || username,
+    hasRepo,
   });
-
-  const json = await res.json();
-  if (json.errors) throw new Error(json.errors[0]?.message);
-  const user = json.data.user;
-  if (!user) throw new Error("User not found");
+  const user = data.user;
 
   // today
   const today = new Date().toISOString().split("T")[0];
@@ -253,7 +546,7 @@ async function fetchGitHubStats(username, repoName) {
     followers,
   });
 
-  const repo = json.data.repository;
+  const repo = data.repository;
 
   return {
     user: {
@@ -296,14 +589,253 @@ async function fetchGitHubStats(username, repoName) {
     },
     repo: repo
       ? {
-        title: parseGitHubText(repo.name),
+        name: repo.name,
+        // Stable disambiguating identifier ("owner/name", lowercased by
+        // convention — though GitHub returns it case-preserved). Used by
+        // `computeRepoDiff` to detect a true repo switch even when two
+        // different repos share a leaf name under different owners.
+        nameWithOwner: repo.nameWithOwner,
         description: parseGitHubText(repo.description || "No description"),
         language: repo.primaryLanguage?.name || "Unknown",
-        color: repo.primaryLanguage?.color || "#999",
+        languageColor: repo.primaryLanguage?.color || "#999999",
         stars: repo.stargazerCount,
+        forks: repo.forkCount,
+        watchers: repo.watchers?.totalCount || 0,
+        openIssues: repo.issues?.totalCount || 0,
+        closedIssues: repo.closedIssues?.totalCount || 0,
+        openPRs: repo.pullRequests?.totalCount || 0,
+        mergedPRs: repo.mergedPRs?.totalCount || 0,
+        commitCount: repo.defaultBranchRef?.target?.history?.totalCount || 0,
+        pushedAt: formatDate(repo.pushedAt),
+        activityScore,
       }
       : null,
   };
+}
+
+// Scores every repository the user has contributed to in the last year by
+// weighting commits, issues, PRs, reviews, and overall history depth — picks
+// the highest-scoring repo as the one to feature on the about page. Wrapped in
+// its own 24-hour cache layer since this query is expensive (paged contribution
+// breakdowns + per-repo commit history) and changes slowly.
+async function findMostActiveRepo(username) {
+  // Initial query: contributions in full + first page of owned repos.
+  // GitHub caps `*ContributionsByRepository` at maxRepositories: 100 with no
+  // cursor available, so contributions cannot be paged — that's a platform
+  // limit. `repositories` does expose pageInfo, so we paginate it below.
+  const initialQuery = `
+    query FindMostActiveRepo($username: String!, $after: String) {
+      user(login: $username) {
+        contributionsCollection {
+          commitContributionsByRepository(maxRepositories: 100) {
+            repository { name owner { login } }
+            contributions { totalCount }
+          }
+          issueContributionsByRepository(maxRepositories: 100) {
+            repository { name owner { login } }
+            contributions { totalCount }
+          }
+          pullRequestContributionsByRepository(maxRepositories: 100) {
+            repository { name owner { login } }
+            contributions { totalCount }
+          }
+          pullRequestReviewContributionsByRepository(maxRepositories: 100) {
+            repository { name owner { login } }
+            contributions { totalCount }
+          }
+        }
+        repositories(first: 100, after: $after, ownerAffiliations: OWNER, isFork: false) {
+          pageInfo { hasNextPage endCursor }
+          nodes {
+            name
+            owner { login }
+            defaultBranchRef {
+              target {
+                ... on Commit {
+                  history(first: 1) { totalCount }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  // Cursor-only query for subsequent repo pages — skips the (expensive,
+  // already-fetched) contributions block so each extra page only costs the
+  // owned-repos slice.
+  const reposPageQuery = `
+    query FindMostActiveRepoReposPage($username: String!, $after: String!) {
+      user(login: $username) {
+        repositories(first: 100, after: $after, ownerAffiliations: OWNER, isFork: false) {
+          pageInfo { hasNextPage endCursor }
+          nodes {
+            name
+            owner { login }
+            defaultBranchRef {
+              target {
+                ... on Commit {
+                  history(first: 1) { totalCount }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  // Track wall-clock from before the initial call so the budget covers the
+  // expensive contributions query too — not just pagination follow-ups.
+  // Pass the budget-capped timeout to the initial call so the entire
+  // function's worst-case wall-clock is `MAX_TOTAL_GITHUB_MS`, not
+  // `GITHUB_TIMEOUT_MS + MAX_TOTAL_GITHUB_MS`. An abort here unwinds
+  // findMostActiveRepo cleanly — no partial state worth preserving without
+  // the initial contributions block.
+  const startTime = Date.now();
+  const initialData = await githubGraphQL(
+    initialQuery,
+    { username, after: null },
+    Math.min(GITHUB_TIMEOUT_MS, remainingBudget(MAX_TOTAL_GITHUB_MS))
+  );
+  const user = initialData.user;
+
+  // Collect every owned repo across pages so the history-depth tie-breaker
+  // covers users with >100 repos. For accounts with ≤100 repos the loop is
+  // skipped and the function still completes in a single round-trip.
+  // Two independent stop conditions:
+  //   - MAX_REPO_PAGES: defends against malformed pageInfo (hasNextPage
+  //     stuck true, endCursor unchanged) and legitimate >1,000-repo
+  //     accounts.
+  //   - MAX_TOTAL_GITHUB_MS: overall wall-clock budget. Page cap alone
+  //     allows MAX_REPO_PAGES × GITHUB_TIMEOUT_MS (10 × 8 s = 80 s) worst
+  //     case, well past typical serverless function limits — this check
+  //     ensures we exit early enough to leave room for response serializa-
+  //     tion and the route's bundled-fallback path.
+  const ownedRepos = [...user.repositories.nodes];
+  let { hasNextPage, endCursor } = user.repositories.pageInfo;
+  let pages = 1;
+  while (hasNextPage && pages < MAX_REPO_PAGES) {
+    // Same shared-deadline-with-local-fallback pattern as getAllLanguages.
+    const remaining = remainingBudget(MAX_TOTAL_GITHUB_MS - (Date.now() - startTime));
+    if (remaining <= 0) {
+      console.warn(
+        `findMostActiveRepo: overall budget exhausted after ${pages} pages (${ownedRepos.length} repos); remaining pages skipped.`
+      );
+      hasNextPage = false;
+      break;
+    }
+    // Cap per-call timeout to the remaining overall budget — see the matching
+    // pattern in getAllLanguages for the rationale.
+    const perCallTimeout = Math.min(GITHUB_TIMEOUT_MS, remaining);
+    let pageData;
+    try {
+      pageData = await githubGraphQL(
+        reposPageQuery,
+        { username, after: endCursor },
+        perCallTimeout
+      );
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        console.warn(
+          `findMostActiveRepo: page ${pages + 1} aborted at ${perCallTimeout}ms cap (overall budget exhausted); ${ownedRepos.length} repos retained.`
+        );
+        hasNextPage = false;
+        break;
+      }
+      throw err;
+    }
+    ownedRepos.push(...pageData.user.repositories.nodes);
+    ({ hasNextPage, endCursor } = pageData.user.repositories.pageInfo);
+    pages += 1;
+  }
+  if (hasNextPage) {
+    console.warn(
+      `findMostActiveRepo: stopped paging owned repos at ${MAX_REPO_PAGES} pages (${ownedRepos.length} repos). History-depth boost will not apply to repos beyond this point; contribution-based scoring is unaffected.`
+    );
+  }
+
+  const excludeSet = mostActiveRepoExclude(username);
+  // Key entries by `owner/name` (lowercased) so the same repo accumulates
+  // score across contribution categories, and so two repos that happen to
+  // share a name under different owners stay distinct.
+  const scoreByRepo = new Map();
+  const addScore = (repo, weight, count) => {
+    const name = repo?.name;
+    const owner = repo?.owner?.login;
+    if (!name || !owner || !count) return;
+    const key = `${owner.toLowerCase()}/${name.toLowerCase()}`;
+    if (excludeSet.has(key)) return;
+    const prev = scoreByRepo.get(key);
+    if (prev) {
+      prev.score += weight * count;
+    } else {
+      scoreByRepo.set(key, { name, owner, score: weight * count });
+    }
+  };
+
+  // Weight tiers, from highest signal to lowest:
+  //   5 — PRs authored & PR reviews: the highest-effort engineering acts.
+  //   4 — commits: substantive but commonplace.
+  //   3 — issues: meaningful engagement but lower craft.
+  //   1 — ambient owned-repo history (added below, soft tie-breaker).
+  for (const c of user.contributionsCollection.commitContributionsByRepository) {
+    addScore(c.repository, 4, c.contributions.totalCount);
+  }
+  for (const c of user.contributionsCollection.issueContributionsByRepository) {
+    addScore(c.repository, 3, c.contributions.totalCount);
+  }
+  for (const c of user.contributionsCollection.pullRequestContributionsByRepository) {
+    addScore(c.repository, 5, c.contributions.totalCount);
+  }
+  for (const c of user.contributionsCollection.pullRequestReviewContributionsByRepository) {
+    addScore(c.repository, 5, c.contributions.totalCount);
+  }
+  // Tie-breaker: log-scaled boost from each owned repo's total commit history
+  // — but only for repos that already accrued contribution score above. Two
+  // independent constraints:
+  //
+  //   1. Gate on `scoreByRepo.has(key)`. Without this, a dormant deep-history
+  //      repo (zero recent activity, thousands of legacy commits) adds its
+  //      raw commit count to its score and trivially outranks a genuinely
+  //      active repo — directly contradicting the "most active" intent.
+  //   2. log10(commits + 1) scaling. Raw counts let history dominate
+  //      contribution scoring too: 5,000 historical commits × weight 1
+  //      (5,000) buries 50 recent commits × weight 4 (200). Log10 collapses
+  //      the range so a 1,000-commit history adds ~3 and a 10,000-commit
+  //      history adds ~4 — small enough to function as a tie-breaker
+  //      between similarly-active candidates rather than the dominant term.
+  //
+  // `ownedRepos` covers every owned, non-fork repo across pages, so users
+  // with >100 repos still get the tie-breaker signal where it applies.
+  for (const repo of ownedRepos) {
+    const name = repo?.name;
+    const owner = repo?.owner?.login;
+    if (!name || !owner) continue;
+    const key = `${owner.toLowerCase()}/${name.toLowerCase()}`;
+    if (!scoreByRepo.has(key)) continue;
+    const commits = repo.defaultBranchRef?.target?.history?.totalCount || 0;
+    if (commits <= 0) continue;
+    addScore(repo, 1, Math.log10(commits + 1));
+  }
+
+  // No qualifying activity is a valid state (fresh fork-user with no recent
+  // contributions). Return null instead of throwing so the endpoint can still
+  // serve user/stats/streaks payloads and the repo card renders empty,
+  // instead of forcing the whole response into the unrelated bundled fallback.
+  if (scoreByRepo.size === 0) {
+    return null;
+  }
+
+  let best = null;
+  for (const entry of scoreByRepo.values()) {
+    if (!best || entry.score > best.score) {
+      best = entry;
+    }
+  }
+
+  return { name: best.name, owner: best.owner, activityScore: best.score };
 }
 
 function computeStreaks(contributionCalendar) {
@@ -340,7 +872,6 @@ function computeStreaks(contributionCalendar) {
     if (lastDay === today)
       currentStreak = { days: streak, start: streakStart, end: lastDay };
   }
-  console.log("Streaks", { currentStreak, longestStreak })
 
   return { currentStreak, longestStreak };
 }

@@ -230,6 +230,58 @@
     transform: scale(1.05);
     animation: glow 2s ease-in-out infinite;
   }
+
+  /* "Most Active Repository" badge — diagonal highlight sweep, infinite loop.
+     Used by the repo card in src/components/about/RepoStatsCard.jsx (issue #22). */
+  @keyframes shimmer-sweep {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+
+  .badge-shimmer {
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255, 179, 58, 0.35) 50%,
+      transparent 60%
+    );
+    background-size: 200% 100%;
+    animation: shimmer-sweep 3s linear infinite;
+  }
+
+  /* Ambient breathing border glow for the repo card (issue #22).
+     Peaks brighter than the resting state, then settles back. Lives in CSS
+     because the parent motion.div already owns its `animate` prop for entrance
+     variants — keeping the loop here avoids prop conflicts. */
+  @keyframes repo-card-breathe {
+    0%,
+    100% {
+      box-shadow:
+        0 0 6px rgba(255, 109, 5, 0.3),
+        0 0 14px rgba(255, 109, 5, 0.15);
+    }
+    50% {
+      box-shadow:
+        0 0 16px rgba(255, 109, 5, 0.65),
+        0 0 30px rgba(255, 109, 5, 0.35);
+    }
+  }
+
+  .repo-card-breathe {
+    /* Baseline shadow matching the 0%/100% keyframe of `repo-card-breathe`
+       above. The animation overrides this during playback, but it survives
+       when the animation is disabled (e.g. under `prefers-reduced-motion`
+       or in browsers that don't apply the keyframes), so the card still
+       reads with the intended resting glow instead of going flat. */
+    box-shadow:
+      0 0 6px rgba(255, 109, 5, 0.3),
+      0 0 14px rgba(255, 109, 5, 0.15);
+    animation: repo-card-breathe 3s ease-in-out infinite;
+  }
 }
 
 @keyframes bounce-shake {
@@ -364,6 +416,14 @@
   .firefly-life {
     animation: none;
     opacity: 0.5;
+  }
+
+  /* Issue #22 animations: the badge shimmer sweep and repo-card breathing
+     glow are decorative-only — neither communicates state. Hold them at a
+     calm resting frame for users who opt out of motion. */
+  .badge-shimmer,
+  .repo-card-breathe {
+    animation: none;
   }
 }
 

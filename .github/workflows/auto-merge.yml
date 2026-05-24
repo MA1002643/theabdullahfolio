@@ -1,0 +1,66 @@
+name: Enable Auto-Merge
+
+# Issue #22 / §12 — flips on auto-merge for every PR opened against main, so
+# once status checks pass and required reviewers approve, GitHub merges the PR
+# without a manual click. Branch-protection rules still apply: this only ARMS
+# auto-merge, it does not bypass review/check requirements.
+#
+# Scope is enforced in two places (defense in depth):
+#   1. `on.pull_request.branches: [main]` filters the trigger so the workflow
+#      never even fires on PRs targeting release/backport/other branches.
+#   2. The job-level `if: github.base_ref == 'main' && ...` guards against a
+#      future trigger-config drift that would re-broaden the surface.
+# Without these, the header's "opened against main" claim would silently be
+# wrong the moment the repo adds any non-main long-lived branch.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+    branches: [main]
+
+# Least-privilege: `enableAutoMerge` is a PR-level mutation and only needs
+# `pull-requests: write`. Dropping `contents: write` denies the token the
+# ability to push commits, modify files, or cut releases — actions this
+# workflow never performs — shrinking the blast radius if the token is ever
+# compromised through a malicious dependency or pull_request_target misuse.
+permissions:
+  pull-requests: write
+
+jobs:
+  enable-auto-merge:
+    runs-on: ubuntu-latest
+    # Three guards, each independent:
+    #   1. `draft == false` — auto-merge can't be enabled on draft PRs anyway,
+    #      so don't burn an Actions minute to discover that.
+    #   2. `base_ref == 'main'` — belt-and-braces with the trigger filter
+    #      above; keeps the workflow harmless if `on.branches` is ever
+    #      broadened or removed.
+    #   3. `head.repo.full_name == github.repository` — skip PRs from forks.
+    #      `pull_request` events from forks run the workflow with a read-only
+    #      GITHUB_TOKEN, so `pulls.enableAutoMerge` would throw "Resource not
+    #      accessible by integration" and produce a noisy warning on every
+    #      external contribution. Filter them out before the API call.
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.base_ref == 'main' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      # Pinned to the SHA that the `v7` tag resolved to (latest v7.x at time of
+      # pinning). Immutable SHA refs prevent a hijacked tag from injecting code
+      # into this workflow; bump alongside any future v7 → v8/v9 upgrade.
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            try {
+              await github.rest.pulls.enableAutoMerge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                merge_method: "squash",
+              });
+              core.info(`Auto-merge enabled on #${context.payload.pull_request.number}`);
+            } catch (err) {
+              // Most common cause: repo has auto-merge disabled at the org/repo
+              // level, or branch protection is not configured. Surface the
+              // failure but do not fail the workflow run.
+              core.warning(`Could not enable auto-merge: ${err.message}`);
+            }

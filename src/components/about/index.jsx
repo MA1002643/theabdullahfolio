@@ -7,9 +7,10 @@ import GitHubStatsCard from "./StatsCard";
 import StreakStatsCard from "./StreakStatsCard";
 import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
+import { computeRepoDiff } from "@/utils/repoDiff";
 
-const githubStatsStorageKey = (username, repo) =>
-  `github-stats:lastGood:${username}:${repo}`;
+const githubStatsStorageKey = (username) =>
+  `github-stats:lastGood:${username}`;
 
 const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Join me as I continue to explore new spells and technologies to shape the future of the web.";
 const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
@@ -25,14 +26,14 @@ const RevealWord = ({ children, progress, range, reducedMotion }) => {
 
 const AboutDetails = () => {
   // GitHub Username — override via NEXT_PUBLIC_GITHUB_USERNAME when forking.
+  // The most-active repo is now picked server-side by /api/github-stats, so the
+  // hardcoded `repo` constant that used to live here is gone (issue #22).
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
-  const repo = "github-readme-stats";
 
-  const [count, setCount] = useState(0);
   const [years, setYears] = useState(0);
   const [githubStats, setGithubStats] = useState(null)
-  const [previousStats, setPreviousStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
+  const [repoDiffMessage, setRepoDiffMessage] = useState(null);
 
   // Scroll-linked per-word reveal for the "Architect of Enchantment" paragraph.
   // Both ends of the active scroll range are derived from the paragraph's own
@@ -74,12 +75,6 @@ const AboutDetails = () => {
     [revealRange.start, revealRange.end],
     [0, 1]
   );
-
-  useEffect(() => {
-    const projectCount = projectsData.length ?? 0
-    if (count && count !== projectCount) setChangedFields("projects")
-    setCount(projectCount);
-  }, [username]);
 
   // Counter Animation...
   function Counter({ from, to, plusIcon = true }) {
@@ -149,7 +144,7 @@ const AboutDetails = () => {
   const getGithubStats = async () => {
     let data;
     try {
-      const res = await fetch(`/api/github-stats?username=${username}&repo=${repo}`);
+      const res = await fetch(`/api/github-stats?username=${encodeURIComponent(username)}`);
       if (!res.ok) throw new Error(`github-stats API responded ${res.status}`);
       data = await res.json();
     } catch (err) {
@@ -171,18 +166,26 @@ const AboutDetails = () => {
       if (!prevStats) {
         return {
           languages: data.languages || [],
-          stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: {} },
+          // `repo: null` (not `{}`) so the parent guard
+          // `githubStats?.stats?.repo` correctly suppresses the card when the
+          // API reports no qualifying activity. An empty object is truthy and
+          // would render a blank "Most Active Repository" card.
+          stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: null },
         };
       }
 
       // Detect top-level and nested changes
       const diffs = detectChanges(prevStats, data);
-      console.log("Diffs", diffs);
 
       if (diffs.length === 0) return prevStats; // nothing changed
 
+      // Compute a human-readable diff for the repo card's update banner.
+      // computeRepoDiff returns null on the first-ever change cycle (no prev),
+      // suppressing a false-positive banner on the initial poll after load.
+      const repoMsg = computeRepoDiff(prevStats?.stats?.repo, data?.stats?.repo);
+      if (repoMsg) setRepoDiffMessage(repoMsg);
+
       setChangedFields(diffs);
-      setPreviousStats(prevStats);
 
       // Start from existing state
       const updatedStats = { ...prevStats };
@@ -193,17 +196,24 @@ const AboutDetails = () => {
       }
 
       // --- Update nested stats fields selectively ---
-      if (diffs.includes("stats")) {
+      // `detectChanges` flattens to two-level keys (e.g. "stats.user"), so the bare "stats" is never emitted — match any "stats.*" instead.
+      if (diffs.some((d) => d === "stats" || d.startsWith("stats."))) {
         const prevNested = prevStats.stats || {};
         const newNested = data.stats || {};
 
         updatedStats.stats = {
           ...prevNested,
-          // only overwrite changed parts
+          // only overwrite changed parts.
+          // `repo` uses ?? so a legitimate `null` (API reporting "no
+          // qualifying activity") is preserved instead of coerced to `{}` —
+          // the parent guard `githubStats?.stats?.repo` then suppresses an
+          // otherwise-blank card. The other fields stay on `||` because
+          // they're always object-shaped in practice and the empty-object
+          // fallback there is just a safety net.
           user: diffs.includes("stats.user") ? newNested.user || {} : prevNested.user,
           stats: diffs.includes("stats.stats") ? newNested.stats || {} : prevNested.stats,
           streaks: diffs.includes("stats.streaks") ? newNested.streaks || {} : prevNested.streaks,
-          repo: diffs.includes("stats.repo") ? newNested.repo || {} : prevNested.repo,
+          repo: diffs.includes("stats.repo") ? (newNested.repo ?? null) : prevNested.repo,
         };
       }
 
@@ -218,10 +228,16 @@ const AboutDetails = () => {
     if (!data?._fallback) {
       try {
         window.localStorage.setItem(
-          githubStatsStorageKey(username, repo),
+          githubStatsStorageKey(username),
           JSON.stringify({
             languages: data.languages || [],
-            stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: {} },
+            // `repo: null` (not `{}`) so the parent guard
+            // `githubStats?.stats?.repo` correctly suppresses the card on the
+            // next cold load when there's no qualifying activity. Must match
+            // the same default used by the in-memory first-load branch above
+            // — drifting these out of sync causes the hydrate to render an
+            // empty card the next time the user visits.
+            stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: null },
           })
         );
       } catch {
@@ -234,8 +250,78 @@ const AboutDetails = () => {
     // Hydrate from the previously cached payload so the stat cards never
     // render empty on a cold page load.
     try {
-      const cached = window.localStorage.getItem(githubStatsStorageKey(username, repo));
-      if (cached) setGithubStats(JSON.parse(cached));
+      const newKey = githubStatsStorageKey(username);
+      let raw = window.localStorage.getItem(newKey);
+
+      // Legacy key migration: prior to dropping the `:${repo}` suffix, the
+      // cache key was `github-stats:lastGood:${username}:${repo}` — one entry
+      // per repo the algorithm had ever selected. Existing visitors carry
+      // those entries forward, and without this scan they'd lose their cold-
+      // load hydration until the first network fetch returns. Find any
+      // legacy entry, promote it to the new key, and clear the old ones.
+      if (!raw) {
+        const legacyPrefix = `${newKey}:`;
+        const legacyKeys = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (k && k.startsWith(legacyPrefix)) legacyKeys.push(k);
+        }
+        if (legacyKeys.length > 0) {
+          // Any one of them will do — they're per-repo snapshots and the
+          // next 10-minute poll will overwrite with the live answer anyway.
+          raw = window.localStorage.getItem(legacyKeys[0]);
+          if (raw) {
+            window.localStorage.setItem(newKey, raw);
+          }
+          // Clean up all legacy entries (including ones we didn't read from)
+          // so localStorage doesn't accumulate stale per-repo snapshots.
+          for (const k of legacyKeys) window.localStorage.removeItem(k);
+        }
+      }
+
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Defensive normalizes for legacy payloads. Without these the cold-
+        // load hydrate would either render a wrong/empty card or trigger a
+        // false "Most active repository changed…" banner on the first poll
+        // (because `computeRepoDiff` compares hydrated `prev.name` —
+        // undefined under the old shape — against the live `next.name`).
+        const repo = parsed?.stats?.repo;
+        if (repo && typeof repo === "object") {
+          // Pre-most-active-repo build: `repo: {}` meant "no qualifying
+          // activity". An empty object is truthy and would slip past the
+          // `githubStats?.stats?.repo` guard.
+          if (Object.keys(repo).length === 0) {
+            parsed.stats.repo = null;
+          } else {
+            // Pre-most-active-repo build also used `title`/`color`; current
+            // shape uses `name`/`languageColor`. Re-key in-place so the
+            // destructure in RepoStatsCard reads the right fields and the
+            // first poll's diff doesn't false-positive on a renamed key.
+            if (repo.title !== undefined && repo.name === undefined) {
+              repo.name = repo.title;
+              delete repo.title;
+            }
+            if (repo.color !== undefined && repo.languageColor === undefined) {
+              // Expand 3-digit hex (#RGB) to 6-digit (#RRGGBB) so the
+              // hydrated shape matches what the live API now emits
+              // (always 6-digit). RepoStatsCard's `hexToRgba` already
+              // tolerates 3-digit at render time, so this normalization
+              // is belt-and-suspenders — its main purpose is keeping the
+              // stored repo shape consistent across the localStorage and
+              // network paths, which simplifies any future code that
+              // reads `repo.languageColor` directly without going through
+              // the card.
+              const shortHex = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(repo.color);
+              repo.languageColor = shortHex
+                ? `#${shortHex[1]}${shortHex[1]}${shortHex[2]}${shortHex[2]}${shortHex[3]}${shortHex[3]}`
+                : repo.color;
+              delete repo.color;
+            }
+          }
+        }
+        setGithubStats(parsed);
+      }
     } catch {
       // Ignore parse / access errors — the fresh fetch will populate state.
     }
@@ -250,7 +336,10 @@ const AboutDetails = () => {
 
   useEffect(() => {
     if (changedFields.length > 0) {
-      const timer = setTimeout(() => setChangedFields([]), 4000);
+      const timer = setTimeout(() => {
+        setChangedFields([]);
+        setRepoDiffMessage(null);
+      }, 10000);
       return () => clearTimeout(timer);
     }
   }, [changedFields]);
@@ -308,24 +397,8 @@ const AboutDetails = () => {
         <ItemLayout
           className={" col-span-full xs:col-span-6 lg:col-span-4 text-accent"}
         >
-          <AnimatePresence>
-            {changedFields.includes('projects') && (
-              <motion.div
-                key="banner"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="absolute inset-0 flex items-center justify-center bg-orange-500/80 backdrop-blur-xl text-[#ff6d05] font-medium text-lg md:text-xl rounded-lg z-10"
-              >
-                <span className="">
-                  Data in this table has been updated
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
           <h1 className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl text-shadow-neon-orange">
-            <Counter from={0} to={count} plusIcon={false}></Counter>
+            <Counter from={0} to={projectsData.length} plusIcon={false}></Counter>
             <p style={{ textShadow: "none" }} className="font-semibold text-base text-shadow-neon-light-orange">completed projects</p>
           </h1>
         </ItemLayout>
@@ -408,7 +481,11 @@ const AboutDetails = () => {
 
 
         {githubStats?.stats?.repo && <ItemLayout className={" col-span-full lg:col-span-6 !p-0"}>
-          <ReadmeStatsCard data={githubStats.stats.repo} isUpdated={changedFields.includes("stats.repo")} />
+          <ReadmeStatsCard
+            data={githubStats.stats.repo}
+            isUpdated={changedFields.includes("stats.repo")}
+            diffMessage={repoDiffMessage}
+          />
         </ItemLayout>}
 
         {/* <ItemLayout className={"col-span-full"}>
