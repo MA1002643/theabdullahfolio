@@ -144,7 +144,7 @@ const AboutDetails = () => {
   const getGithubStats = async () => {
     let data;
     try {
-      const res = await fetch(`/api/github-stats?username=${username}`);
+      const res = await fetch(`/api/github-stats?username=${encodeURIComponent(username)}`);
       if (!res.ok) throw new Error(`github-stats API responded ${res.status}`);
       data = await res.json();
     } catch (err) {

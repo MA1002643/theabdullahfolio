@@ -220,7 +220,15 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
         onAnimationComplete={() => pulse && setPulse(false)}
         className="text-xs sm:text-sm font-semibold text-shadow-neon-orange tabular-nums whitespace-nowrap"
       >
-        {isDate ? display : display.toLocaleString()}
+        {/* `display` cycles through 0 → target during the count-up and is
+            reset to 0 whenever the card scrolls out of view. Exposing that
+            to assistive tech would announce "0 stars" / "0 forks" any time
+            the user navigated to the card via keyboard or non-visual nav
+            before it entered the viewport. The sr-only span carries the
+            final, correct value; the visible span is `aria-hidden` so the
+            animated digits never reach the accessibility tree. */}
+        <span className="sr-only">{isDate ? target : target.toLocaleString()}</span>
+        <span aria-hidden="true">{isDate ? display : display.toLocaleString()}</span>
       </motion.span>
     </motion.div>
   );
@@ -353,7 +361,15 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-xs font-bold text-shadow-neon-orange leading-none tabular-nums">
-            {displayScore.toLocaleString()}
+            {/* Same accessibility split as MetricRow: `displayScore` cycles
+                through 0 → target and resets to 0 when out of view, so
+                exposing it to AT would announce "score 0" to keyboard /
+                non-visual nav until the user scrolls the card on-screen.
+                The sr-only span carries the final truthful score; the
+                visible span is aria-hidden so the animated digits never
+                reach the accessibility tree. */}
+            <span className="sr-only">{target.toLocaleString()}</span>
+            <span aria-hidden="true">{displayScore.toLocaleString()}</span>
           </span>
           <span
             className="text-[9px] text-shadow-neon-light-orange leading-none mt-0.5"
