@@ -13,18 +13,21 @@ import { NextResponse } from "next/server";
 // because `crypto.timingSafeEqual` throws on mismatched buffer lengths,
 // but the check itself is constant-time (one operation regardless of how
 // long the wrong-length input is), so it doesn't reintroduce a length-
-// based timing side-channel.
+// based timing side-channel. We compare *byte* lengths (not JS string
+// `.length`, which counts UTF-16 code units) so a non-ASCII secret can't
+// pass the gate and then trip the throw inside the catch — that path
+// works but is slower than the constant-time compare and would leak
+// timing info that distinguishes "byte-mismatched non-ASCII" inputs from
+// "length-matched mismatched" inputs.
 export function safeBearerEqual(headerValue, expectedSecret) {
   if (typeof headerValue !== "string" || !headerValue.startsWith("Bearer ")) {
     return false;
   }
-  const provided = headerValue.slice("Bearer ".length);
-  if (provided.length !== expectedSecret.length) return false;
+  const providedBuf = Buffer.from(headerValue.slice("Bearer ".length), "utf8");
+  const expectedBuf = Buffer.from(expectedSecret, "utf8");
+  if (providedBuf.length !== expectedBuf.length) return false;
   try {
-    return crypto.timingSafeEqual(
-      Buffer.from(provided, "utf8"),
-      Buffer.from(expectedSecret, "utf8"),
-    );
+    return crypto.timingSafeEqual(providedBuf, expectedBuf);
   } catch {
     return false;
   }
