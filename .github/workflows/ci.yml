@@ -27,7 +27,11 @@ jobs:
 
     strategy:
       matrix:
-        node-version: ['18', '20']
+        # Node 18 went EOL in April 2025, and a direct dep (`pdf-parse@^2.4.5`)
+        # requires `>=20.16.0 <21 || >=22.3.0`, so a Node 18 job would fail
+        # on install. Node 22 is the current LTS; 20 stays for the older-LTS
+        # smoke test until that line also goes EOL.
+        node-version: ['20', '22']
 
     steps:
       - name: Checkout repository

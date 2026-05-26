@@ -8,6 +8,11 @@ import StreakStatsCard from "./StreakStatsCard";
 import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
 import { computeRepoDiff } from "@/utils/repoDiff";
+import { useExperienceSummary } from "@/hooks/useExperienceSummary";
+import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
+import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
+import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
+import { UpdateBanner } from "./UpdateBanner";
 
 const githubStatsStorageKey = (username) =>
   `github-stats:lastGood:${username}`;
@@ -24,16 +29,140 @@ const RevealWord = ({ children, progress, range, reducedMotion }) => {
   );
 };
 
+// Inline percentage count-up. Mirrors the years card's primary
+// Counter — same viewport-trigger hook so the percentage tick begins
+// the moment the card enters view (and replays on re-entry), same
+// `animate()` driver from framer-motion. Renders as an inline-flex
+// span so it slots into the legend line without breaking the flex
+// row's alignment. Reduced motion shows the final value immediately.
+function PercentCount({ value }) {
+  const nodeRef = useRef(null);
+  const sectionRef = useRef(null);
+  const prefersReducedMotion = useReducedMotion();
+  const { playToken } = useViewportCountTrigger(sectionRef, { amount: 0.3 });
+
+  useEffect(() => {
+    const node = nodeRef.current;
+    if (!node) return;
+    if (prefersReducedMotion) {
+      node.textContent = String(value);
+      return;
+    }
+    if (playToken === 0) return;
+    const controls = animate(0, value, {
+      duration: 2,
+      onUpdate(v) {
+        node.textContent = v.toFixed(0);
+      },
+    });
+    return () => controls.stop();
+  }, [value, playToken, prefersReducedMotion]);
+
+  return (
+    <span ref={sectionRef} className="inline-flex items-baseline">
+      <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>
+      <span>%</span>
+    </span>
+  );
+}
+
+// Two-segment proportional bar shown under the years digit on the
+// years card. Personal Projects on the left (gold), Employment on the
+// right (cool cyan) — same color encoding as the modal donut so the
+// two surfaces read as a single visual system. Segments are absolute-
+// positioned tooltips rather than children of a flex so a 0%-share
+// segment doesn't claim layout width.
+function ExperienceSplitBar({ personalMonths, employmentMonths }) {
+  const prefersReducedMotion = useReducedMotion();
+  const total = personalMonths + employmentMonths;
+  if (total === 0) return null;
+  const personalPct = (personalMonths / total) * 100;
+  const employmentPct = (employmentMonths / total) * 100;
+
+  return (
+    <div className="mt-4 w-full" aria-hidden="true">
+      <div
+        className="h-1.5 w-full rounded-full overflow-hidden relative"
+        style={{ background: "rgba(244, 227, 184, 0.06)" }}
+      >
+        <motion.span
+          className="absolute inset-y-0 left-0"
+          style={{
+            background: "#ff6d05",
+            boxShadow: "0 0 10px rgba(255, 109, 5, 0.45)",
+          }}
+          initial={prefersReducedMotion ? { width: `${personalPct}%` } : { width: 0 }}
+          whileInView={{ width: `${personalPct}%` }}
+          viewport={{ once: false, amount: 0.5 }}
+          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+        />
+        <motion.span
+          className="absolute inset-y-0"
+          style={{
+            left: `${personalPct}%`,
+            background: "#ffd27d",
+            boxShadow: "0 0 10px rgba(255, 210, 125, 0.45)",
+          }}
+          initial={prefersReducedMotion ? { width: `${employmentPct}%` } : { width: 0 }}
+          whileInView={{ width: `${employmentPct}%` }}
+          viewport={{ once: false, amount: 0.5 }}
+          transition={{ duration: 1, ease: "easeOut", delay: 0.4 }}
+        />
+      </div>
+      {/* Stacked legend — two rows of [dot label … percentage]. The
+          previous single-row `justify-between` layout cramped the
+          two pills on narrow card widths (years card is full-width
+          on mobile, 1/3 width at lg+; both can hit widths where
+          "● PERSONAL 32%" + "EMPLOYMENT 68% ●" overflowed or
+          wrapped awkwardly). Stacking is cleaner at every width and
+          aligns the percentages in a true vertical column thanks to
+          tabular-nums + justify-between on each row. */}
+      <div
+        className="flex flex-col gap-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
+        style={{ color: "#d4af7a" }}
+      >
+        <span className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ background: "#ff6d05" }}
+            />
+            <span className="text-fire-amber">Personal</span>
+          </span>
+          <span style={{ color: "#ff6d05", textShadow: "none" }}>
+            <PercentCount value={Math.round(personalPct)} />
+          </span>
+        </span>
+        <span className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ background: "#ffd27d" }}
+            />
+            <span className="text-fire-amber">Employment</span>
+          </span>
+          <span style={{ color: "#ff6d05", textShadow: "none" }}>
+            <PercentCount value={Math.round(employmentPct)} />
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const AboutDetails = () => {
   // GitHub Username — override via NEXT_PUBLIC_GITHUB_USERNAME when forking.
   // The most-active repo is now picked server-side by /api/github-stats, so the
   // hardcoded `repo` constant that used to live here is gone (issue #22).
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
 
-  const [years, setYears] = useState(0);
   const [githubStats, setGithubStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
   const [repoDiffMessage, setRepoDiffMessage] = useState(null);
+  // Dev-only override so a synthetic Shift+B can fire the experience
+  // banner, which is otherwise driven entirely by the hook. Stays null
+  // in production builds because the listener that sets it never runs.
+  const [testExperienceMessage, setTestExperienceMessage] = useState(null);
 
   // Scroll-linked per-word reveal for the "Architect of Enchantment" paragraph.
   // Both ends of the active scroll range are derived from the paragraph's own
@@ -77,16 +206,23 @@ const AboutDetails = () => {
   );
 
   // Counter Animation...
+  // Replays the count-up only on real viewport entries (and on `to`
+  // changes from upstream data). `useViewportCountTrigger` absorbs
+  // brief intersection-observer flicker at the viewport edge so a
+  // small scroll oscillation can't restart the animation mid-flight —
+  // same shared trigger now used by RepoStatsCard's MetricRow.
   function Counter({ from, to, plusIcon = true }) {
     const nodeRef = useRef(null);
     const sectionRef = useRef(null);
-    const isInView = useInView(sectionRef, { once: false, amount: 0.3 });
-    // `once: false` → triggers every time it's visible
-    // `amount: 0.3` → starts when 30% of the section is visible
+    const { playToken } = useViewportCountTrigger(sectionRef, { amount: 0.3 });
 
     useEffect(() => {
-      if (!isInView) return; // only run animation when visible
+      // Pre-trigger: leave the node empty; the count-up will populate
+      // it on the first real entry. No reset on exit — the value
+      // holds until the next real entry cycle.
+      if (playToken === 0) return;
       const node = nodeRef.current;
+      if (!node) return;
 
       const controls = animate(from, to, {
         duration: 2,
@@ -96,7 +232,7 @@ const AboutDetails = () => {
       });
 
       return () => controls.stop();
-    }, [from, to, isInView]);
+    }, [from, to, playToken]);
 
     return (
       <div ref={sectionRef} className="flex items-center justify-center">
@@ -106,39 +242,54 @@ const AboutDetails = () => {
     );
   }
 
-  // Set your desired start date here
-  const startDate = '2021-01-01T00:00:00';
+  // Issue #17: years is now driven by the experience-summary API
+  // (GitHub earliest-repo date + software roles parsed from the resume
+  // PDF) instead of a hardcoded `startDate`. The hook fetches once per
+  // mount; the server caches the underlying GitHub + PDF work for 24h
+  // so this is nearly free across visits. Defaulting `data` to null
+  // until the fetch resolves; the Counter below treats `null` as 0 and
+  // animates up once the real value lands.
+  const { data: experienceData, changeMessage: experienceChangeMessage } =
+    useExperienceSummary(username);
+  const experienceTotalMonths = experienceData?.total?.months ?? 0;
+  // Display unit follows the spec: years when total >= 12 months, else
+  // months. Both the numeric `to` and the trailing label switch
+  // together so they can't drift out of sync.
+  const experienceCounterValue =
+    experienceTotalMonths >= 12
+      ? Math.floor(experienceTotalMonths / 12)
+      : experienceTotalMonths;
+  const experienceCounterUnit =
+    experienceTotalMonths >= 12 ? "years" : "months";
 
-  useEffect(() => {
-    const calculateYears = () => {
-      const start = new Date(startDate);
-      const now = new Date();
-      const differenceInMs = now.getTime() - start.getTime();
-      const yearsElapsed = differenceInMs / (1000 * 60 * 60 * 24 * 365.25);
-      const newYears = Math.floor(yearsElapsed);
+  // Years-card-as-button: click / Enter / Space opens the breakdown
+  // modal. `experienceTriggerRef` lets the modal return focus to the
+  // card on close, matching the WAI-ARIA dialog focus-restoration
+  // pattern. Modal state lives here (not in the card subtree) because
+  // the modal is rendered at the end of the component tree as a fixed
+  // overlay — same z-index regardless of which card opened it.
+  const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
+  const experienceTriggerRef = useRef(null);
+  // Banner visibility driver. The banner component dedupes per
+  // message internally, so re-entering the card while the same
+  // message is "in flight" won't restart the timer; only a fresh
+  // change-message from the next poll will fire it again.
+  const isExperienceCardInView = useInView(experienceTriggerRef, {
+    once: false,
+    amount: 0.5,
+  });
+  const openExperienceModal = () => {
+    if (experienceData) setIsExperienceModalOpen(true);
+  };
+  const handleExperienceTriggerKeyDown = (e) => {
+    // Standard button keyboard semantics — Enter or Space activates.
+    // Prevent Space from scrolling the page.
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openExperienceModal();
+    }
+  };
 
-      // Use functional state update to avoid stale closure
-      setYears(prevYears => {
-        if (prevYears && prevYears !== newYears) {
-          // Only push 'years' change if the value actually updated
-          setChangedFields(prev => {
-            if (!prev.includes("years")) {
-              return [...prev, "years"];
-            }
-            return prev;
-          });
-        }
-        return newYears;
-      });
-    };
-
-    // Run once immediately
-    calculateYears();
-
-    // Keep recalculating
-    const intervalId = setInterval(calculateYears, 20000);
-    return () => clearInterval(intervalId);
-  }, [startDate]);
 
 
   const getGithubStats = async () => {
@@ -339,11 +490,57 @@ const AboutDetails = () => {
       const timer = setTimeout(() => {
         setChangedFields([]);
         setRepoDiffMessage(null);
+        setTestExperienceMessage(null);
       }, 10000);
       return () => clearTimeout(timer);
     }
   }, [changedFields]);
 
+  // Dev-only banner sandbox. Press Shift+B anywhere on the page to push
+  // a synthetic change to every card on the about page at once — repo,
+  // stats, streaks, languages, skills section overlay, and the
+  // experience banner inside the years card. Same auto-dismiss path as
+  // a real API change (10s) so the harness clears itself.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    console.log("[banner-sandbox] listener attached — press Shift+B to fire");
+    const handler = (e) => {
+      // `e.code` matches the physical key regardless of layout / caps,
+      // so this works on every Mac keyboard.
+      if (!e.shiftKey || e.code !== "KeyB") return;
+      const target = e.target;
+      // Don't hijack the chord while typing in a form field.
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      console.log("[banner-sandbox] firing all banners");
+      setChangedFields([
+        "languages",
+        "stats.stats",
+        "stats.user",
+        "stats.streaks",
+        "stats.repo",
+        "skills",
+      ]);
+      setRepoDiffMessage("Test: repository update banner");
+      setTestExperienceMessage("Test: experience update banner");
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+
+  // Skills icon-grid card needs the same in-view gating as every
+  // other card so the shared UpdateBanner only paints while the
+  // section is on screen (matching LanguagesCard, RepoStatsCard, etc.).
+  const skillsRef = useRef(null);
+  const isSkillsInView = useInView(skillsRef, { once: false, amount: 0.3 });
 
   //
   //
@@ -361,13 +558,22 @@ const AboutDetails = () => {
       <div className="grid grid-cols-12 gap-4 xs:gap-6 md:gap-8 w-full">
         <ItemLayout
           className={
-            " col-span-full lg:col-span-8 row-span-2 flex-col items-start"
+            // `!py-4 sm:!py-5` overrides the shared p-6/p-8 vertical
+            // padding to tighten the gap above the heading and below
+            // the paragraph (per the request — the card had "too
+            // much space on top and at the end"). `!` is needed
+            // because both rules target padding on the same element.
+            " col-span-full lg:col-span-8 row-span-2 flex-col items-start !py-4 sm:!py-5"
           }
         >
           <h2
-            className="text-xl md:text-2xl text-left w-full capitalize"
+            className="text-xl md:text-2xl text-left w-full capitalize mb-3"
             style={{
-              color: '#ffb347',
+              // Matches the "YEARS IN THE CRAFT" eyebrow on the years
+              // card (eyebrow amber from the 5-tone warm palette) so
+              // every uppercase / heading microlabel on the about
+              // page now reads in the same hue.
+              color: '#ffaa2a',
               textShadow: 'none',
               WebkitFontSmoothing: 'antialiased',
               MozOsxFontSmoothing: 'grayscale',
@@ -378,8 +584,7 @@ const AboutDetails = () => {
           </h2>
           <p
             ref={paragraphRef}
-            style={{ textShadow: "none" }}
-            className="font-light text-xs sm:text-sm md:text-base text-shadow-neon-light-orange"
+            className="font-light text-xs sm:text-sm md:text-base text-fire-amber"
           >
             {ARCHITECT_WORDS.map((word, i) => (
               <RevealWord
@@ -404,28 +609,73 @@ const AboutDetails = () => {
         </ItemLayout>
 
         <ItemLayout
-          className={"col-span-full xs:col-span-6 lg:col-span-4 text-accent"}
+          ref={experienceTriggerRef}
+          role="button"
+          tabIndex={experienceData ? 0 : -1}
+          aria-haspopup="dialog"
+          aria-expanded={isExperienceModalOpen}
+          aria-label={
+            experienceData
+              ? `${experienceCounterValue}+ ${experienceCounterUnit} of experience. Activate to open category breakdown.`
+              : "Loading experience summary"
+          }
+          onClick={openExperienceModal}
+          onKeyDown={handleExperienceTriggerKeyDown}
+          className={`group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent flex-col !items-stretch !justify-center ${
+            experienceData ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50" : "cursor-default"
+          }`}
         >
-          <AnimatePresence>
-            {changedFields.includes('years') && (
-              <motion.div
-                key="banner"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="absolute inset-0 flex items-center justify-center bg-orange-500/80 backdrop-blur-xl text-[#ff6d05] font-medium text-lg md:text-xl rounded-lg z-10"
-              >
-                <span className="">
-                  Years of experience number has been changed
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <h1 className="flex items-center gap-2  font-semibold w-full text-left text-2xl sm:text-5xl text-shadow-neon-orange">
-            <Counter from={0} to={years}></Counter>
-            <p style={{ textShadow: "none" }} className="font-semibold text-base text-shadow-neon-light-orange">years of experience</p>
+          <ExperienceUpdateBanner
+            message={testExperienceMessage ?? experienceChangeMessage}
+            inView={isExperienceCardInView}
+            variant="elite"
+          />
+
+          {/* Eyebrow — uppercase micro-label sets the "feature card"
+              tone before the eye lands on the digit. Amber tone reads
+              a touch warmer than the digit's vivid orange below it. */}
+          <p
+            aria-hidden="true"
+            className="text-[10px] uppercase tracking-[0.22em] mb-2"
+            style={{ color: "#ffaa2a", textShadow: "none" }}
+          >
+            Years in the craft
+          </p>
+
+          <h1
+            className="flex items-baseline gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
+            style={{ color: "#ff6d05", textShadow: "none" }}
+          >
+            <Counter from={0} to={experienceCounterValue}></Counter>
+            <p
+              className="font-semibold text-base text-fire-amber"
+              style={{ textShadow: "none" }}
+            >
+              {experienceCounterUnit} of experience
+            </p>
           </h1>
+
+          {/* Two-segment split bar — Personal vs Employment as a share
+              of total. Only renders when we have data (otherwise the
+              segments would both compute to NaN). */}
+          {experienceData && experienceTotalMonths > 0 && (
+            <ExperienceSplitBar
+              personalMonths={experienceData?.personalProjects?.months ?? 0}
+              employmentMonths={experienceData?.employment?.months ?? 0}
+            />
+          )}
+
+          {/* Hover affordance — fades in on group-hover/focus so the
+              click target stops being implicit. `aria-hidden` because
+              the card itself already advertises `role="button"` +
+              aria-haspopup, so this is purely a visual hint. */}
+          <p
+            aria-hidden="true"
+            className="text-[11px] tracking-wide mt-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
+            style={{ color: "#ffd27d", textShadow: "none" }}
+          >
+            View breakdown →
+          </p>
         </ItemLayout>
 
         {githubStats?.languages && <ItemLayout
@@ -438,23 +688,15 @@ const AboutDetails = () => {
           <GitHubStatsCard data={githubStats.stats.stats} userName={githubStats.stats.user.name} isUpdated={changedFields.includes("stats.stats") || changedFields.includes('stats.user')} />
         </ItemLayout>}
 
-        <ItemLayout className="col-span-full grid grid-cols-4 sm:grid-cols-8 lg:[grid-template-columns:repeat(15,minmax(0,1fr))] !space-y-2 md:!space-y-6">
-          <AnimatePresence>
-            {changedFields.includes('skills') && (
-              <motion.div
-                key="banner"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="absolute inset-0 flex items-center justify-center bg-orange-500/80 backdrop-blur-xl text-[#ff6d05] font-medium text-lg md:text-xl rounded-lg z-10"
-              >
-                <span className="">
-                  This section has been updated
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <ItemLayout
+          ref={skillsRef}
+          className="col-span-full grid grid-cols-4 sm:grid-cols-8 lg:[grid-template-columns:repeat(15,minmax(0,1fr))] !space-y-2 md:!space-y-6 relative overflow-hidden"
+        >
+          <UpdateBanner
+            message={changedFields.includes('skills') ? "This section has been updated" : null}
+            visible={isSkillsInView}
+            srPrefix="Skills update: "
+          />
           {icons.map((icon) => (
             <div
               key={icon}
@@ -523,6 +765,17 @@ const AboutDetails = () => {
           </Link>
         </ItemLayout> */}
       </div>
+
+      {/* Mounted at the section root (outside the grid) so its
+          fixed-position backdrop covers the full viewport regardless
+          of the years card's position in the layout. Modal manages its
+          own AnimatePresence + body scroll lock + focus restoration. */}
+      <ExperienceBreakdownModal
+        open={isExperienceModalOpen}
+        onClose={() => setIsExperienceModalOpen(false)}
+        data={experienceData}
+        triggerRef={experienceTriggerRef}
+      />
     </section>
   );
 };

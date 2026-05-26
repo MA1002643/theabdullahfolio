@@ -1,5 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // `pdf-parse` (used by /api/experience-summary) depends on `pdfjs-dist`,
+  // an ESM bundle that touches browser-style globals (Object.defineProperty
+  // on `globalThis`, etc.) that Next's RSC webpack pass mangles. Marking
+  // it external tells Next to leave it alone and `require()` it at
+  // runtime from node_modules, which is exactly what server functions
+  // already do for native modules. Without this the route throws
+  // `Object.defineProperty called on non-object` at import time.
+  experimental: {
+    serverComponentsExternalPackages: ["pdf-parse"],
+  },
   async headers() {
     return [
       {
