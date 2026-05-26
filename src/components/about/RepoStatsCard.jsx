@@ -1,6 +1,8 @@
 "use client";
 
-import { AnimatePresence, motion, useAnimation, useInView, useReducedMotion } from "framer-motion";
+import { motion, useAnimation, useInView, useReducedMotion } from "framer-motion";
+import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
+import { UpdateBanner } from "./UpdateBanner";
 import {
   Clock,
   GitCommitHorizontal,
@@ -85,7 +87,10 @@ function AnimatedTitle({ text, play }) {
   const prefersReducedMotion = useReducedMotion();
   if (prefersReducedMotion) {
     return (
-      <h3 className="text-xl font-semibold text-shadow-neon-orange break-words">
+      <h3
+        className="text-xl font-semibold break-words"
+        style={{ color: "#ff6d05", textShadow: "none" }}
+      >
         {text}
       </h3>
     );
@@ -111,7 +116,8 @@ function AnimatedTitle({ text, play }) {
       variants={container}
       initial="hidden"
       animate={play ? "visible" : "hidden"}
-      className="text-xl font-semibold text-shadow-neon-orange break-words"
+      className="text-xl font-semibold break-words"
+      style={{ color: "#ff6d05", textShadow: "none" }}
       aria-label={text}
     >
       {chars.map((c, i) => (
@@ -129,7 +135,7 @@ function AnimatedTitle({ text, play }) {
 }
 
 // ----- Single metric row: count-up + optional post-count pulse -----
-function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOnComplete = false, prefersReducedMotion = false }) {
+function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseOnComplete = false, prefersReducedMotion = false }) {
   // When reduced motion is requested, initialize the display directly at the
   // target so the value reads instantly with no animated progression.
   const target = isDate ? value : Number(value) || 0;
@@ -156,8 +162,11 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
       setPulse(false);
       return;
     }
-    if (!isInView) {
-      setDisplay(0);
+    // Pre-trigger state: the hook hasn't seen a true viewport entry yet,
+    // so leave `display` at its initial 0 and wait. No reset on later
+    // viewport exits — the new playToken-driven contract holds the
+    // final value in place until the next *real* entry cycle.
+    if (playToken === 0) {
       setPulse(false);
       return;
     }
@@ -173,6 +182,13 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
       setPulse(false);
       return;
     }
+
+    // Snap to 0 before the first RAF frame so a re-entry trigger
+    // (display currently holding the previous final `target`) starts
+    // the count-up from 0 instead of flashing the final value for one
+    // frame. The initial-render case is a no-op because display is
+    // already 0.
+    setDisplay(0);
 
     let startTime = null;
     const tick = (ts) => {
@@ -190,7 +206,7 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isInView, target, isDate, value, pulseOnComplete, prefersReducedMotion]);
+  }, [playToken, target, isDate, value, pulseOnComplete, prefersReducedMotion]);
 
   return (
     <motion.div
@@ -198,7 +214,7 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
       // Hover transforms (`x: 5` slide, icon scale/rotate) are tiny but they
       // are still motion. Skip them when the user has opted out.
       whileHover={prefersReducedMotion ? undefined : { x: 5, transition: { duration: 0.18 } }}
-      className="flex items-center justify-between gap-2 w-full px-2 py-1 rounded-md hover:bg-orange-500/5 transition-colors"
+      className="flex items-center justify-between gap-2 w-full px-2 py-1 rounded-md hover:bg-[#ff6d05]/5 transition-colors"
     >
       <div className="flex items-center gap-2 min-w-0">
         <motion.span
@@ -206,10 +222,10 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
           transition={{ type: "spring", stiffness: 400 }}
           className="flex-shrink-0"
         >
-          <Icon className="w-4 h-4 text-amber-500" />
+          <Icon className="w-4 h-4" style={{ color: "#ffaa2a" }} />
         </motion.span>
         <span
-          className="text-xs sm:text-sm text-shadow-neon-light-orange truncate"
+          className="text-xs sm:text-sm truncate text-fire-amber"
           style={{ textShadow: "none" }}
         >
           {label}
@@ -218,7 +234,11 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
       <motion.span
         animate={pulse ? { scale: [1, 1.18, 1], transition: { duration: 0.4, ease: "easeOut" } } : { scale: 1 }}
         onAnimationComplete={() => pulse && setPulse(false)}
-        className="text-xs sm:text-sm font-semibold text-shadow-neon-orange tabular-nums whitespace-nowrap"
+        className="text-xs sm:text-sm font-semibold tabular-nums whitespace-nowrap"
+        style={{
+          color: "#ff6d05",
+          textShadow: "none",
+        }}
       >
         {/* `display` cycles through 0 → target during the count-up and is
             reset to 0 whenever the card scrolls out of view. Exposing that
@@ -235,7 +255,7 @@ function MetricRow({ icon: Icon, label, value, isInView, isDate = false, pulseOn
 }
 
 // ----- Activity score arc (SVG) -----
-function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion = false }) {
+function ActivityArc({ score, maxScore = 10000, playToken, prefersReducedMotion = false }) {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const controls = useAnimation();
@@ -259,7 +279,10 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
   // using the same easing the numeric counters use, so the arc and the number
   // inside it land together as a single elite gesture. Under reduced motion
   // the same final offset is set with `duration: 0`, so the arc paints in
-  // place without any sweep.
+  // place without any sweep. Otherwise we wait for a real viewport entry
+  // (`playToken > 0`) and snap back to `circumference` first so a re-entry
+  // trigger animates the sweep again from empty — without that the second
+  // play would have nothing to animate (already at `finalOffset`).
   useEffect(() => {
     if (prefersReducedMotion) {
       controls.start({
@@ -268,18 +291,13 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
       });
       return;
     }
-    if (isInView) {
-      controls.start({
-        strokeDashoffset: finalOffset,
-        transition: { duration: DURATION / 1000, ease: fastStartSlowFinish },
-      });
-    } else {
-      controls.start({
-        strokeDashoffset: circumference,
-        transition: { duration: 0.3 },
-      });
-    }
-  }, [isInView, finalOffset, circumference, controls, prefersReducedMotion]);
+    if (playToken === 0) return;
+    controls.set({ strokeDashoffset: circumference });
+    controls.start({
+      strokeDashoffset: finalOffset,
+      transition: { duration: DURATION / 1000, ease: fastStartSlowFinish },
+    });
+  }, [playToken, finalOffset, circumference, controls, prefersReducedMotion]);
 
   // Numeric count-up: identical sprint-then-settle behaviour as MetricRow.
   // Skipped entirely under reduced motion — the score reads as the final
@@ -291,10 +309,9 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
       setDisplayScore(target);
       return;
     }
-    if (!isInView) {
-      setDisplayScore(0);
-      return;
-    }
+    // Pre-trigger: stay at the initial 0 until the first real viewport
+    // entry. Holds value between true exits and re-entries (no reset).
+    if (playToken === 0) return;
     // Zero-target fast path — same rationale as MetricRow's: the easing
     // produces 0 every frame so the loop would just call setDisplayScore(0)
     // ~120 times across the full DURATION. The arc effect above also
@@ -304,6 +321,10 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
       setDisplayScore(0);
       return;
     }
+
+    // Snap to 0 before the first RAF frame so a re-entry trigger
+    // animates from 0 again instead of flashing the previous final.
+    setDisplayScore(0);
 
     let startTime = null;
     const tick = (ts) => {
@@ -320,7 +341,7 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isInView, target, prefersReducedMotion]);
+  }, [playToken, target, prefersReducedMotion]);
 
   return (
     <div className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -360,7 +381,10 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xs font-bold text-shadow-neon-orange leading-none tabular-nums">
+          <span
+            className="text-xs font-bold leading-none tabular-nums"
+            style={{ color: "#ff6d05", textShadow: "none" }}
+          >
             {/* Same accessibility split as MetricRow: `displayScore` cycles
                 through 0 → target and resets to 0 when out of view, so
                 exposing it to AT would announce "score 0" to keyboard /
@@ -372,7 +396,7 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
             <span aria-hidden="true">{displayScore.toLocaleString()}</span>
           </span>
           <span
-            className="text-[9px] text-shadow-neon-light-orange leading-none mt-0.5"
+            className="text-[9px] leading-none mt-0.5 text-fire-amber"
             style={{ textShadow: "none" }}
           >
             score
@@ -380,7 +404,7 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
         </div>
       </div>
       <span
-        className="text-[10px] text-shadow-neon-light-orange"
+        className="text-[10px] text-fire-amber"
         style={{ textShadow: "none" }}
       >
         Activity Score
@@ -392,9 +416,19 @@ function ActivityArc({ score, maxScore = 10000, isInView, prefersReducedMotion =
 // ----- Main card -----
 export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
   const ref = useRef(null);
-  // `once: false` lets the count-ups and entrance animations replay on every
-  // scroll-in. `amount: 0.3` fires when ~30% of the card crosses the viewport.
-  const isInView = useInView(ref, { amount: 0.3, once: false });
+  // Two visibility signals, intentionally separated:
+  //   - `isInView` (raw observer) still drives the card's outer fade-in
+  //     variants, the AnimatedTitle's `play`, and the diff-message banner
+  //     gate — those should respond immediately to visibility flips.
+  //   - `playToken` (latched + hysteresis-debounced) drives the numeric
+  //     count-ups, so brief in/out scroll oscillations near the viewport
+  //     edge don't restart the animation mid-flight. Passed down to
+  //     MetricRow and ActivityArc; both depend on it instead of raw
+  //     `isInView` for their RAF loops. `amount: 0.3` fires when ~30% of
+  //     the card crosses the viewport.
+  const { isInView, playToken } = useViewportCountTrigger(ref, {
+    amount: 0.3,
+  });
   // Mirrors the CSS `prefers-reduced-motion` override in globals.css so the
   // decorative pulse on the language-color dot also holds still for users
   // who've opted out of motion.
@@ -434,70 +468,44 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
       animate={isInView ? "visible" : "hidden"}
       className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg"
     >
-      {/* Screen-reader announcer for diff updates. Always mounted (the
-          AnimatePresence overlay would unmount this before the SR finished
-          reading it) and intentionally NOT gated on `isInView` — the visual
-          overlay is, but assistive tech users navigate non-spatially and
-          should hear the update whether they've "scrolled" to the card or
-          not. `aria-live="polite"` queues the announcement to the next
-          idle moment, which is right for non-critical stat updates. */}
-      <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {isUpdated && diffMessage ? `Repository update: ${diffMessage}` : ""}
-      </div>
-
-      <AnimatePresence>
-        {isUpdated && isInView && diffMessage && (
-          <motion.div
-            key="repo-banner"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="absolute inset-0 z-10 flex items-center justify-center rounded-lg overflow-hidden"
-            style={{
-              background:
-                "radial-gradient(circle at 50% 50%, rgba(255,179,71,0.18) 0%, rgba(177,102,18,0.10) 35%, rgba(10,6,3,0.92) 75%)",
-              backdropFilter: "blur(16px) saturate(140%)",
-              WebkitBackdropFilter: "blur(16px) saturate(140%)",
-              boxShadow:
-                "inset 0 0 0 1px rgba(255,179,71,0.35), inset 0 0 40px rgba(255,109,5,0.08), 0 0 28px rgba(255,109,5,0.14)",
-            }}
-          >
-            <motion.span
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.12, ease: "easeOut" }}
-              className="font-medium text-lg md:text-xl tracking-wide text-center px-6"
-              style={{
-                color: "#ffb347",
-                textShadow:
-                  "0 0 4px rgba(255,176,58,0.65), 0 0 14px rgba(177,102,18,0.55), 0 0 28px rgba(255,109,5,0.18)",
-              }}
-            >
-              {diffMessage}
-            </motion.span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <UpdateBanner
+        message={isUpdated && diffMessage ? diffMessage : null}
+        visible={isInView}
+        srPrefix="Repository update: "
+      />
 
       {/* Title + Most-Active badge */}
       <motion.div variants={childVariants} className="flex items-start justify-between gap-3 flex-wrap mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <Monitor className="w-5 h-5 text-amber-500 flex-shrink-0" />
+          <Monitor
+            className="w-5 h-5 flex-shrink-0"
+            style={{ color: "#ffaa2a" }}
+          />
           <AnimatedTitle text={name} play={isInView} />
         </div>
         <span
-          className="badge-shimmer relative text-shadow-neon-light-orange text-xs font-light px-2 py-0.5 border border-amber-500/40 rounded-full overflow-hidden whitespace-nowrap"
-          style={{ textShadow: "none" }}
+          // Eyebrow microlabel — same role as "CAREER SNAPSHOT" on the
+          // modal and "YEARS IN THE CRAFT" on the years card, so it
+          // takes the same eyebrow amber palette token.
+          // `badge-shimmer` paints its own moving gradient as the element
+          // background, which would override the fire-amber background-clip
+          // gradient if both lived on the same node. Keep the shimmer on
+          // the outer pill and apply `text-fire-amber` to an inner span so
+          // the text itself can still clip its own gradient.
+          className="badge-shimmer relative text-xs font-light px-2 py-0.5 rounded-full overflow-hidden whitespace-nowrap"
+          style={{
+            textShadow: "none",
+            border: "1px solid #ffaa2a",
+          }}
         >
-          Most Active Repository
+          <span className="text-fire-amber">Most Active Repository</span>
         </span>
       </motion.div>
 
       {/* Description */}
       <motion.p
         variants={childVariants}
-        className="text-sm text-shadow-neon-light-orange font-light mb-4"
+        className="text-sm font-light mb-4 text-fire-amber"
         style={{ textShadow: "none" }}
       >
         {description}
@@ -535,7 +543,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
           }
         />
         <span
-          className="text-sm text-shadow-neon-light-orange font-light"
+          className="text-sm font-light text-fire-amber"
           style={{ textShadow: "none" }}
         >
           {language}
@@ -557,10 +565,10 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
           className="flex flex-col gap-1 w-full sm:w-auto sm:flex-1 sm:min-w-[200px]"
         >
           {metrics.map((m) => (
-            <MetricRow key={m.label} {...m} isInView={isInView} prefersReducedMotion={prefersReducedMotion} />
+            <MetricRow key={m.label} {...m} playToken={playToken} prefersReducedMotion={prefersReducedMotion} />
           ))}
         </motion.div>
-        <ActivityArc score={activityScore} isInView={isInView} prefersReducedMotion={prefersReducedMotion} />
+        <ActivityArc score={activityScore} playToken={playToken} prefersReducedMotion={prefersReducedMotion} />
       </motion.div>
     </motion.div>
   );

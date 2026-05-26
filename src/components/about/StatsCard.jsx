@@ -1,8 +1,10 @@
 "use client";
 
-import { motion, useInView, useAnimation, AnimatePresence } from "framer-motion";
+import { motion, useInView, useAnimation } from "framer-motion";
 import { Star, Clock, GitBranch, AlertCircle, Package } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+import { UpdateBanner } from "./UpdateBanner";
 
 export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated }) {
     const cardRef = useRef(null);
@@ -24,22 +26,11 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="p-5 w-full relative overflow-hidden"
         >
-            <AnimatePresence>
-                {isUpdated && (
-                    <motion.div
-                        key="banner"
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        className="absolute inset-0 flex items-center justify-center bg-orange-500/80 backdrop-blur-xl text-[#ff6d05] font-medium text-lg md:text-xl rounded-lg z-10"
-                    >
-                        <span className="">
-                            Data in this section has been updated
-                        </span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <UpdateBanner
+                message={isUpdated ? "Data in this section has been updated" : null}
+                visible={isInView}
+                srPrefix="Stats update: "
+            />
 
             <h2 className="text-xl md:text-2xl text-left w-full capitalize text-shadow-neon-orange mb-4">
                 {userName}&apos;s GitHub Stats
@@ -110,7 +101,7 @@ function AnimatedStat({ icon: Icon, label, value, delay, isInView }) {
             className="flex items-center gap-3 w-full justify-between"
         >
             <div className="flex items-center gap-2">
-                <Icon className="w-5 h-5 text-amber-500" />
+                <Icon className="w-5 h-5" style={{ color: "#ffaa2a" }} />
                 <span style={{ textShadow: "none" }} className=" text-xs md:text-base text-shadow-neon-light-orange">
                     {label}:
                 </span>

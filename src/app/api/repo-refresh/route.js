@@ -21,12 +21,15 @@ export const dynamic = "force-dynamic";
 // Called by `/api/daily-warmup` (the scheduled cron entrypoint in
 // vercel.json, which orchestrates this route + the work-status bust) or
 // invoked manually with the bearer token to force a refresh outside the
-// daily schedule. Job: invalidate the `github-stats` + `most-active-repo`
-// cache tags and warm the cache by hitting /api/github-stats once, so the
-// first real user request after midnight is instant. Authenticated via
-// CRON_SECRET in the Authorization header — Vercel Cron forwards it on
-// the scheduled call, and `/api/daily-warmup` forwards the same header on
-// the orchestrated call.
+// daily schedule. Job: invalidate the `github-stats`,
+// `most-active-repo`, and `experience-summary` cache tags and warm
+// /api/github-stats + /api/experience-summary so the first morning
+// visitor lands on hot data. Authenticated via CRON_SECRET in the
+// Authorization header — Vercel Cron forwards it on the scheduled
+// call, and `/api/daily-warmup` forwards the same header on the
+// orchestrated call. The experience-summary cache is on a 10-min TTL
+// already, but the daily revalidation ensures the cache rolls even
+// during low-traffic days where no client poll happens.
 export async function GET(request) {
   // Read the secret once and guard explicitly. Without this, an unset
   // CRON_SECRET would let `Bearer undefined` pass as a valid credential —
@@ -70,6 +73,11 @@ export async function GET(request) {
     // and the freshly-scored most-active repo lands in the warm cache.
     revalidateTag("github-stats");
     revalidateTag("most-active-repo");
+    // experience-summary is also tag-cached; included here so the daily
+    // cron rolls all three caches in lockstep. The endpoint already has
+    // a 10-min TTL for normal client-driven refresh, but the daily
+    // revalidation guarantees turnover even on low-traffic days.
+    revalidateTag("experience-summary");
 
     // Bypass two distinct cache layers when warming:
     //   1. `cache: "no-store"` + `Cache-Control: no-cache` request header
@@ -136,10 +144,40 @@ export async function GET(request) {
       );
     }
 
+    // Best-effort warm of /api/experience-summary. Isolated try/catch
+    // so a failure here doesn't downgrade the github-stats success
+    // signal — the experience-summary cache was already invalidated
+    // above and will rebuild on the next client poll if this warm
+    // fails. Reuses the same `cacheBust` so a single timestamp tags
+    // both warm fetches in logs.
+    let experience = { ok: false, attempted: false };
+    try {
+      const expRes = await fetch(
+        `${baseUrl}/api/experience-summary?username=${encodeURIComponent(username)}&_=${cacheBust}`,
+        {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        }
+      );
+      experience = { ok: expRes.ok, attempted: true, status: expRes.status };
+      if (!expRes.ok) {
+        console.warn(
+          `repo-refresh: /api/experience-summary returned ${expRes.status} ${expRes.statusText}`
+        );
+      }
+    } catch (err) {
+      console.warn(
+        "repo-refresh: experience-summary warm failed:",
+        err?.message ?? err
+      );
+      experience = { ok: false, attempted: true, error: err?.message ?? String(err) };
+    }
+
     return noStoreJson({
       ok: true,
       repo: data?.stats?.repo?.name ?? null,
       activityScore: data?.stats?.repo?.activityScore ?? null,
+      experience,
     });
   } catch (err) {
     console.error("repo-refresh cron error:", err);
