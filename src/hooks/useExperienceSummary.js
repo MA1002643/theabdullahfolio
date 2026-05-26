@@ -165,6 +165,13 @@ export function useExperienceSummary(username) {
   const [changeMessage, setChangeMessage] = useState(null);
 
   useEffect(() => {
+    // Clear any message from a previous username on every effect
+    // re-run, so a consumer can't briefly render a sentence that
+    // belonged to the prior username (or to no username at all when
+    // the caller has unset it). Per-poll clearing inside `fetchOnce`
+    // handles the no-diff case; this clears the cross-username case.
+    setChangeMessage(null);
+
     if (!username) {
       setIsLoading(false);
       return;
@@ -200,9 +207,13 @@ export function useExperienceSummary(username) {
         const nextContent = pickContent(payload);
         const prevContent = readStoredPayload(username);
         const message = buildChangeMessage(prevContent, nextContent);
-        if (message) {
-          setChangeMessage(message);
-        }
+        // Always set the state to the current comparison result —
+        // including `null` when there's no diff. The previous "only set
+        // when truthy" path left a stale sentence on screen across
+        // subsequent no-diff polls. ExperienceUpdateBanner dedupes its
+        // one-shot display via sessionStorage, so writing `null` here
+        // just means "no new banner-worthy change this poll".
+        setChangeMessage(message);
         writeStoredPayload(username, nextContent);
 
         setData(payload);

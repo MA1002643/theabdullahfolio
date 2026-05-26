@@ -167,20 +167,28 @@ function AnimatedMessage({ message, prefersReducedMotion }) {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="relative z-10 font-medium text-lg md:text-xl tracking-wide text-center px-6 whitespace-nowrap"
+      className="relative z-10 inline-block max-w-full font-medium text-lg md:text-xl tracking-wide text-center px-6 break-words"
       aria-label={message}
     >
-      {chars.map((c, i) => (
-        <motion.span
-          key={i}
-          variants={charVariant}
-          aria-hidden="true"
-          className="inline-block text-fire-amber"
-          style={{ whiteSpace: "pre" }}
-        >
-          {c === " " ? " " : c}
-        </motion.span>
-      ))}
+      {chars.map((c, i) => {
+        // Space chars are invisible — drop the motion wrapper so they
+        // render as plain text nodes, which restores their role as the
+        // default line-break opportunity. The previous shape wrapped
+        // every space in an inline-block, which let the parent's
+        // (now removed) `whitespace-nowrap` keep the whole message on
+        // one line and overflow long sentences into `overflow-hidden`.
+        if (c === " ") return " ";
+        return (
+          <motion.span
+            key={i}
+            variants={charVariant}
+            aria-hidden="true"
+            className="inline-block text-fire-amber"
+          >
+            {c}
+          </motion.span>
+        );
+      })}
     </motion.span>
   );
 }
