@@ -1,5 +1,3 @@
-import { PDFParse } from "pdf-parse";
-
 import { isSoftwareRole } from "./roleKeywords";
 import {
   formatDuration,
@@ -34,9 +32,13 @@ const ROLE_LINE_REGEX =
   /^([^•\n]+?)\s+[–-]\s+([^,\n]+),\s+[^()\n]*?\(([^)]+)\)\s*$/gm;
 
 // Resume date ranges use either an en-dash (U+2013) or a plain hyphen,
-// often with surrounding whitespace. Splitting on the union handles both
-// without requiring a normalisation pass on the upstream text.
-const DATE_RANGE_SEPARATOR = /\s*[–-]\s*/;
+// flanked by whitespace ("Feb 2024 - Present", "Feb 2024 – Present").
+// Mandatory whitespace on both sides is what disambiguates the *range*
+// separator from a hyphen that lives *inside* a token — the spec
+// (see `parseResumeDateToken`) accepts "Feb-2024" as a month-year, so
+// the previous greedy `\s*` form would shred "Feb-2024 - Present" into
+// three parts and silently drop the role.
+const DATE_RANGE_SEPARATOR = /\s+[–-]\s+/;
 
 // Pull the main Experience block out of the full document text. Returns
 // an empty string when the header is missing so the caller can degrade
@@ -81,17 +83,36 @@ function parseDateRange(rangeText) {
 // with a Buffer fixture. Returns `{ roles, rawText }`; `rawText` is
 // included so callers can log a snippet on parse failures.
 export async function parseExperienceFromPdf(pdfBuffer) {
+  // Dynamic import so `pdfjs-dist` (a transitive dep of `pdf-parse`)
+  // isn't evaluated at module load. Its top-level code references
+  // browser-only globals (DOMMatrix, ImageData, Path2D), which crash
+  // Next.js's build-time "Collecting page data" pass — that pass
+  // imports route modules in plain Node, before the runtime hint
+  // (`export const runtime = "nodejs"`) gets a chance to matter.
+  // Deferring the import keeps the route bundleable.
+  const { PDFParse } = await import("pdf-parse");
   // PDFParse expects a Uint8Array; Node's Buffer is one but the type
   // check inside pdf-parse is stricter than necessary, so the
   // conversion is defensive.
   const parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
-  const result = await parser.getText();
+  // pdf-parse v2's `PDFParse` holds onto the worker-side pdfjs document
+  // until `destroy()` is called. In a long-lived serverless worker
+  // (Vercel keeps Node instances warm across invocations) leaving these
+  // around accumulates memory across cache misses. The try/finally
+  // guarantees cleanup even if `getText` throws — important because the
+  // outer `Promise.allSettled` in the route will swallow a thrown
+  // failure but a leaked parser would still consume the worker's heap.
+  let result;
+  try {
+    result = await parser.getText();
+  } finally {
+    await parser.destroy();
+  }
   const text = result?.text ?? "";
 
   const block = extractExperienceBlock(text);
   if (!block) return { roles: [], rawText: text };
 
-  const now = new Date();
   const roles = [];
   // Reset lastIndex because the regex is module-scoped (global flag
   // makes it stateful across calls). Without this, a second invocation

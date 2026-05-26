@@ -50,7 +50,11 @@ function AnimatedNumber({ value }) {
 // the final value with no animation.
 function CategoryCount({ months }) {
   const value = months >= 12 ? Math.floor(months / 12) : months;
-  const unit = months >= 12 ? "years" : "months";
+  // Singular when the count is exactly 1, matching RoleBar's plural-
+  // aware rendering. Without this the 12–23-month window reads "1+
+  // years" — the same window RoleBar correctly prints as "1+ year".
+  const baseUnit = months >= 12 ? "year" : "month";
+  const unit = value === 1 ? baseUnit : `${baseUnit}s`;
   const nodeRef = useRef(null);
   const sectionRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();

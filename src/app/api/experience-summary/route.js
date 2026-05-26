@@ -42,8 +42,22 @@ const RESPONSE_CACHE_HEADERS = {
 
 const GITHUB_API = "https://api.github.com/graphql";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+// Per-call ceiling. Must stay strictly below the serverless function
+// timeout (10 s on Hobby, 60 s on Pro). Same env var as `/api/github-stats`
+// so a single override raises both routes for Pro/Enterprise.
 const GITHUB_TIMEOUT_MS =
   Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
+// Cumulative wall-clock budget across the entire owned-repos pagination.
+// Per-call timeouts alone aren't enough: with `MAX_OWNED_REPO_PAGES = 10`
+// and an 8 s per-call ceiling, the theoretical worst case is 80 s — well
+// past Hobby's 10 s function limit. This bound is the hard upper limit on
+// time spent paginating; if it fires we return whatever repos we managed
+// to collect (partial) rather than throw, so the modal still gets the
+// newest entries. Default 9 s keeps the function well under Hobby's
+// 10 s budget even on a cold miss. Same env var name as `/api/github-stats`
+// so a Pro/Enterprise override raises both routes together.
+const GITHUB_OVERALL_BUDGET_MS =
+  Number(process.env.GITHUB_OVERALL_BUDGET_MS) || 9000;
 
 // Restrict by username for the same reason `/api/github-stats` does —
 // without an allowlist, any caller varying `?username=` would trigger a
@@ -95,14 +109,27 @@ function buildFingerprint(payload) {
 
 // Single-call GraphQL wrapper used by the owned-repos pagination loop.
 // Each call gets its own AbortController + timeout so a stalled fetch
-// can't hold the serverless function past its budget. Extracted so the
-// loop body stays focused on pagination logic.
-async function githubGraphQL(query, variables) {
+// can't hold the serverless function past its budget. The paginating
+// caller threads a per-call ceiling derived from its remaining wall-
+// clock budget so a single slow GitHub response can't consume the
+// entire `GITHUB_OVERALL_BUDGET_MS` on the first page.
+async function githubGraphQL(query, variables, timeoutMs = GITHUB_TIMEOUT_MS) {
   if (!GITHUB_TOKEN) {
     throw new Error("GITHUB_TOKEN not set");
   }
+  // Short-circuit when the budget is already exhausted. `setTimeout(..., 0)`
+  // queues the abort as a macrotask, so without this we'd still kick off
+  // a fetch that opens a TCP/TLS connection before the immediate abort
+  // fires. AbortError name matches the shape `fetch` produces, so the
+  // pagination loop's existing AbortError catch handles it uniformly.
+  if (timeoutMs <= 0) {
+    throw new DOMException(
+      "experience-summary: GitHub call budget exhausted",
+      "AbortError",
+    );
+  }
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), GITHUB_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(GITHUB_API, {
       method: "POST",
@@ -131,8 +158,18 @@ async function githubGraphQL(query, variables) {
 // / member repos; `isFork: false` excludes forks (those weren't created
 // by this account). Returns `{ name, createdAt, url }` records in DESC
 // order so the modal can render newest-first; the earliest createdAt is
-// always the last element. Bounded by MAX_OWNED_REPO_PAGES so a malformed
-// pageInfo can't infinite-loop.
+// always the last element.
+//
+// Two safety nets:
+//   - `MAX_OWNED_REPO_PAGES` — hard page ceiling so a malformed
+//     `pageInfo` can't infinite-loop.
+//   - `GITHUB_OVERALL_BUDGET_MS` — wall-clock budget. Each call's
+//     per-call timeout is capped at `min(GITHUB_TIMEOUT_MS, remaining
+//     budget)`, and if the budget is exhausted between pages we break
+//     and return whatever was collected. Partial results are far
+//     better than a thrown error: the catch in `buildExperienceSummary`
+//     would drop the entire personal-projects panel, and the 10-min
+//     `unstable_cache` would lock that state in until the next TTL.
 async function fetchOwnedRepos(username) {
   const query = `
     query OwnedRepos($username: String!, $after: String) {
@@ -155,22 +192,53 @@ async function fetchOwnedRepos(username) {
       }
     }
   `;
+  const deadline = Date.now() + GITHUB_OVERALL_BUDGET_MS;
   const repos = [];
   let cursor = null;
   for (let page = 0; page < MAX_OWNED_REPO_PAGES; page++) {
-    const data = await githubGraphQL(query, { username, after: cursor });
-    const conn = data?.user?.repositories;
-    if (!conn) break;
-    for (const node of conn.nodes ?? []) {
-      if (!node?.name || !node?.createdAt) continue;
-      repos.push({
-        name: node.name,
-        createdAt: node.createdAt,
-        url: node.url ?? null,
-      });
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      console.warn(
+        `experience-summary: wall-clock budget exhausted after page ${page} ` +
+          `(${repos.length} repos collected) — returning partial result`,
+      );
+      break;
     }
-    if (!conn.pageInfo?.hasNextPage) break;
-    cursor = conn.pageInfo.endCursor;
+    // Cap per-call timeout at the remaining budget so a single slow
+    // call can't push the loop past the overall deadline.
+    const perCallTimeout = Math.min(GITHUB_TIMEOUT_MS, remaining);
+    try {
+      const data = await githubGraphQL(
+        query,
+        { username, after: cursor },
+        perCallTimeout,
+      );
+      const conn = data?.user?.repositories;
+      if (!conn) break;
+      for (const node of conn.nodes ?? []) {
+        if (!node?.name || !node?.createdAt) continue;
+        repos.push({
+          name: node.name,
+          createdAt: node.createdAt,
+          url: node.url ?? null,
+        });
+      }
+      if (!conn.pageInfo?.hasNextPage) break;
+      cursor = conn.pageInfo.endCursor;
+    } catch (err) {
+      // Timeout / abort mid-pagination — keep what we have, log, and
+      // exit. Any other error (auth, GraphQL field error) is fatal and
+      // bubbles up so the outer `Promise.allSettled` can flag the
+      // GitHub side as failed.
+      if (err?.name === "AbortError" && repos.length > 0) {
+        console.warn(
+          `experience-summary: page ${page} aborted (timeout) — ` +
+            `returning ${repos.length} repos collected so far`,
+        );
+        break;
+      }
+      throw err;
+    }
   }
   return repos;
 }

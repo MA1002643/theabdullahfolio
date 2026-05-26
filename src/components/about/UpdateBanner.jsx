@@ -241,9 +241,17 @@ export function UpdateBanner({ message, visible, srPrefix = "", variant = "orang
 
   return (
     <>
-      {/* SR announcer is always mounted. Wrapping in AnimatePresence
-          would unmount the node before the polite live region had
-          time to announce on transition, swallowing the message. */}
+      {/* SR announcer is always mounted, and its text is gated on
+          `message` ONLY — intentionally NOT on `visible` / `showVisual`.
+          AT users navigate by structure, not by viewport scrolling, so
+          they shouldn't be forced to find a card before hearing that
+          it changed. The `polite` live region queues the announcement
+          to fire after the user's current speech finishes, which is
+          the right cadence for a background data update. Wrapping in
+          AnimatePresence would also unmount the node before the live
+          region had time to announce on transition, swallowing the
+          message — another reason this sits outside the AnimatePresence
+          block below. */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {message ? `${srPrefix}${message}` : ""}
       </div>
