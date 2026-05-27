@@ -1,5 +1,7 @@
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import React, { useRef, useEffect, useState } from "react";
+
+import { UpdateBanner } from "./UpdateBanner";
 
 export default function LanguagesCard({ data, isUpdated }) {
     const cardRef = useRef(null);
@@ -15,21 +17,11 @@ export default function LanguagesCard({ data, isUpdated }) {
             transition={{ duration: 1, ease: "easeOut" }}
             className="p-5 w-full relative overflow-hidden h-full"
         >
-            {/* 🔥 Update Banner */}
-            <AnimatePresence>
-                {isUpdated && (
-                    <motion.div
-                        key="banner"
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        className="absolute inset-0 flex items-center justify-center bg-orange-500/80 backdrop-blur-xl text-[#ff6d05] font-medium text-lg md:text-xl rounded-lg z-10"
-                    >
-                        This table has been updated
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <UpdateBanner
+                message={isUpdated ? "This table has been updated" : null}
+                visible={isInView}
+                srPrefix="Languages update: "
+            />
 
             {/* Header */}
             <h2 className="text-xl md:text-2xl text-left w-full capitalize text-shadow-neon-orange mb-6">

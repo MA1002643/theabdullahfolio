@@ -1,8 +1,10 @@
 "use client";
 
-import { AnimatePresence, motion, useInView } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { Flame } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+import { UpdateBanner } from "./UpdateBanner";
 
 export default function StreakStatsCard({ data, isUpdated }) {
     const cardRef = useRef(null);
@@ -18,22 +20,11 @@ export default function StreakStatsCard({ data, isUpdated }) {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="w-full px-4 py-6 relative overflow-hidden"
         >
-            <AnimatePresence>
-                {isUpdated && (
-                    <motion.div
-                        key="banner"
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        className="absolute inset-0 flex items-center justify-center bg-orange-500/80 backdrop-blur-xl text-[#ff6d05] font-medium text-lg md:text-xl rounded-lg z-10"
-                    >
-                        <span className="">
-                            This streak data has been updated
-                        </span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <UpdateBanner
+                message={isUpdated ? "This streak data has been updated" : null}
+                visible={isInView}
+                srPrefix="Streaks update: "
+            />
             <div className="flex flex-col sm:flex-row items-center md:justify-between justify-center sm:gap-2 gap-4">
                 {/* Total Contributions */}
                 <AnimatedStatBlock
@@ -84,7 +75,7 @@ export default function StreakStatsCard({ data, isUpdated }) {
                             />
                         </svg>
                         <div className="flex items-center justify-center absolute top-1 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-[#0F000F] px-1">
-                            <Flame size={24} fill="#ea580c" className="text-orange-600" />
+                            <Flame size={24} fill="#ffaa2a" style={{ color: "#ffaa2a" }} />
                         </div>
 
                         <AnimatedNumber

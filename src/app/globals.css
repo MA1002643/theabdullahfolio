@@ -27,11 +27,15 @@
   .custom-bg-abt {
     @apply border border-solid;
     border-color: #ffcd5bcc;
-    /* golden border */
-    background-color: #00000020;
-    /* subtle transparent dark bg */
-    backdrop-filter: blur(6px);
-    /* neon blur */
+    /* Slate-and-gold interior — was a flat `#00000020`; lifted up
+       from the former `.elite-card` modifier so every card on the
+       about page shares the same rich background instead of the
+       years card being the lone richly-toned outlier. The warm gold
+       neon border + glow below sit on top of this surface. */
+    background:
+      radial-gradient(circle at 30% 0%, rgba(244, 227, 184, 0.06), transparent 55%),
+      linear-gradient(135deg, rgba(8, 11, 22, 0.92), rgba(2, 6, 23, 0.88));
+    backdrop-filter: blur(12px);
     box-shadow:
       0 0 0px #ff8400,
       0 0 0px #ffaa2a,
@@ -45,6 +49,38 @@
       0 0 1px #ff8400,
       0 0 2px #ffaa2a,
       0 0 8px orangered;
+  }
+
+  .text-gold {
+    color: #f4e3b8;
+    text-shadow: 0 0 14px rgba(212, 175, 122, 0.35);
+  }
+
+  .text-gold-muted {
+    color: #d4af7a;
+  }
+
+  .text-gold-soft {
+    color: #b8946a;
+  }
+
+  .text-cyan-cool {
+    color: #bae6fd;
+  }
+
+  /* Static divider — solid vivid orange matching the "3+" /
+     "1+" CategoryCount digits, fading to transparent at the
+     edges so it reads as a line rather than a bar. Subtle warm
+     halo via box-shadow. */
+  .elite-divider {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      #ff6d05 12%,
+      #ff6d05 88%,
+      transparent 100%
+    );
+    box-shadow: 0 0 8px rgba(255, 109, 5, 0.3);
   }
 
   .custom-bg {
@@ -96,6 +132,30 @@
       0 0 4px #d1970e,
       0 0 10px #b16612;
     color: #d3b883;
+  }
+
+  /* Elite fire-gradient text — vertical bright-amber → vivid-orange
+     fill clipped to the text shape, with two layers of warm drop-
+     shadow giving a heat-haze halo. Each letter looks like it's
+     glowing from within against the slate card background. Pairs
+     with the per-word opacity reveal in <RevealWord /> — as a word
+     fades in, the gradient renders at its position so the paragraph
+     reads like fire "burning into existence" on scroll. */
+  .text-fire-amber {
+    background: linear-gradient(
+      180deg,
+      #ffd27d 0%,
+      #ffbb55 40%,
+      #ffaa2a 70%,
+      #ff6d05 100%
+    );
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter:
+      drop-shadow(0 0 4px rgba(255, 178, 60, 0.55))
+      drop-shadow(0 0 12px rgba(255, 73, 0, 0.35));
   }
 
   .behind-glow {
@@ -466,6 +526,14 @@ html {
   top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
   left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
   z-index: 120;
+}
+
+/* Hide the home button while a modal owns the screen. The
+   experience-breakdown modal sets `data-modal-open` on <body> when
+   it opens; without this rule the home button (z:120) would float
+   above the modal's z:50 backdrop on every viewport. */
+body[data-modal-open] .control-island {
+  display: none;
 }
 
 /* Suppress hover-only tooltip UI on touch devices */
