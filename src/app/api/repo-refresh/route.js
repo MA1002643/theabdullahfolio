@@ -190,13 +190,12 @@ export async function GET(request) {
     // both warm fetches in logs.
     let experience = { ok: false, attempted: false };
     try {
-      const expRes = await fetchWithTimeout(
+      const expRes = await fetch(
         `${baseUrl}/api/experience-summary?username=${encodeURIComponent(username)}&_=${cacheBust}`,
         {
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" },
-        },
-        CRON_WARM_TIMEOUT_MS,
+        }
       );
       experience = { ok: expRes.ok, attempted: true, status: expRes.status };
       if (!expRes.ok) {

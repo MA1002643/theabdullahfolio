@@ -42,23 +42,11 @@ const RESPONSE_CACHE_HEADERS = {
 
 const GITHUB_API = "https://api.github.com/graphql";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-
-// Reads an env value, parses it as a Number, and returns it only when
-// it's a finite positive number. Anything else (missing, NaN, ≤0,
-// Infinity) falls back to the default. Using `Number(env) || fallback`
-// is NOT sufficient: it would only catch the falsy results (0, NaN),
-// letting a negative value through and forcing immediate budget
-// exhaustion at every call, or an `Infinity` through and disabling the
-// budget entirely.
-function envPositiveMs(envValue, fallback) {
-  const n = Number(envValue);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-}
-
 // Per-call ceiling. Must stay strictly below the serverless function
 // timeout (10 s on Hobby, 60 s on Pro). Same env var as `/api/github-stats`
 // so a single override raises both routes for Pro/Enterprise.
-const GITHUB_TIMEOUT_MS = envPositiveMs(process.env.GITHUB_TIMEOUT_MS, 8000);
+const GITHUB_TIMEOUT_MS =
+  Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
 // Cumulative wall-clock budget across the entire owned-repos pagination.
 // Per-call timeouts alone aren't enough: with `MAX_OWNED_REPO_PAGES = 10`
 // and an 8 s per-call ceiling, the theoretical worst case is 80 s — well
@@ -68,10 +56,8 @@ const GITHUB_TIMEOUT_MS = envPositiveMs(process.env.GITHUB_TIMEOUT_MS, 8000);
 // newest entries. Default 9 s keeps the function well under Hobby's
 // 10 s budget even on a cold miss. Same env var name as `/api/github-stats`
 // so a Pro/Enterprise override raises both routes together.
-const GITHUB_OVERALL_BUDGET_MS = envPositiveMs(
-  process.env.GITHUB_OVERALL_BUDGET_MS,
-  9000,
-);
+const GITHUB_OVERALL_BUDGET_MS =
+  Number(process.env.GITHUB_OVERALL_BUDGET_MS) || 9000;
 
 // Restrict by username for the same reason `/api/github-stats` does —
 // without an allowlist, any caller varying `?username=` would trigger a
@@ -82,89 +68,14 @@ const ALLOWED_USERNAME = (
 ).toLowerCase();
 
 // Resolve `public/<file>` to a path the function can read at runtime.
-// On Vercel, `public/` is bundled into the deployment under the
-// project root *when* `outputFileTracingIncludes` lists the file in
-// `next.config.mjs`. `process.cwd()` is normally the right anchor —
-// but on some deployment shapes Next stages traced files under a
-// nested directory and `process.cwd()` doesn't always point at it,
-// so we try a handful of candidate paths in order and surface the
-// one that worked (or the full failure list) in production logs.
-const RESUME_PDF_FILENAME = "Muhammad_Abdullah_CV.pdf";
-const RESUME_PDF_CANDIDATES = [
-  // 1. Standard: <function-root>/public/<file>. Works locally and on
-  //    Vercel when outputFileTracingIncludes has staged the file at
-  //    the expected location.
-  path.join(process.cwd(), "public", RESUME_PDF_FILENAME),
-  // 2. Some Next/Vercel builds end up with cwd one level up from the
-  //    traced project root; try the project subdirectory.
-  path.join(process.cwd(), "theabdullahfolio", "public", RESUME_PDF_FILENAME),
-  // 3. Bare filename in cwd — last-resort if Vercel places traced
-  //    assets flat in the function root rather than under `public/`.
-  path.join(process.cwd(), RESUME_PDF_FILENAME),
-];
-
-// Read the resume PDF by walking the candidate list in order. Logs
-// `process.cwd()` and every probed path on first call so production
-// logs make it obvious which path was used (or which were attempted)
-// when the bundle layout differs from the local one. The error thrown
-// on total failure carries the full attempt list so the caller can
-// surface it in the response payload for remote diagnosis without
-// needing Vercel CLI access.
-async function readResumePdfBuffer() {
-  const attempts = [];
-  for (const candidate of RESUME_PDF_CANDIDATES) {
-    try {
-      const buf = await fs.readFile(candidate);
-      console.log(
-        `experience-summary: resume PDF found at "${candidate}" (${buf.length} bytes, cwd=${process.cwd()})`,
-      );
-      return buf;
-    } catch (err) {
-      attempts.push(`${candidate} -> ${err?.code ?? err?.message ?? "unknown"}`);
-    }
-  }
-  const error = new Error(
-    `Resume PDF not readable at any candidate path (cwd=${process.cwd()}). ` +
-      `Tried: ${attempts.join(" | ")}`,
-  );
-  error.code = "RESUME_PDF_NOT_FOUND";
-  error.attempts = attempts;
-  throw error;
-}
-
-// Wall-clock cap on the PDF read + parse path. pdfjs-dist's first
-// initialization on a cold function instance can be slow (a few
-// hundred ms easily), and parse work on top of it. Without a cap, a
-// pathological slow parse could push the function past its platform
-// timeout and fail the whole request — taking the GitHub side down
-// with it. 4 s is generous against observed local timings.
-const PDF_PARSE_TIMEOUT_MS = envPositiveMs(
-  process.env.PDF_PARSE_TIMEOUT_MS,
-  4000,
+// On Vercel, `public/` is bundled into the deployment under the project
+// root, so `process.cwd()` is the right anchor — works in dev, on
+// Vercel, and in self-hosted Node alike.
+const RESUME_PDF_PATH = path.join(
+  process.cwd(),
+  "public",
+  "Muhammad_Abdullah_CV.pdf",
 );
-
-async function readAndParseResumeWithTimeout() {
-  return Promise.race([
-    (async () => {
-      const buf = await readResumePdfBuffer();
-      return parseExperienceFromPdf(buf);
-    })(),
-    new Promise((_, reject) =>
-      setTimeout(
-        () =>
-          reject(
-            Object.assign(
-              new Error(
-                `Resume PDF parse exceeded ${PDF_PARSE_TIMEOUT_MS}ms budget`,
-              ),
-              { code: "PDF_PARSE_TIMEOUT" },
-            ),
-          ),
-        PDF_PARSE_TIMEOUT_MS,
-      ),
-    ),
-  ]);
-}
 
 // Stable JSON serializer: sorts object keys recursively so two
 // structurally equal payloads always hash to the same digest. Arrays
@@ -188,10 +99,7 @@ function stableStringify(value) {
 // (time-based, would change every call) and `changeFingerprint` itself
 // (would otherwise depend on its own output).
 function buildFingerprint(payload) {
-  // `_pdfDiagnostic` is excluded too — it's diagnostic noise, and
-  // including it would let a flapping PDF error flip the fingerprint
-  // on every poll and trigger the client's change banner spuriously.
-  const { generatedAt, changeFingerprint, _pdfDiagnostic, ...content } = payload;
+  const { generatedAt, changeFingerprint, ...content } = payload;
   const hex = crypto
     .createHash("sha256")
     .update(stableStringify(content))
@@ -343,13 +251,10 @@ async function buildExperienceSummary(username) {
   const now = new Date();
 
   // Run both fetches in parallel — they're independent and each has
-  // its own timeout, so the slower one bounds wall-clock. PDF side is
-  // routed through `readAndParseResumeWithTimeout` so it can never
-  // hang the function past the platform timeout and silently drop the
-  // GitHub side with it.
+  // its own timeout, so the slower one bounds wall-clock.
   const [githubResult, pdfResult] = await Promise.allSettled([
     fetchOwnedRepos(username),
-    readAndParseResumeWithTimeout(),
+    fs.readFile(RESUME_PDF_PATH).then((buf) => parseExperienceFromPdf(buf)),
   ]);
 
   let personalProjects = null;
@@ -378,7 +283,6 @@ async function buildExperienceSummary(username) {
   }
 
   let employment = null;
-  let pdfDiagnostic = null;
   if (pdfResult.status === "fulfilled") {
     const roles = pdfResult.value?.roles ?? [];
     const months = roles.reduce((sum, r) => sum + r.months, 0);
@@ -388,18 +292,10 @@ async function buildExperienceSummary(username) {
       roles,
     };
   } else {
-    // Capture both the message AND the structured fields (code, attempts)
-    // we attach in readResumePdfBuffer / the timeout wrapper, so the
-    // response can carry enough context to diagnose the failure
-    // remotely (no Vercel-CLI required) instead of just "null employment".
-    const reason = pdfResult.reason;
-    pdfDiagnostic = {
-      message: reason?.message ?? String(reason),
-      code: reason?.code ?? null,
-      attempts: reason?.attempts ?? null,
-      cwd: process.cwd(),
-    };
-    console.warn("experience-summary: resume PDF parse failed:", pdfDiagnostic);
+    console.warn(
+      "experience-summary: resume PDF parse failed:",
+      pdfResult.reason?.message ?? pdfResult.reason,
+    );
   }
 
   if (!personalProjects && !employment) {
@@ -419,15 +315,6 @@ async function buildExperienceSummary(username) {
       months: totalMonths,
       display: formatDuration(totalMonths),
     },
-    // Surface the PDF failure cause directly in the response. The
-    // employment side rendering as empty in production was previously
-    // a black box — `employment: null` told you nothing about WHY.
-    // With this field, a single curl reveals the underlying error,
-    // candidate paths tried, and the function's cwd. Excluded from
-    // `changeFingerprint` (see buildFingerprint's whitelist below)
-    // so a flapping PDF error can't churn the fingerprint and trip
-    // the change banner.
-    _pdfDiagnostic: pdfDiagnostic,
   };
   payload.changeFingerprint = buildFingerprint(payload);
   return payload;

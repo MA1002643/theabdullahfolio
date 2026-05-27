@@ -388,15 +388,13 @@ function ActivityArc({ score, maxScore = 10000, playToken, prefersReducedMotion 
             className="text-xs font-bold leading-none tabular-nums"
             style={{ color: "#ff6d05", textShadow: "none" }}
           >
-            {/* Same accessibility split as MetricRow: `displayScore`
-                cycles through 0 → target, then holds at `target` across
-                subsequent viewport exits (no reset on exit per the
-                playToken contract above). It still sits at 0 before the
-                first real entry, so a keyboard / non-visual user
-                reaching the card pre-entry would otherwise hear
-                "score 0". The sr-only span carries the final truthful
-                score unconditionally; the visible span is aria-hidden so
-                the animated digits never reach the accessibility tree. */}
+            {/* Same accessibility split as MetricRow: `displayScore` cycles
+                through 0 → target and resets to 0 when out of view, so
+                exposing it to AT would announce "score 0" to keyboard /
+                non-visual nav until the user scrolls the card on-screen.
+                The sr-only span carries the final truthful score; the
+                visible span is aria-hidden so the animated digits never
+                reach the accessibility tree. */}
             <span className="sr-only">{target.toLocaleString()}</span>
             <span aria-hidden="true">{displayScore.toLocaleString()}</span>
           </span>
