@@ -522,15 +522,35 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
             // rounded corners clip the scrollbar that lives on the
             // inner `scrollRef` div — keeps the scrollbar inside the
             // gold border rather than sitting on top of it.
+            //
+            // Sizing uses `dvh` via inline style with a `vh` Tailwind
+            // fallback. On iOS Safari, `100vh` includes the height of
+            // the URL bar even when it's collapsed, which makes the
+            // modal taller than the truly visible viewport — scrolling
+            // inside the modal then shrinks the URL bar and the panel
+            // appears to "jump" relative to the visible area. `dvh`
+            // tracks the dynamic visible viewport, so the panel stays
+            // pinned to the actual on-screen edges no matter what iOS
+            // does with its chrome. Browsers without `dvh` support
+            // silently ignore the inline style and fall back to vh.
             className="custom-bg-abt rounded-2xl w-full max-w-2xl max-h-[88vh] overflow-hidden text-white relative"
             style={{
+              maxHeight: "88dvh",
               filter: "drop-shadow(0 24px 60px rgba(0, 0, 0, 0.6))",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               ref={scrollRef}
-              className="max-h-[88vh] overflow-y-auto p-6 sm:p-8"
+              // `overscroll-contain` stops a momentum scroll that
+              // bottoms out (or tops out) in the repo list from
+              // bubbling up to the modal panel or the locked body —
+              // on iOS that escaped scroll was what made the whole
+              // panel feel like it was sliding around. Same `dvh`
+              // sizing trick as the panel above so the scroll region
+              // matches the visible viewport on iOS.
+              className="max-h-[88vh] overflow-y-auto overscroll-contain p-6 sm:p-8"
+              style={{ maxHeight: "88dvh" }}
             >
             <header className="flex items-start justify-between gap-4 mb-6">
               <div>
@@ -731,7 +751,7 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-[#d4af7a]">
+                <p className="text-sm text-fire-amber">
                   No software-engineering roles detected yet.
                 </p>
               )}

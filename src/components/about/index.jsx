@@ -610,17 +610,28 @@ const AboutDetails = () => {
 
         <ItemLayout
           ref={experienceTriggerRef}
-          role="button"
-          tabIndex={experienceData ? 0 : -1}
-          aria-haspopup="dialog"
-          aria-expanded={isExperienceModalOpen}
-          aria-label={
-            experienceData
-              ? `${experienceCounterValue}+ ${experienceCounterUnit} of experience. Activate to open category breakdown.`
-              : "Loading experience summary"
-          }
-          onClick={openExperienceModal}
-          onKeyDown={handleExperienceTriggerKeyDown}
+          // Button semantics are only attached once `experienceData`
+          // resolves. While loading, the card is a plain informational
+          // region with `aria-busy` — exposing role="button" + click
+          // handlers on a control that no-ops would mislead AT users in
+          // virtual-cursor mode (they'd hear "button", activate it, and
+          // get nothing). The trigger contract (role, tabIndex, ARIA
+          // popup state, click/keydown handlers) all attach atomically
+          // the moment the data lands.
+          {...(experienceData
+            ? {
+                role: "button",
+                tabIndex: 0,
+                "aria-haspopup": "dialog",
+                "aria-expanded": isExperienceModalOpen,
+                "aria-label": `${experienceCounterValue}+ ${experienceCounterUnit} of experience. Activate to open category breakdown.`,
+                onClick: openExperienceModal,
+                onKeyDown: handleExperienceTriggerKeyDown,
+              }
+            : {
+                "aria-busy": true,
+                "aria-label": "Loading experience summary",
+              })}
           className={`group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent flex-col !items-stretch !justify-center ${
             experienceData ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50" : "cursor-default"
           }`}

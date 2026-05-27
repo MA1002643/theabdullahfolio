@@ -1,5 +1,7 @@
 "use client";
 
+import { Fragment } from "react";
+
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 // Visual variants. Each variant ships every token needed by the full
@@ -177,7 +179,13 @@ function AnimatedMessage({ message, prefersReducedMotion }) {
         // every space in an inline-block, which let the parent's
         // (now removed) `whitespace-nowrap` keep the whole message on
         // one line and overflow long sentences into `overflow-hidden`.
-        if (c === " ") return " ";
+        // A keyed Fragment is used (rather than a bare " ") so every
+        // entry in the mapped array carries a stable key — React tolerates
+        // unkeyed text nodes in lists today but the keyed form is more
+        // defensive against future versions and clearer at a glance.
+        if (c === " ") {
+          return <Fragment key={i}> </Fragment>;
+        }
         return (
           <motion.span
             key={i}

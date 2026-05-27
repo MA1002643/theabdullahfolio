@@ -9,6 +9,20 @@ const nextConfig = {
   // `Object.defineProperty called on non-object` at import time.
   experimental: {
     serverComponentsExternalPackages: ["pdf-parse"],
+    // Output File Tracing — explicitly bundle the resume PDF with the
+    // experience-summary serverless function. By default, Next only
+    // ships files referenced from imports; `public/` assets get
+    // deployed to the static layer but are NOT copied into the
+    // function's filesystem. Locally `process.cwd()` is the repo root
+    // so `fs.readFile` finds the PDF; on Vercel it points to the
+    // function bundle, the PDF isn't there, `parseExperienceFromPdf`
+    // rejects, and the modal renders an empty Employment side. Listing
+    // the file here pulls it into the function bundle so the runtime
+    // path resolves identically in prod. In Next 14.x this option
+    // lives under `experimental`; it became top-level in Next 15+.
+    outputFileTracingIncludes: {
+      "/api/experience-summary": ["./public/Muhammad_Abdullah_CV.pdf"],
+    },
   },
   async headers() {
     return [

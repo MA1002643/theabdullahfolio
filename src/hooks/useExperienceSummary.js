@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { formatDuration } from "@/utils/experience/dateMath";
+
 // Polling interval mirrors the about page's /api/github-stats cadence.
 // The endpoint is server-cached (`unstable_cache`, 10 min TTL), so the
 // poll is cheap in steady state: most hits return from cache. Picks up
@@ -19,18 +21,6 @@ const storageKey = (username) => `experience-summary:last-payload:${username}`;
 // a "new role" record) while still avoiding false positives from
 // transient updatedAt-style fields not present on this payload.
 const roleKey = (r) => `${r?.company ?? ""}|${r?.role ?? ""}|${r?.start ?? ""}`;
-
-// Match the API's display formatter so the banner reads "5+ years"
-// rather than ambiguous raw numbers. Falls back to "0+ months" on
-// missing input.
-function formatTotalDisplay(total) {
-  const m = total?.months ?? 0;
-  if (m >= 12) {
-    const y = Math.floor(m / 12);
-    return `${y}+ ${y === 1 ? "year" : "years"}`;
-  }
-  return `${m}+ ${m === 1 ? "month" : "months"}`;
-}
 
 // Build the human-readable change message from a (prev, next) pair.
 // Returns null when nothing meaningful changed (banner stays hidden).
@@ -52,9 +42,12 @@ function buildChangeMessage(prev, next) {
 
   // 2. Total experience tipped over to a new "X+" bucket. Only fire
   //    on an upward move per spec — counting *down* is a parser
-  //    regression and shouldn't be celebrated.
-  const prevDisplay = formatTotalDisplay(prev.total);
-  const nextDisplay = formatTotalDisplay(next.total);
+  //    regression and shouldn't be celebrated. Display strings come
+  //    from the same `formatDuration` helper the server uses for its
+  //    `total.display` field, so the banner text can't drift from the
+  //    payload's own formatting over time.
+  const prevDisplay = formatDuration(prev.total?.months ?? 0);
+  const nextDisplay = formatDuration(next.total?.months ?? 0);
   if (
     prevDisplay !== nextDisplay &&
     (next.total?.months ?? 0) > (prev.total?.months ?? 0)
