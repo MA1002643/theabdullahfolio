@@ -41,12 +41,22 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// Precompile one regex per keyword. `\b` on the left only; the right
-// side is unbounded so "engineer" matches "engineer" / "engineering" /
-// "engineers" without each variant being added to the list. Building
-// regexes at module load keeps `isSoftwareRole` allocation-free.
+// Precompile one regex per keyword. The left anchor is `(?:^|\W)` —
+// start-of-string OR any non-word char — rather than `\b`. `\b` only
+// fires on the seam between a word and a non-word character, which
+// silently fails for keywords that themselves start with a non-word
+// char: e.g. for ".net", `\b\.net` would require a word char immediately
+// before the `.`, which is the opposite of what we need to match
+// ".NET Developer" at the start of a title or after a space. This
+// form rejects the original `"ml"` false-positives ("HTML developer"
+// has `t` — a word char — before "ml", so `\W` doesn't match) AND
+// will correctly match a future ".net"-style keyword once added.
+// The right side stays unbounded so "engineer" still matches
+// "engineer" / "engineering" / "engineers" without each variant being
+// added to the list. Building regexes at module load keeps
+// `isSoftwareRole` allocation-free.
 const KEYWORD_REGEXES = SOFTWARE_ROLE_KEYWORDS.map(
-  (kw) => new RegExp(`\\b${escapeRegex(kw)}`, "i"),
+  (kw) => new RegExp(`(?:^|\\W)${escapeRegex(kw)}`, "i"),
 );
 
 export function isSoftwareRole(title) {
