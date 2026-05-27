@@ -94,10 +94,20 @@ function buildChangeMessage(prev, next) {
 
 // Strip volatile fields before serialising — `generatedAt` and the
 // `changeFingerprint` itself change every fetch and would defeat the
-// "did anything *meaningful* change" check.
+// "did anything *meaningful* change" check. `pdfStatus` and
+// `_pdfDiagnosticInternal` mirror the server's fingerprint whitelist
+// (route.js buildFingerprint): a flapping PDF error otherwise leaks
+// into the stored baseline and would break the equality check if a
+// future message rule ever compared at the object level.
 function pickContent(payload) {
   if (!payload) return null;
-  const { generatedAt, changeFingerprint, ...rest } = payload;
+  const {
+    generatedAt,
+    changeFingerprint,
+    pdfStatus,
+    _pdfDiagnosticInternal,
+    ...rest
+  } = payload;
   return rest;
 }
 
