@@ -18,6 +18,43 @@ export const runtime = "nodejs";
 // build cache instead of actually running the revalidate + warm-up.
 export const dynamic = "force-dynamic";
 
+// Same env-validation pattern as `/api/experience-summary`: accept only
+// finite positive numbers, fall back otherwise. Plain `Number(env) ||
+// fallback` would let a negative env force immediate abort, or
+// `Infinity` disable the timeout entirely.
+function envPositiveMs(envValue, fallback) {
+  const n = Number(envValue);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+// Per-warm-fetch ceiling. Downstream `/api/github-stats` and
+// `/api/experience-summary` each enforce a ~9 s internal wall-clock
+// budget, so 15 s gives them room to complete cleanly while still
+// aborting well before Vercel's platform-level function timeout (60 s
+// on Pro) would terminate the whole cron run. Without this ceiling, a
+// stalled upstream could hold the cron open until that platform limit
+// and fail the run with no useful signal in the logs. Tunable per
+// plan via `CRON_WARM_TIMEOUT_MS`.
+const CRON_WARM_TIMEOUT_MS = envPositiveMs(
+  process.env.CRON_WARM_TIMEOUT_MS,
+  15000,
+);
+
+// Wrap `fetch` with an AbortController + setTimeout so the warm calls
+// can't outlive their budget. On timeout the controller aborts and
+// the fetch rejects with an AbortError that the outer try/catch (for
+// github-stats) or the inner try/catch (for experience-summary) will
+// log and surface as a degraded cron result instead of a silent stall.
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Called by `/api/daily-warmup` (the scheduled cron entrypoint in
 // vercel.json, which orchestrates this route + the work-status bust) or
 // invoked manually with the bearer token to force a refresh outside the
@@ -89,12 +126,13 @@ export async function GET(request) {
     // the warm-up fetch is served straight from the CDN, the route handler
     // never runs, and the inner cache is never recomputed.
     const cacheBust = Date.now();
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${baseUrl}/api/github-stats?username=${encodeURIComponent(username)}&_=${cacheBust}`,
       {
         cache: "no-store",
         headers: { "Cache-Control": "no-cache" },
-      }
+      },
+      CRON_WARM_TIMEOUT_MS,
     );
 
     if (!res.ok) {
@@ -152,12 +190,13 @@ export async function GET(request) {
     // both warm fetches in logs.
     let experience = { ok: false, attempted: false };
     try {
-      const expRes = await fetch(
+      const expRes = await fetchWithTimeout(
         `${baseUrl}/api/experience-summary?username=${encodeURIComponent(username)}&_=${cacheBust}`,
         {
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" },
-        }
+        },
+        CRON_WARM_TIMEOUT_MS,
       );
       experience = { ok: expRes.ok, attempted: true, status: expRes.status };
       if (!expRes.ok) {

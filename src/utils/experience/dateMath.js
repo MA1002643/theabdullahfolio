@@ -79,9 +79,14 @@ export function parseResumeDateToken(token) {
   // is the only constructor form that produces a deterministic instant
   // for a given (year, month, day) tuple regardless of process locale.
 
-  // "<month> <year>" with space, slash, or hyphen separator. The hyphen
-  // form is unusual but cheap to accept; the slash form is in the spec.
-  const monthYear = t.match(/^([a-z]+)[\s/-](\d{4})$/);
+  // "<month> <year>" with space, slash, or hyphen separator. The
+  // hyphen form is unusual but cheap to accept; the slash form is in
+  // the spec. `[\s/-]+` (NOT `[\s/-]`) tolerates collapsed-but-still-
+  // multiple separator runs — PDF text extraction commonly produces
+  // tokens like "Feb  2024" (two spaces) or "Feb \t2024", which the
+  // single-char form silently failed to match and dropped the entire
+  // role from the aggregate.
+  const monthYear = t.match(/^([a-z]+)[\s/-]+(\d{4})$/);
   if (monthYear) {
     const month = MONTH_INDEX[monthYear[1]];
     const year = parseInt(monthYear[2], 10);

@@ -240,12 +240,15 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
           textShadow: "none",
         }}
       >
-        {/* `display` cycles through 0 → target during the count-up and is
-            reset to 0 whenever the card scrolls out of view. Exposing that
-            to assistive tech would announce "0 stars" / "0 forks" any time
-            the user navigated to the card via keyboard or non-visual nav
-            before it entered the viewport. The sr-only span carries the
-            final, correct value; the visible span is `aria-hidden` so the
+        {/* `display` cycles through 0 → target during the count-up, then
+            holds at `target` across subsequent viewport exits — it only
+            snaps back to 0 immediately before a fresh count-up triggered
+            by a real re-entry (see the playToken-driven effect above).
+            Even so, before the first entry the value sits at 0, so a
+            keyboard / non-visual user navigating to the card before it
+            entered the viewport would otherwise hear "0 stars" / "0
+            forks". The sr-only span carries the final, correct value
+            unconditionally; the visible span is `aria-hidden` so the
             animated digits never reach the accessibility tree. */}
         <span className="sr-only">{isDate ? target : target.toLocaleString()}</span>
         <span aria-hidden="true">{isDate ? display : display.toLocaleString()}</span>
@@ -385,13 +388,15 @@ function ActivityArc({ score, maxScore = 10000, playToken, prefersReducedMotion 
             className="text-xs font-bold leading-none tabular-nums"
             style={{ color: "#ff6d05", textShadow: "none" }}
           >
-            {/* Same accessibility split as MetricRow: `displayScore` cycles
-                through 0 → target and resets to 0 when out of view, so
-                exposing it to AT would announce "score 0" to keyboard /
-                non-visual nav until the user scrolls the card on-screen.
-                The sr-only span carries the final truthful score; the
-                visible span is aria-hidden so the animated digits never
-                reach the accessibility tree. */}
+            {/* Same accessibility split as MetricRow: `displayScore`
+                cycles through 0 → target, then holds at `target` across
+                subsequent viewport exits (no reset on exit per the
+                playToken contract above). It still sits at 0 before the
+                first real entry, so a keyboard / non-visual user
+                reaching the card pre-entry would otherwise hear
+                "score 0". The sr-only span carries the final truthful
+                score unconditionally; the visible span is aria-hidden so
+                the animated digits never reach the accessibility tree. */}
             <span className="sr-only">{target.toLocaleString()}</span>
             <span aria-hidden="true">{displayScore.toLocaleString()}</span>
           </span>
