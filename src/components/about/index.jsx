@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
-import { animate, AnimatePresence, useInView, useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
+import { animate, useInView, useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
 import { projectsData } from "@/app/data";
 import LanguagesCard from "./LanguagesCard";
 import GitHubStatsCard from "./StatsCard";
@@ -225,15 +225,25 @@ const AboutDetails = () => {
   // area, so `playToken` could latch at 0, the effect's
   // `if (playToken === 0) return;` early-return would fire, and the
   // digit `<p>` would stay empty even after `to` (e.g. the years value
-  // from `useExperienceSummary`) arrived. Initial `from` is also
-  // rendered as the JSX text so first paint isn't a blank slot before
-  // the animation's first frame.
+  // from `useExperienceSummary`) arrived.
+  //
+  // Honours `prefers-reduced-motion`: skip the 2 s tween entirely and
+  // write `to` straight to the node — mirrors PercentCount's
+  // contract so vestibular-sensitive users don't get a fresh count-up
+  // replay every time `experienceCounterValue` flips from cached to
+  // live data. The JSX text initialiser uses the same gate so the
+  // first paint is also the final value under reduced motion.
   function Counter({ from, to, plusIcon = true }) {
     const nodeRef = useRef(null);
+    const prefersReducedMotion = useReducedMotion();
 
     useEffect(() => {
       const node = nodeRef.current;
       if (!node) return;
+      if (prefersReducedMotion) {
+        node.textContent = String(to);
+        return;
+      }
 
       const controls = animate(from, to, {
         duration: 2,
@@ -243,11 +253,11 @@ const AboutDetails = () => {
       });
 
       return () => controls.stop();
-    }, [from, to]);
+    }, [from, to, prefersReducedMotion]);
 
     return (
       <div className="flex items-center justify-center">
-        <p ref={nodeRef}>{from}</p>
+        <p ref={nodeRef}>{prefersReducedMotion ? to : from}</p>
         {plusIcon && <p>+</p>}
       </div>
     );
