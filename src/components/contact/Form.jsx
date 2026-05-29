@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
 
+import FireInput from './FireInput';
+
 const container = {
   hidden: { opacity: 0 },
   show: {
@@ -117,7 +119,7 @@ function FormContent({ onReset }) {
           <label htmlFor="name" className="sr-only">
             Full Name
           </label>
-          <input
+          <FireInput
             id="name"
             name="name"
             type="text"
@@ -136,7 +138,7 @@ function FormContent({ onReset }) {
                 message: 'Name should be at most 100 characters long.',
               },
             })}
-            className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
+            className="custom-bg-2 w-full rounded-md p-2 shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
         </motion.div>
         {errors.name && (
@@ -144,7 +146,7 @@ function FormContent({ onReset }) {
             id="name-error"
             role="alert"
             className="inline-block self-start"
-            style={{ color: '#ff6d05' }}
+            style={{ color: '#ff6d05', marginTop: '2px' }}
           >
             {errors.name.message}
           </span>
@@ -153,7 +155,7 @@ function FormContent({ onReset }) {
           <label htmlFor="email" className="sr-only">
             Email
           </label>
-          <input
+          <FireInput
             id="email"
             name="email"
             type="email"
@@ -162,7 +164,7 @@ function FormContent({ onReset }) {
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? 'email-error' : undefined}
             {...register('email', { required: 'Email is required!' })}
-            className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
+            className="custom-bg-2 w-full rounded-md p-2 shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
         </motion.div>
         {errors.email && (
@@ -170,7 +172,7 @@ function FormContent({ onReset }) {
             id="email-error"
             role="alert"
             className="inline-block self-start"
-            style={{ color: '#ff6d05' }}
+            style={{ color: '#ff6d05', marginTop: '2px' }}
           >
             {errors.email.message}
           </span>
@@ -179,7 +181,7 @@ function FormContent({ onReset }) {
           <label htmlFor="subject" className="sr-only">
             Subject
           </label>
-          <input
+          <FireInput
             id="subject"
             name="subject"
             type="text"
@@ -194,7 +196,7 @@ function FormContent({ onReset }) {
                 message: 'Subject should be at most 175 characters long.',
               },
             })}
-            className="custom-bg-2 w-full rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
+            className="custom-bg-2 w-full rounded-md p-2 shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
         </motion.div>
         {errors.subject && (
@@ -202,7 +204,7 @@ function FormContent({ onReset }) {
             id="subject-error"
             role="alert"
             className="inline-block self-start"
-            style={{ color: '#ff6d05' }}
+            style={{ color: '#ff6d05', marginTop: '2px' }}
           >
             {errors.subject.message}
           </span>
@@ -229,7 +231,7 @@ function FormContent({ onReset }) {
                 message: 'Message should be more than 50 characters',
               },
             })}
-            className="custom-bg-2 w-full resize-y rounded-md p-2 text-foreground shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
+            className="contact-fire-input custom-bg-2 w-full resize-y rounded-md p-2 shadow-lg hover:shadow-[0_0_15px_#5c0099] focus:shadow-[0_0_10px_rgba(155,89,182,0.6)] focus:outline-none focus:ring-1 focus:ring-[rgba(155,89,182,0.8)]"
           />
         </motion.div>
         {errors.message && (
@@ -237,7 +239,7 @@ function FormContent({ onReset }) {
             id="message-error"
             role="alert"
             className="inline-block self-start"
-            style={{ color: '#ff6d05' }}
+            style={{ color: '#ff6d05', marginTop: '-0.25rem' }}
           >
             {errors.message.message}
           </span>
@@ -260,7 +262,14 @@ function FormContent({ onReset }) {
               value={launch === 'sending' ? 'SENDING...' : 'SEND MESSAGE!'}
               disabled={launch === 'sending'}
               aria-busy={launch === 'sending'}
-              className={`custom-bg-abt text-shadow-neon-light-orange rounded-full px-6 py-2 font-semibold tracking-wide shadow-sm transition-all duration-300 ${
+              // Text color matches the "4+" digit on the about page's
+              // years card (flat #ff6d05, no text-shadow). Inline style
+              // overrides the previous `.text-shadow-neon-light-orange`
+              // amber + glow treatment so the CTA reads in the same
+              // vivid orange accent used across the site for primary
+              // numeric highlights.
+              style={{ color: '#ff6d05', textShadow: 'none' }}
+              className={`custom-bg-abt rounded-full px-6 py-2 font-semibold tracking-wide shadow-sm transition-all duration-300 ${
                 launch === 'sending'
                   ? 'cursor-not-allowed opacity-60'
                   : 'cursor-pointer hover:shadow-[0_0_20px_rgba(255,109,5,0.6)]'

@@ -7,8 +7,22 @@ const nextConfig = {
   // runtime from node_modules, which is exactly what server functions
   // already do for native modules. Without this the route throws
   // `Object.defineProperty called on non-object` at import time.
+  //
+  // `@napi-rs/canvas` MUST be externalized too. In Node, pdfjs-dist
+  // self-polyfills the DOM globals it needs (DOMMatrix, ImageData,
+  // Path2D) by loading `@napi-rs/canvas` via
+  // `createRequire(import.meta.url)("@napi-rs/canvas")`. Next's
+  // dependency tracer (@vercel/nft) can't statically resolve that
+  // runtime-created `require`, so without listing it here the package
+  // and its native `.node` binary are never copied into the deployed
+  // function. The require then throws, pdfjs only `warn()`s ("Cannot
+  // polyfill DOMMatrix"), and the next `new DOMMatrix` during text
+  // extraction throws "DOMMatrix is not defined" — which surfaces as an
+  // empty Employment side (0%) on /about in production while working
+  // fine locally (where the platform binary is already hoisted).
+  // Listing it forces Next to externalize + bundle it with its binary.
   experimental: {
-    serverComponentsExternalPackages: ["pdf-parse"],
+    serverComponentsExternalPackages: ["pdf-parse", "@napi-rs/canvas"],
     // Output File Tracing — explicitly bundle the resume PDF with the
     // experience-summary serverless function. By default, Next only
     // ships files referenced from imports; `public/` assets get

@@ -365,8 +365,10 @@ const REPO_INITIAL_LIMIT = 5;
  *   - Focus moves to the close button on open.
  *   - Tab / Shift+Tab cycles within the dialog (focus trap).
  *   - Focus returns to the trigger element on close.
- *   - `document.body.style.overflow` locked while open so background
- *     scroll doesn't compete with modal scroll on touch.
+ *   - Background scroll locked while open: `overflow: hidden` on <body>
+ *     everywhere, plus `position: fixed` on phone viewports so iOS
+ *     Safari (which ignores `overflow: hidden` for touch) can't scroll
+ *     the page behind the modal. Scroll offset is restored on close.
  *
  * @param {object} props
  * @param {boolean} props.open
@@ -394,21 +396,58 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
     if (open) setShowAllRepos(false);
   }, [open]);
 
-  // Body scroll lock — restore prior value on close so we don't clobber
-  // a different overflow setting that might be set elsewhere. Also
-  // sets `data-modal-open` on <body> so the floating home button
-  // (`.control-island`, z:120) can be hidden via CSS while the modal
-  // is open — otherwise it sits above the z-50 backdrop and remains
-  // tappable, breaking the modal's focus feel and letting users
-  // navigate away from underneath the dialog.
+  // Body scroll lock — restore prior values on close so we don't clobber
+  // settings that might be applied elsewhere. Also sets `data-modal-open`
+  // on <body> so the floating home button (`.control-island`, z:120) can
+  // be hidden via CSS while the modal is open — otherwise it sits above
+  // the z-50 backdrop and remains tappable, breaking the modal's focus
+  // feel and letting users navigate away from underneath the dialog.
+  //
+  // On phones (and especially iOS Safari) `overflow: hidden` on <body>
+  // does NOT stop touch-scrolling the page behind the modal — Safari
+  // simply ignores it for touch. The only reliable lock is to take
+  // <body> out of the scroll flow with `position: fixed`, pinned at the
+  // negated current scroll offset so the page doesn't visually jump to
+  // the top while locked; we restore the offset with `window.scrollTo`
+  // on close. We scope the fixed-position technique to phone-width
+  // viewports because on desktop it would remove the scrollbar and
+  // reflow the layout ~15px wider — there, plain `overflow: hidden`
+  // already holds. `isMobile` is captured once at open and reused in
+  // cleanup so lock and unlock stay symmetric even across a rotation.
   useEffect(() => {
     if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.body.dataset.modalOpen = "true";
+    const body = document.body;
+    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+    const scrollY = window.scrollY;
+    const prev = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+    };
+
+    body.style.overflow = "hidden";
+    if (isMobile) {
+      body.style.position = "fixed";
+      body.style.top = `-${scrollY}px`;
+      body.style.left = "0";
+      body.style.right = "0";
+      body.style.width = "100%";
+    }
+    body.dataset.modalOpen = "true";
+
     return () => {
-      document.body.style.overflow = previousOverflow;
-      delete document.body.dataset.modalOpen;
+      body.style.overflow = prev.overflow;
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      body.style.width = prev.width;
+      delete body.dataset.modalOpen;
+      // position:fixed resets the document scroll to 0 — put it back.
+      if (isMobile) window.scrollTo(0, scrollY);
     };
   }, [open]);
 
@@ -533,13 +572,27 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
             // pinned to the actual on-screen edges no matter what iOS
             // does with its chrome. Browsers without `dvh` support
             // silently ignore the inline style and fall back to vh.
-            className="custom-bg-abt rounded-2xl w-full max-w-2xl max-h-[88vh] overflow-hidden text-white relative"
+            className="custom-bg-abt rounded-2xl w-full max-w-2xl max-h-[88vh] text-white relative"
             style={{
               maxHeight: "88dvh",
               filter: "drop-shadow(0 24px 60px rgba(0, 0, 0, 0.6))",
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Middle wrapper mirrors the "Most Active Repository" card's
+                inner motion.div 1:1 so the breathing-border effect is
+                visually identical: outer panel keeps `custom-bg-abt` for
+                the amber `1px solid #ffcd5bcc` perimeter; this wrapper
+                wears `repo-card-breathe` so the pulsing orange box-shadow
+                projects outward from a slightly-inset `rounded-xl`
+                perimeter (vs the outer's `rounded-2xl`), producing the
+                same "border line + halo" composition as the repo card's
+                `rounded-lg` inner inside its `rounded-xl` outer.
+                `overflow-hidden` lives here (not on the outer) so the
+                scrollbar clips inside this wrapper's rounded corners
+                while leaving the breathing shadow free to paint past
+                the wrapper into the outer panel without being clipped. */}
+            <div className="repo-card-breathe rounded-xl overflow-hidden w-full h-full">
             <div
               ref={scrollRef}
               // `overscroll-contain` stops a momentum scroll that
@@ -756,6 +809,7 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                 </p>
               )}
             </section>
+            </div>
             </div>
           </motion.div>
         </motion.div>

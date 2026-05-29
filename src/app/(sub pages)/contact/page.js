@@ -33,7 +33,7 @@ export default function Contact() {
           >
             – get in touch –
           </h2>
-          <p className="xs:text-base text-shadow-neon-light-orange text-center text-sm font-light">
+          <p className="xs:text-base text-fire-amber text-center text-sm font-light">
             Step into the circle of enchantment and weave your words into the
             fabric of the cosmos. Whether you seek to conjure collaborations,
             unlock mysteries, or simply share tales of adventure, your messages

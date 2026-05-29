@@ -29,17 +29,24 @@ const RevealWord = ({ children, progress, range, reducedMotion }) => {
   );
 };
 
-// Inline percentage count-up. Mirrors the years card's primary
-// Counter — same viewport-trigger hook so the percentage tick begins
-// the moment the card enters view (and replays on re-entry), same
-// `animate()` driver from framer-motion. Renders as an inline-flex
-// span so it slots into the legend line without breaking the flex
-// row's alignment. Reduced motion shows the final value immediately.
+// Inline percentage count-up. Drives the count-up from `value` alone —
+// not viewport visibility. The viewport-trigger variant was a UX nicety
+// (replay on scroll re-entry) but compounded badly with the parent
+// ItemLayout's `initial={{ scale: 0 }}` entrance: `transform: scale(0)`
+// collapses every descendant's IntersectionObserver rect to zero area,
+// so neither this count-up's `amount: 0.3` nor the bar segments'
+// `amount: 0.5` thresholds were ever crossed. The latch in
+// `useViewportCountTrigger` then refused to re-arm cleanly once the
+// scale animation completed, leaving `playToken === 0` and the
+// percentage stuck at the JSX-rendered "0". This was visible on the
+// employment side after a stale-cache hydration: the live fetch
+// correctly updated `value` to ~32, but the effect's `playToken === 0`
+// guard returned early before the `animate()` ever ran.
+//
+// Reduced motion still skips the animation and shows the final value.
 function PercentCount({ value }) {
   const nodeRef = useRef(null);
-  const sectionRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
-  const { playToken } = useViewportCountTrigger(sectionRef, { amount: 0.3 });
 
   useEffect(() => {
     const node = nodeRef.current;
@@ -48,7 +55,6 @@ function PercentCount({ value }) {
       node.textContent = String(value);
       return;
     }
-    if (playToken === 0) return;
     const controls = animate(0, value, {
       duration: 2,
       onUpdate(v) {
@@ -56,10 +62,10 @@ function PercentCount({ value }) {
       },
     });
     return () => controls.stop();
-  }, [value, playToken, prefersReducedMotion]);
+  }, [value, prefersReducedMotion]);
 
   return (
-    <span ref={sectionRef} className="inline-flex items-baseline">
+    <span className="inline-flex items-baseline">
       <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>
       <span>%</span>
     </span>
@@ -85,6 +91,15 @@ function ExperienceSplitBar({ personalMonths, employmentMonths }) {
         className="h-1.5 w-full rounded-full overflow-hidden relative"
         style={{ background: "rgba(244, 227, 184, 0.06)" }}
       >
+        {/* Bar segments use `animate` (not `whileInView`) for the same
+            reason PercentCount above dropped its viewport gate: the
+            parent ItemLayout's `scale(0)` entrance + the segment's own
+            `width: 0` initial state combine to keep the
+            IntersectionObserver rect at zero area, so the
+            `amount: 0.5` threshold never triggers and the bar stays
+            unfilled. Driving the animation from data on mount means
+            the bar fills as soon as we know the percentages, not when
+            an observer that can't see it agrees. */}
         <motion.span
           className="absolute inset-y-0 left-0"
           style={{
@@ -92,8 +107,7 @@ function ExperienceSplitBar({ personalMonths, employmentMonths }) {
             boxShadow: "0 0 10px rgba(255, 109, 5, 0.45)",
           }}
           initial={prefersReducedMotion ? { width: `${personalPct}%` } : { width: 0 }}
-          whileInView={{ width: `${personalPct}%` }}
-          viewport={{ once: false, amount: 0.5 }}
+          animate={{ width: `${personalPct}%` }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
         />
         <motion.span
@@ -104,8 +118,7 @@ function ExperienceSplitBar({ personalMonths, employmentMonths }) {
             boxShadow: "0 0 10px rgba(255, 210, 125, 0.45)",
           }}
           initial={prefersReducedMotion ? { width: `${employmentPct}%` } : { width: 0 }}
-          whileInView={{ width: `${employmentPct}%` }}
-          viewport={{ once: false, amount: 0.5 }}
+          animate={{ width: `${employmentPct}%` }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.4 }}
         />
       </div>
@@ -632,61 +645,87 @@ const AboutDetails = () => {
                 "aria-busy": true,
                 "aria-label": "Loading experience summary",
               })}
-          className={`group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent flex-col !items-stretch !justify-center ${
+          className={`group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent !p-0 ${
             experienceData ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50" : "cursor-default"
           }`}
         >
-          <ExperienceUpdateBanner
-            message={testExperienceMessage ?? experienceChangeMessage}
-            inView={isExperienceCardInView}
-            variant="elite"
-          />
-
-          {/* Eyebrow — uppercase micro-label sets the "feature card"
-              tone before the eye lands on the digit. Amber tone reads
-              a touch warmer than the digit's vivid orange below it. */}
-          <p
-            aria-hidden="true"
-            className="text-[10px] uppercase tracking-[0.22em] mb-2"
-            style={{ color: "#ffaa2a", textShadow: "none" }}
-          >
-            Years in the craft
-          </p>
-
-          <h1
-            className="flex items-baseline gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
-            style={{ color: "#ff6d05", textShadow: "none" }}
-          >
-            <Counter from={0} to={experienceCounterValue}></Counter>
-            <p
-              className="font-semibold text-base text-fire-amber"
-              style={{ textShadow: "none" }}
-            >
-              {experienceCounterUnit} of experience
-            </p>
-          </h1>
-
-          {/* Two-segment split bar — Personal vs Employment as a share
-              of total. Only renders when we have data (otherwise the
-              segments would both compute to NaN). */}
-          {experienceData && experienceTotalMonths > 0 && (
-            <ExperienceSplitBar
-              personalMonths={experienceData?.personalProjects?.months ?? 0}
-              employmentMonths={experienceData?.employment?.months ?? 0}
+          {/* Inner wrapper mirrors the "Most Active Repository" card's
+              own structure 1:1: outer ItemLayout owns the amber
+              `custom-bg-abt` border + dark gradient background; inner
+              div owns the `repo-card-breathe` pulsing glow on its
+              `rounded-lg` perimeter, padded `p-6`. With `!p-0` on the
+              outer, the two radii line up exactly like the repo card.
+              The content's flex-col stack + vertical centering moved
+              from the outer to this inner so layout behaviour is
+              unchanged after the restructure. */}
+          <div className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg p-6 flex flex-col items-stretch justify-center">
+            <ExperienceUpdateBanner
+              message={testExperienceMessage ?? experienceChangeMessage}
+              inView={isExperienceCardInView}
+              variant="elite"
             />
-          )}
 
-          {/* Hover affordance — fades in on group-hover/focus so the
-              click target stops being implicit. `aria-hidden` because
-              the card itself already advertises `role="button"` +
-              aria-haspopup, so this is purely a visual hint. */}
-          <p
-            aria-hidden="true"
-            className="text-[11px] tracking-wide mt-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
-            style={{ color: "#ffd27d", textShadow: "none" }}
-          >
-            View breakdown →
-          </p>
+            {/* Eyebrow — uppercase micro-label sets the "feature card"
+                tone before the eye lands on the digit. Amber tone reads
+                a touch warmer than the digit's vivid orange below it. */}
+            <p
+              aria-hidden="true"
+              className="text-[10px] uppercase tracking-[0.22em] mb-2"
+              style={{ color: "#ffaa2a", textShadow: "none" }}
+            >
+              Years in the craft
+            </p>
+
+            <h1
+              className="flex items-baseline gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
+              style={{ color: "#ff6d05", textShadow: "none" }}
+            >
+              {experienceData ? (
+                <>
+                  <Counter from={0} to={experienceCounterValue}></Counter>
+                  <p
+                    className="font-semibold text-base text-fire-amber"
+                    style={{ textShadow: "none" }}
+                  >
+                    {experienceCounterUnit} of experience
+                  </p>
+                </>
+              ) : (
+                // First-ever visit: no localStorage baseline yet, so the
+                // hook genuinely has `null` until the fetch resolves.
+                // Render a quiet pulsing em-dash in the same slot rather
+                // than the misleading "0 months of experience" — keeps
+                // the layout stable and signals "still computing" instead
+                // of "the answer is zero". Once data arrives, the Counter
+                // takes over and animates 0 → value as before.
+                <p aria-label="Loading years of experience" className="animate-pulse">
+                  —
+                </p>
+              )}
+            </h1>
+
+            {/* Two-segment split bar — Personal vs Employment as a share
+                of total. Only renders when we have data (otherwise the
+                segments would both compute to NaN). */}
+            {experienceData && experienceTotalMonths > 0 && (
+              <ExperienceSplitBar
+                personalMonths={experienceData?.personalProjects?.months ?? 0}
+                employmentMonths={experienceData?.employment?.months ?? 0}
+              />
+            )}
+
+            {/* Hover affordance — fades in on group-hover/focus so the
+                click target stops being implicit. `aria-hidden` because
+                the card itself already advertises `role="button"` +
+                aria-haspopup, so this is purely a visual hint. */}
+            <p
+              aria-hidden="true"
+              className="text-[11px] tracking-wide mt-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
+              style={{ color: "#ffd27d", textShadow: "none" }}
+            >
+              View breakdown →
+            </p>
+          </div>
         </ItemLayout>
 
         {githubStats?.languages && <ItemLayout

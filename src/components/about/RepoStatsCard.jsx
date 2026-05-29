@@ -240,12 +240,15 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
           textShadow: "none",
         }}
       >
-        {/* `display` cycles through 0 → target during the count-up and is
-            reset to 0 whenever the card scrolls out of view. Exposing that
-            to assistive tech would announce "0 stars" / "0 forks" any time
-            the user navigated to the card via keyboard or non-visual nav
-            before it entered the viewport. The sr-only span carries the
-            final, correct value; the visible span is `aria-hidden` so the
+        {/* `display` cycles through 0 → target during the count-up, then
+            holds at `target` across subsequent viewport exits — it only
+            snaps back to 0 immediately before a fresh count-up triggered
+            by a real re-entry (see the playToken-driven effect above).
+            Even so, before the first entry the value sits at 0, so a
+            keyboard / non-visual user navigating to the card before it
+            entered the viewport would otherwise hear "0 stars" / "0
+            forks". The sr-only span carries the final, correct value
+            unconditionally; the visible span is `aria-hidden` so the
             animated digits never reach the accessibility tree. */}
         <span className="sr-only">{isDate ? target : target.toLocaleString()}</span>
         <span aria-hidden="true">{isDate ? display : display.toLocaleString()}</span>

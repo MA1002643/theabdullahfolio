@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import DIMS from './_dimensions.json';
@@ -470,23 +470,61 @@ const Carousel3D = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const emptyToast = (label) =>
-    toast.info(`No qualifications in ${label} yet`, {
-      style: {
-        color: '#ffb347',
-        backgroundColor: 'rgb(0 0 0 / 0.7)',
-        border: 'none',
+  // Track the id of the most recent "empty category" toast so we can
+  // dismiss it precisely when the message stops being relevant — i.e.
+  // when the user switches to a category that *does* have qualifications,
+  // or when they navigate away from /qualifications entirely.
+  const lastToastIdRef = useRef(null);
+
+  const dismissEmptyToast = () => {
+    if (lastToastIdRef.current !== null) {
+      toast.dismiss(lastToastIdRef.current);
+      lastToastIdRef.current = null;
+    }
+  };
+
+  // Dismiss any lingering empty-category toast on unmount — fires when
+  // the user clicks the home (or any other) nav button and the
+  // /qualifications route is torn down. The toast lives in the Toaster
+  // mounted at the root layout, so it survives this unmount unless we
+  // explicitly close it.
+  useEffect(() => () => dismissEmptyToast(), []);
+
+  const emptyToast = (label) => {
+    // Replace any earlier message so consecutive empty clicks don't stack.
+    dismissEmptyToast();
+    lastToastIdRef.current = toast.info(
+      `No qualifications in ${label} yet`,
+      {
+        style: {
+          color: '#ff6d05',
+          backgroundColor: 'rgb(0 0 0 / 0.7)',
+          border: 'none',
+          textAlign: 'center',
+          // Shrink the toast container to its content width on every
+          // viewport so it doesn't span the screen on mobile or leave
+          // dead space on desktop. `alignSelf: center` + auto inline
+          // margins opt the toast out of sonner's default flex-column
+          // stretch so it centers within the position-anchored wrapper.
+          width: 'fit-content',
+          maxWidth: 'min(90vw, 28rem)',
+          alignSelf: 'center',
+          marginInline: 'auto',
+        },
       },
-    });
+    );
+  };
 
   const handleParentClick = (cat) => {
     if (cat !== 'All' && parentCounts[cat] === 0) return emptyToast(cat);
+    dismissEmptyToast();
     setActiveCategory(cat);
     setActiveSub(null);
   };
 
   const handleSubClick = (sub) => {
     if (subCounts[sub] === 0) return emptyToast(sub);
+    dismissEmptyToast();
     setActiveSub(sub);
   };
 
@@ -690,7 +728,7 @@ const Carousel3D = () => {
                   {/* Main Image — width/height pinned to the image's aspect ratio so the frame hugs it edge-to-edge */}
                   <div
                     className="custom-bg-abt relative flex items-center justify-center rounded-lg p-[0.3rem]"
-                    style={{ width: imgW, height: imgH }}
+                    style={{ width: imgW, height: imgH, background: '#00000020' }}
                   >
                     <a
                       href={card.img}
@@ -735,7 +773,10 @@ const Carousel3D = () => {
                       tablet. flex centring keeps single-line titles
                       vertically aligned inside the reserved space. */}
                   <div className="custom-bg-abt relative mt-3 flex min-h-[5rem] w-full items-center justify-center rounded-lg border p-3 text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg">
-                    <h3 className="text-shadow-neon-light-orange relative z-10 text-center text-lg font-semibold tracking-wide">
+                    <h3
+                      className="text-fire-amber relative z-10 text-center text-lg font-semibold tracking-wide"
+                      style={{ textShadow: 'none' }}
+                    >
                       {card.title}
                     </h3>
                   </div>
@@ -757,7 +798,7 @@ const Carousel3D = () => {
             <button
               type="button"
               onClick={prevSlide}
-              className="custom-bg-abt text-shadow-neon-light-orange rounded-lg px-4 py-2"
+              className="custom-bg-abt text-fire-amber rounded-lg px-4 py-2"
               style={{ textShadow: 'none' }}
             >
               Prev
@@ -765,7 +806,7 @@ const Carousel3D = () => {
             <button
               type="button"
               onClick={nextSlide}
-              className="custom-bg-abt text-shadow-neon-light-orange rounded-lg px-4 py-2"
+              className="custom-bg-abt text-fire-amber rounded-lg px-4 py-2"
               style={{ textShadow: 'none' }}
             >
               Next

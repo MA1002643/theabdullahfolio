@@ -205,7 +205,7 @@ export default function NotFoundClient() {
                 transition={
                   prefersReducedMotion ? { duration: 0 } : { duration: 0.4 }
                 }
-                className="text-base text-foreground/60 sm:text-lg"
+                className="text-base text-fire-amber sm:text-lg"
               >
                 {ROTATING_MESSAGES[messageIndex]}
               </motion.p>
@@ -220,7 +220,8 @@ export default function NotFoundClient() {
                 ? { duration: 0 }
                 : { delay: 0.8, duration: 0.5 }
             }
-            className="text-sm text-foreground/40 sm:text-base"
+            className="text-sm sm:text-base"
+            style={{ color: "#ffaa2a", textShadow: "none" }}
           >
             This page doesn&apos;t exist — yet.
           </motion.p>
@@ -243,10 +244,10 @@ export default function NotFoundClient() {
               key={href}
               href={href}
               prefetch={false}
-              className="custom-bg inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-wider text-foreground/50 transition-all duration-300 hover:border-[#ff6d05]/60 hover:text-ember-halo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05]"
+              className="group custom-bg inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-wider transition-all duration-300 hover:border-[#ff6d05]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05]"
             >
-              <Icon className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
-              {label}
+              <Icon className="elite-cta-icon h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
+              <span className="elite-cta-text">{label}</span>
             </Link>
           ))}
         </motion.div>
@@ -273,7 +274,8 @@ export default function NotFoundClient() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2, duration: 0.6 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em] text-foreground/25"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em]"
+          style={{ color: "rgba(255, 170, 42, 0.55)", textShadow: "none" }}
         >
           Press H to go home
         </motion.p>

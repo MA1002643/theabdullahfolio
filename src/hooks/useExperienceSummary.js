@@ -94,10 +94,20 @@ function buildChangeMessage(prev, next) {
 
 // Strip volatile fields before serialising — `generatedAt` and the
 // `changeFingerprint` itself change every fetch and would defeat the
-// "did anything *meaningful* change" check.
+// "did anything *meaningful* change" check. `pdfStatus` and
+// `_pdfDiagnosticInternal` mirror the server's fingerprint whitelist
+// (route.js buildFingerprint): a flapping PDF error otherwise leaks
+// into the stored baseline and would break the equality check if a
+// future message rule ever compared at the object level.
 function pickContent(payload) {
   if (!payload) return null;
-  const { generatedAt, changeFingerprint, ...rest } = payload;
+  const {
+    generatedAt,
+    changeFingerprint,
+    pdfStatus,
+    _pdfDiagnosticInternal,
+    ...rest
+  } = payload;
   return rest;
 }
 
@@ -168,6 +178,26 @@ export function useExperienceSummary(username) {
     if (!username) {
       setIsLoading(false);
       return;
+    }
+
+    // Instant-paint hydration. The hook already writes `pickContent`
+    // to localStorage on every successful fetch (as the diff baseline);
+    // reading it back here means returning visitors see the real value
+    // on first paint instead of the "0 months of experience" placeholder
+    // while the network round-trip completes. We keep the existing
+    // fetchOnce below so the live payload still revalidates the cache,
+    // and the change-message diff still works because it reads the same
+    // stored baseline before overwriting it.
+    //
+    // Done inside the effect (not in `useState(() => ...)`) to avoid
+    // an SSR/CSR hydration mismatch: the server has no localStorage,
+    // so its initial render is `data: null`. Reading here lets the
+    // client mount with `null`, match the server HTML, then immediately
+    // upgrade to the cached value in the same tick.
+    const cached = readStoredPayload(username);
+    if (cached) {
+      setData(cached);
+      setIsLoading(false);
     }
 
     // Cancellation flag so a late response can't `setState` after the
