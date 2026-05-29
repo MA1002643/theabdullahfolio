@@ -70,7 +70,23 @@ const FireInput = forwardRef(function FireInput(
     const input = inputRef.current;
     const overlay = overlayRef.current;
     if (!input || !overlay) return;
-    if (input.selectionEnd === input.value.length) {
+    // `selectionEnd` is only defined for the text-like input types
+    // (text, search, url, tel, password) per the HTML spec. Reading it
+    // on `type="email"` / `type="number"` throws `InvalidStateError`
+    // in current Chrome and Firefox, which would propagate out of
+    // `sync()` before the overlay.textContent / transform updates run
+    // — leaving the email field with no gradient overlay as the user
+    // types. Fall back to `null` on throw and treat that as "cursor
+    // is at the end of the value", which matches the typing-case
+    // heuristic this block already encodes (pin scroll to the right
+    // edge so the just-typed character stays visible).
+    let end = null;
+    try {
+      end = input.selectionEnd;
+    } catch {
+      end = null;
+    }
+    if (end == null || end === input.value.length) {
       input.scrollLeft = input.scrollWidth;
     }
     overlay.textContent = input.value;

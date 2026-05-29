@@ -572,13 +572,27 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
             // pinned to the actual on-screen edges no matter what iOS
             // does with its chrome. Browsers without `dvh` support
             // silently ignore the inline style and fall back to vh.
-            className="custom-bg-abt rounded-2xl w-full max-w-2xl max-h-[88vh] overflow-hidden text-white relative"
+            className="custom-bg-abt rounded-2xl w-full max-w-2xl max-h-[88vh] text-white relative"
             style={{
               maxHeight: "88dvh",
               filter: "drop-shadow(0 24px 60px rgba(0, 0, 0, 0.6))",
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Middle wrapper mirrors the "Most Active Repository" card's
+                inner motion.div 1:1 so the breathing-border effect is
+                visually identical: outer panel keeps `custom-bg-abt` for
+                the amber `1px solid #ffcd5bcc` perimeter; this wrapper
+                wears `repo-card-breathe` so the pulsing orange box-shadow
+                projects outward from a slightly-inset `rounded-xl`
+                perimeter (vs the outer's `rounded-2xl`), producing the
+                same "border line + halo" composition as the repo card's
+                `rounded-lg` inner inside its `rounded-xl` outer.
+                `overflow-hidden` lives here (not on the outer) so the
+                scrollbar clips inside this wrapper's rounded corners
+                while leaving the breathing shadow free to paint past
+                the wrapper into the outer panel without being clipped. */}
+            <div className="repo-card-breathe rounded-xl overflow-hidden w-full h-full">
             <div
               ref={scrollRef}
               // `overscroll-contain` stops a momentum scroll that
@@ -795,6 +809,7 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                 </p>
               )}
             </section>
+            </div>
             </div>
           </motion.div>
         </motion.div>

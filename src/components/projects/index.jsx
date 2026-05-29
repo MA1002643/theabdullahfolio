@@ -15,8 +15,16 @@ const container = {
   },
 };
 
+// Module-scope so the array reference is stable across renders. The
+// in-component literal it replaced was recreated on every render,
+// which made the `useEffect` and `useMemo` below trip the
+// `react-hooks/exhaustive-deps` lint: adding it to the deps would
+// re-run them every render, omitting it would mask a real dependency.
+// Hoisting matches the naming convention used by `PARENT_CATEGORIES`
+// in `qualifications/Carousel.jsx`.
+const CATEGORIES = ["All", "Web", "System", "App"];
+
 const ProjectList = ({ projects }) => {
-  const categories = ["All", "Web", "System", "App"];
   const [active, setActive] = useState("All");
   // Track the id of the most recent "empty category" toast so we can
   // dismiss it precisely when the message stops being relevant — i.e.
@@ -36,7 +44,7 @@ const ProjectList = ({ projects }) => {
   // ✅ Check localStorage for saved category
   useEffect(() => {
     const saved = localStorage.getItem("projects-category");
-    if (saved && categories.includes(saved)) {
+    if (saved && CATEGORIES.includes(saved)) {
       setActive(saved);
     } else {
       setActive("All");
@@ -57,7 +65,7 @@ const ProjectList = ({ projects }) => {
 
   const categoryCounts = useMemo(() => {
     const counts = { All: projects.length };
-    categories.forEach((cat) => {
+    CATEGORIES.forEach((cat) => {
       if (cat !== "All") {
         counts[cat] = projects.filter((p) => p.category === cat).length;
       }
@@ -95,7 +103,7 @@ const ProjectList = ({ projects }) => {
             for inactive, brighter halo on hover. Disabled (empty) tabs
             dim and surface a toast. */}
         <div className="mb-4 mt-10 flex flex-wrap items-center justify-center gap-6">
-          {categories.map((cat) => {
+          {CATEGORIES.map((cat) => {
             const isActive = active === cat;
             const isDisabled = cat !== "All" && categoryCounts[cat] === 0;
             const activeStyle = {
