@@ -632,7 +632,7 @@ const AboutDetails = () => {
                 "aria-busy": true,
                 "aria-label": "Loading experience summary",
               })}
-          className={`group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent flex-col !items-stretch !justify-center ${
+          className={`repo-card-breathe group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent flex-col !items-stretch !justify-center ${
             experienceData ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50" : "cursor-default"
           }`}
         >
@@ -657,13 +657,28 @@ const AboutDetails = () => {
             className="flex items-baseline gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
             style={{ color: "#ff6d05", textShadow: "none" }}
           >
-            <Counter from={0} to={experienceCounterValue}></Counter>
-            <p
-              className="font-semibold text-base text-fire-amber"
-              style={{ textShadow: "none" }}
-            >
-              {experienceCounterUnit} of experience
-            </p>
+            {experienceData ? (
+              <>
+                <Counter from={0} to={experienceCounterValue}></Counter>
+                <p
+                  className="font-semibold text-base text-fire-amber"
+                  style={{ textShadow: "none" }}
+                >
+                  {experienceCounterUnit} of experience
+                </p>
+              </>
+            ) : (
+              // First-ever visit: no localStorage baseline yet, so the
+              // hook genuinely has `null` until the fetch resolves.
+              // Render a quiet pulsing em-dash in the same slot rather
+              // than the misleading "0 months of experience" — keeps
+              // the layout stable and signals "still computing" instead
+              // of "the answer is zero". Once data arrives, the Counter
+              // takes over and animates 0 → value as before.
+              <p aria-label="Loading years of experience" className="animate-pulse">
+                —
+              </p>
+            )}
           </h1>
 
           {/* Two-segment split bar — Personal vs Employment as a share

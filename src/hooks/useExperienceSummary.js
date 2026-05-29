@@ -180,6 +180,26 @@ export function useExperienceSummary(username) {
       return;
     }
 
+    // Instant-paint hydration. The hook already writes `pickContent`
+    // to localStorage on every successful fetch (as the diff baseline);
+    // reading it back here means returning visitors see the real value
+    // on first paint instead of the "0 months of experience" placeholder
+    // while the network round-trip completes. We keep the existing
+    // fetchOnce below so the live payload still revalidates the cache,
+    // and the change-message diff still works because it reads the same
+    // stored baseline before overwriting it.
+    //
+    // Done inside the effect (not in `useState(() => ...)`) to avoid
+    // an SSR/CSR hydration mismatch: the server has no localStorage,
+    // so its initial render is `data: null`. Reading here lets the
+    // client mount with `null`, match the server HTML, then immediately
+    // upgrade to the cached value in the same tick.
+    const cached = readStoredPayload(username);
+    if (cached) {
+      setData(cached);
+      setIsLoading(false);
+    }
+
     // Cancellation flag so a late response can't `setState` after the
     // component unmounts (or after a StrictMode double-mount). We
     // *don't* use a module/ref guard to dedupe across mounts — that

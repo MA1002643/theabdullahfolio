@@ -148,27 +148,42 @@ const PDF_PARSE_TIMEOUT_MS = envPositiveMs(
 // The timeout side of the race rejects with code "PDF_PARSE_TIMEOUT"
 // so the caller's diagnostic code can distinguish "file missing" from
 // "parse took too long".
+//
+// The timer handle is cleared in `finally` once the race settles — same
+// discipline as the sibling `/api/github-stats` route's
+// AbortController + setTimeout pattern. Without it, on the common path
+// where the parse wins the `setTimeout` stays pending for the full
+// PDF_PARSE_TIMEOUT_MS, keeping the serverless instance's event loop
+// alive (or delaying freeze) for up to 4 s after every successful
+// request. `Promise.race` doesn't cancel the loser, so clearing the
+// timer is the only thing that stops the dangling timer.
 async function readAndParseResumeWithTimeout() {
-  return Promise.race([
-    (async () => {
-      const buf = await readResumePdfBuffer();
-      return parseExperienceFromPdf(buf);
-    })(),
-    new Promise((_, reject) =>
-      setTimeout(
-        () =>
-          reject(
-            Object.assign(
-              new Error(
-                `Resume PDF parse exceeded ${PDF_PARSE_TIMEOUT_MS}ms budget`,
-              ),
-              { code: "PDF_PARSE_TIMEOUT" },
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          Object.assign(
+            new Error(
+              `Resume PDF parse exceeded ${PDF_PARSE_TIMEOUT_MS}ms budget`,
             ),
+            { code: "PDF_PARSE_TIMEOUT" },
           ),
-        PDF_PARSE_TIMEOUT_MS,
-      ),
-    ),
-  ]);
+        ),
+      PDF_PARSE_TIMEOUT_MS,
+    );
+  });
+  try {
+    return await Promise.race([
+      (async () => {
+        const buf = await readResumePdfBuffer();
+        return parseExperienceFromPdf(buf);
+      })(),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Stable JSON serializer: sorts object keys recursively so two

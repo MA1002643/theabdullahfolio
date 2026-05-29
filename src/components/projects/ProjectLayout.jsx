@@ -25,20 +25,20 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
       className="text-sm md:text-base flex items-center justify-between w-full relative rounded-lg overflow-hidden p-4 md:p-6 custom-bg-abt"
     >
       <div className="flex items-center justify-center space-x-2">
-        <h2 className="text-shadow-neon-orange">{name}</h2>
+        <h2 style={{ color: "#ff6d05", textShadow: "none" }}>{name}</h2>
         <p
-          className="text-[#ff6d05] hidden sm:inline-block text-shadow-neon-orange"
+          className="text-fire-amber hidden sm:inline-block"
           style={{ textShadow: "none" }}
         >
           {description}
         </p>
       </div>
 
-      <div className="self-end flex-1 mx-2 mb-2 bg-transparent border-b border-dashed border-[#ffcd5bcc]" />
+      <div className="self-end flex-1 mx-2 mb-2 bg-transparent border-b border-dashed border-[#ffaa2a]" />
 
       <p
         id="date"
-        className="text-[#ff6d05] text-shadow-neon-orange"
+        className="text-[#ff6d05]"
         style={{ textShadow: "none" }}
       >
         {new Date(date).toDateString()}

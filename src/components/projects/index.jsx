@@ -1,7 +1,7 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import ProjectLayout from "./ProjectLayout";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const container = {
@@ -18,6 +18,20 @@ const container = {
 const ProjectList = ({ projects }) => {
   const categories = ["All", "Web", "System", "App"];
   const [active, setActive] = useState("All");
+  // Track the id of the most recent "empty category" toast so we can
+  // dismiss it precisely when the message stops being relevant — i.e.
+  // when the user switches to a category that *does* have projects, or
+  // when they navigate away from /projects entirely. Without this, the
+  // sonner toast keeps counting down its default duration and is still
+  // on screen after the route change, which is the bug we're fixing.
+  const lastToastIdRef = useRef(null);
+
+  const dismissEmptyToast = () => {
+    if (lastToastIdRef.current !== null) {
+      toast.dismiss(lastToastIdRef.current);
+      lastToastIdRef.current = null;
+    }
+  };
 
   // ✅ Check localStorage for saved category
   useEffect(() => {
@@ -28,6 +42,13 @@ const ProjectList = ({ projects }) => {
       setActive("All");
     }
   }, []);
+
+  // Dismiss any lingering empty-category toast on unmount — fires when
+  // the user clicks the home (or any other) nav button and the
+  // /projects route is torn down. The toast lives in the Toaster
+  // mounted at the root layout, so it survives this unmount unless we
+  // explicitly close it.
+  useEffect(() => () => dismissEmptyToast(), []);
 
   const filteredProjects =
     active === "All"
@@ -69,51 +90,86 @@ const ProjectList = ({ projects }) => {
           <div className="w-6 h-[2px] rounded-full" style={{ backgroundColor: '#fc83ff', boxShadow: '0 0 5px #ff55f7, 0 0 10px #ff55f7' }} />
         </div>
 
-        {/* CATEGORY FILTERS */}
-        <div className="flex flex-wrap items-center justify-center gap-6 mt-6">
+        {/* CATEGORY FILTERS — mirrors the qualifications carousel tab
+            treatment: orange neon glow for the active tab, pink neon glow
+            for inactive, brighter halo on hover. Disabled (empty) tabs
+            dim and surface a toast. */}
+        <div className="mb-4 mt-10 flex flex-wrap items-center justify-center gap-6">
           {categories.map((cat) => {
+            const isActive = active === cat;
             const isDisabled = cat !== "All" && categoryCounts[cat] === 0;
+            const activeStyle = {
+              color: '#ff6d05',
+              textShadow:
+                '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)',
+            };
+            const inactiveStyle = {
+              color: '#fc83ff',
+              textShadow:
+                '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7',
+            };
             return (
-              <div key={cat} className="relative group">
-                <span
-                  onClick={() => {
-                    if (isDisabled)
-                      return toast.info("No projects in this category", {
+              <button
+                key={cat}
+                type="button"
+                aria-pressed={isActive}
+                title={isDisabled ? "No projects in this category" : undefined}
+                onClick={() => {
+                  // Clear any prior empty-category toast first so two
+                  // consecutive empty clicks don't stack and a
+                  // disabled→enabled switch leaves the old message on
+                  // screen for its full duration.
+                  dismissEmptyToast();
+                  if (isDisabled) {
+                    lastToastIdRef.current = toast.info(
+                      "No projects in this category",
+                      {
                         style: {
-                          color: "#ffb347",
+                          color: "#ff6d05",
                           backgroundColor: "rgb(0 0 0 / 0.7)",
                           border: "none",
+                          textAlign: "center",
+                          // Shrink the toast container to its content
+                          // width on every viewport so it doesn't span
+                          // the screen on mobile or leave dead space on
+                          // desktop. `alignSelf: center` + auto inline
+                          // margins opt the toast out of sonner's
+                          // default flex-column stretch so it centers
+                          // within the position-anchored wrapper.
+                          width: "fit-content",
+                          maxWidth: "min(90vw, 28rem)",
+                          alignSelf: "center",
+                          marginInline: "auto",
                         },
-                      });
-                    setActive(cat);
-                  }}
-                  className={`transition text-[1rem] md:text-[1.2rem] font-semibold uppercase cursor-pointer
-                  ${active === cat
-                      ? "text-glow-stroke-neon"
-                      : "glitter-text !tracking-normal !text-shadow-none"
-                    }`}
-                  style={{
-                    textShadow:
-                      active === cat
-                        ? "none"
-                        : "0 0 2px #ff55f7, 0 0 4px #ff55f7, 0 0 6px #ff55f7",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (active !== cat) {
-                      e.currentTarget.style.textShadow =
-                        "0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7, 0 0 30px #ff55f7";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (active !== cat) {
-                      e.currentTarget.style.textShadow =
-                        "0 0 2px #ff55f7, 0 0 4px #ff55f7, 0 0 6px #ff55f7";
-                    }
-                  }}
-                >
-                  {cat}
-                </span>
-              </div>
+                      },
+                    );
+                    return;
+                  }
+                  setActive(cat);
+                }}
+                className={`bg-transparent border-0 p-0 transition !text-[1rem] md:!text-[1.2rem] font-semibold uppercase cursor-pointer ${isDisabled ? 'opacity-40' : ''}`}
+                style={isActive ? activeStyle : inactiveStyle}
+                onMouseEnter={(e) => {
+                  if (isActive) {
+                    e.currentTarget.style.textShadow =
+                      '0 0 6px #ff6d05, 0 0 14px #ff6d05, 0 0 26px rgba(255, 106, 0, 0.8)';
+                  } else {
+                    e.currentTarget.style.textShadow =
+                      '0 0 6px #ff55f7, 0 0 14px #ff55f7, 0 0 26px #ff55f7';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (isActive) {
+                    e.currentTarget.style.textShadow =
+                      '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)';
+                  } else {
+                    e.currentTarget.style.textShadow =
+                      '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7';
+                  }
+                }}
+              >
+                {cat}
+              </button>
             );
           })}
         </div>

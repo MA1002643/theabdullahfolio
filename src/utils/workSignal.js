@@ -286,10 +286,14 @@ const describeTop = (topItems) => {
   return ` — currently focused on #${first.number} ${truncateTitle(first.title)}`;
 };
 
+// Despite the name (kept for call-site stability), this no longer
+// truncates — the maintenance-header message paragraph now wraps to as
+// many lines as it needs, and the user wants the full GitHub issue / PR
+// title visible. `.trim()` still normalises stray leading/trailing
+// whitespace from upstream sources.
 const truncateTitle = (title) => {
   if (!title) return '';
-  const trimmed = title.trim();
-  return trimmed.length > 60 ? `${trimmed.slice(0, 57)}…` : trimmed;
+  return title.trim();
 };
 
 export const __testing = { FALLBACK_MESSAGE, HEADLINES };

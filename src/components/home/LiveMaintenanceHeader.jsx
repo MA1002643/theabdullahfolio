@@ -225,19 +225,12 @@ export default function LiveMaintenanceHeader() {
         {srAnnouncement}
       </div>
 
-      {/* Layer E: ambient sheen + noise. Both kept low-impact to protect
-                text contrast — the sheen wrapper is at opacity-60, but its
-                underlying gradient stops use rgba(...,0.18), so its
-                effective contribution is ≈0.6 × 0.18 ≈ 0.11. The noise is
-                a flat opacity-[0.15] over a near-white turbulence svg. */}
-      <div
-        aria-hidden
-        className="status-sheen pointer-events-none absolute inset-0 -z-10 opacity-60"
-      />
-      <div
-        aria-hidden
-        className="status-noise pointer-events-none absolute inset-0 -z-10 opacity-[0.15]"
-      />
+      {/* Background intentionally limited to `.custom-bg-abt` (applied on
+          the <motion.section> wrapper) so the maintenance header reads
+          as the exact same surface as the "Architect of Enchantment"
+          card on the about page, which uses ItemLayout → `custom-bg-abt`
+          with no additional overlays. The previous animated sheen and
+          noise textures were removed to keep that parity. */}
 
       <AnimatePresence mode="wait" initial={false}>
         {isInitialLoading ? (
@@ -291,7 +284,7 @@ export default function LiveMaintenanceHeader() {
                         }
                   }
                   transition={{ duration: reduceMotion ? 0.12 : 0.32 }}
-                  className="text-shadow-neon-light-orange line-clamp-2 break-words text-[clamp(0.78rem,1.6vw,1.05rem)] font-medium leading-snug sm:line-clamp-none"
+                  className="text-fire-amber break-words text-[clamp(0.78rem,1.6vw,1.05rem)] font-medium leading-snug"
                 >
                   {message}
                 </motion.p>
@@ -347,7 +340,7 @@ function StateChip({ state, loading, reduceMotion }) {
   // small screens.
   return (
     <div
-      className={`inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-[#ff6d05]/60 bg-black/50 px-2 sm:h-9 sm:gap-2 sm:px-3 ${reduceMotion || !isPulsing ? '' : 'live-chip-breathe'}`}
+      className={`status-chip-fire-border inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 sm:h-9 sm:gap-2 sm:px-3 ${reduceMotion || !isPulsing ? '' : 'live-chip-breathe'}`}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
@@ -359,7 +352,20 @@ function StateChip({ state, loading, reduceMotion }) {
           className="flex items-center gap-2"
         >
           {isPulsing && <span className="live-dot" aria-hidden />}
-          <span className="text-shadow-neon-orange text-[0.7rem] font-bold uppercase tracking-[0.15em] sm:text-xs">
+          {/* State label: flat #ff6d05 fill (matches the "Experience by
+              category" modal title and the "Years in the craft" number
+              on the about page) behind a same-color #ff6d05 text-shadow
+              halo, so the SHIPPING / LIVE / etc. text reads as a single
+              uniform orange accent consistent with the chip's orange
+              ring border and outer halo. */}
+          <span
+            className="text-[0.7rem] font-bold uppercase tracking-[0.15em] sm:text-xs"
+            style={{
+              color: '#ff6d05',
+              textShadow:
+                '0 0 4px rgba(255, 109, 5, 0.55), 0 0 12px rgba(255, 109, 5, 0.35)',
+            }}
+          >
             {loading ? '…' : label}
           </span>
         </motion.span>
@@ -414,10 +420,21 @@ function Counter({ label, value, reduceMotion }) {
     return () => cancelAnimationFrame(raf);
   }, [value, reduceMotion]);
 
+  // Number: flat #ff6d05 (matches the "4+" digit on the about page's
+  // years card). Label: `.text-fire-amber` (the gradient + warm glow
+  // used by the Architect of Enchantment paragraph) so the unit text
+  // ("PRs", "Issues", "Pushes 24h") reads in the same fire effect as
+  // the rotating message above. `tabular-nums` is inherited from the
+  // counter row wrapper so the digit columns still align.
   return (
     <span className="inline-flex items-baseline gap-1">
-      <span className="font-semibold">{display}</span>
-      <span className="opacity-70">{label}</span>
+      <span
+        className="font-semibold"
+        style={{ color: '#ff6d05', textShadow: 'none' }}
+      >
+        {display}
+      </span>
+      <span className="text-fire-amber">{label}</span>
     </span>
   );
 }
@@ -458,9 +475,33 @@ function RelativeTime({ iso }) {
   if (!iso) return null;
   const diffMs = Date.now() - new Date(iso).getTime();
   if (Number.isNaN(diffMs)) return null;
+
+  // Split the formatted output ("46s ago" / "5m ago" / …) so the
+  // numeric digits can render in flat #ff6d05 (matches the "4+" digit
+  // on the about page's years card) while the surrounding "Updated" and
+  // "s ago" / "m ago" text reads in the same `.text-fire-amber`
+  // gradient + glow as the Architect of Enchantment paragraph. Guarded
+  // fallback renders the whole string in the gradient if the format
+  // ever changes shape so the digits regex stops matching.
+  const formatted = formatRelative(diffMs);
+  const match = /^(\d+)(\D.*)$/.exec(formatted);
+
   return (
-    <span className="opacity-70" title={new Date(iso).toLocaleString()}>
-      Updated {formatRelative(diffMs)}
+    <span title={new Date(iso).toLocaleString()}>
+      <span className="text-fire-amber">Updated </span>
+      {match ? (
+        <>
+          <span
+            className="font-semibold"
+            style={{ color: '#ff6d05', textShadow: 'none' }}
+          >
+            {match[1]}
+          </span>
+          <span className="text-fire-amber">{match[2]}</span>
+        </>
+      ) : (
+        <span className="text-fire-amber">{formatted}</span>
+      )}
     </span>
   );
 }
