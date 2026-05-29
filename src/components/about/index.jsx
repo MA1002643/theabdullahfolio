@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
-import { animate, AnimatePresence, useInView, useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
+import { animate, useInView, useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
 import { projectsData } from "@/app/data";
 import LanguagesCard from "./LanguagesCard";
 import GitHubStatsCard from "./StatsCard";
@@ -9,7 +9,6 @@ import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
 import { computeRepoDiff } from "@/utils/repoDiff";
 import { useExperienceSummary } from "@/hooks/useExperienceSummary";
-import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
@@ -218,24 +217,33 @@ const AboutDetails = () => {
     [0, 1]
   );
 
-  // Counter Animation...
-  // Replays the count-up only on real viewport entries (and on `to`
-  // changes from upstream data). `useViewportCountTrigger` absorbs
-  // brief intersection-observer flicker at the viewport edge so a
-  // small scroll oscillation can't restart the animation mid-flight —
-  // same shared trigger now used by RepoStatsCard's MetricRow.
+  // Counter Animation. Drives the count-up from (from, to) directly —
+  // no viewport gate. The earlier `useViewportCountTrigger` variant
+  // failed the same way `PercentCount` did: this Counter is rendered
+  // inside `ItemLayout`, whose `initial={{ scale: 0 }}` entrance
+  // collapses every descendant's IntersectionObserver rect to zero
+  // area, so `playToken` could latch at 0, the effect's
+  // `if (playToken === 0) return;` early-return would fire, and the
+  // digit `<p>` would stay empty even after `to` (e.g. the years value
+  // from `useExperienceSummary`) arrived.
+  //
+  // Honours `prefers-reduced-motion`: skip the 2 s tween entirely and
+  // write `to` straight to the node — mirrors PercentCount's
+  // contract so vestibular-sensitive users don't get a fresh count-up
+  // replay every time `experienceCounterValue` flips from cached to
+  // live data. The JSX text initialiser uses the same gate so the
+  // first paint is also the final value under reduced motion.
   function Counter({ from, to, plusIcon = true }) {
     const nodeRef = useRef(null);
-    const sectionRef = useRef(null);
-    const { playToken } = useViewportCountTrigger(sectionRef, { amount: 0.3 });
+    const prefersReducedMotion = useReducedMotion();
 
     useEffect(() => {
-      // Pre-trigger: leave the node empty; the count-up will populate
-      // it on the first real entry. No reset on exit — the value
-      // holds until the next real entry cycle.
-      if (playToken === 0) return;
       const node = nodeRef.current;
       if (!node) return;
+      if (prefersReducedMotion) {
+        node.textContent = String(to);
+        return;
+      }
 
       const controls = animate(from, to, {
         duration: 2,
@@ -245,11 +253,11 @@ const AboutDetails = () => {
       });
 
       return () => controls.stop();
-    }, [from, to, playToken]);
+    }, [from, to, prefersReducedMotion]);
 
     return (
-      <div ref={sectionRef} className="flex items-center justify-center">
-        <p ref={nodeRef} />
+      <div className="flex items-center justify-center">
+        <p ref={nodeRef}>{prefersReducedMotion ? to : from}</p>
         {plusIcon && <p>+</p>}
       </div>
     );
