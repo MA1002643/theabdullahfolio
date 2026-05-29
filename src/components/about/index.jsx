@@ -9,7 +9,6 @@ import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
 import { computeRepoDiff } from "@/utils/repoDiff";
 import { useExperienceSummary } from "@/hooks/useExperienceSummary";
-import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
