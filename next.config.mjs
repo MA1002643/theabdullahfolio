@@ -33,7 +33,22 @@ const nextConfig = {
     // path resolves identically in prod. In Next 14.x this option
     // lives under `experimental`; it became top-level in Next 15+.
     outputFileTracingIncludes: {
-      "/api/experience-summary": ["./public/Muhammad_Abdullah_CV.pdf"],
+      "/api/experience-summary": [
+        "./public/Muhammad_Abdullah_CV.pdf",
+        // pdfjs-dist sets up a main-thread "fake worker" by dynamically
+        // importing its worker bundle at runtime — an import @vercel/nft
+        // can't statically trace, so the file was absent from the deployed
+        // function (/var/task) and getText() failed in production with
+        // `Setting up fake worker failed: Cannot find module
+        // .../pdf.worker.mjs`. pdf-parse v2 loads the *legacy* build (see
+        // the error's import path), so trace that worker explicitly. This
+        // is a separate gap from the DOMMatrix polyfill: the polyfill let
+        // parsing advance to the point where the worker is needed, which
+        // is what surfaced this. Both .mjs and .min.mjs are listed so the
+        // trace is robust to whichever pdf-parse resolves at runtime.
+        "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+        "./node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+      ],
     },
   },
   async headers() {
