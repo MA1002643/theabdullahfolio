@@ -137,14 +137,21 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 - **Production employment 0%** on `/api/experience-summary` (preview
   deployments returned `pdfStatus: { message: "DOMMatrix is not
   defined" }` and an empty Employment side in the Years card and the
-  Career Snapshot modal). Fixed by expanding `outputFileTracingIncludes`
-  in `next.config.mjs` to glob both the root and the
-  `pdfjs-dist`-nested `@napi-rs/canvas` JS shim *and* the
-  `linux-x64-gnu` platform binary subpackage, plus pinning all
-  transitive copies of `@napi-rs/canvas` to `0.1.80` via the
-  `package.json` `overrides` field so `pdfjs-dist`'s runtime
+  Career Snapshot modal). The primary fix is `next.config.mjs`
+  `outputFileTracingIncludes["/api/experience-summary"]` tracing
+  **both possible install locations** for the `@napi-rs/canvas` JS
+  shim and its `linux-x64-gnu` platform binary subpackage — the root
+  `node_modules/@napi-rs/canvas/**/*` and the surviving
+  `node_modules/pdfjs-dist/node_modules/@napi-rs/canvas/**/*` nest —
+  so `pdfjs-dist`'s runtime
   `createRequire(import.meta.url)("@napi-rs/canvas")` lands on a
-  bundled file regardless of which install copy npm resolves.
+  bundled file regardless of which copy Node resolves first. The
+  `package.json` `overrides` field also pins `@napi-rs/canvas` to
+  `0.1.80`, which collapsed the duplicated `pdf-parse` install but
+  **did not** flatten `pdfjs-dist`'s nested optional dependency: the
+  committed lockfile still resolves
+  `node_modules/pdfjs-dist/node_modules/@napi-rs/canvas` to `0.1.100`,
+  which is exactly why both glob paths are listed.
 - Years digit `Counter` and the Personal / Employment `PercentCount`
   in `src/components/about/index.jsx` could remain at `0` indefinitely
   because the parent `ItemLayout`'s `initial={{ scale: 0 }}` entrance
