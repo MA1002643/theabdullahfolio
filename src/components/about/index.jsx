@@ -110,9 +110,18 @@ function ExperienceSplitBar({
   const effectivePersonal = personalAvailable ? personalMonths : 0;
   const effectiveEmployment = employmentAvailable ? employmentMonths : 0;
   const total = effectivePersonal + effectiveEmployment;
-  if (total === 0) return null;
-  const personalPct = (effectivePersonal / total) * 100;
-  const employmentPct = (effectiveEmployment / total) * 100;
+  // Bail only when there's genuinely nothing to communicate: both sources
+  // loaded and the measured total is zero. When a source is *unavailable*
+  // we must still render so its "Unavailable" row appears — even if the
+  // surviving (measured) side is itself zero (e.g. GitHub down while the
+  // resume parsed but yielded no software roles). Guarding on `total === 0`
+  // alone would swallow exactly that case.
+  if (personalAvailable && employmentAvailable && total === 0) return null;
+  // Percentages are shares of *measured* experience. With a zero measured
+  // total (only reachable here when a side is unavailable), there's no
+  // denominator, so a present-but-empty side reads as a genuine 0%.
+  const personalPct = total > 0 ? (effectivePersonal / total) * 100 : 0;
+  const employmentPct = total > 0 ? (effectiveEmployment / total) * 100 : 0;
 
   return (
     <div className="mt-4 w-full" aria-hidden="true">
@@ -217,6 +226,38 @@ function ExperienceSplitBar({
       </div>
     </div>
   );
+}
+
+// Spoken equivalent of the ExperienceSplitBar legend, for the years card's
+// accessible name. The card is a `role="button"` with an explicit
+// `aria-label`, which makes it a leaf for name computation — its descendant
+// text (the visual, aria-hidden legend included) is never announced. So the
+// Personal/Employment split, and crucially the "data unavailable" state,
+// have to be folded into the button's own label or screen-reader users hear
+// only the grand total. Mirrors the bar's denominator logic exactly: an
+// unavailable source is excluded (not counted as zero) and spoken as
+// "data unavailable", while a present-but-empty side speaks a genuine
+// "0 percent". Returns "" when there's nothing to split (no bar shown).
+function buildSplitBreakdownLabel(experienceData) {
+  const personalAvailable = experienceData?.personalProjects != null;
+  const employmentAvailable = experienceData?.employment != null;
+  const personalMonths = experienceData?.personalProjects?.months ?? 0;
+  const employmentMonths = experienceData?.employment?.months ?? 0;
+  const effectivePersonal = personalAvailable ? personalMonths : 0;
+  const effectiveEmployment = employmentAvailable ? employmentMonths : 0;
+  const total = effectivePersonal + effectiveEmployment;
+  // Nothing to announce only when both sources loaded and measured zero —
+  // same gate as ExperienceSplitBar. With a side unavailable we still speak
+  // the split so AT users hear the "data unavailable" distinction even when
+  // the measured side is itself zero.
+  if (personalAvailable && employmentAvailable && total === 0) return "";
+  const personalText = personalAvailable
+    ? `${total > 0 ? Math.round((effectivePersonal / total) * 100) : 0} percent`
+    : "data unavailable";
+  const employmentText = employmentAvailable
+    ? `${total > 0 ? Math.round((effectiveEmployment / total) * 100) : 0} percent`
+    : "data unavailable";
+  return `Experience split: personal projects ${personalText}, employment ${employmentText}.`;
 }
 
 const AboutDetails = () => {
@@ -339,6 +380,26 @@ const AboutDetails = () => {
       : experienceTotalMonths;
   const experienceCounterUnit =
     experienceTotalMonths >= 12 ? "years" : "months";
+  // Spoken Personal/Employment split for the years-card button's accessible
+  // name (the visual legend is decorative + aria-hidden and, being inside a
+  // labelled button, would never be announced on its own). Empty string when
+  // there's no split to read.
+  const experienceSplitLabel = buildSplitBreakdownLabel(experienceData);
+
+  // Render the split bar when there's anything worth communicating: measured
+  // experience to apportion, OR a source that failed to load (so its
+  // "Unavailable" row still appears). Hiding purely on `experienceTotalMonths
+  // > 0` would swallow the case where the measured side is genuinely zero but
+  // the other source is unavailable — e.g. GitHub down while the resume
+  // parsed to no roles. Matches ExperienceSplitBar's own bail condition.
+  const experiencePersonalAvailable =
+    experienceData?.personalProjects != null;
+  const experienceEmploymentAvailable = experienceData?.employment != null;
+  const showExperienceSplit =
+    !!experienceData &&
+    (experienceTotalMonths > 0 ||
+      !experiencePersonalAvailable ||
+      !experienceEmploymentAvailable);
 
   // Years-card-as-button: click / Enter / Space opens the breakdown
   // modal. `experienceTriggerRef` lets the modal return focus to the
@@ -702,7 +763,9 @@ const AboutDetails = () => {
                 tabIndex: 0,
                 "aria-haspopup": "dialog",
                 "aria-expanded": isExperienceModalOpen,
-                "aria-label": `${experienceCounterValue}+ ${experienceCounterUnit} of experience. Activate to open category breakdown.`,
+                "aria-label": `${experienceCounterValue}+ ${experienceCounterUnit} of experience.${
+                  experienceSplitLabel ? ` ${experienceSplitLabel}` : ""
+                } Activate to open category breakdown.`,
                 onClick: openExperienceModal,
                 onKeyDown: handleExperienceTriggerKeyDown,
               }
@@ -769,10 +832,11 @@ const AboutDetails = () => {
               )}
             </h1>
 
-            {/* Two-segment split bar — Personal vs Employment as a share
-                of total. Only renders when we have data (otherwise the
-                segments would both compute to NaN). */}
-            {experienceData && experienceTotalMonths > 0 && (
+            {/* Two-segment split bar — Personal vs Employment as a share of
+                total. Renders when there's measured experience to split OR a
+                source is unavailable (so its "Unavailable" row still shows);
+                hidden only when both sources loaded and measured zero. */}
+            {showExperienceSplit && (
               <ExperienceSplitBar
                 personalMonths={experienceData?.personalProjects?.months ?? 0}
                 employmentMonths={experienceData?.employment?.months ?? 0}
@@ -780,8 +844,8 @@ const AboutDetails = () => {
                 // personal; resume PDF missing/parse error for employment),
                 // distinct from a parsed-but-empty `{ months: 0 }`. Drives
                 // the "Unavailable" treatment instead of a misleading 0%.
-                personalAvailable={experienceData?.personalProjects != null}
-                employmentAvailable={experienceData?.employment != null}
+                personalAvailable={experiencePersonalAvailable}
+                employmentAvailable={experienceEmploymentAvailable}
               />
             )}
 

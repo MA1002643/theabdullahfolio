@@ -80,13 +80,32 @@ class DOMMatrixPolyfill {
     return this;
   }
 
+  // translate/scale are NON-mutating per the spec (the mutating variants are
+  // translateSelf/scaleSelf, which pdfjs doesn't use): return a fresh matrix
+  // and leave `this` untouched, so a caller that keeps the original
+  // reference isn't silently corrupted. `multiplySelf` stays the only
+  // in-place primitive; here it mutates the copy, not `this`.
   translate(tx = 0, ty = 0) {
-    return this.multiplySelf({ a: 1, b: 0, c: 0, d: 1, e: tx, f: ty });
+    return new DOMMatrixPolyfill(this).multiplySelf({
+      a: 1,
+      b: 0,
+      c: 0,
+      d: 1,
+      e: tx,
+      f: ty,
+    });
   }
 
   scale(sx = 1, sy) {
     if (sy == null) sy = sx;
-    return this.multiplySelf({ a: sx, b: 0, c: 0, d: sy, e: 0, f: 0 });
+    return new DOMMatrixPolyfill(this).multiplySelf({
+      a: sx,
+      b: 0,
+      c: 0,
+      d: sy,
+      e: 0,
+      f: 0,
+    });
   }
 
   invertSelf() {
