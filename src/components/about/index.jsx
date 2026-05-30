@@ -43,11 +43,18 @@ const RevealWord = ({ children, progress, range, reducedMotion }) => {
 // guard returned early before the `animate()` ever ran.
 //
 // Reduced motion still skips the animation and shows the final value.
-function PercentCount({ value }) {
+//
+// `unavailable` short-circuits the whole count-up and renders an
+// "Unavailable" label instead of a percentage. It's how a category whose
+// source failed to load (e.g. employment, when the resume PDF can't be
+// parsed) is distinguished from a genuine 0% — rendering "0%" for missing
+// data would assert "zero experience" when the truth is "couldn't measure".
+function PercentCount({ value, unavailable = false }) {
   const nodeRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
+    if (unavailable) return;
     const node = nodeRef.current;
     if (!node) return;
     if (prefersReducedMotion) {
@@ -61,7 +68,15 @@ function PercentCount({ value }) {
       },
     });
     return () => controls.stop();
-  }, [value, prefersReducedMotion]);
+  }, [value, prefersReducedMotion, unavailable]);
+
+  if (unavailable) {
+    return (
+      <span className="italic opacity-60 normal-case tracking-normal">
+        Unavailable
+      </span>
+    );
+  }
 
   return (
     <span className="inline-flex items-baseline">
@@ -77,12 +92,27 @@ function PercentCount({ value }) {
 // two surfaces read as a single visual system. Segments are absolute-
 // positioned tooltips rather than children of a flex so a 0%-share
 // segment doesn't claim layout width.
-function ExperienceSplitBar({ personalMonths, employmentMonths }) {
+function ExperienceSplitBar({
+  personalMonths,
+  employmentMonths,
+  personalAvailable = true,
+  employmentAvailable = true,
+}) {
   const prefersReducedMotion = useReducedMotion();
-  const total = personalMonths + employmentMonths;
+  // When a side's source failed to load its month count is *unknown*, not
+  // zero — so exclude it from the denominator entirely. The surviving side
+  // then reads as 100% of *measured* experience, and the failed row renders
+  // "Unavailable" (below) instead of asserting a misleading 0%. A present-
+  // but-empty side ({ months: 0 }) keeps its `*Available` flag true and
+  // still shows a genuine 0%. Symmetric across both sources: GitHub failing
+  // (personal) is the same misrepresentation as the resume PDF failing
+  // (employment).
+  const effectivePersonal = personalAvailable ? personalMonths : 0;
+  const effectiveEmployment = employmentAvailable ? employmentMonths : 0;
+  const total = effectivePersonal + effectiveEmployment;
   if (total === 0) return null;
-  const personalPct = (personalMonths / total) * 100;
-  const employmentPct = (employmentMonths / total) * 100;
+  const personalPct = (effectivePersonal / total) * 100;
+  const employmentPct = (effectiveEmployment / total) * 100;
 
   return (
     <div className="mt-4 w-full" aria-hidden="true">
@@ -99,27 +129,34 @@ function ExperienceSplitBar({ personalMonths, employmentMonths }) {
             unfilled. Driving the animation from data on mount means
             the bar fills as soon as we know the percentages, not when
             an observer that can't see it agrees. */}
-        <motion.span
-          className="absolute inset-y-0 left-0"
-          style={{
-            background: "#ff6d05",
-            boxShadow: "0 0 10px rgba(255, 109, 5, 0.45)",
-          }}
-          initial={prefersReducedMotion ? { width: `${personalPct}%` } : { width: 0 }}
-          animate={{ width: `${personalPct}%` }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-        />
-        <motion.span
-          className="absolute inset-y-0"
-          style={{
-            left: `${personalPct}%`,
-            background: "#ffd27d",
-            boxShadow: "0 0 10px rgba(255, 210, 125, 0.45)",
-          }}
-          initial={prefersReducedMotion ? { width: `${employmentPct}%` } : { width: 0 }}
-          animate={{ width: `${employmentPct}%` }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.4 }}
-        />
+        {/* Each segment is omitted entirely when its source is unavailable —
+            there's no meaningful width to draw, and the surviving segment
+            already fills the bar at 100%. */}
+        {personalAvailable && (
+          <motion.span
+            className="absolute inset-y-0 left-0"
+            style={{
+              background: "#ff6d05",
+              boxShadow: "0 0 10px rgba(255, 109, 5, 0.45)",
+            }}
+            initial={prefersReducedMotion ? { width: `${personalPct}%` } : { width: 0 }}
+            animate={{ width: `${personalPct}%` }}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+          />
+        )}
+        {employmentAvailable && (
+          <motion.span
+            className="absolute inset-y-0"
+            style={{
+              left: `${personalPct}%`,
+              background: "#ffd27d",
+              boxShadow: "0 0 10px rgba(255, 210, 125, 0.45)",
+            }}
+            initial={prefersReducedMotion ? { width: `${employmentPct}%` } : { width: 0 }}
+            animate={{ width: `${employmentPct}%` }}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.4 }}
+          />
+        )}
       </div>
       {/* Stacked legend — two rows of [dot label … percentage]. The
           previous single-row `justify-between` layout cramped the
@@ -135,26 +172,46 @@ function ExperienceSplitBar({ personalMonths, employmentMonths }) {
       >
         <span className="flex items-center justify-between gap-2">
           <span className="flex items-center gap-1.5">
+            {/* Filled dot when measured; hollow ring when unavailable, so
+                a failed source reads as "no data" rather than a real
+                zero-width slice. */}
             <span
               className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ background: "#ff6d05" }}
+              style={
+                personalAvailable
+                  ? { background: "#ff6d05" }
+                  : { border: "1px solid #ff6d05", opacity: 0.5 }
+              }
             />
             <span className="text-fire-amber">Personal</span>
           </span>
           <span style={{ color: "#ff6d05", textShadow: "none" }}>
-            <PercentCount value={Math.round(personalPct)} />
+            <PercentCount
+              value={Math.round(personalPct)}
+              unavailable={!personalAvailable}
+            />
           </span>
         </span>
         <span className="flex items-center justify-between gap-2">
           <span className="flex items-center gap-1.5">
+            {/* Filled dot when measured; hollow ring when unavailable, so
+                the empty employment row reads as "no data" at a glance
+                rather than a real zero-width slice. */}
             <span
               className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ background: "#ffd27d" }}
+              style={
+                employmentAvailable
+                  ? { background: "#ffd27d" }
+                  : { border: "1px solid #ffd27d", opacity: 0.5 }
+              }
             />
             <span className="text-fire-amber">Employment</span>
           </span>
           <span style={{ color: "#ff6d05", textShadow: "none" }}>
-            <PercentCount value={Math.round(employmentPct)} />
+            <PercentCount
+              value={Math.round(employmentPct)}
+              unavailable={!employmentAvailable}
+            />
           </span>
         </span>
       </div>
@@ -719,6 +776,12 @@ const AboutDetails = () => {
               <ExperienceSplitBar
                 personalMonths={experienceData?.personalProjects?.months ?? 0}
                 employmentMonths={experienceData?.employment?.months ?? 0}
+                // A `null` side = its source failed to load (GitHub down for
+                // personal; resume PDF missing/parse error for employment),
+                // distinct from a parsed-but-empty `{ months: 0 }`. Drives
+                // the "Unavailable" treatment instead of a misleading 0%.
+                personalAvailable={experienceData?.personalProjects != null}
+                employmentAvailable={experienceData?.employment != null}
               />
             )}
 

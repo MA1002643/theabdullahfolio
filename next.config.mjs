@@ -8,21 +8,19 @@ const nextConfig = {
   // already do for native modules. Without this the route throws
   // `Object.defineProperty called on non-object` at import time.
   //
-  // `@napi-rs/canvas` MUST be externalized too. In Node, pdfjs-dist
-  // self-polyfills the DOM globals it needs (DOMMatrix, ImageData,
-  // Path2D) by loading `@napi-rs/canvas` via
-  // `createRequire(import.meta.url)("@napi-rs/canvas")`. Next's
-  // dependency tracer (@vercel/nft) can't statically resolve that
-  // runtime-created `require`, so without listing it here the package
-  // and its native `.node` binary are never copied into the deployed
-  // function. The require then throws, pdfjs only `warn()`s ("Cannot
-  // polyfill DOMMatrix"), and the next `new DOMMatrix` during text
-  // extraction throws "DOMMatrix is not defined" — which surfaces as an
-  // empty Employment side (0%) on /about in production while working
-  // fine locally (where the platform binary is already hoisted).
-  // Listing it forces Next to externalize + bundle it with its binary.
+  // We deliberately do NOT externalize or bundle `@napi-rs/canvas`. pdfjs
+  // would otherwise need it to polyfill `DOMMatrix`, but that native
+  // package's platform `.node` binary is loaded via a runtime
+  // `createRequire(...)("@napi-rs/canvas")` that @vercel/nft can't trace,
+  // so it was missing from the deployed function and the route crashed
+  // with "DOMMatrix is not defined" — an empty Employment side (0%) on
+  // /about in production. Instead, the parser installs a pure-JS DOMMatrix
+  // on `globalThis` before pdfjs loads (see
+  // src/utils/experience/domMatrixPolyfill.js). pdfjs keeps that, the
+  // canvas require failing becomes a harmless warning, and text extraction
+  // runs identically on every platform with no native binary to bundle.
   experimental: {
-    serverComponentsExternalPackages: ["pdf-parse", "@napi-rs/canvas"],
+    serverComponentsExternalPackages: ["pdf-parse"],
     // Output File Tracing — explicitly bundle the resume PDF with the
     // experience-summary serverless function. By default, Next only
     // ships files referenced from imports; `public/` assets get
@@ -35,37 +33,7 @@ const nextConfig = {
     // path resolves identically in prod. In Next 14.x this option
     // lives under `experimental`; it became top-level in Next 15+.
     outputFileTracingIncludes: {
-      "/api/experience-summary": [
-        "./public/Muhammad_Abdullah_CV.pdf",
-        // @napi-rs/canvas + its platform binary aren't statically
-        // discoverable by @vercel/nft: pdfjs-dist resolves them at
-        // runtime via `createRequire(import.meta.url)("@napi-rs/canvas")`,
-        // and serverComponentsExternalPackages alone wasn't enough to
-        // pull the *Linux* platform binary into the function bundle —
-        // a real preview deployment was returning
-        // `pdfStatus: { message: "DOMMatrix is not defined" }` and an
-        // empty employment side. Explicitly globbing the JS shim AND
-        // the linux-x64-gnu binary subpackage forces the tracer to
-        // copy them. linux-x64-gnu matches Vercel's Amazon Linux 2
-        // build target; switch the suffix if a project moves to
-        // arm64 or a musl runtime.
-        //
-        // Both ROOT and the pdfjs-dist NESTED path are listed because
-        // the override at the package.json level flattens *most* of
-        // the duplication but npm sometimes preserves a nested
-        // optional-dep install (we observed root 0.1.80 + nested
-        // pdfjs-dist 0.1.100 even after a clean install). Node's
-        // resolution walks up from pdfjs-dist's location and would
-        // pick the nested copy first, so tracing only the root path
-        // would leave the production bundle without the file
-        // createRequire actually resolves. Listing both makes the
-        // trace robust regardless of which instance npm produces at
-        // install time on Vercel.
-        "./node_modules/@napi-rs/canvas/**/*",
-        "./node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
-        "./node_modules/pdfjs-dist/node_modules/@napi-rs/canvas/**/*",
-        "./node_modules/pdfjs-dist/node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
-      ],
+      "/api/experience-summary": ["./public/Muhammad_Abdullah_CV.pdf"],
     },
   },
   async headers() {
