@@ -457,7 +457,13 @@
     --stroke: #ffffff;
     --blur: 5rem 133px;
     letter-spacing: 2px;
-    color: #000e1700;
+    /* Solid `#ff6d05` fill — was the near-transparent `#000e1700`,
+       which made every letter render as an outline only. On wider
+       glyphs (M, W) the interior gap read as a noticeable hollow on
+       the CONTACT ME / ABOUT ME page headers. Matching the stroke
+       colour means the glyph paints as a uniform orange shape with
+       the same outer drop-shadow halo on top. */
+    color: #ff6d05;
     -webkit-text-stroke: 3px #ff6d05;
     /* Outer-only glow (subtle) */
     filter: drop-shadow(0 0 10px rgba(255, 106, 0, 0.8))

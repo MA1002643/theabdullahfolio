@@ -24,7 +24,16 @@ const ProjectsBtn = () => {
 
         <span className="peer bg-transparent absolute top-0 left-0 w-full h-full" />
 
-        <span className="absolute hidden peer-hover:block px-2 py-1 left-full mx-2 top-1/2 -translate-y-1/2 bg-background text-[#ff6d05] text-sm rounded-md shadow-lg whitespace-nowrap">
+        {/* Tooltip chrome reuses `.custom-bg-abt` — the same class
+            the Years in the Craft / Most Active Repository cards on
+            the about page wear — so this tooltip's border colour and
+            background gradient match the rest of the site's card
+            language instead of the plain grey `bg-background` it
+            used to fall back to. Dropping `shadow-lg` because
+            custom-bg-abt already projects its own warm orange neon
+            halo and the two stacked would read as muddy. Matches the
+            same fix already applied to HomeBtn. */}
+        <span className="custom-bg-abt absolute hidden peer-hover:block px-2 py-1 left-full mx-2 top-1/2 -translate-y-1/2 text-[#ff6d05] text-sm rounded-md whitespace-nowrap">
           Projects
         </span>
       </span>
