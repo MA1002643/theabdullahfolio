@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProjectLayout from "./ProjectLayout";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import PageTitle from "@/components/PageTitle";
 
 const container = {
   hidden: { opacity: 0 },
@@ -80,23 +81,11 @@ const ProjectList = ({ projects }) => {
       animate="show"
       className="w-full max-w-full xl:max-w-4xl px-4 mx-auto lg:px-10 space-y-6 md:space-y-8 flex flex-col items-center"
     >
-      {/* HEADER */}
-      <div id="about" className="z-50 pt-8 text-center">
-        <h1 className="text-transparent text-[3rem] font-extrabold uppercase leading-tight md:text-[3.5rem] text-glow-stroke-neon">
-          PROJECTS
-        </h1>
-        <div 
-          className="flex items-center justify-center gap-4 mt-1 text-[1rem] uppercase leading-snug md:text-[1.6rem]"
-          style={{
-            color: 'rgb(252 131 255 / var(--tw-text-opacity, 1))',
-            textShadow: '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7',
-            '--tw-text-opacity': '1'
-          }}
-        >
-          <div className="w-6 h-[2px] rounded-full" style={{ backgroundColor: '#fc83ff', boxShadow: '0 0 5px #ff55f7, 0 0 10px #ff55f7' }} />
-          <span>MY WORK</span>
-          <div className="w-6 h-[2px] rounded-full" style={{ backgroundColor: '#fc83ff', boxShadow: '0 0 5px #ff55f7, 0 0 10px #ff55f7' }} />
-        </div>
+      {/* HEADER — uses shared PageTitle (issue #104). The decorative
+          dashes around "MY WORK" were dropped per the acceptance
+          criteria: the subtitle now uses the same plain <h2>
+          treatment as the qualifications page. */}
+      <PageTitle title="PROJECTS" subtitle="MY WORK" />
 
         {/* CATEGORY FILTERS — mirrors the qualifications carousel tab
             treatment: orange neon glow for the active tab, pink neon glow
@@ -181,7 +170,6 @@ const ProjectList = ({ projects }) => {
             );
           })}
         </div>
-      </div>
 
       {/* PROJECT LIST */}
       <AnimatePresence mode="wait">

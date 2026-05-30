@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import bg from '../../../../public/background/contact-bg.png';
 import Form from '@/components/contact/Form';
+import PageTitle from '@/components/PageTitle';
 
 export const metadata = {
   title: 'Contact',
@@ -20,19 +21,8 @@ export default function Contact() {
 
       <article className="relative flex w-full flex-col items-center justify-center space-y-6 py-2 sm:py-0">
         <div className="flex w-full flex-col items-center justify-center space-y-6 sm:w-3/4">
-          <h1 className="text-glow-stroke-neon text-center text-2xl font-extrabold uppercase sm:text-5xl">
-            CONTACT ME
-          </h1>
-          <h2
-            className="text-center text-lg uppercase tracking-wider sm:text-xl"
-            style={{
-              color: 'rgb(252 131 255 / var(--tw-text-opacity, 1))',
-              textShadow: '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7',
-              '--tw-text-opacity': '1',
-            }}
-          >
-            – get in touch –
-          </h2>
+          {/* HEADLINE — uses shared PageTitle (issue #104). */}
+          <PageTitle title="CONTACT ME" subtitle="get in touch" />
           <p className="xs:text-base text-fire-amber text-center text-sm font-light">
             Step into the circle of enchantment and weave your words into the
             fabric of the cosmos. Whether you seek to conjure collaborations,

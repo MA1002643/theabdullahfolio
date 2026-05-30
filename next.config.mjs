@@ -35,7 +35,37 @@ const nextConfig = {
     // path resolves identically in prod. In Next 14.x this option
     // lives under `experimental`; it became top-level in Next 15+.
     outputFileTracingIncludes: {
-      "/api/experience-summary": ["./public/Muhammad_Abdullah_CV.pdf"],
+      "/api/experience-summary": [
+        "./public/Muhammad_Abdullah_CV.pdf",
+        // @napi-rs/canvas + its platform binary aren't statically
+        // discoverable by @vercel/nft: pdfjs-dist resolves them at
+        // runtime via `createRequire(import.meta.url)("@napi-rs/canvas")`,
+        // and serverComponentsExternalPackages alone wasn't enough to
+        // pull the *Linux* platform binary into the function bundle —
+        // a real preview deployment was returning
+        // `pdfStatus: { message: "DOMMatrix is not defined" }` and an
+        // empty employment side. Explicitly globbing the JS shim AND
+        // the linux-x64-gnu binary subpackage forces the tracer to
+        // copy them. linux-x64-gnu matches Vercel's Amazon Linux 2
+        // build target; switch the suffix if a project moves to
+        // arm64 or a musl runtime.
+        //
+        // Both ROOT and the pdfjs-dist NESTED path are listed because
+        // the override at the package.json level flattens *most* of
+        // the duplication but npm sometimes preserves a nested
+        // optional-dep install (we observed root 0.1.80 + nested
+        // pdfjs-dist 0.1.100 even after a clean install). Node's
+        // resolution walks up from pdfjs-dist's location and would
+        // pick the nested copy first, so tracing only the root path
+        // would leave the production bundle without the file
+        // createRequire actually resolves. Listing both makes the
+        // trace robust regardless of which instance npm produces at
+        // install time on Vercel.
+        "./node_modules/@napi-rs/canvas/**/*",
+        "./node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
+        "./node_modules/pdfjs-dist/node_modules/@napi-rs/canvas/**/*",
+        "./node_modules/pdfjs-dist/node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
+      ],
     },
   },
   async headers() {

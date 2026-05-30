@@ -429,6 +429,18 @@ Or connect the GitHub repository to [vercel.com](https://vercel.com) for automat
 
 > **Required:** Set all environment variables in the Vercel dashboard under **Settings → Environment Variables** before your first production deploy.
 
+### Function bundling notes — `/api/experience-summary`
+
+The Experience Summary route reads the resume PDF at `public/Muhammad_Abdullah_CV.pdf` and parses it with `pdf-parse` (which itself uses `pdfjs-dist`). Both run fine locally, but two Vercel-specific bundling gotchas have to stay handled or the deployed function silently returns `employment: null` and the Years in the Craft / Career Snapshot panels render `0+ months` of employment with `No software-engineering roles detected yet`:
+
+1. **Static asset under `public/`.** Vercel ships `public/` to the static asset layer, **not** into the serverless function's filesystem. `next.config.mjs` therefore lists the resume PDF in `experimental.outputFileTracingIncludes["/api/experience-summary"]` so `@vercel/nft` copies the file into the function bundle. On the function the route reads it via `process.cwd()`-relative `fs.readFile`, which resolves identically in dev and prod once the file is bundled.
+2. **`@napi-rs/canvas` for `pdfjs-dist`'s DOM polyfill.** `pdfjs-dist` polyfills `DOMMatrix` / `ImageData` / `Path2D` by calling `createRequire(import.meta.url)("@napi-rs/canvas")` at runtime. `@vercel/nft` can't statically follow a runtime-created `require`, so without explicit help the JS shim and its platform-specific binary (`@napi-rs/canvas-linux-x64-gnu` on Vercel's Amazon Linux 2 build target) never ship with the function. The fix lives in three coordinated spots:
+   - `package.json` `overrides` pins `@napi-rs/canvas` to `0.1.80`. This eliminated the duplicated `node_modules/pdf-parse/node_modules/@napi-rs/canvas` install entirely, but npm did **not** flatten `pdfjs-dist`'s own copy — the committed lockfile still ships `node_modules/pdfjs-dist/node_modules/@napi-rs/canvas` at `0.1.100`. That nested copy is the one `pdfjs-dist`'s runtime require resolves first (Node walks up from its own directory), so the override alone is necessary but not sufficient.
+   - `next.config.mjs` `experimental.serverComponentsExternalPackages` lists `pdf-parse` and `@napi-rs/canvas` so Next leaves them as runtime requires rather than webpack-bundling them.
+   - `next.config.mjs` `experimental.outputFileTracingIncludes["/api/experience-summary"]` deliberately globs **both** the root install (`node_modules/@napi-rs/canvas/**/*`) and the surviving `pdfjs-dist` nest (`node_modules/pdfjs-dist/node_modules/@napi-rs/canvas/**/*`), plus the matching `linux-x64-gnu` binary paths under each. Tracing only the root would skip the file `createRequire` actually loads on the function; tracing both is belt-and-braces against whatever resolution order npm reproduces on Vercel.
+
+When the function is healthy the deployed preview's `/api/experience-summary?username=<allowed>` response carries `employment: { months, display, roles }` and `pdfStatus: null`. If the response shows `pdfStatus: { message: "DOMMatrix is not defined" }` after a fresh deploy, the canvas binary glob isn't catching the install path npm produced on Vercel — inspect `node_modules` on the build (Vercel dashboard → Deployment → Functions → `experience-summary` → Source), extend `outputFileTracingIncludes` to cover the new path, and redeploy. The same diagnostic also fires if the `overrides` block is removed and a third nested copy (e.g. `pdf-parse`'s 0.1.80) reappears.
+
 ---
 
 ## 🛰️ Live Maintenance Header
