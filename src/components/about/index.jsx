@@ -239,6 +239,13 @@ function ExperienceSplitBar({
 // "data unavailable", while a present-but-empty side speaks a genuine
 // "0 percent". Returns "" when there's nothing to split (no bar shown).
 function buildSplitBreakdownLabel(experienceData) {
+  // No payload yet (summary still loading) is not a failure — match the
+  // visual split bar's `!!experienceData` gate and say nothing, rather than
+  // announcing both sources as "data unavailable" before any request has
+  // resolved. Without this guard a null payload would fall through (both
+  // `*Available` false, so the both-loaded bail below never fires) and speak
+  // a spurious double "data unavailable".
+  if (!experienceData) return "";
   const personalAvailable = experienceData?.personalProjects != null;
   const employmentAvailable = experienceData?.employment != null;
   const personalMonths = experienceData?.personalProjects?.months ?? 0;

@@ -525,13 +525,20 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
 
   const personalMonths = data?.personalProjects?.months ?? 0;
   const employmentMonths = data?.employment?.months ?? 0;
-  // A `null` side means its source failed to load (GitHub down for
-  // personal; resume PDF missing/parse error for employment) — distinct
-  // from a present-but-empty `{ months: 0 }`. Drives the "Unavailable"
-  // treatment so the modal never renders a load failure as "0+ years" or
-  // "none detected yet". Mirrors ExperienceSplitBar on the about page.
-  const personalAvailable = data?.personalProjects != null;
-  const employmentAvailable = data?.employment != null;
+  // `data` is null while the summary request is still in flight — which is
+  // NOT a source failure. Only mark a source unavailable once a payload has
+  // actually arrived (`summaryLoaded`) and that source came back null;
+  // otherwise a render mid-fetch would show "Unavailable" counts + failure
+  // copy for a merely pending request. (Today the card only opens the modal
+  // once data exists and the body renders only while `open`, so this is
+  // defensive — but it keeps the booleans honest regardless of how the
+  // modal is mounted, matching the about-page guards' `!!experienceData`
+  // gate.) Once loaded, a `null` side means its source failed (GitHub down
+  // for personal; resume parse failure for employment) — distinct from a
+  // present-but-empty `{ months: 0 }`, which still reads as a genuine 0.
+  const summaryLoaded = data != null;
+  const personalAvailable = !summaryLoaded || data.personalProjects != null;
+  const employmentAvailable = !summaryLoaded || data.employment != null;
   const roles = data?.employment?.roles ?? [];
   const repos = data?.personalProjects?.repos ?? [];
   const maxRoleMonths = roles.reduce((m, r) => Math.max(m, r.months), 0);
