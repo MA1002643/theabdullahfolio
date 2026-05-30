@@ -85,7 +85,7 @@ const ProjectList = ({ projects }) => {
           dashes around "MY WORK" were dropped per the acceptance
           criteria: the subtitle now uses the same plain <h2>
           treatment as the qualifications page. */}
-      <PageTitle title="PROJECTS" subtitle="MY WORK" id="about" />
+      <PageTitle title="PROJECTS" subtitle="MY WORK" />
 
         {/* CATEGORY FILTERS — mirrors the qualifications carousel tab
             treatment: orange neon glow for the active tab, pink neon glow

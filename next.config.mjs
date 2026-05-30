@@ -49,8 +49,22 @@ const nextConfig = {
         // copy them. linux-x64-gnu matches Vercel's Amazon Linux 2
         // build target; switch the suffix if a project moves to
         // arm64 or a musl runtime.
+        //
+        // Both ROOT and the pdfjs-dist NESTED path are listed because
+        // the override at the package.json level flattens *most* of
+        // the duplication but npm sometimes preserves a nested
+        // optional-dep install (we observed root 0.1.80 + nested
+        // pdfjs-dist 0.1.100 even after a clean install). Node's
+        // resolution walks up from pdfjs-dist's location and would
+        // pick the nested copy first, so tracing only the root path
+        // would leave the production bundle without the file
+        // createRequire actually resolves. Listing both makes the
+        // trace robust regardless of which instance npm produces at
+        // install time on Vercel.
         "./node_modules/@napi-rs/canvas/**/*",
         "./node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
+        "./node_modules/pdfjs-dist/node_modules/@napi-rs/canvas/**/*",
+        "./node_modules/pdfjs-dist/node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
       ],
     },
   },

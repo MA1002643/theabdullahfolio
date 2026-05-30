@@ -5,6 +5,9 @@
   "engines": {
     "node": ">=20.16.0 <21 || >=22.3.0"
   },
+  "overrides": {
+    "@napi-rs/canvas": "0.1.80"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +15,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^1.0.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@vercel/analytics": "^2.0.1",

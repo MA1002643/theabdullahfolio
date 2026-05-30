@@ -1,6 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
-import { Home, Palette } from "lucide-react";
+import { Palette } from "lucide-react";
 import Link from "next/link";
 
 const NavLink = motion(Link);
@@ -33,7 +33,7 @@ const ProjectsBtn = () => {
             custom-bg-abt already projects its own warm orange neon
             halo and the two stacked would read as muddy. Matches the
             same fix already applied to HomeBtn. */}
-        <span className="custom-bg-abt absolute hidden peer-hover:block px-2 py-1 left-full mx-2 top-1/2 -translate-y-1/2 text-[#ff6d05] text-sm rounded-md whitespace-nowrap">
+        <span className="custom-bg-abt desktop-hover-only absolute hidden peer-hover:block px-2 py-1 sm:px-2.5 sm:py-1.5 left-full ml-2 md:ml-3 top-1/2 -translate-y-1/2 text-[#ff6d05] text-xs sm:text-sm md:text-base rounded-md whitespace-nowrap">
           Projects
         </span>
       </span>
