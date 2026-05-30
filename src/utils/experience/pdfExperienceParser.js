@@ -1,3 +1,4 @@
+import { ensureDomMatrixPolyfill } from "./domMatrixPolyfill";
 import { isSoftwareRole } from "./roleKeywords";
 import {
   formatDuration,
@@ -90,6 +91,15 @@ export async function parseExperienceFromPdf(pdfBuffer) {
   // imports route modules in plain Node, before the runtime hint
   // (`export const runtime = "nodejs"`) gets a chance to matter.
   // Deferring the import keeps the route bundleable.
+  //
+  // Install our pure-JS DOMMatrix on `globalThis` *before* the import so
+  // pdfjs-dist's `if (!globalThis.DOMMatrix)` polyfill gate (which runs at
+  // module evaluation, during this dynamic import) keeps ours instead of
+  // depending on the native `@napi-rs/canvas` binary that @vercel/nft can't
+  // reliably trace into the serverless bundle. See domMatrixPolyfill.js for
+  // the full rationale — this is what stops production rendering an empty
+  // "Employment 0%" side when the canvas binary is missing.
+  ensureDomMatrixPolyfill();
   const { PDFParse } = await import("pdf-parse");
   // PDFParse expects a Uint8Array; Node's Buffer is one but the type
   // check inside pdf-parse is stricter than necessary, so the

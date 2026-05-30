@@ -380,8 +380,15 @@ async function buildExperienceSummary(username) {
     readAndParseResumeWithTimeout(),
   ]);
 
+  // `personalProjects` is reserved as `null` for exactly one meaning: the
+  // GitHub source FAILED (rejected). A successful response with an empty
+  // repo list is a genuine "owns nothing yet" result, not a failure, so it
+  // returns an explicit empty object (months 0, repos []). This mirrors the
+  // employment side ({ months: 0, roles: [] } on a successful-but-empty
+  // resume parse) and lets the client key its "Unavailable" treatment off
+  // `null` without misreporting a zero-repo account as a load failure.
   let personalProjects = null;
-  if (githubResult.status === "fulfilled" && githubResult.value?.length > 0) {
+  if (githubResult.status === "fulfilled") {
     // Repos are ordered DESC by createdAt (see fetchOwnedRepos), so the
     // last element is the oldest — that's the anchor for the months
     // calculation. The full list is exposed to the client so the modal
@@ -389,15 +396,24 @@ async function buildExperienceSummary(username) {
     // the response also folds rename/create/delete events into the
     // payload's `changeFingerprint` (so Phase 5's banner will announce
     // a "new repo detected" change naturally without bespoke wiring).
-    const repos = githubResult.value;
-    const earliest = new Date(repos[repos.length - 1].createdAt);
-    const months = Math.max(0, monthsBetween(earliest, now));
-    personalProjects = {
-      firstRepoDate: earliest.toISOString().slice(0, 10),
-      months,
-      display: formatDuration(months),
-      repos,
-    };
+    const repos = githubResult.value ?? [];
+    if (repos.length > 0) {
+      const earliest = new Date(repos[repos.length - 1].createdAt);
+      const months = Math.max(0, monthsBetween(earliest, now));
+      personalProjects = {
+        firstRepoDate: earliest.toISOString().slice(0, 10),
+        months,
+        display: formatDuration(months),
+        repos,
+      };
+    } else {
+      personalProjects = {
+        firstRepoDate: null,
+        months: 0,
+        display: formatDuration(0),
+        repos: [],
+      };
+    }
   } else if (githubResult.status === "rejected") {
     console.warn(
       "experience-summary: GitHub owned-repos lookup failed:",

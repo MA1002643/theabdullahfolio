@@ -48,7 +48,7 @@ function AnimatedNumber({ value }) {
 // (the modal is conditionally rendered) means each open replays the
 // animation cleanly without a manual reset. Reduced motion lands on
 // the final value with no animation.
-function CategoryCount({ months }) {
+function CategoryCount({ months, unavailable = false }) {
   const value = months >= 12 ? Math.floor(months / 12) : months;
   // Singular when the count is exactly 1, matching RoleBar's plural-
   // aware rendering. Without this the 12–23-month window reads "1+
@@ -61,6 +61,7 @@ function CategoryCount({ months }) {
   const { playToken } = useViewportCountTrigger(sectionRef, { amount: 0.3 });
 
   useEffect(() => {
+    if (unavailable) return;
     const node = nodeRef.current;
     if (!node) return;
     if (prefersReducedMotion) {
@@ -75,7 +76,19 @@ function CategoryCount({ months }) {
       },
     });
     return () => controls.stop();
-  }, [value, playToken, prefersReducedMotion]);
+  }, [value, playToken, prefersReducedMotion, unavailable]);
+
+  // A `null` source (failed to load) reads as "Unavailable", never "0+
+  // years" — same distinction the about-page split bar draws. A parsed-
+  // but-empty side ({ months: 0 }) keeps `unavailable` false and shows a
+  // genuine 0.
+  if (unavailable) {
+    return (
+      <span className="text-base sm:text-lg italic text-fire-amber opacity-70">
+        Unavailable
+      </span>
+    );
+  }
 
   return (
     <span ref={sectionRef} className="inline-flex items-baseline gap-1 tabular-nums">
@@ -512,6 +525,20 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
 
   const personalMonths = data?.personalProjects?.months ?? 0;
   const employmentMonths = data?.employment?.months ?? 0;
+  // `data` is null while the summary request is still in flight — which is
+  // NOT a source failure. Only mark a source unavailable once a payload has
+  // actually arrived (`summaryLoaded`) and that source came back null;
+  // otherwise a render mid-fetch would show "Unavailable" counts + failure
+  // copy for a merely pending request. (Today the card only opens the modal
+  // once data exists and the body renders only while `open`, so this is
+  // defensive — but it keeps the booleans honest regardless of how the
+  // modal is mounted, matching the about-page guards' `!!experienceData`
+  // gate.) Once loaded, a `null` side means its source failed (GitHub down
+  // for personal; resume parse failure for employment) — distinct from a
+  // present-but-empty `{ months: 0 }`, which still reads as a genuine 0.
+  const summaryLoaded = data != null;
+  const personalAvailable = !summaryLoaded || data.personalProjects != null;
+  const employmentAvailable = !summaryLoaded || data.employment != null;
   const roles = data?.employment?.roles ?? [];
   const repos = data?.personalProjects?.repos ?? [];
   const maxRoleMonths = roles.reduce((m, r) => Math.max(m, r.months), 0);
@@ -649,15 +676,22 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                     <span
                       aria-hidden="true"
                       className="inline-block w-2.5 h-2.5 rounded-full"
-                      style={{
-                        background: "#ff6d05",
-                        boxShadow: "0 0 8px rgba(255, 109, 5, 0.6)",
-                      }}
+                      style={
+                        personalAvailable
+                          ? {
+                              background: "#ff6d05",
+                              boxShadow: "0 0 8px rgba(255, 109, 5, 0.6)",
+                            }
+                          : { border: "1px solid #ff6d05", opacity: 0.5 }
+                      }
                     />
                     Personal Projects
                   </dt>
                   <dd>
-                    <CategoryCount months={personalMonths} />
+                    <CategoryCount
+                      months={personalMonths}
+                      unavailable={!personalAvailable}
+                    />
                     {repos.length > 0 && (
                       <span className="block text-xs text-[#ffbb55] mt-0.5">
                         <AnimatedNumber value={repos.length} /> owned {repos.length === 1 ? "repository" : "repositories"}
@@ -674,15 +708,22 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                     <span
                       aria-hidden="true"
                       className="inline-block w-2.5 h-2.5 rounded-full"
-                      style={{
-                        background: "#ffd27d",
-                        boxShadow: "0 0 8px rgba(255, 210, 125, 0.6)",
-                      }}
+                      style={
+                        employmentAvailable
+                          ? {
+                              background: "#ffd27d",
+                              boxShadow: "0 0 8px rgba(255, 210, 125, 0.6)",
+                            }
+                          : { border: "1px solid #ffd27d", opacity: 0.5 }
+                      }
                     />
                     Employment
                   </dt>
                   <dd>
-                    <CategoryCount months={employmentMonths} />
+                    <CategoryCount
+                      months={employmentMonths}
+                      unavailable={!employmentAvailable}
+                    />
                     {roles.length > 0 && (
                       <span className="block text-xs text-[#ffbb55] mt-0.5">
                         <AnimatedNumber value={roles.length} /> {roles.length === 1 ? "role" : "roles"}
@@ -753,7 +794,9 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                 </>
               ) : (
                 <p className="text-xs text-fire-amber">
-                  No owned repositories detected yet.
+                  {personalAvailable
+                    ? "No owned repositories detected yet."
+                    : "Personal project data couldn’t be loaded right now."}
                 </p>
               )}
             </section>
@@ -805,7 +848,9 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                 </ul>
               ) : (
                 <p className="text-sm text-fire-amber">
-                  No software-engineering roles detected yet.
+                  {employmentAvailable
+                    ? "No software-engineering roles detected yet."
+                    : "Employment data couldn’t be loaded right now."}
                 </p>
               )}
             </section>
