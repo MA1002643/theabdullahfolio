@@ -1,9 +1,9 @@
 // Language stats diffing + fingerprinting for the "Most Used Languages"
-// card (issue #18). Pure, framework-agnostic JS so it can be shared by
-// BOTH the server route (/api/github-stats, to expose a stable fingerprint
-// on the payload) and the client hook (useLanguagesUpdateSignal, to decide
-// whether the update banner should appear). Keeping a single source of
-// truth for the fingerprint guarantees the two sides can never drift.
+// card (issue #18). Pure, framework-agnostic JS. The fingerprint is computed
+// CLIENT-side only: the /api/github-stats route deliberately does NOT ship a
+// `languagesFingerprint` field (see route.js:231-235), so the sole consumer
+// is the client hook (useLanguagesUpdateSignal), which derives the fingerprint
+// from the returned language list to decide whether the update banner appears.
 //
 // Language records have the shape produced by getAllLanguages():
 //   { language: string, color: string, size: number, percentage: string }
