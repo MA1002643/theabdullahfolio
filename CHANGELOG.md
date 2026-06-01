@@ -31,10 +31,46 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); and the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104))._
+_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); and the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience._
 
 ### Added
 
+- Interactive **Most Used Languages** card overhaul
+  (`src/components/about/LanguagesCard.jsx`, [#18](https://github.com/MA1002643/theabdullahfolio/issues/18)). Two-way
+  hover/focus spotlight linking each list row to its stacked-bar
+  segment (the active language stays lit, the rest dim + desaturate,
+  and vice-versa); a monospaced rank index plus a `PRIMARY` pill on the
+  dominant language; a one-shot `.lang-bar-sheen` shimmer sweep across
+  the bar on viewport entry; and a `· live from GitHub` meta line under
+  the title that hides whenever the displayed list is stale and returns
+  on the next live fetch.
+- Per-language **repository breakdown popover** in the languages card.
+  Activating a row opens a "Career snapshot"-themed panel listing the
+  repos that use that language with each repo's share of the language's
+  bytes, repo names in the language's own `.text-fire-amber` gradient,
+  a slim share bar, and the card's fast-start/slow-finish count-up on
+  every percentage (started on open, killed on close via the row's
+  unmount). It opens by hover (fine pointer), keyboard focus (input
+  modality is tracked, so an attached keyboard behaves like hover even
+  on a touch device), or tap on touch (re-tap / tap-outside / Escape to
+  close). Portaled to `<body>` to escape the card's `overflow-hidden`,
+  clamped so it never overflows the viewport, and scrolls its repo list
+  internally (`max-height: calc(100dvh - 16px)` flex column) when a
+  breakdown is taller than the available height.
+- `repos: [{ name, url, percentage }]` per-language breakdown on the
+  `/api/github-stats` payload (`src/app/api/github-stats/route.js`) —
+  each repo's share of *that language's* bytes, sorted biggest-first
+  and capped at 12 (`MAX_REPOS_PER_LANGUAGE`). The owned-repos
+  languages query now also selects each repo's `name` + `url`.
+- `src/hooks/useLanguagesUpdateSignal.js` and
+  `src/utils/languageDiff.js` — a per-device "languages changed since
+  this device last saw them" banner signal and the pure
+  fingerprint/diff helper it and the card share. The fingerprint is
+  derived client-side from the language list, so it also works on the
+  bundled fallback and the server/client can't drift.
+- `.lang-bar-sheen` utility in `src/app/globals.css` (reuses the
+  existing `shimmer-sweep` keyframe — one iteration, `both` fill — for
+  the languages-bar entry sweep).
 - Shared `<PageTitle title subtitle id?>` component
   (`src/components/PageTitle.jsx`) consumed by every sub-page header,
   so the font sizes, neon stroke, and flanked pink-neon subtitle
@@ -70,6 +106,23 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Changed
 
+- `/api/github-stats` no longer blanks the Most Used Languages card on
+  a partial outage. When the languages GraphQL aborts mid-fetch but the
+  user/stats/streaks queries succeed, the route substitutes the bundled
+  snapshot's languages and flags them `languagesFallback: true` (HTTP
+  200, no `_fallback`) instead of caching an empty list for the 10-min
+  TTL. The client (`src/components/about/index.jsx`) treats
+  snapshot/stale languages as a **soft default** — used to populate a
+  cold card for a first-time visitor, but never allowed to overwrite a
+  returning visitor's own (possibly fresher) `localStorage` last-good.
+- Homepage hero name "Muhammad Abdullah" (`src/app/page.js`) pinned
+  back to its original outline-only look via an inline
+  `color: #000e1700` (transparent fill + orange neon stroke + glow).
+  The Unify Page Titles change had switched the shared
+  `.text-glow-stroke-neon` fill to a solid `#ff6d05` for the sub-page
+  headers (ABOUT ME / CONTACT ME), which also filled in the homepage
+  name; the override restores the hollow hero glyphs without touching
+  the now-solid sub-page titles.
 - Page-title treatment unified across `(sub pages)/about`,
   `(sub pages)/projects`, `(sub pages)/contact`, and
   `(sub pages)/qualifications` via the shared `<PageTitle>` component
@@ -134,6 +187,20 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Fixed
 
+- Most Used Languages card could blank — and then hydrate empty on the
+  next cold load — after a languages-fetch timeout: the empty-but-`200`
+  response overwrote the good list both in memory and in `localStorage`
+  (the `_fallback` guard didn't catch the partial case). The client now
+  treats an empty/snapshot languages list as "no fresh data this fetch"
+  and keeps the last good breakdown, dropping the `live from GitHub`
+  label until a genuine live fetch returns
+  (`src/components/about/index.jsx`).
+- 404 page phantom scroll on mobile portrait (`src/app/globals.css`).
+  `min-h-screen` / `100vh` is measured against the viewport with the
+  mobile address bar hidden, so the single-screen layout could scroll
+  by the toolbar's height with nothing below it. Portrait phones
+  (`max-width: 640px`) now pin `.not-found-bg` to `100svh`; landscape
+  keeps `100vh` + scroll because the short height genuinely needs it.
 - **Production employment 0%** on `/api/experience-summary` (preview
   deployments returned `pdfStatus: { message: "DOMMatrix is not
   defined" }` and an empty Employment side in the Years card and the
@@ -216,6 +283,13 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Removed
 
+- `languagesFingerprint` field from the `/api/github-stats` response
+  (and its `import` in the route). No client read it — the change
+  signal recomputes the fingerprint locally from the languages list via
+  `src/utils/languageDiff.js` — so it was dead bytes on every cached
+  response. As a side benefit, because the client's `prevStats` never
+  carried the field, its absence stops `detectChanges` from emitting a
+  spurious `languagesFingerprint` diff on every 10-minute poll.
 - Decorative `-` / `–` flanks inside the Qualifications and Contact
   page subtitle strings ("-accomplishments-" / "– get in touch –").
   The shared `<PageTitle>` now ships flank pills on either side of the

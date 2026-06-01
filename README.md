@@ -55,6 +55,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
 | **Animated GitHub Stats** | Live GraphQL API → animated SVG ring progress, `requestAnimationFrame` counters, diff-based change detection with 10-min polling |
+| **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up |
 | **Rocket Contact Form** | Multi-phase submit animation — shake → flame flicker → fly-up trail → checkmark spring, integrated with Nodemailer SMTP |
 | **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
 | **Ambient Fireflies** | Generative particle system with randomised spawn, duration, and drift paths |
@@ -205,7 +206,7 @@ theabdullahfolio/
 │   │   │   ├── contact/page.js         # Rocket-animated contact form + Nodemailer
 │   │   │   └── qualifications/page.js  # 3D carousel with certificate cards
 │   │   └── api/
-│   │       ├── github-stats/route.js   # GraphQL → cached stats + rank calculation
+│   │       ├── github-stats/route.js   # GraphQL → cached stats + rank + per-repo language breakdown
 │   │       └── send-mail/route.js      # SMTP email handler
 │   ├── components/
 │   │   ├── navigation/                 # Orbital ring — trig positioning, 5 breakpoints
@@ -218,9 +219,12 @@ theabdullahfolio/
 │   │   ├── FireFliesBackground.jsx     # Ambient generative particle system
 │   │   ├── HomeBtn.jsx                 # Fixed, mobile-safe navigation control
 │   │   └── ProjectsBtn.jsx             # Back button for dynamic project routes
+│   ├── hooks/
+│   │   └── useLanguagesUpdateSignal.js # Per-device language-change banner signal
 │   └── utils/
 │       ├── rankCalculator.js           # GitHub developer rank algorithm
 │       ├── diffChanges.js              # State diff detection for live stat updates
+│       ├── languageDiff.js             # Language fingerprint + diff (client-computed)
 │       └── emoji.js                    # Emoji name-to-symbol resolution
 ├── .github/
 │   ├── workflows/
@@ -301,7 +305,7 @@ Set it as `GITHUB_TOKEN` in `.env.local`. The token is server-only — it is nev
 | CDN `s-maxage` / `stale-while-revalidate` / `stale-if-error` | 10 min / 5 min / 24 hr | Edge caches the response and serves stale on upstream errors |
 | `localStorage` last-good payload | until next successful fetch | Hydrates the stat cards on cold page loads so they never render empty |
 
-**5. Fallback on total failure** — if GitHub returns errors, the route serves the bundled snapshot at [src/data/github-stats-fallback.json](src/data/github-stats-fallback.json) with `X-Cache-Status: FALLBACK` (HTTP 200, `_fallback: true`). The client preserves whatever real data it already had on screen rather than overwriting it with the snapshot. To refresh the snapshot, run the dev server, hit the API, and overwrite the file:
+**5. Fallback on total failure** — if GitHub returns errors, the route serves the bundled snapshot at [src/data/github-stats-fallback.json](src/data/github-stats-fallback.json) with `X-Cache-Status: FALLBACK` (HTTP 200, `_fallback: true`). The client preserves whatever real data it already had on screen rather than overwriting it with the snapshot. (A narrower **languages-only** fallback covers the case where just the languages query times out while the rest succeeds — see point 9.) To refresh the snapshot, run the dev server, hit the API, and overwrite the file:
 
 ```bash
 # Write to a tempfile first, then atomically move into place. A direct
@@ -321,6 +325,10 @@ rm /tmp/fallback.json
 **6. Cache invalidation** — both `unstable_cache` layers expire automatically (10 min and 24 hr). To force a refresh sooner, you can either redeploy or call `revalidateTag("github-stats")` / `revalidateTag("most-active-repo")` from a Server Action. There's also a daily cron at `/api/daily-warmup` (defined in [vercel.json](vercel.json), schedule `0 1 * * *` UTC) — a thin orchestrator that calls `/api/repo-refresh` (which invalidates both tags and warms the cache by hitting `/api/github-stats` with a cache-busting query param) and `/api/work-status?bust=1` (which forces a fresh GitHub poll for the live-status header). Consolidated into a single cron because Hobby plans cap daily cron-job count; the two endpoints remain individually invokable with the bearer token for manual triggers.
 
 **7. Cron and warm-up env vars** — `/api/daily-warmup`, `/api/repo-refresh`, and `/api/work-status?bust=1` are all authenticated against `Authorization: Bearer ${CRON_SECRET}`, which Vercel Cron Jobs attaches automatically when `CRON_SECRET` is set in the project's environment variables. The optional `BASE_URL` env var (server-only — *not* `NEXT_PUBLIC_BASE_URL`, which would leak into client bundles) overrides the URL the cron's internal warm-up fetches hit; falls back to `https://${VERCEL_URL}` then `http://localhost:3000`.
+
+**8. Most Used Languages card & per-repo breakdown** — the language card is more than a static list. Each row links two-ways with the stacked bar (hover or keyboard-focus a row to spotlight its segment and dim the rest, and vice-versa), is rank-numbered with a `PRIMARY` tag on the top language, and carries a `· live from GitHub` meta label that disappears whenever the displayed data is stale and returns once a live fetch lands (see point 9). `/api/github-stats` embeds a per-repo breakdown on every language — a `repos: [{ name, url, percentage }]` array giving each repo's share of *that language's* bytes (sorted biggest-first, capped at 12). Activating a row opens a "Career snapshot"-themed popover listing those repos, with the same fast-start/slow-finish count-up the card numbers use on each percentage. It opens by **hover** on a fine pointer, by **keyboard focus** (detected via input modality, so an attached keyboard behaves like hover even on a touch device), or by **tap** on touch (re-tap / tap-outside / Escape to close). The popover is portaled to `<body>` to escape the card's clip, clamps so it never overflows the viewport, and scrolls its repo list internally when a breakdown is taller than the available height.
+
+**9. Languages-only fallback** — distinct from the whole-payload fallback in point 5: when the languages GraphQL aborts mid-fetch but the user/stats/streaks queries succeed, the route substitutes the bundled snapshot's languages and flags them `languagesFallback: true` (HTTP 200, no `_fallback`) instead of serving an empty list that would blank the card and lock in for the 10-min TTL. The client treats those as a **soft default** — used to populate a cold card for a first-time visitor, but never allowed to overwrite a returning visitor's own (possibly fresher) `localStorage` last-good. In both the stale and partial cases the card keeps showing the last good breakdown and drops its `live from GitHub` label until a genuine live fetch returns. The per-language change-detection fingerprint is computed **client-side** from this list (`src/utils/languageDiff.js`), so it keeps working on the fallback and the two sides can't drift — there is no `languagesFingerprint` field on the wire.
 
 ### Commands
 
@@ -393,7 +401,7 @@ upgrade-insecure-requests
 ## 🎬 Animation Inventory
 
 <details>
-<summary><strong>View all 13 custom animations</strong></summary>
+<summary><strong>View all 14 custom animations</strong></summary>
 <br />
 
 | Animation | Technique | Location |
@@ -405,6 +413,7 @@ upgrade-insecure-requests
 | Rocket launch | Multi-phase: shake → flame → fly → checkmark | `contact/Form.jsx` |
 | Stat counters | `requestAnimationFrame` interpolation | `about/StatsCard.jsx` |
 | SVG rank ring | `stroke-dashoffset` spring animation | `about/StatsCard.jsx` |
+| Language count-up & bar sheen | `animate()` fast-start/slow-finish curve + one-shot shimmer sweep on viewport entry | `about/LanguagesCard.jsx` |
 | Firefly drift | `@keyframes` with randomised duration + paths | `FireFliesBackground.jsx` |
 | Loader progress | SVG `stroke-dashoffset` + percentage counter | `loaderWrapper/index.jsx` |
 | Stagger reveals | `staggerChildren` Framer Motion variants | Multiple components |
