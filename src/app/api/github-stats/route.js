@@ -4,7 +4,6 @@ import { calculateRank } from "@/utils/rankCalculator";
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { languagesFingerprint } from "@/utils/languageDiff";
 import fallbackStats from "@/data/github-stats-fallback.json";
 
 // Pin to Node so `node:async_hooks` (used by the shared-deadline
@@ -229,10 +228,11 @@ const getCachedGithubStats = unstable_cache(
       ),
     ]);
     // Top 10 per issue #18 (the reference top-langs widget uses
-    // langs_count=10). `languagesFingerprint` is a stable signature of the
-    // names + percentages + ranks so the client can cheaply detect a real
-    // change between visits/polls and gate the update banner on it — the
-    // same helper the client uses, so the two can't drift.
+    // langs_count=10). The change-detection fingerprint is computed
+    // CLIENT-side from this list (useLanguagesUpdateSignal → languagesDiff),
+    // not shipped on the payload: deriving it on the client keeps it working
+    // on the bundled fallback too and guarantees the two sides can't drift,
+    // so there's no server-provided `languagesFingerprint` field to carry.
     let topLanguages = languages.slice(0, 10);
 
     // Languages-only degradation guard. When the languages GraphQL aborts
@@ -260,10 +260,9 @@ const getCachedGithubStats = unstable_cache(
 
     return {
       languages: topLanguages,
-      languagesFingerprint: languagesFingerprint(topLanguages),
       // Only present (and true) on the substituted path — omitted entirely
-      // on the normal path so a successful fetch's fingerprint/payload is
-      // byte-identical to before.
+      // on the normal path so a successful fetch's payload is byte-identical
+      // to before.
       ...(languagesFallback ? { languagesFallback: true } : {}),
       stats,
     };
