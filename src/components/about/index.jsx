@@ -544,11 +544,19 @@ const AboutDetails = () => {
 
       // Per-stat diff for the GitHub Stats banner. computeStatsDiff returns
       // hasChanged=false on the first cycle (prevStats present here, but the
-      // nested stats object may be absent), so this only fires on a genuine
-      // value change — mirroring the repo banner's suppression of false
+      // nested stats object may be absent), so a real message only appears on a
+      // genuine value change — mirroring the repo banner's suppression of false
       // positives on the initial poll.
+      //
+      // RECONCILE (set OR clear) every changed poll, never set-only: the card
+      // prefers `diffMessage` over the generic `isUpdated` copy, so a stale
+      // per-stat message left over from an earlier poll would be shown for a
+      // *later* non-stat change (e.g. a `stats.user` display-name update, where
+      // `hasChanged` is false but `changedFields` still flips the card's
+      // `isUpdated`). Clearing to null when stats didn't move this poll makes
+      // the card correctly fall back to the generic banner.
       const statsMsg = computeStatsDiff(prevStats?.stats?.stats, data?.stats?.stats);
-      if (statsMsg.hasChanged) setStatsDiffMessage(statsMsg.summaryMessage);
+      setStatsDiffMessage(statsMsg.hasChanged ? statsMsg.summaryMessage : null);
 
       setChangedFields(diffs);
 
