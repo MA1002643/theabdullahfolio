@@ -451,12 +451,43 @@ const AboutDetails = () => {
       return;
     }
 
+    // A timed-out languages GraphQL call returns an empty `languages` array
+    // with a 200 — the stats half can still succeed, so the response carries
+    // NO `_fallback` flag and the guard below for it doesn't fire. Treat an
+    // empty list as "no fresh language data this fetch" so it never clobbers
+    // the last good languages already on screen / in the cold-load cache; the
+    // Most Used Languages card keeps showing the most recent successful fetch.
+    const freshLanguages = Array.isArray(data.languages) ? data.languages : [];
+    const hasFreshLanguages = freshLanguages.length > 0;
+    // The server now substitutes the bundled snapshot's languages (flagged
+    // `languagesFallback`) instead of serving an empty list when its own
+    // languages fetch aborted — so a brand-new visitor with no localStorage
+    // still sees a populated card. But those snapshot languages are a static
+    // default: never let them overwrite THIS browser's own (possibly fresher)
+    // last-good in memory or in the cold-load cache. Only a genuine live fetch
+    // is authoritative. New visitors still get the snapshot via the no-prev
+    // first-load branch below, which uses `data.languages` directly.
+    //
+    // `languagesAreAuthoritative` doubles as the "are these languages LIVE?"
+    // signal that drives the card's "live from GitHub" label: true only for a
+    // genuine live fetch — not an empty timeout (`!hasFreshLanguages`), the
+    // partial languages snapshot (`languagesFallback`), or the whole-payload
+    // bundled fallback (`_fallback`). When false, the displayed languages are
+    // kept/stale and the label is dropped until a live fetch returns.
+    const languagesAreAuthoritative =
+      hasFreshLanguages && !data.languagesFallback && !data._fallback;
+
     setGithubStats(prevStats => {
       // If the API served the bundled fallback (upstream failure) and we
       // already have real data on screen, keep that state — only let the
-      // fallback populate on a truly empty first load.
+      // fallback populate on a truly empty first load. Mark `languagesLive`
+      // false since the live source is fully down and we're showing kept
+      // data, so the card drops its "live from GitHub" label. Return a fresh
+      // object only when the flag actually flips, to avoid a needless render.
       if (data._fallback && prevStats) {
-        return prevStats;
+        return prevStats.languagesLive
+          ? { ...prevStats, languagesLive: false }
+          : prevStats;
       }
 
       // First-time load
@@ -468,13 +499,22 @@ const AboutDetails = () => {
           // API reports no qualifying activity. An empty object is truthy and
           // would render a blank "Most Active Repository" card.
           stats: data.stats || { user: {}, stats: {}, streaks: {}, repo: null },
+          // Live only when this first response was a genuine live fetch — a
+          // new visitor served the snapshot starts un-labelled until a live
+          // poll confirms.
+          languagesLive: languagesAreAuthoritative,
         };
       }
 
       // Detect top-level and nested changes
       const diffs = detectChanges(prevStats, data);
 
-      if (diffs.length === 0) return prevStats; // nothing changed
+      // Liveness can flip without the language *values* changing — a timeout
+      // after live data, or a recovery to an identical live list — so the
+      // label state has to reconcile even when the value diff is empty.
+      const livenessChanged =
+        Boolean(prevStats.languagesLive) !== languagesAreAuthoritative;
+      if (diffs.length === 0 && !livenessChanged) return prevStats; // nothing changed
 
       // Compute a human-readable diff for the repo card's update banner.
       // computeRepoDiff returns null on the first-ever change cycle (no prev),
@@ -488,8 +528,15 @@ const AboutDetails = () => {
       const updatedStats = { ...prevStats };
 
       // --- Update top-level languages if changed ---
-      if (diffs.includes("languages")) {
-        updatedStats.languages = data.languages || [];
+      // Only overwrite when the fetch carried *authoritative* (live, non-
+      // snapshot) languages. An empty list means the languages GraphQL timed
+      // out; a `languagesFallback` list is the server's static snapshot. In
+      // both cases keep `prevStats.languages` — already spread into
+      // `updatedStats` — so neither blanks the card nor downgrades a fresher
+      // last-good to the bundled snapshot. A genuinely empty account is a
+      // non-issue on this single-user, language-bearing site.
+      if (diffs.includes("languages") && languagesAreAuthoritative) {
+        updatedStats.languages = freshLanguages;
       }
 
       // --- Update nested stats fields selectively ---
@@ -514,6 +561,12 @@ const AboutDetails = () => {
         };
       }
 
+      // Reconcile the live/stale label state every fetch — independent of the
+      // value diff above, so a timeout (live → stale) or a recovery to an
+      // identical list (stale → live) flips the "live from GitHub" label even
+      // when `updatedStats.languages` itself is unchanged.
+      updatedStats.languagesLive = languagesAreAuthoritative;
+
       return updatedStats;
     });
 
@@ -524,10 +577,26 @@ const AboutDetails = () => {
     // stats with stale snapshot data for every future cold load.
     if (!data?._fallback) {
       try {
+        const statsKey = githubStatsStorageKey(username);
+        // Mirror the in-memory guard for the cold-load cache: never let a
+        // non-authoritative languages list (empty timeout, or the server's
+        // static snapshot) overwrite a better last-good already persisted, or
+        // the next cold load would downgrade/blank the card. Prefer the stored
+        // list when this fetch wasn't authoritative; if nothing is stored yet
+        // (brand-new visitor), fall through to whatever we got — the snapshot
+        // — so their cold reload still hydrates a populated card.
+        let languagesToStore = freshLanguages;
+        if (!languagesAreAuthoritative) {
+          const prevRaw = window.localStorage.getItem(statsKey);
+          const prev = prevRaw ? JSON.parse(prevRaw) : null;
+          if (Array.isArray(prev?.languages) && prev.languages.length > 0) {
+            languagesToStore = prev.languages;
+          }
+        }
         window.localStorage.setItem(
-          githubStatsStorageKey(username),
+          statsKey,
           JSON.stringify({
-            languages: data.languages || [],
+            languages: languagesToStore,
             // `repo: null` (not `{}`) so the parent guard
             // `githubStats?.stats?.repo` correctly suppresses the card on the
             // next cold load when there's no qualifying activity. Must match
@@ -812,7 +881,13 @@ const AboutDetails = () => {
             </p>
 
             <h1
-              className="flex items-baseline gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
+              // `items-center` (not `items-baseline`): the Counter renders a
+              // flex <div>, which doesn't expose a reliable text baseline to
+              // the parent, so baseline alignment let the big number and the
+              // "… of experience" text drift apart. Centering aligns them
+              // consistently at every width — and matches the sibling
+              // "Completed projects" card, which already uses items-center.
+              className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
               style={{ color: "#ff6d05", textShadow: "none" }}
             >
               {experienceData ? (
@@ -873,7 +948,17 @@ const AboutDetails = () => {
         {githubStats?.languages && <ItemLayout
           className={"col-span-full lg:col-span-6 !p-0"}
         >
-          <LanguagesCard data={githubStats.languages} isUpdated={changedFields.includes("languages")} />
+          {/* Update banner is now driven inside LanguagesCard by
+              useLanguagesUpdateSignal (a structured language-diff against the
+              last-seen fingerprint), replacing the old generic
+              changedFields("languages") boolean. */}
+          <LanguagesCard
+            data={githubStats.languages}
+            // Drop the "live from GitHub" label whenever the displayed
+            // languages are kept/stale (a languages-GraphQL timeout or the
+            // bundled snapshot); it returns the moment a live fetch does.
+            isLive={Boolean(githubStats.languagesLive)}
+          />
         </ItemLayout>}
 
         {githubStats?.stats && <ItemLayout className={" col-span-full lg:col-span-6 !p-0"}>

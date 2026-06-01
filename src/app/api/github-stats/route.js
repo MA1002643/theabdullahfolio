@@ -3,6 +3,7 @@ import { parseGitHubText } from "@/utils/emoji";
 import { calculateRank } from "@/utils/rankCalculator";
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
+
 import fallbackStats from "@/data/github-stats-fallback.json";
 
 // Pin to Node so `node:async_hooks` (used by the shared-deadline
@@ -179,6 +180,12 @@ async function githubGraphQL(query, variables, timeoutMs) {
 // at 100 each), so the missing tier is only the soft history-depth boost.
 const MAX_REPO_PAGES = 10;
 
+// Cap on how many repos each language exposes in its per-repo breakdown
+// (the Most Used Languages card's hover popover). Keeps the payload compact
+// — the popover only needs the top contributors, and the breakdown is
+// sorted biggest-first so the cap drops only the long tail of tiny shares.
+const MAX_REPOS_PER_LANGUAGE = 12;
+
 // Derive the set of `owner/name` keys (lowercased) to skip when picking the
 // "most active" feature repo. The GitHub profile-README repo — the one whose
 // owner AND name both match the username — is always excluded, because every
@@ -220,8 +227,43 @@ const getCachedGithubStats = unstable_cache(
         mostActiveRepo?.activityScore ?? 0
       ),
     ]);
+    // Top 10 per issue #18 (the reference top-langs widget uses
+    // langs_count=10). The change-detection fingerprint is computed
+    // CLIENT-side from this list (useLanguagesUpdateSignal → languagesDiff),
+    // not shipped on the payload: deriving it on the client keeps it working
+    // on the bundled fallback too and guarantees the two sides can't drift,
+    // so there's no server-provided `languagesFingerprint` field to carry.
+    let topLanguages = languages.slice(0, 10);
+
+    // Languages-only degradation guard. When the languages GraphQL aborts
+    // mid-fetch, `getAllLanguages` returns [] (indistinguishable from a
+    // genuinely empty account — which can't happen on this single-user,
+    // language-bearing site). Caching and serving that empty list would
+    // blank the Most Used Languages card for any visitor without a
+    // client-side last-good snapshot, and the 10-min TTL would lock that
+    // empty state in. So substitute the bundled snapshot's languages and
+    // flag it: the client treats `languagesFallback` languages as a soft
+    // default — used to populate a cold card, but never preferred over the
+    // visitor's OWN (possibly fresher) localStorage last-good. The stats
+    // half succeeded independently, so this stays a partial substitution,
+    // distinct from the GET handler's whole-payload `_fallback`.
+    let languagesFallback = false;
+    if (topLanguages.length === 0) {
+      const snapshot = Array.isArray(fallbackStats.languages)
+        ? fallbackStats.languages.slice(0, 10)
+        : [];
+      if (snapshot.length > 0) {
+        topLanguages = snapshot;
+        languagesFallback = true;
+      }
+    }
+
     return {
-      languages: languages.slice(0, 6),
+      languages: topLanguages,
+      // Only present (and true) on the substituted path — omitted entirely
+      // on the normal path so a successful fetch's payload is byte-identical
+      // to before.
+      ...(languagesFallback ? { languagesFallback: true } : {}),
       stats,
     };
   },
@@ -309,6 +351,8 @@ async function getAllLanguages(username) {
             endCursor
           }
           nodes {
+            name
+            url
             languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
               edges {
                 size
@@ -380,13 +424,23 @@ async function getAllLanguages(username) {
     const repoData = data.user.repositories;
     const repos = repoData.nodes;
 
-    // Aggregate sizes
+    // Aggregate sizes — overall per language AND per-repo. The per-repo map
+    // lets each language expose the breakdown of which repos contribute its
+    // bytes (the Most Used Languages card's hover popover). Keyed by repo
+    // name; each entry also keeps the repo URL for the popover's links.
     for (const repo of repos) {
       for (const { size, node } of repo.languages.edges) {
         if (!languageStats[node.name]) {
-          languageStats[node.name] = { size: 0, color: node.color };
+          languageStats[node.name] = { size: 0, color: node.color, repos: {} };
         }
-        languageStats[node.name].size += size;
+        const entry = languageStats[node.name];
+        entry.size += size;
+        if (repo.name) {
+          if (!entry.repos[repo.name]) {
+            entry.repos[repo.name] = { size: 0, url: repo.url ?? null };
+          }
+          entry.repos[repo.name].size += size;
+        }
       }
     }
 
@@ -415,7 +469,11 @@ async function getAllLanguages(username) {
     return [];
   }
 
-  // Sort and convert to percentage
+  // Sort and convert to percentage. Each language also carries its per-repo
+  // breakdown: for every repo that contains the language, the share of THAT
+  // language's bytes contributed by the repo (so the per-repo percentages sum
+  // to ~100% within the language). Sorted biggest-first and capped to keep the
+  // payload compact.
   return Object.entries(languageStats)
     .sort((a, b) => b[1].size - a[1].size)
     .map(([language, info]) => ({
@@ -423,6 +481,15 @@ async function getAllLanguages(username) {
       color: info.color,
       size: info.size,
       percentage: ((info.size / totalSize) * 100).toFixed(2), // 2 decimal places
+      repos: Object.entries(info.repos || {})
+        .sort((a, b) => b[1].size - a[1].size)
+        .slice(0, MAX_REPOS_PER_LANGUAGE)
+        .map(([name, r]) => ({
+          name,
+          url: r.url,
+          percentage:
+            info.size > 0 ? ((r.size / info.size) * 100).toFixed(2) : "0.00",
+        })),
     }));
 }
 

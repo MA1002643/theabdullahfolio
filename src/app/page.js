@@ -35,7 +35,18 @@ export default function Home() {
 
         {/* HEADLINE */}
         <div className="z-40 pb-2 pt-3 text-center sm:pt-5 md:pb-4 md:pt-6 lg:pb-6 lg:pt-8">
-          <h1 className="text-glow-stroke-neon text-center text-[2.6rem] font-[500] uppercase leading-none text-transparent sm:text-[3rem] md:text-[4rem] lg:text-[5rem]">
+          {/* Keep the original outline-only look for the hero name. The
+              shared `.text-glow-stroke-neon` class was later changed (page-
+              titles unification, PR #104) to a SOLID #ff6d05 fill so the
+              sub-page headers (ABOUT ME / CONTACT ME) read as filled glyphs —
+              but the homepage name is meant to stay hollow (transparent fill,
+              orange stroke + glow). This inline `color` restores that prior
+              value (`#000e1700`, fully transparent) for this h1 only, without
+              touching the shared class the sub-page titles now rely on. */}
+          <h1
+            className="text-glow-stroke-neon text-center text-[2.6rem] font-[500] uppercase leading-none text-transparent sm:text-[3rem] md:text-[4rem] lg:text-[5rem]"
+            style={{ color: '#000e1700' }}
+          >
             Muhammad
             <br /> Abdullah
           </h1>
