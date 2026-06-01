@@ -637,6 +637,27 @@
   }
 }
 
+/* One-shot light sweep across the Most Used Languages stacked bar when it
+   scrolls into view. Reuses the global `shimmer-sweep` keyframe but plays
+   exactly once (iteration-count 1) and keeps its final off-screen position
+   (`both`) so no residual highlight lingers on the bar afterward. The
+   element is rendered only for non-reduced-motion users and keyed on the
+   viewport play-token, so it remounts (and replays) on each true entry. */
+.lang-bar-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 196, 92, 0.5) 50%,
+    transparent 58%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.5s ease-out 0.25s 1 both;
+}
+
 @keyframes bounce-shake {
   0% {
     transform: translateY(0) rotate(0deg);
@@ -1019,6 +1040,24 @@ body[data-modal-open] .control-island {
      rather than a generic black box. */
   background: radial-gradient(ellipse at 50% 40%, #1b100f 0%, #01050b 70%);
   min-height: 100vh;
+}
+
+/* Portrait phones: the 404 is a single-screen layout, but `min-h-screen`
+   / `min-height: 100vh` is measured against the viewport with the mobile
+   browser's address bar HIDDEN. While that bar is visible the page is
+   taller than the visible area, so the user can scroll by exactly the
+   toolbar's height with nothing actually below — a phantom scroll on a
+   page that already fits one screen. Pin to the small-viewport height
+   (`100svh`, the address-bar-VISIBLE height) so it fits exactly. The
+   `<main>` already carries `overflow-hidden`, so pinning the height here
+   removes the document scroll entirely. Landscape is intentionally
+   excluded: at a short landscape height the content genuinely overflows
+   and must stay scrollable to reach the suggestion links. */
+@media (orientation: portrait) and (max-width: 640px) {
+  .not-found-bg {
+    min-height: 100svh;
+    height: 100svh;
+  }
 }
 
 /* ── Glitch text ──
