@@ -34,3 +34,20 @@ export function fastStartSlowFinish(t) {
   const localT = (x - 0.25) / 0.75;
   return 0.7 + 0.3 * (1 - Math.pow(1 - localT, 3));
 }
+
+/**
+ * Per-item delay for a staggered sequence — `index * baseDelay` (seconds).
+ *
+ * Drives the row-by-row *entrance* slide of the stat lines, NOT the count-up
+ * itself: per issue #19 the numbers all start counting simultaneously
+ * (baseDelay 0) so the metrics read as one unified unit, while the rows can
+ * still cascade in for visual polish. Centralising the formula keeps both
+ * cadences tunable from one place.
+ *
+ * @param {number} index - zero-based position in the sequence
+ * @param {number} [baseDelay=0] - seconds between successive items
+ * @returns {number} delay in seconds for this item
+ */
+export function staggerDelay(index, baseDelay = 0) {
+  return index * baseDelay;
+}

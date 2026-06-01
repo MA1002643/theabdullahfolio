@@ -226,13 +226,29 @@ export default function LanguagesCard({ data, isLive = false }) {
   const { pendingMessage, consume } = useLanguagesUpdateSignal(languages);
   const [bannerMessage, setBannerMessage] = useState(null);
 
+  // Promote the pending message to a visible banner once the section is in
+  // view, then `consume()` it from the hook so a reload before the next
+  // change doesn't replay it. Crucially this effect does NOT own the
+  // auto-hide timer: `consume()` nulls `pendingMessage` (a dependency here),
+  // which re-runs this effect — so a timer set inside it would be cleared by
+  // the re-run's cleanup before it could fire, leaving the banner stuck on
+  // screen until a manual refresh. The hide timer lives in its own effect
+  // below, keyed on `bannerMessage`, mirroring the experience banner's
+  // `shown`-keyed timer.
   useEffect(() => {
     if (!pendingMessage || !isInView) return;
     setBannerMessage(pendingMessage);
     consume();
+  }, [pendingMessage, isInView, consume]);
+
+  // Auto-hide once a banner is actually showing. Keyed on `bannerMessage`
+  // (not `pendingMessage`), so consuming the pending message can't cancel
+  // this timer; a fresh message re-arms it cleanly.
+  useEffect(() => {
+    if (!bannerMessage) return;
     const timer = setTimeout(() => setBannerMessage(null), BANNER_AUTO_HIDE_MS);
     return () => clearTimeout(timer);
-  }, [pendingMessage, isInView, consume]);
+  }, [bannerMessage]);
 
   return (
     <motion.div
@@ -309,19 +325,29 @@ export default function LanguagesCard({ data, isLive = false }) {
         )}
       </div>
 
-      {/* Language list — 1 column on mobile, 2 columns on the full-width
-          tablet view (`sm`–`md`), then back to 1 column at `lg`+ where the
-          card becomes half-width and sits beside the taller GitHub-stats
-          card. The single column there stacks all rows so the list fills the
-          stretched card height instead of leaving a gap below a short
-          2-column (3-row) grid. */}
-      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-y-3 gap-x-4 pt-2 text-sm md:text-base">
-        {languages.map((lang, idx) => (
+      {/* Language list — a single column on mobile AND tablet (incl. iPad-
+          landscape at `lg`/1024, where this card is already half-width beside
+          the stats card, so each row keeps the full card width and the language
+          name is never cramped). Two columns kick in only at `xl`+ (≥1280),
+          where the half-width card is finally wide enough to fit two names —
+          even the longest ("JavaScript", "Dockerfile") plus their percentage —
+          side-by-side without truncating. The list drops to `text-sm` at `xl`
+          to match those tighter two-column cells; `gap-x-6` keeps a name and
+          its percentage from colliding across the column gutter. */}
+      {/* Up to 10 rows are rendered, but rows 6–10 (index ≥ 5) are hidden below
+          `xl` via `hiddenUntilXl`. Net effect: the single-column view (mobile →
+          lg) shows the top 5 languages, and the two-column view (`xl`+) shows
+          all 10 — matching the wider canvas to a fuller list. The decorative
+          proportion bar above still reflects every language, so it stays a
+          complete overview regardless of how many rows are listed. */}
+      <ul className="grid grid-cols-1 xl:grid-cols-2 gap-y-3 gap-x-6 pt-2 text-sm md:text-base xl:text-sm">
+        {languages.slice(0, 10).map((lang, idx) => (
           <AnimatedLangLabel
             key={lang.language ?? idx}
             lang={lang}
             rank={idx + 1}
             isPrimary={idx === 0}
+            hiddenUntilXl={idx >= 5}
             playToken={playToken}
             prefersReducedMotion={prefersReducedMotion}
             active={activeIndex === idx}
@@ -432,6 +458,7 @@ function AnimatedLangLabel({
   lang,
   rank,
   isPrimary,
+  hiddenUntilXl = false,
   playToken,
   prefersReducedMotion,
   active,
@@ -496,7 +523,10 @@ function AnimatedLangLabel({
       }}
       onClick={(e) => onRepoTap?.(e.currentTarget)}
       aria-haspopup={hasRepos ? "true" : undefined}
-      className={`group flex items-center gap-2 min-w-0 rounded-md outline-none transition-[opacity,transform] duration-200 ${
+      // `hiddenUntilXl` rows (the 6th–10th languages) are display:none below
+      // `xl` so the single-column view lists only the top 5; at `xl`+ they
+      // become flex items again and fill the second column.
+      className={`group ${hiddenUntilXl ? "hidden xl:flex" : "flex"} items-center gap-2 min-w-0 rounded-md outline-none transition-[opacity,transform] duration-200 ${
         hasRepos ? "cursor-pointer" : ""
       }`}
       style={{
@@ -506,9 +536,14 @@ function AnimatedLangLabel({
     >
       {/* Rank index — monospaced, dim, fixed-width so the dots/names align
           into a clean column. Reads like an analytics leaderboard. */}
+      {/* Rank index — hidden at `xl`+, where the list splits into two tighter
+          columns and every pixel counts toward showing the full language name
+          (esp. the #1 row, whose "Primary" pill already eats width). The colour
+          dot + descending percentages still convey order there. Shown at all
+          smaller widths, where the single full-width column has room to spare. */}
       <span
         aria-hidden="true"
-        className="font-mono tabular-nums text-[10px] md:text-xs select-none w-5 shrink-0"
+        className="font-mono tabular-nums text-[10px] md:text-xs select-none w-5 shrink-0 xl:hidden"
         style={{ color: "rgba(255, 170, 42, 0.45)", textShadow: "none" }}
       >
         {String(rank).padStart(2, "0")}
@@ -527,11 +562,15 @@ function AnimatedLangLabel({
           "Employment" labels in the Years-in-the-craft split bar. */}
       <span className="text-fire-amber truncate">{lang.language}</span>
       {/* PRIMARY tag on the dominant language — a restrained amber pill that
-          marks the headline figure without competing with the percentage. */}
+          marks the headline figure without competing with the percentage.
+          Hidden at `xl`+ (the two-column view), where it would otherwise push
+          the longest name ("JavaScript") into truncation; the #1 row already
+          reads as primary there (top of the list, largest percentage). The
+          badge stays on every single-column width, which all have room. */}
       {isPrimary && (
         <span
           aria-hidden="true"
-          className="ml-1 shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider"
+          className="ml-1 shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider xl:hidden"
           style={{
             color: "#ffd27d",
             background: "rgba(255, 170, 42, 0.08)",
