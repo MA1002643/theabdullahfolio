@@ -32,8 +32,11 @@
  */
 
 // Field key → human label, in the display order used for the banner message.
-// Labels match the visible stat-line labels on the card so the banner reads
-// as a direct summary of what the user is looking at.
+// These are intentionally SHORT-FORM banner labels, not the card's full
+// stat-line labels: the card shows "Total Stars Earned" and "Total Commits
+// (last year)", but those would be unwieldy in a pipe-joined one-liner like
+// "Total Stars +5 | Total Commits +50". The labels are trimmed to the core
+// noun so the banner stays compact while still clearly mapping to each row.
 const STAT_FIELDS = [
   { key: "stars", label: "Total Stars" },
   { key: "commits", label: "Total Commits" },

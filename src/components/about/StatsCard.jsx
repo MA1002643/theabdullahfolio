@@ -156,7 +156,11 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
         }
         // Zero-target fast path: the easing yields 0 every frame, so skip the
         // ~120-frame RAF loop that would only call setDisplay(0) repeatedly.
-        if (target === 0 && !pulseOnComplete) {
+        // This applies even to a `pulseOnComplete` row (e.g. Stars on a brand-
+        // new account with 0 stars): a "landing" pulse on a number that never
+        // counted up from 0 is meaningless, so we skip both the loop and the
+        // pulse rather than burning renders to celebrate a static 0.
+        if (target === 0) {
             setDisplay(0);
             setPulse(false);
             return;
@@ -314,12 +318,21 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
     // line for non-value changes (e.g. display name). No change → no banner.
     const bannerMessage = diffMessage ?? (isUpdated ? "GitHub stats updated" : null);
     const [bannerDismissed, setBannerDismissed] = useState(false);
+    // Auto-hide timer is gated on `isInView`, NOT just on `bannerMessage`:
+    // the banner only paints while in view (`visible={isInView}` below), so if
+    // an update lands while the card is off-screen we must NOT start the 4.5s
+    // countdown — otherwise it would expire unseen and the banner would be
+    // permanently dismissed before the user ever scrolls to it. Tying both the
+    // start and the cleanup to `isInView` means the timer begins on the entry
+    // that actually shows the banner, cancels when the card leaves the
+    // viewport, and re-arms (re-showing) on a later re-entry while the message
+    // still stands — matching how the repo/experience banners key off view.
     useEffect(() => {
-        if (!bannerMessage) return;
+        if (!bannerMessage || !isInView) return;
         setBannerDismissed(false);
         const timer = setTimeout(() => setBannerDismissed(true), BANNER_VISIBLE_MS);
         return () => clearTimeout(timer);
-    }, [bannerMessage]);
+    }, [bannerMessage, isInView]);
 
     const stats = [
         { label: "Total Stars Earned", value: data.stars, icon: Star, pulseOnComplete: true },
