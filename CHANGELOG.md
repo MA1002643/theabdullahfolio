@@ -31,10 +31,26 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); and the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience._
+_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience; and the GitHub Stats Section enhancement ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19), [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)) — a redesigned, animated GitHub Stats card with a per-stat change banner, a live/stale label, and a responsive Languages list._
 
 ### Added
 
+- **GitHub Stats** per-stat change banner ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19),
+  [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)). New
+  `src/utils/statsDiff.js` `computeStatsDiff(prev, current)` returns a
+  per-stat `{ prev, current, delta, increased }` breakdown plus a
+  signed-delta summary message (`Total Stars +5 | Total Commits +50`),
+  wired through `src/components/about/index.jsx` →
+  `src/components/about/StatsCard.jsx`. The banner appears only on a real
+  value change (never on first load or an unchanged re-fetch), auto-hides
+  after ~4.5 s, and is gated on viewport visibility so an update that
+  lands off-screen can't expire before it's seen.
+- `statsLive` flag on the about-page stats state
+  (`src/components/about/index.jsx`) distinguishing genuinely live GitHub
+  stats from the bundled `_fallback` snapshot. Drives the GitHub Stats
+  card's new **"Live GitHub Metrics"** eyebrow, which is omitted whenever
+  the stats are kept/stale so the card never claims "live" over fallback
+  data — mirroring the languages card's `· live from GitHub` suffix.
 - Interactive **Most Used Languages** card overhaul
   (`src/components/about/LanguagesCard.jsx`, [#18](https://github.com/MA1002643/theabdullahfolio/issues/18)). Two-way
   hover/focus spotlight linking each list row to its stacked-bar
@@ -106,6 +122,26 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Changed
 
+- **GitHub Stats card redesign** ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19),
+  `src/components/about/StatsCard.jsx`) to share the Most Active
+  Repository card's design system: vivid-orange (`#ff6d05`) stat numbers,
+  title, and rank arc; `text-fire-amber` labels; amber icons; the
+  `repo-card-breathe` container; a spring-staggered entrance; a
+  per-character blur-fade title; hover-spotlight metric rows;
+  simultaneous `fastStartSlowFinish` count-ups; and a rank arc with a
+  faded track plus a breathing radial glow. The header is now
+  title-over-meta (matching the adjacent languages card), and the whole
+  card honours `prefers-reduced-motion`.
+- Most Used Languages list is now a **responsive count + column layout**
+  (`src/components/about/LanguagesCard.jsx`): a single column on mobile
+  through `lg` (incl. iPad-landscape) showing the **top 5**, switching to
+  two columns at `xl` (≥1280px) showing up to **10**. The rank index and
+  `PRIMARY` pill are hidden at `xl`+ so the longest names aren't truncated
+  in the tighter two-column cells; the list also drops to `text-sm` there.
+- About section horizontal padding is now responsive
+  (`px-6 sm:px-10 md:px-16`, `src/components/about/index.jsx`) instead of
+  a flat `px-16`, giving phones roughly 80px more content width while
+  leaving the desktop layout unchanged.
 - `/api/github-stats` no longer blanks the Most Used Languages card on
   a partial outage. When the languages GraphQL aborts mid-fetch but the
   user/stats/streaks queries succeed, the route substitutes the bundled
@@ -187,6 +223,33 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Fixed
 
+- Most Used Languages **update banner never auto-hid** — it stayed on
+  screen until the user manually refreshed
+  (`src/components/about/LanguagesCard.jsx`). The 4.5 s auto-hide
+  `setTimeout` lived in the same effect that `consume()`d the pending
+  message; consuming it nulled the effect's `pendingMessage` dependency,
+  so React fired the cleanup (clearing the timer) before it could elapse.
+  Split into a separate `bannerMessage`-keyed effect that the consume
+  step can't cancel, mirroring the experience banner's `shown`-keyed
+  timer.
+- GitHub Stats banner auto-hide timer started even while the card was
+  off-screen, so an update landing off-screen could be dismissed unseen.
+  The timer is now gated on `isInView`
+  (`src/components/about/StatsCard.jsx`).
+- A stale per-stat diff could be shown (and announced) for a later
+  non-stat update such as a display-name change: `statsDiffMessage` was
+  set-only. It's now reconciled — cleared whenever a poll's stat values
+  are unchanged (`src/components/about/index.jsx`), so the card falls back
+  to its generic copy instead of replaying an old delta.
+- Mobile (`< sm`) truncated the longest language name (e.g.
+  `JavaScript`): the flat `px-16` section padding left phones only ~247px
+  of content. Fixed by the responsive section padding noted under
+  **Changed**.
+- New-account GitHub Stats count-up burned a full ~120-frame
+  `requestAnimationFrame` loop computing `0` every frame for the headline
+  Stars row (its `pulseOnComplete` flag had excluded it from the
+  zero-target fast path). The fast path now applies to any `0` target
+  regardless of `pulseOnComplete` (`src/components/about/StatsCard.jsx`).
 - Most Used Languages card could blank — and then hydrate empty on the
   next cold load — after a languages-fetch timeout: the empty-but-`200`
   response overwrote the good list both in memory and in `localStorage`

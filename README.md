@@ -54,8 +54,8 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **3D Project Viewer** | Interactive Three.js scene — procedural laptop model with canvas-generated keyboard texture, 40+ mesh objects, auto-rotate orbit controls |
 | **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
-| **Animated GitHub Stats** | Live GraphQL API → animated SVG ring progress, `requestAnimationFrame` counters, diff-based change detection with 10-min polling |
-| **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up |
+| **Animated GitHub Stats** | Live GraphQL API → fast-start/slow-finish count-ups, a breathing SVG rank arc, hover-spotlight metric rows, and a per-stat change banner (e.g. "Total Stars +5, Total Commits +50"); a "Live GitHub Metrics" label that hides on stale/fallback data; diff-based change detection with 10-min polling |
+| **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up; responsive list: top 5 in a single column (mobile → `lg`), up to 10 in two columns at `xl`+ |
 | **Rocket Contact Form** | Multi-phase submit animation — shake → flame flicker → fly-up trail → checkmark spring, integrated with Nodemailer SMTP |
 | **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
 | **Ambient Fireflies** | Generative particle system with randomised spawn, duration, and drift paths |
@@ -211,7 +211,7 @@ theabdullahfolio/
 │   ├── components/
 │   │   ├── navigation/                 # Orbital ring — trig positioning, 5 breakpoints
 │   │   ├── project-detail/             # 3D laptop, aurora parallax, boot sequence, lantern sweep
-│   │   ├── about/                      # Animated counters, SVG progress ring, diff tracking
+│   │   ├── about/                      # GitHub stats card (count-ups, rank arc, change banner), languages card, diff tracking
 │   │   ├── projects/                   # Filtered grid with AnimatePresence transitions
 │   │   ├── contact/                    # Multi-phase rocket form, react-hook-form
 │   │   ├── qualifications/             # 3D CSS carousel with category tabs
@@ -225,6 +225,8 @@ theabdullahfolio/
 │       ├── rankCalculator.js           # GitHub developer rank algorithm
 │       ├── diffChanges.js              # State diff detection for live stat updates
 │       ├── languageDiff.js             # Language fingerprint + diff (client-computed)
+│       ├── statsDiff.js                # Per-stat GitHub-stats diff + banner summary
+│       ├── animationCurves.js          # Shared fast-start/slow-finish count-up easing
 │       └── emoji.js                    # Emoji name-to-symbol resolution
 ├── .github/
 │   ├── workflows/
@@ -326,9 +328,11 @@ rm /tmp/fallback.json
 
 **7. Cron and warm-up env vars** — `/api/daily-warmup`, `/api/repo-refresh`, and `/api/work-status?bust=1` are all authenticated against `Authorization: Bearer ${CRON_SECRET}`, which Vercel Cron Jobs attaches automatically when `CRON_SECRET` is set in the project's environment variables. The optional `BASE_URL` env var (server-only — *not* `NEXT_PUBLIC_BASE_URL`, which would leak into client bundles) overrides the URL the cron's internal warm-up fetches hit; falls back to `https://${VERCEL_URL}` then `http://localhost:3000`.
 
-**8. Most Used Languages card & per-repo breakdown** — the language card is more than a static list. Each row links two-ways with the stacked bar (hover or keyboard-focus a row to spotlight its segment and dim the rest, and vice-versa), is rank-numbered with a `PRIMARY` tag on the top language, and carries a `· live from GitHub` meta label that disappears whenever the displayed data is stale and returns once a live fetch lands (see point 9). `/api/github-stats` embeds a per-repo breakdown on every language — a `repos: [{ name, url, percentage }]` array giving each repo's share of *that language's* bytes (sorted biggest-first, capped at 12). Activating a row opens a "Career snapshot"-themed popover listing those repos, with the same fast-start/slow-finish count-up the card numbers use on each percentage. It opens by **hover** on a fine pointer, by **keyboard focus** (detected via input modality, so an attached keyboard behaves like hover even on a touch device), or by **tap** on touch (re-tap / tap-outside / Escape to close). The popover is portaled to `<body>` to escape the card's clip, clamps so it never overflows the viewport, and scrolls its repo list internally when a breakdown is taller than the available height.
+**8. Most Used Languages card & per-repo breakdown** — the language card is more than a static list. Each row links two-ways with the stacked bar (hover or keyboard-focus a row to spotlight its segment and dim the rest, and vice-versa), is rank-numbered with a `PRIMARY` tag on the top language, and carries a `· live from GitHub` meta label that disappears whenever the displayed data is stale and returns once a live fetch lands (see point 9). `/api/github-stats` embeds a per-repo breakdown on every language — a `repos: [{ name, url, percentage }]` array giving each repo's share of *that language's* bytes (sorted biggest-first, capped at 12). Activating a row opens a "Career snapshot"-themed popover listing those repos, with the same fast-start/slow-finish count-up the card numbers use on each percentage. It opens by **hover** on a fine pointer, by **keyboard focus** (detected via input modality, so an attached keyboard behaves like hover even on a touch device), or by **tap** on touch (re-tap / tap-outside / Escape to close). The popover is portaled to `<body>` to escape the card's clip, clamps so it never overflows the viewport, and scrolls its repo list internally when a breakdown is taller than the available height. The list itself is **responsive**: a single column showing the **top 5** languages from mobile through `lg` (including iPad-landscape, where the card is already half-width beside the stats card), expanding to two columns showing **up to 10** at `xl`+ (≥1280px). In the two-column view the rank index and `PRIMARY` pill are hidden and the type drops to `text-sm` so even the longest names never truncate.
 
 **9. Languages-only fallback** — distinct from the whole-payload fallback in point 5: when the languages GraphQL aborts mid-fetch but the user/stats/streaks queries succeed, the route substitutes the bundled snapshot's languages and flags them `languagesFallback: true` (HTTP 200, no `_fallback`) instead of serving an empty list that would blank the card and lock in for the 10-min TTL. The client treats those as a **soft default** — used to populate a cold card for a first-time visitor, but never allowed to overwrite a returning visitor's own (possibly fresher) `localStorage` last-good. In both the stale and partial cases the card keeps showing the last good breakdown and drops its `live from GitHub` label until a genuine live fetch returns. The per-language change-detection fingerprint is computed **client-side** from this list (`src/utils/languageDiff.js`), so it keeps working on the fallback and the two sides can't drift — there is no `languagesFingerprint` field on the wire.
+
+**10. GitHub Stats card — per-stat change banner & live label** — the stats card (`src/components/about/StatsCard.jsx`) reuses the Most Active Repository card's design system (vivid-orange numbers, `text-fire-amber` labels, the `repo-card-breathe` container, a spring-staggered entrance, a per-character title, hover-spotlight rows, fast-start/slow-finish count-ups, and a rank arc with a breathing glow — all `prefers-reduced-motion` aware). On each 10-min poll, `src/utils/statsDiff.js` `computeStatsDiff(prev, current)` compares the previous and current snapshots and, when a value actually moved, produces a signed-delta summary (e.g. `Total Stars +5 | Total Commits +50`) shown as a banner that auto-hides after ~4.5s and is gated on viewport visibility (an update landing off-screen waits to show + time out until the card is scrolled into view). The message is reconciled every poll — cleared when stat values are unchanged — so a non-stat update (such as a display-name change) never replays a stale delta. A **"Live GitHub Metrics"** eyebrow appears only when the stats are genuinely live (driven by the client's `statsLive` flag); it's hidden whenever the card is showing the bundled `_fallback` snapshot or kept/stale data, mirroring the languages card's `· live from GitHub` label.
 
 ### Commands
 
@@ -401,7 +405,7 @@ upgrade-insecure-requests
 ## 🎬 Animation Inventory
 
 <details>
-<summary><strong>View all 14 custom animations</strong></summary>
+<summary><strong>View all 15 custom animations</strong></summary>
 <br />
 
 | Animation | Technique | Location |
@@ -411,8 +415,9 @@ upgrade-insecure-requests
 | Aurora parallax | `useScroll` + `useTransform` + mouse tilt | `project-detail/aurora-bg.jsx` |
 | Boot sequence | Sequential `clipPath` chunk reveals | `project-detail/boot-on-sequence.jsx` |
 | Rocket launch | Multi-phase: shake → flame → fly → checkmark | `contact/Form.jsx` |
-| Stat counters | `requestAnimationFrame` interpolation | `about/StatsCard.jsx` |
-| SVG rank ring | `stroke-dashoffset` spring animation | `about/StatsCard.jsx` |
+| Stat counters | `requestAnimationFrame` fast-start/slow-finish count-up (simultaneous, reduced-motion aware) | `about/StatsCard.jsx` |
+| SVG rank arc | `stroke-dashoffset` sweep + breathing radial glow | `about/StatsCard.jsx` |
+| GitHub stat change banner | per-character reveal, ~4.5s auto-hide gated on viewport | `about/StatsCard.jsx` + `about/UpdateBanner.jsx` |
 | Language count-up & bar sheen | `animate()` fast-start/slow-finish curve + one-shot shimmer sweep on viewport entry | `about/LanguagesCard.jsx` |
 | Firefly drift | `@keyframes` with randomised duration + paths | `FireFliesBackground.jsx` |
 | Loader progress | SVG `stroke-dashoffset` + percentage counter | `loaderWrapper/index.jsx` |
