@@ -8,6 +8,7 @@ import StreakStatsCard from "./StreakStatsCard";
 import ReadmeStatsCard from "./RepoStatsCard";
 import { detectChanges } from "@/utils/diffChanges";
 import { computeRepoDiff } from "@/utils/repoDiff";
+import { computeStatsDiff } from "@/utils/statsDiff";
 import { useExperienceSummary } from "@/hooks/useExperienceSummary";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
@@ -276,6 +277,10 @@ const AboutDetails = () => {
   const [githubStats, setGithubStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
   const [repoDiffMessage, setRepoDiffMessage] = useState(null);
+  // Specific per-stat change summary for the GitHub Stats card's banner
+  // ("Total Stars +5 | Total Commits +50"). Null when nothing changed, so
+  // the banner only fires on real value changes — never on first load.
+  const [statsDiffMessage, setStatsDiffMessage] = useState(null);
   // Dev-only override so a synthetic Shift+B can fire the experience
   // banner, which is otherwise driven entirely by the hook. Stays null
   // in production builds because the listener that sets it never runs.
@@ -477,16 +482,27 @@ const AboutDetails = () => {
     const languagesAreAuthoritative =
       hasFreshLanguages && !data.languagesFallback && !data._fallback;
 
+    // Are the *stats* live? Unlike languages (which can independently time out
+    // and soft-fall-back via `languagesFallback`), the stats half only ever
+    // becomes non-live when the whole upstream fetch fails and the route serves
+    // the bundled snapshot (`_fallback`). So stats are live whenever the
+    // payload isn't that whole-payload fallback. Drives the GitHub Stats card's
+    // "Live GitHub Metrics" eyebrow, which is hidden when this is false (API
+    // down / showing kept or snapshot data), mirroring `languagesLive`.
+    const statsAreLive = !data._fallback;
+
     setGithubStats(prevStats => {
       // If the API served the bundled fallback (upstream failure) and we
       // already have real data on screen, keep that state — only let the
-      // fallback populate on a truly empty first load. Mark `languagesLive`
-      // false since the live source is fully down and we're showing kept
-      // data, so the card drops its "live from GitHub" label. Return a fresh
-      // object only when the flag actually flips, to avoid a needless render.
+      // fallback populate on a truly empty first load. Mark BOTH `languagesLive`
+      // and `statsLive` false since the live source is fully down and we're
+      // showing kept data, so both cards drop their "live" labels. Return a
+      // fresh object only when a flag actually flips, to avoid a needless render.
       if (data._fallback && prevStats) {
-        return prevStats.languagesLive
-          ? { ...prevStats, languagesLive: false }
+        const needsFlip =
+          prevStats.languagesLive || prevStats.statsLive;
+        return needsFlip
+          ? { ...prevStats, languagesLive: false, statsLive: false }
           : prevStats;
       }
 
@@ -503,17 +519,21 @@ const AboutDetails = () => {
           // new visitor served the snapshot starts un-labelled until a live
           // poll confirms.
           languagesLive: languagesAreAuthoritative,
+          statsLive: statsAreLive,
         };
       }
 
       // Detect top-level and nested changes
       const diffs = detectChanges(prevStats, data);
 
-      // Liveness can flip without the language *values* changing — a timeout
-      // after live data, or a recovery to an identical live list — so the
-      // label state has to reconcile even when the value diff is empty.
+      // Liveness can flip without the *values* changing — a timeout after live
+      // data, or a recovery to an identical payload — so the label state has to
+      // reconcile even when the value diff is empty. Tracks both the languages
+      // and stats liveness flags so either label can re-appear/disappear on a
+      // pure liveness change.
       const livenessChanged =
-        Boolean(prevStats.languagesLive) !== languagesAreAuthoritative;
+        Boolean(prevStats.languagesLive) !== languagesAreAuthoritative ||
+        Boolean(prevStats.statsLive) !== statsAreLive;
       if (diffs.length === 0 && !livenessChanged) return prevStats; // nothing changed
 
       // Compute a human-readable diff for the repo card's update banner.
@@ -521,6 +541,22 @@ const AboutDetails = () => {
       // suppressing a false-positive banner on the initial poll after load.
       const repoMsg = computeRepoDiff(prevStats?.stats?.repo, data?.stats?.repo);
       if (repoMsg) setRepoDiffMessage(repoMsg);
+
+      // Per-stat diff for the GitHub Stats banner. computeStatsDiff returns
+      // hasChanged=false on the first cycle (prevStats present here, but the
+      // nested stats object may be absent), so a real message only appears on a
+      // genuine value change — mirroring the repo banner's suppression of false
+      // positives on the initial poll.
+      //
+      // RECONCILE (set OR clear) every changed poll, never set-only: the card
+      // prefers `diffMessage` over the generic `isUpdated` copy, so a stale
+      // per-stat message left over from an earlier poll would be shown for a
+      // *later* non-stat change (e.g. a `stats.user` display-name update, where
+      // `hasChanged` is false but `changedFields` still flips the card's
+      // `isUpdated`). Clearing to null when stats didn't move this poll makes
+      // the card correctly fall back to the generic banner.
+      const statsMsg = computeStatsDiff(prevStats?.stats?.stats, data?.stats?.stats);
+      setStatsDiffMessage(statsMsg.hasChanged ? statsMsg.summaryMessage : null);
 
       setChangedFields(diffs);
 
@@ -566,6 +602,7 @@ const AboutDetails = () => {
       // identical list (stale → live) flips the "live from GitHub" label even
       // when `updatedStats.languages` itself is unchanged.
       updatedStats.languagesLive = languagesAreAuthoritative;
+      updatedStats.statsLive = statsAreLive;
 
       return updatedStats;
     });
@@ -705,6 +742,7 @@ const AboutDetails = () => {
       const timer = setTimeout(() => {
         setChangedFields([]);
         setRepoDiffMessage(null);
+        setStatsDiffMessage(null);
         setTestExperienceMessage(null);
       }, 10000);
       return () => clearTimeout(timer);
@@ -744,6 +782,7 @@ const AboutDetails = () => {
         "skills",
       ]);
       setRepoDiffMessage("Test: repository update banner");
+      setStatsDiffMessage("Total Stars +5 | Total Commits +50 | Total PRs +2");
       setTestExperienceMessage("Test: experience update banner");
     };
     window.addEventListener("keydown", handler);
@@ -769,7 +808,12 @@ const AboutDetails = () => {
   ];
 
   return (
-    <section className="py-20 px-16 w-full">
+    // Horizontal padding scales with viewport: a flat `px-16` (64px) left
+    // phones only ~247px of content width, cramping every card and truncating
+    // the longest language name. Now `px-6` (24px) on mobile → `px-10` at `sm`
+    // → the original `px-16` from `md`+ up, so desktop is unchanged while small
+    // screens gain real breathing room.
+    <section className="py-20 px-6 sm:px-10 md:px-16 w-full">
       <div className="grid grid-cols-12 gap-4 xs:gap-6 md:gap-8 w-full">
         <ItemLayout
           className={
@@ -962,7 +1006,7 @@ const AboutDetails = () => {
         </ItemLayout>}
 
         {githubStats?.stats && <ItemLayout className={" col-span-full lg:col-span-6 !p-0"}>
-          <GitHubStatsCard data={githubStats.stats.stats} userName={githubStats.stats.user.name} isUpdated={changedFields.includes("stats.stats") || changedFields.includes('stats.user')} />
+          <GitHubStatsCard data={githubStats.stats.stats} userName={githubStats.stats.user.name} isUpdated={changedFields.includes("stats.stats") || changedFields.includes('stats.user')} diffMessage={statsDiffMessage} isLive={Boolean(githubStats.statsLive)} />
         </ItemLayout>}
 
         <ItemLayout

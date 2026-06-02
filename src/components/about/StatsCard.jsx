@@ -1,17 +1,341 @@
 "use client";
 
-import { motion, useInView, useAnimation } from "framer-motion";
-import { Star, Clock, GitBranch, AlertCircle, Package } from "lucide-react";
+import { motion, useAnimation, useReducedMotion } from "framer-motion";
+import {
+    Activity,
+    AlertCircle,
+    Clock,
+    GitBranch,
+    Package,
+    Star,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { fastStartSlowFinish } from "@/utils/animationCurves";
+import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
 
-export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated }) {
+// ---------------------------------------------------------------------------
+// Palette — deliberately the SAME tokens the "Most Active Repository" card
+// uses (RepoStatsCard.jsx), so the two cards read as one design system:
+//   - ORANGE   #ff6d05  → all metric numbers, the title, the rank arc fill
+//   - text-fire-amber   → labels (vertical fire gradient utility)
+//   - AMBER    #ffaa2a  → icons + eyebrow microlabel
+//   - arc track rgba(255,109,5,0.12) — faded ghost of the fill
+// ---------------------------------------------------------------------------
+const ORANGE = "#ff6d05";
+const AMBER = "#ffaa2a";
+const ARC_TRACK = "rgba(255,109,5,0.12)";
+
+// Count-up window — 2s lets the sprint-then-settle easing land deliberately
+// (matches RepoStatsCard's DURATION so every counter across the two cards
+// settles on the same cadence).
+const DURATION_MS = 2000;
+// Banner lingers 4.5s, then auto-hides — local to the card so it dismisses
+// well before the parent's coarser 10s changedFields reset.
+const BANNER_VISIBLE_MS = 4500;
+
+// ----- Card-level choreography (mirrors RepoStatsCard) -----
+const cardVariants = {
+    hidden: { opacity: 0, y: 56, scale: 0.97 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: {
+            type: "spring",
+            stiffness: 70,
+            damping: 18,
+            staggerChildren: 0.07,
+            delayChildren: 0.15,
+        },
+    },
+};
+
+const childVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { type: "spring", stiffness: 120, damping: 20 },
+    },
+};
+
+const metricContainerVariants = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.06 } },
+};
+
+const metricRowVariants = {
+    hidden: { opacity: 0, x: -16 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
+
+/* ----------------------------- ANIMATED TITLE -----------------------------
+   Per-character blur-fade-in, exactly like the repo card's title — only the
+   palette (ORANGE) and the responsive sizing differ. Reduced motion renders a
+   plain heading; the per-char spans are aria-hidden with an aria-label so the
+   accessible name stays clean. */
+function AnimatedTitle({ text, play }) {
+    const prefersReducedMotion = useReducedMotion();
+    const className =
+        "text-lg sm:text-xl md:text-2xl font-semibold break-words leading-tight";
+
+    if (prefersReducedMotion) {
+        return (
+            <h2 className={className} style={{ color: ORANGE, textShadow: "none" }}>
+                {text}
+            </h2>
+        );
+    }
+
+    const chars = Array.from(text);
+    const container = {
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.025, delayChildren: 0.2 } },
+    };
+    const charVariant = {
+        hidden: { opacity: 0, filter: "blur(6px)", y: 8 },
+        visible: {
+            opacity: 1,
+            filter: "blur(0px)",
+            y: 0,
+            transition: { duration: 0.35, ease: "easeOut" },
+        },
+    };
+    return (
+        <motion.h2
+            variants={container}
+            initial="hidden"
+            animate={play ? "visible" : "hidden"}
+            className={className}
+            style={{ color: ORANGE, textShadow: "none" }}
+            aria-label={text}
+        >
+            {chars.map((c, i) => (
+                <motion.span
+                    key={i}
+                    variants={charVariant}
+                    style={{ display: "inline-block" }}
+                    aria-hidden="true"
+                >
+                    {c === " " ? " " : c}
+                </motion.span>
+            ))}
+        </motion.h2>
+    );
+}
+
+/* ------------------------------- METRIC ROW -------------------------------
+   One stat line: amber icon (scale/rotate on hover), fire-amber label, and an
+   orange count-up value. The count-up runs on `fastStartSlowFinish` and starts
+   simultaneously for every row (issue #19 — metrics move as one unit; the
+   per-row *entrance* slide is what's staggered, via metricRowVariants). The
+   headline stat (Stars) gets a single scale-pulse the instant it lands.
+   Accessibility: the animated digits are aria-hidden and an sr-only span
+   carries the final value so AT never hears "0". */
+function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = false, prefersReducedMotion }) {
+    const target = Number(value) || 0;
+    const [display, setDisplay] = useState(prefersReducedMotion ? target : 0);
+    const [pulse, setPulse] = useState(false);
+    const rafRef = useRef(null);
+
+    useEffect(() => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+        if (prefersReducedMotion) {
+            setDisplay(target);
+            setPulse(false);
+            return;
+        }
+        // Not yet entered the viewport — hold at 0 so the first entry plays a
+        // full 0 → target sweep.
+        if (playToken === 0) {
+            setPulse(false);
+            return;
+        }
+        // Zero-target fast path: the easing yields 0 every frame, so skip the
+        // ~120-frame RAF loop that would only call setDisplay(0) repeatedly.
+        // This applies even to a `pulseOnComplete` row (e.g. Stars on a brand-
+        // new account with 0 stars): a "landing" pulse on a number that never
+        // counted up from 0 is meaningless, so we skip both the loop and the
+        // pulse rather than burning renders to celebrate a static 0.
+        if (target === 0) {
+            setDisplay(0);
+            setPulse(false);
+            return;
+        }
+
+        // Snap to 0 before the first frame so a re-entry trigger animates from
+        // 0 again rather than flashing the previous final value.
+        setDisplay(0);
+        let startTime = null;
+        const tick = (ts) => {
+            if (!startTime) startTime = ts;
+            const t = Math.min((ts - startTime) / DURATION_MS, 1);
+            setDisplay(Math.floor(fastStartSlowFinish(t) * target));
+            if (t < 1) {
+                rafRef.current = requestAnimationFrame(tick);
+            } else {
+                setDisplay(target);
+                if (pulseOnComplete) setPulse(true);
+            }
+        };
+        rafRef.current = requestAnimationFrame(tick);
+        return () => {
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        };
+    }, [playToken, target, pulseOnComplete, prefersReducedMotion]);
+
+    return (
+        <motion.div
+            variants={metricRowVariants}
+            whileHover={prefersReducedMotion ? undefined : { x: 5, transition: { duration: 0.18 } }}
+            className="flex items-center justify-between gap-2 w-full px-2 py-1.5 rounded-md hover:bg-[#ff6d05]/5 transition-colors"
+        >
+            <div className="flex items-center gap-2 min-w-0">
+                <motion.span
+                    whileHover={prefersReducedMotion ? undefined : { scale: 1.25, rotate: 6 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                    className="flex-shrink-0"
+                >
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: AMBER }} />
+                </motion.span>
+                <span className="text-xs sm:text-sm md:text-base truncate text-fire-amber" style={{ textShadow: "none" }}>
+                    {label}
+                </span>
+            </div>
+            <motion.span
+                animate={pulse ? { scale: [1, 1.18, 1], transition: { duration: 0.4, ease: "easeOut" } } : { scale: 1 }}
+                onAnimationComplete={() => pulse && setPulse(false)}
+                className="text-xs sm:text-sm md:text-base font-semibold tabular-nums whitespace-nowrap"
+                style={{ color: ORANGE, textShadow: "none" }}
+            >
+                <span className="sr-only">{target.toLocaleString()}</span>
+                <span aria-hidden="true">{display.toLocaleString()}</span>
+            </motion.span>
+        </motion.div>
+    );
+}
+
+/* -------------------------------- RANK ARC --------------------------------
+   The rank circle, elevated past the repo card's ActivityArc: a faded orange
+   track, an orange progress arc that sweeps in on the same easing, a breathing
+   radial glow behind it, and the level letter rendered in orange with a soft
+   heat halo. Responsive diameter (120 → 144 → 160px) via the wrapper; the SVG
+   fills it and keeps its 160-unit viewBox so the geometry scales cleanly. */
+function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
+    const radius = 70;
+    const circumference = 2 * Math.PI * radius;
+    const controls = useAnimation();
+    // Fraction filled follows the prior contract (percentile/100), clamped so
+    // a stray >100 / <0 percentile can't over/under-draw the arc.
+    const fraction = Math.min(Math.max(Number(percentile) || 0, 0), 100) / 100;
+    const finalOffset = circumference * (1 - fraction);
+
+    useEffect(() => {
+        if (prefersReducedMotion) {
+            controls.start({ strokeDashoffset: finalOffset, transition: { duration: 0 } });
+            return;
+        }
+        if (playToken === 0) {
+            controls.set({ strokeDashoffset: circumference });
+            return;
+        }
+        controls.set({ strokeDashoffset: circumference });
+        controls.start({
+            strokeDashoffset: finalOffset,
+            transition: { duration: DURATION_MS / 1000, ease: fastStartSlowFinish },
+        });
+    }, [playToken, finalOffset, circumference, controls, prefersReducedMotion]);
+
+    return (
+        <div className="relative w-[120px] h-[120px] sm:w-36 sm:h-36 lg:w-40 lg:h-40 flex-shrink-0">
+            {/* Breathing radial glow behind the ring — the "beyond elite"
+                flourish. Held static (no pulse) under reduced motion. */}
+            <motion.div
+                aria-hidden="true"
+                className="absolute inset-2 rounded-full"
+                style={{
+                    background: "radial-gradient(circle, rgba(255,109,5,0.28) 0%, transparent 68%)",
+                }}
+                animate={
+                    prefersReducedMotion
+                        ? undefined
+                        : { opacity: [0.5, 0.9, 0.5], scale: [0.96, 1.04, 0.96] }
+                }
+                transition={
+                    prefersReducedMotion ? undefined : { duration: 3.4, repeat: Infinity, ease: "easeInOut" }
+                }
+            />
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 160 160">
+                {/* Faded track — a dim ghost of the fill, same relationship as
+                    the repo card's arc track. */}
+                <circle cx="80" cy="80" r={radius} stroke={ARC_TRACK} strokeWidth="6" fill="transparent" />
+                {/* Progress arc — orange, sweeps in on entry. */}
+                <motion.circle
+                    cx="80"
+                    cy="80"
+                    r={radius}
+                    stroke={ORANGE}
+                    strokeWidth="6"
+                    fill="transparent"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    initial={{ strokeDashoffset: prefersReducedMotion ? finalOffset : circumference }}
+                    animate={controls}
+                    style={{ rotate: -90, transformOrigin: "80px 80px" }}
+                />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span
+                    className="text-3xl sm:text-4xl font-bold leading-none"
+                    style={{
+                        color: ORANGE,
+                        textShadow: "0 0 10px rgba(255,109,5,0.55), 0 0 22px rgba(255,109,5,0.3)",
+                    }}
+                >
+                    {level}
+                </span>
+                <span className="text-[10px] uppercase tracking-[0.22em] mt-1 text-fire-amber" style={{ textShadow: "none" }}>
+                    Rank
+                </span>
+            </div>
+        </div>
+    );
+}
+
+/* ---------------------------------- CARD ---------------------------------- */
+export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated, diffMessage = null, isLive = false }) {
     const cardRef = useRef(null);
-    const isInView = useInView(cardRef, { once: false, margin: "-50px" });
+    // `isInView` drives the outer fade + title play + banner gate; `playToken`
+    // (latched, flicker-immune) drives the count-ups so brief scroll
+    // oscillations never restart them mid-flight.
+    const { isInView, playToken } = useViewportCountTrigger(cardRef, { amount: 0.3, margin: "-50px" });
+    const prefersReducedMotion = useReducedMotion();
+
+    // Banner message: prefer the specific per-stat diff; fall back to a generic
+    // line for non-value changes (e.g. display name). No change → no banner.
+    const bannerMessage = diffMessage ?? (isUpdated ? "GitHub stats updated" : null);
+    const [bannerDismissed, setBannerDismissed] = useState(false);
+    // Auto-hide timer is gated on `isInView`, NOT just on `bannerMessage`:
+    // the banner only paints while in view (`visible={isInView}` below), so if
+    // an update lands while the card is off-screen we must NOT start the 4.5s
+    // countdown — otherwise it would expire unseen and the banner would be
+    // permanently dismissed before the user ever scrolls to it. Tying both the
+    // start and the cleanup to `isInView` means the timer begins on the entry
+    // that actually shows the banner, cancels when the card leaves the
+    // viewport, and re-arms (re-showing) on a later re-entry while the message
+    // still stands — matching how the repo/experience banners key off view.
+    useEffect(() => {
+        if (!bannerMessage || !isInView) return;
+        setBannerDismissed(false);
+        const timer = setTimeout(() => setBannerDismissed(true), BANNER_VISIBLE_MS);
+        return () => clearTimeout(timer);
+    }, [bannerMessage, isInView]);
 
     const stats = [
-        { label: "Total Stars Earned", value: data.stars, icon: Star },
+        { label: "Total Stars Earned", value: data.stars, icon: Star, pulseOnComplete: true },
         { label: "Total Commits (last year)", value: data.commits, icon: Clock },
         { label: "Total PRs", value: data.prs, icon: GitBranch },
         { label: "Total Issues", value: data.issues, icon: AlertCircle },
@@ -21,157 +345,85 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
     return (
         <motion.div
             ref={cardRef}
-            initial={{ opacity: 0, y: 40 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="p-5 w-full relative overflow-hidden"
+            variants={cardVariants}
+            initial="hidden"
+            animate={isInView ? "visible" : "hidden"}
+            className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg h-full"
         >
             <UpdateBanner
-                message={isUpdated ? "Data in this section has been updated" : null}
+                message={bannerDismissed ? null : bannerMessage}
                 visible={isInView}
                 srPrefix="Stats update: "
             />
 
-            <h2 className="text-xl md:text-2xl text-left w-full capitalize text-shadow-neon-orange mb-4">
-                {userName}&apos;s GitHub Stats
-            </h2>
+            {/* Header — title first, then the live-status meta line BELOW it,
+                mirroring the adjacent "Most Used Languages" card's
+                title-over-meta structure so the side-by-side pair reads as one
+                system. The "Live GitHub Metrics" line (pulse dot + text) renders
+                ONLY when the stats are genuinely live from GitHub (`isLive`); if
+                the API is down or we're showing kept/snapshot data it's omitted
+                entirely rather than asserting "live" over stale data. The title
+                + icon always render. */}
+            <motion.div variants={childVariants} className="mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <Activity className="w-5 h-5 flex-shrink-0" style={{ color: AMBER }} />
+                    <AnimatedTitle text={`${userName}'s GitHub Stats`} play={isInView} />
+                </div>
+                {isLive && (
+                    <div className="flex items-center gap-2 mt-1.5">
+                        <motion.span
+                            aria-hidden="true"
+                            className="inline-block w-1.5 h-1.5 rounded-full"
+                            style={{ background: ORANGE, boxShadow: `0 0 6px ${ORANGE}` }}
+                            animate={prefersReducedMotion ? undefined : { opacity: [0.4, 1, 0.4], scale: [0.85, 1.15, 0.85] }}
+                            transition={prefersReducedMotion ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                        <span className="text-[10px] uppercase tracking-[0.22em] text-fire-amber" style={{ textShadow: "none" }}>
+                            Live GitHub Metrics
+                        </span>
+                    </div>
+                )}
+            </motion.div>
 
-            <div className="flex gap-8 items-center flex-col sm:flex-row md:items-start flex-wrap justify-center">
-                {/* Stats List */}
-                <div className="flex-1 space-y-2 w-full">
-                    {stats.map((stat, idx) => (
-                        <AnimatedStat
-                            key={idx}
+            {/* Animated hairline divider — fills from the left on entry. */}
+            <motion.div
+                aria-hidden="true"
+                className="h-px elite-divider mb-4 origin-left"
+                variants={{
+                    hidden: { scaleX: 0, opacity: 0 },
+                    visible: { scaleX: 1, opacity: 1, transition: { duration: 0.6, ease: "easeOut" } },
+                }}
+            />
+
+            {/* Metric column + rank arc — column full-width on mobile (labels
+                left, values right), side-by-side and centered at sm+. */}
+            <motion.div variants={childVariants} className="flex flex-col items-center gap-4 sm:gap-6 sm:flex-row sm:flex-wrap sm:justify-center">
+                <motion.div
+                    variants={metricContainerVariants}
+                    className="flex flex-col gap-1 w-full sm:w-auto sm:flex-1 sm:min-w-[220px]"
+                >
+                    {stats.map((stat) => (
+                        <MetricRow
+                            key={stat.label}
                             icon={stat.icon}
                             label={stat.label}
                             value={stat.value}
-                            delay={idx * 0.15}
-                            isInView={isInView}
+                            pulseOnComplete={stat.pulseOnComplete}
+                            playToken={playToken}
+                            prefersReducedMotion={prefersReducedMotion}
                         />
                     ))}
-                </div>
+                </motion.div>
 
-                {/* Level Circle */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                    transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-                    className="flex items-center justify-center flex-shrink-0"
-                >
-                    <AnimatedRankCircle
+                <motion.div variants={childVariants} className="flex items-center justify-center flex-shrink-0">
+                    <RankArc
                         level={data.level}
                         percentile={parseFloat(data.percentile)}
-                        isInView={isInView}
+                        playToken={playToken}
+                        prefersReducedMotion={prefersReducedMotion}
                     />
                 </motion.div>
-            </div>
+            </motion.div>
         </motion.div>
-    );
-}
-
-/* -------------------------- ANIMATED STAT LINE -------------------------- */
-function AnimatedStat({ icon: Icon, label, value, delay, isInView }) {
-    const [displayValue, setDisplayValue] = useState(0);
-    const target = Number(value) || 0;
-
-    useEffect(() => {
-        if (isInView) {
-            let startTime;
-            const duration = 1200;
-
-            const animate = (timestamp) => {
-                if (!startTime) startTime = timestamp;
-                const progress = Math.min((timestamp - startTime) / duration, 1);
-                setDisplayValue(Math.floor(progress * target));
-                if (progress < 1) requestAnimationFrame(animate);
-            };
-
-            const timeout = setTimeout(() => requestAnimationFrame(animate), delay * 1000);
-            return () => clearTimeout(timeout);
-        } else {
-            setDisplayValue(0);
-        }
-    }, [isInView, target, delay]);
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.5, delay, ease: "easeOut" }}
-            className="flex items-center gap-3 w-full justify-between"
-        >
-            <div className="flex items-center gap-2">
-                <Icon className="w-5 h-5" style={{ color: "#ffaa2a" }} />
-                <span style={{ textShadow: "none" }} className=" text-xs md:text-base text-shadow-neon-light-orange">
-                    {label}:
-                </span>
-            </div>
-            <span style={{ textShadow: "none" }} className="font-light text-xs md:text-base text-shadow-neon-light-orange">
-                {displayValue.toLocaleString()}
-            </span>
-        </motion.div>
-    );
-}
-
-/* ----------------------- ANIMATED RANK CIRCLE -------------------------- */
-function AnimatedRankCircle({ level, percentile, isInView }) {
-    const controls = useAnimation();
-
-    const radius = 70;
-    const circumference = 2 * Math.PI * radius;
-
-    useEffect(() => {
-        if (isInView) {
-            controls.start({
-                strokeDashoffset: circumference * (1 - percentile / 100),
-                transition: { duration: 1.2, ease: "easeOut" },
-            });
-        } else {
-            controls.start({ strokeDashoffset: circumference });
-        }
-    }, [isInView, percentile, circumference, controls]);
-
-    return (
-        <div className="relative w-36 h-36">
-            <svg
-                className="absolute inset-0"
-                width="144"
-                height="144"
-                viewBox="0 0 160 160"
-            >
-                {/* Background Circle */}
-                <circle
-                    cx="80"
-                    cy="80"
-                    r={radius}
-                    stroke="rgba(80, 80, 80, 0)"
-                    strokeWidth="6"
-                    fill="transparent"
-                />
-                {/* Animated Circle */}
-                <motion.circle
-                    cx="80"
-                    cy="80"
-                    r={radius}
-                    stroke="rgb(209 151 14)"
-                    strokeWidth="6"
-                    fill="transparent"
-                    strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    initial={{ strokeDashoffset: circumference }}
-                    animate={controls}
-                    style={{
-                        transform: "rotate(-90deg)",
-                        transformOrigin: "50% 50%",
-                    }}
-                />
-            </svg>
-
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold text-shadow-neon-light-orange">
-                    {level}
-                </span>
-            </div>
-        </div>
     );
 }
