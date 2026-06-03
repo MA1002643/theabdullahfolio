@@ -83,11 +83,22 @@ function useViewportCountUp(
     }
 
     if (prefersReducedMotion) {
+      // Cancel any in-flight tween AND any pending out-of-view reset — a reset
+      // queued while motion was enabled would otherwise still fire after the OS
+      // flips to reduced motion and overwrite the final value back to `from`.
       if (controlsRef.current) {
         controlsRef.current.stop();
         controlsRef.current = null;
       }
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
       node.textContent = fmt(to);
+      // Mark the value as already "shown" at `to` so re-enabling motion while
+      // still in view (same target) doesn't trigger a redundant re-animation/snap.
+      armedRef.current = false;
+      lastToRef.current = to;
       return undefined;
     }
 
