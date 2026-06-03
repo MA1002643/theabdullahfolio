@@ -629,10 +629,13 @@ const AboutDetails = () => {
     useViewportCountUp(nodeRef, { from, to, inView, prefersReducedMotion });
 
     return (
-      <div className="flex items-center justify-center">
-        <p ref={nodeRef}>{prefersReducedMotion ? to : from}</p>
-        {plusIcon && <p>+</p>}
-      </div>
+      // Inline elements only: this renders inside the cards' <h1>, and a
+      // heading may contain phrasing content only — a block <div>/<p> here is
+      // invalid HTML. `inline-flex` keeps the digit (+ optional plus) aligned.
+      <span className="inline-flex items-center justify-center">
+        <span ref={nodeRef}>{prefersReducedMotion ? to : from}</span>
+        {plusIcon && <span>+</span>}
+      </span>
     );
   }
 
@@ -1076,20 +1079,28 @@ const AboutDetails = () => {
   // once at module load (see PROJECT_CATEGORY_BREAKDOWN) — projectsData is a
   // static import, so there's nothing component-scoped to recompute here.
   const [projectCountBanner, setProjectCountBanner] = useState(null);
-  // Promote the pending message to a visible banner once the card scrolls into
-  // view, then consume it. The auto-hide timer lives in its own effect below
-  // (keyed on the visible message), so consuming the pending message can't
-  // cancel it — the same split that fixed the languages banner getting stuck.
+  // Capture the pending message as soon as it exists — deliberately NOT gated
+  // on viewport visibility. It's passed straight through to UpdateBanner's
+  // `message`, whose always-mounted `aria-live` region announces on `message`
+  // alone (not `visible`), so AT users hear the count change immediately rather
+  // than only after scrolling the card into view. `consume()` advances the
+  // localStorage baseline so a reload before the next change doesn't replay it.
   useEffect(() => {
-    if (!projectCountPending || !isCompletedProjectsInView) return;
+    if (!projectCountPending) return;
     setProjectCountBanner(projectCountPending);
     consumeProjectCount();
-  }, [projectCountPending, isCompletedProjectsInView, consumeProjectCount]);
+  }, [projectCountPending, consumeProjectCount]);
+  // Auto-hide the VISUAL banner ~4.5s after the card is actually in view, so an
+  // update detected while the card is off-screen doesn't expire its visual
+  // before it's seen. Gated on `isCompletedProjectsInView` (the timer restarts
+  // on each true entry), mirroring the GitHub Stats banner. `consume()` above
+  // only nulls `projectCountPending` — not `projectCountBanner` or the in-view
+  // flag — so it can't cancel this timer.
   useEffect(() => {
-    if (!projectCountBanner) return;
+    if (!projectCountBanner || !isCompletedProjectsInView) return;
     const timer = setTimeout(() => setProjectCountBanner(null), 4500);
     return () => clearTimeout(timer);
-  }, [projectCountBanner]);
+  }, [projectCountBanner, isCompletedProjectsInView]);
 
   //
   //
@@ -1197,12 +1208,12 @@ const AboutDetails = () => {
               style={{ color: "#ff6d05", textShadow: "none" }}
             >
               <Counter from={0} to={projectsData.length} plusIcon={false} inView={isCompletedProjectsInView}></Counter>
-              <p
+              <span
                 className="font-semibold text-base text-fire-amber"
                 style={{ textShadow: "none" }}
               >
                 completed projects
-              </p>
+              </span>
             </h1>
 
             {/* Two-segment category split bar (Web / System) — the "elite &
@@ -1282,12 +1293,12 @@ const AboutDetails = () => {
               {experienceData ? (
                 <>
                   <Counter from={0} to={experienceCounterValue} inView={isExperienceCardInView}></Counter>
-                  <p
+                  <span
                     className="font-semibold text-base text-fire-amber"
                     style={{ textShadow: "none" }}
                   >
                     {experienceCounterUnit} of experience
-                  </p>
+                  </span>
                 </>
               ) : (
                 // First-ever visit: no localStorage baseline yet, so the
@@ -1297,9 +1308,9 @@ const AboutDetails = () => {
                 // the layout stable and signals "still computing" instead
                 // of "the answer is zero". Once data arrives, the Counter
                 // takes over and animates 0 → value as before.
-                <p aria-label="Loading years of experience" className="animate-pulse">
+                <span aria-label="Loading years of experience" className="animate-pulse">
                   —
-                </p>
+                </span>
               )}
             </h1>
 

@@ -40,9 +40,9 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
   proportional bar (Web / System, grouped from each project's `category`)
   with an `aria-hidden` animated fill that re-fires on viewport entry, a
   responsive count legend (stacked below `sm`; side-by-side from `sm` up
-  with a vivid `#ff6d05` `|` divider that wraps back to stacked when the
-  pair — or the wider "Unavailable" labels — won't fit), and raw
-  per-category counts driven by the card's count-up. The grouping is
+  with a vivid `#ff6d05` `|` divider, wrapping back to stacked when the
+  pair won't fit), and raw per-category counts driven by the card's
+  count-up. The grouping is
   computed once at module scope as `PROJECT_CATEGORY_BREAKDOWN` from the
   static `projectsData`, so adding a project to a category (or a brand-new
   category) updates the count, colour, legend, and a new `|`-separated
