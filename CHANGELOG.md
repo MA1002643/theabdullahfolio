@@ -31,10 +31,44 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience; and the GitHub Stats Section enhancement ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19), [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)) — a redesigned, animated GitHub Stats card with a per-stat change banner, a live/stale label, and a responsive Languages list._
+_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience; and the GitHub Stats Section enhancement ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19), [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)) — a redesigned, animated GitHub Stats card with a per-stat change banner, a live/stale label, and a responsive Languages list; and the Completed Projects Section enhancement ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16)) — the completed-projects card rebuilt to match the Years-in-the-Craft card with an animated per-category breakdown bar, a screen-reader summary, a per-device count-change banner, and all about-page count-ups consolidated onto one debounced, flicker-immune hook._
 
 ### Added
 
+- **Completed Projects category breakdown** ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16),
+  `ProjectsSplitBar` in `src/components/about/index.jsx`). A two-segment
+  proportional bar (Web / System, grouped from each project's `category`)
+  with an `aria-hidden` animated fill that re-fires on viewport entry, a
+  responsive count legend (stacked below `sm`; side-by-side from `sm` up
+  with a vivid `#ff6d05` `|` divider that wraps back to stacked when the
+  pair — or the wider "Unavailable" labels — won't fit), and raw
+  per-category counts driven by the card's count-up. The grouping is
+  computed once at module scope as `PROJECT_CATEGORY_BREAKDOWN` from the
+  static `projectsData`, so adding a project to a category (or a brand-new
+  category) updates the count, colour, legend, and a new `|`-separated
+  entry automatically.
+- `sr-only` "Completed projects by category — …" summary on the Completed
+  Projects card so the per-category breakdown (information not expressed in
+  text anywhere else on the card) reaches assistive tech while the
+  decorative bar and legend stay `aria-hidden`.
+- Shared `useViewportCountUp` hook (`src/components/about/index.jsx`)
+  backing all three about-page imperative counters (`Counter`, `CountUp`,
+  `PercentCount`): animates `from → to` on a true viewport entry, replays
+  on re-entry, and **debounces the out-of-view reset**
+  (`COUNT_RESET_DELAY_MS = 300`) so an `IntersectionObserver` flicker
+  during the parent `ItemLayout`'s `scale: 0 → 1` entrance never snaps a
+  digit to 0. It also leaves an in-flight tween running through a flicker
+  (no restart, no freeze), re-arms cleanly when disabled/re-enabled, and is
+  `prefers-reduced-motion` aware.
+- `src/hooks/useProjectCountSignal.js` — a per-device "completed-projects
+  count changed since this device last saw it" banner signal (localStorage
+  baseline, same model as `useLanguagesUpdateSignal`), surfaced once the
+  card scrolls into view via the shared `UpdateBanner` and auto-hidden
+  after ~4.5 s.
+- Completed Projects card promoted to the same two-layer "elite" chrome as
+  the Years-in-the-Craft / Most Active Repository cards (outer
+  `custom-bg-abt` amber border + inner `repo-card-breathe` glow), with a
+  "Projects shipped" eyebrow microlabel.
 - **GitHub Stats** per-stat change banner ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19),
   [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)). New
   `src/utils/statsDiff.js` `computeStatsDiff(prev, current)` returns a
@@ -122,6 +156,32 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Changed
 
+- About-page count-ups consolidated onto the shared `useViewportCountUp`
+  hook ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16),
+  `src/components/about/index.jsx`), replacing three near-duplicate
+  `useEffect` count-up implementations in `Counter`, `CountUp`, and
+  `PercentCount`. The years digit, projects total, per-category counts, and
+  the Personal / Employment percentages now all **replay on every viewport
+  entry**, and the Personal/Employment and Web/System split-bar segments
+  re-fill on entry too.
+- **Years-in-the-Craft legend** is now responsive
+  (`src/components/about/index.jsx`): the Personal / Employment rows stack
+  on mobile and sit side-by-side from `sm` up, separated by a vivid
+  `#ff6d05` `|` divider, wrapping back to a stacked column when the pair
+  doesn't fit (a narrow `lg` card, or the wider "Unavailable" labels).
+- **Most Used Languages card title** recoloured from amber `#ffaa2a` to
+  vivid orange `#ff6d05` (`src/components/about/LanguagesCard.jsx`) so it
+  matches the GitHub Stats card title and the two side-by-side headers read
+  as one system.
+- Completed Projects category breakdown hoisted to module scope
+  (`PROJECT_CATEGORY_BREAKDOWN`) instead of a component `useMemo` with an
+  empty dependency array over the static `projectsData` import — cheaper
+  than a per-mount memo and sidesteps the `react-hooks/exhaustive-deps`
+  warning.
+- Extended the "Architect of Enchantment" about paragraph with three more
+  sentences in the existing mystical register so the card fills its column
+  instead of leaving large top/bottom gaps
+  (`src/components/about/index.jsx`).
 - **GitHub Stats card redesign** ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19),
   `src/components/about/StatsCard.jsx`) to share the Most Active
   Repository card's design system: vivid-orange (`#ff6d05`) stat numbers,
@@ -223,6 +283,36 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Fixed
 
+- About-page **entry glitch** on the Most Used Languages, GitHub Stats, and
+  Most Active Repository cards ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16)).
+  Each card drove its entrance fade + per-character title off the **raw**
+  `useInView` observer, which flickers true/false/true while the parent
+  `ItemLayout` scales in (`scale: 0 → 1`), replaying the entrance and
+  reading as a flicker. The entrance and title `play` now latch to the
+  hysteresis-debounced `playToken > 0` (`hasEntered`) so they play once
+  cleanly; the count-ups still replay on a real re-entry via the
+  `playToken` value (`LanguagesCard.jsx`, `StatsCard.jsx`,
+  `RepoStatsCard.jsx`).
+- `useViewportCountUp` reset/teardown hardened across all early-return
+  branches (`src/components/about/index.jsx`): (a) a brief out-of-view
+  flicker no longer snaps the digit to 0 — the reset is debounced and
+  cancelled on a quick re-entry, and an in-flight tween is left to finish
+  rather than restarted; (b) the disabled / no-node branch (e.g.
+  `PercentCount`'s `unavailable`) re-arms the latch so a later re-enable
+  with the same target animates fresh instead of staying stuck at the JSX
+  `0`; (c) the reduced-motion branch clears any pending reset timer (so it
+  can't fire and overwrite the final value back to `from`) and marks the
+  value "shown" so re-enabling motion while in view doesn't trigger a
+  redundant re-animation.
+- `useProjectCountSignal` baseline validation
+  (`src/hooks/useProjectCountSignal.js`). `readStored()` validates the
+  **parsed** value before coercion, so a corrupt / hand-edited `null`,
+  `false`, `""`, or `[]` (all of which `Number(...)` collapses to `0`) is
+  treated as "no baseline" instead of fabricating a phantom "N new
+  completed projects added" banner on the next visit. A genuine `0` is
+  accepted as a legitimate baseline (empty project list) in both the read
+  validation and the effect's write guard, so a real `0 → N` change still
+  announces.
 - Most Used Languages **update banner never auto-hid** — it stayed on
   screen until the user manually refreshed
   (`src/components/about/LanguagesCard.jsx`). The 4.5 s auto-hide
@@ -287,11 +377,15 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
   because the parent `ItemLayout`'s `initial={{ scale: 0 }}` entrance
   collapsed every descendant's `IntersectionObserver` rect to zero
   area, so `useViewportCountTrigger`'s `playToken` never armed and
-  the count-up early-return suppressed the animation. Both components
-  now drive their animations directly from `(from, to)` / `value`
-  effect deps with no viewport gate. Both honour
-  `prefers-reduced-motion`. Bar segments inside `ExperienceSplitBar`
-  swapped `whileInView` for `animate` for the same reason.
+  the count-up early-return suppressed the animation. Both counters now
+  run through the shared `useViewportCountUp` hook, which drives the
+  animation from the **card-level** in-view signal
+  (`isExperienceCardInView`) rather than a per-digit observer that the
+  `scale(0)` entrance would collapse, and debounces the out-of-view reset
+  so a scroll/scale flicker can't snap the digit back to 0. Both honour
+  `prefers-reduced-motion`. Bar segments inside `ExperienceSplitBar` (and
+  the new projects `ProjectsSplitBar`) likewise gate their fill on that
+  card-level signal instead of a per-segment `whileInView`.
 - `useExperienceSummary` (`src/hooks/useExperienceSummary.js`) now
   hydrates `data` from `localStorage` on mount. The hook already wrote
   the diff baseline there but never read it back as initial state, so
