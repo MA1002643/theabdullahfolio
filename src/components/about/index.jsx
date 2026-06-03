@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
 import { animate, useInView, useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
 import { projectsData } from "@/app/data";
@@ -306,6 +306,25 @@ function ExperienceSplitBar({
 // two-category split (Web / System today) reads as the same visual system;
 // extra categories fall back to the cooler golds further down the palette.
 const PROJECT_CATEGORY_COLORS = ["#ff6d05", "#ffd27d", "#ffaa2a", "#d4af7a", "#b8946a"];
+
+// Completed-projects category breakdown — computed once at module load from the
+// static `projectsData` import. The count only ever changes across a deploy
+// (there's no runtime data source), so there's nothing to recompute per render
+// or per mount; hoisting to module scope is both cheaper than a `useMemo` and
+// sidesteps the react-hooks/exhaustive-deps warning that an empty dep array
+// over `projectsData` would trip. Sorted by count desc so the largest category
+// leads with the lead colour (#ff6d05) and anchors the bar's left edge — same
+// reading order as the years card, where Personal (the larger share) leads.
+const PROJECT_CATEGORY_BREAKDOWN = (() => {
+  const counts = projectsData.reduce((acc, p) => {
+    const key = p.category || "Other";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts)
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+})();
 
 // Completed-projects category split bar — the "elite & complex" counterpart to
 // the years card's ExperienceSplitBar. Apportions the total project count
@@ -1015,22 +1034,9 @@ const AboutDetails = () => {
   });
   const { pendingMessage: projectCountPending, consume: consumeProjectCount } =
     useProjectCountSignal(projectsData.length);
-  // Category breakdown that feeds the completed-projects split bar (the elite
-  // counterpart to the years card's Personal/Employment split). Derived from
-  // the static projectsData so it stays correct as projects are added/retired;
-  // sorted by count desc so the largest category takes the lead colour
-  // (#ff6d05) and anchors the bar's left edge — same reading order as the
-  // years card, where Personal (the larger share) leads.
-  const projectCategoryBreakdown = useMemo(() => {
-    const counts = projectsData.reduce((acc, p) => {
-      const key = p.category || "Other";
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
-    return Object.entries(counts)
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count);
-  }, []);
+  // Category breakdown feeding the completed-projects split bar is computed
+  // once at module load (see PROJECT_CATEGORY_BREAKDOWN) — projectsData is a
+  // static import, so there's nothing component-scoped to recompute here.
   const [projectCountBanner, setProjectCountBanner] = useState(null);
   // Promote the pending message to a visible banner once the card scrolls into
   // view, then consume it. The auto-hide timer lives in its own effect below
@@ -1164,7 +1170,7 @@ const AboutDetails = () => {
             {/* Two-segment category split bar (Web / System) — the "elite &
                 complex" counterpart to the years card's Personal/Employment
                 split, same track, animated fill, legend, and percentages. */}
-            <ProjectsSplitBar breakdown={projectCategoryBreakdown} inView={isCompletedProjectsInView} />
+            <ProjectsSplitBar breakdown={PROJECT_CATEGORY_BREAKDOWN} inView={isCompletedProjectsInView} />
           </div>
         </ItemLayout>
 

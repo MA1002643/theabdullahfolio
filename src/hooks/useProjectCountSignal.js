@@ -20,8 +20,9 @@ function readStored() {
     // next visit reports `count - 0` as a bogus "N new completed projects
     // added". Requiring `typeof "number"` first rejects those corrupt /
     // hand-edited shapes outright, while still accepting a genuine stored `0`
-    // (a legitimate baseline when the project list is empty — see the write
-    // guard above, which now records a `0` count).
+    // (a legitimate baseline when the project list is empty — the count guard
+    // in `useProjectCountSignal`'s effect below admits `0`, so a `0` can be
+    // written and must round-trip back here intact).
     if (typeof parsed !== "number" || !Number.isFinite(parsed) || parsed < 0) {
       return null;
     }
