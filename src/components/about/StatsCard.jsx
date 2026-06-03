@@ -308,10 +308,15 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
 /* ---------------------------------- CARD ---------------------------------- */
 export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated, diffMessage = null, isLive = false }) {
     const cardRef = useRef(null);
-    // `isInView` drives the outer fade + title play + banner gate; `playToken`
-    // (latched, flicker-immune) drives the count-ups so brief scroll
-    // oscillations never restart them mid-flight.
+    // `playToken` (latched, hysteresis-debounced, monotonic) drives BOTH the
+    // count-ups AND the entrance fade/title play — the parent ItemLayout's
+    // scale 0 → 1 entry wobbles this card's observer rect, so raw `isInView`
+    // toggled true/false/true and replayed the entrance (the visible glitch).
+    // `playToken > 0` flips once on a real entry and never reverts, so the
+    // entrance plays a single clean time. `isInView` is kept only for the
+    // banner gate, which is fine flickering off-screen (no message shown).
     const { isInView, playToken } = useViewportCountTrigger(cardRef, { amount: 0.3, margin: "-50px" });
+    const hasEntered = playToken > 0;
     const prefersReducedMotion = useReducedMotion();
 
     // Banner message: prefer the specific per-stat diff; fall back to a generic
@@ -347,7 +352,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             ref={cardRef}
             variants={cardVariants}
             initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
+            animate={hasEntered ? "visible" : "hidden"}
             className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg h-full"
         >
             <UpdateBanner
@@ -367,7 +372,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             <motion.div variants={childVariants} className="mb-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <Activity className="w-5 h-5 flex-shrink-0" style={{ color: AMBER }} />
-                    <AnimatedTitle text={`${userName}'s GitHub Stats`} play={isInView} />
+                    <AnimatedTitle text={`${userName}'s GitHub Stats`} play={hasEntered} />
                 </div>
                 {isLive && (
                     <div className="flex items-center gap-2 mt-1.5">

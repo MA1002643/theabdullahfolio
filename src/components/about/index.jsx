@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
 import { animate, useInView, useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
 import { projectsData } from "@/app/data";
@@ -10,6 +10,7 @@ import { detectChanges } from "@/utils/diffChanges";
 import { computeRepoDiff } from "@/utils/repoDiff";
 import { computeStatsDiff } from "@/utils/statsDiff";
 import { useExperienceSummary } from "@/hooks/useExperienceSummary";
+import { useProjectCountSignal } from "@/hooks/useProjectCountSignal";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
@@ -17,7 +18,7 @@ import { UpdateBanner } from "./UpdateBanner";
 const githubStatsStorageKey = (username) =>
   `github-stats:lastGood:${username}`;
 
-const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Join me as I continue to explore new spells and technologies to shape the future of the web.";
+const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Beyond the visible enchantments, I tend the hidden machinery — conjuring resilient APIs and databases (the vaults where each realm's memory is safely kept) and weaving automated pipelines that carry my creations from the workshop to the cloud (the boundless aether where they finally awaken). I hold performance and accessibility as sacred vows, so every portal opens swiftly for every traveller, on any device and in any far-flung corner of the realm. Curiosity remains my truest compass, forever drawing me toward new grimoires, sharper instincts, and ideas bold enough to become living, breathing experiences. Join me as I continue to explore new spells and technologies to shape the future of the web.";
 const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
 
 const RevealWord = ({ children, progress, range, reducedMotion }) => {
@@ -50,7 +51,11 @@ const RevealWord = ({ children, progress, range, reducedMotion }) => {
 // source failed to load (e.g. employment, when the resume PDF can't be
 // parsed) is distinguished from a genuine 0% — rendering "0%" for missing
 // data would assert "zero experience" when the truth is "couldn't measure".
-function PercentCount({ value, unavailable = false }) {
+// `inView` (default true) makes the percentage count-up replay on every
+// viewport entry: each false → true flip re-runs the 0 → value tween, and
+// going out of view resets the digit to 0 so re-entry starts fresh. Defaults
+// to true so a caller that doesn't gate on visibility animates once on mount.
+function PercentCount({ value, unavailable = false, inView = true }) {
   const nodeRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
 
@@ -62,6 +67,11 @@ function PercentCount({ value, unavailable = false }) {
       node.textContent = String(value);
       return;
     }
+    if (!inView) {
+      // Out of view — reset to 0 so re-entry animates from the start.
+      node.textContent = "0";
+      return;
+    }
     const controls = animate(0, value, {
       duration: 2,
       onUpdate(v) {
@@ -69,7 +79,7 @@ function PercentCount({ value, unavailable = false }) {
       },
     });
     return () => controls.stop();
-  }, [value, prefersReducedMotion, unavailable]);
+  }, [value, prefersReducedMotion, unavailable, inView]);
 
   if (unavailable) {
     return (
@@ -87,6 +97,43 @@ function PercentCount({ value, unavailable = false }) {
   );
 }
 
+// Integer count-up for the projects category legend (Web / System counts).
+// Mirrors the card's big `Counter` exactly — animates 0 → value over 2s on
+// mount via framer's `animate`, and honours `prefers-reduced-motion` by writing
+// the final value straight to the node. Lives at module scope (unlike the
+// in-component `Counter`) so the module-level ProjectsSplitBar can use it.
+// `inView` drives a replay-on-every-entry count-up: each time it flips false →
+// true the effect re-runs and animates 0 → value again; when it goes false the
+// digit resets to 0 so the next entry starts fresh. Defaults to `true` (animate
+// once on mount) for any caller that doesn't gate on viewport visibility.
+function CountUp({ value, inView = true }) {
+  const nodeRef = useRef(null);
+  const prefersReducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    const node = nodeRef.current;
+    if (!node) return;
+    if (prefersReducedMotion) {
+      node.textContent = String(value);
+      return;
+    }
+    if (!inView) {
+      // Out of view — reset to 0 so re-entry animates from the start.
+      node.textContent = "0";
+      return;
+    }
+    const controls = animate(0, value, {
+      duration: 2,
+      onUpdate(v) {
+        node.textContent = v.toFixed(0);
+      },
+    });
+    return () => controls.stop();
+  }, [value, prefersReducedMotion, inView]);
+
+  return <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>;
+}
+
 // Two-segment proportional bar shown under the years digit on the
 // years card. Personal Projects on the left (gold), Employment on the
 // right (cool cyan) — same color encoding as the modal donut so the
@@ -98,6 +145,7 @@ function ExperienceSplitBar({
   employmentMonths,
   personalAvailable = true,
   employmentAvailable = true,
+  inView = true,
 }) {
   const prefersReducedMotion = useReducedMotion();
   // When a side's source failed to load its month count is *unknown*, not
@@ -125,7 +173,7 @@ function ExperienceSplitBar({
   const employmentPct = total > 0 ? (effectiveEmployment / total) * 100 : 0;
 
   return (
-    <div className="mt-4 w-full" aria-hidden="true">
+    <div className="mt-3 w-full" aria-hidden="true">
       <div
         className="h-1.5 w-full rounded-full overflow-hidden relative"
         style={{ background: "rgba(244, 227, 184, 0.06)" }}
@@ -150,7 +198,11 @@ function ExperienceSplitBar({
               boxShadow: "0 0 10px rgba(255, 109, 5, 0.45)",
             }}
             initial={prefersReducedMotion ? { width: `${personalPct}%` } : { width: 0 }}
-            animate={{ width: `${personalPct}%` }}
+            // Re-fills on every viewport entry: `inView` (from the card-level
+            // useInView, not a scale-collapsed segment observer) drives the
+            // width back to 0 when the card leaves and animates it to the share
+            // again on re-entry. Reduced motion holds the final width, no tween.
+            animate={{ width: prefersReducedMotion || inView ? `${personalPct}%` : 0 }}
             transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
           />
         )}
@@ -163,24 +215,30 @@ function ExperienceSplitBar({
               boxShadow: "0 0 10px rgba(255, 210, 125, 0.45)",
             }}
             initial={prefersReducedMotion ? { width: `${employmentPct}%` } : { width: 0 }}
-            animate={{ width: `${employmentPct}%` }}
+            animate={{ width: prefersReducedMotion || inView ? `${employmentPct}%` : 0 }}
             transition={{ duration: 1, ease: "easeOut", delay: 0.4 }}
           />
         )}
       </div>
-      {/* Stacked legend — two rows of [dot label … percentage]. The
-          previous single-row `justify-between` layout cramped the
-          two pills on narrow card widths (years card is full-width
-          on mobile, 1/3 width at lg+; both can hit widths where
-          "● PERSONAL 32%" + "EMPLOYMENT 68% ●" overflowed or
-          wrapped awkwardly). Stacking is cleaner at every width and
-          aligns the percentages in a true vertical column thanks to
-          tabular-nums + justify-between on each row. */}
+      {/* Legend — two [dot label … percentage] items. Layout is responsive:
+          • Below `sm` (phones): a single stacked column (flex-col), each row
+            full-width with `justify-between` so the percentages align in a
+            true right-hand column. This is the original look, unchanged.
+          • `sm` and up (tablets/laptops): a wrapping flex ROW. When both items
+            fit they sit side by side with a safe `gap-x-6` between them; when
+            they don't (a narrow lg-width 1/3 card, or the wider "Unavailable"
+            labels), `flex-wrap` drops the second onto its own line and `grow`
+            lets each lone item fill the width — falling back to the exact
+            stacked `justify-between` rows above. `basis-[130px]` sets the
+            fit/wrap threshold; `min-width:auto` (left at its default) means an
+            item that's intrinsically wider than that — i.e. an "Unavailable"
+            row — pushes the wrap point out on its own, so the unavailable
+            state stacks precisely when the pair no longer fits. */}
       <div
-        className="flex flex-col gap-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
+        className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
         style={{ color: "#d4af7a" }}
       >
-        <span className="flex items-center justify-between gap-2">
+        <span className="flex items-center justify-between gap-2 sm:grow sm:basis-[130px]">
           <span className="flex items-center gap-1.5">
             {/* Filled dot when measured; hollow ring when unavailable, so
                 a failed source reads as "no data" rather than a real
@@ -199,10 +257,22 @@ function ExperienceSplitBar({
             <PercentCount
               value={Math.round(personalPct)}
               unavailable={!personalAvailable}
+              inView={inView}
             />
           </span>
         </span>
-        <span className="flex items-center justify-between gap-2">
+        {/* Vertical divider between the two legend items — same vivid
+            #ff6d05 as the experience digit above. Shown only in the `sm+`
+            side-by-side row; below `sm` the legend is a stacked column so
+            this is `hidden` and no rule appears between the two rows. */}
+        <span
+          aria-hidden="true"
+          className="hidden sm:block select-none px-3"
+          style={{ color: "#ff6d05", textShadow: "none" }}
+        >
+          |
+        </span>
+        <span className="flex items-center justify-between gap-2 sm:grow sm:basis-[130px]">
           <span className="flex items-center gap-1.5">
             {/* Filled dot when measured; hollow ring when unavailable, so
                 the empty employment row reads as "no data" at a glance
@@ -221,9 +291,121 @@ function ExperienceSplitBar({
             <PercentCount
               value={Math.round(employmentPct)}
               unavailable={!employmentAvailable}
+              inView={inView}
             />
           </span>
         </span>
+      </div>
+    </div>
+  );
+}
+
+// Warm palette for the completed-projects category split, drawn from the same
+// 5-tone scheme the years card uses (vivid orange → golds). Index 0/1 are the
+// exact two colours of the years card's Personal/Employment segments, so a
+// two-category split (Web / System today) reads as the same visual system;
+// extra categories fall back to the cooler golds further down the palette.
+const PROJECT_CATEGORY_COLORS = ["#ff6d05", "#ffd27d", "#ffaa2a", "#d4af7a", "#b8946a"];
+
+// Completed-projects category split bar — the "elite & complex" counterpart to
+// the years card's ExperienceSplitBar. Apportions the total project count
+// across its categories (Web / System), rendering a single thin rounded bar of
+// proportional segments plus a stacked legend with animated percentages. Built
+// to mirror ExperienceSplitBar 1:1 visually: same height/track, same
+// absolute-positioned segments (so a zero-share category never claims layout
+// width), and the same 10px tracking legend rows. The fill is gated on the
+// card-level `inView` prop (passed down from the parent's useInView, NOT a
+// per-segment whileInView — the parent ItemLayout's `scale(0)` entrance would
+// collapse a segment's own IntersectionObserver rect to zero area, exactly as
+// documented on PercentCount above), so it re-fires on every viewport entry.
+function ProjectsSplitBar({ breakdown, inView = true }) {
+  const prefersReducedMotion = useReducedMotion();
+  const total = breakdown.reduce((sum, c) => sum + c.count, 0);
+  if (total === 0) return null;
+
+  // Cumulative left-offset per segment so each absolutely-positioned slice
+  // starts where the previous one ended — no flex, so a 0% category draws
+  // nothing and steals no width.
+  let cumulative = 0;
+  const segments = breakdown.map((c, i) => {
+    const pct = (c.count / total) * 100;
+    const left = cumulative;
+    cumulative += pct;
+    return {
+      ...c,
+      pct,
+      left,
+      color: PROJECT_CATEGORY_COLORS[i % PROJECT_CATEGORY_COLORS.length],
+    };
+  });
+
+  return (
+    <div className="mt-3 w-full" aria-hidden="true">
+      <div
+        className="h-1.5 w-full rounded-full overflow-hidden relative"
+        style={{ background: "rgba(244, 227, 184, 0.06)" }}
+      >
+        {segments.map((s, i) => (
+          <motion.span
+            key={s.label}
+            className="absolute inset-y-0"
+            style={{
+              left: `${s.left}%`,
+              background: s.color,
+              // 8-digit hex: `73` ≈ 0.45 alpha, matching the 0.45 glow on the
+              // years card's split segments.
+              boxShadow: `0 0 10px ${s.color}73`,
+            }}
+            initial={prefersReducedMotion ? { width: `${s.pct}%` } : { width: 0 }}
+            // Re-fills on every viewport entry (see ExperienceSplitBar): the
+            // card-level `inView` collapses the width to 0 on exit and animates
+            // it back to the share on re-entry. Reduced motion holds final width.
+            animate={{ width: prefersReducedMotion || inView ? `${s.pct}%` : 0 }}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.2 + i * 0.15 }}
+          />
+        ))}
+      </div>
+      {/* Legend — mirrors the years card's responsive layout exactly: a
+          stacked column below `sm` (full-width rows, `justify-between`), and a
+          wrapping side-by-side row from `sm` up. Each item grows to fill when
+          it's alone on a line (the wrapped/stacked fallback), and a vivid
+          #ff6d05 `|` divider — same colour as the count digit above — sits
+          between adjacent items in the side-by-side row (hidden below `sm`). */}
+      <div
+        className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
+        style={{ color: "#d4af7a" }}
+      >
+        {segments.map((s, i) => (
+          <React.Fragment key={s.label}>
+            {i > 0 && (
+              <span
+                aria-hidden="true"
+                className="hidden sm:block select-none px-3"
+                style={{ color: "#ff6d05", textShadow: "none" }}
+              >
+                |
+              </span>
+            )}
+            <span className="flex items-center justify-between gap-2 sm:grow sm:basis-[130px]">
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: s.color }}
+                />
+                <span className="text-fire-amber">{s.label}</span>
+              </span>
+              {/* Legend shows the raw project count per category (not a
+                  percentage) — the bar segment widths already carry the
+                  proportional share. `s.count` is derived from projectsData,
+                  so adding a project to a category bumps this automatically.
+                  Animated with the same 0 → count count-up as the card's big
+                  "completed projects" digit. */}
+              <span style={{ color: "#ff6d05", textShadow: "none" }}>
+                <CountUp value={s.count} inView={inView} />
+              </span>
+            </span>
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );
@@ -343,7 +525,12 @@ const AboutDetails = () => {
   // replay every time `experienceCounterValue` flips from cached to
   // live data. The JSX text initialiser uses the same gate so the
   // first paint is also the final value under reduced motion.
-  function Counter({ from, to, plusIcon = true }) {
+  // `inView` (default true) makes the count-up replay on every viewport entry:
+  // each false → true flip re-runs the tween from `from` → `to`, and going out
+  // of view resets the digit to `from` so the next entry starts fresh. Callers
+  // that don't pass it (e.g. the years card) keep the original animate-once
+  // behaviour since `inView` stays constant true.
+  function Counter({ from, to, plusIcon = true, inView = true }) {
     const nodeRef = useRef(null);
     const prefersReducedMotion = useReducedMotion();
 
@@ -352,6 +539,11 @@ const AboutDetails = () => {
       if (!node) return;
       if (prefersReducedMotion) {
         node.textContent = String(to);
+        return;
+      }
+      if (!inView) {
+        // Out of view — reset to the start so re-entry animates from `from`.
+        node.textContent = String(from);
         return;
       }
 
@@ -363,7 +555,7 @@ const AboutDetails = () => {
       });
 
       return () => controls.stop();
-    }, [from, to, prefersReducedMotion]);
+    }, [from, to, prefersReducedMotion, inView]);
 
     return (
       <div className="flex items-center justify-center">
@@ -796,6 +988,51 @@ const AboutDetails = () => {
   const skillsRef = useRef(null);
   const isSkillsInView = useInView(skillsRef, { once: false, amount: 0.3 });
 
+  // Completed-projects count-change banner (issue #16). `projectsData` is a
+  // static import, so the count only moves across a deploy; the signal hook
+  // compares it to a per-device localStorage baseline and surfaces a one-time
+  // message when it changed since this device last saw it (same model as the
+  // languages card). Shown via the shared UpdateBanner once the card is in
+  // view, then auto-hidden after ~4.5s.
+  const completedProjectsRef = useRef(null);
+  const isCompletedProjectsInView = useInView(completedProjectsRef, {
+    once: false,
+    amount: 0.3,
+  });
+  const { pendingMessage: projectCountPending, consume: consumeProjectCount } =
+    useProjectCountSignal(projectsData.length);
+  // Category breakdown that feeds the completed-projects split bar (the elite
+  // counterpart to the years card's Personal/Employment split). Derived from
+  // the static projectsData so it stays correct as projects are added/retired;
+  // sorted by count desc so the largest category takes the lead colour
+  // (#ff6d05) and anchors the bar's left edge — same reading order as the
+  // years card, where Personal (the larger share) leads.
+  const projectCategoryBreakdown = useMemo(() => {
+    const counts = projectsData.reduce((acc, p) => {
+      const key = p.category || "Other";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(counts)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count);
+  }, []);
+  const [projectCountBanner, setProjectCountBanner] = useState(null);
+  // Promote the pending message to a visible banner once the card scrolls into
+  // view, then consume it. The auto-hide timer lives in its own effect below
+  // (keyed on the visible message), so consuming the pending message can't
+  // cancel it — the same split that fixed the languages banner getting stuck.
+  useEffect(() => {
+    if (!projectCountPending || !isCompletedProjectsInView) return;
+    setProjectCountBanner(projectCountPending);
+    consumeProjectCount();
+  }, [projectCountPending, isCompletedProjectsInView, consumeProjectCount]);
+  useEffect(() => {
+    if (!projectCountBanner) return;
+    const timer = setTimeout(() => setProjectCountBanner(null), 4500);
+    return () => clearTimeout(timer);
+  }, [projectCountBanner]);
+
   //
   //
   // Icons...
@@ -859,12 +1096,62 @@ const AboutDetails = () => {
         </ItemLayout>
 
         <ItemLayout
-          className={" col-span-full xs:col-span-6 lg:col-span-4 text-accent"}
+          ref={completedProjectsRef}
+          // Mirrors the "Years in the craft" card exactly: `!p-0` hands all
+          // padding to the inner `repo-card-breathe` wrapper, and `group
+          // relative` matches the sibling so the two feature cards share one
+          // structure (outer owns the `custom-bg-abt` amber border + gradient;
+          // inner owns the breathing glow on its rounded-lg perimeter).
+          className={" group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent !p-0"}
         >
-          <h1 className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl text-shadow-neon-orange">
-            <Counter from={0} to={projectsData.length} plusIcon={false}></Counter>
-            <p style={{ textShadow: "none" }} className="font-semibold text-base text-shadow-neon-light-orange">completed projects</p>
-          </h1>
+          {/* Inner wrapper is the 1:1 twin of the years card's: the
+              `repo-card-breathe` pulsing glow border on a `rounded-lg`
+              perimeter, padded `p-6`, content flex-col centered. */}
+          <div className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center">
+            {/* Count-change banner — appears only when the completed-projects
+                count changed since this device last saw it (issue #16). The
+                UpdateBanner's nodes are both out-of-flow (sr-only is absolute,
+                overlay is absolute inset-0), so it doesn't disturb the card's
+                stacked content. */}
+            <UpdateBanner
+              message={projectCountBanner}
+              visible={isCompletedProjectsInView}
+              srPrefix="Projects update: "
+            />
+
+            {/* Eyebrow — same uppercase micro-label treatment + amber tone as
+                the years card's "Years in the craft", so the two feature cards
+                announce themselves identically. */}
+            <p
+              aria-hidden="true"
+              className="text-[10px] uppercase tracking-[0.22em] mb-2"
+              style={{ color: "#ffaa2a", textShadow: "none" }}
+            >
+              Projects shipped
+            </p>
+
+            {/* Digit uses the vivid neon-orange (#ff6d05) of the sibling years
+                digit; the label now matches the years card's `text-fire-amber`
+                "of experience" tone (was the golden text-shadow-neon-light-orange)
+                so the two cards' colour systems are identical. */}
+            <h1
+              className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
+              style={{ color: "#ff6d05", textShadow: "none" }}
+            >
+              <Counter from={0} to={projectsData.length} plusIcon={false} inView={isCompletedProjectsInView}></Counter>
+              <p
+                className="font-semibold text-base text-fire-amber"
+                style={{ textShadow: "none" }}
+              >
+                completed projects
+              </p>
+            </h1>
+
+            {/* Two-segment category split bar (Web / System) — the "elite &
+                complex" counterpart to the years card's Personal/Employment
+                split, same track, animated fill, legend, and percentages. */}
+            <ProjectsSplitBar breakdown={projectCategoryBreakdown} inView={isCompletedProjectsInView} />
+          </div>
         </ItemLayout>
 
         <ItemLayout
@@ -906,7 +1193,7 @@ const AboutDetails = () => {
               The content's flex-col stack + vertical centering moved
               from the outer to this inner so layout behaviour is
               unchanged after the restructure. */}
-          <div className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg p-6 flex flex-col items-stretch justify-center">
+          <div className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center">
             <ExperienceUpdateBanner
               message={testExperienceMessage ?? experienceChangeMessage}
               inView={isExperienceCardInView}
@@ -936,7 +1223,7 @@ const AboutDetails = () => {
             >
               {experienceData ? (
                 <>
-                  <Counter from={0} to={experienceCounterValue}></Counter>
+                  <Counter from={0} to={experienceCounterValue} inView={isExperienceCardInView}></Counter>
                   <p
                     className="font-semibold text-base text-fire-amber"
                     style={{ textShadow: "none" }}
@@ -972,6 +1259,7 @@ const AboutDetails = () => {
                 // the "Unavailable" treatment instead of a misleading 0%.
                 personalAvailable={experiencePersonalAvailable}
                 employmentAvailable={experienceEmploymentAvailable}
+                inView={isExperienceCardInView}
               />
             )}
 
@@ -981,7 +1269,7 @@ const AboutDetails = () => {
                 aria-haspopup, so this is purely a visual hint. */}
             <p
               aria-hidden="true"
-              className="text-[11px] tracking-wide mt-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
+              className="text-[11px] tracking-wide mt-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
               style={{ color: "#ffd27d", textShadow: "none" }}
             >
               View breakdown →

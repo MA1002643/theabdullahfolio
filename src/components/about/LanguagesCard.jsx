@@ -254,7 +254,14 @@ export default function LanguagesCard({ data, isLive = false }) {
     <motion.div
       ref={cardRef}
       initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      // Drive the fade-in off the latched, flicker-immune `playToken` (>0 once
+      // a true entry happens) instead of raw `isInView`. The parent ItemLayout
+      // animates scale 0 → 1 on entry, which wobbles this card's observer rect
+      // and made raw `isInView` toggle true/false/true — replaying the fade and
+      // looking like a glitch. `playToken > 0` flips once and stays, so the
+      // entrance plays a single time; the count-ups still replay via the
+      // `playToken` value passed to the bar/label children.
+      animate={playToken > 0 ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 1, ease: "easeOut" }}
       // Border + glow parity with the "Years in the craft" card: the outer
       // `custom-bg-abt` amber border comes from the `!p-0` ItemLayout
@@ -272,11 +279,12 @@ export default function LanguagesCard({ data, isLive = false }) {
 
       {/* Header — title + an analytics-style meta line. */}
       <div className="mb-5">
-        {/* Title — amber (#ffaa2a), matching the "Years in the craft"
-            eyebrow on the years card. Flat, semibold, no neon glow. */}
+        {/* Title — vivid orange (#ff6d05), matching the "… GitHub Stats" card
+            title so the side-by-side pair share one headline hue. Flat,
+            semibold, no neon glow. */}
         <h2
           className="text-xl md:text-2xl text-left font-semibold mb-1"
-          style={{ color: "#ffaa2a", textShadow: "none" }}
+          style={{ color: "#ff6d05", textShadow: "none" }}
         >
           Most Used Languages
         </h2>
