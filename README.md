@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.17-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--04--25-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-2026--06--03-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -56,6 +56,8 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
 | **Animated GitHub Stats** | Live GraphQL API → fast-start/slow-finish count-ups, a breathing SVG rank arc, hover-spotlight metric rows, and a per-stat change banner (e.g. "Total Stars +5 \| Total Commits +50"); a "Live GitHub Metrics" label that hides on stale/fallback data; diff-based change detection with 10-min polling |
 | **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up; responsive list: top 5 in a single column (mobile → `lg`), up to 10 in two columns at `xl`+ |
+| **Completed Projects Breakdown** | "Projects shipped" card with an animated per-category proportional bar (Web / System, derived from the project data), a `\|`-separated count legend that wraps stacked→side-by-side responsively, count-ups that replay on every viewport entry, and an `sr-only` summary so screen readers get the breakdown |
+| **Years in the Craft** | Experience figure derived live from the earliest GitHub repo **and** software roles parsed from the résumé PDF, with a Personal vs Employment split bar and a click-to-open category breakdown modal |
 | **Rocket Contact Form** | Multi-phase submit animation — shake → flame flicker → fly-up trail → checkmark spring, integrated with Nodemailer SMTP |
 | **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
 | **Ambient Fireflies** | Generative particle system with randomised spawn, duration, and drift paths |
@@ -211,7 +213,7 @@ theabdullahfolio/
 │   ├── components/
 │   │   ├── navigation/                 # Orbital ring — trig positioning, 5 breakpoints
 │   │   ├── project-detail/             # 3D laptop, aurora parallax, boot sequence, lantern sweep
-│   │   ├── about/                      # GitHub stats card (count-ups, rank arc, change banner), languages card, diff tracking
+│   │   ├── about/                      # Stats/streaks/repo/languages cards, Completed Projects + Years-in-the-Craft cards, experience modal, shared count-up hook, diff tracking
 │   │   ├── projects/                   # Filtered grid with AnimatePresence transitions
 │   │   ├── contact/                    # Multi-phase rocket form, react-hook-form
 │   │   ├── qualifications/             # 3D CSS carousel with category tabs
@@ -220,13 +222,18 @@ theabdullahfolio/
 │   │   ├── HomeBtn.jsx                 # Fixed, mobile-safe navigation control
 │   │   └── ProjectsBtn.jsx             # Back button for dynamic project routes
 │   ├── hooks/
-│   │   └── useLanguagesUpdateSignal.js # Per-device language-change banner signal
+│   │   ├── useExperienceSummary.js     # Years-in-the-craft data + localStorage hydration + change signal
+│   │   ├── useLanguagesUpdateSignal.js # Per-device language-change banner signal
+│   │   ├── useProjectCountSignal.js    # Per-device completed-projects count-change banner signal
+│   │   └── useViewportCountTrigger.js  # Latched, hysteresis-debounced "play once per viewport entry" trigger
 │   └── utils/
 │       ├── rankCalculator.js           # GitHub developer rank algorithm
 │       ├── diffChanges.js              # State diff detection for live stat updates
 │       ├── languageDiff.js             # Language fingerprint + diff (client-computed)
 │       ├── statsDiff.js                # Per-stat GitHub-stats diff + banner summary
+│       ├── repoDiff.js                 # Most-active-repository change summary
 │       ├── animationCurves.js          # Shared fast-start/slow-finish count-up easing
+│       ├── experience/                 # Résumé-PDF parsing + experience aggregation helpers
 │       └── emoji.js                    # Emoji name-to-symbol resolution
 ├── .github/
 │   ├── workflows/
@@ -334,6 +341,8 @@ rm /tmp/fallback.json
 
 **10. GitHub Stats card — per-stat change banner & live label** — the stats card (`src/components/about/StatsCard.jsx`) reuses the Most Active Repository card's design system (vivid-orange numbers, `text-fire-amber` labels, the `repo-card-breathe` container, a spring-staggered entrance, a per-character title, hover-spotlight rows, fast-start/slow-finish count-ups, and a rank arc with a breathing glow — all `prefers-reduced-motion` aware). On each 10-min poll, `src/utils/statsDiff.js` `computeStatsDiff(prev, current)` compares the previous and current snapshots and, when a value actually moved, produces a signed-delta summary (e.g. `Total Stars +5 | Total Commits +50`) shown as a banner that auto-hides after ~4.5s and is gated on viewport visibility (an update landing off-screen waits to show + time out until the card is scrolled into view). The message is reconciled every poll — cleared when stat values are unchanged — so a non-stat update (such as a display-name change) never replays a stale delta. A **"Live GitHub Metrics"** eyebrow appears only when the stats are genuinely live (driven by the client's `statsLive` flag); it's hidden whenever the card is showing the bundled `_fallback` snapshot or kept/stale data, mirroring the languages card's `· live from GitHub` label.
 
+**11. Completed Projects & Years-in-the-Craft cards** — the two feature cards beside the About paragraph share the Most Active Repository card's two-layer chrome (outer `custom-bg-abt` amber border + inner `repo-card-breathe` glow). *Completed Projects* renders `projectsData.length` with a count-up plus an animated per-category proportional bar (Web / System today, grouped from each project's `category` once at module scope as `PROJECT_CATEGORY_BREAKDOWN`), a responsive legend (stacked on mobile; side-by-side from `sm` with a vivid `#ff6d05` `|` divider, wrapping back to stacked when the pair won't fit), raw per-category counts, and an `sr-only` "Completed projects by category — …" line so screen readers get the breakdown while the decorative bar + legend stay `aria-hidden`. A per-device `useProjectCountSignal` surfaces a one-time "N new completed projects" banner when the count changes across a deploy. *Years in the Craft* shows the figure from `/api/experience-summary` with a Personal vs Employment split bar and a click-to-open breakdown modal. Every digit on both cards runs through a shared `useViewportCountUp` hook: it animates on a true viewport entry, **replays on re-entry**, and **debounces the out-of-view reset** (`COUNT_RESET_DELAY_MS`) so a brief `IntersectionObserver` flicker during the parent `ItemLayout`'s `scale: 0 → 1` entrance never snaps a number back to 0 — all `prefers-reduced-motion` aware.
+
 ### Commands
 
 ```bash
@@ -405,7 +414,7 @@ upgrade-insecure-requests
 ## 🎬 Animation Inventory
 
 <details>
-<summary><strong>View all 15 custom animations</strong></summary>
+<summary><strong>View all 17 custom animations</strong></summary>
 <br />
 
 | Animation | Technique | Location |
@@ -419,6 +428,8 @@ upgrade-insecure-requests
 | SVG rank arc | `stroke-dashoffset` sweep + breathing radial glow | `about/StatsCard.jsx` |
 | GitHub stat change banner | per-character reveal, ~4.5s auto-hide gated on viewport | `about/StatsCard.jsx` + `about/UpdateBanner.jsx` |
 | Language count-up & bar sheen | `animate()` fast-start/slow-finish curve + one-shot shimmer sweep on viewport entry | `about/LanguagesCard.jsx` |
+| About count-ups (years, projects total, %s, category counts) | Shared `useViewportCountUp` — `animate()` count-up that replays on viewport entry with a debounced, flicker-immune out-of-view reset | `about/index.jsx` |
+| Experience & projects split bars | Proportional segment widths that re-fill on each viewport entry (`animate` gated on the card's in-view signal) | `about/index.jsx` |
 | Firefly drift | `@keyframes` with randomised duration + paths | `FireFliesBackground.jsx` |
 | Loader progress | SVG `stroke-dashoffset` + percentage counter | `loaderWrapper/index.jsx` |
 | Stagger reveals | `staggerChildren` Framer Motion variants | Multiple components |

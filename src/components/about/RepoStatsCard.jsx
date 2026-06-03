@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useAnimation, useInView, useReducedMotion } from "framer-motion";
+import { motion, useAnimation, useReducedMotion } from "framer-motion";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
 import {
@@ -420,18 +420,21 @@ function ActivityArc({ score, maxScore = 10000, playToken, prefersReducedMotion 
 export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
   const ref = useRef(null);
   // Two visibility signals, intentionally separated:
-  //   - `isInView` (raw observer) still drives the card's outer fade-in
-  //     variants, the AnimatedTitle's `play`, and the diff-message banner
-  //     gate — those should respond immediately to visibility flips.
-  //   - `playToken` (latched + hysteresis-debounced) drives the numeric
-  //     count-ups, so brief in/out scroll oscillations near the viewport
-  //     edge don't restart the animation mid-flight. Passed down to
-  //     MetricRow and ActivityArc; both depend on it instead of raw
-  //     `isInView` for their RAF loops. `amount: 0.3` fires when ~30% of
-  //     the card crosses the viewport.
+  //   - `playToken` (latched + hysteresis-debounced, monotonic) drives the
+  //     numeric count-ups AND, via `hasEntered`, the card's outer fade-in
+  //     variants and the AnimatedTitle's `play`. The parent ItemLayout
+  //     animates scale 0 → 1 on entry, which wobbles this card's observer
+  //     rect; raw `isInView` then toggled true/false/true and replayed the
+  //     entrance + per-char title blur — the visible glitch. `playToken > 0`
+  //     flips once on a real entry and never reverts, so the entrance plays a
+  //     single clean time while the count-ups still replay on re-entry (they
+  //     key off the playToken value). `amount: 0.3` fires at ~30% crossing.
+  //   - `isInView` (raw observer) is kept only for the diff-message banner
+  //     gate, which is harmless flickering off-screen (no message shown).
   const { isInView, playToken } = useViewportCountTrigger(ref, {
     amount: 0.3,
   });
+  const hasEntered = playToken > 0;
   // Mirrors the CSS `prefers-reduced-motion` override in globals.css so the
   // decorative pulse on the language-color dot also holds still for users
   // who've opted out of motion.
@@ -468,7 +471,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
       ref={ref}
       variants={cardVariants}
       initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      animate={hasEntered ? "visible" : "hidden"}
       className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg"
     >
       <UpdateBanner
@@ -484,7 +487,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
             className="w-5 h-5 flex-shrink-0"
             style={{ color: "#ffaa2a" }}
           />
-          <AnimatedTitle text={name} play={isInView} />
+          <AnimatedTitle text={name} play={hasEntered} />
         </div>
         <span
           // Eyebrow microlabel — same role as "CAREER SNAPSHOT" on the
