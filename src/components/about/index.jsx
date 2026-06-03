@@ -61,8 +61,13 @@ function useViewportCountUp(
     const node = nodeRef.current;
     const fmt = (v) => `${Math.round(v)}`;
 
-    // Disabled (e.g. PercentCount's `unavailable`) — tear down any in-flight
-    // work so a later enable starts clean, and render nothing here.
+    // Disabled (e.g. PercentCount's `unavailable`) or no node yet — tear down
+    // any in-flight work AND re-arm the latch so a later re-enable (or the node
+    // remounting) starts a fresh count-up. Without resetting `armedRef`/
+    // `lastToRef`, a counter that was previously enabled + in view (armedRef
+    // false, lastToRef === to) would, after a disable → re-enable with the same
+    // `to`, fail the inView branch's animate guard and leave the remounted node
+    // stuck at its JSX initial "0".
     if (!enabled || !node) {
       if (controlsRef.current) {
         controlsRef.current.stop();
@@ -72,6 +77,8 @@ function useViewportCountUp(
         clearTimeout(resetTimerRef.current);
         resetTimerRef.current = null;
       }
+      armedRef.current = true;
+      lastToRef.current = null;
       return undefined;
     }
 
