@@ -30,56 +30,134 @@ const RevealWord = ({ children, progress, range, reducedMotion }) => {
   );
 };
 
-// Inline percentage count-up. Drives the count-up from `value` alone —
-// not viewport visibility. The viewport-trigger variant was a UX nicety
-// (replay on scroll re-entry) but compounded badly with the parent
-// ItemLayout's `initial={{ scale: 0 }}` entrance: `transform: scale(0)`
-// collapses every descendant's IntersectionObserver rect to zero area,
-// so neither this count-up's `amount: 0.3` nor the bar segments'
-// `amount: 0.5` thresholds were ever crossed. The latch in
-// `useViewportCountTrigger` then refused to re-arm cleanly once the
-// scale animation completed, leaving `playToken === 0` and the
-// percentage stuck at the JSX-rendered "0". This was visible on the
-// employment side after a stale-cache hydration: the live fetch
-// correctly updated `value` to ~32, but the effect's `playToken === 0`
-// guard returned early before the `animate()` ever ran.
-//
-// Reduced motion still skips the animation and shows the final value.
-//
-// `unavailable` short-circuits the whole count-up and renders an
-// "Unavailable" label instead of a percentage. It's how a category whose
-// source failed to load (e.g. employment, when the resume PDF can't be
-// parsed) is distinguished from a genuine 0% — rendering "0%" for missing
-// data would assert "zero experience" when the truth is "couldn't measure".
-// `inView` (default true) makes the percentage count-up replay on every
-// viewport entry: each false → true flip re-runs the 0 → value tween, and
-// going out of view resets the digit to 0 so re-entry starts fresh. Defaults
-// to true so a caller that doesn't gate on visibility animates once on mount.
+// Shared count-up controller for the about page's three imperative counters
+// (PercentCount, CountUp, and the nested Counter). Animates `nodeRef`'s text
+// from `from` → `to` on a true viewport entry, and resets to `from` on exit so
+// the next entry replays — but with HYSTERESIS on the exit. The `inView`
+// signals these counters read (isExperienceCardInView / isCompletedProjectsInView)
+// are RAW observers that briefly flicker false during scroll and the parent
+// ItemLayout's scale transition; resetting immediately would snap the digit to
+// 0 while the card is still effectively on-screen. So:
+//   - Exit is debounced — only a sustained exit (>= COUNT_RESET_DELAY_MS)
+//     resets to `from` and re-arms; a quick re-entry cancels the pending reset.
+//   - A running animation is NOT stopped on a flicker (the effect returns no
+//     cleanup), so it finishes on its own, and a quick re-entry does NOT
+//     restart it — no snap to 0 either way.
+//   - A genuine re-entry after a sustained exit (re-armed) replays the count-up,
+//     and a changed `to` re-animates even while still in view.
+// Reduced motion writes the final value immediately, with no tween.
+const COUNT_RESET_DELAY_MS = 300;
+
+function useViewportCountUp(
+  nodeRef,
+  { from = 0, to, inView, prefersReducedMotion, enabled = true },
+) {
+  const armedRef = useRef(true);
+  const lastToRef = useRef(null);
+  const resetTimerRef = useRef(null);
+  const controlsRef = useRef(null);
+
+  useEffect(() => {
+    const node = nodeRef.current;
+    const fmt = (v) => `${Math.round(v)}`;
+
+    // Disabled (e.g. PercentCount's `unavailable`) — tear down any in-flight
+    // work so a later enable starts clean, and render nothing here.
+    if (!enabled || !node) {
+      if (controlsRef.current) {
+        controlsRef.current.stop();
+        controlsRef.current = null;
+      }
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+      return undefined;
+    }
+
+    if (prefersReducedMotion) {
+      if (controlsRef.current) {
+        controlsRef.current.stop();
+        controlsRef.current = null;
+      }
+      node.textContent = fmt(to);
+      return undefined;
+    }
+
+    if (inView) {
+      // Entry or flicker-recovery — cancel any pending out-of-view reset.
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+      // Animate only on a genuine (re)entry (re-armed after a sustained exit)
+      // or a changed target — never on a brief flicker back into view, which
+      // would restart the sweep and snap to 0. An in-flight tween keeps running.
+      if (armedRef.current || lastToRef.current !== to) {
+        armedRef.current = false;
+        lastToRef.current = to;
+        if (controlsRef.current) controlsRef.current.stop();
+        controlsRef.current = animate(from, to, {
+          duration: 2,
+          onUpdate(v) {
+            node.textContent = fmt(v);
+          },
+        });
+      }
+      return undefined;
+    }
+
+    // Out of view — schedule a DEBOUNCED reset. Don't reset (or stop the tween)
+    // now: a brief observer flicker re-enters before this fires (the inView
+    // branch above clears it), so only a sustained exit resets and re-arms.
+    if (!resetTimerRef.current) {
+      resetTimerRef.current = setTimeout(() => {
+        if (controlsRef.current) {
+          controlsRef.current.stop();
+          controlsRef.current = null;
+        }
+        node.textContent = fmt(from);
+        armedRef.current = true; // re-arm so the next true entry replays
+        resetTimerRef.current = null;
+      }, COUNT_RESET_DELAY_MS);
+    }
+    return undefined;
+  }, [from, to, inView, prefersReducedMotion, enabled, nodeRef]);
+
+  // Stop the tween and clear any pending reset on unmount.
+  useEffect(
+    () => () => {
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+      if (controlsRef.current) {
+        controlsRef.current.stop();
+        controlsRef.current = null;
+      }
+    },
+    [],
+  );
+}
+
+// Inline percentage count-up for the years card's Personal/Employment split.
+// `unavailable` short-circuits the count-up and renders an "Unavailable" label
+// instead of a percentage — how a category whose source failed to load (e.g.
+// employment when the resume PDF can't be parsed) is distinguished from a
+// genuine 0%; rendering "0%" for missing data would assert "zero experience"
+// when the truth is "couldn't measure". `inView` drives the debounced,
+// flicker-immune replay (see useViewportCountUp); reduced motion shows the
+// final value with no tween.
 function PercentCount({ value, unavailable = false, inView = true }) {
   const nodeRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
 
-  useEffect(() => {
-    if (unavailable) return;
-    const node = nodeRef.current;
-    if (!node) return;
-    if (prefersReducedMotion) {
-      node.textContent = String(value);
-      return;
-    }
-    if (!inView) {
-      // Out of view — reset to 0 so re-entry animates from the start.
-      node.textContent = "0";
-      return;
-    }
-    const controls = animate(0, value, {
-      duration: 2,
-      onUpdate(v) {
-        node.textContent = v.toFixed(0);
-      },
-    });
-    return () => controls.stop();
-  }, [value, prefersReducedMotion, unavailable, inView]);
+  useViewportCountUp(nodeRef, {
+    to: value,
+    inView,
+    prefersReducedMotion,
+    enabled: !unavailable,
+  });
 
   if (unavailable) {
     return (
@@ -98,38 +176,17 @@ function PercentCount({ value, unavailable = false, inView = true }) {
 }
 
 // Integer count-up for the projects category legend (Web / System counts).
-// Mirrors the card's big `Counter` exactly — animates 0 → value over 2s on
-// mount via framer's `animate`, and honours `prefers-reduced-motion` by writing
-// the final value straight to the node. Lives at module scope (unlike the
-// in-component `Counter`) so the module-level ProjectsSplitBar can use it.
-// `inView` drives a replay-on-every-entry count-up: each time it flips false →
-// true the effect re-runs and animates 0 → value again; when it goes false the
-// digit resets to 0 so the next entry starts fresh. Defaults to `true` (animate
-// once on mount) for any caller that doesn't gate on viewport visibility.
+// Mirrors the card's big `Counter` — animates 0 → value over 2s on a true
+// viewport entry and replays on re-entry, with the same debounced, flicker-
+// immune behaviour as the rest of the page (see useViewportCountUp). Lives at
+// module scope (unlike the in-component `Counter`) so the module-level
+// ProjectsSplitBar can use it. `inView` defaults to `true` for any caller that
+// doesn't gate on viewport visibility.
 function CountUp({ value, inView = true }) {
   const nodeRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
 
-  useEffect(() => {
-    const node = nodeRef.current;
-    if (!node) return;
-    if (prefersReducedMotion) {
-      node.textContent = String(value);
-      return;
-    }
-    if (!inView) {
-      // Out of view — reset to 0 so re-entry animates from the start.
-      node.textContent = "0";
-      return;
-    }
-    const controls = animate(0, value, {
-      duration: 2,
-      onUpdate(v) {
-        node.textContent = v.toFixed(0);
-      },
-    });
-    return () => controls.stop();
-  }, [value, prefersReducedMotion, inView]);
+  useViewportCountUp(nodeRef, { to: value, inView, prefersReducedMotion });
 
   return <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>;
 }
@@ -542,53 +599,16 @@ const AboutDetails = () => {
     [0, 1]
   );
 
-  // Counter Animation. Drives the count-up from (from, to) directly —
-  // no viewport gate. The earlier `useViewportCountTrigger` variant
-  // failed the same way `PercentCount` did: this Counter is rendered
-  // inside `ItemLayout`, whose `initial={{ scale: 0 }}` entrance
-  // collapses every descendant's IntersectionObserver rect to zero
-  // area, so `playToken` could latch at 0, the effect's
-  // `if (playToken === 0) return;` early-return would fire, and the
-  // digit `<p>` would stay empty even after `to` (e.g. the years value
-  // from `useExperienceSummary`) arrived.
-  //
-  // Honours `prefers-reduced-motion`: skip the 2 s tween entirely and
-  // write `to` straight to the node — mirrors PercentCount's
-  // contract so vestibular-sensitive users don't get a fresh count-up
-  // replay every time `experienceCounterValue` flips from cached to
-  // live data. The JSX text initialiser uses the same gate so the
-  // first paint is also the final value under reduced motion.
-  // `inView` (default true) makes the count-up replay on every viewport entry:
-  // each false → true flip re-runs the tween from `from` → `to`, and going out
-  // of view resets the digit to `from` so the next entry starts fresh. Callers
-  // that don't pass it (e.g. the years card) keep the original animate-once
-  // behaviour since `inView` stays constant true.
+  // Counter Animation — the count-up + debounced viewport replay live in the
+  // shared `useViewportCountUp` hook (see its definition for the hysteresis
+  // rationale). `inView` (default true) gates the replay; reduced motion writes
+  // `to` straight to the node, and the JSX initialiser uses the same gate so
+  // the first paint is already final under reduced motion.
   function Counter({ from, to, plusIcon = true, inView = true }) {
     const nodeRef = useRef(null);
     const prefersReducedMotion = useReducedMotion();
 
-    useEffect(() => {
-      const node = nodeRef.current;
-      if (!node) return;
-      if (prefersReducedMotion) {
-        node.textContent = String(to);
-        return;
-      }
-      if (!inView) {
-        // Out of view — reset to the start so re-entry animates from `from`.
-        node.textContent = String(from);
-        return;
-      }
-
-      const controls = animate(from, to, {
-        duration: 2,
-        onUpdate(value) {
-          node.textContent = value.toFixed(0);
-        },
-      });
-
-      return () => controls.stop();
-    }, [from, to, prefersReducedMotion, inView]);
+    useViewportCountUp(nodeRef, { from, to, inView, prefersReducedMotion });
 
     return (
       <div className="flex items-center justify-center">
