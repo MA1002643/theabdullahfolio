@@ -12,8 +12,20 @@ function readStored() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === null) return null;
-    const n = Number(JSON.parse(raw));
-    return Number.isFinite(n) ? n : null;
+    const parsed = JSON.parse(raw);
+    // A valid baseline is a non-negative, finite number. Validate the PARSED
+    // value *before* any coercion: `Number(null)`/`Number(false)`/`Number("")`/
+    // `Number([])` all collapse to 0, which a post-coercion `Number.isFinite`
+    // check would wave through and fabricate a phantom baseline of 0 — then the
+    // next visit reports `count - 0` as a bogus "N new completed projects
+    // added". Requiring `typeof "number"` first rejects those corrupt /
+    // hand-edited shapes outright, while still accepting a genuine stored `0`
+    // (a legitimate baseline when the project list is empty — see the write
+    // guard above, which now records a `0` count).
+    if (typeof parsed !== "number" || !Number.isFinite(parsed) || parsed < 0) {
+      return null;
+    }
+    return parsed;
   } catch {
     // Corrupt entry or storage blocked (private mode) — treat as no
     // baseline so the banner simply stays silent rather than throwing.
@@ -60,9 +72,11 @@ export function useProjectCountSignal(count) {
   const [pendingMessage, setPendingMessage] = useState(null);
 
   useEffect(() => {
-    // Guard against the pre-hydration 0 / non-numeric values — there's
-    // nothing meaningful to compare or announce until a real count lands.
-    if (typeof count !== "number" || count <= 0) return;
+    // Only bail on values that can't be a real count: non-numbers, NaN/±∞, or
+    // a negative. Zero IS a legitimate count (an empty project list) and a
+    // valid baseline — skipping it would prevent recording a `0` baseline and
+    // suppress the first real `0 → N` notification on a later visit.
+    if (typeof count !== "number" || !Number.isFinite(count) || count < 0) return;
 
     const stored = readStored();
 

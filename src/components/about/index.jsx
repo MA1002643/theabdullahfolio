@@ -339,9 +339,22 @@ function ProjectsSplitBar({ breakdown, inView = true }) {
     };
   });
 
+  // Plain-text equivalent of the per-category counts for screen readers. The
+  // bar + legend are decorative and animated (count-up via textContent), so
+  // they stay aria-hidden; this string is the ONLY place the category
+  // breakdown — information not expressed in text anywhere else on the card —
+  // reaches assistive tech.
+  const categorySummary = segments
+    .map((s) => `${s.label}: ${s.count} ${s.count === 1 ? "project" : "projects"}`)
+    .join(", ");
+
   return (
-    <div className="mt-3 w-full" aria-hidden="true">
+    <div className="mt-3 w-full">
+      <span className="sr-only">
+        Completed projects by category — {categorySummary}.
+      </span>
       <div
+        aria-hidden="true"
         className="h-1.5 w-full rounded-full overflow-hidden relative"
         style={{ background: "rgba(244, 227, 184, 0.06)" }}
       >
@@ -372,6 +385,7 @@ function ProjectsSplitBar({ breakdown, inView = true }) {
           #ff6d05 `|` divider — same colour as the count digit above — sits
           between adjacent items in the side-by-side row (hidden below `sm`). */}
       <div
+        aria-hidden="true"
         className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
         style={{ color: "#d4af7a" }}
       >
