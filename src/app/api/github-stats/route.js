@@ -634,7 +634,9 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
     },
     streaks: {
       totalContributions: {
-        value: 250,
+        // Real calendar total (was hardcoded to 250) so the count-up and the
+        // change-diff in the Current Streak card reflect actual activity.
+        value: totalContributions,
         dateRange: `${formatDate(
           contributionCalendar.weeks[0].contributionDays[0].date
         )} - Present`,

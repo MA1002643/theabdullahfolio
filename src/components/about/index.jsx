@@ -1396,7 +1396,7 @@ const AboutDetails = () => {
         </ItemLayout>
 
         {githubStats?.stats && <ItemLayout className={"col-span-full lg:col-span-6 !p-0"}>
-          <StreakStatsCard data={githubStats.stats.streaks} isUpdated={changedFields.includes("stats.streaks")} />
+          <StreakStatsCard data={githubStats.stats.streaks} />
         </ItemLayout>}
 
 

@@ -409,6 +409,39 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
     if (open) setShowAllRepos(false);
   }, [open]);
 
+  // Scrollbar repaint on foreground return. The repo links open with
+  // `target="_blank"`, so tapping one (e.g. on mobile to open GitHub) leaves
+  // this tab backgrounded rather than navigating it away. Android Chrome — and
+  // bfcache restores generally — drop a *nested* scroll container's inherited
+  // `scrollbar-color` when the tab returns to the foreground, so the modal's
+  // orange thumb reverts to the default grey until a manual refresh. There's no
+  // CSS-only fix, so when the page is shown again we re-assert the colour
+  // explicitly on the scroll element, toggling through `auto` first (with a
+  // forced reflow between the two writes) so it's a genuine computed-value
+  // change the browser can't coalesce into a no-op.
+  useEffect(() => {
+    if (!open) return undefined;
+    const repaintScrollbar = () => {
+      const node = scrollRef.current;
+      if (!node) return;
+      node.style.scrollbarColor = "auto";
+      void node.offsetHeight; // flush so the writes aren't merged
+      node.style.scrollbarColor = "#ff6d05 #222";
+    };
+    const onPageShow = (e) => {
+      if (e.persisted) repaintScrollbar();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") repaintScrollbar();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [open]);
+
   // Body scroll lock — restore prior values on close so we don't clobber
   // settings that might be applied elsewhere. Also sets `data-modal-open`
   // on <body> so the floating home button (`.control-island`, z:120) can
@@ -630,7 +663,15 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
               // sizing trick as the panel above so the scroll region
               // matches the visible viewport on iOS.
               className="max-h-[88vh] overflow-y-auto overscroll-contain p-6 sm:p-8"
-              style={{ maxHeight: "88dvh" }}
+              // Set the scrollbar colour explicitly (not just inherited from
+              // `html`) so it's an own declaration on the scroller — paired
+              // with the foreground-return repaint effect above, this keeps the
+              // orange thumb from reverting to grey after an outbound link.
+              style={{
+                maxHeight: "88dvh",
+                scrollbarColor: "#ff6d05 #222",
+                scrollbarWidth: "thin",
+              }}
             >
             <header className="flex items-start justify-between gap-4 mb-6">
               <div>

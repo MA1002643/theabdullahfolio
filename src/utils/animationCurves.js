@@ -34,3 +34,67 @@ export function fastStartSlowFinish(t) {
   const localT = (x - 0.25) / 0.75;
   return 0.7 + 0.3 * (1 - Math.pow(1 - localT, 3));
 }
+
+/**
+ * Imperative count-up tween on `requestAnimationFrame`. Drives a numeric value
+ * `from` → `to` over `duration` ms through `easing`, calling `onUpdate(value)`
+ * each frame and `onComplete()` once at the end. The final frame is clamped to
+ * exactly `to` so the displayed number always lands on the target (rounding a
+ * frame at t≈0.999 could otherwise settle one short).
+ *
+ * Returns a `cancel()` function — call it from an effect cleanup so a re-trigger
+ * (or unmount) stops the in-flight tween instead of leaking competing rAF loops
+ * that fight over the same node.
+ *
+ * SSR / no-rAF safe: when `requestAnimationFrame` is unavailable it paints the
+ * final value synchronously and returns a no-op canceller.
+ *
+ * @param {object}   opts
+ * @param {number}   [opts.from=0]
+ * @param {number}   opts.to
+ * @param {number}   [opts.duration=2000] - ms
+ * @param {(t:number)=>number} [opts.easing=fastStartSlowFinish]
+ * @param {(value:number)=>void} [opts.onUpdate]
+ * @param {() => void} [opts.onComplete]
+ * @returns {() => void} cancel
+ */
+export function animateToTarget({
+  from = 0,
+  to,
+  duration = 2000,
+  easing = fastStartSlowFinish,
+  onUpdate,
+  onComplete,
+} = {}) {
+  if (
+    typeof window === "undefined" ||
+    typeof window.requestAnimationFrame !== "function"
+  ) {
+    onUpdate?.(to);
+    onComplete?.();
+    return () => {};
+  }
+
+  let rafId = 0;
+  let startTs = null;
+  let cancelled = false;
+
+  const tick = (ts) => {
+    if (cancelled) return;
+    if (startTs === null) startTs = ts;
+    const t = duration <= 0 ? 1 : Math.min((ts - startTs) / duration, 1);
+    onUpdate?.(from + (to - from) * easing(t));
+    if (t < 1) {
+      rafId = window.requestAnimationFrame(tick);
+    } else {
+      onUpdate?.(to); // clamp exactly on the target
+      onComplete?.();
+    }
+  };
+
+  rafId = window.requestAnimationFrame(tick);
+  return () => {
+    cancelled = true;
+    if (rafId) window.cancelAnimationFrame(rafId);
+  };
+}
