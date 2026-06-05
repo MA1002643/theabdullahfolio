@@ -943,11 +943,18 @@ function computeStreaks(contributionCalendar) {
   // yesterday. A gap older than that means the streak is genuinely broken.
   let currentStreak = { days: 0, start: null, end: null };
   let i = days.length - 1;
-  if (i >= 0 && days[i].date === today && days[i].contributionCount === 0) {
+  const skippedEmptyToday =
+    i >= 0 && days[i].date === today && days[i].contributionCount === 0;
+  if (skippedEmptyToday) {
     i--; // today not contributed yet — don't count it, but don't break on it
   }
   if (i >= 0 && days[i].contributionCount > 0) {
-    const end = days[i].date;
+    // Keep `end` at TODAY when the only skipped day is an empty today: the
+    // streak is still ongoing (the day just isn't over yet). Pinning it to
+    // yesterday's date would make `formatStreakRange` drop the "Present" label
+    // AND shift `currentStreak.dateRange` at every midnight rollover, which
+    // `streakFingerprint` would read as a real change and fire a false banner.
+    const end = skippedEmptyToday ? today : days[i].date;
     let start = end;
     let count = 0;
     while (i >= 0 && days[i].contributionCount > 0) {

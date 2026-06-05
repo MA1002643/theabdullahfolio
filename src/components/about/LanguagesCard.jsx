@@ -69,6 +69,16 @@ const metricRowVariants = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
 };
 
+// Reduced-motion no-op: hidden === visible at the resting state with no tween,
+// so the card simply appears (no spring, slide, or staggered replay) for users
+// who've opted out of motion. Used in place of every variant set above when
+// `prefers-reduced-motion` is set — mirroring AnimatedTitle's reduced path so
+// the whole card honours the preference, not just the title.
+const noMotionVariants = {
+  hidden: { opacity: 1, x: 0, y: 0, scale: 1 },
+  visible: { opacity: 1, x: 0, y: 0, scale: 1 },
+};
+
 /* Per-character blur-fade-in title — the exact treatment the GitHub Stats card
    uses, in the same vivid orange (#ff6d05) so the two headlines read as one
    system. Reduced motion renders a plain heading; the per-char spans are
@@ -135,6 +145,17 @@ export default function LanguagesCard({ data, isLive = false }) {
     amount: 0.3,
     margin: "-50px",
   });
+
+  // Honour reduced motion across the whole entrance: swap every animated variant
+  // set for the resting no-op so nothing springs, slides, or re-plays on
+  // re-entry for users who opted out (AnimatedTitle already takes its own
+  // reduced path). The count-ups handle reduced motion separately.
+  const cardV = prefersReducedMotion ? noMotionVariants : cardVariants;
+  const childV = prefersReducedMotion ? noMotionVariants : childVariants;
+  const listContainerV = prefersReducedMotion
+    ? noMotionVariants
+    : metricContainerVariants;
+  const rowV = prefersReducedMotion ? noMotionVariants : metricRowVariants;
 
   const languages = Array.isArray(data) ? data : [];
   // Denominator for the stacked bar. The normalized list sums to ~100, but
@@ -359,7 +380,7 @@ export default function LanguagesCard({ data, isLive = false }) {
       // `isInView` would replay as a glitch), but REVERSIBLE: it flips false
       // after a sustained exit so the whole entrance REPLAYS on every true
       // re-entry instead of firing once. Count-ups still replay via `playToken`.
-      variants={cardVariants}
+      variants={cardV}
       initial="hidden"
       animate={settledInView ? "visible" : "hidden"}
       // Border + glow parity with the "Years in the craft" card: the outer
@@ -377,7 +398,7 @@ export default function LanguagesCard({ data, isLive = false }) {
       />
 
       {/* Header — title + an analytics-style meta line. */}
-      <motion.div variants={childVariants} className="mb-5">
+      <motion.div variants={childV} className="mb-5">
         {/* Title — per-character blur-in in vivid orange (#ff6d05), the exact
             treatment + hue the "… GitHub Stats" card uses, so the side-by-side
             pair share one headline animation and colour. */}
@@ -403,7 +424,7 @@ export default function LanguagesCard({ data, isLive = false }) {
           sheen overlay; per-segment right borders draw crisp dividers
           between colours without changing layout width (border-box). */}
       <motion.div
-        variants={childVariants}
+        variants={childV}
         aria-hidden="true"
         className="relative w-full h-2 md:h-3 rounded-full overflow-hidden flex mb-5 bg-gray-700/30"
       >
@@ -444,7 +465,7 @@ export default function LanguagesCard({ data, isLive = false }) {
           proportion bar above still reflects every language, so it stays a
           complete overview regardless of how many rows are listed. */}
       <motion.ul
-        variants={metricContainerVariants}
+        variants={listContainerV}
         className="grid grid-cols-1 xl:grid-cols-2 gap-y-3 gap-x-6 pt-2 text-sm md:text-base xl:text-sm"
       >
         {languages.slice(0, 10).map((lang, idx) => (
@@ -454,7 +475,7 @@ export default function LanguagesCard({ data, isLive = false }) {
             rank={idx + 1}
             isPrimary={idx === 0}
             hiddenUntilXl={idx >= 5}
-            variants={metricRowVariants}
+            variants={rowV}
             playToken={playToken}
             prefersReducedMotion={prefersReducedMotion}
             active={activeIndex === idx}
@@ -638,8 +659,15 @@ function AnimatedLangLabel({
           onActivate();
           onRepoFocus?.(e.currentTarget);
         }}
-        onBlur={() => {
+        onBlur={(e) => {
+          // Clear the spotlight whenever focus leaves the row (mirrors the
+          // pointer path's onMouseLeave). But only schedule the popover CLOSE
+          // when focus isn't moving INTO the popover — Tab from the row lands on
+          // a repo link in the body-portaled panel (matched by its data attr,
+          // not DOM ancestry), and closing then would dismiss those links before
+          // they're reachable. The popover closes itself once focus leaves it.
           onDeactivate();
+          if (e.relatedTarget?.closest?.("[data-lang-popover]")) return;
           onRepoClose?.();
         }}
         onClick={(e) => onRepoTap?.(e.currentTarget)}
@@ -761,6 +789,23 @@ function LanguageRepoPopover({
       aria-label={`Repositories using ${lang.language}`}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
+      // Keyboard equivalents of pointer enter/leave (React onFocus/onBlur bubble
+      // from the repo links inside). Focus entering the panel cancels any pending
+      // close; focus leaving it closes — UNLESS it lands back on the panel
+      // (tabbing between repo links) or on a language row (the trigger, or
+      // another row that opens its own), so the links stay reachable by keyboard.
+      onFocus={onPointerEnter}
+      onBlur={(e) => {
+        const next = e.relatedTarget;
+        if (
+          next &&
+          (next.closest?.("[data-lang-popover]") ||
+            next.closest?.("[data-lang-row]"))
+        ) {
+          return;
+        }
+        onPointerLeave?.();
+      }}
       data-lang-popover=""
       className="custom-bg-abt rounded-xl flex flex-col"
       style={{
