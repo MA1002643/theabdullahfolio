@@ -667,7 +667,14 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
         // Real calendar total (was hardcoded to 250) so the count-up and the
         // change-diff in the Current Streak card reflect actual activity.
         value: totalContributions,
-        dateRange: `${formatDate(
+        // Use the UTC-pinned `formatStreakDate` (not `formatDate`) for the
+        // window start: the calendar day is a date-only `YYYY-MM-DD` parsed as
+        // UTC midnight, so the conditional-TZ `formatDate` would render it one
+        // day off depending on the deploy region. This range is excluded from
+        // the streak fingerprint, so it's a display-stability fix only — but it
+        // keeps the shown start day region-independent and consistent with the
+        // streak rows below.
+        dateRange: `${formatStreakDate(
           contributionCalendar.weeks[0].contributionDays[0].date
         )} - Present`,
       },
