@@ -164,8 +164,9 @@ export default function StreakStatsCard({ data }) {
   // stays visible, and absorbs the IntersectionObserver flicker that the raw
   // observer would emit during the parent ItemLayout's scale entrance);
   // `settledInView` (debounced + reversible) drives the card's fade/slide
-  // entrance so it replays on every re-entry; `isInView` gates the banner.
-  const { isInView, playToken, settledInView } = useViewportCountTrigger(cardRef, {
+  // entrance AND gates the banner overlay, so both ride out the same flicker
+  // that raw `isInView` would expose as on/off jitter.
+  const { playToken, settledInView } = useViewportCountTrigger(cardRef, {
     amount: 0.3,
     margin: "-50px",
   });
@@ -190,14 +191,16 @@ export default function StreakStatsCard({ data }) {
     setBannerMessage(pendingMessage);
     consume();
   }, [pendingMessage, consume]);
-  // Auto-hide the VISUAL banner ~4.5s after the card is actually in view (timer
-  // restarts on each entry), so an update detected off-screen isn't dismissed
-  // unseen. consume() above only nulls pendingMessage, not this timer.
+  // Auto-hide the VISUAL banner ~4.5s after it actually paints (timer restarts
+  // on each settled entry), so an update detected off-screen isn't dismissed
+  // unseen. Gated on `settledInView` — the same signal the banner paints on —
+  // so flicker can't restart the timer while the banner stays visible.
+  // consume() above only nulls pendingMessage, not this timer.
   useEffect(() => {
-    if (!bannerMessage || !isInView) return undefined;
+    if (!bannerMessage || !settledInView) return undefined;
     const timer = setTimeout(() => setBannerMessage(null), BANNER_VISIBLE_MS);
     return () => clearTimeout(timer);
-  }, [bannerMessage, isInView]);
+  }, [bannerMessage, settledInView]);
 
   // Current streak as a fraction of the personal best — the ring visualises
   // "how close is the current streak to your longest?". Clamped to [0,1];
@@ -233,7 +236,7 @@ export default function StreakStatsCard({ data }) {
     >
       <UpdateBanner
         message={bannerMessage}
-        visible={isInView}
+        visible={settledInView}
         srPrefix="Streaks update: "
         variant="orange"
       />
