@@ -75,6 +75,16 @@ export function animateToTarget({
     return () => {};
   }
 
+  // Nothing to tween: no distance to cover (`from === to`, e.g. a streak value
+  // of 0) or no time to cover it in (`duration <= 0`). Paint the final value
+  // once and finish synchronously instead of scheduling a full rAF loop that
+  // would otherwise spend ~2s repainting the same number every frame.
+  if (from === to || duration <= 0) {
+    onUpdate?.(to);
+    onComplete?.();
+    return () => {};
+  }
+
   let rafId = 0;
   let startTs = null;
   let cancelled = false;

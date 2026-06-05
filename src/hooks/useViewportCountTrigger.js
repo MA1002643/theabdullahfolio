@@ -23,13 +23,22 @@ import { useEffect, useRef, useState } from "react";
  *   - Sustained exit (≥ `leaveDelayMs` outside the viewport) re-arms
  *     the trigger; the next entry increments playToken again.
  *
- * Returns `{ isInView, playToken }`:
+ * Returns `{ isInView, playToken, settledInView }`:
  *   - `isInView` mirrors the underlying observer (use it for things
  *     that should reflect raw visibility, e.g. lazy mounting or
  *     pausing autoplay).
  *   - `playToken` is the latched, hysteresis-debounced trigger value.
  *     A consumer that depends on `[playToken, target]` will animate
  *     when either a real entry happens or the data changes.
+ *   - `settledInView` is a debounced boolean that flips TRUE on a true
+ *     entry and FALSE only after a *sustained* exit (the same
+ *     `leaveDelayMs` hysteresis that re-arms `playToken`). Unlike
+ *     `playToken > 0` — which latches true forever — this reverts, so a
+ *     reversible entrance (fade/slide in, then out off-screen, then in
+ *     again) can REPLAY on every viewport re-entry while still absorbing
+ *     IntersectionObserver flicker. Drive whileInView-style entrances off
+ *     this; drive count-ups/arcs (which key off the trigger value) off
+ *     `playToken`.
  *
  * @param {React.RefObject<HTMLElement>} ref - element to observe
  * @param {object} [options]
@@ -48,11 +57,13 @@ export function useViewportCountTrigger(ref, options = {}) {
 
   const isInView = useInView(ref, { once: false, amount, margin });
 
-  // `playToken` is the only piece of state — every other "is it time to
-  // trigger?" piece of book-keeping lives in refs so it doesn't itself
-  // cause re-renders. The state change happens exactly once per real
-  // entry cycle, which is also the only time consumers want to react.
+  // `playToken` (monotonic trigger count) and `settledInView` (debounced,
+  // reversible visibility) are the only state — all other "is it time to
+  // trigger?" book-keeping lives in refs so it doesn't itself cause
+  // re-renders. `playToken` increments exactly once per real entry cycle;
+  // `settledInView` toggles true on entry and false on sustained exit.
   const [playToken, setPlayToken] = useState(0);
+  const [settledInView, setSettledInView] = useState(false);
 
   // `armedRef` flips false the moment we fire a trigger and only
   // returns to true after the leave-delay timer elapses with the
@@ -75,6 +86,9 @@ export function useViewportCountTrigger(ref, options = {}) {
         clearTimeout(leaveTimerRef.current);
         leaveTimerRef.current = null;
       }
+      // Show the (reversible) entrance immediately on any true visibility —
+      // idempotent, so a flicker that never reset it is a no-op re-render.
+      setSettledInView(true);
       if (armedRef.current) {
         armedRef.current = false;
         setPlayToken((t) => t + 1);
@@ -85,6 +99,9 @@ export function useViewportCountTrigger(ref, options = {}) {
       // mobile momentum scroll past element edges) is absorbed.
       leaveTimerRef.current = setTimeout(() => {
         armedRef.current = true;
+        // Reset the reversible entrance so the NEXT true entry replays it.
+        // Only fires after a sustained exit, so flicker can't reset it.
+        setSettledInView(false);
         leaveTimerRef.current = null;
       }, leaveDelayMs);
     }
@@ -103,5 +120,5 @@ export function useViewportCountTrigger(ref, options = {}) {
     };
   }, []);
 
-  return { isInView, playToken };
+  return { isInView, playToken, settledInView };
 }

@@ -908,38 +908,54 @@ async function findMostActiveRepo(username) {
 }
 
 function computeStreaks(contributionCalendar) {
-  const days = contributionCalendar.weeks.flatMap((w) => w.contributionDays);
   const today = new Date().toISOString().slice(0, 10);
 
-  let currentStreak = { days: 0, start: null, end: null };
+  // GitHub returns the FULL current week, so the calendar is padded with the
+  // remaining (future) days of this week at contributionCount 0. Left in, those
+  // trailing zero-days close the running streak before the loop ends AND make
+  // the array's last element a future date — which is exactly why the current
+  // streak was stuck at 0: the loop hit "tomorrow" (count 0), closed the streak
+  // with end = today, and the ongoing-streak tail was never reached. Dropping
+  // everything after today makes the array end on the real "today".
+  const days = contributionCalendar.weeks
+    .flatMap((w) => w.contributionDays)
+    .filter((d) => d.date <= today);
+
+  // --- Longest streak: scan forward, tracking each run's high-water mark. ---
   let longestStreak = { days: 0, start: null, end: null };
-
-  let streak = 0;
-  let streakStart = null;
-
+  let runStart = null;
+  let run = 0;
   for (let i = 0; i < days.length; i++) {
     const { date, contributionCount } = days[i];
     if (contributionCount > 0) {
-      if (streak === 0) streakStart = date;
-      streak++;
+      if (run === 0) runStart = date;
+      run++;
+      if (run > longestStreak.days)
+        longestStreak = { days: run, start: runStart, end: date };
     } else {
-      if (streak > 0) {
-        const streakEnd = days[i - 1].date;
-        if (streak > longestStreak.days)
-          longestStreak = { days: streak, start: streakStart, end: streakEnd };
-        streak = 0;
-      }
+      run = 0;
     }
   }
 
-  // Handle ongoing streak
-  if (streak > 0) {
-    const lastDay = days[days.length - 1].date;
-    if (streak > longestStreak.days)
-      longestStreak = { days: streak, start: streakStart, end: lastDay };
-
-    if (lastDay === today)
-      currentStreak = { days: streak, start: streakStart, end: lastDay };
+  // --- Current streak: walk BACKWARD from the most recent day. ---
+  // An empty TODAY does not break the streak — the day isn't over yet, so the
+  // user may still contribute — so skip an empty today and continue from
+  // yesterday. A gap older than that means the streak is genuinely broken.
+  let currentStreak = { days: 0, start: null, end: null };
+  let i = days.length - 1;
+  if (i >= 0 && days[i].date === today && days[i].contributionCount === 0) {
+    i--; // today not contributed yet — don't count it, but don't break on it
+  }
+  if (i >= 0 && days[i].contributionCount > 0) {
+    const end = days[i].date;
+    let start = end;
+    let count = 0;
+    while (i >= 0 && days[i].contributionCount > 0) {
+      start = days[i].date;
+      count++;
+      i--;
+    }
+    currentStreak = { days: count, start, end };
   }
 
   return { currentStreak, longestStreak };

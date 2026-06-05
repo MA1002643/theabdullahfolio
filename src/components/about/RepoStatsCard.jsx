@@ -421,20 +421,19 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
   const ref = useRef(null);
   // Two visibility signals, intentionally separated:
   //   - `playToken` (latched + hysteresis-debounced, monotonic) drives the
-  //     numeric count-ups AND, via `hasEntered`, the card's outer fade-in
-  //     variants and the AnimatedTitle's `play`. The parent ItemLayout
-  //     animates scale 0 → 1 on entry, which wobbles this card's observer
-  //     rect; raw `isInView` then toggled true/false/true and replayed the
-  //     entrance + per-char title blur — the visible glitch. `playToken > 0`
-  //     flips once on a real entry and never reverts, so the entrance plays a
-  //     single clean time while the count-ups still replay on re-entry (they
-  //     key off the playToken value). `amount: 0.3` fires at ~30% crossing.
+  //     numeric count-ups, which key off its value and replay on re-entry by
+  //     themselves. The parent ItemLayout animates scale 0 → 1 on entry, which
+  //     wobbles this card's observer rect; `playToken`/`settledInView` are both
+  //     debounced so that wobble can't replay anything spuriously.
+  //   - `settledInView` (debounced like playToken, but reversible) drives the
+  //     card's outer fade-in variants and the AnimatedTitle's `play`, so the
+  //     entrance + per-char title blur REPLAY on every true re-entry instead of
+  //     firing once on first load. `amount: 0.3` fires at ~30% crossing.
   //   - `isInView` (raw observer) is kept only for the diff-message banner
   //     gate, which is harmless flickering off-screen (no message shown).
-  const { isInView, playToken } = useViewportCountTrigger(ref, {
+  const { isInView, playToken, settledInView } = useViewportCountTrigger(ref, {
     amount: 0.3,
   });
-  const hasEntered = playToken > 0;
   // Mirrors the CSS `prefers-reduced-motion` override in globals.css so the
   // decorative pulse on the language-color dot also holds still for users
   // who've opted out of motion.
@@ -471,7 +470,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
       ref={ref}
       variants={cardVariants}
       initial="hidden"
-      animate={hasEntered ? "visible" : "hidden"}
+      animate={settledInView ? "visible" : "hidden"}
       className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg"
     >
       <UpdateBanner
@@ -487,7 +486,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
             className="w-5 h-5 flex-shrink-0"
             style={{ color: "#ffaa2a" }}
           />
-          <AnimatedTitle text={name} play={hasEntered} />
+          <AnimatedTitle text={name} play={settledInView} />
         </div>
         <span
           // Eyebrow microlabel — same role as "CAREER SNAPSHOT" on the

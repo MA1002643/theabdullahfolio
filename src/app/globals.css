@@ -635,45 +635,6 @@
       0 0 9px rgba(255, 109, 5, 0.15);
     animation: repo-card-breathe 3s ease-in-out infinite;
   }
-
-  /* Breathing glow for the current-streak progress ring. Replaces the previous
-     static drop-shadow with a slow pulse so the ring reads as "alive". The
-     baseline `filter` survives when the animation is disabled (reduced motion),
-     so the ring keeps its resting halo instead of going flat. The `--peak`
-     variant burns hotter and is applied only when the current streak has
-     matched the all-time longest (a personal best). */
-  @keyframes streak-ring-pulse {
-    0%,
-    100% {
-      filter: drop-shadow(0 0 3px rgba(255, 109, 5, 0.4));
-    }
-    50% {
-      filter: drop-shadow(0 0 9px rgba(255, 109, 5, 0.85));
-    }
-  }
-  @keyframes streak-ring-pulse-peak {
-    0%,
-    100% {
-      filter: drop-shadow(0 0 5px rgba(255, 170, 42, 0.6));
-    }
-    50% {
-      filter: drop-shadow(0 0 14px rgba(255, 170, 42, 1));
-    }
-  }
-  .streak-ring-glow {
-    filter: drop-shadow(0 0 4px rgba(255, 109, 5, 0.4));
-  }
-  .streak-ring-glow--peak {
-    filter: drop-shadow(0 0 6px rgba(255, 170, 42, 0.65));
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .streak-ring-glow {
-      animation: streak-ring-pulse 2.6s ease-in-out infinite;
-    }
-    .streak-ring-glow--peak {
-      animation: streak-ring-pulse-peak 2.2s ease-in-out infinite;
-    }
-  }
 }
 
 /* One-shot light sweep across the Most Used Languages stacked bar when it

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Flame, GitCommitVertical } from "lucide-react";
+import { GitCommitVertical } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { UpdateBanner } from "./UpdateBanner";
@@ -82,12 +82,36 @@ function StreakNumber({
   );
 }
 
+/* ----------------------- STAGGERED ENTRANCE VARIANTS -----------------------
+   The card reveals its three sections in sequence on every viewport entry —
+   Total Contributions, then the Current Streak ring, then Longest Streak — a
+   left-to-right cascade rather than everything popping at once. The row is the
+   stagger container; each column (and the dividers between them) is an item, so
+   they fade+rise in DOM order. Reduced motion swaps to the "still" item set
+   (no transform/opacity tween) while keeping the same structure. */
+const STAGGER_CONTAINER = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.13, delayChildren: 0.1 } },
+};
+const STAGGER_ITEM = {
+  hidden: { opacity: 0, y: 22 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
+const STAGGER_ITEM_STILL = {
+  hidden: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0 },
+};
+
 /* ------------------------------- STAT BLOCK -------------------------------
    Total Contributions / Longest Streak: a count-up number, a fire-amber
-   label, and a static (never animated) muted-gold date range. */
-function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion }) {
+   label, and a static (never animated) muted-gold date range. Rendered as a
+   stagger item so it slides into the cascade. */
+function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion, variants }) {
   return (
-    <div className="flex flex-col items-center justify-center flex-1 text-center min-w-0">
+    <motion.div
+      variants={variants}
+      className="flex flex-col items-center justify-center flex-1 text-center min-w-0"
+    >
       <StreakNumber
         target={Number(value) || 0}
         playToken={playToken}
@@ -107,15 +131,17 @@ function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion })
       >
         {dateRange}
       </span>
-    </div>
+    </motion.div>
   );
 }
 
 // Vertical gradient divider — a faded amber line that dissolves at both ends,
 // replacing the previous flat white rule. Hidden on the stacked mobile layout.
-function Divider() {
+// A stagger item so it fades in between its two neighbouring columns.
+function Divider({ variants }) {
   return (
-    <div
+    <motion.div
+      variants={variants}
       aria-hidden="true"
       className="hidden sm:block w-px self-stretch my-2 mx-1 shrink-0"
       style={{
@@ -132,12 +158,16 @@ export default function StreakStatsCard({ data }) {
   // count-ups + ring sweep on each TRUE re-entry (never loops while the card
   // stays visible, and absorbs the IntersectionObserver flicker that the raw
   // observer would emit during the parent ItemLayout's scale entrance);
-  // `isInView` gates the banner's visual. `hasEntered` drives the one-shot
-  // entrance so that flicker can't replay the fade.
-  const { isInView, playToken } = useViewportCountTrigger(cardRef, {
+  // `settledInView` (debounced + reversible) drives the card's fade/slide
+  // entrance so it replays on every re-entry; `isInView` gates the banner.
+  const { isInView, playToken, settledInView } = useViewportCountTrigger(cardRef, {
     amount: 0.3,
     margin: "-50px",
   });
+  // `hasEntered` (monotonic) still gates the ring/count-up internals, which
+  // key off `playToken` and replay on their own. `settledInView` (debounced,
+  // reversible) drives the card's fade/slide entrance so it REPLAYS on every
+  // true viewport re-entry instead of firing once on first load.
   const hasEntered = playToken > 0;
   const prefersReducedMotion = useReducedMotion();
 
@@ -173,10 +203,6 @@ export default function StreakStatsCard({ data }) {
   const fraction =
     longest > 0 ? Math.min(current / longest, 1) : current > 0 ? 1 : 0;
   const filledOffset = RING_CIRCUMFERENCE * (1 - fraction);
-  // Personal best: the current run has caught (or matched) the all-time
-  // longest. This is the card's hero moment — it lights the ring hotter and
-  // surfaces the "Personal best" badge below the current-streak label.
-  const isPeak = current > 0 && current >= longest;
   const ringSrLabel =
     longest > 0
       ? `${current} day${current === 1 ? "" : "s"}, ${Math.round(
@@ -184,20 +210,20 @@ export default function StreakStatsCard({ data }) {
         )} percent of your longest streak`
       : `${current} day${current === 1 ? "" : "s"}`;
 
+  // Stagger item variant set — motion when allowed, still under reduced motion.
+  const itemVariants = prefersReducedMotion ? STAGGER_ITEM_STILL : STAGGER_ITEM;
+
   return (
     // `repo-card-breathe rounded-lg` matches the sibling cards' inner chrome
     // (the breathing orange halo on a rounded perimeter inside the ItemLayout's
-    // amber `custom-bg-abt` border). The original opacity/y entrance is
-    // preserved but driven off `hasEntered` so it plays once cleanly.
+    // amber `custom-bg-abt` border). The card itself just fades in on
+    // `settledInView`; the three stat sections inside cascade in sequence (see
+    // the stagger container below), and both replay on every viewport re-entry.
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 30 }}
-      animate={
-        hasEntered
-          ? { opacity: 1, y: 0 }
-          : { opacity: 0, y: prefersReducedMotion ? 0 : 30 }
-      }
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: settledInView ? 1 : 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeOut" }}
       className="repo-card-breathe rounded-lg w-full h-full relative overflow-hidden p-5 sm:p-6 flex flex-col justify-center"
     >
       <UpdateBanner
@@ -216,7 +242,14 @@ export default function StreakStatsCard({ data }) {
         Contribution streaks
       </p>
 
-      <div className="flex flex-col sm:flex-row items-stretch justify-between gap-5 sm:gap-2">
+      {/* Stagger container — reveals Total Contributions → Current Streak →
+          Longest Streak in a left-to-right cascade on each viewport entry. */}
+      <motion.div
+        variants={STAGGER_CONTAINER}
+        initial="hidden"
+        animate={settledInView ? "visible" : "hidden"}
+        className="flex flex-col sm:flex-row items-stretch justify-between gap-5 sm:gap-2"
+      >
         {/* Total Contributions */}
         <StatBlock
           label="Total Contributions"
@@ -224,13 +257,17 @@ export default function StreakStatsCard({ data }) {
           dateRange={totalContributions?.dateRange}
           playToken={playToken}
           prefersReducedMotion={prefersReducedMotion}
+          variants={itemVariants}
         />
 
-        <Divider />
+        <Divider variants={itemVariants} />
 
         {/* Current Streak — count-up centred in a progress ring whose fill
             shows the current streak as a share of the longest. */}
-        <div className="flex flex-col items-center justify-center flex-1 text-center min-w-0">
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col items-center justify-center flex-1 text-center min-w-0"
+        >
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 flex items-center justify-center mb-2">
             <svg
               className="absolute w-full h-full"
@@ -248,12 +285,10 @@ export default function StreakStatsCard({ data }) {
               />
               {/* `key={playToken}` remounts the arc on each true entry so the
                   sweep replays; pre-entry (playToken 0 → hasEntered false) it
-                  holds empty. Reduced motion snaps to the filled offset. */}
+                  holds empty. Reduced motion snaps to the filled offset. No
+                  drop-shadow glow — the ring is a flat stroke. */}
               <motion.circle
                 key={playToken}
-                className={
-                  isPeak ? "streak-ring-glow--peak" : "streak-ring-glow"
-                }
                 cx="60"
                 cy="60"
                 r={RING_RADIUS}
@@ -326,32 +361,9 @@ export default function StreakStatsCard({ data }) {
           >
             {currentStreak?.dateRange}
           </span>
-          {/* Peak badge — only when the current run has matched the all-time
-              best. Subtle gold pill that celebrates the moment without
-              competing with the headline numbers. */}
-          {isPeak && (
-            <motion.span
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={
-                hasEntered
-                  ? { opacity: 1, scale: 1 }
-                  : { opacity: 0, scale: 0.85 }
-              }
-              transition={{ duration: 0.4, ease: "easeOut", delay: 0.6 }}
-              className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em]"
-              style={{
-                color: AMBER,
-                background: "rgba(255,170,42,0.10)",
-                border: "1px solid rgba(255,170,42,0.30)",
-              }}
-            >
-              <Flame size={9} fill={AMBER} style={{ color: AMBER }} aria-hidden="true" />
-              Personal best
-            </motion.span>
-          )}
-        </div>
+        </motion.div>
 
-        <Divider />
+        <Divider variants={itemVariants} />
 
         {/* Longest Streak */}
         <StatBlock
@@ -360,8 +372,9 @@ export default function StreakStatsCard({ data }) {
           dateRange={longestStreak?.dateRange}
           playToken={playToken}
           prefersReducedMotion={prefersReducedMotion}
+          variants={itemVariants}
         />
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

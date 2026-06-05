@@ -149,6 +149,19 @@ export function computeStreakDiff(prev, next) {
  */
 export function streakFingerprint(streaks) {
   if (!streaks || typeof streaks !== "object") return null;
+  // Placeholder guard: the About page seeds state with `streaks: {}` while the
+  // first fetch is in flight (the loading/default shape). That empty object has
+  // NONE of the tracked blocks, so without this check `block()` would coerce
+  // each to `{ value: 0, dateRange: "" }` and return a non-null all-zeros
+  // fingerprint — which the hook would record as a baseline, then flag a false
+  // "updated" banner the instant the first real streak payload arrived. Treat a
+  // payload missing every expected block as ABSENT so the baseline is only
+  // recorded once real data is present.
+  const hasRealBlock =
+    "totalContributions" in streaks ||
+    "currentStreak" in streaks ||
+    "longestStreak" in streaks;
+  if (!hasRealBlock) return null;
   const total = block(streaks, "totalContributions");
   const current = block(streaks, "currentStreak");
   const longest = block(streaks, "longestStreak");
