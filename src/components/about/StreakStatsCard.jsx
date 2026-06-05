@@ -61,6 +61,11 @@ function StreakNumber({
       node.textContent = "0";
       return undefined;
     }
+    // Reset to 0 SYNCHRONOUSLY before scheduling the tween. animateToTarget
+    // paints its first value on the next rAF tick, so without this the node
+    // would show its previous final value (e.g. the last streak count) for one
+    // frame on a re-entry or data change before dropping to 0 — a visible flash.
+    node.textContent = "0";
     const cancel = animateToTarget({
       from: 0,
       to: safe,
