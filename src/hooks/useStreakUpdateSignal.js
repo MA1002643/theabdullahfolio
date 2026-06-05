@@ -32,9 +32,20 @@ function readStored() {
     if (
       typeof parsed !== "object" ||
       parsed === null ||
-      typeof parsed.fingerprint !== "string" ||
-      streakFingerprint(parsed.streaks) === null
+      typeof parsed.fingerprint !== "string"
     ) {
+      return null;
+    }
+    // Cross-check the stored fingerprint against the one its OWN snapshot
+    // produces. `writeStored` always persists `{ fingerprint, streaks }` as a
+    // matched pair, and `streakFingerprint` is deterministic, so for any honest
+    // entry the recomputed value equals the stored one. A mismatch — null
+    // (garbage/empty `streaks`) or a different string (the fingerprint was
+    // hand-edited, or the snapshot was swapped out from under it) — means the
+    // pair is internally inconsistent and would diff `current` against the WRONG
+    // baseline, fabricating or muting a banner. Treat that as no baseline so the
+    // effect overwrites it silently with a fresh, self-consistent pair.
+    if (streakFingerprint(parsed.streaks) !== parsed.fingerprint) {
       return null;
     }
     return parsed;

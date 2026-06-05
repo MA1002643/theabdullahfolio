@@ -594,11 +594,33 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
   // Compute streaks
   const { currentStreak, longestStreak } = computeStreaks(contributionCalendar);
 
+  // Streak endpoints are formatted with the year ALWAYS present, unlike the
+  // general `formatDate` (which drops the year for the current year). The
+  // resulting `dateRange` string is what `streakFingerprint`/`computeStreakDiff`
+  // compare across polls to detect a "dates changed" event, so it must shift
+  // ONLY when the underlying dates do. With the conditional-year `formatDate`, a
+  // streak that crosses a New Year boundary reformats at midnight on Jan 1 —
+  // "Dec 30 - Present" → "Dec 30, 2025 - Present" — a purely presentational
+  // change the diff would mis-read as a real date move and surface as a false
+  // "dates changed" banner. (This complements pinning `end` to `today` in
+  // `computeStreaks`, which guards the daily midnight shift; this guards the
+  // yearly one.) Affects the current streak's start and any current-year longest
+  // streak's start/end alike.
+  const formatStreakDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   // Replace today's date with "Present" & format
   const formatStreakRange = (start, end) => {
     if (!start || !end) return "No data";
-    const displayEnd = end === today ? "Present" : formatDate(end);
-    return `${formatDate(start)} - ${displayEnd}`;
+    const displayEnd = end === today ? "Present" : formatStreakDate(end);
+    return `${formatStreakDate(start)} - ${displayEnd}`;
   };
 
   // Rank calculation
