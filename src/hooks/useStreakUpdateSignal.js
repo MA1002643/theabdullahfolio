@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { computeStreakDiff, streakFingerprint } from "@/utils/streakDiff";
 
@@ -64,17 +64,21 @@ function writeStored(value) {
 export function useStreakUpdateSignal(streaks) {
   const [pendingMessage, setPendingMessage] = useState(null);
 
-  // Keep the latest snapshot reachable from the fingerprint-keyed effect
-  // without listing `streaks` as a dep (its identity changes every render and
-  // would defeat the fingerprint-only gate).
-  const streaksRef = useRef(streaks);
-  streaksRef.current = streaks;
-
   const fingerprint = streakFingerprint(streaks);
 
   useEffect(() => {
     if (!fingerprint) return;
-    const current = streaksRef.current;
+    // Use the `streaks` captured by THIS render's closure — the exact snapshot
+    // `fingerprint` was computed from — not a mutable "latest" ref. If a newer
+    // payload commits before this passive effect flushes, a ref would pair an
+    // old `fingerprint` with the newer snapshot, so the stored
+    // `{ fingerprint, streaks }` could diff against the wrong baseline and
+    // suppress or misreport the banner. The effect is still gated on
+    // `fingerprint` ALONE (not `streaks`, whose identity changes every render
+    // and would re-run it constantly); a new `streaks` object carrying
+    // identical values produces the same fingerprint, so the captured snapshot
+    // stays value-equivalent.
+    const current = streaks;
     const stored = readStored();
 
     if (!stored) {
@@ -90,6 +94,9 @@ export function useStreakUpdateSignal(streaks) {
     // state until the section becomes visible and the consumer shows it.
     writeStored({ fingerprint, streaks: current });
     if (diff.hasChanged) setPendingMessage(diff.summaryMessage);
+    // `streaks` is intentionally captured by closure, not listed as a dep — see
+    // the comment above; `fingerprint` is the change-only trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fingerprint]);
 
   const consume = useCallback(() => setPendingMessage(null), []);
