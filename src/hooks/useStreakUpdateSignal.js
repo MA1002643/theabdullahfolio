@@ -14,19 +14,26 @@ function readStored() {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === null) return null;
     const parsed = JSON.parse(raw);
-    // A valid baseline is an object shaped `{ fingerprint: string, streaks }`.
-    // JSON.parse happily yields non-objects (`true`, `"oops"`, `42`) for a
-    // hand-edited or corrupt entry, and the caller dereferences
-    // `stored.fingerprint` / `stored.streaks` directly — on a primitive that
-    // throws (or on an object missing `fingerprint`, silently misdiffs against
-    // `undefined`). Mirror `useProjectCountSignal`'s read-side validation:
-    // require the parsed shape outright, and treat anything else as no baseline
-    // so the effect's `!stored` branch overwrites it silently. (`typeof null`
-    // is "object", so the explicit null check is load-bearing.)
+    // A valid baseline is an object shaped `{ fingerprint: string, streaks }`
+    // where `streaks` is itself a real streak payload. JSON.parse happily yields
+    // non-objects (`true`, `"oops"`, `42`) for a hand-edited or corrupt entry,
+    // and the caller dereferences `stored.fingerprint` / `stored.streaks`
+    // directly — on a primitive that throws, and on an object whose `streaks` is
+    // missing/garbage (`{ fingerprint: "x" }`, `{ ..., streaks: 42 }`)
+    // `computeStreakDiff` silently diffs against an all-zeros baseline and
+    // fabricates or suppresses a banner. Mirror `useProjectCountSignal`'s
+    // read-side validation: require the full shape outright, and treat anything
+    // else as no baseline so the effect's `!stored` branch overwrites it
+    // silently. (`typeof null` is "object", so the explicit null check is
+    // load-bearing.) `streaks` is validated through `streakFingerprint` — the
+    // same predicate that decides a payload is real elsewhere (non-null object
+    // with at least one tracked block; it returns null for `{}`/primitives) — so
+    // the baseline's notion of "valid streaks" can't drift from the writer's.
     if (
       typeof parsed !== "object" ||
       parsed === null ||
-      typeof parsed.fingerprint !== "string"
+      typeof parsed.fingerprint !== "string" ||
+      streakFingerprint(parsed.streaks) === null
     ) {
       return null;
     }

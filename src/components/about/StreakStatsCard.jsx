@@ -47,7 +47,14 @@ function StreakNumber({
   srLabel,
 }) {
   const ref = useRef(null);
-  const safe = Number(target) || 0;
+  // Coerce to a FINITE number. `Number(target) || 0` would catch NaN (falsy)
+  // but let `Infinity`/`-Infinity` through (both truthy) — the reduced-motion
+  // path writes `String(safe)` and would render the literal "Infinity", and the
+  // sr-only label / initial paint would expose it too. `Number.isFinite` mirrors
+  // the guard `animateToTarget` already applies to `to`, so the reduced-motion
+  // and animated paths land on the same valid target.
+  const n = Number(target);
+  const safe = Number.isFinite(n) ? n : 0;
 
   useEffect(() => {
     const node = ref.current;
