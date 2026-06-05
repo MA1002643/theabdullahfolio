@@ -12,7 +12,25 @@ function readStored() {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw);
+    // A valid baseline is an object shaped `{ fingerprint: string, streaks }`.
+    // JSON.parse happily yields non-objects (`true`, `"oops"`, `42`) for a
+    // hand-edited or corrupt entry, and the caller dereferences
+    // `stored.fingerprint` / `stored.streaks` directly — on a primitive that
+    // throws (or on an object missing `fingerprint`, silently misdiffs against
+    // `undefined`). Mirror `useProjectCountSignal`'s read-side validation:
+    // require the parsed shape outright, and treat anything else as no baseline
+    // so the effect's `!stored` branch overwrites it silently. (`typeof null`
+    // is "object", so the explicit null check is load-bearing.)
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      typeof parsed.fingerprint !== "string"
+    ) {
+      return null;
+    }
+    return parsed;
   } catch {
     // Corrupt entry or storage blocked (private mode) — treat as no baseline
     // so the banner simply stays silent rather than throwing.
