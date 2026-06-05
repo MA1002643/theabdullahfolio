@@ -31,7 +31,7 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience; and the GitHub Stats Section enhancement ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19), [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)) — a redesigned, animated GitHub Stats card with a per-stat change banner, a live/stale label, and a responsive Languages list; and the Completed Projects Section enhancement ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16)) — the completed-projects card rebuilt to match the Years-in-the-Craft card with an animated per-category breakdown bar, a screen-reader summary, a per-device count-change banner, and all about-page count-ups consolidated onto one debounced, flicker-immune hook._
+_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience; and the GitHub Stats Section enhancement ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19), [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)) — a redesigned, animated GitHub Stats card with a per-stat change banner, a live/stale label, and a responsive Languages list; and the Completed Projects Section enhancement ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16)) — the completed-projects card rebuilt to match the Years-in-the-Craft card with an animated per-category breakdown bar, a screen-reader summary, a per-device count-change banner, and all about-page count-ups consolidated onto one debounced, flicker-immune hook; and the Current Streak Section enhancement ([#21](https://github.com/MA1002643/theabdullahfolio/issues/21), [#117](https://github.com/MA1002643/theabdullahfolio/pull/117)) — the Current Streak card rebuilt with a server-accurate streak computation, a per-device streak-change update banner, a git-commit-node progress ring with a staggered card entrance, and the Most Used Languages card brought to full entrance-animation parity with the GitHub Stats card (replayable on every viewport entry, with reduced-motion support)._
 
 ### Added
 
@@ -153,6 +153,52 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
   three time-tiered recourse paths (7-day alternate-channel contact,
   30-day CERT/CC coordination, 90-day responsible-disclosure window)
   and a 48-hour compressed timeline for active-exploitation cases.
+- **Current Streak card overhaul** ([#21](https://github.com/MA1002643/theabdullahfolio/issues/21),
+  [#117](https://github.com/MA1002643/theabdullahfolio/pull/117),
+  `src/components/about/StreakStatsCard.jsx`). Three stat blocks — Total
+  Contributions, the Current Streak progress ring, and Longest Streak —
+  that reveal in a staggered left-to-right cascade on every viewport entry,
+  with vertically-centred content. The ring is a flat-stroke arc whose fill
+  encodes the current streak as a share of the longest, sweeping in once on
+  entry, with a `GitCommitVertical` "commit node" perched at the top. Numbers
+  count up imperatively via the new `animateToTarget` util.
+- `src/hooks/useStreakUpdateSignal.js` + `src/utils/streakDiff.js`
+  (`computeStreakDiff` / `streakFingerprint`) — a per-device "streak stats
+  changed since this device last saw them" banner signal (localStorage
+  baseline, same model as `useLanguagesUpdateSignal` / `useProjectCountSignal`),
+  surfaced via the shared `UpdateBanner` once the card is in view and
+  auto-hidden after ~4.5 s. The fingerprint is computed **client-side** from
+  the three streak values plus the current/longest date ranges (the rolling
+  `totalContributions` range is deliberately excluded so a daily window
+  roll-over never reads as a change), so it works on the bundled fallback and
+  the server/client can't drift.
+- `src/utils/animationCurves.js` — `animateToTarget`, a cancellable
+  `requestAnimationFrame` count-up on the shared fast-start/slow-finish easing
+  (`fastStartSlowFinish`), driving the streak digits. SSR-safe and short-circuits
+  with a no-op fast-path when there is nothing to tween (`from === to`).
+- **Most Used Languages** entrance animation brought to 1:1 parity with the
+  GitHub Stats card (`src/components/about/LanguagesCard.jsx`): a spring
+  `cardVariants` lift, per-character blur-in `AnimatedTitle`, and the language
+  list rows sliding in from the left as a staggered cascade (the Stats card's
+  `metricRowVariants`). All driven off `settledInView` so the whole entrance
+  **replays on every true viewport re-entry**, with a reduced-motion no-op
+  variant set that holds everything still for users who opted out.
+- `settledInView` added to `useViewportCountTrigger` — a debounced, reversible
+  visibility flag (true on a real entry, false only after a *sustained* exit)
+  that drives the GitHub-card entrance fades + per-character titles so they
+  **replay on every re-entry** instead of latching after the first, while still
+  absorbing the `IntersectionObserver` flicker the monotonic `playToken` was
+  introduced to ignore.
+- `src/hooks/useReliableInView.js` — a transform-safe "is this in view?" hook
+  measuring `getBoundingClientRect` (plus a short post-mount `rAF` burst to
+  catch the entrance settling) instead of an `IntersectionObserver`. Needed
+  because an observer attached anywhere inside a `scale: 0 → 1` `ItemLayout`
+  reads zero area at entry and never re-fires after the transform-only
+  scale-up, so the count-ups it gated never ran.
+- Real contribution-calendar total now backs **Total Contributions** in the
+  streak payload (`computeStreaks` in `src/app/api/github-stats/route.js`),
+  replacing the previously hardcoded value so the displayed count and its
+  change-diff are accurate.
 
 ### Changed
 
@@ -437,6 +483,45 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
   so path-based PR labels stay in sync with the latest diff across the
   PR lifetime, with the welcome job gated by `github.event.action == 'opened'`
   to avoid re-greeting on every push.
+- **Current Streak always reported `0`** ([#21](https://github.com/MA1002643/theabdullahfolio/issues/21),
+  `computeStreaks` in `src/app/api/github-stats/route.js`). GitHub returns the
+  full current *week*, so the calendar was padded with future days at
+  `contributionCount: 0`; scanning forward, the first of those closed the
+  active run and the trailing zeros kept the counter at 0, so the
+  ongoing-streak tail was never reached (the streak read `0` every day except
+  Saturday). The current streak is now found by **walking backward** over days
+  filtered to `<= today`, treating an empty *today* as "not yet broken" (the
+  day isn't over). `end` is pinned to `today` in that case so the range keeps
+  printing **"Present"** and `currentStreak.dateRange` doesn't shift at midnight
+  (which `streakFingerprint` would otherwise read as a real change).
+- **"Projects shipped" / "Years in the craft" count-ups stuck at `0`** on
+  `/about`. Two stacked causes: (1) the `useInView` gating those counters was
+  attached to the `scale: 0 → 1` `ItemLayout`, which reads zero area at entry
+  and never re-fires after the transform settles — replaced with the new
+  `useReliableInView`; and (2) the `Counter` component was defined *inside*
+  `AboutDetails`, so every parent re-render remounted it and reset the tween to
+  0 — hoisted to module scope so it runs once to completion.
+- `streakFingerprint({})` treated the About page's `streaks: {}` loading
+  placeholder as a valid all-zeros snapshot and returned a non-null fingerprint,
+  recording it as a baseline and then firing a **false "updated" banner** the
+  instant real streak data arrived. It now returns `null` for a payload missing
+  every tracked block, so the baseline is only recorded once real data lands.
+- **Repo-breakdown popover dismissed when keyboard focus moved into it**
+  (`src/components/about/LanguagesCard.jsx`). The row's `onBlur` scheduled a
+  close that only a pointer-enter could cancel, so tabbing from a language row
+  to its repo links closed the panel before they were reachable. The row now
+  gates that close on `relatedTarget` (skip it when focus moves into
+  `[data-lang-popover]`), and the popover gained focus enter/leave handlers so
+  it stays open while focus is within it or the trigger row, closing only once
+  focus leaves both.
+- `animateToTarget` scheduled a full ~2 s `requestAnimationFrame` loop of
+  no-op repaints even when `from === to` (reachable from the streak card at a
+  value of 0); a fast-path early return now paints the final value once and
+  finishes synchronously.
+- Reduced motion is now honoured across the **whole** Most Used Languages
+  entrance, not just the title: the card/header/list/row variants swap to a
+  resting no-op set under `prefers-reduced-motion` so nothing springs, slides,
+  or replays for users who opted out.
 
 ### Removed
 

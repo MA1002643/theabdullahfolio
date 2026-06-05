@@ -11,6 +11,7 @@ import { computeRepoDiff } from "@/utils/repoDiff";
 import { computeStatsDiff } from "@/utils/statsDiff";
 import { useExperienceSummary } from "@/hooks/useExperienceSummary";
 import { useProjectCountSignal } from "@/hooks/useProjectCountSignal";
+import { useReliableInView } from "@/hooks/useReliableInView";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
@@ -207,6 +208,36 @@ function CountUp({ value, inView = true }) {
   useViewportCountUp(nodeRef, { to: value, inView, prefersReducedMotion });
 
   return <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>;
+}
+
+// Big-digit count-up for the "Completed projects" and "Years in the craft"
+// cards. The count-up + debounced viewport replay live in the shared
+// `useViewportCountUp` hook (see its definition for the hysteresis rationale).
+// `inView` (default true) gates the replay; reduced motion writes `to` straight
+// to the node, and the JSX initialiser uses the same gate so the first paint is
+// already final under reduced motion.
+//
+// MUST live at module scope (not nested in AboutDetails): a component defined
+// inside another is a NEW type every parent render, so React unmounts and
+// remounts it on each AboutDetails update (hydrate, experience load, polling).
+// That reset the count-up to `from` and restarted the tween before it could
+// finish — the digit was stuck at 0. Hoisting keeps it mounted so the tween
+// runs once to completion.
+function Counter({ from = 0, to, plusIcon = true, inView = true }) {
+  const nodeRef = useRef(null);
+  const prefersReducedMotion = useReducedMotion();
+
+  useViewportCountUp(nodeRef, { from, to, inView, prefersReducedMotion });
+
+  return (
+    // Inline elements only: this renders inside the cards' <h1>, and a
+    // heading may contain phrasing content only — a block <div>/<p> here is
+    // invalid HTML. `inline-flex` keeps the digit (+ optional plus) aligned.
+    <span className="inline-flex items-center justify-center">
+      <span ref={nodeRef}>{prefersReducedMotion ? to : from}</span>
+      {plusIcon && <span>+</span>}
+    </span>
+  );
 }
 
 // Two-segment proportional bar shown under the years digit on the
@@ -617,28 +648,6 @@ const AboutDetails = () => {
     [0, 1]
   );
 
-  // Counter Animation — the count-up + debounced viewport replay live in the
-  // shared `useViewportCountUp` hook (see its definition for the hysteresis
-  // rationale). `inView` (default true) gates the replay; reduced motion writes
-  // `to` straight to the node, and the JSX initialiser uses the same gate so
-  // the first paint is already final under reduced motion.
-  function Counter({ from, to, plusIcon = true, inView = true }) {
-    const nodeRef = useRef(null);
-    const prefersReducedMotion = useReducedMotion();
-
-    useViewportCountUp(nodeRef, { from, to, inView, prefersReducedMotion });
-
-    return (
-      // Inline elements only: this renders inside the cards' <h1>, and a
-      // heading may contain phrasing content only — a block <div>/<p> here is
-      // invalid HTML. `inline-flex` keeps the digit (+ optional plus) aligned.
-      <span className="inline-flex items-center justify-center">
-        <span ref={nodeRef}>{prefersReducedMotion ? to : from}</span>
-        {plusIcon && <span>+</span>}
-      </span>
-    );
-  }
-
   // Issue #17: years is now driven by the experience-summary API
   // (GitHub earliest-repo date + software roles parsed from the resume
   // PDF) instead of a hardcoded `startDate`. The hook fetches once per
@@ -687,12 +696,24 @@ const AboutDetails = () => {
   // overlay — same z-index regardless of which card opened it.
   const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
   const experienceTriggerRef = useRef(null);
+  // Viewport observer for the count-up + banner. Deliberately a SEPARATE ref
+  // on the inner (non-scaled) card div rather than reusing `experienceTriggerRef`
+  // on the outer ItemLayout: the ItemLayout animates `scale 0 → 1` on entry, and
+  // an IntersectionObserver attached to that self-scaling element reads zero area
+  // at entry and never re-fires after the transform settles — so `useInView`
+  // stuck false and the years count-up sat at 0. The inner div isn't the scale
+  // target, so its observer reads a true ratio. `experienceTriggerRef` stays on
+  // the ItemLayout because the modal restores focus to that focusable button.
+  const experienceInViewRef = useRef(null);
   // Banner visibility driver. The banner component dedupes per
   // message internally, so re-entering the card while the same
   // message is "in flight" won't restart the timer; only a fresh
   // change-message from the next poll will fire it again.
-  const isExperienceCardInView = useInView(experienceTriggerRef, {
-    once: false,
+  // `useReliableInView` (not framer `useInView`) because the ItemLayout's
+  // `scale 0 → 1` entrance blinds an IntersectionObserver to the card — see the
+  // hook's own docs. Measures real geometry so the count-up fires on /about
+  // where this card is on screen at load and never gets a re-triggering scroll.
+  const isExperienceCardInView = useReliableInView(experienceInViewRef, {
     amount: 0.5,
   });
   const openExperienceModal = () => {
@@ -1069,8 +1090,10 @@ const AboutDetails = () => {
   // languages card). Shown via the shared UpdateBanner once the card is in
   // view, then auto-hidden after ~4.5s.
   const completedProjectsRef = useRef(null);
-  const isCompletedProjectsInView = useInView(completedProjectsRef, {
-    once: false,
+  // `useReliableInView` (not framer `useInView`): the ItemLayout's scale 0 → 1
+  // entrance hides the card from an IntersectionObserver, so the count-up never
+  // fired and the digit sat at 0 on /about. See the hook's docs.
+  const isCompletedProjectsInView = useReliableInView(completedProjectsRef, {
     amount: 0.3,
   });
   const { pendingMessage: projectCountPending, consume: consumeProjectCount } =
@@ -1165,7 +1188,6 @@ const AboutDetails = () => {
         </ItemLayout>
 
         <ItemLayout
-          ref={completedProjectsRef}
           // Mirrors the "Years in the craft" card exactly: `!p-0` hands all
           // padding to the inner `repo-card-breathe` wrapper, and `group
           // relative` matches the sibling so the two feature cards share one
@@ -1175,8 +1197,17 @@ const AboutDetails = () => {
         >
           {/* Inner wrapper is the 1:1 twin of the years card's: the
               `repo-card-breathe` pulsing glow border on a `rounded-lg`
-              perimeter, padded `p-6`, content flex-col centered. */}
-          <div className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center">
+              perimeter, padded `p-6`, content flex-col centered.
+
+              The viewport observer (`completedProjectsRef`) lives HERE on the
+              inner div, NOT on the outer ItemLayout: the ItemLayout animates
+              `scale 0 → 1` on entry, and an IntersectionObserver attached to
+              that self-scaling element reads zero area at entry and never
+              re-fires after the transform settles — leaving `useInView` stuck
+              false so the count-up never ran (the digit sat at 0). The inner
+              div is not the scale target, so its observer reads a true ratio.
+              Same reason the sibling stat cards observe their inner card. */}
+          <div ref={completedProjectsRef} className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center">
             {/* Count-change banner — appears only when the completed-projects
                 count changed since this device last saw it (issue #16). The
                 UpdateBanner's nodes are both out-of-flow (sr-only is absolute,
@@ -1262,7 +1293,7 @@ const AboutDetails = () => {
               The content's flex-col stack + vertical centering moved
               from the outer to this inner so layout behaviour is
               unchanged after the restructure. */}
-          <div className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center">
+          <div ref={experienceInViewRef} className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center">
             <ExperienceUpdateBanner
               message={testExperienceMessage ?? experienceChangeMessage}
               inView={isExperienceCardInView}
@@ -1396,7 +1427,7 @@ const AboutDetails = () => {
         </ItemLayout>
 
         {githubStats?.stats && <ItemLayout className={"col-span-full lg:col-span-6 !p-0"}>
-          <StreakStatsCard data={githubStats.stats.streaks} isUpdated={changedFields.includes("stats.streaks")} />
+          <StreakStatsCard data={githubStats.stats.streaks} />
         </ItemLayout>}
 
 

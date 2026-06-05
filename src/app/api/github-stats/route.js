@@ -594,11 +594,41 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
   // Compute streaks
   const { currentStreak, longestStreak } = computeStreaks(contributionCalendar);
 
+  // Streak endpoints are formatted with the year ALWAYS present, unlike the
+  // general `formatDate` (which drops the year for the current year). The
+  // resulting `dateRange` string is what `streakFingerprint`/`computeStreakDiff`
+  // compare across polls to detect a "dates changed" event, so it must shift
+  // ONLY when the underlying dates do. With the conditional-year `formatDate`, a
+  // streak that crosses a New Year boundary reformats at midnight on Jan 1 —
+  // "Dec 30 - Present" → "Dec 30, 2025 - Present" — a purely presentational
+  // change the diff would mis-read as a real date move and surface as a false
+  // "dates changed" banner. (This complements pinning `end` to `today` in
+  // `computeStreaks`, which guards the daily midnight shift; this guards the
+  // yearly one.) Affects the current streak's start and any current-year longest
+  // streak's start/end alike.
+  const formatStreakDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    // Pin to UTC. The input is a date-only `YYYY-MM-DD` string, which
+    // `new Date(...)` parses as UTC midnight; without `timeZone: "UTC"`,
+    // `toLocaleDateString` renders in the RUNTIME's local zone, so a function
+    // deployed behind UTC would shift the day back one ("Dec 30" → "Dec 29")
+    // and a function ahead of it forward. That makes the emitted `dateRange`
+    // depend on deploy region and reintroduces the very fingerprint
+    // instability this stable formatter exists to remove.
+    return date.toLocaleDateString("en-US", {
+      timeZone: "UTC",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   // Replace today's date with "Present" & format
   const formatStreakRange = (start, end) => {
     if (!start || !end) return "No data";
-    const displayEnd = end === today ? "Present" : formatDate(end);
-    return `${formatDate(start)} - ${displayEnd}`;
+    const displayEnd = end === today ? "Present" : formatStreakDate(end);
+    return `${formatStreakDate(start)} - ${displayEnd}`;
   };
 
   // Rank calculation
@@ -634,8 +664,17 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
     },
     streaks: {
       totalContributions: {
-        value: 250,
-        dateRange: `${formatDate(
+        // Real calendar total (was hardcoded to 250) so the count-up and the
+        // change-diff in the Current Streak card reflect actual activity.
+        value: totalContributions,
+        // Use the UTC-pinned `formatStreakDate` (not `formatDate`) for the
+        // window start: the calendar day is a date-only `YYYY-MM-DD` parsed as
+        // UTC midnight, so the conditional-TZ `formatDate` would render it one
+        // day off depending on the deploy region. This range is excluded from
+        // the streak fingerprint, so it's a display-stability fix only — but it
+        // keeps the shown start day region-independent and consistent with the
+        // streak rows below.
+        dateRange: `${formatStreakDate(
           contributionCalendar.weeks[0].contributionDays[0].date
         )} - Present`,
       },
@@ -906,38 +945,61 @@ async function findMostActiveRepo(username) {
 }
 
 function computeStreaks(contributionCalendar) {
-  const days = contributionCalendar.weeks.flatMap((w) => w.contributionDays);
   const today = new Date().toISOString().slice(0, 10);
 
-  let currentStreak = { days: 0, start: null, end: null };
+  // GitHub returns the FULL current week, so the calendar is padded with the
+  // remaining (future) days of this week at contributionCount 0. Left in, those
+  // trailing zero-days close the running streak before the loop ends AND make
+  // the array's last element a future date — which is exactly why the current
+  // streak was stuck at 0: the loop hit "tomorrow" (count 0), closed the streak
+  // with end = today, and the ongoing-streak tail was never reached. Dropping
+  // everything after today makes the array end on the real "today".
+  const days = contributionCalendar.weeks
+    .flatMap((w) => w.contributionDays)
+    .filter((d) => d.date <= today);
+
+  // --- Longest streak: scan forward, tracking each run's high-water mark. ---
   let longestStreak = { days: 0, start: null, end: null };
-
-  let streak = 0;
-  let streakStart = null;
-
+  let runStart = null;
+  let run = 0;
   for (let i = 0; i < days.length; i++) {
     const { date, contributionCount } = days[i];
     if (contributionCount > 0) {
-      if (streak === 0) streakStart = date;
-      streak++;
+      if (run === 0) runStart = date;
+      run++;
+      if (run > longestStreak.days)
+        longestStreak = { days: run, start: runStart, end: date };
     } else {
-      if (streak > 0) {
-        const streakEnd = days[i - 1].date;
-        if (streak > longestStreak.days)
-          longestStreak = { days: streak, start: streakStart, end: streakEnd };
-        streak = 0;
-      }
+      run = 0;
     }
   }
 
-  // Handle ongoing streak
-  if (streak > 0) {
-    const lastDay = days[days.length - 1].date;
-    if (streak > longestStreak.days)
-      longestStreak = { days: streak, start: streakStart, end: lastDay };
-
-    if (lastDay === today)
-      currentStreak = { days: streak, start: streakStart, end: lastDay };
+  // --- Current streak: walk BACKWARD from the most recent day. ---
+  // An empty TODAY does not break the streak — the day isn't over yet, so the
+  // user may still contribute — so skip an empty today and continue from
+  // yesterday. A gap older than that means the streak is genuinely broken.
+  let currentStreak = { days: 0, start: null, end: null };
+  let i = days.length - 1;
+  const skippedEmptyToday =
+    i >= 0 && days[i].date === today && days[i].contributionCount === 0;
+  if (skippedEmptyToday) {
+    i--; // today not contributed yet — don't count it, but don't break on it
+  }
+  if (i >= 0 && days[i].contributionCount > 0) {
+    // Keep `end` at TODAY when the only skipped day is an empty today: the
+    // streak is still ongoing (the day just isn't over yet). Pinning it to
+    // yesterday's date would make `formatStreakRange` drop the "Present" label
+    // AND shift `currentStreak.dateRange` at every midnight rollover, which
+    // `streakFingerprint` would read as a real change and fire a false banner.
+    const end = skippedEmptyToday ? today : days[i].date;
+    let start = end;
+    let count = 0;
+    while (i >= 0 && days[i].contributionCount > 0) {
+      start = days[i].date;
+      count++;
+      i--;
+    }
+    currentStreak = { days: count, start, end };
   }
 
   return { currentStreak, longestStreak };

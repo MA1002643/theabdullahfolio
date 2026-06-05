@@ -24,6 +24,115 @@ const COUNT_UP_DURATION = 2; // seconds
 // How long the change banner lingers once the section scrolls into view.
 const BANNER_AUTO_HIDE_MS = 4500;
 
+// ----- Card-level entrance choreography — mirrors the GitHub Stats card
+// (StatsCard.jsx) 1:1 so the side-by-side pair animate IN identically: the card
+// springs up (opacity/y/scale) and its sections cascade via `staggerChildren`,
+// with the title typing in per character. Driven off `settledInView`, so the
+// whole entrance REPLAYS on every true viewport re-entry.
+const cardVariants = {
+  hidden: { opacity: 0, y: 56, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 70,
+      damping: 18,
+      staggerChildren: 0.07,
+      delayChildren: 0.15,
+    },
+  },
+};
+
+const childVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 120, damping: 20 },
+  },
+};
+
+// Row choreography — IDENTICAL to the GitHub Stats card's metric rows
+// (Total Stars Earned, Total Commits, …): the list is a stagger container and
+// each language row slides in from the left (x: -16 → 0) one after another.
+// Because the list is itself a stagger child of the card, this cascade plays
+// after the header + bar, and replays on every viewport entry.
+const metricContainerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+};
+
+const metricRowVariants = {
+  hidden: { opacity: 0, x: -16 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
+
+// Reduced-motion no-op: hidden === visible at the resting state with no tween,
+// so the card simply appears (no spring, slide, or staggered replay) for users
+// who've opted out of motion. Used in place of every variant set above when
+// `prefers-reduced-motion` is set — mirroring AnimatedTitle's reduced path so
+// the whole card honours the preference, not just the title.
+const noMotionVariants = {
+  hidden: { opacity: 1, x: 0, y: 0, scale: 1 },
+  visible: { opacity: 1, x: 0, y: 0, scale: 1 },
+};
+
+/* Per-character blur-fade-in title — the exact treatment the GitHub Stats card
+   uses, in the same vivid orange (#ff6d05) so the two headlines read as one
+   system. Reduced motion renders a plain heading; the per-char spans are
+   aria-hidden with an aria-label so the accessible name stays clean. */
+function AnimatedTitle({ text, play }) {
+  const prefersReducedMotion = useReducedMotion();
+  const className =
+    "text-xl md:text-2xl text-left font-semibold mb-1 break-words leading-tight";
+
+  if (prefersReducedMotion) {
+    return (
+      <h2 className={className} style={{ color: "#ff6d05", textShadow: "none" }}>
+        {text}
+      </h2>
+    );
+  }
+
+  const chars = Array.from(text);
+  const container = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.025, delayChildren: 0.2 } },
+  };
+  const charVariant = {
+    hidden: { opacity: 0, filter: "blur(6px)", y: 8 },
+    visible: {
+      opacity: 1,
+      filter: "blur(0px)",
+      y: 0,
+      transition: { duration: 0.35, ease: "easeOut" },
+    },
+  };
+  return (
+    <motion.h2
+      variants={container}
+      initial="hidden"
+      animate={play ? "visible" : "hidden"}
+      className={className}
+      style={{ color: "#ff6d05", textShadow: "none" }}
+      aria-label={text}
+    >
+      {chars.map((c, i) => (
+        <motion.span
+          key={i}
+          variants={charVariant}
+          style={{ display: "inline-block" }}
+          aria-hidden="true"
+        >
+          {c === " " ? " " : c}
+        </motion.span>
+      ))}
+    </motion.h2>
+  );
+}
+
 export default function LanguagesCard({ data, isLive = false }) {
   const cardRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
@@ -32,10 +141,21 @@ export default function LanguagesCard({ data, isLive = false }) {
   // immune to the rapid in/out IntersectionObserver flicker that made the
   // old `useInView`-driven count-up restart mid-scroll (issue #16/17 bug
   // class). Children animate on `playToken`, not raw visibility.
-  const { isInView, playToken } = useViewportCountTrigger(cardRef, {
+  const { isInView, playToken, settledInView } = useViewportCountTrigger(cardRef, {
     amount: 0.3,
     margin: "-50px",
   });
+
+  // Honour reduced motion across the whole entrance: swap every animated variant
+  // set for the resting no-op so nothing springs, slides, or re-plays on
+  // re-entry for users who opted out (AnimatedTitle already takes its own
+  // reduced path). The count-ups handle reduced motion separately.
+  const cardV = prefersReducedMotion ? noMotionVariants : cardVariants;
+  const childV = prefersReducedMotion ? noMotionVariants : childVariants;
+  const listContainerV = prefersReducedMotion
+    ? noMotionVariants
+    : metricContainerVariants;
+  const rowV = prefersReducedMotion ? noMotionVariants : metricRowVariants;
 
   const languages = Array.isArray(data) ? data : [];
   // Denominator for the stacked bar. The normalized list sums to ~100, but
@@ -253,16 +373,16 @@ export default function LanguagesCard({ data, isLive = false }) {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 40 }}
-      // Drive the fade-in off the latched, flicker-immune `playToken` (>0 once
-      // a true entry happens) instead of raw `isInView`. The parent ItemLayout
-      // animates scale 0 → 1 on entry, which wobbles this card's observer rect
-      // and made raw `isInView` toggle true/false/true — replaying the fade and
-      // looking like a glitch. `playToken > 0` flips once and stays, so the
-      // entrance plays a single time; the count-ups still replay via the
-      // `playToken` value passed to the bar/label children.
-      animate={playToken > 0 ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 1, ease: "easeOut" }}
+      // Entrance choreography is the GitHub Stats card's, 1:1 (`cardVariants` +
+      // `childVariants` + the per-char title). Driven off `settledInView` —
+      // debounced and flicker-immune like `playToken` (the parent ItemLayout's
+      // scale 0 → 1 entry wobbles this card's observer rect, which raw
+      // `isInView` would replay as a glitch), but REVERSIBLE: it flips false
+      // after a sustained exit so the whole entrance REPLAYS on every true
+      // re-entry instead of firing once. Count-ups still replay via `playToken`.
+      variants={cardV}
+      initial="hidden"
+      animate={settledInView ? "visible" : "hidden"}
       // Border + glow parity with the "Years in the craft" card: the outer
       // `custom-bg-abt` amber border comes from the `!p-0` ItemLayout
       // wrapper (index.jsx), and this inner `repo-card-breathe rounded-lg`
@@ -278,16 +398,11 @@ export default function LanguagesCard({ data, isLive = false }) {
       />
 
       {/* Header — title + an analytics-style meta line. */}
-      <div className="mb-5">
-        {/* Title — vivid orange (#ff6d05), matching the "… GitHub Stats" card
-            title so the side-by-side pair share one headline hue. Flat,
-            semibold, no neon glow. */}
-        <h2
-          className="text-xl md:text-2xl text-left font-semibold mb-1"
-          style={{ color: "#ff6d05", textShadow: "none" }}
-        >
-          Most Used Languages
-        </h2>
+      <motion.div variants={childV} className="mb-5">
+        {/* Title — per-character blur-in in vivid orange (#ff6d05), the exact
+            treatment + hue the "… GitHub Stats" card uses, so the side-by-side
+            pair share one headline animation and colour. */}
+        <AnimatedTitle text="Most Used Languages" play={settledInView} />
         {/* Meta line — frames the card as a live data widget. Count is
             pluralised; the "· live from GitHub" suffix is shown only when
             `isLive` (the displayed languages came from a genuine live
@@ -302,13 +417,14 @@ export default function LanguagesCard({ data, isLive = false }) {
           {languages.length} {languages.length === 1 ? "language" : "languages"}
           {isLive && " · live from GitHub"}
         </p>
-      </div>
+      </motion.div>
 
       {/* Combined horizontal stacked bar — decorative; the list below
           carries the same data accessibly. `relative` anchors the one-shot
           sheen overlay; per-segment right borders draw crisp dividers
           between colours without changing layout width (border-box). */}
-      <div
+      <motion.div
+        variants={childV}
         aria-hidden="true"
         className="relative w-full h-2 md:h-3 rounded-full overflow-hidden flex mb-5 bg-gray-700/30"
       >
@@ -331,7 +447,7 @@ export default function LanguagesCard({ data, isLive = false }) {
         {playToken > 0 && !prefersReducedMotion && (
           <span key={playToken} className="lang-bar-sheen" aria-hidden="true" />
         )}
-      </div>
+      </motion.div>
 
       {/* Language list — a single column on mobile AND tablet (incl. iPad-
           landscape at `lg`/1024, where this card is already half-width beside
@@ -348,7 +464,10 @@ export default function LanguagesCard({ data, isLive = false }) {
           all 10 — matching the wider canvas to a fuller list. The decorative
           proportion bar above still reflects every language, so it stays a
           complete overview regardless of how many rows are listed. */}
-      <ul className="grid grid-cols-1 xl:grid-cols-2 gap-y-3 gap-x-6 pt-2 text-sm md:text-base xl:text-sm">
+      <motion.ul
+        variants={listContainerV}
+        className="grid grid-cols-1 xl:grid-cols-2 gap-y-3 gap-x-6 pt-2 text-sm md:text-base xl:text-sm"
+      >
         {languages.slice(0, 10).map((lang, idx) => (
           <AnimatedLangLabel
             key={lang.language ?? idx}
@@ -356,6 +475,7 @@ export default function LanguagesCard({ data, isLive = false }) {
             rank={idx + 1}
             isPrimary={idx === 0}
             hiddenUntilXl={idx >= 5}
+            variants={rowV}
             playToken={playToken}
             prefersReducedMotion={prefersReducedMotion}
             active={activeIndex === idx}
@@ -368,7 +488,7 @@ export default function LanguagesCard({ data, isLive = false }) {
             onRepoClose={scheduleClose}
           />
         ))}
-      </ul>
+      </motion.ul>
 
       {/* Repo-breakdown popover — portaled to <body> so it escapes the card's
           `overflow-hidden`. Rendered only while a row with a known breakdown
@@ -467,6 +587,7 @@ function AnimatedLangLabel({
   rank,
   isPrimary,
   hiddenUntilXl = false,
+  variants,
   playToken,
   prefersReducedMotion,
   active,
@@ -504,44 +625,61 @@ function AnimatedLangLabel({
   }, [playToken, target, prefersReducedMotion]);
 
   return (
-    <li
-      tabIndex={0}
-      data-lang-row=""
-      // The whole row is the popover trigger, so the name OR the percentage
-      // activates it; the same handlers still drive the bar spotlight.
-      // `currentTarget` (the <li>) is the positioning anchor. Open/close is
-      // mode-gated in the parent: hover/leave act only with a fine pointer,
-      // focus opens only when the keyboard drove it, and tap toggles only on
-      // touch — so touch → tap, keyboard → hover/focus, mouse → hover.
-      onMouseEnter={(e) => {
-        onActivate();
-        onRepoEnter?.(e.currentTarget);
-      }}
-      onMouseLeave={() => {
-        onDeactivate();
-        onRepoClose?.();
-      }}
-      onFocus={(e) => {
-        onActivate();
-        onRepoFocus?.(e.currentTarget);
-      }}
-      onBlur={() => {
-        onDeactivate();
-        onRepoClose?.();
-      }}
-      onClick={(e) => onRepoTap?.(e.currentTarget)}
-      aria-haspopup={hasRepos ? "true" : undefined}
-      // `hiddenUntilXl` rows (the 6th–10th languages) are display:none below
-      // `xl` so the single-column view lists only the top 5; at `xl`+ they
-      // become flex items again and fill the second column.
-      className={`group ${hiddenUntilXl ? "hidden xl:flex" : "flex"} items-center gap-2 min-w-0 rounded-md outline-none transition-[opacity,transform] duration-200 ${
-        hasRepos ? "cursor-pointer" : ""
-      }`}
-      style={{
-        opacity: dimmed ? 0.4 : 1,
-        transform: active ? "translateX(2px)" : "none",
-      }}
+    // Two layers, deliberately separated so two animation systems don't fight
+    // over the same CSS properties:
+    //   • <motion.li> owns the ENTRANCE — framer animates opacity + x (-16 → 0)
+    //     via `variants` (the metric-row slide-in, staggered by the parent ul).
+    //     It's the grid cell, so `hiddenUntilXl` toggles its display.
+    //   • the inner <div> owns the INTERACTION — the hover/focus spotlight's
+    //     React-controlled `opacity` (dim) + `transform` (nudge). Keeping these
+    //     off the motion.li avoids clobbering framer's entrance transform/opacity
+    //     (and vice-versa); the two opacities simply compose.
+    <motion.li
+      variants={variants}
+      className={hiddenUntilXl ? "hidden xl:block" : "block"}
     >
+      <div
+        tabIndex={0}
+        data-lang-row=""
+        // The whole row is the popover trigger, so the name OR the percentage
+        // activates it; the same handlers still drive the bar spotlight.
+        // `currentTarget` (this div) is the positioning anchor. Open/close is
+        // mode-gated in the parent: hover/leave act only with a fine pointer,
+        // focus opens only when the keyboard drove it, and tap toggles only on
+        // touch — so touch → tap, keyboard → hover/focus, mouse → hover.
+        onMouseEnter={(e) => {
+          onActivate();
+          onRepoEnter?.(e.currentTarget);
+        }}
+        onMouseLeave={() => {
+          onDeactivate();
+          onRepoClose?.();
+        }}
+        onFocus={(e) => {
+          onActivate();
+          onRepoFocus?.(e.currentTarget);
+        }}
+        onBlur={(e) => {
+          // Clear the spotlight whenever focus leaves the row (mirrors the
+          // pointer path's onMouseLeave). But only schedule the popover CLOSE
+          // when focus isn't moving INTO the popover — Tab from the row lands on
+          // a repo link in the body-portaled panel (matched by its data attr,
+          // not DOM ancestry), and closing then would dismiss those links before
+          // they're reachable. The popover closes itself once focus leaves it.
+          onDeactivate();
+          if (e.relatedTarget?.closest?.("[data-lang-popover]")) return;
+          onRepoClose?.();
+        }}
+        onClick={(e) => onRepoTap?.(e.currentTarget)}
+        aria-haspopup={hasRepos ? "true" : undefined}
+        className={`group flex items-center gap-2 min-w-0 rounded-md outline-none transition-[opacity,transform] duration-200 ${
+          hasRepos ? "cursor-pointer" : ""
+        }`}
+        style={{
+          opacity: dimmed ? 0.4 : 1,
+          transform: active ? "translateX(2px)" : "none",
+        }}
+      >
       {/* Rank index — monospaced, dim, fixed-width so the dots/names align
           into a clean column. Reads like an analytics leaderboard. */}
       {/* Rank index — hidden at `xl`+, where the list splits into two tighter
@@ -598,7 +736,8 @@ function AnimatedLangLabel({
       >
         <span ref={numRef}>{prefersReducedMotion ? target.toFixed(2) : "0.00"}</span>%
       </span>
-    </li>
+      </div>
+    </motion.li>
   );
 }
 
@@ -650,6 +789,23 @@ function LanguageRepoPopover({
       aria-label={`Repositories using ${lang.language}`}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
+      // Keyboard equivalents of pointer enter/leave (React onFocus/onBlur bubble
+      // from the repo links inside). Focus entering the panel cancels any pending
+      // close; focus leaving it closes — UNLESS it lands back on the panel
+      // (tabbing between repo links) or on a language row (the trigger, or
+      // another row that opens its own), so the links stay reachable by keyboard.
+      onFocus={onPointerEnter}
+      onBlur={(e) => {
+        const next = e.relatedTarget;
+        if (
+          next &&
+          (next.closest?.("[data-lang-popover]") ||
+            next.closest?.("[data-lang-row]"))
+        ) {
+          return;
+        }
+        onPointerLeave?.();
+      }}
       data-lang-popover=""
       className="custom-bg-abt rounded-xl flex flex-col"
       style={{

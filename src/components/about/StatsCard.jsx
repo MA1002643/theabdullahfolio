@@ -308,15 +308,13 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
 /* ---------------------------------- CARD ---------------------------------- */
 export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated, diffMessage = null, isLive = false }) {
     const cardRef = useRef(null);
-    // `playToken` (latched, hysteresis-debounced, monotonic) drives BOTH the
-    // count-ups AND the entrance fade/title play — the parent ItemLayout's
-    // scale 0 → 1 entry wobbles this card's observer rect, so raw `isInView`
-    // toggled true/false/true and replayed the entrance (the visible glitch).
-    // `playToken > 0` flips once on a real entry and never reverts, so the
-    // entrance plays a single clean time. `isInView` is kept only for the
-    // banner gate, which is fine flickering off-screen (no message shown).
-    const { isInView, playToken } = useViewportCountTrigger(cardRef, { amount: 0.3, margin: "-50px" });
-    const hasEntered = playToken > 0;
+    // `playToken` (latched, hysteresis-debounced, monotonic) drives the
+    // count-ups/arc, which key off its value and replay each entry on their
+    // own. `settledInView` (debounced + reversible, so flicker-immune like
+    // playToken but able to revert) drives the entrance fade + title play so
+    // they REPLAY on every true viewport re-entry rather than once on first
+    // load. `isInView` is kept only for the banner gate.
+    const { isInView, playToken, settledInView } = useViewportCountTrigger(cardRef, { amount: 0.3, margin: "-50px" });
     const prefersReducedMotion = useReducedMotion();
 
     // Banner message: prefer the specific per-stat diff; fall back to a generic
@@ -352,7 +350,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             ref={cardRef}
             variants={cardVariants}
             initial="hidden"
-            animate={hasEntered ? "visible" : "hidden"}
+            animate={settledInView ? "visible" : "hidden"}
             className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg h-full"
         >
             <UpdateBanner
@@ -372,7 +370,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             <motion.div variants={childVariants} className="mb-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <Activity className="w-5 h-5 flex-shrink-0" style={{ color: AMBER }} />
-                    <AnimatedTitle text={`${userName}'s GitHub Stats`} play={hasEntered} />
+                    <AnimatedTitle text={`${userName}'s GitHub Stats`} play={settledInView} />
                 </div>
                 {isLive && (
                     <div className="flex items-center gap-2 mt-1.5">

@@ -34,3 +34,98 @@ export function fastStartSlowFinish(t) {
   const localT = (x - 0.25) / 0.75;
   return 0.7 + 0.3 * (1 - Math.pow(1 - localT, 3));
 }
+
+/**
+ * Imperative count-up tween on `requestAnimationFrame`. Drives a numeric value
+ * `from` → `to` over `duration` ms through `easing`, calling `onUpdate(value)`
+ * each frame and `onComplete()` once at the end. The final frame is clamped to
+ * exactly `to` so the displayed number always lands on the target (rounding a
+ * frame at t≈0.999 could otherwise settle one short).
+ *
+ * Returns a `cancel()` function — call it from an effect cleanup so a re-trigger
+ * (or unmount) stops the in-flight tween instead of leaking competing rAF loops
+ * that fight over the same node.
+ *
+ * SSR / no-rAF safe: when `requestAnimationFrame` is unavailable it paints the
+ * final value synchronously and returns a no-op canceller.
+ *
+ * Input-safe: `from`, `to`, and `duration` are validated as finite numbers
+ * before any tween math runs. A non-finite `to` (e.g. `undefined`/`NaN` from an
+ * unresolved value) has no meaningful target, so the tween is skipped — it
+ * paints the validated start value once and returns a no-op canceller rather
+ * than leaking `NaN`/`undefined` into `onUpdate`. A non-finite or non-positive
+ * `duration` is treated as instant for the same reason.
+ *
+ * @param {object}   opts
+ * @param {number}   [opts.from=0]
+ * @param {number}   opts.to
+ * @param {number}   [opts.duration=2000] - ms
+ * @param {(t:number)=>number} [opts.easing=fastStartSlowFinish]
+ * @param {(value:number)=>void} [opts.onUpdate]
+ * @param {() => void} [opts.onComplete]
+ * @returns {() => void} cancel
+ */
+export function animateToTarget({
+  from = 0,
+  to,
+  duration = 2000,
+  easing = fastStartSlowFinish,
+  onUpdate,
+  onComplete,
+} = {}) {
+  // Validate numeric inputs up front. This is an exported shared utility, so a
+  // caller passing `to: undefined`/`NaN` (or a `NaN` duration) must never reach
+  // the tween math — `from + (to - from) * easing(t)` would otherwise push
+  // `NaN`/`undefined` straight into `onUpdate` and the UI. Fall back to a finite
+  // start value (default 0) and a non-finite duration to "instant".
+  const safeFrom = Number.isFinite(from) ? from : 0;
+  const safeDuration = Number.isFinite(duration) ? duration : 0;
+  const hasValidTarget = Number.isFinite(to);
+  // When `to` is invalid there is no destination to land on, so the safest paint
+  // is the validated start value rather than the bogus `to`.
+  const safeValue = hasValidTarget ? to : safeFrom;
+
+  if (
+    typeof window === "undefined" ||
+    typeof window.requestAnimationFrame !== "function"
+  ) {
+    onUpdate?.(safeValue);
+    onComplete?.();
+    return () => {};
+  }
+
+  // Nothing to tween: invalid target, no distance to cover (`from === to`, e.g.
+  // a streak value of 0), or no time to cover it in (`duration <= 0`). Paint the
+  // final value once and finish synchronously instead of scheduling a full rAF
+  // loop that would otherwise spend ~2s repainting the same number every frame.
+  if (!hasValidTarget || safeFrom === to || safeDuration <= 0) {
+    onUpdate?.(safeValue);
+    onComplete?.();
+    return () => {};
+  }
+
+  let rafId = 0;
+  let startTs = null;
+  let cancelled = false;
+
+  const tick = (ts) => {
+    if (cancelled) return;
+    if (startTs === null) startTs = ts;
+    // `safeDuration` is guaranteed finite and > 0 here (the early return above
+    // handles every other case), so the ratio is always a finite progress.
+    const t = Math.min((ts - startTs) / safeDuration, 1);
+    onUpdate?.(safeFrom + (to - safeFrom) * easing(t));
+    if (t < 1) {
+      rafId = window.requestAnimationFrame(tick);
+    } else {
+      onUpdate?.(to); // clamp exactly on the target
+      onComplete?.();
+    }
+  };
+
+  rafId = window.requestAnimationFrame(tick);
+  return () => {
+    cancelled = true;
+    if (rafId) window.cancelAnimationFrame(rafId);
+  };
+}

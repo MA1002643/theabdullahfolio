@@ -58,6 +58,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up; responsive list: top 5 in a single column (mobile → `lg`), up to 10 in two columns at `xl`+ |
 | **Completed Projects Breakdown** | "Projects shipped" card with an animated per-category proportional bar (Web / System, derived from the project data), a `\|`-separated count legend that wraps stacked→side-by-side responsively, count-ups that replay on every viewport entry, and an `sr-only` summary so screen readers get the breakdown |
 | **Years in the Craft** | Experience figure derived live from the earliest GitHub repo **and** software roles parsed from the résumé PDF, with a Personal vs Employment split bar and a click-to-open category breakdown modal |
+| **Current Streak** | Server-accurate streak from the GitHub contribution calendar (future-day-padding aware, "Present"-stable across midnight), shown in a git-commit-node progress ring with a staggered card entrance and a per-device change banner that fires only on real movement |
 | **Rocket Contact Form** | Multi-phase submit animation — shake → flame flicker → fly-up trail → checkmark spring, integrated with Nodemailer SMTP |
 | **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
 | **Ambient Fireflies** | Generative particle system with randomised spawn, duration, and drift paths |
@@ -225,14 +226,17 @@ theabdullahfolio/
 │   │   ├── useExperienceSummary.js     # Years-in-the-craft data + localStorage hydration + change signal
 │   │   ├── useLanguagesUpdateSignal.js # Per-device language-change banner signal
 │   │   ├── useProjectCountSignal.js    # Per-device completed-projects count-change banner signal
-│   │   └── useViewportCountTrigger.js  # Latched, hysteresis-debounced "play once per viewport entry" trigger
+│   │   ├── useReliableInView.js        # Transform-safe viewport detection (geometry, not IntersectionObserver)
+│   │   ├── useStreakUpdateSignal.js    # Per-device streak-change banner signal
+│   │   └── useViewportCountTrigger.js  # Latched "play once per entry" trigger + reversible settled-in-view flag
 │   └── utils/
 │       ├── rankCalculator.js           # GitHub developer rank algorithm
 │       ├── diffChanges.js              # State diff detection for live stat updates
 │       ├── languageDiff.js             # Language fingerprint + diff (client-computed)
 │       ├── statsDiff.js                # Per-stat GitHub-stats diff + banner summary
 │       ├── repoDiff.js                 # Most-active-repository change summary
-│       ├── animationCurves.js          # Shared fast-start/slow-finish count-up easing
+│       ├── streakDiff.js               # Streak fingerprint + diff (client-computed)
+│       ├── animationCurves.js          # Shared fast-start/slow-finish easing + imperative count-up (animateToTarget)
 │       ├── experience/                 # Résumé-PDF parsing + experience aggregation helpers
 │       └── emoji.js                    # Emoji name-to-symbol resolution
 ├── .github/
@@ -343,6 +347,8 @@ rm /tmp/fallback.json
 
 **11. Completed Projects & Years-in-the-Craft cards** — the two feature cards beside the About paragraph share the Most Active Repository card's two-layer chrome (outer `custom-bg-abt` amber border + inner `repo-card-breathe` glow). *Completed Projects* renders `projectsData.length` with a count-up plus an animated per-category proportional bar (Web / System today, grouped from each project's `category` once at module scope as `PROJECT_CATEGORY_BREAKDOWN`), a responsive legend (stacked on mobile; side-by-side from `sm` with a vivid `#ff6d05` `|` divider, wrapping back to stacked when the pair won't fit), raw per-category counts, and an `sr-only` "Completed projects by category — …" line so screen readers get the breakdown while the decorative bar + legend stay `aria-hidden`. A per-device `useProjectCountSignal` surfaces a one-time "N new completed projects" banner when the count changes across a deploy. *Years in the Craft* shows the figure from `/api/experience-summary` with a Personal vs Employment split bar and a click-to-open breakdown modal. Every digit on both cards runs through a shared `useViewportCountUp` hook: it animates on a true viewport entry, **replays on re-entry**, and **debounces the out-of-view reset** (`COUNT_RESET_DELAY_MS`) so a brief `IntersectionObserver` flicker during the parent `ItemLayout`'s `scale: 0 → 1` entrance never snaps a number back to 0 — all `prefers-reduced-motion` aware.
 
+**12. Current Streak card** (`src/components/about/StreakStatsCard.jsx`) — three stat blocks (Total Contributions, the Current Streak progress ring, Longest Streak) that reveal in a **staggered left-to-right cascade** on every viewport entry. The ring is a flat-stroke arc whose fill encodes the current streak as a share of the longest, sweeping in once on entry with a `GitCommitVertical` "commit node" at the top; digits count up imperatively via `src/utils/animationCurves.js` `animateToTarget`. Streaks are computed **server-side** in `computeStreaks` (`/api/github-stats`): GitHub pads the contribution calendar with the rest of the current *week*, so future days are dropped (`<= today`) and the current streak is found by walking **backward**, treating an empty *today* as "not yet broken" (and keeping `end` pinned to today so the range reads **"Present"** and doesn't shift at midnight). A per-device `useStreakUpdateSignal` + `src/utils/streakDiff.js` (`computeStreakDiff` / `streakFingerprint`) surfaces a human-readable change banner via the shared `UpdateBanner` only when a tracked value actually moves — the fingerprint is **client-computed** from the streak values + current/longest ranges (the rolling `totalContributions` range is excluded so a daily window roll-over never reads as a change), and an empty `{}` loading placeholder is treated as *absent* so the first real payload doesn't fire a false banner. The adjacent **Most Used Languages** card was brought to full entrance-animation parity with the GitHub Stats card here (spring lift, per-character title, metric-row slide-in stagger), all driven off the reversible `settledInView` flag so the entrance replays on every re-entry, with a reduced-motion no-op path.
+
 ### Commands
 
 ```bash
@@ -414,7 +420,7 @@ upgrade-insecure-requests
 ## 🎬 Animation Inventory
 
 <details>
-<summary><strong>View all 17 custom animations</strong></summary>
+<summary><strong>View all 20 custom animations</strong></summary>
 <br />
 
 | Animation | Technique | Location |
@@ -430,6 +436,9 @@ upgrade-insecure-requests
 | Language count-up & bar sheen | `animate()` fast-start/slow-finish curve + one-shot shimmer sweep on viewport entry | `about/LanguagesCard.jsx` |
 | About count-ups (years, projects total, %s, category counts) | Shared `useViewportCountUp` — `animate()` count-up that replays on viewport entry with a debounced, flicker-immune out-of-view reset | `about/index.jsx` |
 | Experience & projects split bars | Proportional segment widths that re-fill on each viewport entry (`animate` gated on the card's in-view signal) | `about/index.jsx` |
+| GitHub Stats / Languages card entrance | Spring card lift + per-character blur-in title + metric-row slide-in stagger; replays on each viewport entry via the reversible `settledInView` flag, reduced-motion aware | `about/StatsCard.jsx` + `about/LanguagesCard.jsx` |
+| Streak card entrance | Staggered left-to-right section cascade (Total Contributions → Current Streak ring → Longest Streak), replaying on each viewport entry | `about/StreakStatsCard.jsx` |
+| Streak progress ring | `stroke-dashoffset` one-shot fill sweep (current ÷ longest) on entry, with a git-commit node and `animateToTarget` count-ups | `about/StreakStatsCard.jsx` |
 | Firefly drift | `@keyframes` with randomised duration + paths | `FireFliesBackground.jsx` |
 | Loader progress | SVG `stroke-dashoffset` + percentage counter | `loaderWrapper/index.jsx` |
 | Stagger reveals | `staggerChildren` Framer Motion variants | Multiple components |

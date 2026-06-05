@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { diffLanguages, languagesFingerprint } from "@/utils/languageDiff";
 
@@ -63,12 +63,6 @@ function writeStored(value) {
 export function useLanguagesUpdateSignal(languages) {
   const [pendingMessage, setPendingMessage] = useState(null);
 
-  // Keep the latest list reachable from the fingerprint-keyed effect
-  // without listing `languages` as a dep (its identity changes every
-  // render and would defeat the fingerprint-only gate).
-  const languagesRef = useRef(languages);
-  languagesRef.current = languages;
-
   const fingerprint =
     Array.isArray(languages) && languages.length > 0
       ? languagesFingerprint(languages)
@@ -76,7 +70,16 @@ export function useLanguagesUpdateSignal(languages) {
 
   useEffect(() => {
     if (!fingerprint) return;
-    const current = languagesRef.current;
+    // Use the `languages` captured by THIS render's closure — the exact list
+    // `fingerprint` was computed from — not a mutable "latest" ref. If a newer
+    // payload commits before this passive effect flushes, a ref would pair an
+    // old `fingerprint` with the newer list, so the stored
+    // `{ fingerprint, languages }` could diff against the wrong baseline and
+    // suppress or misreport the banner. The effect is still gated on
+    // `fingerprint` ALONE (not `languages`, whose identity changes every render
+    // and would re-run it constantly); a fresh-but-equal array produces the same
+    // fingerprint, so the captured snapshot stays value-equivalent.
+    const current = languages;
     const stored = readStored();
 
     if (!stored) {
@@ -93,6 +96,9 @@ export function useLanguagesUpdateSignal(languages) {
     // shows + consumes it.
     writeStored({ fingerprint, languages: current });
     if (diff.hasChanges) setPendingMessage(diff.summaryMessage);
+    // `languages` is intentionally captured by closure, not listed as a dep —
+    // see the comment above; `fingerprint` is the change-only trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fingerprint]);
 
   const consume = useCallback(() => setPendingMessage(null), []);
