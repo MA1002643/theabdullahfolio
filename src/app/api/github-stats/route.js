@@ -609,7 +609,15 @@ async function fetchGitHubStats(username, repoOwner, repoName, activityScore = 0
   const formatStreakDate = (dateStr) => {
     if (!dateStr) return "N/A";
     const date = new Date(dateStr);
+    // Pin to UTC. The input is a date-only `YYYY-MM-DD` string, which
+    // `new Date(...)` parses as UTC midnight; without `timeZone: "UTC"`,
+    // `toLocaleDateString` renders in the RUNTIME's local zone, so a function
+    // deployed behind UTC would shift the day back one ("Dec 30" → "Dec 29")
+    // and a function ahead of it forward. That makes the emitted `dateRange`
+    // depend on deploy region and reintroduces the very fingerprint
+    // instability this stable formatter exists to remove.
     return date.toLocaleDateString("en-US", {
+      timeZone: "UTC",
       month: "short",
       day: "numeric",
       year: "numeric",
