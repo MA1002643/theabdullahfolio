@@ -1,13 +1,17 @@
 import { SIMPLE_ICONS_SLUGS } from "@/utils/simpleIconsSlugs";
+import { CATEGORY_ORDER } from "@/utils/skillsIconUrl";
 
 // Skill detection → icon mapping for the About-page skills grid (issue #20).
 //
-// Pure, framework-agnostic data + helpers. Two consumers share it:
-//   - the /api/github-skills route, which maps raw detected language/dependency
-//     names (GitHub language names + package.json keys) through `resolveSkill`
-//     and buckets them with `categorizeSkills`; and
-//   - SkillsCard, which renders the resulting categories. There is NO hardcoded
-//     display list — the grid is sourced entirely from the live GitHub crawl.
+// SERVER-SIDE detection module. It builds SKILL_MAP and pulls in the ~3.4k-slug
+// Simple Icons catalog (`simpleIconsSlugs.js`) at module load, so it is HEAVY and
+// must NOT reach the client bundle — it's imported ONLY by the /api/github-skills
+// route, which maps raw detected language/dependency names (GitHub language names
+// + manifest keys) through `resolveSkill` and buckets them with
+// `categorizeSkills*`. Client components ("use client") get the small,
+// catalog-free helpers (`getIconUrl`, `CATEGORY_ORDER`, `emptyCategories`) from
+// the sibling `skillsIconUrl.js` instead. There is NO hardcoded display list —
+// the grid is sourced entirely from the live GitHub crawl.
 //
 // COVERAGE — two tiers, curated first then a catalog fallback:
 //   1. CURATED (the SKILLS table below): every icon skillicons.dev serves (its
@@ -24,10 +28,9 @@ import { SIMPLE_ICONS_SLUGS } from "@/utils/simpleIconsSlugs";
 // the curated table; its slug MUST be a real skillicons short name (or a valid
 // simpleicons slug when source is "simpleicons"), else the icon 404s.
 
-// Ordering only — categories are NEVER shown as headings (issue #20, Task 3).
-// The grid renders groups in this sequence with an invisible row-break between
-// them so alignment resets cleanly without a visible label.
-export const CATEGORY_ORDER = ["languages", "frameworks", "libraries", "tools", "software"];
+// CATEGORY_ORDER (the grid's category sequence) is imported from the client-safe
+// `skillsIconUrl` module above — single source of truth shared with the UI —
+// and used below to build SKILL_MAP and to bucket detections.
 
 // Compact source-of-truth, grouped by category. Each row is
 //   [slug, displayName, aliases?, source?]
@@ -514,21 +517,6 @@ export function categorizeSkillsWithRepos(nameToRepos) {
   return categories;
 }
 
-/**
- * Build the icon URL for a slug from the chosen CDN. skillicons.dev is the
- * preferred illustrated style; simpleicons / devicon are fallbacks for tools
- * skillicons doesn't carry. All three render through the same <img> with
- * identical sizing, so colour may differ but layout never does.
- *
- * @param {string} slug
- * @param {"skillicons"|"simpleicons"|"devicon"} [source="skillicons"]
- * @returns {string}
- */
-export function getIconUrl(slug, source = "skillicons") {
-  if (source === "simpleicons") return `https://cdn.simpleicons.org/${slug}`;
-  if (source === "devicon") {
-    return `https://raw.githubusercontent.com/devicons/devicon/master/icons/${slug}/${slug}-original.svg`;
-  }
-  // skillicons (default + safe fallback for an unknown source value)
-  return `https://skillicons.dev/icons?i=${slug}`;
-}
+// `getIconUrl` now lives in the client-safe `skillsIconUrl.js` so UI components
+// can build icon URLs without importing this heavy detection module (the
+// SKILL_MAP build + the ~3.4k-slug Simple Icons catalog).

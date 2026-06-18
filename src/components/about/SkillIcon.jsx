@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 
 import { useStaggeredScrollReveal } from "@/hooks/useStaggeredScrollReveal";
 import { animateToTarget } from "@/utils/animationCurves";
-import { getIconUrl } from "@/utils/skillsIconMap";
+import { getIconUrl } from "@/utils/skillsIconUrl";
 
 // ── "Used in repositories" popover reveal — the Most Active Repository card's
 // entrance, applied to this floating panel. The panel springs up as a unit

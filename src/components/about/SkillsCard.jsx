@@ -11,7 +11,7 @@ import { useSkillsUpdateSignal } from "@/hooks/useSkillsUpdateSignal";
 import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { flattenCategories } from "@/utils/skillsDiff";
-import { CATEGORY_ORDER, categorizeSkills } from "@/utils/skillsIconMap";
+import { CATEGORY_ORDER, emptyCategories } from "@/utils/skillsIconUrl";
 
 // How long the change banner lingers once the section scrolls into view —
 // matches the Languages / Streak cards (issue #20, acceptance #15).
@@ -918,7 +918,10 @@ export default function SkillsCard({ username }) {
   const canHover = usePointerCapability();
 
   // No hardcoded seed — the grid is sourced ENTIRELY from the live GitHub crawl.
-  const [categories, setCategories] = useState(() => categorizeSkills([]));
+  // `emptyCategories()` (client-safe) replaces the old `categorizeSkills([])`,
+  // which only built this empty shape but dragged the heavy detection module
+  // (SKILL_MAP + the ~3.4k Simple Icons catalog) into the client bundle.
+  const [categories, setCategories] = useState(() => emptyCategories());
   const [loaded, setLoaded] = useState(false);
   // True ONLY when the rendered grid came from a genuine live crawl THIS load.
   const [isLive, setIsLive] = useState(false);

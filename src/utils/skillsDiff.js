@@ -10,7 +10,7 @@
 // which `flattenCategories` produces from the `{ languages, frameworks, ... }`
 // category shape the API and SkillsCard pass around.
 
-import { CATEGORY_ORDER } from "./skillsIconMap";
+import { CATEGORY_ORDER } from "./skillsIconUrl";
 
 /**
  * Flatten the category map into one ordered list. Categories are walked in
