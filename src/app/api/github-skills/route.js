@@ -406,9 +406,12 @@ async function buildSkillCategories(username) {
   return categorizeSkillsWithRepos(nameToRepos);
 }
 
-// Per-username memoised 24h cache wrapper. The Map avoids recreating the
-// `unstable_cache` closure each request; keying by username keeps the contract
-// forward-compatible and matches the github-stats route.
+// Per-username memoised cache wrapper. Its TTL is `REVALIDATE_SECONDS` (10 min,
+// shortened from the original 24h — see the constant's definition above), not a
+// fixed 24h; referencing the constant here keeps this comment from drifting if
+// the value changes again. The Map avoids recreating the `unstable_cache`
+// closure each request; keying by username keeps the contract forward-compatible
+// and matches the github-stats route.
 const cacheByUser = new Map();
 function getCachedCategories(username) {
   const key = username || "default";

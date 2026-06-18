@@ -36,18 +36,31 @@ function readStored() {
     if (typeof parsed === "number") {
       return Number.isFinite(parsed) && parsed >= 0 ? { count: parsed, cats: null } : null;
     }
-    // Current shape: `{ count: number>=0, cats: { [label]: number } }`. Validate
+    // Current shape: `{ count: number>=0, cats: { [label]: number>=0 } }`. Validate
     // the full shape before trusting it — a hand-edited / corrupt entry must be
     // treated as no baseline (overwritten silently) rather than diffed against,
     // which would fabricate or suppress a banner + heartbeat.
+    //
+    // `typeof x === "object"` is also true for arrays AND null, so both `parsed`
+    // and `parsed.cats` need explicit `Array.isArray` / `=== null` guards: an
+    // array (e.g. `cats: []`) would otherwise pass the bare typeof check and then
+    // `Object.keys([])` / index access downstream yields a nonsense diff. Every
+    // `cats` VALUE must also be a finite, non-negative number — the same contract
+    // `count` and `toCatMap` hold — so a corrupt `{ Web: "x" }` / `{ Web: NaN }`
+    // can't slip in and poison the per-category compare.
     if (
       parsed === null ||
       typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
       typeof parsed.count !== "number" ||
       !Number.isFinite(parsed.count) ||
       parsed.count < 0 ||
       typeof parsed.cats !== "object" ||
-      parsed.cats === null
+      parsed.cats === null ||
+      Array.isArray(parsed.cats) ||
+      !Object.values(parsed.cats).every(
+        (v) => typeof v === "number" && Number.isFinite(v) && v >= 0,
+      )
     ) {
       return null;
     }

@@ -42,6 +42,10 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// Banner lingers this long once the card is actually in view, then auto-hides —
+// local to the card (matches StatsCard / SkillsCard) so it dismisses well before
+// the parent's coarser 10s changedFields reset, instead of being driven by it.
+const BANNER_VISIBLE_MS = 4500;
 // "Just changed" heartbeat window — two clean 1s cycles of `skill-heartbeat`,
 // matching the Languages / Skills cards.
 const HEARTBEAT_MS = 2000;
@@ -454,8 +458,9 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
   //     card's outer fade-in variants and the AnimatedTitle's `play`, so the
   //     entrance + per-char title blur REPLAY on every true re-entry instead of
   //     firing once on first load. `amount: 0.3` fires at ~30% crossing.
-  //   - `isInView` (raw observer) is kept only for the diff-message banner
-  //     gate, which is harmless flickering off-screen (no message shown).
+  //   - `isInView` (raw observer) gates the heartbeat pulse-fire (the pulse only
+  //     plays while the card is actually on screen); the banner itself now keys
+  //     on the debounced `settledInView`, so its flicker is harmless.
   const { isInView, playToken, settledInView } = useViewportCountTrigger(ref, {
     amount: 0.3,
   });
@@ -466,17 +471,61 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
 
   // ── "Just changed" heartbeat ────────────────────────────────────────────────
   // Pulse, AFTER the update banner and once the card is in view, whatever the
-  // banner just announced: the repo name, the primary language, and each metric
-  // ROW that rose — where a metric row beats as a whole (icon + label + value),
-  // so "Stars increased" pulses the star icon, the "Stars" label, and the number
-  // together. The standalone-card analog of the Languages popover's "name +
-  // percentage" beat. `pulseFields` is the changed-field list
-  // (['name','stars','language',…]) from the parent's repo diff.
+  // banner just announced: the repo name, the primary language, the activity
+  // score, and each metric ROW that rose — where a metric row beats as a whole
+  // (icon + label + value), so "Stars increased" pulses the star icon, the
+  // "Stars" label, and the number together. The standalone-card analog of the
+  // Languages popover's "name + percentage" beat. `pulseFields` is the
+  // changed-field list (['name','stars','language',…]) from the parent's repo diff.
   //
   // These hooks sit ABOVE the `if (!data)` early return so the hook order stays
-  // stable across renders (rules of hooks). `showMessage` mirrors the banner's
-  // own message gate.
-  const showMessage = isUpdated && diffMessage ? diffMessage : null;
+  // stable across renders (rules of hooks).
+
+  // Self-contained banner state — the same capture-early model as StatsCard /
+  // LanguagesCard / SkillsCard. The parent's message is copied into LOCAL state
+  // the MOMENT it arrives (NOT gated on in-view), then displayed and auto-hidden
+  // only once the card has settled in view.
+  //
+  // Capturing immediately is load-bearing: index.jsx clears `repoDiffMessage` /
+  // `repoChangedFields` on a coarse 10s timer, so an update that lands while the
+  // card is off-screen would otherwise vanish from props before an in-view-gated
+  // read could copy it — taking the banner AND (via the `bannerGone` gate below)
+  // the heartbeat with it. The local copy outlives that reset, so a later
+  // scroll-in still shows both. Mirrors the `pendingFields` capture, which is
+  // already view-independent.
+  //
+  // Display + auto-hide gate on `settledInView` (debounced, flicker-immune), so
+  // the visible window is measured from real in-view time and a raw-isInView
+  // flicker can't thrash the banner.
+  const incomingMessage = isUpdated && diffMessage ? diffMessage : null;
+  const [bannerMessage, setBannerMessage] = useState(null);
+  const lastShownRef = useRef(null);
+
+  // Capture a genuinely NEW message into local state as soon as it arrives,
+  // regardless of viewport. The ref guards against re-capturing the SAME message
+  // after it hides; showing it is deferred to `settledInView` below.
+  useEffect(() => {
+    if (!incomingMessage) return;
+    if (lastShownRef.current === incomingMessage) return;
+    lastShownRef.current = incomingMessage;
+    setBannerMessage(incomingMessage);
+  }, [incomingMessage]);
+
+  // When the upstream message clears, drop the guard so an identical future
+  // change can show again.
+  useEffect(() => {
+    if (!incomingMessage) lastShownRef.current = null;
+  }, [incomingMessage]);
+
+  // Auto-hide — gated on the local message AND `settledInView`, so the visible
+  // window is measured from when the card is actually seen (a message captured
+  // off-screen waits), and only the debounced, flicker-immune `settledInView`
+  // can start/clear it. Always resolves to hidden after BANNER_VISIBLE_MS.
+  useEffect(() => {
+    if (!bannerMessage || !settledInView) return undefined;
+    const timer = setTimeout(() => setBannerMessage(null), BANNER_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [bannerMessage, settledInView]);
 
   // Capture the changed fields locally when they arrive, held until the pulse
   // consumes them — the parent clears `pulseFields` on its banner auto-timer, so
@@ -489,26 +538,27 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
     if (fieldsKey) setPendingFields(fieldsKey.split(","));
   }, [fieldsKey]);
 
-  // Banner-gone gate. A fresh message un-gates (so its later clear arms a new
-  // pulse); when the message clears (present → absent) a short beat opens the
-  // gate. Using the message-cleared edge (not the overlay's onExitComplete)
-  // keeps the pulse robust to the banner being auto-cleared while the card is
-  // off-screen — it then still plays when the user scrolls the card in.
+  // Banner-gone gate, keyed on the card's OWN local banner (not the raw prop):
+  // a fresh banner un-gates (so its later clear arms a new pulse); when the
+  // banner clears (shown → hidden) a short beat opens the gate so the pulse plays
+  // just AFTER it, never under the still-fading overlay. Keying on the local
+  // banner means the pulse fires once the user has actually SEEN the banner — and,
+  // with the capture-early model above, both survive the parent's 10s reset.
   const [bannerGone, setBannerGone] = useState(false);
-  const prevShowRef = useRef(showMessage);
+  const prevBannerRef = useRef(bannerMessage);
   const beatTimerRef = useRef(null);
   useEffect(() => () => clearTimeout(beatTimerRef.current), []);
   useEffect(() => {
-    const prev = prevShowRef.current;
-    prevShowRef.current = showMessage;
-    if (showMessage) {
+    const prev = prevBannerRef.current;
+    prevBannerRef.current = bannerMessage;
+    if (bannerMessage) {
       setBannerGone(false);
       clearTimeout(beatTimerRef.current);
-    } else if (prev && !showMessage) {
+    } else if (prev && !bannerMessage) {
       clearTimeout(beatTimerRef.current);
       beatTimerRef.current = setTimeout(() => setBannerGone(true), POST_BANNER_BEAT_MS);
     }
-  }, [showMessage]);
+  }, [bannerMessage]);
 
   // Fire the one-shot pulse once the gate is open and the card is in view.
   const [pulsing, setPulsing] = useState(EMPTY_FIELD_SET);
@@ -564,8 +614,8 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
       className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg"
     >
       <UpdateBanner
-        message={isUpdated && diffMessage ? diffMessage : null}
-        visible={isInView}
+        message={bannerMessage}
+        visible={Boolean(bannerMessage) && settledInView}
         srPrefix="Repository update: "
       />
 

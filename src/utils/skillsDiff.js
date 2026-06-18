@@ -59,7 +59,7 @@ export function skillsFingerprint(skills) {
 /**
  * Diff a previously-seen flat skill list against the latest one, by slug. Reports
  * three kinds of change:
- *   - `added`   — slug present only in next, as `{ name, category }` (added TO)
+ *   - `added`   — slug present only in next, as `{ slug, name, category }` (added TO)
  *   - `removed` — slug present only in prev, as `{ name, category }` (removed FROM)
  *   - `moved`   — slug in BOTH but its category changed, as `{ name, from, to }`
  * plus a convenience `hasChanges`. Pure reorders within a category are ignored —
@@ -67,11 +67,19 @@ export function skillsFingerprint(skills) {
  *
  * @param {Array<{ slug: string, displayName: string, category: string }>} prev
  * @param {Array<{ slug: string, displayName: string, category: string }>} next
- * @returns {{ added: Array<{ name: string, category: string|null }>, removed: Array<{ name: string, category: string|null }>, moved: Array<{ name: string, from: string, to: string }>, hasChanges: boolean }}
+ * @returns {{ added: Array<{ slug: string, name: string, category: string|null }>, removed: Array<{ name: string, category: string|null }>, moved: Array<{ name: string, from: string, to: string }>, hasChanges: boolean }}
  */
 export function diffSkills(prev, next) {
-  const prevList = Array.isArray(prev) ? prev : [];
-  const nextList = Array.isArray(next) ? next : [];
+  // `prev` arrives from localStorage and the read-side validator
+  // (`skillsFingerprint`, in useSkillsUpdateSignal) keys on `s?.slug ?? ""`, so a
+  // hand-edited-but-fingerprint-consistent baseline can carry null items or
+  // non-string/empty slugs. Drop anything without a real string slug up front:
+  // otherwise a null item throws on the `.slug` map below, and an
+  // `undefined`/numeric/`""` slug propagates through the Sets/Maps into the diff
+  // output (phantom added/removed entries, an `undefined` heartbeat key).
+  const hasSlug = (s) => s != null && typeof s.slug === "string" && s.slug.length > 0;
+  const prevList = (Array.isArray(prev) ? prev : []).filter(hasSlug);
+  const nextList = (Array.isArray(next) ? next : []).filter(hasSlug);
 
   const prevSlugs = new Set(prevList.map((s) => s.slug));
   const nextSlugs = new Set(nextList.map((s) => s.slug));

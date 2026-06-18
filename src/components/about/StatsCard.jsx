@@ -333,29 +333,38 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
     const incomingMessage = diffMessage ?? (isUpdated ? "GitHub stats updated" : null);
 
     // Self-contained banner state — mirrors LanguagesCard / SkillsCard so the
-    // banner can NEVER get stuck. The message is captured into LOCAL state once,
-    // shown, and auto-hidden by a timer keyed ONLY on that local state.
+    // banner can NEVER get stuck. The parent's message is captured into LOCAL
+    // state the MOMENT it arrives (NOT gated on in-view), then displayed and
+    // auto-hidden only once the card has settled in view.
     //
-    // The previous shape re-derived the message from props every render and
-    // reset a `bannerDismissed` flag inside an effect keyed on `[bannerMessage,
-    // isInView]`. `isInView` flickers while scrolling, so each flicker re-opened
-    // the banner AND restarted the auto-hide timer — it could never settle to
-    // hidden, leaving it stuck until a manual reload. Keying the auto-hide on the
-    // local message alone makes a flicker irrelevant: once shown, it always
-    // resolves to hidden after BANNER_VISIBLE_MS.
+    // Capturing immediately is load-bearing. The parent (index.jsx) clears
+    // `statsDiffMessage` / `statsChangedFields` on a coarse 10s timer, so an
+    // update that lands while this card is off-screen would otherwise vanish from
+    // props before an in-view-gated capture could copy it — taking the banner AND
+    // (via the `statsBannerGone` gate below, which only flips on this local
+    // banner's shown→hidden edge) the heartbeat with it. The local copy outlives
+    // the parent's reset, so a later scroll-in still shows both. This matches the
+    // `pendingStats` capture further down, which is already view-independent.
+    //
+    // Display + auto-hide gate on `settledInView` (debounced, flicker-immune),
+    // which is what keeps the banner from getting stuck — the original bug keyed
+    // on raw `isInView`, which flickers while scrolling, so every flicker
+    // re-opened the banner and restarted the auto-hide timer and it never settled
+    // to hidden. `settledInView` only flips on a genuine enter/exit, so the 4.5s
+    // window is spent on real in-view time and always resolves to hidden.
     const [bannerMessage, setBannerMessage] = useState(null);
     const lastShownRef = useRef(null);
 
-    // Promote a genuinely NEW message once the card is in view (off-screen
-    // updates wait for the entry that actually shows them). The ref guards
-    // against re-showing the SAME message after it hides — an isInView flicker
-    // can no longer re-open it.
+    // Capture a genuinely NEW message into local state as soon as it arrives,
+    // regardless of viewport (see the rationale above — survives the parent's 10s
+    // reset). The ref guards against re-capturing the SAME message after it has
+    // hidden; showing it is deferred to `settledInView` by the banner + auto-hide.
     useEffect(() => {
-        if (!incomingMessage || !isInView) return;
+        if (!incomingMessage) return;
         if (lastShownRef.current === incomingMessage) return;
         lastShownRef.current = incomingMessage;
         setBannerMessage(incomingMessage);
-    }, [incomingMessage, isInView]);
+    }, [incomingMessage]);
 
     // When the upstream message clears, drop the guard so an identical future
     // change can show again.
@@ -363,13 +372,16 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
         if (!incomingMessage) lastShownRef.current = null;
     }, [incomingMessage]);
 
-    // Auto-hide — keyed ONLY on bannerMessage, so an isInView flicker can't
-    // restart or re-open it. Always resolves to hidden after BANNER_VISIBLE_MS.
+    // Auto-hide — gated on the local message AND `settledInView`, so the 4.5s
+    // visible window is measured from when the card is actually seen (a message
+    // captured off-screen waits to be shown), and only the debounced, flicker-
+    // immune `settledInView` can start/clear it — a raw isInView flicker never
+    // could. Always resolves to hidden after BANNER_VISIBLE_MS of in-view time.
     useEffect(() => {
-        if (!bannerMessage) return undefined;
+        if (!bannerMessage || !settledInView) return undefined;
         const timer = setTimeout(() => setBannerMessage(null), BANNER_VISIBLE_MS);
         return () => clearTimeout(timer);
-    }, [bannerMessage]);
+    }, [bannerMessage, settledInView]);
 
     // ── "Just rose" heartbeat ───────────────────────────────────────────────
     // Pulse the label + number of every stat that went UP, AFTER the banner and
@@ -443,7 +455,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
         >
             <UpdateBanner
                 message={bannerMessage}
-                visible={Boolean(bannerMessage)}
+                visible={Boolean(bannerMessage) && settledInView}
                 srPrefix="Stats update: "
             />
 
