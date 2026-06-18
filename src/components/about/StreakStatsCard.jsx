@@ -230,6 +230,13 @@ export default function StreakStatsCard({ data }) {
   // after the pulse, and `consume()` runs immediately on the banner), held until
   // the pulse fires. Gate the capture on the fields' CONTENT, not array identity.
   const [pendingFields, setPendingFields] = useState([]);
+  // Mirror of the latest pendingFields so the heartbeat timer can compare what's
+  // pending NOW against the snapshot that armed it, instead of its stale closure
+  // value (which is always the armed set).
+  const pendingFieldsRef = useRef(pendingFields);
+  useEffect(() => {
+    pendingFieldsRef.current = pendingFields;
+  }, [pendingFields]);
   const fieldsKey = Array.isArray(increasedFields) ? increasedFields.join(",") : "";
   useEffect(() => {
     if (fieldsKey) setPendingFields(fieldsKey.split(","));
@@ -262,12 +269,22 @@ export default function StreakStatsCard({ data }) {
     if (prefersReducedMotion || pulseArmedRef.current) return;
     if (!bannerGone || !settledInView || pendingFields.length === 0) return;
     pulseArmedRef.current = true;
+    // Snapshot the exact fields this pulse covers so the timer can tell whether a
+    // newer streak diff replaced them mid-window.
+    const armedKey = pendingFields.join(",");
     setPulsingFields(new Set(pendingFields));
     pulseTimerRef.current = setTimeout(() => {
       setPulsingFields(EMPTY_FIELD_SET);
-      setPendingFields([]);
-      clearIncreased();
       pulseArmedRef.current = false;
+      // Clear the captured fields AND the hook's source ONLY if they're STILL the
+      // set we just pulsed. If a newer diff landed during the window, the capture
+      // effect already replaced pendingFields (and the hook holds new
+      // increasedFields) — clearing either here would wipe that change's heartbeat.
+      // Leaving them lets the banner-gone gate re-arm once the new banner clears.
+      if (pendingFieldsRef.current.join(",") === armedKey) {
+        setPendingFields([]);
+        clearIncreased();
+      }
     }, HEARTBEAT_MS);
   }, [bannerGone, settledInView, pendingFields, prefersReducedMotion, clearIncreased]);
 

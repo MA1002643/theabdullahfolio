@@ -429,11 +429,20 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
         if (prefersReducedMotion || statsArmedRef.current) return;
         if (!statsBannerGone || !isInView || pendingStats.length === 0) return;
         statsArmedRef.current = true;
+        // Snapshot the exact fields this pulse covers so the timer can tell
+        // whether a newer update replaced them mid-window.
+        const armedKey = pendingStats.join(",");
         setPulsingStats(new Set(pendingStats));
         statsPulseTimerRef.current = setTimeout(() => {
             setPulsingStats(EMPTY_FIELD_SET);
-            setPendingStats([]);
             statsArmedRef.current = false;
+            // Clear pendingStats ONLY if it's still the set we just pulsed. If a
+            // new pulseFields update landed during the window, the capture effect
+            // already replaced pendingStats with different fields — clearing
+            // unconditionally would wipe them and lose that change's heartbeat.
+            // Leaving them intact lets the banner-gone gate re-arm once the new
+            // change's banner clears (a fresh statsBannerGone edge re-runs this).
+            setPendingStats((cur) => (cur.join(",") === armedKey ? [] : cur));
         }, HEARTBEAT_MS);
     }, [statsBannerGone, isInView, pendingStats, prefersReducedMotion]);
 

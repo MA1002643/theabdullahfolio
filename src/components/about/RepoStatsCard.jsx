@@ -569,11 +569,19 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
     if (prefersReducedMotion || pulseArmedRef.current) return;
     if (!bannerGone || !isInView || pendingFields.length === 0) return;
     pulseArmedRef.current = true;
+    // Snapshot the exact fields this pulse covers so the timer can tell whether a
+    // newer update replaced them mid-window.
+    const armedKey = pendingFields.join(",");
     setPulsing(new Set(pendingFields));
     pulseTimerRef.current = setTimeout(() => {
       setPulsing(EMPTY_FIELD_SET);
-      setPendingFields([]);
       pulseArmedRef.current = false;
+      // Clear pendingFields ONLY if it's still the set we just pulsed. A new
+      // pulseFields update arriving during the window replaces pendingFields with
+      // different fields; clearing unconditionally would wipe them and lose that
+      // change's heartbeat. Leaving them lets the banner-gone gate re-arm once the
+      // new change's banner clears (a fresh bannerGone edge re-runs this).
+      setPendingFields((cur) => (cur.join(",") === armedKey ? [] : cur));
     }, HEARTBEAT_MS);
   }, [bannerGone, isInView, pendingFields, prefersReducedMotion]);
 

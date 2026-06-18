@@ -135,12 +135,17 @@ export function useProjectCountSignal(breakdown) {
   );
 
   useEffect(() => {
-    if (!Array.isArray(breakdown) || breakdown.length === 0) return;
+    // Bail only on a non-array (truly "no data yet"). An EMPTY array is a real,
+    // known state — zero completed projects — and must still record a baseline,
+    // so a later 0 → N (the first project shipped in a deploy) reads as a genuine
+    // change instead of a silent first load. `readStored` already accepts a
+    // stored count of 0, so writing one keeps the read/write sides consistent.
+    if (!Array.isArray(breakdown)) return;
     const cats = toCatMap(breakdown);
     const stored = readStored();
 
     if (stored === null) {
-      // No baseline yet — record this breakdown and stay silent.
+      // No baseline yet — record this breakdown (count may be 0) and stay silent.
       writeStored(count, cats);
       return;
     }
