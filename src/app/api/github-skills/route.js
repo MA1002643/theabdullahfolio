@@ -372,7 +372,8 @@ async function crawlScope(username, privacy, into) {
  *
  * Per-scope errors are isolated: a PRIVATE-scope auth failure must not discard
  * PUBLIC detections. If BOTH scopes fail to produce anything, the error
- * propagates so the GET handler serves the curated fallback.
+ * propagates so the GET handler can fall back — which now means an EMPTY payload
+ * (`_fallback: true`), not a curated set; there is no curated floor anymore.
  */
 async function crawlSkillNames(username) {
   const skillRepos = new Map();
@@ -447,7 +448,9 @@ const CACHE_HEADERS = {
  * in the contract for a future server-authoritative changelog if ever wanted.
  *
  * On any total crawl failure (no token, GraphQL/network error, both scopes
- * down) the curated set is served so the grid never renders empty.
+ * down) an EMPTY payload is returned (`categories: categorizeSkills([])`,
+ * `_fallback: true`) — there is no curated floor, so the grid shows its
+ * "couldn't load" state and the 10-min TTL retries on the next visit.
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url);

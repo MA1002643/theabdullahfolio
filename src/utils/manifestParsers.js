@@ -1,28 +1,37 @@
 // Multi-ecosystem manifest parsing for the About-page skills crawl (issue #20).
 //
-// The /api/github-skills route pulls a fixed set of dependency manifests INLINE
-// per repo (one GraphQL `file(path:)` alias each — see MANIFESTS) and runs the
-// matching parser here to extract raw dependency / package names. Those names
-// are unioned with the repo's GitHub language list and handed to
-// `categorizeSkills`, which resolves each to an icon and SILENTLY DROPS anything
-// unmapped. So these parsers are deliberately permissive: over-extraction is
-// harmless (unmapped noise is dropped downstream), under-extraction loses a
-// detection. The goal is breadth, not a faithful dependency resolver.
+// The /api/github-skills route discovers dependency manifests per repo with a
+// recursive default-branch TREE WALK (one REST `git/trees?recursive=1` call —
+// see `findManifestPaths`), then batch-fetches the text of every match in a
+// single GraphQL blob query (`fetchManifestTexts`). Each text is dispatched by
+// basename to the matching parser here to extract raw dependency / package
+// names. Those names are unioned with the repo's GitHub language list and handed
+// to `categorizeSkills`, which resolves each to an icon and SILENTLY DROPS
+// anything unmapped. So these parsers are deliberately permissive: over-
+// extraction is harmless (unmapped noise is dropped downstream), under-extraction
+// loses a detection. The goal is breadth, not a faithful dependency resolver.
 //
-// SCOPE: only the repo's DEFAULT-BRANCH ROOT path of each manifest is fetched
-// (GraphQL resolves `file(path:)` to an exact path). Nested manifests in a
-// monorepo (e.g. `packages/*/package.json`, `services/api/requirements.txt`)
-// are not crawled — that would need a tree walk per repo and blow the
-// serverless budget. Root manifests cover the overwhelming majority of repos.
+// SCOPE: manifests are matched by BASENAME at ANY tree depth, so a monorepo's
+// nested manifests (`packages/*/package.json`, `services/api/requirements.txt`,
+// `Backend/go.mod`, …) ARE crawled — not just the repo root. Tradeoffs vs. the
+// old root-only inline fetch: one extra recursive tree call per repo and a larger
+// blob batch. These are bounded to stay within the serverless budget — vendored
+// and build dirs are skipped (`SKIP_DIR`), each repo is capped at
+// `MAX_MANIFESTS_PER_REPO` matches, repos run at a fixed `REPO_CONCURRENCY`, and
+// a tree too large for one REST page is truncated by GitHub (logged; the deepest
+// matches may be missed). Root manifests still cover most repos; the walk adds
+// the rest.
 //
 // Pure + framework-agnostic (no Node/Next imports) so it stays unit-testable
 // and reusable. No TOML/YAML/XML dependency is pulled in: each parser is a
 // lightweight line/regex scanner tuned to the dependency-bearing sections only.
 
-// The manifests fetched per repo. `alias` is the GraphQL field alias (must be a
-// valid GraphQL name — alphanumeric, no dots/slashes); `path` is the exact
-// default-branch root path passed to `file(path:)`. Add a row here AND a case
-// in `parseManifest` to cover a new ecosystem.
+// The manifest filenames we recognise. `path` is the BASENAME matched against
+// every blob in the route's recursive tree walk (`MANIFEST_BASENAMES`), so a
+// manifest is detected at ANY depth, not just the repo root. `alias` is vestigial
+// from the previous inline `file(path:)` fetch — no longer read (the batched blob
+// query derives its own per-index aliases). Add a row here AND a case in
+// `parseManifest` to cover a new ecosystem.
 export const MANIFESTS = [
   { alias: "packageJson", path: "package.json" }, // JS / Node (npm, pnpm, yarn, bun)
   { alias: "requirementsTxt", path: "requirements.txt" }, // Python (pip)

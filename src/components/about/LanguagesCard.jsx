@@ -942,11 +942,16 @@ function LanguageRepoPopover({
   // once `pos` is set. Gating the start on `pos` (not raw mount) means the full
   // window plays from the moment the panel appears, rather than part of it
   // burning while the panel is still hidden off-screen. Fires once per open
-  // (`repoPulseFiredRef`). Props are read through refs so a parent re-render
-  // (which passes a fresh `onRepoPulsed` closure) can't restart or cancel the
-  // running timer.
+  // (`repoPulseFiredRef`). Props are read through refs — kept in sync below — so
+  // a parent re-render (a fresh `onRepoPulsed` closure, or an updated
+  // `pulseRepoNames` when a new diff lands while the popover is open) can't
+  // restart or cancel the running timer, while the one-shot still reads the
+  // LATEST names at the moment it fires rather than a mount-time snapshot.
   const [pulsingRepos, setPulsingRepos] = useState(EMPTY_NAME_SET);
   const pulseNamesRef = useRef(pulseRepoNames);
+  useEffect(() => {
+    pulseNamesRef.current = pulseRepoNames;
+  }, [pulseRepoNames]);
   const onRepoPulsedRef = useRef(onRepoPulsed);
   useEffect(() => {
     onRepoPulsedRef.current = onRepoPulsed;
