@@ -135,6 +135,26 @@ export function computeStreakDiff(prev, next) {
   return { hasChanged, changes, summaryMessage: messages.join(" | ") };
 }
 
+// The three count blocks (the date ranges are tracked separately and never pulse).
+const STREAK_COUNT_FIELDS = ["totalContributions", "currentStreak", "longestStreak"];
+
+/**
+ * From a `computeStreakDiff` result, the count-block keys whose value INCREASED
+ * this cycle — a subset of
+ * `['totalContributions','currentStreak','longestStreak']`. Powers the Current
+ * Streak card's post-banner heartbeat on each risen number + its label. Only
+ * increases pulse (a broken streak / recount never does), matching the "going
+ * up" intent and the stats/languages cards' rise-only rule. Date-range changes
+ * are intentionally excluded.
+ *
+ * @param {object|null} diff - the object returned by `computeStreakDiff`
+ * @returns {Array<'totalContributions'|'currentStreak'|'longestStreak'>}
+ */
+export function streakIncreasedFields(diff) {
+  if (!diff || !diff.changes) return [];
+  return STREAK_COUNT_FIELDS.filter((k) => diff.changes[k]?.increased);
+}
+
 /**
  * Deterministic fingerprint of a streak snapshot — a stable, ordered signature
  * of exactly the fields `computeStreakDiff` tracks (the three values + the

@@ -684,6 +684,193 @@
   animation: bounce-shake 0.6s ease;
 }
 
+/* Skills "just added" heartbeat (issue #20 follow-up). When a freshly-detected
+   icon's category scrolls into view, its header label + count and the new icon
+   itself pulse — fading their true colour in and out — to draw the eye to the
+   change. Two flavours: a plain opacity pulse for the header text, and an
+   opacity + warm-glow pulse for the icon. Both are applied for a fixed window
+   (5–6s) then the class is removed in JS, so they pulse only the first time. */
+@keyframes skill-heartbeat {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+.skill-heartbeat {
+  animation: skill-heartbeat 1s ease-in-out infinite;
+}
+
+/* Elite "just added" icon treatment — three composited effects replace the
+   simple warm-glow heartbeat:
+   1. OUTER GLOW + SCALE (cell div, renders outside overflow-hidden via CSS
+      filter): a coronal multi-layer drop-shadow with two asymmetric intensity
+      peaks per cycle — a sharper first burst (12%) and a softer second bloom
+      (52%) — so the rhythm feels organic, not mechanical. Simultaneous
+      micro-scale breathing (6% → 4%) anchors the glow to the icon's mass.
+   2. DIAGONAL SHIMMER (::before on .skill-elite-shimmer child, inside
+      overflow-hidden): a tapered glint sweeps across the icon face once per
+      cycle, peaking around the 50% mark — arrives just after the initial
+      burst so it reads "flash then glint". The overflow-hidden clips it to
+      the icon's rounded boundary so it feels like light catching the surface,
+      not a floating artifact. Both animations share the same 1.75s period so
+      they stay phase-locked. */
+@keyframes skill-elite-glow {
+  0%   { transform: scale(1);    filter: drop-shadow(0 0 1px rgba(255,210,125,0.15)); }
+  12%  {
+    transform: scale(1.06);
+    filter:
+      drop-shadow(0 0 5px rgba(255,109,5,1))
+      drop-shadow(0 0 14px rgba(255,170,42,0.75))
+      drop-shadow(0 0 26px rgba(255,109,5,0.32));
+  }
+  28%  {
+    transform: scale(1);
+    filter:
+      drop-shadow(0 0 2px rgba(255,210,125,0.4))
+      drop-shadow(0 0 6px rgba(255,170,42,0.18));
+  }
+  52%  {
+    transform: scale(1.04);
+    filter:
+      drop-shadow(0 0 4px rgba(255,109,5,0.9))
+      drop-shadow(0 0 11px rgba(255,170,42,0.55))
+      drop-shadow(0 0 20px rgba(255,109,5,0.2));
+  }
+  70%  { transform: scale(1);    filter: drop-shadow(0 0 1px rgba(255,170,42,0.1)); }
+  100% { transform: scale(1);    filter: drop-shadow(0 0 1px rgba(255,210,125,0.15)); }
+}
+
+.skill-elite-icon {
+  animation: skill-elite-glow 1.75s ease-in-out infinite;
+}
+
+@keyframes skill-elite-shimmer-sweep {
+  0%, 38%, 100% { transform: translateX(-220%) skewX(-15deg); opacity: 0; }
+  43%            { opacity: 1; }
+  57%            { opacity: 1; }
+  62%            { transform: translateX(220%) skewX(-15deg); opacity: 0; }
+}
+
+.skill-elite-shimmer {
+  position: absolute;
+  inset: 0;
+  /* Below the hover dark overlay (z-10) so the icon name stays legible on hover,
+     but above the img (z-auto) so the glint is visible when not hovering. */
+  z-index: 5;
+  pointer-events: none;
+}
+
+.skill-elite-shimmer::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: 0;
+  width: 28%;
+  height: 120%;
+  background: linear-gradient(
+    90deg,
+    transparent            0%,
+    rgba(255,235,180,0)    15%,
+    rgba(255,235,180,0.28) 40%,
+    rgba(255,255,255,0.18) 50%,
+    rgba(255,235,180,0.28) 60%,
+    rgba(255,235,180,0)    85%,
+    transparent            100%
+  );
+  animation: skill-elite-shimmer-sweep 1.75s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-heartbeat {
+    animation: none;
+  }
+  .skill-elite-icon {
+    animation: none;
+    filter: drop-shadow(0 0 4px rgba(255, 109, 5, 0.55));
+  }
+  .skill-elite-shimmer {
+    display: none;
+  }
+}
+
+/* Skills icon ENTRANCE (issue #20 follow-up, item 1). When a category becomes
+   the active one, each of its icons fades + sharpens + rises into place, in a
+   left-to-right stagger driven by the per-icon `--i`. Restarted imperatively in
+   SkillsCard on every activation so it replays each time the category is shown.
+   This is the per-appearance reveal — distinct from (and composing with) the
+   scrub reveal that fades icons entering from the right edge mid-scroll. */
+@keyframes skill-icon-reveal {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+.skill-icon-reveal {
+  animation: skill-icon-reveal 0.45s ease-out both;
+  /* Per-icon stagger — `--i` is set inline on each icon (0, 1, 2 …). */
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-icon-reveal {
+    animation: none;
+  }
+}
+
+/* Skills icon HOVER / ACTIVE lift (issue #20 hover redesign). The old hover
+   state washed the icon in a warm multi-layer drop-shadow glow — that is gone.
+   In its place: a clean, premium RISE toward the viewer. The icon translates up
+   a few px with a hair of scale and a gentle eased overshoot, NO shadow at all.
+   Driven on the inner <img> so the wrapper stays free for the heartbeat pulse
+   and the scrub engine's opacity/filter writes. Hover is gated to a fine
+   pointer (a touch tap instead opens the popover, which adds `.is-active`);
+   `.is-active` keeps the open icon raised so the user can see which icon the
+   repository panel belongs to. */
+.skill-icon-tile img {
+  transition: transform 240ms cubic-bezier(0.34, 1.42, 0.5, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .skill-icon-tile:hover img {
+    transform: translateY(-5px) scale(1.07);
+  }
+}
+.skill-icon-tile.is-active img {
+  transform: translateY(-5px) scale(1.07);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skill-icon-tile img {
+    transition: none;
+  }
+  .skill-icon-tile:hover img,
+  .skill-icon-tile.is-active img {
+    transform: none;
+  }
+}
+
+/* Repo-list row reveal — a row slides in from the left as it scrolls into its
+   popover list's OWN viewport. Driven imperatively by `useStaggeredScrollReveal`
+   (cancel → reflow → restart with a per-row stagger delay), and reset on exit so
+   it REPLAYS every time the row re-enters on scroll up or down. */
+@keyframes repo-row-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @keyframes glow {
   0%,
   100% {

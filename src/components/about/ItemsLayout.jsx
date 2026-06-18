@@ -17,7 +17,16 @@ const ItemLayout = forwardRef(function ItemLayout(
       initial={{ scale: 0 }}
       whileInView={{ scale: 1 }}
       transition={{ duration: 0.5 }}
-      viewport={{ once: false }}
+      // `once: true` is load-bearing, not a preference. With `once: false` this
+      // wrapper re-ran scale 0 → 1 on every viewport edge-cross, and a wrapper
+      // scaled toward 0 has ~0 area — which collapsed the IntersectionObservers
+      // of the cards INSIDE it (their `useInView`/`settledInView` flipped),
+      // resetting and replaying their content entrance in a flicker loop
+      // ("content loads on and off" when half-visible). Animating the wrapper in
+      // ONCE keeps it at full size thereafter, so inner observers stay reliable;
+      // the cards' own entrances still replay on re-entry via their debounced
+      // `settledInView`. `amount: 0.2` waits for a stable 20% before firing.
+      viewport={{ once: true, amount: 0.2 }}
       // `space-y-8` was dead styling — every existing consumer wraps a
       // single visible child so the inter-child margin never fired. It
       // *did* fire on the years card after issue #17 added the

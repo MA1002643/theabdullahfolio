@@ -34,6 +34,14 @@ const DURATION_MS = 2000;
 // Banner lingers 4.5s, then auto-hides — local to the card so it dismisses
 // well before the parent's coarser 10s changedFields reset.
 const BANNER_VISIBLE_MS = 4500;
+// "Just changed" heartbeat window — two clean 1s cycles of `skill-heartbeat`,
+// matching the Languages / Repo cards.
+const HEARTBEAT_MS = 2000;
+// Short beat between the banner clearing and the heartbeat starting, so the
+// pulse plays just AFTER the banner rather than overlapping its fade-out.
+const POST_BANNER_BEAT_MS = 400;
+// Stable empty Set so "nothing pulsing" keeps a constant identity across renders.
+const EMPTY_FIELD_SET = new Set();
 
 // ----- Card-level choreography (mirrors RepoStatsCard) -----
 const cardVariants = {
@@ -134,7 +142,7 @@ function AnimatedTitle({ text, play }) {
    headline stat (Stars) gets a single scale-pulse the instant it lands.
    Accessibility: the animated digits are aria-hidden and an sr-only span
    carries the final value so AT never hears "0". */
-function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = false, prefersReducedMotion }) {
+function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = false, heartbeat = false, prefersReducedMotion }) {
     const target = Number(value) || 0;
     const [display, setDisplay] = useState(prefersReducedMotion ? target : 0);
     const [pulse, setPulse] = useState(false);
@@ -201,14 +209,17 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
                 >
                     <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: AMBER }} />
                 </motion.span>
-                <span className="text-xs sm:text-sm md:text-base truncate text-fire-amber" style={{ textShadow: "none" }}>
+                <span className={`text-xs sm:text-sm md:text-base truncate text-fire-amber${heartbeat ? " skill-heartbeat" : ""}`} style={{ textShadow: "none" }}>
                     {label}
                 </span>
             </div>
             <motion.span
                 animate={pulse ? { scale: [1, 1.18, 1], transition: { duration: 0.4, ease: "easeOut" } } : { scale: 1 }}
                 onAnimationComplete={() => pulse && setPulse(false)}
-                className="text-xs sm:text-sm md:text-base font-semibold tabular-nums whitespace-nowrap"
+                // `heartbeat` is the post-banner "this stat just rose" opacity pulse
+                // (skill-heartbeat) on BOTH the label (above) and this number,
+                // independent of the local `pulse` scale-bounce on count-up landing.
+                className={`text-xs sm:text-sm md:text-base font-semibold tabular-nums whitespace-nowrap${heartbeat ? " skill-heartbeat" : ""}`}
                 style={{ color: ORANGE, textShadow: "none" }}
             >
                 <span className="sr-only">{target.toLocaleString()}</span>
@@ -306,7 +317,7 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
 }
 
 /* ---------------------------------- CARD ---------------------------------- */
-export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated, diffMessage = null, isLive = false }) {
+export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated, diffMessage = null, pulseFields, isLive = false }) {
     const cardRef = useRef(null);
     // `playToken` (latched, hysteresis-debounced, monotonic) drives the
     // count-ups/arc, which key off its value and replay each entry on their
@@ -317,32 +328,109 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
     const { isInView, playToken, settledInView } = useViewportCountTrigger(cardRef, { amount: 0.3, margin: "-50px" });
     const prefersReducedMotion = useReducedMotion();
 
-    // Banner message: prefer the specific per-stat diff; fall back to a generic
-    // line for non-value changes (e.g. display name). No change → no banner.
-    const bannerMessage = diffMessage ?? (isUpdated ? "GitHub stats updated" : null);
-    const [bannerDismissed, setBannerDismissed] = useState(false);
-    // Auto-hide timer is gated on `isInView`, NOT just on `bannerMessage`:
-    // the banner only paints while in view (`visible={isInView}` below), so if
-    // an update lands while the card is off-screen we must NOT start the 4.5s
-    // countdown — otherwise it would expire unseen and the banner would be
-    // permanently dismissed before the user ever scrolls to it. Tying both the
-    // start and the cleanup to `isInView` means the timer begins on the entry
-    // that actually shows the banner, cancels when the card leaves the
-    // viewport, and re-arms (re-showing) on a later re-entry while the message
-    // still stands — matching how the repo/experience banners key off view.
+    // Incoming change copy from the parent — prefer the specific per-stat diff,
+    // fall back to a generic line for non-value changes (e.g. display name).
+    const incomingMessage = diffMessage ?? (isUpdated ? "GitHub stats updated" : null);
+
+    // Self-contained banner state — mirrors LanguagesCard / SkillsCard so the
+    // banner can NEVER get stuck. The message is captured into LOCAL state once,
+    // shown, and auto-hidden by a timer keyed ONLY on that local state.
+    //
+    // The previous shape re-derived the message from props every render and
+    // reset a `bannerDismissed` flag inside an effect keyed on `[bannerMessage,
+    // isInView]`. `isInView` flickers while scrolling, so each flicker re-opened
+    // the banner AND restarted the auto-hide timer — it could never settle to
+    // hidden, leaving it stuck until a manual reload. Keying the auto-hide on the
+    // local message alone makes a flicker irrelevant: once shown, it always
+    // resolves to hidden after BANNER_VISIBLE_MS.
+    const [bannerMessage, setBannerMessage] = useState(null);
+    const lastShownRef = useRef(null);
+
+    // Promote a genuinely NEW message once the card is in view (off-screen
+    // updates wait for the entry that actually shows them). The ref guards
+    // against re-showing the SAME message after it hides — an isInView flicker
+    // can no longer re-open it.
     useEffect(() => {
-        if (!bannerMessage || !isInView) return;
-        setBannerDismissed(false);
-        const timer = setTimeout(() => setBannerDismissed(true), BANNER_VISIBLE_MS);
+        if (!incomingMessage || !isInView) return;
+        if (lastShownRef.current === incomingMessage) return;
+        lastShownRef.current = incomingMessage;
+        setBannerMessage(incomingMessage);
+    }, [incomingMessage, isInView]);
+
+    // When the upstream message clears, drop the guard so an identical future
+    // change can show again.
+    useEffect(() => {
+        if (!incomingMessage) lastShownRef.current = null;
+    }, [incomingMessage]);
+
+    // Auto-hide — keyed ONLY on bannerMessage, so an isInView flicker can't
+    // restart or re-open it. Always resolves to hidden after BANNER_VISIBLE_MS.
+    useEffect(() => {
+        if (!bannerMessage) return undefined;
+        const timer = setTimeout(() => setBannerMessage(null), BANNER_VISIBLE_MS);
         return () => clearTimeout(timer);
-    }, [bannerMessage, isInView]);
+    }, [bannerMessage]);
+
+    // ── "Just rose" heartbeat ───────────────────────────────────────────────
+    // Pulse the label + number of every stat that went UP, AFTER the banner and
+    // once the card is in view (same model as the Languages / Repo cards).
+    // `pulseFields` is the risen-stat list (['stars','commits',…]) from the
+    // parent's stats diff.
+    //
+    // Capture the fields locally when they arrive, held until the pulse consumes
+    // them — the parent clears `pulseFields` on its 10s reset, so relying on the
+    // live prop could strip them before the (post-banner) pulse runs. Gate the
+    // capture on the fields' CONTENT (joined key), since the array prop's
+    // identity changes every render.
+    const [pendingStats, setPendingStats] = useState([]);
+    const statsFieldsKey = Array.isArray(pulseFields) ? pulseFields.join(",") : "";
+    useEffect(() => {
+        if (statsFieldsKey) setPendingStats(statsFieldsKey.split(","));
+    }, [statsFieldsKey]);
+
+    // Banner-gone gate, keyed on the card's OWN local banner: a fresh banner
+    // un-gates (so its later clear arms a new pulse); when the banner clears
+    // (shown → hidden) a short beat opens the gate so the pulse plays just AFTER
+    // it, never under the still-fading overlay.
+    const [statsBannerGone, setStatsBannerGone] = useState(false);
+    const prevBannerRef = useRef(bannerMessage);
+    const beatTimerRef = useRef(null);
+    useEffect(() => () => clearTimeout(beatTimerRef.current), []);
+    useEffect(() => {
+        const prev = prevBannerRef.current;
+        prevBannerRef.current = bannerMessage;
+        if (bannerMessage) {
+            setStatsBannerGone(false);
+            clearTimeout(beatTimerRef.current);
+        } else if (prev && !bannerMessage) {
+            clearTimeout(beatTimerRef.current);
+            beatTimerRef.current = setTimeout(() => setStatsBannerGone(true), POST_BANNER_BEAT_MS);
+        }
+    }, [bannerMessage]);
+
+    // Fire the one-shot pulse once the gate is open and the card is in view.
+    const [pulsingStats, setPulsingStats] = useState(EMPTY_FIELD_SET);
+    const statsArmedRef = useRef(false);
+    const statsPulseTimerRef = useRef(null);
+    useEffect(() => () => clearTimeout(statsPulseTimerRef.current), []);
+    useEffect(() => {
+        if (prefersReducedMotion || statsArmedRef.current) return;
+        if (!statsBannerGone || !isInView || pendingStats.length === 0) return;
+        statsArmedRef.current = true;
+        setPulsingStats(new Set(pendingStats));
+        statsPulseTimerRef.current = setTimeout(() => {
+            setPulsingStats(EMPTY_FIELD_SET);
+            setPendingStats([]);
+            statsArmedRef.current = false;
+        }, HEARTBEAT_MS);
+    }, [statsBannerGone, isInView, pendingStats, prefersReducedMotion]);
 
     const stats = [
-        { label: "Total Stars Earned", value: data.stars, icon: Star, pulseOnComplete: true },
-        { label: "Total Commits (last year)", value: data.commits, icon: Clock },
-        { label: "Total PRs", value: data.prs, icon: GitBranch },
-        { label: "Total Issues", value: data.issues, icon: AlertCircle },
-        { label: "Contributed to (last year)", value: data.contributedTo, icon: Package },
+        { label: "Total Stars Earned", value: data.stars, icon: Star, field: "stars", pulseOnComplete: true },
+        { label: "Total Commits (last year)", value: data.commits, icon: Clock, field: "commits" },
+        { label: "Total PRs", value: data.prs, icon: GitBranch, field: "prs" },
+        { label: "Total Issues", value: data.issues, icon: AlertCircle, field: "issues" },
+        { label: "Contributed to (last year)", value: data.contributedTo, icon: Package, field: "contributedTo" },
     ];
 
     return (
@@ -354,8 +442,8 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg h-full"
         >
             <UpdateBanner
-                message={bannerDismissed ? null : bannerMessage}
-                visible={isInView}
+                message={bannerMessage}
+                visible={Boolean(bannerMessage)}
                 srPrefix="Stats update: "
             />
 
@@ -412,6 +500,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
                             label={stat.label}
                             value={stat.value}
                             pulseOnComplete={stat.pulseOnComplete}
+                            heartbeat={pulsingStats.has(stat.field)}
                             playToken={playToken}
                             prefersReducedMotion={prefersReducedMotion}
                         />

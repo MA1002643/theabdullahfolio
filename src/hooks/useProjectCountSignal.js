@@ -1,11 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Single fixed key — the completed-projects count is a site-wide value
-// (driven by `projectsData.length`), not per-user. Mirrors the keying
-// discipline of `useLanguagesUpdateSignal` without a username segment.
+// (driven by `projectsData`), not per-user. Mirrors the keying discipline of
+// `useLanguagesUpdateSignal` without a username segment.
 const STORAGE_KEY = "project-count:last-seen";
+
+// Normalise a breakdown array (`[{ label, count }]`) into a plain
+// `{ [label]: count }` map — the shape the per-category diff and the persisted
+// baseline both use.
+function toCatMap(breakdown) {
+  const map = {};
+  if (Array.isArray(breakdown)) {
+    for (const b of breakdown) {
+      if (b && typeof b.label === "string" && Number.isFinite(b.count)) {
+        map[b.label] = b.count;
+      }
+    }
+  }
+  return map;
+}
 
 function readStored() {
   if (typeof window === "undefined") return null;
@@ -13,95 +28,155 @@ function readStored() {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === null) return null;
     const parsed = JSON.parse(raw);
-    // A valid baseline is a non-negative, finite number. Validate the PARSED
-    // value *before* any coercion: `Number(null)`/`Number(false)`/`Number("")`/
-    // `Number([])` all collapse to 0, which a post-coercion `Number.isFinite`
-    // check would wave through and fabricate a phantom baseline of 0 — then the
-    // next visit reports `count - 0` as a bogus "N new completed projects
-    // added". Requiring `typeof "number"` first rejects those corrupt /
-    // hand-edited shapes outright, while still accepting a genuine stored `0`
-    // (a legitimate baseline when the project list is empty — the count guard
-    // in `useProjectCountSignal`'s effect below admits `0`, so a `0` can be
-    // written and must round-trip back here intact).
-    if (typeof parsed !== "number" || !Number.isFinite(parsed) || parsed < 0) {
+    // Legacy baseline: a bare non-negative finite number (written before this
+    // hook tracked per-category counts). Accept it as a count-only baseline so
+    // the banner still fires on the next change; `cats: null` just means that
+    // ONE post-upgrade change can't be attributed to specific categories (no
+    // per-category heartbeat that once) — it self-heals on the next write.
+    if (typeof parsed === "number") {
+      return Number.isFinite(parsed) && parsed >= 0 ? { count: parsed, cats: null } : null;
+    }
+    // Current shape: `{ count: number>=0, cats: { [label]: number } }`. Validate
+    // the full shape before trusting it — a hand-edited / corrupt entry must be
+    // treated as no baseline (overwritten silently) rather than diffed against,
+    // which would fabricate or suppress a banner + heartbeat.
+    if (
+      parsed === null ||
+      typeof parsed !== "object" ||
+      typeof parsed.count !== "number" ||
+      !Number.isFinite(parsed.count) ||
+      parsed.count < 0 ||
+      typeof parsed.cats !== "object" ||
+      parsed.cats === null
+    ) {
       return null;
     }
-    return parsed;
+    return { count: parsed.count, cats: parsed.cats };
   } catch {
-    // Corrupt entry or storage blocked (private mode) — treat as no
-    // baseline so the banner simply stays silent rather than throwing.
+    // Corrupt entry or storage blocked (private mode) — treat as no baseline so
+    // the banner simply stays silent rather than throwing.
     return null;
   }
 }
 
-function writeStored(count) {
+function writeStored(count, cats) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(count));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ count, cats }));
   } catch {
-    // QuotaExceeded / private-mode block — we lose the next-visit diff but
-    // the counter still renders fine.
+    // QuotaExceeded / private-mode block — we lose the next-visit diff but the
+    // counter still renders fine.
   }
 }
 
 /**
- * Decides whether the "Completed Projects" update banner should appear,
- * based on whether the project count changed since this device last saw it.
+ * Decides whether the "Completed Projects" update banner should appear AND which
+ * project categories changed, based on whether the project breakdown changed
+ * since this device last saw it.
  *
- * `projectsData` is a static module import, so the count only ever changes
- * across a deploy — there's no runtime data source to poll. This signal
- * therefore compares the current count against a per-device baseline
- * persisted in `localStorage` (exactly the model `useLanguagesUpdateSignal`
- * uses for the language fingerprint): the first visit records the count
- * silently, and a later visit after the count changed surfaces a one-time
- * `pendingMessage` that the consumer shows once the section scrolls into
- * view, then clears via `consume()`.
+ * `projectsData` is a static module import, so the breakdown only ever changes
+ * across a deploy — there's no runtime source to poll. This signal therefore
+ * compares the current breakdown against a per-device baseline persisted in
+ * `localStorage` (the model `useLanguagesUpdateSignal` / `useSkillsUpdateSignal`
+ * use): the first visit records the breakdown silently, and a later visit after
+ * a change surfaces a one-time `pendingMessage` plus `changedCategories` — the
+ * labels whose count grew or that are newly present. The consumer shows the
+ * banner once the section scrolls into view and heartbeats the changed
+ * categories' legend entry (label + count), exactly like the Skills card's
+ * category-header heartbeat.
  *
  * Behaviour:
- *   - First load on a device (no baseline) → record silently, no banner.
- *   - Count unchanged → no banner.
- *   - Count changed → advance the baseline immediately (so a reload before
- *     the user scrolls doesn't replay the banner) and expose a message.
+ *   - First load on a device (no baseline) → record silently, nothing surfaced.
+ *   - Breakdown unchanged → nothing surfaced.
+ *   - Breakdown changed → advance the baseline immediately (so a reload before
+ *     the user scrolls doesn't replay it) and expose the message + the grown/new
+ *     category labels.
  *
- * Keyed on the numeric `count`, so it runs only when the value actually
+ * Keyed on a breakdown fingerprint, so it runs only when the value actually
  * changes — not on every re-render.
  *
- * @param {number} count - current completed-projects count
- * @returns {{ pendingMessage: string|null, consume: () => void }}
+ * @param {Array<{ label: string, count: number }>} breakdown - per-category counts
+ * @returns {{ pendingMessage: string|null, consume: () => void, changedCategories: string[], clearChangedCategories: () => void }}
  */
-export function useProjectCountSignal(count) {
+export function useProjectCountSignal(breakdown) {
   const [pendingMessage, setPendingMessage] = useState(null);
+  // The category labels whose count GREW or that are newly present in this
+  // change cycle — surfaced so the card can heartbeat exactly those legend
+  // entries. Cleared by the consumer once the pulse has played.
+  const [changedCategories, setChangedCategories] = useState([]);
+
+  // Derived, deterministic trigger so the effect runs only when the breakdown
+  // actually moves (a project added/removed/moved, or a new category), never on
+  // an unrelated re-render. `count` is the sum (drives the banner total);
+  // `fingerprint` is the ordered label:count string (the change-only key).
+  const count = useMemo(
+    () =>
+      Array.isArray(breakdown)
+        ? breakdown.reduce((s, b) => s + (Number.isFinite(b.count) ? b.count : 0), 0)
+        : 0,
+    [breakdown],
+  );
+  const fingerprint = useMemo(
+    () => (Array.isArray(breakdown) ? breakdown.map((b) => `${b.label}:${b.count}`).join("|") : ""),
+    [breakdown],
+  );
 
   useEffect(() => {
-    // Only bail on values that can't be a real count: non-numbers, NaN/±∞, or
-    // a negative. Zero IS a legitimate count (an empty project list) and a
-    // valid baseline — skipping it would prevent recording a `0` baseline and
-    // suppress the first real `0 → N` notification on a later visit.
-    if (typeof count !== "number" || !Number.isFinite(count) || count < 0) return;
-
+    if (!Array.isArray(breakdown) || breakdown.length === 0) return;
+    const cats = toCatMap(breakdown);
     const stored = readStored();
 
     if (stored === null) {
-      // No baseline yet — record this count and stay silent.
-      writeStored(count);
+      // No baseline yet — record this breakdown and stay silent.
+      writeStored(count, cats);
       return;
     }
-    if (stored === count) return; // nothing changed
+
+    const storedCats = stored.cats; // may be null for a legacy (count-only) baseline
+
+    // Legacy numeric baseline whose total still matches: upgrade it to the
+    // per-category shape silently (no banner — nothing changed). Without this,
+    // an unchanged returning device would keep the count-only entry forever and
+    // the FIRST post-upgrade change could never attribute its categories.
+    if (!storedCats && stored.count === count) {
+      writeStored(count, cats);
+      return;
+    }
+    // Did anything change? With a per-category baseline, compare every label on
+    // either side; with a legacy baseline, fall back to the total.
+    const hasChange = storedCats
+      ? [...new Set([...Object.keys(storedCats), ...Object.keys(cats)])].some(
+          (l) => (storedCats[l] ?? 0) !== (cats[l] ?? 0),
+        )
+      : stored.count !== count;
+    if (!hasChange) return;
 
     // Advance the baseline immediately so a reload before the user scrolls
-    // doesn't replay the same banner; the message lives in React state until
-    // the consumer shows + consumes it once the section is visible.
-    writeStored(count);
+    // doesn't replay the banner/heartbeat; both live in React state until the
+    // consumer shows + consumes them once the section is visible.
+    writeStored(count, cats);
 
-    const delta = count - stored;
+    const delta = count - stored.count;
     const message =
       delta > 0
         ? `${delta} new completed project${delta !== 1 ? "s" : ""} added — now ${count}`
         : `Completed projects updated — now ${count}`;
     setPendingMessage(message);
-  }, [count]);
+
+    // Heartbeat targets: categories that GREW or are NEW since the baseline. A
+    // legacy (cats: null) baseline can't attribute the change, so none pulse
+    // that once — the freshly-written `cats` map makes the next change precise.
+    const grown = storedCats
+      ? Object.keys(cats).filter((l) => cats[l] > (storedCats[l] ?? 0))
+      : [];
+    setChangedCategories(grown);
+    // `fingerprint` is the change-only trigger; `breakdown`/`count` are read
+    // through it and intentionally not extra deps (they move together).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fingerprint]);
 
   const consume = useCallback(() => setPendingMessage(null), []);
+  const clearChangedCategories = useCallback(() => setChangedCategories([]), []);
 
-  return { pendingMessage, consume };
+  return { pendingMessage, consume, changedCategories, clearChangedCategories };
 }

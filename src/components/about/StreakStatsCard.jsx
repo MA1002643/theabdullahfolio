@@ -27,6 +27,14 @@ const RING_TRACK = "rgba(255,109,5,0.12)";
 
 const COUNT_UP_MS = 2000; // shared window so all three values land together
 const BANNER_VISIBLE_MS = 4500;
+// "Just rose" heartbeat window — two clean 1s cycles of `skill-heartbeat`,
+// matching the GitHub Stats / Languages / Repo cards.
+const HEARTBEAT_MS = 2000;
+// Short beat between the banner clearing and the heartbeat starting, so the
+// pulse plays just AFTER the banner rather than overlapping its fade-out.
+const POST_BANNER_BEAT_MS = 400;
+// Stable empty Set so "nothing pulsing" keeps a constant identity across renders.
+const EMPTY_FIELD_SET = new Set();
 const RING_RADIUS = 55;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
@@ -118,7 +126,9 @@ const STAGGER_ITEM_STILL = {
    Total Contributions / Longest Streak: a count-up number, a fire-amber
    label, and a static (never animated) muted-gold date range. Rendered as a
    stagger item so it slides into the cascade. */
-function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion, variants }) {
+function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion, variants, heartbeat = false }) {
+  // "Just rose" pulse on the NUMBER + LABEL together (never the date range).
+  const pulse = heartbeat ? " skill-heartbeat" : "";
   return (
     <motion.div
       variants={variants}
@@ -128,11 +138,11 @@ function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion, v
         target={Number(value) || 0}
         playToken={playToken}
         prefersReducedMotion={prefersReducedMotion}
-        className="text-2xl sm:text-3xl lg:text-4xl font-bold tabular-nums mb-2"
+        className={`text-2xl sm:text-3xl lg:text-4xl font-bold tabular-nums mb-2${pulse}`}
         style={{ color: ORANGE, textShadow: "none" }}
       />
       <span
-        className="text-sm md:text-base mb-1 font-semibold text-fire-amber"
+        className={`text-sm md:text-base mb-1 font-semibold text-fire-amber${pulse}`}
         style={{ textShadow: "none" }}
       >
         {label}
@@ -187,7 +197,8 @@ export default function StreakStatsCard({ data }) {
   const { totalContributions, currentStreak, longestStreak } = data || {};
 
   // --- Smart update banner (issue #21) ---
-  const { pendingMessage, consume } = useStreakUpdateSignal(data);
+  const { pendingMessage, increasedFields, consume, clearIncreased } =
+    useStreakUpdateSignal(data);
   const [bannerMessage, setBannerMessage] = useState(null);
   // Capture the pending message as soon as it exists — NOT gated on viewport —
   // so UpdateBanner's always-mounted aria-live region announces the change
@@ -208,6 +219,57 @@ export default function StreakStatsCard({ data }) {
     const timer = setTimeout(() => setBannerMessage(null), BANNER_VISIBLE_MS);
     return () => clearTimeout(timer);
   }, [bannerMessage, settledInView]);
+
+  // ── "Just rose" heartbeat ──────────────────────────────────────────────────
+  // Once the banner has gone and the card is in view, pulse the NUMBER + LABEL of
+  // every streak stat that went up (Total Contributions / Current Streak /
+  // Longest Streak) — never the dates. One-shot per change cycle. Same model as
+  // the GitHub Stats card's post-banner heartbeat.
+  //
+  // Capture the risen fields locally the moment they arrive (the hook clears them
+  // after the pulse, and `consume()` runs immediately on the banner), held until
+  // the pulse fires. Gate the capture on the fields' CONTENT, not array identity.
+  const [pendingFields, setPendingFields] = useState([]);
+  const fieldsKey = Array.isArray(increasedFields) ? increasedFields.join(",") : "";
+  useEffect(() => {
+    if (fieldsKey) setPendingFields(fieldsKey.split(","));
+  }, [fieldsKey]);
+
+  // Banner-gone gate: a fresh banner closes the gate; when it clears, a short beat
+  // opens it so the pulse plays just AFTER the overlay fades, never under it.
+  const [bannerGone, setBannerGone] = useState(false);
+  const prevBannerRef = useRef(bannerMessage);
+  const beatTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(beatTimerRef.current), []);
+  useEffect(() => {
+    const prev = prevBannerRef.current;
+    prevBannerRef.current = bannerMessage;
+    if (bannerMessage) {
+      setBannerGone(false);
+      clearTimeout(beatTimerRef.current);
+    } else if (prev && !bannerMessage) {
+      clearTimeout(beatTimerRef.current);
+      beatTimerRef.current = setTimeout(() => setBannerGone(true), POST_BANNER_BEAT_MS);
+    }
+  }, [bannerMessage]);
+
+  // Fire the one-shot pulse once the gate is open and the card is settled in view.
+  const [pulsingFields, setPulsingFields] = useState(EMPTY_FIELD_SET);
+  const pulseArmedRef = useRef(false);
+  const pulseTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(pulseTimerRef.current), []);
+  useEffect(() => {
+    if (prefersReducedMotion || pulseArmedRef.current) return;
+    if (!bannerGone || !settledInView || pendingFields.length === 0) return;
+    pulseArmedRef.current = true;
+    setPulsingFields(new Set(pendingFields));
+    pulseTimerRef.current = setTimeout(() => {
+      setPulsingFields(EMPTY_FIELD_SET);
+      setPendingFields([]);
+      clearIncreased();
+      pulseArmedRef.current = false;
+    }, HEARTBEAT_MS);
+  }, [bannerGone, settledInView, pendingFields, prefersReducedMotion, clearIncreased]);
 
   // Current streak as a fraction of the personal best — the ring visualises
   // "how close is the current streak to your longest?". Clamped to [0,1];
@@ -273,6 +335,7 @@ export default function StreakStatsCard({ data }) {
           playToken={playToken}
           prefersReducedMotion={prefersReducedMotion}
           variants={itemVariants}
+          heartbeat={pulsingFields.has("totalContributions")}
         />
 
         <Divider variants={itemVariants} />
@@ -283,7 +346,13 @@ export default function StreakStatsCard({ data }) {
           variants={itemVariants}
           className="flex flex-col items-center justify-center flex-1 text-center min-w-0"
         >
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 flex items-center justify-center mb-2">
+          {/* `isolate` confines the streak number's `z-10` (which it needs to
+              sit above the ring SVG + commit node) to THIS container's own
+              stacking context. Without it, that `z-10` leaks up to the card
+              level and ties with the UpdateBanner's `z-10` — and being later in
+              the DOM, the number would paint OVER the banner text. Isolating
+              keeps the number above its ring but below the full-card banner. */}
+          <div className="relative isolate w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 flex items-center justify-center mb-2">
             <svg
               className="absolute w-full h-full"
               viewBox="0 0 120 120"
@@ -360,12 +429,16 @@ export default function StreakStatsCard({ data }) {
               playToken={playToken}
               prefersReducedMotion={prefersReducedMotion}
               srLabel={ringSrLabel}
-              className="z-10 text-2xl sm:text-3xl lg:text-4xl font-bold tabular-nums"
+              className={`z-10 text-2xl sm:text-3xl lg:text-4xl font-bold tabular-nums${
+                pulsingFields.has("currentStreak") ? " skill-heartbeat" : ""
+              }`}
               style={{ color: ORANGE, textShadow: "none" }}
             />
           </div>
           <span
-            className="text-sm md:text-base mb-1 font-semibold text-fire-amber"
+            className={`text-sm md:text-base mb-1 font-semibold text-fire-amber${
+              pulsingFields.has("currentStreak") ? " skill-heartbeat" : ""
+            }`}
             style={{ textShadow: "none" }}
           >
             Current Streak
@@ -388,6 +461,7 @@ export default function StreakStatsCard({ data }) {
           playToken={playToken}
           prefersReducedMotion={prefersReducedMotion}
           variants={itemVariants}
+          heartbeat={pulsingFields.has("longestStreak")}
         />
       </motion.div>
     </motion.div>

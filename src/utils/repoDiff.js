@@ -94,5 +94,114 @@ export function computeRepoDiff(prev, next) {
     messages.push(`${delta} PR${delta !== 1 ? "s" : ""} merged`);
   }
 
+  // Activity score is a derived metric (weighted recent commits/issues/PRs/
+  // reviews + a commit-history tie-breaker), so it can move in a poll where
+  // none of the four displayed counts did. Announce it — on the ROUNDED value,
+  // since that's what the arc shows — so a sub-integer drift that doesn't change
+  // the visible number stays silent. It can move either way (the contribution
+  // window slides), so report both directions like stars/forks.
+  const prevScore = Math.round(Number(prev.activityScore ?? 0));
+  const nextScore = Math.round(Number(next.activityScore ?? 0));
+  if (prevScore !== nextScore) {
+    const delta = nextScore - prevScore;
+    messages.push(
+      `Activity score ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)} (now ${nextScore})`
+    );
+  }
+
+  // Primary language can shift for the SAME repo when its language composition
+  // changes (an identity change already returned above, so this compares
+  // like-for-like). Announce it so the banner names what moved — but never a
+  // downgrade *to* "Unknown" (the placeholder used when the API can't resolve a
+  // language), which would read as a spurious change rather than a lost signal.
+  const prevLang = prev.language;
+  const nextLang = next.language;
+  if (
+    prevLang != null &&
+    nextLang != null &&
+    nextLang !== "Unknown" &&
+    prevLang !== nextLang
+  ) {
+    messages.push(`Primary language changed to "${nextLang}"`);
+  }
+
   return messages.length > 0 ? messages.join(" · ") : null;
+}
+
+/**
+ * Structured counterpart to `computeRepoDiff` — which fields of the most-active
+ * repo changed in a way worth heartbeating on the card. Returns the field keys
+ * to pulse, drawn from
+ * `['name', 'stars', 'forks', 'commitCount', 'mergedPRs', 'activityScore', 'language']`.
+ *
+ * Rules mirror `computeRepoDiff`'s intent but only flag POSITIVE movement (the
+ * heartbeat draws the eye to growth, matching the languages/popover behaviour —
+ * "percentage increasing"):
+ *   - Repo IDENTITY changed → flag ONLY `name` (the metrics belong to a
+ *     different repo, so pulsing them would compare apples to oranges — same
+ *     reason `computeRepoDiff` announces only the switch).
+ *   - Otherwise, flag each metric that INCREASED (stars/forks/commits/PRs); a
+ *     decrease is never flagged. When any metric rose, `name` is flagged too so
+ *     the repo name pulses alongside the changed value — the standalone card's
+ *     analog of the popover's "name + percentage" pair.
+ *   - A same-repo activity-score change (in EITHER direction, compared on the
+ *     rounded value the arc shows) flags `activityScore`; like `language` it
+ *     beats on its own and does NOT pull `name` in.
+ *   - A same-repo primary-language shift flags `language` (the language text
+ *     beats on its own — it does NOT pull `name` in, since it isn't a metric
+ *     rise). Same "not a downgrade to Unknown" guard as `computeRepoDiff`.
+ *
+ * Returns `[]` on first load (`prev`/`next` null) or when nothing rose, so the
+ * card never pulses on a fresh visit.
+ *
+ * @param {object|null} prev
+ * @param {object|null} next
+ * @returns {Array<'name'|'stars'|'forks'|'commitCount'|'mergedPRs'|'activityScore'|'language'>}
+ */
+export function computeRepoChangedFields(prev, next) {
+  if (!prev || !next) return [];
+
+  // Identity comparison — like-for-like, same logic as computeRepoDiff.
+  const useFullName = prev.nameWithOwner != null && next.nameWithOwner != null;
+  const prevId = useFullName ? prev.nameWithOwner : prev.name;
+  const nextId = useFullName ? next.nameWithOwner : next.name;
+  if (prevId != null && nextId != null && prevId !== nextId) {
+    return ["name"]; // a different repo — pulse only the name
+  }
+
+  const fields = [];
+  if (Number(next.stars ?? 0) > Number(prev.stars ?? 0)) fields.push("stars");
+  if (Number(next.forks ?? 0) > Number(prev.forks ?? 0)) fields.push("forks");
+  if (Number(next.commitCount ?? 0) > Number(prev.commitCount ?? 0))
+    fields.push("commitCount");
+  if (Number(next.mergedPRs ?? 0) > Number(prev.mergedPRs ?? 0))
+    fields.push("mergedPRs");
+
+  // A metric rose → pulse the repo name alongside it (name + value, together).
+  if (fields.length > 0) fields.unshift("name");
+
+  // Activity-score change (same repo, EITHER direction) pulses ONLY the score
+  // number — added AFTER the name-unshift so a score-only change never drags the
+  // repo name in. Compared on the rounded value the arc displays, so a
+  // sub-integer drift that leaves the visible number unchanged never pulses.
+  if (
+    Math.round(Number(next.activityScore ?? 0)) !==
+    Math.round(Number(prev.activityScore ?? 0))
+  ) {
+    fields.push("activityScore");
+  }
+
+  // Primary-language shift (same repo) pulses ONLY the language text — added
+  // AFTER the name-unshift above so a language-only change never drags the repo
+  // name into the beat. Same "not a downgrade to Unknown" guard as
+  // `computeRepoDiff`, so the banner message and the pulse stay in lock-step.
+  if (
+    prev.language != null &&
+    next.language != null &&
+    next.language !== "Unknown" &&
+    prev.language !== next.language
+  ) {
+    fields.push("language");
+  }
+  return fields;
 }

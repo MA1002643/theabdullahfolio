@@ -224,7 +224,12 @@ function AnimatedMessage({ message, prefersReducedMotion }) {
 // @param {boolean} props.visible     - render visual overlay this paint?
 // @param {string} [props.srPrefix]   - prefix for the SR announcement
 // @param {"orange"|"elite"} [props.variant] - visual palette
-export function UpdateBanner({ message, visible, srPrefix = "", variant = "orange" }) {
+// @param {() => void} [props.onExitComplete] - fired once the exit animation
+//        fully finishes and the overlay unmounts. Lets a consumer sequence
+//        follow-up motion (e.g. the years card's legend heartbeat) to start
+//        only after the banner is truly gone — the per-character exit stagger
+//        can keep the node mounted ~0.75s after its state cleared.
+export function UpdateBanner({ message, visible, srPrefix = "", variant = "orange", onExitComplete }) {
   const prefersReducedMotion = useReducedMotion();
   const showVisual = Boolean(visible && message);
   const palette = VARIANT_STYLES[variant] ?? VARIANT_STYLES.orange;
@@ -272,7 +277,7 @@ export function UpdateBanner({ message, visible, srPrefix = "", variant = "orang
         {message ? `${srPrefix}${message}` : ""}
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence onExitComplete={onExitComplete}>
         {showVisual && (
           <motion.div
             key="update-banner"

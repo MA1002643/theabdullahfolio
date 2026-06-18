@@ -51,8 +51,15 @@ const SESSION_KEY = "experience-update-banner:lastPlayed";
  *                                       the years card opts into
  *                                       "elite" so the banner matches
  *                                       its slate + gold treatment.
+ * @param {(shown: boolean) => void} [props.onVisibilityChange] - notified
+ *                                       whenever the banner shows (true) or
+ *                                       auto-hides (false). The years card
+ *                                       uses the show→hide edge to defer its
+ *                                       legend heartbeat until the banner
+ *                                       overlay has cleared (no pulse hidden
+ *                                       under the blur).
  */
-export function ExperienceUpdateBanner({ message, inView, variant = "orange" }) {
+export function ExperienceUpdateBanner({ message, inView, variant = "orange", onVisibilityChange }) {
   const [shown, setShown] = useState(false);
   // Remembers which message we've already played so re-entries with the
   // same message don't re-show it. Hydrated from sessionStorage on first
@@ -85,9 +92,16 @@ export function ExperienceUpdateBanner({ message, inView, variant = "orange" }) 
       // next mount falls back to lifetime-scoped dedupe.
     }
     setShown(true);
+    // Tell the parent the banner is now visible. The matching `false` is sent
+    // from UpdateBanner's onExitComplete below — i.e. only once the overlay has
+    // FULLY animated out and unmounted, not when `shown` flips false. That edge
+    // is what the years card waits for before pulsing its legend, so the
+    // heartbeat can never play under the still-fading banner regardless of how
+    // long the per-character exit stagger runs.
+    onVisibilityChange?.(true);
     const timer = setTimeout(() => setShown(false), VISIBLE_DURATION_MS);
     return () => clearTimeout(timer);
-  }, [message, inView]);
+  }, [message, inView, onVisibilityChange]);
 
   return (
     <UpdateBanner
@@ -95,6 +109,7 @@ export function ExperienceUpdateBanner({ message, inView, variant = "orange" }) 
       visible={shown}
       srPrefix="Experience update: "
       variant={variant}
+      onExitComplete={() => onVisibilityChange?.(false)}
     />
   );
 }

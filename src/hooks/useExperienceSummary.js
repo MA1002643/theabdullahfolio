@@ -20,7 +20,9 @@ const storageKey = (username) => `experience-summary:last-payload:${username}`;
 // start covers rename detection (title change with same start fires as
 // a "new role" record) while still avoiding false positives from
 // transient updatedAt-style fields not present on this payload.
-const roleKey = (r) => `${r?.company ?? ""}|${r?.role ?? ""}|${r?.start ?? ""}`;
+// Exported so the breakdown modal can build the SAME key for its rendered roles
+// and match them against `addedRoleKeys` (below) for the per-role heartbeat.
+export const roleKey = (r) => `${r?.company ?? ""}|${r?.role ?? ""}|${r?.start ?? ""}`;
 
 // Build the human-readable change message from a (prev, next) pair.
 // Returns null when nothing meaningful changed (banner stays hidden).
@@ -92,6 +94,70 @@ function buildChangeMessage(prev, next) {
   return null;
 }
 
+// Which split-bar categories actually GREW between (prev, next) — the labels
+// the years card heartbeats in its legend (issue #20 follow-up, mirroring the
+// Skills / Completed-projects category pulse). Returned values match the
+// ExperienceSplitBar legend labels EXACTLY ("Personal" / "Employment") so the
+// card can pulse a category's name + percentage by simple membership test.
+//
+// Derived from real growth (months up, a new repo/role, or a timeline shift),
+// NOT from which `buildChangeMessage` branch won — so the pulse always lands on
+// the side that moved even when a higher-priority message (e.g. an "X+ → Y+"
+// bucket cross) is what's shown. Both percentages technically shift when either
+// side moves (they're shares of the total), but only the side whose underlying
+// experience grew is the meaningful "this went up", so only it pulses.
+function changedExperienceCategories(prev, next) {
+  if (!prev || !next) return [];
+  const cats = [];
+
+  const prevRepoNames = new Set(
+    (prev.personalProjects?.repos ?? []).map((r) => r.name),
+  );
+  const newRepos = (next.personalProjects?.repos ?? []).filter(
+    (r) => !prevRepoNames.has(r.name),
+  );
+  const personalGrew =
+    (next.personalProjects?.months ?? 0) > (prev.personalProjects?.months ?? 0) ||
+    newRepos.length > 0 ||
+    prev.personalProjects?.firstRepoDate !== next.personalProjects?.firstRepoDate;
+  if (personalGrew) cats.push("Personal");
+
+  const prevRoleKeys = new Set((prev.employment?.roles ?? []).map(roleKey));
+  const newRoles = (next.employment?.roles ?? []).filter(
+    (r) => !prevRoleKeys.has(roleKey(r)),
+  );
+  const employmentGrew =
+    (next.employment?.months ?? 0) > (prev.employment?.months ?? 0) ||
+    newRoles.length > 0;
+  if (employmentGrew) cats.push("Employment");
+
+  return cats;
+}
+
+// The exact repos / roles ADDED between (prev, next) — surfaced so the breakdown
+// modal can heartbeat precisely those rows (repo name + date; role name +
+// company + duration) and the "N owned repositories" total, mirroring the
+// per-item heartbeat the Skills card applies to a just-added icon. Repos are
+// keyed by name, roles by the shared `roleKey`. Empty arrays on first load or
+// when nothing was added.
+function addedExperienceItems(prev, next) {
+  if (!prev || !next) return { repoNames: [], roleKeys: [] };
+
+  const prevRepoNames = new Set(
+    (prev.personalProjects?.repos ?? []).map((r) => r.name),
+  );
+  const repoNames = (next.personalProjects?.repos ?? [])
+    .filter((r) => r && typeof r.name === "string" && !prevRepoNames.has(r.name))
+    .map((r) => r.name);
+
+  const prevRoleKeys = new Set((prev.employment?.roles ?? []).map(roleKey));
+  const roleKeys = (next.employment?.roles ?? [])
+    .filter((r) => !prevRoleKeys.has(roleKey(r)))
+    .map(roleKey);
+
+  return { repoNames, roleKeys };
+}
+
 // Strip volatile fields before serialising — `generatedAt` and the
 // `changeFingerprint` itself change every fetch and would defeat the
 // "did anything *meaningful* change" check. `pdfStatus` and
@@ -154,7 +220,10 @@ function writeStoredPayload(username, content) {
  *   data: object|null,
  *   isLoading: boolean,
  *   error: Error|null,
- *   changeMessage: string|null
+ *   changeMessage: string|null,
+ *   changedCategories: string[],
+ *   addedRepoNames: string[],
+ *   addedRoleKeys: string[]
  * }}
  */
 export function useExperienceSummary(username) {
@@ -166,6 +235,15 @@ export function useExperienceSummary(username) {
   // meaningful diff is detected. Consumed by ExperienceUpdateBanner,
   // which manages its own one-shot-per-message display logic.
   const [changeMessage, setChangeMessage] = useState(null);
+  // The split-bar categories ("Personal" / "Employment") whose underlying
+  // experience grew this diff cycle — surfaced so the years card can heartbeat
+  // exactly those legend entries (label + percentage). `[]` when nothing grew
+  // or on first load, matching `changeMessage`'s null contract.
+  const [changedCategories, setChangedCategories] = useState([]);
+  // The exact repos / roles added this diff cycle, for the breakdown modal's
+  // per-row heartbeat. `[]` when nothing was added or on first load.
+  const [addedRepoNames, setAddedRepoNames] = useState([]);
+  const [addedRoleKeys, setAddedRoleKeys] = useState([]);
 
   useEffect(() => {
     // Clear any message from a previous username on every effect
@@ -174,6 +252,9 @@ export function useExperienceSummary(username) {
     // the caller has unset it). Per-poll clearing inside `fetchOnce`
     // handles the no-diff case; this clears the cross-username case.
     setChangeMessage(null);
+    setChangedCategories([]);
+    setAddedRepoNames([]);
+    setAddedRoleKeys([]);
 
     if (!username) {
       setIsLoading(false);
@@ -237,6 +318,13 @@ export function useExperienceSummary(username) {
         // one-shot display via sessionStorage, so writing `null` here
         // just means "no new banner-worthy change this poll".
         setChangeMessage(message);
+        // Per-category attribution for the legend heartbeat — derived from the
+        // same (prev, next) pair, so it stays in lockstep with the message.
+        setChangedCategories(changedExperienceCategories(prevContent, nextContent));
+        // Exact added repos / roles for the breakdown modal's per-row heartbeat.
+        const added = addedExperienceItems(prevContent, nextContent);
+        setAddedRepoNames(added.repoNames);
+        setAddedRoleKeys(added.roleKeys);
         writeStoredPayload(username, nextContent);
 
         setData(payload);
@@ -261,5 +349,13 @@ export function useExperienceSummary(username) {
     };
   }, [username]);
 
-  return { data, isLoading, error, changeMessage };
+  return {
+    data,
+    isLoading,
+    error,
+    changeMessage,
+    changedCategories,
+    addedRepoNames,
+    addedRoleKeys,
+  };
 }

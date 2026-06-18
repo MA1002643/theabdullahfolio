@@ -42,6 +42,15 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// "Just changed" heartbeat window — two clean 1s cycles of `skill-heartbeat`,
+// matching the Languages / Skills cards.
+const HEARTBEAT_MS = 2000;
+// Short beat between the change banner clearing and the heartbeat starting, so
+// the pulse plays just AFTER the banner rather than overlapping its fade-out.
+const POST_BANNER_BEAT_MS = 400;
+// Stable empty Set so "nothing pulsing" keeps a constant identity across renders.
+const EMPTY_FIELD_SET = new Set();
+
 // ----- Card-level variants -----
 const cardVariants = {
   hidden: { opacity: 0, y: 56, scale: 0.97 },
@@ -79,16 +88,19 @@ const metricRowVariants = {
 };
 
 // ----- Per-character title (blur-fade in) -----
-function AnimatedTitle({ text, play }) {
+function AnimatedTitle({ text, play, heartbeat = false }) {
   // Reduced-motion path: render a plain heading. The blur-fade-per-character
   // effect is purely decorative, and the staggered blur(6px) → blur(0) ramp
   // is exactly the kind of vestibular trigger the OS preference exists to
   // avoid. No motion, no per-char wrappers, no DOM bloat.
   const prefersReducedMotion = useReducedMotion();
+  // "Just changed" heartbeat on the repo name (CSS no-ops it under reduced
+  // motion, so the class is safe to carry on either branch).
+  const pulseClass = heartbeat ? " skill-heartbeat" : "";
   if (prefersReducedMotion) {
     return (
       <h3
-        className="text-xl font-semibold break-words"
+        className={`text-xl font-semibold break-words${pulseClass}`}
         style={{ color: "#ff6d05", textShadow: "none" }}
       >
         {text}
@@ -116,7 +128,7 @@ function AnimatedTitle({ text, play }) {
       variants={container}
       initial="hidden"
       animate={play ? "visible" : "hidden"}
-      className="text-xl font-semibold break-words"
+      className={`text-xl font-semibold break-words${pulseClass}`}
       style={{ color: "#ff6d05", textShadow: "none" }}
       aria-label={text}
     >
@@ -135,7 +147,7 @@ function AnimatedTitle({ text, play }) {
 }
 
 // ----- Single metric row: count-up + optional post-count pulse -----
-function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseOnComplete = false, prefersReducedMotion = false }) {
+function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseOnComplete = false, heartbeat = false, prefersReducedMotion = false }) {
   // When reduced motion is requested, initialize the display directly at the
   // target so the value reads instantly with no animated progression.
   const target = isDate ? value : Number(value) || 0;
@@ -147,6 +159,12 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
   // 2 s gives the slow-settle phase room to breathe — at the previous 1.1 s
   // the settle phase compressed into ~800 ms and the elite landing felt rushed.
   const DURATION = 2000;
+
+  // "Just changed" heartbeat applies to the WHOLE row — icon, label, and value
+  // beat together so a risen metric reads as one unit (e.g. the star icon, the
+  // "Stars" label, and the number all pulse). CSS no-ops `skill-heartbeat` under
+  // reduced motion, so the class is safe to carry regardless.
+  const beatClass = heartbeat ? " skill-heartbeat" : "";
 
   useEffect(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -220,12 +238,12 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
         <motion.span
           whileHover={prefersReducedMotion ? undefined : { scale: 1.25, rotate: 6 }}
           transition={{ type: "spring", stiffness: 400 }}
-          className="flex-shrink-0"
+          className={`flex-shrink-0${beatClass}`}
         >
           <Icon className="w-4 h-4" style={{ color: "#ffaa2a" }} />
         </motion.span>
         <span
-          className="text-xs sm:text-sm truncate text-fire-amber"
+          className={`text-xs sm:text-sm truncate text-fire-amber${beatClass}`}
           style={{ textShadow: "none" }}
         >
           {label}
@@ -234,7 +252,11 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
       <motion.span
         animate={pulse ? { scale: [1, 1.18, 1], transition: { duration: 0.4, ease: "easeOut" } } : { scale: 1 }}
         onAnimationComplete={() => pulse && setPulse(false)}
-        className="text-xs sm:text-sm font-semibold tabular-nums whitespace-nowrap"
+        // `beatClass` is the post-banner "this value just rose" opacity pulse
+        // (skill-heartbeat), independent of the local `pulse` scale-bounce that
+        // fires on count-up completion — the two compose without fighting. The
+        // same class also rides the icon + label above so the whole row beats.
+        className={`text-xs sm:text-sm font-semibold tabular-nums whitespace-nowrap${beatClass}`}
         style={{
           color: "#ff6d05",
           textShadow: "none",
@@ -258,7 +280,7 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
 }
 
 // ----- Activity score arc (SVG) -----
-function ActivityArc({ score, maxScore = 10000, playToken, prefersReducedMotion = false }) {
+function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, prefersReducedMotion = false }) {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const controls = useAnimation();
@@ -385,7 +407,10 @@ function ActivityArc({ score, maxScore = 10000, playToken, prefersReducedMotion 
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
-            className="text-xs font-bold leading-none tabular-nums"
+            // "Just changed" heartbeat when the rounded activity score moves —
+            // only the number beats (the arc + "score"/"Activity Score" labels
+            // hold). CSS no-ops `skill-heartbeat` under reduced motion.
+            className={`text-xs font-bold leading-none tabular-nums${heartbeat ? " skill-heartbeat" : ""}`}
             style={{ color: "#ff6d05", textShadow: "none" }}
           >
             {/* Same accessibility split as MetricRow: `displayScore` cycles
@@ -417,7 +442,7 @@ function ActivityArc({ score, maxScore = 10000, playToken, prefersReducedMotion 
 }
 
 // ----- Main card -----
-export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
+export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFields }) {
   const ref = useRef(null);
   // Two visibility signals, intentionally separated:
   //   - `playToken` (latched + hysteresis-debounced, monotonic) drives the
@@ -439,6 +464,69 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
   // who've opted out of motion.
   const prefersReducedMotion = useReducedMotion();
 
+  // ── "Just changed" heartbeat ────────────────────────────────────────────────
+  // Pulse, AFTER the update banner and once the card is in view, whatever the
+  // banner just announced: the repo name, the primary language, and each metric
+  // ROW that rose — where a metric row beats as a whole (icon + label + value),
+  // so "Stars increased" pulses the star icon, the "Stars" label, and the number
+  // together. The standalone-card analog of the Languages popover's "name +
+  // percentage" beat. `pulseFields` is the changed-field list
+  // (['name','stars','language',…]) from the parent's repo diff.
+  //
+  // These hooks sit ABOVE the `if (!data)` early return so the hook order stays
+  // stable across renders (rules of hooks). `showMessage` mirrors the banner's
+  // own message gate.
+  const showMessage = isUpdated && diffMessage ? diffMessage : null;
+
+  // Capture the changed fields locally when they arrive, held until the pulse
+  // consumes them — the parent clears `pulseFields` on its banner auto-timer, so
+  // relying on the live prop could strip them before the post-banner pulse runs.
+  // Gate the capture on the fields' CONTENT (joined key), since the array prop's
+  // identity changes every render.
+  const [pendingFields, setPendingFields] = useState([]);
+  const fieldsKey = Array.isArray(pulseFields) ? pulseFields.join(",") : "";
+  useEffect(() => {
+    if (fieldsKey) setPendingFields(fieldsKey.split(","));
+  }, [fieldsKey]);
+
+  // Banner-gone gate. A fresh message un-gates (so its later clear arms a new
+  // pulse); when the message clears (present → absent) a short beat opens the
+  // gate. Using the message-cleared edge (not the overlay's onExitComplete)
+  // keeps the pulse robust to the banner being auto-cleared while the card is
+  // off-screen — it then still plays when the user scrolls the card in.
+  const [bannerGone, setBannerGone] = useState(false);
+  const prevShowRef = useRef(showMessage);
+  const beatTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(beatTimerRef.current), []);
+  useEffect(() => {
+    const prev = prevShowRef.current;
+    prevShowRef.current = showMessage;
+    if (showMessage) {
+      setBannerGone(false);
+      clearTimeout(beatTimerRef.current);
+    } else if (prev && !showMessage) {
+      clearTimeout(beatTimerRef.current);
+      beatTimerRef.current = setTimeout(() => setBannerGone(true), POST_BANNER_BEAT_MS);
+    }
+  }, [showMessage]);
+
+  // Fire the one-shot pulse once the gate is open and the card is in view.
+  const [pulsing, setPulsing] = useState(EMPTY_FIELD_SET);
+  const pulseArmedRef = useRef(false);
+  const pulseTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(pulseTimerRef.current), []);
+  useEffect(() => {
+    if (prefersReducedMotion || pulseArmedRef.current) return;
+    if (!bannerGone || !isInView || pendingFields.length === 0) return;
+    pulseArmedRef.current = true;
+    setPulsing(new Set(pendingFields));
+    pulseTimerRef.current = setTimeout(() => {
+      setPulsing(EMPTY_FIELD_SET);
+      setPendingFields([]);
+      pulseArmedRef.current = false;
+    }, HEARTBEAT_MS);
+  }, [bannerGone, isInView, pendingFields, prefersReducedMotion]);
+
   if (!data) return null;
 
   const {
@@ -457,11 +545,13 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
     activityScore = 0,
   } = data;
 
+  // `field` keys the row to the repo-diff's changed-field list so a risen metric
+  // heartbeats. "Last Pushed" has no field — a timestamp change isn't a "rise".
   const metrics = [
-    { icon: Star, label: "Stars", value: stars, pulseOnComplete: true },
-    { icon: GitFork, label: "Forks", value: forks },
-    { icon: GitMerge, label: "Merged PRs", value: mergedPRs },
-    { icon: GitCommitHorizontal, label: "Total Commits", value: commitCount },
+    { icon: Star, label: "Stars", value: stars, field: "stars", pulseOnComplete: true },
+    { icon: GitFork, label: "Forks", value: forks, field: "forks" },
+    { icon: GitMerge, label: "Merged PRs", value: mergedPRs, field: "mergedPRs" },
+    { icon: GitCommitHorizontal, label: "Total Commits", value: commitCount, field: "commitCount" },
     { icon: Clock, label: "Last Pushed", value: pushedAt, isDate: true },
   ];
 
@@ -486,7 +576,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
             className="w-5 h-5 flex-shrink-0"
             style={{ color: "#ffaa2a" }}
           />
-          <AnimatedTitle text={name} play={settledInView} />
+          <AnimatedTitle text={name} play={settledInView} heartbeat={pulsing.has("name")} />
         </div>
         <span
           // Eyebrow microlabel — same role as "CAREER SNAPSHOT" on the
@@ -548,7 +638,10 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
           }
         />
         <span
-          className="text-sm font-light text-fire-amber"
+          // "Just changed" heartbeat when the repo's primary language shifts —
+          // only the language NAME beats (the dot keeps its own breathing glow).
+          // CSS no-ops `skill-heartbeat` under reduced motion.
+          className={`text-sm font-light text-fire-amber${pulsing.has("language") ? " skill-heartbeat" : ""}`}
           style={{ textShadow: "none" }}
         >
           {language}
@@ -570,10 +663,10 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage }) {
           className="flex flex-col gap-1 w-full sm:w-auto sm:flex-1 sm:min-w-[200px]"
         >
           {metrics.map((m) => (
-            <MetricRow key={m.label} {...m} playToken={playToken} prefersReducedMotion={prefersReducedMotion} />
+            <MetricRow key={m.label} {...m} playToken={playToken} heartbeat={m.field ? pulsing.has(m.field) : false} prefersReducedMotion={prefersReducedMotion} />
           ))}
         </motion.div>
-        <ActivityArc score={activityScore} playToken={playToken} prefersReducedMotion={prefersReducedMotion} />
+        <ActivityArc score={activityScore} playToken={playToken} heartbeat={pulsing.has("activityScore")} prefersReducedMotion={prefersReducedMotion} />
       </motion.div>
     </motion.div>
   );
