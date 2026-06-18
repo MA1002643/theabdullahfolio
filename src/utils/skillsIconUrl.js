@@ -38,10 +38,15 @@ export function emptyCategories() {
  * @returns {string}
  */
 export function getIconUrl(slug, source = "skillicons") {
-  if (source === "simpleicons") return `https://cdn.simpleicons.org/${slug}`;
+  // Defensive only: every slug we emit is already [a-z0-9] (curated short names
+  // + the Simple Icons fallback's `replace(/[^a-z0-9]/g, "")`), so this is a
+  // no-op for current inputs. It just keeps the URL well-formed if a future
+  // caller ever passes a slug containing reserved characters.
+  const encoded = encodeURIComponent(slug);
+  if (source === "simpleicons") return `https://cdn.simpleicons.org/${encoded}`;
   if (source === "devicon") {
-    return `https://raw.githubusercontent.com/devicons/devicon/master/icons/${slug}/${slug}-original.svg`;
+    return `https://raw.githubusercontent.com/devicons/devicon/master/icons/${encoded}/${encoded}-original.svg`;
   }
   // skillicons (default + safe fallback for an unknown source value)
-  return `https://skillicons.dev/icons?i=${slug}`;
+  return `https://skillicons.dev/icons?i=${encoded}`;
 }

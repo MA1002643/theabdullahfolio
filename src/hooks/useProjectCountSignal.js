@@ -121,7 +121,7 @@ export function useProjectCountSignal(breakdown) {
   // Derived, deterministic trigger so the effect runs only when the breakdown
   // actually moves (a project added/removed/moved, or a new category), never on
   // an unrelated re-render. `count` is the sum (drives the banner total);
-  // `fingerprint` is the ordered label:count string (the change-only key).
+  // `fingerprint` is the label:count signature (the change-only key).
   const count = useMemo(
     () =>
       Array.isArray(breakdown)
@@ -129,8 +129,21 @@ export function useProjectCountSignal(breakdown) {
         : 0,
     [breakdown],
   );
+  // Order-INSENSITIVE: `PROJECT_CATEGORY_BREAKDOWN` is sorted by count, so tied
+  // categories (or a reorder of `projectsData`) can change the array order with
+  // identical per-category counts. The effect's actual change detection is
+  // order-insensitive (sum + per-label `toCatMap` compare), so an order-sensitive
+  // key would only cause harmless redundant effect runs — but sorting the pairs
+  // keeps the trigger consistent with the semantics it gates (labels are unique,
+  // so the sorted multiset is canonical) and avoids those redundant runs.
   const fingerprint = useMemo(
-    () => (Array.isArray(breakdown) ? breakdown.map((b) => `${b.label}:${b.count}`).join("|") : ""),
+    () =>
+      Array.isArray(breakdown)
+        ? breakdown
+            .map((b) => `${b.label}:${b.count}`)
+            .sort()
+            .join("|")
+        : "",
     [breakdown],
   );
 

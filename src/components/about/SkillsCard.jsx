@@ -957,7 +957,14 @@ export default function SkillsCard({ username }) {
       // Storage blocked (private mode) — fall through to a live fetch.
     }
 
-    const needsRefresh = !lastFetched || Date.now() - Number(lastFetched) > CACHE_TTL_MS;
+    // Coerce first and guard non-finite values: a corrupt / hand-edited
+    // `lastFetched` (e.g. "abc") yields NaN, and every NaN comparison is false —
+    // so the old `Date.now() - Number(lastFetched) > TTL` test would read as
+    // "fresh" forever and suppress all live refreshes. A missing/empty value
+    // coerces to 0, which is correctly treated as stale → refresh.
+    const lastFetchedMs = Number(lastFetched);
+    const needsRefresh =
+      !Number.isFinite(lastFetchedMs) || Date.now() - lastFetchedMs > CACHE_TTL_MS;
 
     if (!needsRefresh && cached) {
       try {
