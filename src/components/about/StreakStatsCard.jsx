@@ -238,9 +238,19 @@ export default function StreakStatsCard({ data }) {
     pendingFieldsRef.current = pendingFields;
   }, [pendingFields]);
   const fieldsKey = Array.isArray(increasedFields) ? increasedFields.join(",") : "";
+  // Capture the risen fields per NEW banner message — the EMPTY case included. The
+  // old `if (fieldsKey) …` capture ran ONLY for a non-empty list, so a changed-but-
+  // no-increase diff (a streak decrease / recount) — where the hook sets a
+  // `pendingMessage` but `increasedFields` is [] — left the PREVIOUS cycle's fields
+  // in `pendingFields`, which then heart-beat stale rows right after the new banner.
+  // Keying on `pendingMessage` (set together with `increasedFields` by the hook)
+  // clears them for the empty case too; the `!pendingMessage` guard ignores the
+  // hook's later `clearIncreased()` (which empties `increasedFields`) so a
+  // not-yet-run pulse keeps the fields it still needs.
   useEffect(() => {
-    if (fieldsKey) setPendingFields(fieldsKey.split(","));
-  }, [fieldsKey]);
+    if (!pendingMessage) return;
+    setPendingFields(fieldsKey ? fieldsKey.split(",") : []);
+  }, [pendingMessage, fieldsKey]);
 
   // Banner-gone gate: a fresh banner closes the gate; when it clears, a short beat
   // opens it so the pulse plays just AFTER the overlay fades, never under it.
