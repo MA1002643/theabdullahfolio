@@ -141,3 +141,68 @@ export function diffLanguages(prev, next) {
 
   return { hasChanges: true, changeType, summaryMessage, details };
 }
+
+/**
+ * From a `diffLanguages` details object, the names of languages that ROSE —
+ * either moved UP in rank (to a lower index) or whose percentage INCREASED.
+ * These are the rows the "Most Used Languages" card heartbeats after its update
+ * banner. A drop in rank or percentage is deliberately NOT flagged: only
+ * positive movement draws the eye (matches the request's "moves up in position
+ * or its percentage increases"). Deduped across both signals.
+ *
+ * @param {{ percentChanges?: Array<{language:string,delta:number}>, rankChanges?: Array<{language:string,from:number,to:number}> }} details
+ * @returns {string[]}
+ */
+export function risenLanguages(details) {
+  if (!details) return [];
+  const names = new Set();
+  for (const c of details.percentChanges ?? []) {
+    if (c.delta > 0) names.add(c.language);
+  }
+  for (const c of details.rankChanges ?? []) {
+    if (c.to < c.from) names.add(c.language); // lower index = higher rank
+  }
+  return Array.from(names);
+}
+
+/**
+ * Keys (`"<language>::<repoName>"`) of repos that ROSE within a language's
+ * per-repo breakdown — their share INCREASED or they moved UP a rank in that
+ * language's `repos` list — between two language snapshots. Powers the
+ * heartbeat on the matching rows of the Languages card's repository-breakdown
+ * popover.
+ *
+ * Only languages present in BOTH snapshots are compared (a brand-new language's
+ * repos have no prior share to have "risen" from), and within them only repos
+ * present in both prev/next `repos`. Drops are not flagged — parity with
+ * `risenLanguages`. Repos are matched by name. Percentages compared at 2-dp to
+ * match the fingerprint's resolution, so sub-0.01 float noise isn't a "rise".
+ *
+ * @param {Array} prev - previously-seen language list
+ * @param {Array} next - latest language list
+ * @returns {string[]}
+ */
+export function risenRepoKeys(prev, next) {
+  const prevList = Array.isArray(prev) ? prev : [];
+  const nextList = Array.isArray(next) ? next : [];
+  const prevByLang = new Map(prevList.map((l) => [l?.language, l]));
+  const keys = [];
+  for (const lang of nextList) {
+    const prevLang = prevByLang.get(lang?.language);
+    if (!prevLang) continue;
+    const nextRepos = Array.isArray(lang.repos) ? lang.repos : [];
+    const prevRepos = Array.isArray(prevLang.repos) ? prevLang.repos : [];
+    const prevByName = new Map(
+      prevRepos.map((r, i) => [r?.name, { pct: pct(r?.percentage), rank: i }]),
+    );
+    nextRepos.forEach((r, i) => {
+      const prevRepo = prevByName.get(r?.name);
+      if (!prevRepo) return;
+      const increased =
+        Number(pct(r?.percentage).toFixed(2)) > Number(prevRepo.pct.toFixed(2));
+      const movedUp = i < prevRepo.rank;
+      if (increased || movedUp) keys.push(`${lang.language}::${r.name}`);
+    });
+  }
+  return keys;
+}

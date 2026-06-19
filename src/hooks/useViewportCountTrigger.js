@@ -20,8 +20,10 @@ import { useEffect, useRef, useState } from "react";
  *   - Continuous visibility (incl. brief flickers absorbed by
  *     `leaveDelayMs`) → playToken stable, consumer effect does not re-
  *     fire purely because of the flicker.
- *   - Sustained exit (≥ `leaveDelayMs` outside the viewport) re-arms
- *     the trigger; the next entry increments playToken again.
+ *   - Sustained FULL exit (≥ `leaveDelayMs` with NO part of the element
+ *     visible) re-arms the trigger; the next entry increments playToken
+ *     again. A dip below `amount` while still partially visible does NOT
+ *     re-arm — see the asymmetric-threshold note on the observers below.
  *
  * Returns `{ isInView, playToken, settledInView }`:
  *   - `isInView` mirrors the underlying observer (use it for things
@@ -55,7 +57,21 @@ export function useViewportCountTrigger(ref, options = {}) {
     leaveDelayMs = 300,
   } = options;
 
+  // ASYMMETRIC thresholds break a self-sustaining flicker loop. The replay-on-
+  // view cards observe the SAME element they animate; a reversible entrance with
+  // a `translateY` can dip the element back under `amount` while it's parked
+  // partially visible, which (with a single threshold) would flip the trigger
+  // off → reset the entrance → move the element back over `amount` → fire again,
+  // looping forever (the "content loads on and off when half-visible" glitch).
+  //   - `isInView`   (>= `amount`, e.g. 30%) → ENTERS / fires the trigger.
+  //   - `anyVisible` (any pixel)             → gates the RESET: we only re-arm /
+  //     reverse the entrance once the element is essentially GONE, not merely
+  //     below `amount`. The entrance's own small transform can never push a
+  //     parked card fully off-screen, so it can no longer reset itself.
+  // Replay on a genuine scroll-away still works: a full exit clears `anyVisible`,
+  // which (after the debounce) re-arms and reverses for the next true entry.
   const isInView = useInView(ref, { once: false, amount, margin });
+  const anyVisible = useInView(ref, { once: false, amount: "some", margin });
 
   // `playToken` (monotonic trigger count) and `settledInView` (debounced,
   // reversible visibility) are the only state — all other "is it time to
@@ -93,19 +109,31 @@ export function useViewportCountTrigger(ref, options = {}) {
         armedRef.current = false;
         setPlayToken((t) => t + 1);
       }
+    } else if (anyVisible) {
+      // Below the trigger `amount` but still partially on screen — HOLD. Cancel
+      // any pending reset and do NOT schedule one. This is the loop-breaker: the
+      // entrance's own transform can dip the element under `amount`, but as long
+      // as any part is visible we keep the entrance latched so it COMPLETES
+      // instead of restarting. (We deliberately don't re-fire the trigger here.)
+      if (leaveTimerRef.current) {
+        clearTimeout(leaveTimerRef.current);
+        leaveTimerRef.current = null;
+      }
     } else if (!leaveTimerRef.current) {
-      // Sustained-exit candidate. Don't immediately re-arm — wait the
-      // debounce so brief intersection-observer wobble (especially on
-      // mobile momentum scroll past element edges) is absorbed.
+      // Fully out of view — the genuine sustained-exit candidate. Don't
+      // immediately re-arm — wait the debounce so brief intersection-observer
+      // wobble (especially on mobile momentum scroll past element edges) is
+      // absorbed; only a real, complete exit re-arms the replay.
       leaveTimerRef.current = setTimeout(() => {
         armedRef.current = true;
         // Reset the reversible entrance so the NEXT true entry replays it.
-        // Only fires after a sustained exit, so flicker can't reset it.
+        // Only fires after a sustained FULL exit, so partial-visibility wobble
+        // can't reset it.
         setSettledInView(false);
         leaveTimerRef.current = null;
       }, leaveDelayMs);
     }
-  }, [isInView, leaveDelayMs]);
+  }, [isInView, anyVisible, leaveDelayMs]);
 
   // Cleanup only on unmount. Note this is intentionally a separate
   // effect with an empty dep array: the cleanup in the trigger effect

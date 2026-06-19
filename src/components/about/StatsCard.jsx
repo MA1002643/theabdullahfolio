@@ -34,6 +34,14 @@ const DURATION_MS = 2000;
 // Banner lingers 4.5s, then auto-hides — local to the card so it dismisses
 // well before the parent's coarser 10s changedFields reset.
 const BANNER_VISIBLE_MS = 4500;
+// "Just changed" heartbeat window — two clean 1s cycles of `skill-heartbeat`,
+// matching the Languages / Repo cards.
+const HEARTBEAT_MS = 2000;
+// Short beat between the banner clearing and the heartbeat starting, so the
+// pulse plays just AFTER the banner rather than overlapping its fade-out.
+const POST_BANNER_BEAT_MS = 400;
+// Stable empty Set so "nothing pulsing" keeps a constant identity across renders.
+const EMPTY_FIELD_SET = new Set();
 
 // ----- Card-level choreography (mirrors RepoStatsCard) -----
 const cardVariants = {
@@ -134,7 +142,7 @@ function AnimatedTitle({ text, play }) {
    headline stat (Stars) gets a single scale-pulse the instant it lands.
    Accessibility: the animated digits are aria-hidden and an sr-only span
    carries the final value so AT never hears "0". */
-function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = false, prefersReducedMotion }) {
+function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = false, heartbeat = false, prefersReducedMotion }) {
     const target = Number(value) || 0;
     const [display, setDisplay] = useState(prefersReducedMotion ? target : 0);
     const [pulse, setPulse] = useState(false);
@@ -201,14 +209,17 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
                 >
                     <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: AMBER }} />
                 </motion.span>
-                <span className="text-xs sm:text-sm md:text-base truncate text-fire-amber" style={{ textShadow: "none" }}>
+                <span className={`text-xs sm:text-sm md:text-base truncate text-fire-amber${heartbeat ? " skill-heartbeat" : ""}`} style={{ textShadow: "none" }}>
                     {label}
                 </span>
             </div>
             <motion.span
                 animate={pulse ? { scale: [1, 1.18, 1], transition: { duration: 0.4, ease: "easeOut" } } : { scale: 1 }}
                 onAnimationComplete={() => pulse && setPulse(false)}
-                className="text-xs sm:text-sm md:text-base font-semibold tabular-nums whitespace-nowrap"
+                // `heartbeat` is the post-banner "this stat just rose" opacity pulse
+                // (skill-heartbeat) on BOTH the label (above) and this number,
+                // independent of the local `pulse` scale-bounce on count-up landing.
+                className={`text-xs sm:text-sm md:text-base font-semibold tabular-nums whitespace-nowrap${heartbeat ? " skill-heartbeat" : ""}`}
                 style={{ color: ORANGE, textShadow: "none" }}
             >
                 <span className="sr-only">{target.toLocaleString()}</span>
@@ -306,7 +317,7 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
 }
 
 /* ---------------------------------- CARD ---------------------------------- */
-export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated, diffMessage = null, isLive = false }) {
+export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated, diffMessage = null, pulseFields, isLive = false }) {
     const cardRef = useRef(null);
     // `playToken` (latched, hysteresis-debounced, monotonic) drives the
     // count-ups/arc, which key off its value and replay each entry on their
@@ -317,32 +328,143 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
     const { isInView, playToken, settledInView } = useViewportCountTrigger(cardRef, { amount: 0.3, margin: "-50px" });
     const prefersReducedMotion = useReducedMotion();
 
-    // Banner message: prefer the specific per-stat diff; fall back to a generic
-    // line for non-value changes (e.g. display name). No change → no banner.
-    const bannerMessage = diffMessage ?? (isUpdated ? "GitHub stats updated" : null);
-    const [bannerDismissed, setBannerDismissed] = useState(false);
-    // Auto-hide timer is gated on `isInView`, NOT just on `bannerMessage`:
-    // the banner only paints while in view (`visible={isInView}` below), so if
-    // an update lands while the card is off-screen we must NOT start the 4.5s
-    // countdown — otherwise it would expire unseen and the banner would be
-    // permanently dismissed before the user ever scrolls to it. Tying both the
-    // start and the cleanup to `isInView` means the timer begins on the entry
-    // that actually shows the banner, cancels when the card leaves the
-    // viewport, and re-arms (re-showing) on a later re-entry while the message
-    // still stands — matching how the repo/experience banners key off view.
+    // Incoming change copy from the parent — prefer the specific per-stat diff,
+    // fall back to a generic line for non-value changes (e.g. display name).
+    const incomingMessage = diffMessage ?? (isUpdated ? "GitHub stats updated" : null);
+
+    // Self-contained banner state — mirrors LanguagesCard / SkillsCard so the
+    // banner can NEVER get stuck. The parent's message is captured into LOCAL
+    // state the MOMENT it arrives (NOT gated on in-view), then displayed and
+    // auto-hidden only once the card has settled in view.
+    //
+    // Capturing immediately is load-bearing. The parent (index.jsx) clears
+    // `statsDiffMessage` / `statsChangedFields` on a coarse 10s timer, so an
+    // update that lands while this card is off-screen would otherwise vanish from
+    // props before an in-view-gated capture could copy it — taking the banner AND
+    // (via the `statsBannerGone` gate below, which only flips on this local
+    // banner's shown→hidden edge) the heartbeat with it. The local copy outlives
+    // the parent's reset, so a later scroll-in still shows both. This matches the
+    // `pendingStats` capture further down, which is already view-independent.
+    //
+    // Display + auto-hide gate on `settledInView` (debounced, flicker-immune),
+    // which is what keeps the banner from getting stuck — the original bug keyed
+    // on raw `isInView`, which flickers while scrolling, so every flicker
+    // re-opened the banner and restarted the auto-hide timer and it never settled
+    // to hidden. `settledInView` only flips on a genuine enter/exit, so the 4.5s
+    // window is spent on real in-view time and always resolves to hidden.
+    const [bannerMessage, setBannerMessage] = useState(null);
+    const lastShownRef = useRef(null);
+
+    // Capture a genuinely NEW message into local state as soon as it arrives,
+    // regardless of viewport (see the rationale above — survives the parent's 10s
+    // reset). The ref guards against re-capturing the SAME message after it has
+    // hidden; showing it is deferred to `settledInView` by the banner + auto-hide.
     useEffect(() => {
-        if (!bannerMessage || !isInView) return;
-        setBannerDismissed(false);
-        const timer = setTimeout(() => setBannerDismissed(true), BANNER_VISIBLE_MS);
+        if (!incomingMessage) return;
+        if (lastShownRef.current === incomingMessage) return;
+        lastShownRef.current = incomingMessage;
+        setBannerMessage(incomingMessage);
+    }, [incomingMessage]);
+
+    // When the upstream message clears, drop the guard so an identical future
+    // change can show again.
+    useEffect(() => {
+        if (!incomingMessage) lastShownRef.current = null;
+    }, [incomingMessage]);
+
+    // Auto-hide — gated on the local message AND `settledInView`, so the 4.5s
+    // visible window is measured from when the card is actually seen (a message
+    // captured off-screen waits to be shown), and only the debounced, flicker-
+    // immune `settledInView` can start/clear it — a raw isInView flicker never
+    // could. Always resolves to hidden after BANNER_VISIBLE_MS of in-view time.
+    useEffect(() => {
+        if (!bannerMessage || !settledInView) return undefined;
+        const timer = setTimeout(() => setBannerMessage(null), BANNER_VISIBLE_MS);
         return () => clearTimeout(timer);
-    }, [bannerMessage, isInView]);
+    }, [bannerMessage, settledInView]);
+
+    // ── "Just rose" heartbeat ───────────────────────────────────────────────
+    // Pulse the label + number of every stat that went UP, AFTER the banner and
+    // once the card is in view (same model as the Languages / Repo cards).
+    // `pulseFields` is the risen-stat list (['stars','commits',…]) from the
+    // parent's stats diff.
+    //
+    // Capture the risen-stat fields locally, held until the pulse consumes them —
+    // the parent clears `pulseFields` on its 10s reset, so relying on the live
+    // prop could strip them before the (post-banner) pulse runs.
+    const [pendingStats, setPendingStats] = useState([]);
+    const statsFieldsKey = Array.isArray(pulseFields) ? pulseFields.join(",") : "";
+    // Snapshot the fields per NEW banner message — the EMPTY case included. The
+    // old `if (statsFieldsKey) …` capture ran ONLY for a non-empty list, so a
+    // newer message carrying no risen stats (a decrease, or a non-stat change like
+    // a display-name edit) left the PREVIOUS update's fields in `pendingStats`,
+    // which then heart-beat stale rows right after the new banner. Keying on the
+    // message clears them for the empty case too, while the `null` branch ignores
+    // the parent's later 10s reset (it nulls the message AND empties `pulseFields`)
+    // so a not-yet-run pulse keeps the fields it still needs.
+    const pendingMsgRef = useRef(null);
+    useEffect(() => {
+        if (!incomingMessage) {
+            pendingMsgRef.current = null;
+            return;
+        }
+        if (pendingMsgRef.current === incomingMessage) return;
+        pendingMsgRef.current = incomingMessage;
+        setPendingStats(statsFieldsKey ? statsFieldsKey.split(",") : []);
+    }, [incomingMessage, statsFieldsKey]);
+
+    // Banner-gone gate, keyed on the card's OWN local banner: a fresh banner
+    // un-gates (so its later clear arms a new pulse); when the banner clears
+    // (shown → hidden) a short beat opens the gate so the pulse plays just AFTER
+    // it, never under the still-fading overlay.
+    const [statsBannerGone, setStatsBannerGone] = useState(false);
+    const prevBannerRef = useRef(bannerMessage);
+    const beatTimerRef = useRef(null);
+    useEffect(() => () => clearTimeout(beatTimerRef.current), []);
+    useEffect(() => {
+        const prev = prevBannerRef.current;
+        prevBannerRef.current = bannerMessage;
+        if (bannerMessage) {
+            setStatsBannerGone(false);
+            clearTimeout(beatTimerRef.current);
+        } else if (prev && !bannerMessage) {
+            clearTimeout(beatTimerRef.current);
+            beatTimerRef.current = setTimeout(() => setStatsBannerGone(true), POST_BANNER_BEAT_MS);
+        }
+    }, [bannerMessage]);
+
+    // Fire the one-shot pulse once the gate is open and the card is in view.
+    const [pulsingStats, setPulsingStats] = useState(EMPTY_FIELD_SET);
+    const statsArmedRef = useRef(false);
+    const statsPulseTimerRef = useRef(null);
+    useEffect(() => () => clearTimeout(statsPulseTimerRef.current), []);
+    useEffect(() => {
+        if (prefersReducedMotion || statsArmedRef.current) return;
+        if (!statsBannerGone || !isInView || pendingStats.length === 0) return;
+        statsArmedRef.current = true;
+        // Snapshot the exact fields this pulse covers so the timer can tell
+        // whether a newer update replaced them mid-window.
+        const armedKey = pendingStats.join(",");
+        setPulsingStats(new Set(pendingStats));
+        statsPulseTimerRef.current = setTimeout(() => {
+            setPulsingStats(EMPTY_FIELD_SET);
+            statsArmedRef.current = false;
+            // Clear pendingStats ONLY if it's still the set we just pulsed. If a
+            // new pulseFields update landed during the window, the capture effect
+            // already replaced pendingStats with different fields — clearing
+            // unconditionally would wipe them and lose that change's heartbeat.
+            // Leaving them intact lets the banner-gone gate re-arm once the new
+            // change's banner clears (a fresh statsBannerGone edge re-runs this).
+            setPendingStats((cur) => (cur.join(",") === armedKey ? [] : cur));
+        }, HEARTBEAT_MS);
+    }, [statsBannerGone, isInView, pendingStats, prefersReducedMotion]);
 
     const stats = [
-        { label: "Total Stars Earned", value: data.stars, icon: Star, pulseOnComplete: true },
-        { label: "Total Commits (last year)", value: data.commits, icon: Clock },
-        { label: "Total PRs", value: data.prs, icon: GitBranch },
-        { label: "Total Issues", value: data.issues, icon: AlertCircle },
-        { label: "Contributed to (last year)", value: data.contributedTo, icon: Package },
+        { label: "Total Stars Earned", value: data.stars, icon: Star, field: "stars", pulseOnComplete: true },
+        { label: "Total Commits (last year)", value: data.commits, icon: Clock, field: "commits" },
+        { label: "Total PRs", value: data.prs, icon: GitBranch, field: "prs" },
+        { label: "Total Issues", value: data.issues, icon: AlertCircle, field: "issues" },
+        { label: "Contributed to (last year)", value: data.contributedTo, icon: Package, field: "contributedTo" },
     ];
 
     return (
@@ -354,8 +476,8 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg h-full"
         >
             <UpdateBanner
-                message={bannerDismissed ? null : bannerMessage}
-                visible={isInView}
+                message={bannerMessage}
+                visible={Boolean(bannerMessage) && settledInView}
                 srPrefix="Stats update: "
             />
 
@@ -412,6 +534,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
                             label={stat.label}
                             value={stat.value}
                             pulseOnComplete={stat.pulseOnComplete}
+                            heartbeat={pulsingStats.has(stat.field)}
                             playToken={playToken}
                             prefersReducedMotion={prefersReducedMotion}
                         />

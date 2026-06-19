@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -13,6 +14,7 @@ import { createPortal } from "react-dom";
 import { UpdateBanner } from "./UpdateBanner";
 
 import { useLanguagesUpdateSignal } from "@/hooks/useLanguagesUpdateSignal";
+import { useStaggeredScrollReveal } from "@/hooks/useStaggeredScrollReveal";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { fastStartSlowFinish } from "@/utils/animationCurves";
 
@@ -23,6 +25,14 @@ import { fastStartSlowFinish } from "@/utils/animationCurves";
 const COUNT_UP_DURATION = 2; // seconds
 // How long the change banner lingers once the section scrolls into view.
 const BANNER_AUTO_HIDE_MS = 4500;
+// "Just changed" heartbeat window — 2000ms = exactly two 1s cycles of the
+// shared `skill-heartbeat` animation, so the pulse always ends on its resting
+// keyframe (no mid-dip snap when the class is removed). Same value + rationale
+// as the Skills card's HEARTBEAT_MS.
+const HEARTBEAT_MS = 2000;
+// Stable empty Set so a language with no armed popover repos hands the popover a
+// constant identity (the default never changes between renders).
+const EMPTY_NAME_SET = new Set();
 
 // ----- Card-level entrance choreography — mirrors the GitHub Stats card
 // (StatsCard.jsx) 1:1 so the side-by-side pair animate IN identically: the card
@@ -342,9 +352,23 @@ export default function LanguagesCard({ data, isLive = false }) {
 
   // Change-aware banner. The hook surfaces a contextual message only when
   // the language stats actually changed since this device last saw them;
-  // we hold it back until the section is in view, then show + auto-hide.
-  const { pendingMessage, consume } = useLanguagesUpdateSignal(languages);
+  // we hold it back until the section is in view, then show + auto-hide. It
+  // also surfaces which language ROWS rose (moved up / % increased) and which
+  // popover REPOS rose, so we can heartbeat exactly those after the banner.
+  const {
+    pendingMessage,
+    consume,
+    changedLanguages,
+    changedRepoKeys,
+    clearChangedLanguage,
+    clearChangedRepo,
+  } = useLanguagesUpdateSignal(languages);
   const [bannerMessage, setBannerMessage] = useState(null);
+  // True from the moment the banner's message clears until its exit animation
+  // has fully finished (UpdateBanner.onExitComplete). The row heartbeat is gated
+  // through this so a pulse never plays under the banner's still-fading blur
+  // overlay — same guard the Skills card uses (`bannerExiting`).
+  const [bannerExiting, setBannerExiting] = useState(false);
 
   // Promote the pending message to a visible banner once the section is in
   // view, then `consume()` it from the hook so a reload before the next
@@ -363,12 +387,66 @@ export default function LanguagesCard({ data, isLive = false }) {
 
   // Auto-hide once a banner is actually showing. Keyed on `bannerMessage`
   // (not `pendingMessage`), so consuming the pending message can't cancel
-  // this timer; a fresh message re-arms it cleanly.
+  // this timer; a fresh message re-arms it cleanly. On hide we flip
+  // `bannerExiting` true so the row heartbeat stays gated until the overlay has
+  // fully animated out (cleared by UpdateBanner's onExitComplete below).
   useEffect(() => {
     if (!bannerMessage) return;
-    const timer = setTimeout(() => setBannerMessage(null), BANNER_AUTO_HIDE_MS);
+    const timer = setTimeout(() => {
+      setBannerMessage(null);
+      setBannerExiting(true);
+    }, BANNER_AUTO_HIDE_MS);
     return () => clearTimeout(timer);
   }, [bannerMessage]);
+
+  // The card is clear for the post-banner heartbeat only once no message is
+  // pending or showing AND the overlay has finished exiting.
+  const bannerGone = !bannerMessage && !pendingMessage && !bannerExiting;
+
+  // ── Language-row heartbeat ──────────────────────────────────────────────────
+  // Pulse the name + percentage of every language that rose, once the section is
+  // in view and the banner is gone. One-shot per change cycle: `clearChangedLanguage`
+  // consumes each name after its window so a later viewport re-entry doesn't
+  // replay it, while a genuinely new change cycle re-arms cleanly. `langPulsingRef`
+  // guards against re-entering mid-window (e.g. a fresh change arriving while a
+  // pulse is still running — its names simply pulse in the next window).
+  const [pulsingLanguages, setPulsingLanguages] = useState(EMPTY_NAME_SET);
+  const langPulsingRef = useRef(false);
+  const langTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(langTimerRef.current), []);
+  useEffect(() => {
+    if (prefersReducedMotion || langPulsingRef.current) return;
+    if (!isInView || !bannerGone || changedLanguages.length === 0) return;
+    const names = changedLanguages.slice();
+    langPulsingRef.current = true;
+    setPulsingLanguages(new Set(names));
+    langTimerRef.current = setTimeout(() => {
+      setPulsingLanguages(EMPTY_NAME_SET);
+      names.forEach((n) => clearChangedLanguage(n));
+      langPulsingRef.current = false;
+    }, HEARTBEAT_MS);
+  }, [
+    changedLanguages,
+    isInView,
+    bannerGone,
+    prefersReducedMotion,
+    clearChangedLanguage,
+  ]);
+
+  // ── Popover repo heartbeat ──────────────────────────────────────────────────
+  // The repo rows that rose for the CURRENTLY-open language, keyed back to bare
+  // repo names. Handed to the popover, which pulses them on open (the "survives
+  // until seen" model — a repo-breakdown is on-demand, so the beat plays the
+  // first time the user opens that language's popover after the change).
+  const activeLang = popover ? languages[popover.index] : null;
+  const popoverPulseNames = useMemo(() => {
+    if (!activeLang) return EMPTY_NAME_SET;
+    const prefix = `${activeLang.language}::`;
+    const names = changedRepoKeys
+      .filter((k) => k.startsWith(prefix))
+      .map((k) => k.slice(prefix.length));
+    return names.length > 0 ? new Set(names) : EMPTY_NAME_SET;
+  }, [activeLang, changedRepoKeys]);
 
   return (
     <motion.div
@@ -395,6 +473,7 @@ export default function LanguagesCard({ data, isLive = false }) {
         visible={Boolean(bannerMessage)}
         srPrefix="Languages update: "
         variant="elite"
+        onExitComplete={() => setBannerExiting(false)}
       />
 
       {/* Header — title + an analytics-style meta line. */}
@@ -404,18 +483,43 @@ export default function LanguagesCard({ data, isLive = false }) {
             pair share one headline animation and colour. */}
         <AnimatedTitle text="Most Used Languages" play={settledInView} />
         {/* Meta line — frames the card as a live data widget. Count is
-            pluralised; the "· live from GitHub" suffix is shown only when
-            `isLive` (the displayed languages came from a genuine live
-            fetch). On a languages-GraphQL timeout the card keeps showing the
+            pluralised; the "· live from GitHub" suffix (with a pulsing dot
+            matching the GitHub Stats card's "Live GitHub Metrics" indicator) is
+            shown only when `isLive` (the displayed languages came from a genuine
+            live fetch). On a languages-GraphQL timeout the card keeps showing the
             last-good / snapshot list, and the suffix is dropped so it never
             claims "live" over stale data — it returns the moment a live
             fetch succeeds again. */}
         <p
-          className="text-[10px] md:text-xs uppercase tracking-[0.18em]"
+          className="flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.18em]"
           style={{ color: "rgba(255, 170, 42, 0.6)", textShadow: "none" }}
         >
-          {languages.length} {languages.length === 1 ? "language" : "languages"}
-          {isLive && " · live from GitHub"}
+          <span>
+            {languages.length} {languages.length === 1 ? "language" : "languages"}
+          </span>
+          {isLive && (
+            <>
+              <span aria-hidden="true">·</span>
+              {/* Pulsing live dot — same keyframes, loop, and reduced-motion
+                  handling as StatsCard's "Live GitHub Metrics" dot. */}
+              <motion.span
+                aria-hidden="true"
+                className="inline-block w-1.5 h-1.5 rounded-full"
+                style={{ background: "#ff6d05", boxShadow: "0 0 6px #ff6d05" }}
+                animate={
+                  prefersReducedMotion
+                    ? undefined
+                    : { opacity: [0.4, 1, 0.4], scale: [0.85, 1.15, 0.85] }
+                }
+                transition={
+                  prefersReducedMotion
+                    ? undefined
+                    : { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                }
+              />
+              <span>live from GitHub</span>
+            </>
+          )}
         </p>
       </motion.div>
 
@@ -480,6 +584,7 @@ export default function LanguagesCard({ data, isLive = false }) {
             prefersReducedMotion={prefersReducedMotion}
             active={activeIndex === idx}
             dimmed={activeIndex !== null && activeIndex !== idx}
+            pulse={pulsingLanguages.has(lang.language)}
             onActivate={() => setActiveIndex(idx)}
             onDeactivate={() => setActiveIndex(null)}
             onRepoEnter={(el) => handleRowEnter(idx, el)}
@@ -495,9 +600,24 @@ export default function LanguagesCard({ data, isLive = false }) {
           is hovered/focused. */}
       {popover && languages[popover.index] && (
         <LanguageRepoPopover
+          // Key by language so switching the popover from one language's
+          // breakdown straight to another's (without it closing in between)
+          // REMOUNTS it: a fresh visible-gated heartbeat fires for the new
+          // language's risen repos, and the previous instance's pulse timer is
+          // torn down with it. Without the key the popover would update in place
+          // — its mount-captured pulse refs would stay on the first language and
+          // the `pos`-change cleanup would cancel the running beat.
+          key={languages[popover.index].language}
           lang={languages[popover.index]}
           anchorRect={popover.rect}
           prefersReducedMotion={prefersReducedMotion}
+          // Repo rows that rose for this language → pulsed on open, then consumed
+          // so the beat plays only the first time this popover is opened after
+          // the change.
+          pulseRepoNames={popoverPulseNames}
+          onRepoPulsed={(name) =>
+            clearChangedRepo(`${languages[popover.index].language}::${name}`)
+          }
           // The pointer bridge only matters in hover mode; scheduleClose is a
           // no-op for a sticky tap popover, so the same handlers are safe for
           // both. cancelClose keeps a hover popover alive while the pointer is
@@ -592,6 +712,7 @@ function AnimatedLangLabel({
   prefersReducedMotion,
   active,
   dimmed,
+  pulse = false,
   onActivate,
   onDeactivate,
   onRepoEnter,
@@ -602,6 +723,10 @@ function AnimatedLangLabel({
   const numRef = useRef(null);
   const target = parseFloat(lang.percentage || 0);
   const hasRepos = Array.isArray(lang.repos) && lang.repos.length > 0;
+  // "Just rose" heartbeat — pulse the name + percentage together when this
+  // language moved up / increased. CSS no-ops `.skill-heartbeat` under reduced
+  // motion, but gate the class too for parity with the rest of the page.
+  const pulseClass = pulse && !prefersReducedMotion ? " skill-heartbeat" : "";
 
   useEffect(() => {
     const node = numRef.current;
@@ -706,7 +831,7 @@ function AnimatedLangLabel({
       />
       {/* Language name — fire-amber gradient, matching the "Personal" /
           "Employment" labels in the Years-in-the-craft split bar. */}
-      <span className="text-fire-amber truncate">{lang.language}</span>
+      <span className={`text-fire-amber truncate${pulseClass}`}>{lang.language}</span>
       {/* PRIMARY tag on the dominant language — a restrained amber pill that
           marks the headline figure without competing with the percentage.
           Hidden at `xl`+ (the two-column view), where it would otherwise push
@@ -731,7 +856,7 @@ function AnimatedLangLabel({
           matching the Personal/Employment numbers in the Years-in-the-craft
           split bar (size unchanged — inherited from the list). */}
       <span
-        className="ml-auto tabular-nums shrink-0"
+        className={`ml-auto tabular-nums shrink-0${pulseClass}`}
         style={{ color: "#ff6d05", textShadow: "none" }}
       >
         <span ref={numRef}>{prefersReducedMotion ? target.toFixed(2) : "0.00"}</span>%
@@ -740,6 +865,41 @@ function AnimatedLangLabel({
     </motion.li>
   );
 }
+
+// ── Repo-breakdown popover reveal — the SAME whole-card entrance the Skills
+// card's "Used in repositories" popover uses (itself the Most Active Repository
+// card's reveal): the panel springs up as a unit (opacity + y + scale), then the
+// header block slides up and the repo rows slide in from the left, staggered.
+// Same spring constants + metric-row slide as the cards, 1:1; only the panel's
+// travel is a smaller 24px because it's a compact floating panel.
+const popoverPanelVariants = {
+  hidden: { opacity: 0, y: 24, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring", stiffness: 70, damping: 18, delayChildren: 0.1, staggerChildren: 0.07 },
+  },
+};
+// Orchestrates the inner cascade: the header block, then the repo list.
+const popoverContentVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+// The header block (eyebrow + title + divider) slides up as one unit.
+const popoverSectionVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 20 } },
+};
+// (Repo rows reveal imperatively via useStaggeredScrollReveal + the
+// `repo-row-reveal` keyframe — see the list below — so they can RE-PLAY on every
+// scroll into the list's own viewport with a real one-by-one stagger, which the
+// declarative variant path can't do from inside the panel's animation tree.)
+// Reduced-motion no-op for every variant above: hidden === visible, no transform.
+const popoverNoMotion = {
+  hidden: { opacity: 1, x: 0, y: 0, scale: 1 },
+  visible: { opacity: 1, x: 0, y: 0, scale: 1 },
+};
 
 /* Repo-breakdown popover for one language. Themed to match the "Career
    snapshot" experience modal: `custom-bg-abt` amber-bordered panel, inner
@@ -754,11 +914,61 @@ function LanguageRepoPopover({
   lang,
   anchorRect,
   prefersReducedMotion,
+  pulseRepoNames = EMPTY_NAME_SET,
+  onRepoPulsed,
   onPointerEnter,
   onPointerLeave,
 }) {
   const ref = useRef(null);
   const [pos, setPos] = useState(null);
+  // The repo list scrolls internally when it overflows; this ref is the
+  // IntersectionObserver root so each row's reveal RE-TRIGGERS as it scrolls into
+  // the list's own viewport (down to the bottom and back to the top), per row.
+  const listScrollRef = useRef(null);
+  const panelV = prefersReducedMotion ? popoverNoMotion : popoverPanelVariants;
+  const contentV = prefersReducedMotion ? popoverNoMotion : popoverContentVariants;
+  const sectionV = prefersReducedMotion ? popoverNoMotion : popoverSectionVariants;
+
+  // "Just rose" heartbeat for repo rows. The popover remounts on every open
+  // (it's conditionally rendered) and fires the pulse for any language with
+  // armed repos: pulse the matching rows for one window, then `onRepoPulsed`
+  // consumes each so a reopen doesn't replay them. Closing mid-window unmounts
+  // this and skips the consume, leaving the repos armed for the next open
+  // ("survives until seen").
+  //
+  // The pulse — and its HEARTBEAT_MS countdown — starts only once the popover is
+  // actually VISIBLE to the user: the panel renders `visibility: hidden` while
+  // the layout effect below measures and positions it, and flips to visible only
+  // once `pos` is set. Gating the start on `pos` (not raw mount) means the full
+  // window plays from the moment the panel appears, rather than part of it
+  // burning while the panel is still hidden off-screen. Fires once per open
+  // (`repoPulseFiredRef`). Props are read through refs — kept in sync below — so
+  // a parent re-render (a fresh `onRepoPulsed` closure, or an updated
+  // `pulseRepoNames` when a new diff lands while the popover is open) can't
+  // restart or cancel the running timer, while the one-shot still reads the
+  // LATEST names at the moment it fires rather than a mount-time snapshot.
+  const [pulsingRepos, setPulsingRepos] = useState(EMPTY_NAME_SET);
+  const pulseNamesRef = useRef(pulseRepoNames);
+  useEffect(() => {
+    pulseNamesRef.current = pulseRepoNames;
+  }, [pulseRepoNames]);
+  const onRepoPulsedRef = useRef(onRepoPulsed);
+  useEffect(() => {
+    onRepoPulsedRef.current = onRepoPulsed;
+  }, [onRepoPulsed]);
+  const repoPulseFiredRef = useRef(false);
+  useEffect(() => {
+    if (prefersReducedMotion || !pos || repoPulseFiredRef.current) return undefined;
+    const names = pulseNamesRef.current;
+    if (!names || names.size === 0) return undefined;
+    repoPulseFiredRef.current = true;
+    setPulsingRepos(new Set(names));
+    const t = setTimeout(() => {
+      setPulsingRepos(EMPTY_NAME_SET);
+      names.forEach((name) => onRepoPulsedRef.current?.(name));
+    }, HEARTBEAT_MS);
+    return () => clearTimeout(t);
+  }, [pos, prefersReducedMotion]);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -782,9 +992,23 @@ function LanguageRepoPopover({
 
   const repos = Array.isArray(lang.repos) ? lang.repos : [];
 
+  // Staggered, replay-on-scroll reveal for the internal repo list (gated on
+  // `pos` so it doesn't fire while the panel is still positioning off-screen).
+  useStaggeredScrollReveal(listScrollRef, {
+    enabled: Boolean(pos),
+    prefersReducedMotion,
+    resetKey: repos.length,
+  });
+
   return createPortal(
-    <div
+    // Panel springs up as a unit, gated on `pos` so the reveal begins the instant
+    // it's positioned. Positioning is measured via offsetWidth/offsetHeight
+    // (unaffected by transform); `left`/`top`/`visibility` stay on the inline style.
+    <motion.div
       ref={ref}
+      variants={panelV}
+      initial="hidden"
+      animate={pos ? "visible" : "hidden"}
       role="group"
       aria-label={`Repositories using ${lang.language}`}
       onPointerEnter={onPointerEnter}
@@ -824,9 +1048,11 @@ function LanguageRepoPopover({
       }}
     >
       <div className="repo-card-breathe rounded-lg overflow-hidden flex flex-col min-h-0 flex-1">
-        <div className="p-4 flex flex-col min-h-0 flex-1">
+        {/* Inner cascade orchestrator — staggers the header block, then the list,
+            inheriting the panel's animation state through the plain wrapper. */}
+        <motion.div variants={contentV} className="p-4 flex flex-col min-h-0 flex-1">
           {/* Header — stays fixed while the repo list below scrolls. */}
-          <div className="shrink-0">
+          <motion.div variants={sectionV} className="shrink-0">
             {/* Eyebrow — same microlabel treatment as the modal's "Career
                 snapshot". */}
             <p className="text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">
@@ -847,28 +1073,40 @@ function LanguageRepoPopover({
               <span className="truncate">{lang.language}</span>
             </h3>
             <div aria-hidden="true" className="h-px elite-divider mb-3" />
-          </div>
-          {/* Repo list — scrolls within the viewport-bounded panel so a long
-              breakdown never pushes the popover off-screen. */}
-          <ul className="space-y-2.5 flex-1 min-h-0 overflow-y-auto overscroll-contain pr-0.5">
-            {repos.map((r) => (
-              <li key={r.name} className="text-xs">
+          </motion.div>
+          {/* Repo list — each row slides in from the left, staggered, after the
+              header. `overflow-x-hidden` clips the -16px slide so it can't flash a
+              horizontal scrollbar; scrolls within the viewport-bounded panel so a
+              long breakdown never pushes the popover off-screen. */}
+          <ul
+            ref={listScrollRef}
+            className="space-y-2.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5"
+          >
+            {repos.map((r) => {
+              // This repo rose within the language → pulse its name + percentage
+              // together (the popover's "name + %" pair).
+              const rowPulseClass =
+                pulsingRepos.has(r.name) && !prefersReducedMotion
+                  ? " skill-heartbeat"
+                  : "";
+              return (
+              <li key={r.name} data-reveal-row className="text-xs">
                 <div className="flex items-center gap-2">
                   {r.url ? (
                     <a
                       href={r.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      // Repo name in the same fire-amber gradient as the
-                      // language names in the card list. Hover fades slightly —
-                      // a gradient (transparent-fill) text has no visible
-                      // underline colour to shift.
-                      className="text-fire-amber truncate transition-opacity hover:opacity-70"
+                      // Repo name in the same fire-amber gradient as the language
+                      // names in the card list. Hover underline — the SAME effect
+                      // as the Career snapshot's Personal Projects repo rows
+                      // (`underline-offset-2 hover:underline transition-colors`).
+                      className={`text-fire-amber truncate underline-offset-2 hover:underline transition-colors${rowPulseClass}`}
                     >
                       {r.name}
                     </a>
                   ) : (
-                    <span className="text-fire-amber truncate">{r.name}</span>
+                    <span className={`text-fire-amber truncate${rowPulseClass}`}>{r.name}</span>
                   )}
                   {/* Percentage counts up 0 → target with the card's curve the
                       moment the popover opens; it's killed if the popover
@@ -877,6 +1115,7 @@ function LanguageRepoPopover({
                   <AnimatedRepoPercent
                     value={r.percentage}
                     prefersReducedMotion={prefersReducedMotion}
+                    pulse={pulsingRepos.has(r.name)}
                   />
                 </div>
                 {/* Slim share bar — uses the language's own colour so the
@@ -892,11 +1131,12 @@ function LanguageRepoPopover({
                   />
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
-        </div>
+        </motion.div>
       </div>
-    </div>,
+    </motion.div>,
     document.body,
   );
 }
@@ -909,7 +1149,7 @@ function LanguageRepoPopover({
    and is stopped in the effect cleanup, so closing the popover mid-count
    unmounts this and kills the animation. Honours reduced motion by painting
    the final value immediately. */
-function AnimatedRepoPercent({ value, prefersReducedMotion }) {
+function AnimatedRepoPercent({ value, prefersReducedMotion, pulse = false }) {
   const ref = useRef(null);
   const target = parseFloat(value) || 0;
 
@@ -933,7 +1173,7 @@ function AnimatedRepoPercent({ value, prefersReducedMotion }) {
 
   return (
     <span
-      className="ml-auto tabular-nums shrink-0"
+      className={`ml-auto tabular-nums shrink-0${pulse && !prefersReducedMotion ? " skill-heartbeat" : ""}`}
       style={{ color: "#ff6d05", textShadow: "none" }}
     >
       <span ref={ref}>{prefersReducedMotion ? target.toFixed(2) : "0.00"}</span>%

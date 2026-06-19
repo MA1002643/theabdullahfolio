@@ -1,17 +1,19 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
-import { animate, useInView, useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
+import { useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
 import { projectsData } from "@/app/data";
 import LanguagesCard from "./LanguagesCard";
 import GitHubStatsCard from "./StatsCard";
 import StreakStatsCard from "./StreakStatsCard";
 import ReadmeStatsCard from "./RepoStatsCard";
+import SkillsCard from "./SkillsCard";
 import { detectChanges } from "@/utils/diffChanges";
-import { computeRepoDiff } from "@/utils/repoDiff";
-import { computeStatsDiff } from "@/utils/statsDiff";
+import { computeRepoDiff, computeRepoChangedFields } from "@/utils/repoDiff";
+import { computeStatsDiff, statsIncreasedFields } from "@/utils/statsDiff";
 import { useExperienceSummary } from "@/hooks/useExperienceSummary";
 import { useProjectCountSignal } from "@/hooks/useProjectCountSignal";
 import { useReliableInView } from "@/hooks/useReliableInView";
+import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
@@ -30,134 +32,6 @@ const RevealWord = ({ children, progress, range, reducedMotion }) => {
     </motion.span>
   );
 };
-
-// Shared count-up controller for the about page's three imperative counters
-// (PercentCount, CountUp, and the nested Counter). Animates `nodeRef`'s text
-// from `from` → `to` on a true viewport entry, and resets to `from` on exit so
-// the next entry replays — but with HYSTERESIS on the exit. The `inView`
-// signals these counters read (isExperienceCardInView / isCompletedProjectsInView)
-// are RAW observers that briefly flicker false during scroll and the parent
-// ItemLayout's scale transition; resetting immediately would snap the digit to
-// 0 while the card is still effectively on-screen. So:
-//   - Exit is debounced — only a sustained exit (>= COUNT_RESET_DELAY_MS)
-//     resets to `from` and re-arms; a quick re-entry cancels the pending reset.
-//   - A running animation is NOT stopped on a flicker (the effect returns no
-//     cleanup), so it finishes on its own, and a quick re-entry does NOT
-//     restart it — no snap to 0 either way.
-//   - A genuine re-entry after a sustained exit (re-armed) replays the count-up,
-//     and a changed `to` re-animates even while still in view.
-// Reduced motion writes the final value immediately, with no tween.
-const COUNT_RESET_DELAY_MS = 300;
-
-function useViewportCountUp(
-  nodeRef,
-  { from = 0, to, inView, prefersReducedMotion, enabled = true },
-) {
-  const armedRef = useRef(true);
-  const lastToRef = useRef(null);
-  const resetTimerRef = useRef(null);
-  const controlsRef = useRef(null);
-
-  useEffect(() => {
-    const node = nodeRef.current;
-    const fmt = (v) => `${Math.round(v)}`;
-
-    // Disabled (e.g. PercentCount's `unavailable`) or no node yet — tear down
-    // any in-flight work AND re-arm the latch so a later re-enable (or the node
-    // remounting) starts a fresh count-up. Without resetting `armedRef`/
-    // `lastToRef`, a counter that was previously enabled + in view (armedRef
-    // false, lastToRef === to) would, after a disable → re-enable with the same
-    // `to`, fail the inView branch's animate guard and leave the remounted node
-    // stuck at its JSX initial "0".
-    if (!enabled || !node) {
-      if (controlsRef.current) {
-        controlsRef.current.stop();
-        controlsRef.current = null;
-      }
-      if (resetTimerRef.current) {
-        clearTimeout(resetTimerRef.current);
-        resetTimerRef.current = null;
-      }
-      armedRef.current = true;
-      lastToRef.current = null;
-      return undefined;
-    }
-
-    if (prefersReducedMotion) {
-      // Cancel any in-flight tween AND any pending out-of-view reset — a reset
-      // queued while motion was enabled would otherwise still fire after the OS
-      // flips to reduced motion and overwrite the final value back to `from`.
-      if (controlsRef.current) {
-        controlsRef.current.stop();
-        controlsRef.current = null;
-      }
-      if (resetTimerRef.current) {
-        clearTimeout(resetTimerRef.current);
-        resetTimerRef.current = null;
-      }
-      node.textContent = fmt(to);
-      // Mark the value as already "shown" at `to` so re-enabling motion while
-      // still in view (same target) doesn't trigger a redundant re-animation/snap.
-      armedRef.current = false;
-      lastToRef.current = to;
-      return undefined;
-    }
-
-    if (inView) {
-      // Entry or flicker-recovery — cancel any pending out-of-view reset.
-      if (resetTimerRef.current) {
-        clearTimeout(resetTimerRef.current);
-        resetTimerRef.current = null;
-      }
-      // Animate only on a genuine (re)entry (re-armed after a sustained exit)
-      // or a changed target — never on a brief flicker back into view, which
-      // would restart the sweep and snap to 0. An in-flight tween keeps running.
-      if (armedRef.current || lastToRef.current !== to) {
-        armedRef.current = false;
-        lastToRef.current = to;
-        if (controlsRef.current) controlsRef.current.stop();
-        controlsRef.current = animate(from, to, {
-          duration: 2,
-          onUpdate(v) {
-            node.textContent = fmt(v);
-          },
-        });
-      }
-      return undefined;
-    }
-
-    // Out of view — schedule a DEBOUNCED reset. Don't reset (or stop the tween)
-    // now: a brief observer flicker re-enters before this fires (the inView
-    // branch above clears it), so only a sustained exit resets and re-arms.
-    if (!resetTimerRef.current) {
-      resetTimerRef.current = setTimeout(() => {
-        if (controlsRef.current) {
-          controlsRef.current.stop();
-          controlsRef.current = null;
-        }
-        node.textContent = fmt(from);
-        armedRef.current = true; // re-arm so the next true entry replays
-        resetTimerRef.current = null;
-      }, COUNT_RESET_DELAY_MS);
-    }
-    return undefined;
-  }, [from, to, inView, prefersReducedMotion, enabled, nodeRef]);
-
-  // Stop the tween and clear any pending reset on unmount.
-  useEffect(
-    () => () => {
-      if (resetTimerRef.current) {
-        clearTimeout(resetTimerRef.current);
-        resetTimerRef.current = null;
-      }
-      if (controlsRef.current) {
-        controlsRef.current.stop();
-        controlsRef.current = null;
-      }
-    },
-    [],
-  );
-}
 
 // Inline percentage count-up for the years card's Personal/Employment split.
 // `unavailable` short-circuits the count-up and renders an "Unavailable" label
@@ -252,8 +126,18 @@ function ExperienceSplitBar({
   personalAvailable = true,
   employmentAvailable = true,
   inView = true,
+  pulseCategories = [],
 }) {
   const prefersReducedMotion = useReducedMotion();
+  // Heartbeat a category whose experience just grew — the same `skill-heartbeat`
+  // opacity pulse the Skills / Completed-projects cards apply to a changed
+  // category's label + count. Applied to BOTH the legend label and its
+  // percentage so the whole entry beats as one. CSS already no-ops the animation
+  // under reduced motion, but gate the class too for parity.
+  const personalPulse =
+    !prefersReducedMotion && pulseCategories.includes("Personal") ? "skill-heartbeat" : "";
+  const employmentPulse =
+    !prefersReducedMotion && pulseCategories.includes("Employment") ? "skill-heartbeat" : "";
   // When a side's source failed to load its month count is *unknown*, not
   // zero — so exclude it from the denominator entirely. The surviving side
   // then reads as 100% of *measured* experience, and the failed row renders
@@ -357,9 +241,9 @@ function ExperienceSplitBar({
                   : { border: "1px solid #ff6d05", opacity: 0.5 }
               }
             />
-            <span className="text-fire-amber">Personal</span>
+            <span className={`text-fire-amber ${personalPulse}`}>Personal</span>
           </span>
-          <span style={{ color: "#ff6d05", textShadow: "none" }}>
+          <span className={personalPulse} style={{ color: "#ff6d05", textShadow: "none" }}>
             <PercentCount
               value={Math.round(personalPct)}
               unavailable={!personalAvailable}
@@ -391,9 +275,9 @@ function ExperienceSplitBar({
                   : { border: "1px solid #ffd27d", opacity: 0.5 }
               }
             />
-            <span className="text-fire-amber">Employment</span>
+            <span className={`text-fire-amber ${employmentPulse}`}>Employment</span>
           </span>
-          <span style={{ color: "#ff6d05", textShadow: "none" }}>
+          <span className={employmentPulse} style={{ color: "#ff6d05", textShadow: "none" }}>
             <PercentCount
               value={Math.round(employmentPct)}
               unavailable={!employmentAvailable}
@@ -443,7 +327,7 @@ const PROJECT_CATEGORY_BREAKDOWN = (() => {
 // per-segment whileInView — the parent ItemLayout's `scale(0)` entrance would
 // collapse a segment's own IntersectionObserver rect to zero area, exactly as
 // documented on PercentCount above), so it re-fires on every viewport entry.
-function ProjectsSplitBar({ breakdown, inView = true }) {
+function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
   const prefersReducedMotion = useReducedMotion();
   const total = breakdown.reduce((sum, c) => sum + c.count, 0);
   if (total === 0) return null;
@@ -514,37 +398,45 @@ function ProjectsSplitBar({ breakdown, inView = true }) {
         className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
         style={{ color: "#d4af7a" }}
       >
-        {segments.map((s, i) => (
-          <React.Fragment key={s.label}>
-            {i > 0 && (
-              <span
-                aria-hidden="true"
-                className="hidden sm:block select-none px-3"
-                style={{ color: "#ff6d05", textShadow: "none" }}
-              >
-                |
-              </span>
-            )}
-            <span className="flex items-center justify-between gap-2 sm:grow sm:basis-[130px]">
-              <span className="flex items-center gap-1.5">
+        {segments.map((s, i) => {
+          // Heartbeat the category that just gained project(s) (or is newly
+          // present) — the same `skill-heartbeat` opacity pulse the Skills card
+          // applies to a changed category's header + count. CSS disables the
+          // animation under reduced motion, but gate the class too for parity.
+          const pulse =
+            !prefersReducedMotion && pulseCategories.includes(s.label) ? "skill-heartbeat" : "";
+          return (
+            <React.Fragment key={s.label}>
+              {i > 0 && (
                 <span
-                  className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style={{ background: s.color }}
-                />
-                <span className="text-fire-amber">{s.label}</span>
+                  aria-hidden="true"
+                  className="hidden sm:block select-none px-3"
+                  style={{ color: "#ff6d05", textShadow: "none" }}
+                >
+                  |
+                </span>
+              )}
+              <span className="flex items-center justify-between gap-2 sm:grow sm:basis-[130px]">
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ background: s.color }}
+                  />
+                  <span className={`text-fire-amber ${pulse}`}>{s.label}</span>
+                </span>
+                {/* Legend shows the raw project count per category (not a
+                    percentage) — the bar segment widths already carry the
+                    proportional share. `s.count` is derived from projectsData,
+                    so adding a project to a category bumps this automatically.
+                    Animated with the same 0 → count count-up as the card's big
+                    "completed projects" digit. */}
+                <span className={pulse} style={{ color: "#ff6d05", textShadow: "none" }}>
+                  <CountUp value={s.count} inView={inView} />
+                </span>
               </span>
-              {/* Legend shows the raw project count per category (not a
-                  percentage) — the bar segment widths already carry the
-                  proportional share. `s.count` is derived from projectsData,
-                  so adding a project to a category bumps this automatically.
-                  Animated with the same 0 → count count-up as the card's big
-                  "completed projects" digit. */}
-              <span style={{ color: "#ff6d05", textShadow: "none" }}>
-                <CountUp value={s.count} inView={inView} />
-              </span>
-            </span>
-          </React.Fragment>
-        ))}
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   );
@@ -598,10 +490,18 @@ const AboutDetails = () => {
   const [githubStats, setGithubStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
   const [repoDiffMessage, setRepoDiffMessage] = useState(null);
+  // Which fields of the most-active repo rose this poll (['name','stars',…]) —
+  // drives the post-banner heartbeat on the repo card's name + metric values.
+  // Held until the card's pulse consumes it / the 10s auto-clear resets it.
+  const [repoChangedFields, setRepoChangedFields] = useState([]);
   // Specific per-stat change summary for the GitHub Stats card's banner
   // ("Total Stars +5 | Total Commits +50"). Null when nothing changed, so
   // the banner only fires on real value changes — never on first load.
   const [statsDiffMessage, setStatsDiffMessage] = useState(null);
+  // Which GitHub stats rose this poll (['stars','commits',…]) — drives the
+  // post-banner heartbeat on each risen stat's label + number in the GitHub
+  // Stats card. Held until the card's pulse consumes it / the 10s reset clears.
+  const [statsChangedFields, setStatsChangedFields] = useState([]);
   // Dev-only override so a synthetic Shift+B can fire the experience
   // banner, which is otherwise driven entirely by the hook. Stays null
   // in production builds because the listener that sets it never runs.
@@ -655,8 +555,22 @@ const AboutDetails = () => {
   // so this is nearly free across visits. Defaulting `data` to null
   // until the fetch resolves; the Counter below treats `null` as 0 and
   // animates up once the real value lands.
-  const { data: experienceData, changeMessage: experienceChangeMessage } =
-    useExperienceSummary(username);
+  const {
+    data: experienceData,
+    changeMessage: experienceChangeMessage,
+    changedCategories: experienceChangedCategories,
+    addedRepoNames: experienceAddedRepoNames,
+    addedRoleKeys: experienceAddedRoleKeys,
+  } = useExperienceSummary(username);
+  // Sets for the breakdown modal's per-row heartbeat (added repos / roles).
+  const experiencePulseRepoNames = useMemo(
+    () => new Set(experienceAddedRepoNames),
+    [experienceAddedRepoNames],
+  );
+  const experiencePulseRoleKeys = useMemo(
+    () => new Set(experienceAddedRoleKeys),
+    [experienceAddedRoleKeys],
+  );
   const experienceTotalMonths = experienceData?.total?.months ?? 0;
   // Display unit follows the spec: years when total >= 12 months, else
   // months. Both the numeric `to` and the trailing label switch
@@ -716,6 +630,63 @@ const AboutDetails = () => {
   const isExperienceCardInView = useReliableInView(experienceInViewRef, {
     amount: 0.5,
   });
+
+  // Years-card legend heartbeat (issue #20 follow-up) — when the experience
+  // banner reports that a category grew (e.g. "Employment experience updated"),
+  // pulse that category's legend label + percentage, the SAME beat the Skills /
+  // Completed-projects cards use. Deferred until the banner has fully shown AND
+  // EXITED so the pulse never plays under the banner's blur overlay (the bug
+  // proven + fixed on the Completed-projects card). Here the "exited" signal is
+  // exact — ExperienceUpdateBanner reports `false` from UpdateBanner's
+  // onExitComplete — so it's robust to the per-character exit's variable length
+  // rather than relying on a guessed delay.
+  const [pulseExperienceCats, setPulseExperienceCats] = useState([]);
+  // Driven by ExperienceUpdateBanner's onVisibilityChange: `true` when the
+  // banner appears, `false` only once it has FULLY animated out (onExitComplete).
+  // The banner owns its own show/hide (per-message sessionStorage dedupe), so the
+  // parent learns the life cycle through this callback rather than owning a timer.
+  const [experienceBannerShown, setExperienceBannerShown] = useState(false);
+  const experienceBannerWasShownRef = useRef(false);
+  // The changed categories captured at detection time, held until the banner
+  // finishes so a later no-diff poll (which resets the hook's array) can't blank
+  // them mid-flight.
+  const pendingExperienceCatsRef = useRef([]);
+  useEffect(() => {
+    if (experienceChangedCategories && experienceChangedCategories.length > 0) {
+      pendingExperienceCatsRef.current = experienceChangedCategories;
+    }
+  }, [experienceChangedCategories]);
+
+  // Fire the pulse on the banner's shown → exited edge. `experienceBannerShown`
+  // flips false only AFTER the overlay has fully unmounted (onExitComplete), so
+  // the card is already clear; the short delay is just a deliberate beat between
+  // the banner vanishing and the heartbeat starting. Not gated on in-view here:
+  // if the user scrolled away mid-banner, the pulse stays armed and the
+  // (in-view-gated) stop timer below holds it until they return — same "pulse
+  // survives until seen" contract as the Completed-projects legend.
+  useEffect(() => {
+    const wasShown = experienceBannerWasShownRef.current;
+    experienceBannerWasShownRef.current = experienceBannerShown;
+    if (!(wasShown && !experienceBannerShown)) return undefined; // only true→false
+    if (pendingExperienceCatsRef.current.length === 0) return undefined;
+    const cats = pendingExperienceCatsRef.current;
+    const POST_BANNER_BEAT_MS = 150;
+    const t = setTimeout(() => {
+      setPulseExperienceCats(cats);
+      pendingExperienceCatsRef.current = [];
+    }, POST_BANNER_BEAT_MS);
+    return () => clearTimeout(t);
+  }, [experienceBannerShown]);
+
+  // Stop the pulse after the shared ~3.5s heartbeat window, once it's actually
+  // been on screen (in-view-gated for the same reason as the projects legend:
+  // an off-screen wall-clock timer could burn the window before it's seen).
+  useEffect(() => {
+    if (pulseExperienceCats.length === 0 || !isExperienceCardInView) return undefined;
+    const t = setTimeout(() => setPulseExperienceCats([]), 3500);
+    return () => clearTimeout(t);
+  }, [pulseExperienceCats, isExperienceCardInView]);
+
   const openExperienceModal = () => {
     if (experienceData) setIsExperienceModalOpen(true);
   };
@@ -829,6 +800,13 @@ const AboutDetails = () => {
       const repoMsg = computeRepoDiff(prevStats?.stats?.repo, data?.stats?.repo);
       if (repoMsg) setRepoDiffMessage(repoMsg);
 
+      // Structured changed-field list for the repo card's heartbeat (which
+      // name / metric values rose). Only set when non-empty so an unrelated
+      // poll doesn't blank a pulse the card hasn't shown yet; the 10s timer and
+      // the card's own consume handle clearing.
+      const repoFields = computeRepoChangedFields(prevStats?.stats?.repo, data?.stats?.repo);
+      if (repoFields.length > 0) setRepoChangedFields(repoFields);
+
       // Per-stat diff for the GitHub Stats banner. computeStatsDiff returns
       // hasChanged=false on the first cycle (prevStats present here, but the
       // nested stats object may be absent), so a real message only appears on a
@@ -844,6 +822,12 @@ const AboutDetails = () => {
       // the card correctly fall back to the generic banner.
       const statsMsg = computeStatsDiff(prevStats?.stats?.stats, data?.stats?.stats);
       setStatsDiffMessage(statsMsg.hasChanged ? statsMsg.summaryMessage : null);
+
+      // Stats that ROSE → heartbeat their label + number after the banner. Only
+      // set when non-empty so an unrelated poll doesn't blank a pulse the card
+      // hasn't shown yet; the card captures it locally and the 10s reset clears.
+      const statsFields = statsIncreasedFields(statsMsg);
+      if (statsFields.length > 0) setStatsChangedFields(statsFields);
 
       setChangedFields(diffs);
 
@@ -1029,7 +1013,9 @@ const AboutDetails = () => {
       const timer = setTimeout(() => {
         setChangedFields([]);
         setRepoDiffMessage(null);
+        setRepoChangedFields([]);
         setStatsDiffMessage(null);
+        setStatsChangedFields([]);
         setTestExperienceMessage(null);
       }, 10000);
       return () => clearTimeout(timer);
@@ -1066,10 +1052,16 @@ const AboutDetails = () => {
         "stats.user",
         "stats.streaks",
         "stats.repo",
-        "skills",
       ]);
       setRepoDiffMessage("Test: repository update banner");
+      // Heartbeat the repo name, the language, the activity score, and a couple
+      // of metric rows when the sandbox fires, so the post-banner pulse (name +
+      // language text + activity-score number + each risen row's icon/label/
+      // value) is testable without a real data change.
+      setRepoChangedFields(["name", "stars", "commitCount", "language", "activityScore"]);
       setStatsDiffMessage("Total Stars +5 | Total Commits +50 | Total PRs +2");
+      // Heartbeat the matching stat rows (label + number) when the sandbox fires.
+      setStatsChangedFields(["stars", "commits", "prs"]);
       setTestExperienceMessage("Test: experience update banner");
     };
     window.addEventListener("keydown", handler);
@@ -1077,11 +1069,10 @@ const AboutDetails = () => {
   }, []);
 
 
-  // Skills icon-grid card needs the same in-view gating as every
-  // other card so the shared UpdateBanner only paints while the
-  // section is on screen (matching LanguagesCard, RepoStatsCard, etc.).
-  const skillsRef = useRef(null);
-  const isSkillsInView = useInView(skillsRef, { once: false, amount: 0.3 });
+  // SkillsCard owns its own viewport gating, daily-refresh fetch, and
+  // per-device change banner (useSkillsUpdateSignal) — the same self-contained
+  // model as LanguagesCard / StreakStatsCard — so index.jsx no longer tracks a
+  // skills ref or in-view flag here.
 
   // Completed-projects count-change banner (issue #16). `projectsData` is a
   // static import, so the count only moves across a deploy; the signal hook
@@ -1096,12 +1087,31 @@ const AboutDetails = () => {
   const isCompletedProjectsInView = useReliableInView(completedProjectsRef, {
     amount: 0.3,
   });
-  const { pendingMessage: projectCountPending, consume: consumeProjectCount } =
-    useProjectCountSignal(projectsData.length);
-  // Category breakdown feeding the completed-projects split bar is computed
-  // once at module load (see PROJECT_CATEGORY_BREAKDOWN) — projectsData is a
-  // static import, so there's nothing component-scoped to recompute here.
+  // The signal now diffs the per-category BREAKDOWN (not just the total), so it
+  // can tell which category gained project(s) / is newly present and surface
+  // those labels for the legend heartbeat. The breakdown feeds the count too
+  // (its sum === projectsData.length), so the banner message is unchanged.
+  const {
+    pendingMessage: projectCountPending,
+    consume: consumeProjectCount,
+    changedCategories: projectChangedCategories,
+    clearChangedCategories: clearProjectChangedCategories,
+  } = useProjectCountSignal(PROJECT_CATEGORY_BREAKDOWN);
   const [projectCountBanner, setProjectCountBanner] = useState(null);
+  // The categories currently heartbeating in the split-bar legend (the ones
+  // that just grew / appeared). Same lifecycle as the banner: captured as soon
+  // as detected, then pulsed for ~6s once the card is in view.
+  const [pulseProjectCats, setPulseProjectCats] = useState([]);
+  // Set true once the banner has been DISMISSED (message cleared) AND has fully
+  // animated out (UpdateBanner.onExitComplete) — the exact, message-length-proof
+  // "overlay is gone, the heartbeat may start" signal.
+  const [projectBannerGone, setProjectBannerGone] = useState(false);
+  // A ref mirror of `projectCountBanner` so the onExitComplete callback (a stable
+  // closure) can tell a REAL dismissal apart from a scroll-out exit. This banner's
+  // `visible` is the in-view flag, so scrolling away also fires onExitComplete —
+  // but with the message still pending; only when the message has already cleared
+  // is the exit a genuine dismissal that should arm the pulse.
+  const projectCountBannerRef = useRef(null);
   // Capture the pending message as soon as it exists — deliberately NOT gated
   // on viewport visibility. It's passed straight through to UpdateBanner's
   // `message`, whose always-mounted `aria-live` region announces on `message`
@@ -1124,17 +1134,61 @@ const AboutDetails = () => {
     const timer = setTimeout(() => setProjectCountBanner(null), 4500);
     return () => clearTimeout(timer);
   }, [projectCountBanner, isCompletedProjectsInView]);
-
+  // Keep the ref in sync so onExitComplete can read the CURRENT message state.
+  useEffect(() => {
+    projectCountBannerRef.current = projectCountBanner;
+  }, [projectCountBanner]);
+  // Legend heartbeat (mirrors the Skills / years cards): once the banner has been
+  // dismissed AND fully exited, with the card in view, pulse the changed
+  // categories' label + count, then consume the hook's one-shot list so it can't
+  // replay on a later re-entry.
   //
+  // The trigger is `projectBannerGone`, set ONLY by a real-dismissal
+  // onExitComplete (the banner is a full-card blur overlay whose AnimatePresence
+  // exit — opacity fade + per-character dissolve — lingers ~0.5–0.75s after the
+  // state clears; waiting for the exact unmount signal makes this robust to
+  // message length, unlike the earlier guessed delay). Crucially the pulse is NOT
+  // coupled to the `projectCountBanner` state transition: because this banner's
+  // `visible` is the in-view flag, a scroll-out also fires onExitComplete, and a
+  // prior design that keyed off the state edge could fire the pulse the instant
+  // the message cleared — i.e. while the re-shown banner was still animating out.
+  // `projectBannerGone` only flips true on a dismissal exit (ref guard below), so
+  // that can't happen.
   //
-  // Icons...
-  const icons = [
-    "appwrite", "aws", "babel", "bootstrap", "cloudflare", "css", "d3", "docker",
-    "figma", "firebase", "gatsby", "git", "github", "graphql", "html", "ipfs",
-    "js", "jquery", "kubernetes", "linux", "mongodb", "mysql", "netlify", "nextjs",
-    "nodejs", "npm", "postgres", "react", "redux", "replit", "sass", "supabase",
-    "tailwind", "threejs", "vercel", "vite", "vscode", "yarn"
-  ];
+  // `isCompletedProjectsInView` stays in the deps so that if the user scrolled
+  // away during the post-banner beat, the pulse re-arms on re-entry
+  // (`projectBannerGone` stays true until consumed) — the "pulse survives until
+  // seen" contract shared with the other cards. The short beat is a breath
+  // between the banner vanishing and the heartbeat starting.
+  useEffect(() => {
+    if (!projectBannerGone) return undefined;
+    if (projectChangedCategories.length === 0 || !isCompletedProjectsInView) return undefined;
+    const POST_BANNER_BEAT_MS = 150;
+    const t = setTimeout(() => {
+      setPulseProjectCats(projectChangedCategories);
+      clearProjectChangedCategories();
+      setProjectBannerGone(false); // one-shot: consume so it can't re-fire
+    }, POST_BANNER_BEAT_MS);
+    return () => clearTimeout(t);
+  }, [
+    projectBannerGone,
+    projectChangedCategories,
+    isCompletedProjectsInView,
+    clearProjectChangedCategories,
+  ]);
+  // Stop the pulse after the shared header-beat window (~3.5s, matching the
+  // Skills card's HEARTBEAT_HEADER_MS) so it flags the change without becoming
+  // a permanent blinker. Gated on the SAME in-view flag as the banner timer
+  // above, for the same reason: the capture effect consumes the hook's one-shot
+  // list on the FIRST visibility flicker (even a flick-scroll past the card), so
+  // an ungated wall-clock timer could burn the whole window off-screen and the
+  // pulse would be gone before it was ever seen. Out of view → cleanup cancels
+  // the timer (pulse stays armed); re-entry → a fresh 6s window restarts.
+  useEffect(() => {
+    if (pulseProjectCats.length === 0 || !isCompletedProjectsInView) return undefined;
+    const timer = setTimeout(() => setPulseProjectCats([]), 3500);
+    return () => clearTimeout(timer);
+  }, [pulseProjectCats, isCompletedProjectsInView]);
 
   return (
     // Horizontal padding scales with viewport: a flat `px-16` (64px) left
@@ -1217,6 +1271,12 @@ const AboutDetails = () => {
               message={projectCountBanner}
               visible={isCompletedProjectsInView}
               srPrefix="Projects update: "
+              // Only a real dismissal arms the pulse: if the message has already
+              // cleared (ref === null) this exit is the auto-hide; if it's still
+              // set, this exit is a scroll-out and must be ignored.
+              onExitComplete={() => {
+                if (projectCountBannerRef.current === null) setProjectBannerGone(true);
+              }}
             />
 
             {/* Eyebrow — same uppercase micro-label treatment + amber tone as
@@ -1250,7 +1310,11 @@ const AboutDetails = () => {
             {/* Two-segment category split bar (Web / System) — the "elite &
                 complex" counterpart to the years card's Personal/Employment
                 split, same track, animated fill, legend, and percentages. */}
-            <ProjectsSplitBar breakdown={PROJECT_CATEGORY_BREAKDOWN} inView={isCompletedProjectsInView} />
+            <ProjectsSplitBar
+              breakdown={PROJECT_CATEGORY_BREAKDOWN}
+              inView={isCompletedProjectsInView}
+              pulseCategories={pulseProjectCats}
+            />
           </div>
         </ItemLayout>
 
@@ -1297,6 +1361,7 @@ const AboutDetails = () => {
             <ExperienceUpdateBanner
               message={testExperienceMessage ?? experienceChangeMessage}
               inView={isExperienceCardInView}
+              onVisibilityChange={setExperienceBannerShown}
               variant="elite"
             />
 
@@ -1360,6 +1425,7 @@ const AboutDetails = () => {
                 personalAvailable={experiencePersonalAvailable}
                 employmentAvailable={experienceEmploymentAvailable}
                 inView={isExperienceCardInView}
+                pulseCategories={pulseExperienceCats}
               />
             )}
 
@@ -1394,36 +1460,18 @@ const AboutDetails = () => {
         </ItemLayout>}
 
         {githubStats?.stats && <ItemLayout className={" col-span-full lg:col-span-6 !p-0"}>
-          <GitHubStatsCard data={githubStats.stats.stats} userName={githubStats.stats.user.name} isUpdated={changedFields.includes("stats.stats") || changedFields.includes('stats.user')} diffMessage={statsDiffMessage} isLive={Boolean(githubStats.statsLive)} />
+          <GitHubStatsCard data={githubStats.stats.stats} userName={githubStats.stats.user.name} isUpdated={changedFields.includes("stats.stats") || changedFields.includes('stats.user')} diffMessage={statsDiffMessage} pulseFields={statsChangedFields} isLive={Boolean(githubStats.statsLive)} />
         </ItemLayout>}
 
-        <ItemLayout
-          ref={skillsRef}
-          className="col-span-full grid grid-cols-4 sm:grid-cols-8 lg:[grid-template-columns:repeat(15,minmax(0,1fr))] !space-y-2 md:!space-y-6 relative overflow-hidden"
-        >
-          <UpdateBanner
-            message={changedFields.includes('skills') ? "This section has been updated" : null}
-            visible={isSkillsInView}
-            srPrefix="Skills update: "
-          />
-          {icons.map((icon) => (
-            <div
-              key={icon}
-              className="relative group w-11 h-11 md:w-12 md:h-12 lg:w-16 lg:h-16 transition-transform duration-300 ease-in-out hover:animate-lift-shake"
-            >
-              <img
-                src={`https://skillicons.dev/icons?i=${icon}`}
-                alt={icon}
-                className="w-full h-full object-contain hover:scale-110 transition-all duration-300 group-hover:grayscale "
-                loading="lazy"
-              />
-              <div className="absolute top-0 left-0 w-full h-full bg-black/60 hidden group-hover:block z-10" />
-              {/* Tooltip */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300  text-shadow-neon-orange text-md rounded px-2 py-1 pointer-events-none whitespace-nowrap z-20">
-                {icon}
-              </div>
-            </div>
-          ))}
+        {/* Skills grid (issue #20): the hardcoded icon list + inline grid were
+            replaced by a self-contained SkillsCard that fetches its set from
+            /api/github-skills (daily-cached), categorises + responsively renders
+            it, handles the in-icon hover label, and raises its own per-device
+            "skills changed" banner. `!p-0` hands padding to the card's inner
+            `repo-card-breathe` wrapper, matching the Languages / Streak cards —
+            and dropping the old `!space-y-2` is what fixes the first-icon lift. */}
+        <ItemLayout className="col-span-full !p-0">
+          <SkillsCard username={username} />
         </ItemLayout>
 
         {githubStats?.stats && <ItemLayout className={"col-span-full lg:col-span-6 !p-0"}>
@@ -1436,6 +1484,7 @@ const AboutDetails = () => {
             data={githubStats.stats.repo}
             isUpdated={changedFields.includes("stats.repo")}
             diffMessage={repoDiffMessage}
+            pulseFields={repoChangedFields}
           />
         </ItemLayout>}
 
@@ -1484,6 +1533,8 @@ const AboutDetails = () => {
         onClose={() => setIsExperienceModalOpen(false)}
         data={experienceData}
         triggerRef={experienceTriggerRef}
+        pulseRepoNames={experiencePulseRepoNames}
+        pulseRoleKeys={experiencePulseRoleKeys}
       />
     </section>
   );

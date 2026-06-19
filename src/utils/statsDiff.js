@@ -97,3 +97,19 @@ export function computeStatsDiff(prevStats, currentStats) {
   result.summaryMessage = messages.join(" | ");
   return result;
 }
+
+/**
+ * From a `computeStatsDiff` result, the field keys whose value INCREASED this
+ * cycle — `['stars','commits','prs','issues','contributedTo']` filtered to the
+ * ones that went up. Powers the GitHub Stats card's post-banner heartbeat on
+ * each risen stat's label + number. Only increases are flagged (a decrease — an
+ * unstar, a recount — never pulses), matching the "going up" intent and the
+ * languages/repo cards' rise-only rule.
+ *
+ * @param {object|null} diff - the object returned by `computeStatsDiff`
+ * @returns {Array<'stars'|'commits'|'prs'|'issues'|'contributedTo'>}
+ */
+export function statsIncreasedFields(diff) {
+  if (!diff) return [];
+  return STAT_FIELDS.map((f) => f.key).filter((k) => diff[k]?.increased);
+}

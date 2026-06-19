@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { computeStreakDiff, streakFingerprint } from "@/utils/streakDiff";
+import {
+  computeStreakDiff,
+  streakFingerprint,
+  streakIncreasedFields,
+} from "@/utils/streakDiff";
 
 // Single-user site, so one fixed key suffices — mirrors the keying discipline
 // of `useLanguagesUpdateSignal`.
@@ -99,6 +103,10 @@ function writeStored(value) {
  */
 export function useStreakUpdateSignal(streaks) {
   const [pendingMessage, setPendingMessage] = useState(null);
+  // The count blocks that ROSE this change cycle — surfaced so the card can
+  // heartbeat each risen number + its label after the banner. Captured by the
+  // consumer; cleared via `clearIncreased` once its pulse has played.
+  const [increasedFields, setIncreasedFields] = useState([]);
 
   const fingerprint = streakFingerprint(streaks);
 
@@ -129,13 +137,19 @@ export function useStreakUpdateSignal(streaks) {
     // doesn't replay the same banner indefinitely. The message lives in React
     // state until the section becomes visible and the consumer shows it.
     writeStored({ fingerprint, streaks: current });
-    if (diff.hasChanged) setPendingMessage(diff.summaryMessage);
+    if (diff.hasChanged) {
+      setPendingMessage(diff.summaryMessage);
+      setIncreasedFields(streakIncreasedFields(diff));
+    }
     // `streaks` is intentionally captured by closure, not listed as a dep — see
     // the comment above; `fingerprint` is the change-only trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fingerprint]);
 
   const consume = useCallback(() => setPendingMessage(null), []);
+  // Drop the captured risen fields once their heartbeat has played, so a later
+  // viewport re-entry doesn't replay the pulse (a genuinely new change re-arms it).
+  const clearIncreased = useCallback(() => setIncreasedFields([]), []);
 
-  return { pendingMessage, consume };
+  return { pendingMessage, increasedFields, consume, clearIncreased };
 }

@@ -31,10 +31,72 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience; and the GitHub Stats Section enhancement ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19), [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)) — a redesigned, animated GitHub Stats card with a per-stat change banner, a live/stale label, and a responsive Languages list; and the Completed Projects Section enhancement ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16)) — the completed-projects card rebuilt to match the Years-in-the-Craft card with an animated per-category breakdown bar, a screen-reader summary, a per-device count-change banner, and all about-page count-ups consolidated onto one debounced, flicker-immune hook; and the Current Streak Section enhancement ([#21](https://github.com/MA1002643/theabdullahfolio/issues/21), [#117](https://github.com/MA1002643/theabdullahfolio/pull/117)) — the Current Streak card rebuilt with a server-accurate streak computation, a per-device streak-change update banner, a git-commit-node progress ring with a staggered card entrance, and the Most Used Languages card brought to full entrance-animation parity with the GitHub Stats card (replayable on every viewport entry, with reduced-motion support)._
+_Scope: changes shipped by the Repository Governance & Templates Suite ([#81](https://github.com/MA1002643/theabdullahfolio/pull/81), closing [#23](https://github.com/MA1002643/theabdullahfolio/issues/23)); the Experience Summary live-data feature for the about page (`#102` + `#106`, combined into `feat/experience-summary-combined`); the Unify Page Titles refactor ([#104](https://github.com/MA1002643/theabdullahfolio/issues/104)); the Most Used Languages enhancement ([#18](https://github.com/MA1002643/theabdullahfolio/issues/18)) — an interactive language card with a per-repo breakdown popover plus languages-fetch resilience; and the GitHub Stats Section enhancement ([#19](https://github.com/MA1002643/theabdullahfolio/issues/19), [#115](https://github.com/MA1002643/theabdullahfolio/pull/115)) — a redesigned, animated GitHub Stats card with a per-stat change banner, a live/stale label, and a responsive Languages list; and the Completed Projects Section enhancement ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16)) — the completed-projects card rebuilt to match the Years-in-the-Craft card with an animated per-category breakdown bar, a screen-reader summary, a per-device count-change banner, and all about-page count-ups consolidated onto one debounced, flicker-immune hook; and the Current Streak Section enhancement ([#21](https://github.com/MA1002643/theabdullahfolio/issues/21), [#117](https://github.com/MA1002643/theabdullahfolio/pull/117)) — the Current Streak card rebuilt with a server-accurate streak computation, a per-device streak-change update banner, a git-commit-node progress ring with a staggered card entrance, and the Most Used Languages card brought to full entrance-animation parity with the GitHub Stats card (replayable on every viewport entry, with reduced-motion support); and the About-page Skills grid ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20)) — an icon grid sourced entirely from a live multi-ecosystem GitHub crawl (repo languages + dependency manifests) behind a new `/api/github-skills` route, with per-skill "used in repositories" popovers, keyboard-accessible icons, a per-device skills-change banner, and an owner-only, private-name-safe crawl._
 
 ### Added
 
+- **About-page Skills grid** ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20),
+  `src/components/about/SkillsCard.jsx`). An icon grid sourced **entirely
+  from a live GitHub crawl** — there is no hardcoded skill list, so it only
+  ever shows what your repositories actually use. Detections are grouped into
+  five ordered buckets (languages, frameworks, libraries, tools, software —
+  headings hidden, used only for sequence), rendered as illustrated icons via
+  skillicons.dev with `cdn.simpleicons.org` / devicon fallbacks, with a total
+  count-up, a `· live from GitHub` label shown only on genuinely live data, a
+  `prefers-reduced-motion`-aware staggered entrance, and a "No skills detected"
+  empty state. An unmapped detection is dropped rather than shown as a broken
+  image.
+- **`/api/github-skills` route** ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20),
+  `src/app/api/github-skills/route.js`). A budget-bounded GraphQL + REST
+  crawler that, for the allowlisted owner, pages the owner's repositories and
+  extracts skills two ways: **repo languages** inline from GraphQL, and
+  **dependency names** parsed from manifests discovered at any depth in each
+  repo's default-branch tree (recursive Git tree → batched blob fetch).
+  Wall-clock is bounded by a shared per-request deadline (`AsyncLocalStorage`)
+  plus per-call, cumulative, and pagination caps, so a slow GitHub response
+  can't exceed the serverless limit — partial results are retained on
+  exhaustion. A `?username=` other than `NEXT_PUBLIC_GITHUB_USERNAME` returns
+  `403`; a total failure returns an empty payload (`_fallback: true`) and the
+  10-min TTL retries on the next visit.
+- **Multi-ecosystem manifest parsing** ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20),
+  `src/utils/manifestParsers.js`). `parseManifest` recognises 12 manifest
+  filenames across 7 ecosystems — `package.json` (JS/Node), `requirements.txt`
+  / `pyproject.toml` / `Pipfile` (Python), `go.mod` (Go), `Cargo.toml` (Rust),
+  `Gemfile` (Ruby), `composer.json` (PHP), `pubspec.yaml` (Dart/Flutter), and
+  `pom.xml` / `build.gradle` / `build.gradle.kts` (JVM) — matched by basename
+  at **any tree depth** (so a `Backend/`/`Frontend/` monorepo is fully
+  covered), skipping vendored/build directories (`node_modules`, `dist`, …).
+- **Skill detection → icon mapping** ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20),
+  `src/utils/skillsIconMap.js`). A curated `SKILL_MAP` of canonical
+  skillicons.dev short names (plus a handful of Simple Icons additions)
+  resolves first and owns ambiguous names; anything else falls back to the
+  Simple Icons slug algorithm against a bundled ~3.4k-slug catalog
+  (`src/utils/simpleIconsSlugs.js`). `categorizeSkillsWithRepos` dedupes by
+  slug and attaches the repositories each skill was detected in.
+- **Per-skill repository popover + keyboard-accessible icons**
+  ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20),
+  `src/components/about/SkillIcon.jsx`). Activating a skill icon opens a panel
+  (themed like the languages card's breakdown popover) listing the repos that
+  skill was detected in — portaled to `<body>`, viewport-clamped, internally
+  scrolling. It opens by **hover** (fine pointer), **keyboard focus**
+  (input-modality tracked, so an attached keyboard behaves like hover), or
+  **tap** on touch. Each interactive tile is exposed as a `role="button"` with
+  `aria-haspopup`, `aria-expanded`, and Enter/Space activation (wired to a
+  modality-agnostic toggle in the parent that opens in the blur-closable mode,
+  so tabbing away still dismisses it); non-interactive icons stay out of the
+  tab order.
+- **Per-device skills-change banner** ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20),
+  `src/hooks/useSkillsUpdateSignal.js` + `src/utils/skillsDiff.js`). A
+  localStorage-baselined "skills changed since this device last saw them"
+  signal (same model as the languages / streak / project signals): the
+  fingerprint (slug + category) is **client-computed** via `skillsFingerprint`
+  so it can't drift from the server, and `diffSkills` / `buildBannerMessage`
+  surface a human-readable added/removed message via the shared `UpdateBanner`
+  only on a real change.
+- **Client-safe `src/utils/skillsIconUrl.js`** ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20)) —
+  the small surface UI components need (`CATEGORY_ORDER`, `emptyCategories`,
+  `getIconUrl`), split out of the heavy detection module so the ~3.4k-slug
+  Simple Icons catalog and the `SKILL_MAP` build never reach the client bundle.
 - **Completed Projects category breakdown** ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16),
   `ProjectsSplitBar` in `src/components/about/index.jsx`). A two-segment
   proportional bar (Web / System, grouped from each project's `category`)
@@ -202,6 +264,16 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Changed
 
+- **`src/utils/skillsIconMap.js` is now server-only**
+  ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20)). The
+  detection machinery (the `SKILL_MAP` build + the ~3.4k-slug Simple Icons
+  catalog) is imported solely by `/api/github-skills`; client components
+  consume the new catalog-free `skillsIconUrl.js` instead, keeping the catalog
+  out of the about-page bundle. `src/components/about/SkillsCard.jsx` now seeds
+  its grid from `emptyCategories()` rather than a client-side
+  `categorizeSkills([])` call that previously dragged the whole heavy module in
+  (and `src/utils/skillsDiff.js` likewise imports `CATEGORY_ORDER` from the
+  client-safe module).
 - About-page count-ups consolidated onto the shared `useViewportCountUp`
   hook ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16),
   `src/components/about/index.jsx`), replacing three near-duplicate
@@ -329,6 +401,24 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Fixed
 
+- **Skills cache could pin stale data forever**
+  (`src/components/about/SkillsCard.jsx`). A corrupt / hand-edited
+  `skillsLastFetched` localStorage value (non-numeric) made
+  `Number(lastFetched)` `NaN`, and `Date.now() - NaN > TTL` is always `false`,
+  so the hook trusted the cached payload indefinitely and skipped every live
+  refresh. The staleness check now coerces first and treats a non-finite
+  timestamp (and a missing one) as stale.
+- **`getIconUrl` now URL-encodes the slug** (`src/utils/skillsIconUrl.js`) —
+  defensive hardening so a slug with reserved characters can't produce a
+  malformed icon URL (a no-op for the current `[a-z0-9]` slugs, which are
+  guaranteed by the curated table + the Simple Icons fallback's non-alnum
+  strip).
+- **False "completed projects changed" banner on a tie/reorder**
+  (`src/hooks/useProjectCountSignal.js`). The effect's change-trigger
+  fingerprint was derived from the count-sorted breakdown's **array order**, so
+  a tie (or a reorder of `projectsData`) could change the key without any
+  per-category count changing. It is now an order-insensitive (sorted)
+  signature, matching the order-insensitive comparison it gates.
 - About-page **entry glitch** on the Most Used Languages, GitHub Stats, and
   Most Active Repository cards ([#16](https://github.com/MA1002643/theabdullahfolio/issues/16)).
   Each card drove its entrance fade + per-character title off the **raw**
@@ -548,7 +638,24 @@ _Scope: changes shipped by the Repository Governance & Templates Suite ([#81](ht
 
 ### Security
 
-- No security advisories published yet.
+- **Skills crawl restricted to owner-owned repositories**
+  ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20),
+  `src/app/api/github-skills/route.js`). The repo query used
+  `ownerAffiliations: [OWNER, COLLABORATOR]` which — combined with crawling the
+  PRIVATE scope — could surface the **names of repos owned by other accounts /
+  orgs (including private org repos) that the token-holder only collaborates
+  on** in the public, CDN-cached per-skill `repos` lists. Restricted to
+  `[OWNER]` (matching `/api/github-stats`'s crawl), so only the owner's own
+  repositories are ever enumerated. Caught in review before release.
+- **Private repository names withheld from the public payload**
+  ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20), same route).
+  Private repos are still crawled for skill **detection**, but each detection
+  is attached to a disclosure-safe identifier that is `null` for any repo whose
+  `isPrivate` is true — so a private repo's name never enters the per-skill
+  `repos` lists or their `https://github.com/…` links (the skill still appears,
+  just without naming the private repo). The `unstable_cache` key was bumped
+  `github-skills-v2 → v3` so a stale pre-fix entry can't serve private names
+  after deploy.
 
 ---
 

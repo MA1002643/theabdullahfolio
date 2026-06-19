@@ -5,6 +5,83 @@ import { X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
+import { roleKey } from "@/hooks/useExperienceSummary";
+
+// ── Scroll-reveal cascade — the SAME entrance the Repository Breakdown / Used in
+// Repositories popovers use (sections slide up, list rows slide in from the left,
+// staggered), here triggered as each region scrolls into the modal's OWN scroll
+// container so the Career snapshot comes alive as you move through it.
+const revealUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 20 } },
+};
+// A list = a stagger container; its rows inherit the in-view state and cascade.
+const revealListContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+};
+const revealRow = {
+  hidden: { opacity: 0, x: -16 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
+// Reduced-motion no-op for every reveal variant above.
+const revealNoMotion = {
+  hidden: { opacity: 1, x: 0, y: 0 },
+  visible: { opacity: 1, x: 0, y: 0 },
+};
+
+// In-view detection scoped to the modal's OWN scroll container (handed to the
+// IntersectionObserver as `root`), so a section counts as visible only when it's
+// actually on screen inside the dialog — satisfying the "only when the relevant
+// section comes into view" requirement for the per-row heartbeats. `open`
+// re-arms the observer each time the dialog mounts (its observed children only
+// exist while open); `inView` is sticky-true for the lifetime of an open so a
+// section that has scrolled past still counts as seen.
+function useSectionInView(scrollRef, open, amount = 0.35) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!open) {
+      setInView(false);
+      return undefined;
+    }
+    const el = ref.current;
+    if (!el) return undefined;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) setInView(true);
+      },
+      { root: scrollRef.current ?? null, threshold: amount },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [scrollRef, open, amount]);
+  return [ref, inView];
+}
+
+// One-shot heartbeat window: when `active` first becomes true, turn the pulse on
+// for `ms` then off, and keep it off for the rest of this active period (so a
+// section that stays in view doesn't blink forever). Re-arms when `active`
+// returns to false (e.g. the dialog closes), so reopening replays the beat for
+// whatever is still flagged as newly added.
+function usePulseWindow(active, ms = 3500) {
+  const [on, setOn] = useState(false);
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (active && !firedRef.current) {
+      firedRef.current = true;
+      setOn(true);
+      const t = setTimeout(() => setOn(false), ms);
+      return () => clearTimeout(t);
+    }
+    if (!active) {
+      firedRef.current = false;
+      setOn(false);
+    }
+    return undefined;
+  }, [active, ms]);
+  return on;
+}
 
 // Generic numeric count-up. Renders an integer that ticks 0 → value
 // on viewport entry, then holds. Same animate()/viewport-trigger
@@ -238,38 +315,37 @@ function ExperienceDonut({ personalMonths, employmentMonths }) {
 // modal's visible region replays the fill animation. `containerRef`
 // is the dialog scroller, threaded through from the parent so this
 // detail stays local to the modal.
-function RoleBar({ role, maxMonths, index, containerRef }) {
+function RoleBar({ role, maxMonths, index, containerRef, pulse = false }) {
   const prefersReducedMotion = useReducedMotion();
   const pct = maxMonths > 0 ? Math.max(4, (role.months / maxMonths) * 100) : 0;
-  // Split the pre-formatted `role.display` into its leading numeric
-  // segment and the trailing unit + sentence so the number can animate
-  // independently. Same rules as the server-side `formatDuration` (>=12
-  // months → "X+ years", else "X+ months"; singular/plural handled).
+  // Heartbeat the role name + company + duration digit when this role was just
+  // added (and its section is in view) — same pulse the Skills card uses.
+  const pulseClass = pulse ? " skill-heartbeat" : "";
+  // Leading numeric value + year/month mode for the duration badge on the
+  // right (which animates the number independently). The left label is a
+  // plain "Role · Company" string, so the duration lives only in the badge
+  // now — no need to spell out the unit word. Same >=12-month → years split
+  // as the server-side `formatDuration`.
   const isYears = role.months >= 12;
   const leading = isYears ? Math.floor(role.months / 12) : role.months;
-  const unitWord = isYears
-    ? leading === 1
-      ? "year"
-      : "years"
-    : leading === 1
-      ? "month"
-      : "months";
 
   return (
-    <li
+    <motion.li
       className="grid gap-1 py-2"
       style={{ gridTemplateColumns: "minmax(0, 1fr) auto" }}
+      // Slide in from the left as this role's list scrolls into the dialog —
+      // inherits the parent list's in-view stagger (same row reveal as the repo
+      // popovers). The progress bar inside keeps its own width animation.
+      variants={prefersReducedMotion ? revealNoMotion : revealRow}
     >
       <span
-        className="text-sm leading-snug min-w-0 truncate"
+        className={`text-sm leading-snug min-w-0 truncate${pulseClass}`}
         style={{ color: "#ff6d05", textShadow: "none" }}
       >
-        <AnimatedNumber value={leading} />+{" "}
-        <span className="text-fire-amber">
-          {unitWord} with {role.company} as a {role.role}
-        </span>
+        {role.role}
+        <span className="text-fire-amber"> · {role.company}</span>
       </span>
-      <span className="text-xs text-[#ffaa2a] tabular-nums self-center">
+      <span className={`text-xs text-[#ffaa2a] tabular-nums self-center${pulseClass}`}>
         <AnimatedNumber value={leading} />
         {isYears ? "+ yrs" : " mo"}
       </span>
@@ -294,7 +370,7 @@ function RoleBar({ role, maxMonths, index, containerRef }) {
           }}
         />
       </div>
-    </li>
+    </motion.li>
   );
 }
 
@@ -305,7 +381,7 @@ function RoleBar({ role, maxMonths, index, containerRef }) {
 // every hover even when the full name was already visible. A
 // ResizeObserver re-checks on container width changes so the tooltip
 // turns on/off as the modal is resized.
-function RepoName({ repo }) {
+function RepoName({ repo, pulse = false }) {
   const ref = useRef(null);
   const [isClipped, setIsClipped] = useState(false);
 
@@ -320,6 +396,7 @@ function RepoName({ repo }) {
   }, [repo.name]);
 
   const titleAttr = isClipped ? repo.name : undefined;
+  const pulseClass = pulse ? " skill-heartbeat" : "";
 
   if (repo.url) {
     return (
@@ -329,7 +406,7 @@ function RepoName({ repo }) {
         target="_blank"
         rel="noopener noreferrer"
         title={titleAttr}
-        className="block truncate text-fire-amber underline-offset-2 hover:underline transition-colors"
+        className={`block truncate text-fire-amber underline-offset-2 hover:underline transition-colors${pulseClass}`}
       >
         {repo.name}
       </a>
@@ -339,7 +416,7 @@ function RepoName({ repo }) {
     <span
       ref={ref}
       title={titleAttr}
-      className="block truncate text-fire-amber"
+      className={`block truncate text-fire-amber${pulseClass}`}
     >
       {repo.name}
     </span>
@@ -363,6 +440,10 @@ const FOCUSABLE_SELECTOR = [
 // so the modal opens at a compact height even on accounts with many
 // owned repos; users with curiosity can expand to the full list.
 const REPO_INITIAL_LIMIT = 5;
+
+// Stable empty default for the pulse Sets so the default prop identity never
+// changes between renders (a fresh `new Set()` default would re-run effects).
+const EMPTY_SET = new Set();
 
 /**
  * Experience breakdown modal — opens from the years card on the about
@@ -389,7 +470,15 @@ const REPO_INITIAL_LIMIT = 5;
  * @param {object|null} props.data         - experience-summary payload
  * @param {React.RefObject<HTMLElement>} props.triggerRef - element that opened the modal
  */
-export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
+export function ExperienceBreakdownModal({
+  open,
+  onClose,
+  data,
+  triggerRef,
+  pulseRepoNames = EMPTY_SET,
+  pulseRoleKeys = EMPTY_SET,
+}) {
+  const prefersReducedMotion = useReducedMotion();
   const dialogRef = useRef(null);
   // Inner scrolling region is the actual `overflow-y-auto` element so
   // the browser's scrollbar lands inside the gold border instead of
@@ -411,32 +500,64 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
 
   // Scrollbar repaint on foreground return. The repo links open with
   // `target="_blank"`, so tapping one (e.g. on mobile to open GitHub) leaves
-  // this tab backgrounded rather than navigating it away. Android Chrome — and
-  // bfcache restores generally — drop a *nested* scroll container's inherited
-  // `scrollbar-color` when the tab returns to the foreground, so the modal's
-  // orange thumb reverts to the default grey until a manual refresh. There's no
-  // CSS-only fix, so when the page is shown again we re-assert the colour
-  // explicitly on the scroll element, toggling through `auto` first (with a
-  // forced reflow between the two writes) so it's a genuine computed-value
-  // change the browser can't coalesce into a no-op.
+  // this tab backgrounded rather than navigating it away. Chrome (desktop and
+  // Android) — and bfcache restores generally — drop a *nested* scroll
+  // container's `scrollbar-color` when the tab returns to the foreground, so
+  // the modal's orange thumb reverts to the default grey until a manual
+  // refresh. There's no CSS-only fix, so we re-assert it from JS — but it has
+  // to be done forcefully and at the right time, or it silently no-ops:
+  //
+  //   1. TIMING — the browser repaints the restored scrollbar grey a frame or
+  //      two AFTER the page becomes visible, so a re-assert run synchronously
+  //      in the visibilitychange/pageshow handler gets clobbered by that later
+  //      stale paint. We schedule past it: next frame, the frame after (double
+  //      rAF), and a short timeout backstop in case the stale paint lands later
+  //      still. Repainting orange more than once is visually a no-op.
+  //   2. INVALIDATION — merely re-writing `scrollbar-color` (even toggling it
+  //      through `auto` with a layout flush) doesn't repaint the scrollbar:
+  //      `offsetHeight` forces *layout*, not a scrollbar re-theme, and when
+  //      Blink still believes the property equals its current value the write
+  //      is a paint no-op. Toggling `overflow` tears down and recreates the
+  //      scroll container's scrollbar, which forces it to re-read the colour.
+  //      We save/restore `scrollTop` because the brief `overflow: hidden` can
+  //      clamp the scroll offset.
   useEffect(() => {
     if (!open) return undefined;
+    let rafA = 0;
+    let rafB = 0;
+    let timer = 0;
     const repaintScrollbar = () => {
       const node = scrollRef.current;
       if (!node) return;
-      node.style.scrollbarColor = "auto";
-      void node.offsetHeight; // flush so the writes aren't merged
+      const top = node.scrollTop;
       node.style.scrollbarColor = "#ff6d05 #222";
+      const prevOverflow = node.style.overflowY;
+      node.style.overflowY = "hidden";
+      void node.offsetHeight; // reflow so the toggle isn't coalesced
+      node.style.overflowY = prevOverflow || "auto";
+      node.scrollTop = top;
+    };
+    const schedule = () => {
+      cancelAnimationFrame(rafA);
+      cancelAnimationFrame(rafB);
+      clearTimeout(timer);
+      rafA = requestAnimationFrame(() => {
+        rafB = requestAnimationFrame(repaintScrollbar);
+      });
+      timer = setTimeout(repaintScrollbar, 80);
     };
     const onPageShow = (e) => {
-      if (e.persisted) repaintScrollbar();
+      if (e.persisted) schedule();
     };
     const onVisibility = () => {
-      if (document.visibilityState === "visible") repaintScrollbar();
+      if (document.visibilityState === "visible") schedule();
     };
     window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
+      cancelAnimationFrame(rafA);
+      cancelAnimationFrame(rafB);
+      clearTimeout(timer);
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibility);
     };
@@ -578,6 +699,25 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
   const visibleRepos = showAllRepos ? repos : repos.slice(0, REPO_INITIAL_LIMIT);
   const hasMoreRepos = repos.length > REPO_INITIAL_LIMIT;
 
+  // ── "Just added" heartbeats ────────────────────────────────────────────────
+  // Each of the three target regions gets its own in-modal-view trigger + a
+  // one-shot pulse window, so a row only beats once its section is actually
+  // scrolled into view inside the dialog. `hasAddedRepos` drives both the hero
+  // "N owned repositories" total and the matching rows in the list; added roles
+  // drive the employment bars. Reduced motion suppresses the JS class too (the
+  // CSS also no-ops `.skill-heartbeat`).
+  const hasAddedRepos = pulseRepoNames.size > 0;
+  const hasAddedRoles = pulseRoleKeys.size > 0;
+  const motionOK = !prefersReducedMotion;
+
+  const [ownedTotalRef, ownedTotalInView] = useSectionInView(scrollRef, open);
+  const [repoListRef, repoListInView] = useSectionInView(scrollRef, open);
+  const [employmentListRef, employmentListInView] = useSectionInView(scrollRef, open);
+
+  const ownedTotalPulsing = usePulseWindow(motionOK && hasAddedRepos && ownedTotalInView);
+  const repoListPulsing = usePulseWindow(motionOK && hasAddedRepos && repoListInView);
+  const employmentPulsing = usePulseWindow(motionOK && hasAddedRoles && employmentListInView);
+
   // Repos arrive in DESC-by-createdAt order (newest first) from the
   // API. Date formatter renders "Mar 4, 2023"-style readable dates
   // anchored in UTC so a non-UTC client locale can't shift the day.
@@ -591,6 +731,14 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
       timeZone: "UTC",
     });
   };
+
+  // Reduced-motion-aware reveal variants. `revealViewport` uses the modal's own
+  // scroll container as the IntersectionObserver root, so each region reveals as
+  // it scrolls into the dialog (not the page) — once per open.
+  const upV = prefersReducedMotion ? revealNoMotion : revealUp;
+  const listV = prefersReducedMotion ? revealNoMotion : revealListContainer;
+  const rowV = prefersReducedMotion ? revealNoMotion : revealRow;
+  const revealViewport = { root: scrollRef, once: false, amount: 0.1 };
 
   return (
     <AnimatePresence>
@@ -705,8 +853,14 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
             </header>
 
             {/* Hero block — donut + legend. Stacks on mobile so the
-                donut stays large enough to read. */}
-            <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
+                donut stays large enough to read. Slides up as it enters view. */}
+            <motion.div
+              variants={upV}
+              initial="hidden"
+              whileInView="visible"
+              viewport={revealViewport}
+              className="flex flex-col sm:flex-row items-center gap-6 mb-8"
+            >
               <ExperienceDonut
                 personalMonths={personalMonths}
                 employmentMonths={employmentMonths}
@@ -734,7 +888,10 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                       unavailable={!personalAvailable}
                     />
                     {repos.length > 0 && (
-                      <span className="block text-xs text-[#ffbb55] mt-0.5">
+                      <span
+                        ref={ownedTotalRef}
+                        className={`block text-xs text-[#ffbb55] mt-0.5${ownedTotalPulsing ? " skill-heartbeat" : ""}`}
+                      >
                         <AnimatedNumber value={repos.length} /> owned {repos.length === 1 ? "repository" : "repositories"}
                       </span>
                     )}
@@ -773,10 +930,16 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                   </dd>
                 </div>
               </dl>
-            </div>
+            </motion.div>
 
-            <section className="mb-7">
-              <header className="flex items-center justify-between mb-3">
+            <section ref={repoListRef} className="mb-7">
+              <motion.header
+                variants={upV}
+                initial="hidden"
+                whileInView="visible"
+                viewport={revealViewport}
+                className="flex items-center justify-between mb-3"
+              >
                 <h3 className="text-[11px] uppercase tracking-[0.2em] text-[#ffaa2a]">
                   Personal Projects
                 </h3>
@@ -785,18 +948,26 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                     Newest first
                   </span>
                 )}
-              </header>
+              </motion.header>
               {repos.length > 0 ? (
                 <>
-                  <ul
+                  <motion.ul
                     role="list"
+                    variants={listV}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={revealViewport}
                     className="custom-bg-abt rounded-lg p-2 space-y-1.5"
                   >
                     {visibleRepos.map((r) => {
                       const dateText = formatRepoDate(r.createdAt);
+                      // This repo was just added AND its section is in view → pulse
+                      // its name + date together (item 2 of the request).
+                      const rowPulse = repoListPulsing && pulseRepoNames.has(r.name);
                       return (
-                        <li
+                        <motion.li
                           key={r.url ?? r.name}
+                          variants={rowV}
                           className="flex items-center gap-3 text-sm leading-snug"
                         >
                           <span
@@ -808,18 +979,18 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                             }}
                           />
                           <div className="flex-1 min-w-0">
-                            <RepoName repo={r} />
+                            <RepoName repo={r} pulse={rowPulse} />
                           </div>
                           <time
                             dateTime={r.createdAt}
-                            className="flex-shrink-0 text-xs text-[#ffaa2a] tabular-nums"
+                            className={`flex-shrink-0 text-xs text-[#ffaa2a] tabular-nums${rowPulse ? " skill-heartbeat" : ""}`}
                           >
                             {dateText}
                           </time>
-                        </li>
+                        </motion.li>
                       );
                     })}
-                  </ul>
+                  </motion.ul>
                   {hasMoreRepos && (
                     <button
                       type="button"
@@ -842,8 +1013,14 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
               )}
             </section>
 
-            <section>
-              <header className="flex items-center justify-between mb-3">
+            <section ref={employmentListRef}>
+              <motion.header
+                variants={upV}
+                initial="hidden"
+                whileInView="visible"
+                viewport={revealViewport}
+                className="flex items-center justify-between mb-3"
+              >
                 <h3 className="text-[11px] uppercase tracking-[0.2em] text-[#ffaa2a]">
                   Employment
                 </h3>
@@ -852,10 +1029,14 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                     Relative duration
                   </span>
                 )}
-              </header>
+              </motion.header>
               {roles.length > 0 ? (
-                <ul
+                <motion.ul
                   role="list"
+                  variants={listV}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={revealViewport}
                   className="custom-bg-abt rounded-lg px-3 py-1"
                 >
                   {roles.map((r, i) => (
@@ -872,7 +1053,8 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                         // the leading-snug line-box padding above
                         // the role text, so the visible gap above
                         // and below the line reads as equal.
-                        <li
+                        <motion.li
+                          variants={rowV}
                           role="presentation"
                           aria-hidden="true"
                           className="h-px elite-divider -mx-3 list-none -mb-1"
@@ -883,10 +1065,11 @@ export function ExperienceBreakdownModal({ open, onClose, data, triggerRef }) {
                         maxMonths={maxRoleMonths}
                         index={i}
                         containerRef={scrollRef}
+                        pulse={employmentPulsing && pulseRoleKeys.has(roleKey(r))}
                       />
                     </Fragment>
                   ))}
-                </ul>
+                </motion.ul>
               ) : (
                 <p className="text-sm text-fire-amber">
                   {employmentAvailable

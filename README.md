@@ -56,6 +56,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
 | **Animated GitHub Stats** | Live GraphQL API → fast-start/slow-finish count-ups, a breathing SVG rank arc, hover-spotlight metric rows, and a per-stat change banner (e.g. "Total Stars +5 \| Total Commits +50"); a "Live GitHub Metrics" label that hides on stale/fallback data; diff-based change detection with 10-min polling |
 | **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up; responsive list: top 5 in a single column (mobile → `lg`), up to 10 in two columns at `xl`+ |
+| **Live Skills Grid** | About-page icon grid built **entirely from a live GitHub crawl** — repo languages plus dependency manifests across 7 ecosystems — resolved to skillicons.dev / Simple Icons icons, with a per-skill "used in repositories" popover (hover / keyboard / tap), a per-device skills-change banner, and an owner-only, private-name-safe crawl |
 | **Completed Projects Breakdown** | "Projects shipped" card with an animated per-category proportional bar (Web / System, derived from the project data), a `\|`-separated count legend that wraps stacked→side-by-side responsively, count-ups that replay on every viewport entry, and an `sr-only` summary so screen readers get the breakdown |
 | **Years in the Craft** | Experience figure derived live from the earliest GitHub repo **and** software roles parsed from the résumé PDF, with a Personal vs Employment split bar and a click-to-open category breakdown modal |
 | **Current Streak** | Server-accurate streak from the GitHub contribution calendar (future-day-padding aware, "Present"-stable across midnight), shown in a git-commit-node progress ring with a staggered card entrance and a per-device change banner that fires only on real movement |
@@ -150,13 +151,16 @@ graph TD
 
         Root --> API["API Routes"]
         API --> GHStats["/api/github-stats<br/>GraphQL + Cache<br/>Rank Calculator"]
+        API --> GHSkills["/api/github-skills<br/>Repo + Manifest Crawl<br/>Icon Resolver"]
         API --> SendMail["/api/send-mail<br/>SMTP Handler"]
     end
 
     About -- "poll 10min" --> GHStats
+    About -- "poll 10min" --> GHSkills
     Contact -- "POST" --> SendMail
     SendMail -- "SMTP" --> Email([Email Inbox])
     GHStats -- "GraphQL" --> GitHub([GitHub API])
+    GHSkills -- "GraphQL + REST" --> GitHub
 ```
 
 ```mermaid
@@ -210,11 +214,12 @@ theabdullahfolio/
 │   │   │   └── qualifications/page.js  # 3D carousel with certificate cards
 │   │   └── api/
 │   │       ├── github-stats/route.js   # GraphQL → cached stats + rank + per-repo language breakdown
+│   │       ├── github-skills/route.js  # Multi-ecosystem repo crawl → cached, icon-mapped skills grid
 │   │       └── send-mail/route.js      # SMTP email handler
 │   ├── components/
 │   │   ├── navigation/                 # Orbital ring — trig positioning, 5 breakpoints
 │   │   ├── project-detail/             # 3D laptop, aurora parallax, boot sequence, lantern sweep
-│   │   ├── about/                      # Stats/streaks/repo/languages cards, Completed Projects + Years-in-the-Craft cards, experience modal, shared count-up hook, diff tracking
+│   │   ├── about/                      # Stats/streaks/repo/languages cards, Skills grid + per-skill repo popover, Completed Projects + Years-in-the-Craft cards, experience modal, shared count-up hook, diff tracking
 │   │   ├── projects/                   # Filtered grid with AnimatePresence transitions
 │   │   ├── contact/                    # Multi-phase rocket form, react-hook-form
 │   │   ├── qualifications/             # 3D CSS carousel with category tabs
@@ -227,6 +232,7 @@ theabdullahfolio/
 │   │   ├── useLanguagesUpdateSignal.js # Per-device language-change banner signal
 │   │   ├── useProjectCountSignal.js    # Per-device completed-projects count-change banner signal
 │   │   ├── useReliableInView.js        # Transform-safe viewport detection (geometry, not IntersectionObserver)
+│   │   ├── useSkillsUpdateSignal.js    # Per-device skills-change banner signal
 │   │   ├── useStreakUpdateSignal.js    # Per-device streak-change banner signal
 │   │   └── useViewportCountTrigger.js  # Latched "play once per entry" trigger + reversible settled-in-view flag
 │   └── utils/
@@ -236,6 +242,11 @@ theabdullahfolio/
 │       ├── statsDiff.js                # Per-stat GitHub-stats diff + banner summary
 │       ├── repoDiff.js                 # Most-active-repository change summary
 │       ├── streakDiff.js               # Streak fingerprint + diff (client-computed)
+│       ├── skillsDiff.js               # Skills fingerprint + diff (client-computed)
+│       ├── skillsIconMap.js            # Server-only skill detection → icon mapping (SKILL_MAP + Simple Icons fallback)
+│       ├── skillsIconUrl.js            # Client-safe icon-URL + category helpers (no heavy catalog)
+│       ├── manifestParsers.js          # Multi-ecosystem dependency-manifest parsers for the skills crawl
+│       ├── simpleIconsSlugs.js         # Bundled Simple Icons slug catalog (fallback membership set)
 │       ├── animationCurves.js          # Shared fast-start/slow-finish easing + imperative count-up (animateToTarget)
 │       ├── experience/                 # Résumé-PDF parsing + experience aggregation helpers
 │       └── emoji.js                    # Emoji name-to-symbol resolution
@@ -297,7 +308,7 @@ RECEIVER_EMAIL=recipient@example.com
 
 ### GitHub Stats Integration
 
-The `/about` page (Most Used Languages, GitHub Stats, Streaks, Repository card) is powered by `/api/github-stats`, a single GraphQL aggregator that runs against your own PAT instead of public unauthenticated requests.
+The `/about` page's data cards (Most Used Languages, GitHub Stats, Streaks, Repository card) are powered by `/api/github-stats`, a single GraphQL aggregator that runs against your own PAT instead of public unauthenticated requests. The **Skills grid** on the same page is powered by a companion `/api/github-skills` route — see point 13.
 
 **1. Create the token** — [github.com/settings/tokens](https://github.com/settings/tokens). Either:
 - **Fine-grained PAT** (recommended) scoped to your account with *read-only* access to `Public repositories` (Metadata) and `Contents`.
@@ -349,6 +360,12 @@ rm /tmp/fallback.json
 
 **12. Current Streak card** (`src/components/about/StreakStatsCard.jsx`) — three stat blocks (Total Contributions, the Current Streak progress ring, Longest Streak) that reveal in a **staggered left-to-right cascade** on every viewport entry. The ring is a flat-stroke arc whose fill encodes the current streak as a share of the longest, sweeping in once on entry with a `GitCommitVertical` "commit node" at the top; digits count up imperatively via `src/utils/animationCurves.js` `animateToTarget`. Streaks are computed **server-side** in `computeStreaks` (`/api/github-stats`): GitHub pads the contribution calendar with the rest of the current *week*, so future days are dropped (`<= today`) and the current streak is found by walking **backward**, treating an empty *today* as "not yet broken" (and keeping `end` pinned to today so the range reads **"Present"** and doesn't shift at midnight). A per-device `useStreakUpdateSignal` + `src/utils/streakDiff.js` (`computeStreakDiff` / `streakFingerprint`) surfaces a human-readable change banner via the shared `UpdateBanner` only when a tracked value actually moves — the fingerprint is **client-computed** from the streak values + current/longest ranges (the rolling `totalContributions` range is excluded so a daily window roll-over never reads as a change), and an empty `{}` loading placeholder is treated as *absent* so the first real payload doesn't fire a false banner. The adjacent **Most Used Languages** card was brought to full entrance-animation parity with the GitHub Stats card here (spring lift, per-character title, metric-row slide-in stagger), all driven off the reversible `settledInView` flag so the entrance replays on every re-entry, with a reduced-motion no-op path.
 
+**13. About-page Skills grid & `/api/github-skills`** — the skills section (`src/components/about/SkillsCard.jsx`) is built **entirely from a live GitHub crawl**; there is no hardcoded list, so it only ever shows what your repositories actually use. `/api/github-skills` pages your repos and detects skills two ways: **languages** inline from the GraphQL repo query, and **dependencies** parsed from manifests found at any depth in each repo's default-branch tree — `package.json`, `requirements.txt` / `pyproject.toml` / `Pipfile`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `pubspec.yaml`, and `pom.xml` / `build.gradle` / `build.gradle.kts` (`src/utils/manifestParsers.js`), skipping vendored/build directories. Detected names resolve to icons in the **server-only** `src/utils/skillsIconMap.js` — a curated table of skillicons.dev short names first, then a Simple Icons slug fallback against a bundled ~3.4k-slug catalog (`src/utils/simpleIconsSlugs.js`); an unmapped name is dropped, never rendered as a broken image. Icons render via skillicons.dev with `cdn.simpleicons.org` / devicon fallbacks, grouped into five ordered buckets, each with a **"used in repositories" popover** that opens by hover (fine pointer), keyboard focus (input-modality tracked), or tap — and is exposed to assistive tech as a `role="button"` with `aria-haspopup` / `aria-expanded` and Enter/Space activation. A per-device `useSkillsUpdateSignal` (`src/utils/skillsDiff.js`) surfaces a client-computed "skills changed" banner via the shared `UpdateBanner` only on a real change.
+
+   **Privacy** — the crawl uses `ownerAffiliations: [OWNER]` (matching `/api/github-stats`), so it never enumerates repos owned by other accounts/orgs that you only collaborate on. Private repositories you own are still crawled for **detection**, but their names are withheld from the public payload: each detection is attached to a disclosure-safe id that is `null` for any repo whose `isPrivate` is true, so a private repo's name never reaches the per-skill `repos` lists or the CDN-cached response. (Detecting skills from private repos requires a `GITHUB_TOKEN` with private read access; without it the PRIVATE scope simply yields nothing — degraded coverage, not an error.)
+
+   **Caching & resilience** — results are wrapped in a 10-min `unstable_cache` (key `github-skills-v3`) and served `public, s-maxage=600, stale-while-revalidate=300, stale-if-error=86400`; the client also keeps a `localStorage` last-good (`skillsCache:v3`) behind a 10-min TTL guard. The crawl is **budget-bounded** (a shared per-request deadline via `AsyncLocalStorage` plus per-call, cumulative, and pagination caps) so a slow GitHub response can't blow the serverless limit — partial results are retained. The same `NEXT_PUBLIC_GITHUB_USERNAME` allowlist applies (`403` otherwise), and a total failure returns an empty payload (`_fallback: true`) so the grid shows a "No skills detected" / couldn't-load state and retries on the next visit.
+
 ### Commands
 
 ```bash
@@ -392,7 +409,7 @@ upgrade-insecure-requests
 | **Image pipeline** | Sharp — automatic WebP / AVIF conversion |
 | **Font loading** | `next/font` self-hosted Inter, zero layout shift |
 | **Code splitting** | Route-based automatic splitting; Three.js loaded only on `/projects/[id]` |
-| **API caching** | `/api/github-stats` wrapped in two `unstable_cache` layers — 24-hr for the most-active-repo selection, 10-min for the display-data refresh; both invalidated by tag on demand via the daily `/api/repo-refresh` cron. CDN response is also `s-maxage=10min` / `stale-while-revalidate=5min` / `stale-if-error=24hr`, with a bundled JSON snapshot served on total upstream failure |
+| **API caching** | `/api/github-stats` wrapped in two `unstable_cache` layers — 24-hr for the most-active-repo selection, 10-min for the display-data refresh; both invalidated by tag on demand via the daily `/api/repo-refresh` cron. CDN response is also `s-maxage=10min` / `stale-while-revalidate=5min` / `stale-if-error=24hr`, with a bundled JSON snapshot served on total upstream failure. `/api/github-skills` adds its own 10-min `unstable_cache` (key `github-skills-v3`) behind the same CDN policy, with a budget-bounded crawl that retains partial results under a shared wall-clock deadline |
 | **Analytics** | Vercel Speed Insights + Web Analytics for real-user Core Web Vitals |
 
 </details>

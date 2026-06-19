@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { diffLanguages, languagesFingerprint } from "@/utils/languageDiff";
+import {
+  diffLanguages,
+  languagesFingerprint,
+  risenLanguages,
+  risenRepoKeys,
+} from "@/utils/languageDiff";
 
 // Single-user site, so one fixed key suffices. Mirrors the keying
 // discipline of `useExperienceSummary` (which keys per-username) without
@@ -58,10 +63,24 @@ function writeStored(value) {
  * equal array don't re-fire it.
  *
  * @param {Array<{language: string, percentage: string|number}>} languages
- * @returns {{ pendingMessage: string|null, consume: () => void }}
+ * @returns {{
+ *   pendingMessage: string|null,
+ *   consume: () => void,
+ *   changedLanguages: string[],
+ *   changedRepoKeys: string[],
+ *   clearChangedLanguage: (name: string) => void,
+ *   clearChangedRepo: (key: string) => void,
+ * }}
  */
 export function useLanguagesUpdateSignal(languages) {
   const [pendingMessage, setPendingMessage] = useState(null);
+  // The language NAMES that rose this change cycle (moved up or % increased) and
+  // the repo KEYS (`"<language>::<repo>"`) that rose within a language's
+  // breakdown — surfaced so the card can heartbeat exactly those rows (and the
+  // popover those repos) once the section is in view and the banner has cleared.
+  // Each is consumed per-item by the card so a row pulses only the first time.
+  const [changedLanguages, setChangedLanguages] = useState([]);
+  const [changedRepoKeys, setChangedRepoKeys] = useState([]);
 
   const fingerprint =
     Array.isArray(languages) && languages.length > 0
@@ -95,13 +114,38 @@ export function useLanguagesUpdateSignal(languages) {
     // React state until the section becomes visible and the consumer
     // shows + consumes it.
     writeStored({ fingerprint, languages: current });
-    if (diff.hasChanges) setPendingMessage(diff.summaryMessage);
+    if (diff.hasChanges) {
+      setPendingMessage(diff.summaryMessage);
+      // Rows to heartbeat: languages that rose, and repos that rose within a
+      // language's breakdown. Repo-share shifts only surface here when a
+      // language-level change ALSO moved the fingerprint (the popover heartbeat
+      // piggybacks on the banner rather than firing it on noisy share drift).
+      setChangedLanguages(risenLanguages(diff.details));
+      setChangedRepoKeys(risenRepoKeys(stored.languages, current));
+    }
     // `languages` is intentionally captured by closure, not listed as a dep —
     // see the comment above; `fingerprint` is the change-only trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fingerprint]);
 
   const consume = useCallback(() => setPendingMessage(null), []);
+  // Drop one language / repo key once its heartbeat has played, so each pulses
+  // only the first time the user sees it (not on every viewport re-entry).
+  const clearChangedLanguage = useCallback(
+    (name) => setChangedLanguages((prev) => prev.filter((n) => n !== name)),
+    [],
+  );
+  const clearChangedRepo = useCallback(
+    (key) => setChangedRepoKeys((prev) => prev.filter((k) => k !== key)),
+    [],
+  );
 
-  return { pendingMessage, consume };
+  return {
+    pendingMessage,
+    consume,
+    changedLanguages,
+    changedRepoKeys,
+    clearChangedLanguage,
+    clearChangedRepo,
+  };
 }
