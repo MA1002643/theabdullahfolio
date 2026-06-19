@@ -8,7 +8,10 @@ import { MANIFESTS, parseManifest } from "@/utils/manifestParsers";
 
 // Record that `name` (a detected language / dependency) surfaced in `repo`.
 // `into` is a Map<detectedName, Set<nameWithOwner>> so the payload can later tell
-// the user WHICH repositories each skill is used in.
+// the user WHICH repositories each skill is used in. `repo` may be null/empty to
+// register a DETECTION without attaching a name — used for PRIVATE repos, whose
+// names must not reach the public payload (the skill still shows; the private
+// repo just won't appear in its `repos` list).
 function trackSkill(into, name, repo) {
   if (!name) return;
   let set = into.get(name);
@@ -161,12 +164,19 @@ const REPOS_QUERY = `
       repositories(
         first: 100,
         after: $after,
-        ownerAffiliations: [OWNER, COLLABORATOR],
+        # OWNER only — never COLLABORATOR. A collaborator affiliation pulls repos
+        # owned by OTHER accounts/orgs (including PRIVATE org repos) into the
+        # per-skill repos lists, which ship in this PUBLIC, CDN-cached payload —
+        # i.e. it would leak the names of repos that aren't even yours. Matches
+        # /api/github-stats's owner-only crawl. (PRIVATE scope below still applies,
+        # so this surfaces only the owner's OWN repos, public + private.)
+        ownerAffiliations: [OWNER],
         privacy: $privacy
       ) {
         pageInfo { hasNextPage endCursor }
         nodes {
           nameWithOwner
+          isPrivate
           primaryLanguage { name }
           languages(first: 10) { nodes { name } }
           defaultBranchRef { target { ... on Commit { oid } } }
@@ -326,12 +336,19 @@ async function crawlScope(username, privacy, into) {
     if (!repoData) break;
     for (const repo of repoData.nodes ?? []) {
       const nwo = repo?.nameWithOwner;
-      if (repo?.primaryLanguage?.name) trackSkill(into, repo.primaryLanguage.name, nwo);
+      // Disclosure-safe identifier: a PRIVATE repo's name must never reach the
+      // public, CDN-cached payload, so we attach `null` for it. The skill is
+      // still DETECTED (trackSkill registers the name with no repo), so the icon
+      // shows — only its private repo name is withheld from the per-skill `repos`
+      // popover list. `nwo` itself is still used below purely as the server-side
+      // fetch key (authenticated tree/blob reads), which is never disclosed.
+      const repoId = repo?.isPrivate ? null : nwo;
+      if (repo?.primaryLanguage?.name) trackSkill(into, repo.primaryLanguage.name, repoId);
       for (const lang of repo?.languages?.nodes ?? []) {
-        if (lang?.name) trackSkill(into, lang.name, nwo);
+        if (lang?.name) trackSkill(into, lang.name, repoId);
       }
       const sha = repo?.defaultBranchRef?.target?.oid;
-      if (nwo && sha) repos.push({ nameWithOwner: nwo, sha });
+      if (nwo && sha) repos.push({ nameWithOwner: nwo, sha, repoId });
     }
 
     hasNextPage = repoData.pageInfo.hasNextPage;
@@ -351,8 +368,11 @@ async function crawlScope(username, privacy, into) {
       for (const { path, text } of texts) {
         if (typeof text !== "string") continue;
         // Dispatch on the basename so a nested "Backend/package.json" uses the
-        // package.json parser.
-        for (const name of parseManifest(path.split("/").pop(), text)) trackSkill(into, name, repo.nameWithOwner);
+        // package.json parser. Attach `repo.repoId` (null for PRIVATE repos), NOT
+        // `nameWithOwner` — the deps are detected, but a private repo's name never
+        // enters the public `repos` lists. (`nameWithOwner` above is used only as
+        // the authenticated server-side fetch key.)
+        for (const name of parseManifest(path.split("/").pop(), text)) trackSkill(into, name, repo.repoId);
       }
     } catch (err) {
       if (err?.name === "AbortError") return; // budget exhausted; partial retained
@@ -418,9 +438,11 @@ function getCachedCategories(username) {
   const key = username || "default";
   let cached = cacheByUser.get(key);
   if (!cached) {
-    // Key suffix bumped to v2 when the payload gained per-skill `repos` — old
-    // cached entries (skill list with no repo breakdown) must not be served.
-    cached = unstable_cache(async () => buildSkillCategories(key), ["github-skills-v2", key], {
+    // Key suffix bumped to v3 for the privacy fix: PRIVATE repo names were
+    // removed from the per-skill `repos` lists, so a stale v2 entry (which could
+    // still hold private names) must never be served after deploy. (v2 was the
+    // earlier bump when the payload first gained per-skill `repos`.)
+    cached = unstable_cache(async () => buildSkillCategories(key), ["github-skills-v3", key], {
       revalidate: REVALIDATE_SECONDS,
       tags: ["github-skills"],
     });
