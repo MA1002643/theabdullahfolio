@@ -389,16 +389,29 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
     // `pulseFields` is the risen-stat list (['stars','commits',…]) from the
     // parent's stats diff.
     //
-    // Capture the fields locally when they arrive, held until the pulse consumes
-    // them — the parent clears `pulseFields` on its 10s reset, so relying on the
-    // live prop could strip them before the (post-banner) pulse runs. Gate the
-    // capture on the fields' CONTENT (joined key), since the array prop's
-    // identity changes every render.
+    // Capture the risen-stat fields locally, held until the pulse consumes them —
+    // the parent clears `pulseFields` on its 10s reset, so relying on the live
+    // prop could strip them before the (post-banner) pulse runs.
     const [pendingStats, setPendingStats] = useState([]);
     const statsFieldsKey = Array.isArray(pulseFields) ? pulseFields.join(",") : "";
+    // Snapshot the fields per NEW banner message — the EMPTY case included. The
+    // old `if (statsFieldsKey) …` capture ran ONLY for a non-empty list, so a
+    // newer message carrying no risen stats (a decrease, or a non-stat change like
+    // a display-name edit) left the PREVIOUS update's fields in `pendingStats`,
+    // which then heart-beat stale rows right after the new banner. Keying on the
+    // message clears them for the empty case too, while the `null` branch ignores
+    // the parent's later 10s reset (it nulls the message AND empties `pulseFields`)
+    // so a not-yet-run pulse keeps the fields it still needs.
+    const pendingMsgRef = useRef(null);
     useEffect(() => {
-        if (statsFieldsKey) setPendingStats(statsFieldsKey.split(","));
-    }, [statsFieldsKey]);
+        if (!incomingMessage) {
+            pendingMsgRef.current = null;
+            return;
+        }
+        if (pendingMsgRef.current === incomingMessage) return;
+        pendingMsgRef.current = incomingMessage;
+        setPendingStats(statsFieldsKey ? statsFieldsKey.split(",") : []);
+    }, [incomingMessage, statsFieldsKey]);
 
     // Banner-gone gate, keyed on the card's OWN local banner: a fresh banner
     // un-gates (so its later clear arms a new pulse); when the banner clears

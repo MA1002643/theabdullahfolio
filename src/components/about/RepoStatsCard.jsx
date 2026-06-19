@@ -530,13 +530,26 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
   // Capture the changed fields locally when they arrive, held until the pulse
   // consumes them — the parent clears `pulseFields` on its banner auto-timer, so
   // relying on the live prop could strip them before the post-banner pulse runs.
-  // Gate the capture on the fields' CONTENT (joined key), since the array prop's
-  // identity changes every render.
   const [pendingFields, setPendingFields] = useState([]);
   const fieldsKey = Array.isArray(pulseFields) ? pulseFields.join(",") : "";
+  // Snapshot the fields per NEW banner message — the EMPTY case included. The old
+  // `if (fieldsKey) …` capture ran ONLY for a non-empty list, so a newer message
+  // carrying no changed fields (a metric decrease, or the most-active repo simply
+  // changing) left the PREVIOUS update's fields in `pendingFields`, which then
+  // heart-beat stale rows right after the new banner. Keying on the message clears
+  // them for the empty case too, while the `null` branch ignores the parent's
+  // later reset (it nulls the message and empties `pulseFields`) so a not-yet-run
+  // pulse keeps the fields it still needs.
+  const pendingMsgRef = useRef(null);
   useEffect(() => {
-    if (fieldsKey) setPendingFields(fieldsKey.split(","));
-  }, [fieldsKey]);
+    if (!incomingMessage) {
+      pendingMsgRef.current = null;
+      return;
+    }
+    if (pendingMsgRef.current === incomingMessage) return;
+    pendingMsgRef.current = incomingMessage;
+    setPendingFields(fieldsKey ? fieldsKey.split(",") : []);
+  }, [incomingMessage, fieldsKey]);
 
   // Banner-gone gate, keyed on the card's OWN local banner (not the raw prop):
   // a fresh banner un-gates (so its later clear arms a new pulse); when the
