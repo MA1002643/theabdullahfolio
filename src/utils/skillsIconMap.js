@@ -514,6 +514,20 @@ export function categorizeSkillsWithRepos(nameToRepos) {
       }));
     bucket.push({ slug: entry.slug, displayName: entry.displayName, source: entry.source, repos: repoList });
   }
+  // The crawl records detections concurrently (two privacy scopes + a per-repo
+  // fan-out), so `bySlug` insertion order — and thus each bucket's order — varies
+  // run-to-run for an IDENTICAL detected set. Sort each bucket deterministically
+  // (display name, slug as tiebreaker) so the payload is STABLE: the client's
+  // order-sensitive `skillsFingerprint` would otherwise churn on every fetch,
+  // defeating its "nothing changed" fast-path (a needless localStorage rewrite
+  // each time) and reshuffling the rendered grid even when nothing changed.
+  for (const bucket of Object.values(categories)) {
+    bucket.sort(
+      (a, b) =>
+        a.displayName.localeCompare(b.displayName, undefined, { sensitivity: "base" }) ||
+        a.slug.localeCompare(b.slug),
+    );
+  }
   return categories;
 }
 
