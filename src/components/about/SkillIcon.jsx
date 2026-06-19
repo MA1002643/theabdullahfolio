@@ -113,6 +113,7 @@ export function SkillIcon({
   onIconFocus,
   onIconBlur,
   onIconTap,
+  onIconActivate,
 }) {
   const ref = useRef(null);
 
@@ -120,8 +121,15 @@ export function SkillIcon({
     <div
       ref={ref}
       data-skill-row=""
+      // Exposed as a button only when it has a repo list to disclose: `role` +
+      // `aria-expanded` give screen readers the disclosure semantics + open/closed
+      // state, and the `onKeyDown` below honours the button key contract
+      // (Enter/Space). The panel still opens on focus (keyboard) / hover (mouse) /
+      // tap (touch) too — this just makes the tile's a11y role explicit.
+      role={hasRepos ? "button" : undefined}
       tabIndex={hasRepos ? 0 : -1}
       aria-haspopup={hasRepos ? "true" : undefined}
+      aria-expanded={hasRepos ? active : undefined}
       // Pointer (mouse-guarded) rather than mouse events: a touch pointer is
       // ignored here so it never opens a "hover" panel — touch goes through
       // onClick → tap-toggle in the parent. A real mouse / trackpad fires
@@ -135,6 +143,13 @@ export function SkillIcon({
       onFocus={() => onIconFocus?.(ref.current)}
       onBlur={(e) => onIconBlur?.(e)}
       onClick={() => onIconTap?.(ref.current)}
+      onKeyDown={(e) => {
+        if (!hasRepos) return;
+        if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+          e.preventDefault(); // Space would otherwise scroll the page
+          onIconActivate?.(ref.current);
+        }
+      }}
       className={`skill-icon-tile relative h-full w-full select-none rounded-md outline-none ${
         hasRepos ? "cursor-pointer" : ""
       } ${active ? "is-active" : ""} ${pulsing ? "skill-heartbeat" : ""}`}

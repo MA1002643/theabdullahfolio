@@ -274,6 +274,7 @@ function IconStrip({ items, rowRef, pulsingIcons, activeSlug, iconHandlers }) {
                 onIconFocus={(el) => iconHandlers.onIconFocus(item, el)}
                 onIconBlur={iconHandlers.onIconBlur}
                 onIconTap={(el) => iconHandlers.onIconTap(item, el)}
+                onIconActivate={(el) => iconHandlers.onIconActivate(item, el)}
               />
             </div>
           </div>
@@ -389,7 +390,24 @@ function SkillsStage({
     [scheduleClose],
   );
   const onIconTap = useCallback((item, el) => { if (!canHover) toggleTap(item, el); }, [canHover, toggleTap]);
-  const iconHandlers = { onIconEnter, onIconLeave, onIconFocus, onIconBlur, onIconTap };
+  // Enter/Space activation for the focusable tile (role="button"). Deliberately
+  // modality-agnostic: `onIconFocus` only opens under keyboard hover-modality and
+  // `onIconTap` only fires on touch (`!canHover`), so neither covers an Enter/Space
+  // press on a hover-capable device. Toggles in the blur-closable "hover" mode
+  // (never the sticky "tap" mode), so tabbing away still dismisses the panel.
+  const onIconActivate = useCallback(
+    (item, el) => {
+      cancelClose();
+      if (!item?.repos?.length || !el) return;
+      setPopover((cur) =>
+        cur && cur.skill.slug === item.slug
+          ? null
+          : { skill: item, rect: el.getBoundingClientRect(), mode: "hover" },
+      );
+    },
+    [cancelClose],
+  );
+  const iconHandlers = { onIconEnter, onIconLeave, onIconFocus, onIconBlur, onIconTap, onIconActivate };
 
   // A tap (touch) popover is sticky: a pointerdown outside it + outside any icon
   // dismisses it.
@@ -836,6 +854,7 @@ function SkillsStage({
                       onIconFocus={(el) => iconHandlers.onIconFocus(item, el)}
                       onIconBlur={iconHandlers.onIconBlur}
                       onIconTap={(el) => iconHandlers.onIconTap(item, el)}
+                      onIconActivate={(el) => iconHandlers.onIconActivate(item, el)}
                     />
                   </div>
                 ))}
