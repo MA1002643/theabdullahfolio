@@ -83,7 +83,15 @@ export function useMessageRefine() {
         // eslint-disable-next-line no-constant-condition
         while (true) {
           const { value, done } = await reader.read();
-          if (!isCurrent()) return;
+          if (!isCurrent()) {
+            // A newer refine()/reset() took over while this read was in flight.
+            // Their abort() usually tears the stream down, but a response whose
+            // body was already buffered can resolve post-abort without erroring
+            // — so cancel explicitly to release the reader and close the
+            // connection rather than leaving this stale stream open and hanging.
+            reader.cancel().catch(() => {});
+            return;
+          }
           if (done) break;
           acc += decoder.decode(value, { stream: true });
           setSuggestion(acc);

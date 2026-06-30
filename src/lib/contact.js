@@ -36,6 +36,24 @@ export function setNativeValue(el, value) {
   el.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+// A stable per-message idempotency key. Generated ONCE when a message is first
+// composed and persisted with the queued item, so the live send and every
+// offline retry of that same message carry the SAME key. That lets the server
+// recognise a retry of an already-delivered message — one whose success response
+// was lost to a timeout or a dropped connection — and skip mailing it twice.
+// Prefer the crypto UUID; fall back for older browsers / non-secure contexts
+// where `crypto.randomUUID` is unavailable.
+export function newIdempotencyKey() {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+  } catch {
+    /* fall through to the manual fallback */
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 // POST a contact message. Returns a discriminated result instead of toasting so
 // callers (the live form vs. the background queue flush) can react differently:
 //   { ok: true }                     — delivered
@@ -60,11 +78,19 @@ export async function postContactMessage(params, signal) {
     controller.abort();
   }, REQUEST_TIMEOUT_MS);
 
+  // The idempotency key rides alongside the message fields in `params` (so it's
+  // persisted with the queued item and reused on every retry), but it travels in
+  // a header rather than the body: the server reads it to dedupe, while the body
+  // stays exactly the validated message payload.
+  const { idempotencyKey, ...fields } = params;
   try {
     const res = await fetch('/api/send-mail', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+      },
+      body: JSON.stringify(fields),
       signal: controller.signal,
     });
     let data = null;

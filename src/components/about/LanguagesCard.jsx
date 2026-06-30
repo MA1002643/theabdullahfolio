@@ -17,6 +17,7 @@ import { useLanguagesUpdateSignal } from "@/hooks/useLanguagesUpdateSignal";
 import { useStaggeredScrollReveal } from "@/hooks/useStaggeredScrollReveal";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { fastStartSlowFinish } from "@/utils/animationCurves";
+import { onMediaChange } from "@/lib/mediaQuery";
 
 // Shared count-up window. Every row animates over the same duration with no
 // per-row stagger so all percentages reach their targets *simultaneously*
@@ -33,19 +34,6 @@ const HEARTBEAT_MS = 2000;
 // Stable empty Set so a language with no armed popover repos hands the popover a
 // constant identity (the default never changes between renders).
 const EMPTY_NAME_SET = new Set();
-
-// Subscribe to a MediaQueryList change, returning an unsubscribe fn. Older
-// Safari / WebViews expose only the deprecated addListener/removeListener (no
-// addEventListener on MediaQueryList), so fall back to those when needed —
-// otherwise calling the missing method throws and breaks the effect.
-function onMediaChange(mql, handler) {
-  if (typeof mql.addEventListener === "function") {
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }
-  mql.addListener(handler);
-  return () => mql.removeListener(handler);
-}
 
 // ----- Card-level entrance choreography — mirrors the GitHub Stats card
 // (StatsCard.jsx) 1:1 so the side-by-side pair animate IN identically: the card

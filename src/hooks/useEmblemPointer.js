@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { onMediaChange } from "@/lib/mediaQuery";
 
 // Pointer-reactive parallax for the intro emblem seal — the third sibling of
 // useCardTilt and useMagneticPull. Same input-capability gate, same
@@ -37,8 +38,7 @@ export function useEmblemPointer() {
     const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
     const update = () => setHasHover(mql.matches);
     update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
+    return onMediaChange(mql, update);
   }, []);
 
   const enabled = hasHover && !prefersReducedMotion;

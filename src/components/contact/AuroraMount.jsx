@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
+import { onMediaChange } from '@/lib/mediaQuery';
 
 // The WebGL canvas is loaded lazily and client-only: Three never enters this
 // route's critical bundle, and the import doesn't fire until the conditions
@@ -27,8 +28,7 @@ export default function AuroraMount() {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const apply = () => setMotionOk(!mq.matches);
     apply();
-    mq.addEventListener?.('change', apply);
-    return () => mq.removeEventListener?.('change', apply);
+    return onMediaChange(mq, apply);
   }, []);
 
   if (!motionOk || !revealed) return null;

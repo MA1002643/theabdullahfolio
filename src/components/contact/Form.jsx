@@ -24,7 +24,7 @@ import MessageRefine from './MessageRefine';
 import { useMagneticPull } from '../../hooks/useMagneticPull';
 import { useFormDraft } from '../../hooks/useFormDraft';
 import { useOfflineQueue } from '../../hooks/useOfflineQueue';
-import { DRAFT_FIELDS, postContactMessage, setNativeValue } from '../../lib/contact';
+import { DRAFT_FIELDS, newIdempotencyKey, postContactMessage, setNativeValue } from '../../lib/contact';
 
 const container = {
   hidden: { opacity: 0 },
@@ -577,6 +577,9 @@ function FormContent({ onReset, queue }) {
       name: data.name,
       email: data.email,
       message: data.message,
+      // Minted once here so the live send and any offline retry of this exact
+      // message share one key — the server dedupes on it to avoid a double-send.
+      idempotencyKey: newIdempotencyKey(),
     };
 
     // Already offline → don't spin the send animation against a wall; hold the

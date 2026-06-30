@@ -14,6 +14,7 @@ import {
   useReducedMotion,
   useTransform,
 } from 'framer-motion';
+import { onMediaChange } from '@/lib/mediaQuery';
 
 // SliceLabel — the button's "sliced" hover label, re-built so the cutting line
 // and the text run on ONE timeline instead of two independent CSS transitions
@@ -113,8 +114,7 @@ export default function SliceLabel({ text, hovered }) {
     const mql = window.matchMedia('(any-hover: hover) and (any-pointer: fine)');
     const update = () => setEnabled(mql.matches);
     update();
-    mql.addEventListener('change', update);
-    return () => mql.removeEventListener('change', update);
+    return onMediaChange(mql, update);
   }, [reduced]);
 
   // Measure in the BUTTON's frame so the blade can rest outside the pill and

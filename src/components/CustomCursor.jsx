@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { onMediaChange } from '@/lib/mediaQuery';
 
 // ── Custom cursor ───────────────────────────────────────────────────────────
 // Site-wide pointer: a crisp ember dot pinned to the real cursor + an outline
@@ -55,11 +56,11 @@ export default function CustomCursor() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     const evaluate = () => setEnabled(fine.matches && !reduce.matches);
     evaluate();
-    fine.addEventListener?.('change', evaluate);
-    reduce.addEventListener?.('change', evaluate);
+    const unsubscribeFine = onMediaChange(fine, evaluate);
+    const unsubscribeReduce = onMediaChange(reduce, evaluate);
     return () => {
-      fine.removeEventListener?.('change', evaluate);
-      reduce.removeEventListener?.('change', evaluate);
+      unsubscribeFine();
+      unsubscribeReduce();
     };
   }, []);
 

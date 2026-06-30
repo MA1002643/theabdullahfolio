@@ -1,5 +1,10 @@
 import { streamText, toTextStream, createTextStreamResponse, APICallError } from 'ai';
 
+// Pin the Node.js runtime, matching the repo's other API routes. The AI SDK +
+// gateway stack targets Node >=22; pinning also prevents accidental Edge
+// execution if Next's defaults ever change.
+export const runtime = 'nodejs';
+
 // ── /api/refine-message ──────────────────────────────────────────────────────
 // "Polish my missive": takes the visitor's rough contact-form message and
 // streams back a cleaner, warmer, more professional rewrite — token by token —
@@ -22,6 +27,13 @@ const MODEL = process.env.REFINE_MODEL || 'anthropic/claude-haiku-4.5';
 // than burn tokens refining something the form itself would reject.
 const MIN_LEN = 20;
 const MAX_LEN = 2000;
+
+// Byte ceiling for the raw request body, checked before we buffer/parse it. A
+// 2000-char message is at most ~6 KB of UTF-8 (plus the tiny JSON wrapper), so
+// 8 KB leaves headroom for multi-byte content while still rejecting payloads no
+// legitimate contact note would produce. Distinct from MAX_LEN — that's a
+// character count on the parsed message; this is a fast-fail gate on wire bytes.
+const MAX_BODY_BYTES = 8 * 1024;
 
 // The rewrite contract. Kept deliberately tight so the output drops straight
 // into the textarea: no preamble, no quotes, no markdown — just the message.
@@ -92,6 +104,16 @@ export async function POST(req) {
       { error: 'rate_limited', message: 'Too many requests — try again in a moment.' },
       429,
     );
+  }
+
+  // Reject obviously-oversized bodies before req.json() buffers and parses them.
+  // A caller within the rate limit could still POST a huge payload that the parse
+  // below would fully read before the MAX_LEN check ever runs; this gate fails
+  // such requests fast. Best-effort (content-length can be absent or wrong) — the
+  // MAX_LEN check on the parsed message stays the authoritative cap.
+  const declaredBytes = Number(req.headers.get('content-length'));
+  if (Number.isFinite(declaredBytes) && declaredBytes > MAX_BODY_BYTES) {
+    return json({ error: 'too_large', message: 'Request is too large.' }, 413);
   }
 
   let message;

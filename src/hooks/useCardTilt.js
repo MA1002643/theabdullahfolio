@@ -7,6 +7,7 @@ import {
   useReducedMotion,
   useSpring,
 } from "framer-motion";
+import { onMediaChange } from "@/lib/mediaQuery";
 
 // Pointer-reactive 3D tilt + ember glare for the about-page hero cards.
 //
@@ -40,8 +41,7 @@ export function useCardTilt({ maxTilt = MAX_TILT_DEG } = {}) {
     const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
     const update = () => setHasHover(mql.matches);
     update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
+    return onMediaChange(mql, update);
   }, []);
 
   const enabled = hasHover && !prefersReducedMotion;

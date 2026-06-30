@@ -1,4 +1,25 @@
 import nodemailer from 'nodemailer';
+import { Redis } from '@upstash/redis';
+
+// Pin the Node.js runtime, matching the repo's other API routes. Required here:
+// nodemailer relies on Node core modules (net/tls/stream) and cannot run on Edge.
+export const runtime = 'nodejs';
+
+// Durable idempotency store for contact-send dedupe. The Vercel↔Upstash
+// Marketplace integration injects KV_REST_API_URL / KV_REST_API_TOKEN (Vercel's
+// KV-compatible names); a native Upstash setup uses UPSTASH_REDIS_REST_URL /
+// _TOKEN. Accept either so the store works however it was provisioned. Use the
+// WRITE token — never KV_REST_API_READ_ONLY_TOKEN — since the claim does SET/DEL.
+// When neither pair is present (local dev / a preview without the integration)
+// we degrade to no-dedupe so the form still works — see the claim block in POST.
+const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
+
+// How long a delivered message's key is remembered. Must comfortably outlast any
+// retry the offline queue could make — it retries on reconnect, which can be far
+// later — so 24h is generous headroom for a personal contact form.
+const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 
 function escapeHtml(str) {
   return String(str)
@@ -10,6 +31,9 @@ function escapeHtml(str) {
 }
 
 export async function POST(req) {
+  // Stable per-message key from the client (see lib/contact.js). Same key on the
+  // first send and every offline retry of that message — the dedupe hinges on it.
+  const idempotencyKey = req.headers.get('idempotency-key');
   try {
     let { name, email, subject, message } = await req.json();
     name = typeof name === 'string' ? name.trim() : '';
@@ -93,6 +117,33 @@ export async function POST(req) {
       });
     }
 
+    // 🔁 Idempotency claim — the first request for a given key wins the right to
+    // send. A retry of an already-sent message (whose success response was lost
+    // to a timeout or a dropped connection) finds the key already taken and
+    // returns success WITHOUT mailing again. The claim is atomic (SET NX) so two
+    // concurrent retries can't both pass it. If the store is unreachable we fail
+    // OPEN — better an unlikely duplicate than a dropped message.
+    if (idempotencyKey && redis) {
+      let claimed;
+      try {
+        claimed = await redis.set(idempotencyKey, '1', {
+          nx: true,
+          ex: IDEMPOTENCY_TTL_SECONDS,
+        });
+      } catch (storeErr) {
+        console.warn('idempotency store unavailable; sending without dedupe', {
+          name: storeErr?.name,
+        });
+        claimed = 'OK';
+      }
+      if (claimed !== 'OK') {
+        return new Response(
+          JSON.stringify({ success: true, message: 'Email already sent.', deduped: true }),
+          { status: 200 },
+        );
+      }
+    }
+
     // 🔒 Set up transporter using your SMTP credentials
     const smtpPort = Number(process.env.SMTP_PORT) || 587;
     const smtpSecureFromEnv = process.env.SMTP_SECURE;
@@ -114,21 +165,34 @@ export async function POST(req) {
     // 📧 Send email
     const emailSubject = `${subject.slice(0, maxRawSubjectLength)}${subjectSuffix}`;
 
-    await transporter.sendMail({
-      from: { name: 'ma.codes Contact Form', address: process.env.SMTP_USER },
-      replyTo: { name, address: email },
-      to: process.env.RECEIVER_EMAIL, // your inbox
-      subject: emailSubject,
-      text: `From: ${name} <${email}>\nFull Name: ${name}\n\nMessage:\n${message}`,
-      html: `
-        <div style="font-family:Arial, sans-serif; line-height:1.6;">
-          <p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
-          <p><strong>Full Name:</strong> ${escapeHtml(name)}</p>
-          <p><strong>Message:</strong></p>
-          <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
-        </div>
-      `,
-    });
+    try {
+      await transporter.sendMail({
+        from: { name: 'ma.codes Contact Form', address: process.env.SMTP_USER },
+        replyTo: { name, address: email },
+        to: process.env.RECEIVER_EMAIL, // your inbox
+        subject: emailSubject,
+        text: `From: ${name} <${email}>\nFull Name: ${name}\n\nMessage:\n${message}`,
+        html: `
+          <div style="font-family:Arial, sans-serif; line-height:1.6;">
+            <p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
+            <p><strong>Full Name:</strong> ${escapeHtml(name)}</p>
+            <p><strong>Message:</strong></p>
+            <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
+          </div>
+        `,
+      });
+    } catch (sendErr) {
+      // Send failed → release the claim so a legitimate retry isn't silently
+      // deduped into a lost message. Best-effort: the key's TTL is the backstop.
+      if (idempotencyKey && redis) {
+        try {
+          await redis.del(idempotencyKey);
+        } catch {
+          /* ignore — the TTL will expire the stale claim */
+        }
+      }
+      throw sendErr; // surfaces as the 500 below
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: 'Email sent successfully!' }),

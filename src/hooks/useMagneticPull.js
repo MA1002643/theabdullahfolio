@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { onMediaChange } from "@/lib/mediaQuery";
 
 // Pointer-reactive "magnetic" pull for a CTA — the element leans a few px toward
 // the cursor while it's over (or just near) the button and springs back home on
@@ -37,8 +38,7 @@ export function useMagneticPull({ maxPull = MAX_PULL_PX } = {}) {
     const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
     const update = () => setHasHover(mql.matches);
     update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
+    return onMediaChange(mql, update);
   }, []);
 
   const enabled = hasHover && !prefersReducedMotion;

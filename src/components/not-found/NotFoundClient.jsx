@@ -10,6 +10,7 @@ import { track } from '@vercel/analytics';
 
 import bg from '../../../public/background/contact-bg.png';
 import AboutAuroraDustMount from '@/components/about/AboutAuroraDustMount';
+import { onMediaChange } from '@/lib/mediaQuery';
 import DidYouMean from './DidYouMean';
 import GlitchText from './GlitchText';
 import ReturnPortal from './ReturnPortal';
@@ -91,8 +92,7 @@ export default function NotFoundClient() {
     const mql = window.matchMedia('(hover: hover) and (pointer: fine)');
     const update = () => setHasHover(mql.matches);
     update();
-    mql.addEventListener('change', update);
-    return () => mql.removeEventListener('change', update);
+    return onMediaChange(mql, update);
   }, []);
 
   // Mouse parallax — bound only when the device (a) supports

@@ -44,3 +44,5 @@ TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
 # editor / tool temp files (e.g. crash-leftover *.tmp.<pid>.<hash>)
 *.tmp
 *.tmp.*
+.env*
+!.env.example
