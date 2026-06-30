@@ -206,6 +206,22 @@ export default function LanguagesCard({ data, isLive = false }) {
     return () => mql.removeEventListener("change", update);
   }, []);
 
+  // Whether the two-column list is active (`xl`+ / ≥1280px — Tailwind's `xl`).
+  // Below it the list renders only its top 5 rows (rows 6–10 are `hidden
+  // xl:block`); at `xl`+ every rendered row shows. The meta-line count keys off
+  // this so it always reflects the rows ACTUALLY visible, not the full payload
+  // length — otherwise mobile shows 5 rows under a "6 languages" (or "10") label.
+  // Starts `false` (mobile-first, matching the SSR markup) and corrects on mount,
+  // exactly like `canHover` above, so there's no hydration mismatch.
+  const [isWideList, setIsWideList] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1280px)");
+    const update = () => setIsWideList(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+
   // Last-input modality. A keyboard attached to a touch device has no hover
   // pointer, so focus-driven opening can't key off `canHover`; instead we
   // track whether the most recent interaction was the keyboard (Tab) and, if
@@ -438,6 +454,15 @@ export default function LanguagesCard({ data, isLive = false }) {
   // repo names. Handed to the popover, which pulses them on open (the "survives
   // until seen" model — a repo-breakdown is on-demand, so the beat plays the
   // first time the user opens that language's popover after the change).
+  // Count shown in the meta line — the number of language rows the current
+  // viewport actually renders, not the full payload. The list renders at most
+  // 10 rows (`slice(0, 10)`); below `xl` only the top 5 are visible, at `xl`+ all
+  // rendered rows show. Kept in lock-step with the list's own slice + responsive
+  // hiding so the label can never claim more languages than are on screen.
+  const visibleLanguageCount = isWideList
+    ? Math.min(languages.length, 10)
+    : Math.min(languages.length, 5);
+
   const activeLang = popover ? languages[popover.index] : null;
   const popoverPulseNames = useMemo(() => {
     if (!activeLang) return EMPTY_NAME_SET;
@@ -495,7 +520,8 @@ export default function LanguagesCard({ data, isLive = false }) {
           style={{ color: "rgba(255, 170, 42, 0.6)", textShadow: "none" }}
         >
           <span>
-            {languages.length} {languages.length === 1 ? "language" : "languages"}
+            {visibleLanguageCount}{" "}
+            {visibleLanguageCount === 1 ? "language" : "languages"}
           </span>
           {isLive && (
             <>

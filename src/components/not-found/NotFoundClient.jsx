@@ -2,14 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Briefcase, Phone, User } from 'lucide-react';
+import { Briefcase, GraduationCap, Phone, User } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { track } from '@vercel/analytics';
 
-import FloatingParticles from './FloatingParticles';
+import bg from '../../../public/background/contact-bg.png';
+import AboutAuroraDustMount from '@/components/about/AboutAuroraDustMount';
+import DidYouMean from './DidYouMean';
 import GlitchText from './GlitchText';
 import ReturnPortal from './ReturnPortal';
+import { suggestRoute } from './suggestRoute';
 
 const ROTATING_MESSAGES = [
   "You've drifted into the void.",
@@ -22,6 +26,7 @@ const ROTATING_MESSAGES = [
 const SUGGESTIONS = [
   { label: 'About', href: '/about', Icon: User },
   { label: 'Projects', href: '/projects', Icon: Briefcase },
+  { label: 'Qualifications', href: '/qualifications', Icon: GraduationCap },
   { label: 'Contact', href: '/contact', Icon: Phone },
 ];
 
@@ -44,6 +49,10 @@ export default function NotFoundClient() {
   const [messageIndex, setMessageIndex] = useState(0);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [hasHover, setHasHover] = useState(false);
+  // Closest known route to a mistyped path ({href,label}) or null.
+  // Resolved once on mount in the analytics effect below (same single
+  // read of window.location.pathname), then rendered via <DidYouMean>.
+  const [suggestion, setSuggestion] = useState(null);
   // Single source of truth for "skip ongoing motion effects". Used
   // by the rotating subtitle and mouse parallax below; the visual
   // ambient effects (orbs, glitch scramble) honour the same media
@@ -143,6 +152,14 @@ export default function NotFoundClient() {
   //     whichever page sent the user here. Malformed referrers
   //     fall through to '(invalid)' rather than crashing or
   //     leaking the broken string.
+  //
+  // The same `path` also drives the "did you mean" recovery: we
+  // resolve the closest known route once here (reusing the single
+  // pathname read), stash it for <DidYouMean> to render, and record
+  // which suggestion — if any — was offered. That turns the event
+  // into a fuller picture of each dead end: not just "what broke",
+  // but "did we have a confident guess for it" — useful for spotting
+  // common typos worth a real redirect vs. genuinely unknown paths.
   useEffect(() => {
     const path = window.location.pathname;
     let referrer = '(direct)';
@@ -154,7 +171,9 @@ export default function NotFoundClient() {
         referrer = '(invalid)';
       }
     }
-    track('404_hit', { path, referrer });
+    const match = suggestRoute(path);
+    setSuggestion(match);
+    track('404_hit', { path, referrer, suggestion: match?.href ?? '(none)' });
   }, []);
 
   // Console easter egg — devs who inspect the page get a nod and a
@@ -168,7 +187,22 @@ export default function NotFoundClient() {
 
   return (
     <main className="not-found-bg relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-12 text-center">
-      <FloatingParticles />
+      {/* Background mirrors the about / contact pages exactly: the same
+          contact-bg.png at half opacity, a black overlay to deepen it, then
+          the cursor- + scroll-reactive aurora "dust" composited over the top
+          (screen blend) by the shared mount. This replaces the void page's
+          former radial gradient + amethyst firefly orbs. The mount self-gates
+          on motion preference + loader reveal, so reduced-motion users get the
+          static image + overlay alone. `alt=""` marks it decorative. */}
+      <Image
+        src={bg}
+        alt=""
+        priority
+        sizes="100vw"
+        className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-50"
+      />
+      <div className="-z-40 fixed top-0 left-0 w-full h-full bg-black/70" />
+      <AboutAuroraDustMount />
 
       <div className="relative z-10 flex flex-col items-center gap-6">
         <GlitchText
@@ -226,6 +260,11 @@ export default function NotFoundClient() {
             This page doesn&apos;t exist — yet.
           </motion.p>
         </div>
+
+        {/* Contextual recovery — only renders when the mistyped path
+            is a confident near-miss of a real route. Sits in the
+            stagger between the subtitles and the portal. */}
+        <DidYouMean suggestion={suggestion} />
 
         <ReturnPortal />
 

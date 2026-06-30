@@ -52,14 +52,15 @@ const VIEWPORT = "7.5rem";
 // rather than a long stretch of dead scroll where nothing visibly changes.
 const ADVANCE_GAP = 56;
 
-// Item 1 — REVEAL on scrub: as the row slides left, each icon fades + sharpens
-// in over the last REVEAL_DIST px before it crosses the right edge, so icons
-// "appear as you scroll" (the spirit of the old wave, adapted to a single row).
+// Item 1 — REVEAL on scrub: as the row slides left, each icon fades in over the
+// last REVEAL_DIST px before it crosses the right edge, so icons "appear as you
+// scroll" (the spirit of the old wave, adapted to a single row). A PURE opacity
+// fade — no blur: the blur read as permanently smeared icons on mobile (this
+// follow-up), so icons now stay sharp at every scrub position.
 // Kept BELOW one cell width so the trailing icons (which sit within a cell of the
 // right edge at full scrub) still settle to full opacity rather than staying
 // half-faded.
 const REVEAL_DIST = 38;
-const REVEAL_BLUR = 5;
 
 // Per-icon entrance WAVE, re-fired as an icon scrubs into view. Mirrors the
 // `.skill-icon-reveal` CSS rule (fade + blur + rise) so a scrubbed-in icon gets
@@ -69,11 +70,6 @@ const REVEAL_BLUR = 5;
 // (fast scroll) can stagger left-to-right.
 const ICON_REVEAL_ANIM = "skill-icon-reveal 0.45s ease-out both";
 const ICON_REVEAL_STAGGER_MS = 45;
-
-// Item 3 — a SHORT settle when crossing from one category to the next, so the
-// switch is felt without the old jarring wait. While settling, scroll input is
-// briefly consumed (a beat, not a hard stop) and the crossfade plays.
-const PAUSE_MS = 90;
 
 // Item 4 — the "just added" heartbeat window, SHARED by the category header
 // (name + count) and the added icon so the whole flag starts and ends as one
@@ -250,11 +246,15 @@ function IconStrip({ items, rowRef, pulsingIcons, activeSlug, iconHandlers }) {
       <div ref={rowRef} className="flex w-max flex-nowrap gap-3 sm:gap-4 will-change-transform">
         {items.map((item, idx) => (
           // Flex child = the unit the scrub engine maps (data-slug, offsetLeft)
-          // and writes the per-icon scrub reveal (opacity/blur) onto.
+          // and writes the per-icon scrub reveal (opacity) onto. NO `will-change`:
+          // promoting each cell to its own composite layer left individual icons
+          // landing on a fractional sub-pixel sat blurry (Node.js / Vercel and
+          // friends). Painted into the row's layer instead, they stay crisp; the
+          // opacity writes below don't need the hint.
           <div
             key={item.slug}
             data-slug={item.slug}
-            className="shrink-0 will-change-[opacity,filter]"
+            className="shrink-0"
             style={{ width: CELL_SIZE, height: CELL_SIZE }}
           >
             {/* Entrance layer — a staggered fade/blur/rise replayed each time the
@@ -296,14 +296,14 @@ function IconStrip({ items, rowRef, pulsingIcons, activeSlug, iconHandlers }) {
      • crossing into the next segment swaps the active category (crossfade).
    So one vertical gesture scrubs a category sideways, then advances to the next
    — and only categories that overflow one row actually scrub (others just need a
-   flick to pass). Nested scrolling means the page only continues once the last
-   category's last icon has been reached. Reduced-motion users get a plain,
+   flick to pass). The scroller scrolls NATIVELY (no wheel/touch hijack), so the
+   scrub inherits the platform's momentum and a fling that bottoms out chains to
+   the page like any nested scroll. Reduced-motion users get a plain,
    fully-scrollable stacked grid instead. */
 function SkillsStage({
   groups,
   settledInView,
   prefersReducedMotion,
-  cardRef,
   pulseSlugs,
   onPulsed,
   bannerVisible,
@@ -487,9 +487,9 @@ function SkillsStage({
     };
   }, []);
 
-  // Sync bannerVisible into a ref so the wheel/touch drive() closure can read it
-  // without capturing a stale value — the effect dep array can't include it or it
-  // would re-attach the event listeners on every banner show/hide.
+  // Sync bannerVisible into a ref so the scroll handler can read it without
+  // capturing a stale value — the effect dep array can't include it or it would
+  // re-attach the scroll listener on every banner show/hide.
   const bannerVisibleRef = useRef(bannerVisible);
   useEffect(() => {
     bannerVisibleRef.current = bannerVisible;
@@ -548,7 +548,10 @@ function SkillsStage({
       // seeds `_waved`), so we don't re-fire waves here — we'd double up.
       const categoryChanged = i !== activeRef.current;
       if (row) {
-        row.style.transform = `translateX(${tx}px)`;
+        // Round to whole pixels: a fractional translate on a `will-change:
+        // transform` layer is resampled by the GPU → the whole row (and every
+        // icon in it) renders blurry. Integer offsets keep the scrub crisp.
+        row.style.transform = `translateX(${Math.round(tx)}px)`;
         const stageW = sc.clientWidth;
         const cells = row.children;
         const entering = [];
@@ -558,13 +561,13 @@ function SkillsStage({
           // Reveal: 0 just as the icon touches the right edge → 1 once it has
           // travelled REVEAL_DIST into view. Non-overflowing rows show fully.
           // (Composes multiplicatively with the entrance layer's own opacity.)
+          // Opacity ONLY — no blur, so an icon is sharp the instant it appears.
           let t = 1;
           if (o > 0) {
             t = (stageW - cellLeft) / REVEAL_DIST;
             t = t < 0 ? 0 : t > 1 ? 1 : t;
           }
           cell.style.opacity = String(t);
-          cell.style.filter = t < 1 ? `blur(${(1 - t) * REVEAL_BLUR}px)` : "";
           // Per-icon WAVE bookkeeping. `_waved` latches whether the icon is
           // currently "appeared". "In view" = the icon's midpoint is inside the
           // stage — midpoint-based so a re-entry is detected from EITHER edge
@@ -734,77 +737,16 @@ function SkillsStage({
     }
   }, [active, pulseSlugs, groups, prefersReducedMotion, bannerVisible]);
 
-  // Page-scroll HIJACK (item 2) + inter-category PAUSE (item 3). When the WHOLE
-  // card is fully on screen, wheel/touch is redirected into the inner scrub and
-  // the page is held until the scrub bottoms out (last category's last icon
-  // shown) — then released so the page resumes. While only partially visible the
-  // listeners no-op, preserving the prior "scroll inside the card" nested-scroll.
-  useEffect(() => {
-    if (prefersReducedMotion) return undefined;
-    const sc = scrollerRef.current;
-    const card = cardRef?.current;
-    if (!sc || !card || !layout.starts.length) return undefined;
-
-    const idxFor = (s) => {
-      let i = 0;
-      for (let k = 0; k < layout.starts.length; k++) {
-        if (s >= layout.starts[k]) i = k;
-        else break;
-      }
-      return i;
-    };
-    let pauseUntil = 0;
-    const drive = (delta) => {
-      // Banner is showing — don't hijack scroll so the user can still scroll
-      // the page away from the card; pointer-events: none on the stage stops
-      // interaction with the icons separately.
-      if (bannerVisibleRef.current) return false;
-      const r = card.getBoundingClientRect();
-      const fully = r.top >= -1 && r.bottom <= (window.innerHeight || 0) + 1;
-      if (!fully) return false; // partially visible → let native scroll / the page handle it
-      const max = sc.scrollHeight - sc.clientHeight;
-      if (max <= 0) return false;
-      const top = sc.scrollTop;
-      // At the scrub end in the scroll direction → release to the page so the
-      // user is NEVER trapped — works symmetrically up AND down.
-      if ((delta > 0 && top >= max - 0.5) || (delta < 0 && top <= 0.5)) return false;
-      const now = performance.now();
-      if (now < pauseUntil) return true; // brief settle right after a switch
-      const cur = idxFor(top);
-      let next = top + delta;
-      next = next < 0 ? 0 : next > max ? max : next;
-      // Move freely (no hard snap) so scrubbing stays fluid in both directions
-      // and can't get pinned at a boundary. Crossing into a new category just
-      // arms a short settle so the switch registers — the crossfade plays into
-      // the new category at its start.
-      sc.scrollTop = next;
-      if (idxFor(next) !== cur) pauseUntil = now + PAUSE_MS;
-      return true;
-    };
-
-    const onWheel = (e) => {
-      if (drive(e.deltaY)) e.preventDefault();
-    };
-    let lastY = null;
-    const onTouchStart = (e) => {
-      lastY = e.touches[0]?.clientY ?? null;
-    };
-    const onTouchMove = (e) => {
-      if (lastY == null) return;
-      const y = e.touches[0]?.clientY ?? lastY;
-      const delta = lastY - y;
-      lastY = y;
-      if (drive(delta)) e.preventDefault();
-    };
-    window.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    return () => {
-      window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-    };
-  }, [layout, prefersReducedMotion, cardRef]);
+  // NO scroll hijack. The scrub is driven purely by the inner scroller's OWN
+  // native vertical scroll (the effect above maps its scrollTop → horizontal
+  // translate + category switch), so it inherits the platform's momentum and
+  // feels flawless on touch. The old version added window-level wheel/touch
+  // listeners that called preventDefault and hand-set scrollTop (no momentum)
+  // WHENEVER the card was fully on screen — which redirected ALL page scrolling
+  // into this one card and read as global, glitchy jank. Letting the browser do
+  // the scrolling (and chain to the page natively at the scrub's top/bottom)
+  // fixes that everywhere. The reveal/heartbeat read bannerVisibleRef; the
+  // banner separately locks interaction via pointer-events on the stage.
 
   // Reduced motion / no scrubbing: a plain, fully-scrollable stacked grid so
   // every icon is reachable without any motion. Hover/tap still opens the same
@@ -896,10 +838,10 @@ function SkillsStage({
                 className="absolute inset-0 transition-opacity duration-300"
                 style={{
                   opacity: i === active ? 1 : 0,
-                  // While the update banner is visible the stage is locked: icons
-                  // are not hoverable/clickable, scroll hijack is off (drive()
-                  // returns false when bannerVisible), so the card reads as a
-                  // non-interactive surface until the banner auto-hides.
+                  // While the update banner is visible the stage is locked:
+                  // pointer-events: none makes the icons non-hoverable/clickable,
+                  // so the card reads as a non-interactive surface until the
+                  // banner auto-hides.
                   pointerEvents: bannerVisible || i !== active ? "none" : "auto",
                 }}
               >
@@ -1154,7 +1096,6 @@ export default function SkillsCard({ username }) {
           groups={groups}
           settledInView={settledInView}
           prefersReducedMotion={prefersReducedMotion}
-          cardRef={cardRef}
           pulseSlugs={pulseSlugs}
           onPulsed={clearAdded}
           bannerVisible={Boolean(bannerMessage) || Boolean(pendingMessage) || bannerExiting}
