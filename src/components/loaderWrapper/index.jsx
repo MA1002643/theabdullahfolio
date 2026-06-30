@@ -99,7 +99,16 @@ export default function LoaderWrapper({ children }) {
   // The four-beat timeline. Repeat visitors arriving from the same site skip
   // straight to the page.
   useEffect(() => {
-    const hasSeen = localStorage.getItem('loaderSeen');
+    // Storage can throw when it's disabled or blocked (private mode, hardened
+    // privacy settings, cross-origin iframes). A throw here would crash the
+    // effect before the timeline starts and strand the overlay, so swallow it and
+    // treat the visitor as first-time — the loader simply plays again.
+    let hasSeen = null;
+    try {
+      hasSeen = localStorage.getItem('loaderSeen');
+    } catch {
+      hasSeen = null;
+    }
     const fromSameSite = document.referrer.includes(window.location.hostname);
     if (hasSeen && fromSameSite) {
       setShowLoader(false);
@@ -108,7 +117,14 @@ export default function LoaderWrapper({ children }) {
 
     const timers = [];
     const finish = () => {
-      localStorage.setItem('loaderSeen', 'true');
+      // Best-effort persist: if the write fails it just means the loader may
+      // replay next visit. Must never block dismissing the overlay, so guard it
+      // and dismiss regardless.
+      try {
+        localStorage.setItem('loaderSeen', 'true');
+      } catch {
+        /* storage unavailable — fine, dismiss anyway */
+      }
       setShowLoader(false);
       setPhase('done');
     };

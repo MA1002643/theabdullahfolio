@@ -16,10 +16,34 @@ const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_U
 const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
 
-// How long a delivered message's key is remembered. Must comfortably outlast any
-// retry the offline queue could make — it retries on reconnect, which can be far
-// later — so 24h is generous headroom for a personal contact form.
+// How long a DELIVERED message's key (the SENT marker) is remembered. Must
+// comfortably outlast any retry the offline queue could make — it retries on
+// reconnect, which can be far later — so 24h is generous headroom for a personal
+// contact form.
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
+
+// A short-lived claim marking a send as IN PROGRESS, written before sendMail()
+// and promoted to SENT only once delivery succeeds. It must outlast one
+// server-side send attempt yet stay small: while a PENDING marker lingers,
+// retries are told to wait, so a crashed/killed request that never promotes or
+// releases would otherwise block delivery for the whole TTL. 120s comfortably
+// covers an SMTP send while bounding that self-heal window to two minutes.
+const PENDING_TTL_SECONDS = 120;
+
+// Claim states stored under the idempotency key. PENDING = an attempt is in
+// flight (or recently died); SENT = the message was delivered. Only SENT dedupes
+// a retry to success — a PENDING key gets a retryable response so the client
+// keeps the message queued until one attempt actually completes.
+const CLAIM_PENDING = 'pending';
+const CLAIM_SENT = 'sent';
+
+// Namespace for the client-supplied idempotency key. The key arrives in a request
+// header and would otherwise be used verbatim against a Redis database shared with
+// the rest of the app, so we never store it raw: prefixing isolates these claims
+// into a dedicated keyspace (no collisions with other features) and confines a
+// crafted header to reading/writing/deleting keys under this prefix only — it can
+// never target arbitrary keys elsewhere in the database.
+const IDEMPOTENCY_KEY_PREFIX = 'contact:idempotency:';
 
 function escapeHtml(str) {
   return String(str)
@@ -34,6 +58,11 @@ export async function POST(req) {
   // Stable per-message key from the client (see lib/contact.js). Same key on the
   // first send and every offline retry of that message — the dedupe hinges on it.
   const idempotencyKey = req.headers.get('idempotency-key');
+  // Namespaced key actually used against Redis — never the raw client header. See
+  // IDEMPOTENCY_KEY_PREFIX above for why. Null when the client sent no key.
+  const idempotencyStoreKey = idempotencyKey
+    ? `${IDEMPOTENCY_KEY_PREFIX}${idempotencyKey}`
+    : null;
   try {
     let { name, email, subject, message } = await req.json();
     name = typeof name === 'string' ? name.trim() : '';
@@ -118,17 +147,17 @@ export async function POST(req) {
     }
 
     // 🔁 Idempotency claim — the first request for a given key wins the right to
-    // send. A retry of an already-sent message (whose success response was lost
-    // to a timeout or a dropped connection) finds the key already taken and
-    // returns success WITHOUT mailing again. The claim is atomic (SET NX) so two
-    // concurrent retries can't both pass it. If the store is unreachable we fail
-    // OPEN — better an unlikely duplicate than a dropped message.
+    // send by writing a PENDING marker (atomic SET NX, so two concurrent retries
+    // can't both pass it). The marker is promoted to SENT only after delivery
+    // actually succeeds (below), so a claimed-but-unsent key is NEVER mistaken
+    // for proof of delivery. If the store is unreachable we fail OPEN — better an
+    // unlikely duplicate than a dropped message.
     if (idempotencyKey && redis) {
       let claimed;
       try {
-        claimed = await redis.set(idempotencyKey, '1', {
+        claimed = await redis.set(idempotencyStoreKey, CLAIM_PENDING, {
           nx: true,
-          ex: IDEMPOTENCY_TTL_SECONDS,
+          ex: PENDING_TTL_SECONDS,
         });
       } catch (storeErr) {
         console.warn('idempotency store unavailable; sending without dedupe', {
@@ -137,9 +166,29 @@ export async function POST(req) {
         claimed = 'OK';
       }
       if (claimed !== 'OK') {
+        // The key already exists. Only a SENT marker proves the message was
+        // delivered — dedupe THAT to success. A PENDING marker means another
+        // attempt is still in flight (or recently died); return a retryable
+        // response so the client keeps the message queued rather than dropping it
+        // on a send that hasn't actually completed.
+        let claimState = null;
+        try {
+          claimState = await redis.get(idempotencyStoreKey);
+        } catch {
+          /* unreadable status → treat as not-yet-sent → retryable */
+        }
+        if (claimState === CLAIM_SENT) {
+          return new Response(
+            JSON.stringify({ success: true, message: 'Email already sent.', deduped: true }),
+            { status: 200 },
+          );
+        }
         return new Response(
-          JSON.stringify({ success: true, message: 'Email already sent.', deduped: true }),
-          { status: 200 },
+          JSON.stringify({
+            retryable: true,
+            message: 'A send for this message is already in progress. Please retry shortly.',
+          }),
+          { status: 409 },
         );
       }
     }
@@ -186,12 +235,26 @@ export async function POST(req) {
       // deduped into a lost message. Best-effort: the key's TTL is the backstop.
       if (idempotencyKey && redis) {
         try {
-          await redis.del(idempotencyKey);
+          await redis.del(idempotencyStoreKey);
         } catch {
           /* ignore — the TTL will expire the stale claim */
         }
       }
       throw sendErr; // surfaces as the 500 below
+    }
+
+    // Delivered → promote the claim from PENDING to SENT and extend it to the
+    // full retention TTL, so far-future offline retries of this same message
+    // dedupe to success. Best-effort: the email is already out, so a store blip
+    // here must not fail the request — the short PENDING TTL is the backstop (a
+    // retry within it gets a retryable response and stays queued; after it
+    // expires a retry could re-send, an acceptable fail-open duplicate).
+    if (idempotencyKey && redis) {
+      try {
+        await redis.set(idempotencyStoreKey, CLAIM_SENT, { ex: IDEMPOTENCY_TTL_SECONDS });
+      } catch {
+        /* ignore — PENDING will expire on its own */
+      }
     }
 
     return new Response(

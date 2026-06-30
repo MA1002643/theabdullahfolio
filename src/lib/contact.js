@@ -25,9 +25,12 @@ const REQUEST_TIMEOUT_MS = 15000;
 // onChange AND the FireInput/FireTextarea overlay's own input listener — the one
 // mechanism that keeps the model and the painted gradient text in sync.
 export function setNativeValue(el, value) {
-  if (!el) return;
+  // No DOM (SSR/tests) → nothing to write and nothing to dispatch into, so the
+  // whole helper is a no-op. This also guards the `window.HTMLInputElement`
+  // fallback below, which would otherwise throw when `window` is undefined.
+  if (!el || typeof window === 'undefined') return;
   const proto =
-    typeof window !== 'undefined' && el instanceof window.HTMLTextAreaElement
+    el instanceof window.HTMLTextAreaElement
       ? window.HTMLTextAreaElement.prototype
       : window.HTMLInputElement.prototype;
   const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
@@ -58,8 +61,10 @@ export function newIdempotencyKey() {
 // callers (the live form vs. the background queue flush) can react differently:
 //   { ok: true }                     — delivered
 //   { ok: false, errors: [...] }     — server rejected it (validation etc.)
-//   { ok: false, network: true }     — the request never reached the server
-//                                      (offline / DNS / connection reset) → queue
+//   { ok: false, network: true }     — transient: the request never reached the
+//                                      server (offline / DNS / connection reset),
+//                                      OR the server is mid-send for this key and
+//                                      asked us to retry → queue
 //   { ok: false, aborted: true }     — caller aborted the request
 export async function postContactMessage(params, signal) {
   // Compose the caller's signal (if any) with our own timeout-driven abort so
@@ -100,6 +105,11 @@ export async function postContactMessage(params, signal) {
       data = null;
     }
     if (res.ok && data?.success) return { ok: true };
+    // The server holds a PENDING claim for this idempotency key — another attempt
+    // is still in flight. The message is NOT delivered yet, so treat this like a
+    // transport failure (keep it queued and retry) rather than a hard rejection
+    // that would drop it. Reuses the `network` path both callers already re-queue.
+    if (!res.ok && data?.retryable) return { ok: false, network: true };
     const errors = data?.errors ?? (data?.error ? [data.error] : ['Failed to send message']);
     return { ok: false, errors };
   } catch (err) {
