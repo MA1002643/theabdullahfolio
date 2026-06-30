@@ -1,25 +1,18 @@
 // Pure, DOM-free route matcher for the 404 page. Lives apart from
-// the React tree (no 'use client', no imports) so the matching logic
-// can be reasoned about in isolation — same separation the rest of
-// this folder follows (GlitchText / ReturnPortal / DidYouMean).
+// the React tree (no 'use client') so the matching logic can be
+// reasoned about in isolation — same separation the rest of this
+// folder follows (GlitchText / ReturnPortal / DidYouMean). Its one
+// import is the pure `routes` data module, shared with the 404 chips
+// so the matcher and the UI can't drift; no React/DOM is pulled in.
+import { ROUTES } from './routes';
 
 /**
- * The browsable destinations a mistyped URL might be aiming for.
- *
- * Home ("/") is intentionally omitted — the TAKE ME BACK portal
- * already covers it — so this list is only the sub-pages worth
- * recovering a typo *toward*. Order is the tie-break order when two
- * routes are equidistant from the typed segment (first wins), so keep
- * the most likely guesses higher.
- *
- * Keep in sync with `src/app/(sub pages)/*`.
+ * The browsable destinations a mistyped URL might be aiming for —
+ * the shared {@link ROUTES} registry, re-exported under the name the
+ * matcher has always used. See `routes.js` for the ordering contract
+ * (tie-break order) and the home-omission rationale.
  */
-export const KNOWN_ROUTES = [
-  { segment: 'about', href: '/about', label: 'About' },
-  { segment: 'projects', href: '/projects', label: 'Projects' },
-  { segment: 'qualifications', href: '/qualifications', label: 'Qualifications' },
-  { segment: 'contact', href: '/contact', label: 'Contact' },
-];
+export const KNOWN_ROUTES = ROUTES;
 
 /**
  * Classic iterative Levenshtein distance — the minimum number of

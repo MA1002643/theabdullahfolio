@@ -22,7 +22,13 @@ export default function MessageRefine({ message, onAccept, disabled }) {
   const trimmed = (message || '').trim();
   const longEnough = trimmed.length >= MIN_REFINE_LEN;
   const busy = status === 'loading' || status === 'streaming';
-  const showPanel = busy || status === 'done' || status === 'error';
+  // Gate the whole panel on `!disabled`, not just its buttons: once the form is
+  // sending it has already captured the message, so the panel goes fully inert.
+  // This also unmounts an in-flight refine's streaming view rather than leaving a
+  // rewrite materialising for a message that's already on its way out. On a
+  // server error `disabled` clears and the panel returns for a retry; on success
+  // the form remounts, so it was leaving regardless.
+  const showPanel = !disabled && (busy || status === 'done' || status === 'error');
 
   // sr-only status so non-streaming AT users hear the state transitions without
   // the live text node spamming an announcement on every token.
@@ -35,9 +41,20 @@ export default function MessageRefine({ message, onAccept, disabled }) {
           ? error || 'Could not polish the message.'
           : '';
 
+  // Once the form is sending (`disabled`), the panel must go inert: accepting a
+  // rewrite would mutate the textarea the submit has already captured, and a new
+  // refine would fire a request mid-send. The affordance is hidden while busy,
+  // but a panel left open from a just-finished refine still renders its buttons.
   const handleAccept = () => {
+    if (disabled) return;
     if (suggestion) onAccept(suggestion);
     reset();
+  };
+
+  // Guarded refine starter — no-op while disabled so neither the affordance nor
+  // the panel's "Polish again" / "Try again" can kick off a request mid-send.
+  const startRefine = () => {
+    if (!disabled) refine(trimmed);
   };
 
   // The affordance hides entirely while a panel is open (the panel owns the
@@ -64,7 +81,7 @@ export default function MessageRefine({ message, onAccept, disabled }) {
             key="affordance"
             type="button"
             className="refine-affordance"
-            onClick={() => refine(trimmed)}
+            onClick={startRefine}
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
@@ -100,10 +117,20 @@ export default function MessageRefine({ message, onAccept, disabled }) {
             <div className="refine-actions">
               {status === 'done' && (
                 <>
-                  <button type="button" className="refine-btn refine-btn--use" onClick={handleAccept}>
+                  <button
+                    type="button"
+                    className="refine-btn refine-btn--use"
+                    onClick={handleAccept}
+                    disabled={disabled}
+                  >
                     Use this
                   </button>
-                  <button type="button" className="refine-btn refine-btn--ghost" onClick={() => refine(trimmed)}>
+                  <button
+                    type="button"
+                    className="refine-btn refine-btn--ghost"
+                    onClick={startRefine}
+                    disabled={disabled}
+                  >
                     Polish again
                   </button>
                   <button type="button" className="refine-btn refine-btn--ghost" onClick={reset}>
@@ -113,7 +140,12 @@ export default function MessageRefine({ message, onAccept, disabled }) {
               )}
               {status === 'error' && (
                 <>
-                  <button type="button" className="refine-btn refine-btn--use" onClick={() => refine(trimmed)}>
+                  <button
+                    type="button"
+                    className="refine-btn refine-btn--use"
+                    onClick={startRefine}
+                    disabled={disabled}
+                  >
                     Try again
                   </button>
                   <button type="button" className="refine-btn refine-btn--ghost" onClick={reset}>

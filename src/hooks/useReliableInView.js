@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
+
 /**
  * A transform-safe "is this element in view?" hook.
  *
@@ -59,6 +61,14 @@ export function useReliableInView(
 ) {
   const [inView, setInView] = useState(false);
   const [settledInView, setSettledInView] = useState(false);
+  // The outer about cards reveal off `useLoaderRevealed`; consume the SAME
+  // signal here so the inner section's burst re-runs no matter HOW the loader
+  // completed — the `loaderdone` event (handled directly below), but also the
+  // already-done flag (loader lifted before mount) and the safety-timeout
+  // fallback, neither of which dispatches an event this hook would otherwise
+  // see. `revealed` flips false→true once; that re-runs the effect (burst
+  // included), keeping the count-ups in sync with the cards around them.
+  const revealed = useLoaderRevealed();
 
   useEffect(() => {
     const el = ref.current;
@@ -158,7 +168,9 @@ export function useReliableInView(
       if (rafId) window.cancelAnimationFrame(rafId);
       if (leaveTimer) window.clearTimeout(leaveTimer);
     };
-  }, [ref, amount, settleFrames, leaveDelayMs]);
+    // `revealed` is a dep so the effect (and its mount burst) re-runs the moment
+    // the loader is considered revealed via ANY path, not only the event above.
+  }, [ref, amount, settleFrames, leaveDelayMs, revealed]);
 
   return { inView, settledInView };
 }

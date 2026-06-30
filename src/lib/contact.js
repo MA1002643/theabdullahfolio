@@ -11,6 +11,12 @@ export const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const DRAFT_FIELDS = ['name', 'email', 'subject', 'message'];
 
+// Hard ceiling on a single send. Without it, a stalled /api/send-mail leaves the
+// live form spinning and the offline-queue flush blocked indefinitely. A timeout
+// is treated like a transport failure below (→ network: true) so the message is
+// queued for retry rather than lost.
+const REQUEST_TIMEOUT_MS = 15000;
+
 // Write `value` into an <input>/<textarea> through the prototype's value setter,
 // NOT `el.value = ...`. React tracks a node's value internally; assigning
 // `.value` directly is invisible to React, so the subsequent `input` event would
@@ -38,12 +44,28 @@ export function setNativeValue(el, value) {
 //                                      (offline / DNS / connection reset) → queue
 //   { ok: false, aborted: true }     — caller aborted the request
 export async function postContactMessage(params, signal) {
+  // Compose the caller's signal (if any) with our own timeout-driven abort so
+  // BOTH callers — the live form and the queue flush — get the same bounded
+  // request without each having to wire a timeout. Manual composition (rather
+  // than AbortSignal.any/.timeout) keeps this working on older browsers.
+  const controller = new AbortController();
+  const onCallerAbort = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener('abort', onCallerAbort, { once: true });
+  }
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
   try {
     const res = await fetch('/api/send-mail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
-      signal,
+      signal: controller.signal,
     });
     let data = null;
     try {
@@ -55,10 +77,18 @@ export async function postContactMessage(params, signal) {
     const errors = data?.errors ?? (data?.error ? [data.error] : ['Failed to send message']);
     return { ok: false, errors };
   } catch (err) {
-    if (err?.name === 'AbortError') return { ok: false, aborted: true };
+    if (err?.name === 'AbortError') {
+      // Our timeout fired → treat it as a transport failure so it gets queued
+      // and retried later. A genuine caller-initiated abort stays `aborted`.
+      if (timedOut) return { ok: false, network: true };
+      return { ok: false, aborted: true };
+    }
     // A thrown fetch means the request never completed at the transport layer —
     // offline, connection dropped, etc. Distinct from a server error response.
     return { ok: false, network: true };
+  } finally {
+    clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', onCallerAbort);
   }
 }
 

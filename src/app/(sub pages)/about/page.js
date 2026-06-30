@@ -10,10 +10,11 @@ export default function About() {
     <main >
       {/* Background mirrors the contact page exactly: the same contact-bg.png at
           half opacity, a black overlay to deepen it, then the cursor-reactive
-          aurora composited over the top (screen blend) by the mount. */}
+          aurora composited over the top (screen blend) by the mount. `alt=""`
+          marks it decorative so screen readers skip it (matches NotFoundClient). */}
       <Image
         src={bg}
-        alt="background-image"
+        alt=""
         priority
         sizes="100vw"
         className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-50"

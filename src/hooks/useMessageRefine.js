@@ -44,6 +44,13 @@ export function useMessageRefine() {
       abort();
       const controller = new AbortController();
       controllerRef.current = controller;
+      // True only while THIS call still owns the in-flight slot. After every
+      // await we re-check it: reset() or a newer refine() swaps controllerRef
+      // out, and a stale stream must exit silently rather than commit suggestion
+      // or status over the state the newer owner has already set. (Abort handles
+      // most of this, but a response whose body was already buffered can resolve
+      // post-abort without throwing — this guard closes that window.)
+      const isCurrent = () => controllerRef.current === controller;
 
       setStatus('loading');
       setSuggestion('');
@@ -56,11 +63,13 @@ export function useMessageRefine() {
           body: JSON.stringify({ message }),
           signal: controller.signal,
         });
+        if (!isCurrent()) return;
 
         if (!res.ok || !res.body) {
           // The route returns JSON { message } on every error path; surface it
           // verbatim so the copy stays on-voice ("Write a little more first…").
           const data = await res.json().catch(() => null);
+          if (!isCurrent()) return;
           setError(data?.message || 'Could not polish the message. Please try again.');
           setStatus('error');
           return;
@@ -74,6 +83,7 @@ export function useMessageRefine() {
         // eslint-disable-next-line no-constant-condition
         while (true) {
           const { value, done } = await reader.read();
+          if (!isCurrent()) return;
           if (done) break;
           acc += decoder.decode(value, { stream: true });
           setSuggestion(acc);
@@ -81,6 +91,7 @@ export function useMessageRefine() {
         acc += decoder.decode(); // flush any multi-byte tail
         acc = acc.trim();
 
+        if (!isCurrent()) return;
         if (!acc) {
           setError('Could not polish the message. Please try again.');
           setStatus('error');
@@ -91,6 +102,7 @@ export function useMessageRefine() {
       } catch (err) {
         // An intentional abort (new refine / unmount) is not a user-facing error.
         if (err?.name === 'AbortError') return;
+        if (!isCurrent()) return;
         setError('Could not polish the message. Please try again.');
         setStatus('error');
       } finally {

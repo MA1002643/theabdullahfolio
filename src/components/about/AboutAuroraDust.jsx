@@ -188,19 +188,28 @@ export default function AboutAuroraDust() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    const onMove = (e) => {
-      pointer.current.x = e.clientX / window.innerWidth;
-      pointer.current.y = 1 - e.clientY / window.innerHeight;
-    };
     const onScroll = () => {
       scroll.current.y = window.scrollY || window.pageYOffset || 0;
     };
     onScroll();
-    window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Coarse pointer = touch/mobile: there's no hovering cursor to bend the
+    // aurora toward, so skip the global pointermove listener entirely (scroll
+    // parallax is what carries the reaction there). Same check the DPR cap uses.
+    const coarse =
+      window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    let onMove;
+    if (!coarse) {
+      onMove = (e) => {
+        pointer.current.x = e.clientX / window.innerWidth;
+        pointer.current.y = 1 - e.clientY / window.innerHeight;
+      };
+      window.addEventListener('pointermove', onMove, { passive: true });
+    }
     return () => {
-      window.removeEventListener('pointermove', onMove);
       window.removeEventListener('scroll', onScroll);
+      if (onMove) window.removeEventListener('pointermove', onMove);
     };
   }, []);
 

@@ -31,6 +31,11 @@ export default function CustomCursor() {
   const [enabled, setEnabled] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [pressed, setPressed] = useState(false);
+  // True once a real pointer position has arrived. The dot/ring start parked
+  // off-screen (-100), so hiding the OS cursor the instant we activate would
+  // leave a brief window with NO visible cursor at all. Gate the cursor-hiding
+  // on this so the swap only happens once the custom dot has somewhere to be.
+  const [located, setLocated] = useState(false);
 
   // Dot tracks the raw pointer (no lag); the ring springs toward its own target,
   // which is the pointer — or a point leaned toward a hovered element's centre.
@@ -58,12 +63,14 @@ export default function CustomCursor() {
     };
   }, []);
 
-  // Hide the OS cursor across the whole document while the custom one is live.
+  // Hide the OS cursor across the whole document while the custom one is live —
+  // but only once we actually know where the pointer is, so there's never a
+  // flash of "no cursor" between activation and the first pointer event.
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle('custom-cursor-active', enabled);
+    root.classList.toggle('custom-cursor-active', enabled && located);
     return () => root.classList.remove('custom-cursor-active');
-  }, [enabled]);
+  }, [enabled, located]);
 
   // Pointer tracking + hover/press/magnetic logic.
   useEffect(() => {
@@ -75,6 +82,9 @@ export default function CustomCursor() {
       const y = e.clientY;
       dotX.set(x);
       dotY.set(y);
+      // First real position — now it's safe to hide the OS cursor (no flash).
+      // Cheap to call every move: React bails when the value is unchanged.
+      setLocated(true);
 
       const el =
         e.target instanceof Element ? e.target.closest(INTERACTIVE) : null;
@@ -110,12 +120,12 @@ export default function CustomCursor() {
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerdown', onDown, { passive: true });
     window.addEventListener('pointerup', onUp, { passive: true });
-    document.addEventListener('pointerleave', onLeave);
+    document.addEventListener('mouseleave', onLeave);
     return () => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointerleave', onLeave);
+      document.removeEventListener('mouseleave', onLeave);
     };
   }, [enabled, dotX, dotY, ringTX, ringTY]);
 

@@ -34,6 +34,19 @@ const HEARTBEAT_MS = 2000;
 // constant identity (the default never changes between renders).
 const EMPTY_NAME_SET = new Set();
 
+// Subscribe to a MediaQueryList change, returning an unsubscribe fn. Older
+// Safari / WebViews expose only the deprecated addListener/removeListener (no
+// addEventListener on MediaQueryList), so fall back to those when needed —
+// otherwise calling the missing method throws and breaks the effect.
+function onMediaChange(mql, handler) {
+  if (typeof mql.addEventListener === "function") {
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }
+  mql.addListener(handler);
+  return () => mql.removeListener(handler);
+}
+
 // ----- Card-level entrance choreography — mirrors the GitHub Stats card
 // (StatsCard.jsx) 1:1 so the side-by-side pair animate IN identically: the card
 // springs up (opacity/y/scale) and its sections cascade via `staggerChildren`,
@@ -202,8 +215,7 @@ export default function LanguagesCard({ data, isLive = false }) {
     const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
     const update = () => setCanHover(mql.matches);
     update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
+    return onMediaChange(mql, update);
   }, []);
 
   // Whether the two-column list is active (`xl`+ / ≥1280px — Tailwind's `xl`).
@@ -218,8 +230,7 @@ export default function LanguagesCard({ data, isLive = false }) {
     const mql = window.matchMedia("(min-width: 1280px)");
     const update = () => setIsWideList(mql.matches);
     update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
+    return onMediaChange(mql, update);
   }, []);
 
   // Last-input modality. A keyboard attached to a touch device has no hover

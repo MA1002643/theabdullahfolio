@@ -35,6 +35,10 @@ export function useFormDraft({ watch, formRef, fields }) {
   // True only during a programmatic repopulate, so the input events it fires
   // don't immediately bounce back through the autosave subscription.
   const restoringRef = useRef(false);
+  // The pending debounced-save timer. Held in a ref (not the watch effect's
+  // closure) so clearStored/clearDraft can cancel a just-scheduled write before
+  // it can recreate a draft we're trying to remove.
+  const saveTimerRef = useRef(null);
 
   // Restore once, on mount.
   useEffect(() => {
@@ -62,11 +66,10 @@ export function useFormDraft({ watch, formRef, fields }) {
 
   // Autosave: subscribe to value changes (no re-render) and debounce-write.
   useEffect(() => {
-    let timer;
     const sub = watch((values) => {
       if (restoringRef.current) return;
-      clearTimeout(timer);
-      timer = setTimeout(() => {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
         const next = {};
         let hasContent = false;
         fields.forEach((f) => {
@@ -79,15 +82,24 @@ export function useFormDraft({ watch, formRef, fields }) {
       }, SAVE_DEBOUNCE_MS);
     });
     return () => {
-      clearTimeout(timer);
+      clearTimeout(saveTimerRef.current);
       sub.unsubscribe();
     };
   }, [watch, fields]);
 
+  // Cancel any debounced save still in flight — otherwise a write scheduled
+  // moments before a clear would fire afterwards and resurrect the draft we
+  // just removed.
+  const cancelPendingSave = useCallback(() => {
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = null;
+  }, []);
+
   const clearStored = useCallback(() => {
+    cancelPendingSave();
     remove(DRAFT_KEY);
     setRestored(false);
-  }, []);
+  }, [cancelPendingSave]);
 
   const clearDraft = useCallback(() => {
     const root = formRef.current;
@@ -96,9 +108,10 @@ export function useFormDraft({ watch, formRef, fields }) {
       root.querySelectorAll('input, textarea').forEach((el) => setNativeValue(el, ''));
       restoringRef.current = false;
     }
+    cancelPendingSave();
     remove(DRAFT_KEY);
     setRestored(false);
-  }, [formRef]);
+  }, [formRef, cancelPendingSave]);
 
   const dismissRestored = useCallback(() => setRestored(false), []);
 

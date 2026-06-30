@@ -13,6 +13,7 @@ import AboutAuroraDustMount from '@/components/about/AboutAuroraDustMount';
 import DidYouMean from './DidYouMean';
 import GlitchText from './GlitchText';
 import ReturnPortal from './ReturnPortal';
+import { ROUTES } from './routes';
 import { suggestRoute } from './suggestRoute';
 
 const ROTATING_MESSAGES = [
@@ -23,12 +24,19 @@ const ROTATING_MESSAGES = [
   "You've reached the edge of the portfolio.",
 ];
 
-const SUGGESTIONS = [
-  { label: 'About', href: '/about', Icon: User },
-  { label: 'Projects', href: '/projects', Icon: Briefcase },
-  { label: 'Qualifications', href: '/qualifications', Icon: GraduationCap },
-  { label: 'Contact', href: '/contact', Icon: Phone },
-];
+// Suggestion chips, derived from the shared ROUTES registry so they can't drift
+// from the typo matcher. Icons are a UI-only concern, mapped here by segment.
+const SUGGESTION_ICONS = {
+  about: User,
+  projects: Briefcase,
+  qualifications: GraduationCap,
+  contact: Phone,
+};
+const SUGGESTIONS = ROUTES.map(({ segment, href, label }) => ({
+  label,
+  href,
+  Icon: SUGGESTION_ICONS[segment],
+}));
 
 const PARALLAX_AMPLITUDE_PX = 10;
 const MESSAGE_ROTATION_MS = 5000;

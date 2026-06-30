@@ -42,6 +42,38 @@ function json(body, status) {
   });
 }
 
+// ── Application-level rate limit ──────────────────────────────────────────────
+// A best-effort, per-instance gate so one visitor can't spend our model budget
+// by hammering this public endpoint. On Fluid Compute a warm instance is reused
+// across requests, so an in-memory per-IP window curbs the common abuse (a burst
+// from a single client) with no external store. It is the FIRST line of defense;
+// the upstream gateway 429 mapping below remains the backstop for traffic spread
+// across instances. A human polishing a contact note never approaches this rate.
+const RATE_LIMIT = 10; // requests per window, per IP
+const RATE_WINDOW_MS = 60_000;
+const hits = new Map(); // ip -> { count, resetAt }
+
+function clientIp(req) {
+  const fwd = req.headers.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0].trim();
+  return req.headers.get('x-real-ip') || 'unknown';
+}
+
+function rateLimited(ip) {
+  const now = Date.now();
+  const entry = hits.get(ip);
+  if (!entry || now >= entry.resetAt) {
+    // Opportunistic sweep so the map can't grow without bound under churn.
+    if (hits.size > 5000) {
+      for (const [k, v] of hits) if (now >= v.resetAt) hits.delete(k);
+    }
+    hits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > RATE_LIMIT;
+}
+
 export async function POST(req) {
   // The gateway needs either a static key or an OIDC token. When neither is
   // present (typically local dev before `vercel env pull`), fail with a clear,
@@ -50,6 +82,15 @@ export async function POST(req) {
     return json(
       { error: 'unconfigured', message: 'Message polishing is not available right now.' },
       503,
+    );
+  }
+
+  // Throttle before parsing the body or touching the model — reject abuse as
+  // early and cheaply as possible. Same 429 shape as the upstream-429 fallback.
+  if (rateLimited(clientIp(req))) {
+    return json(
+      { error: 'rate_limited', message: 'Too many requests — try again in a moment.' },
+      429,
     );
   }
 
@@ -104,7 +145,14 @@ export async function POST(req) {
       if (err.statusCode === 402)
         return json({ error: 'budget', message: 'Message polishing is paused right now.' }, 402);
     }
-    console.error('refine-message failed:', err);
+    // Log only structural fields — never the raw error, and not the free-text
+    // `.message`: an AI SDK APICallError carries provider request/response bodies
+    // and can surface them in its message, which may echo the visitor's authored
+    // content. `name` + `statusCode` are enough to diagnose without that leak.
+    console.error('refine-message failed', {
+      name: err?.name,
+      statusCode: APICallError.isInstance(err) ? err.statusCode : undefined,
+    });
     return json({ error: 'failed', message: 'Could not polish the message. Please try again.' }, 500);
   }
 }

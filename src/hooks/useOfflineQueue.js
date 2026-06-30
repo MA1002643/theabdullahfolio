@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { QUEUE_KEY, postContactMessage, readJSON, remove, writeJSON } from '@/lib/contact';
+import { QUEUE_KEY, postContactMessage, readJSON, writeJSON } from '@/lib/contact';
 
 // useOfflineQueue — makes the contact form resilient to a dead connection.
 // When a send can't reach the server (the visitor is offline, or the request
@@ -51,8 +51,15 @@ export function useOfflineQueue() {
         // else: the server rejected it (e.g. validation) — it will never
         // succeed on retry, so drop it rather than loop forever.
       }
-      writeJSON(QUEUE_KEY, remaining);
-      setPending(remaining.length);
+      // Re-read before writing: `enqueue()` may have appended new messages while
+      // we were awaiting sends. Those live past `q.length` in the stored queue
+      // (enqueue only ever appends, and flushingRef makes flushes mutually
+      // exclusive), so carry them forward instead of clobbering them with our
+      // stale snapshot.
+      const newlyQueued = (readJSON(QUEUE_KEY) || []).slice(q.length);
+      const nextQueue = [...remaining, ...newlyQueued];
+      writeJSON(QUEUE_KEY, nextQueue);
+      setPending(nextQueue.length);
       if (sent > 0) {
         toast.success(
           sent === 1

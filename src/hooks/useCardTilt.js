@@ -64,24 +64,37 @@ export function useCardTilt({ maxTilt = MAX_TILT_DEG } = {}) {
   const glareOpacity = useSpring(glareOpacityRaw, GLARE_SPRING);
   const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255, 109, 5, 0.16), transparent 60%)`;
 
+  // Map a pointer event to the card's tilt + glare hot-spot — one calculation
+  // shared by enter and move so the two can't disagree. Both the rotation and
+  // the glare centre derive from the cursor's normalized position within the
+  // card; bails on a zero-area rect (a card collapsed mid-entrance) so we never
+  // divide by zero.
+  const syncFromPointer = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const px = (e.clientX - rect.left) / rect.width; // 0 (left) → 1 (right)
+    const py = (e.clientY - rect.top) / rect.height; // 0 (top)  → 1 (bottom)
+    rotateXRaw.set((0.5 - py) * 2 * maxTilt);
+    rotateYRaw.set((px - 0.5) * 2 * maxTilt);
+    glareX.set(px * 100);
+    glareY.set(py * 100);
+  };
+
   const handlers = enabled
     ? {
+        // pointermove fires continuously over the card, so it keeps the tilt and
+        // glare tracking the cursor and re-lights the glare as movement begins.
         onPointerMove: (e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          if (rect.width === 0 || rect.height === 0) return;
-          const px = (e.clientX - rect.left) / rect.width; // 0 (left) → 1 (right)
-          const py = (e.clientY - rect.top) / rect.height; // 0 (top)  → 1 (bottom)
-          rotateXRaw.set((0.5 - py) * 2 * maxTilt);
-          rotateYRaw.set((px - 0.5) * 2 * maxTilt);
-          glareX.set(px * 100);
-          glareY.set(py * 100);
-          // Turn the glare on from here (not only onPointerEnter): pointermove
-          // fires continuously while the cursor is over the card, so the glare
-          // is reliably lit the moment movement begins — independent of whether
-          // a discrete enter event arrives.
+          syncFromPointer(e);
           glareOpacityRaw.set(1);
         },
-        onPointerEnter: () => glareOpacityRaw.set(1),
+        // Enter seeds tilt + glare from the ACTUAL entry point (same calc) so the
+        // very first rendered frame is under the cursor, instead of showing the
+        // glare at the previous hover's spot until the first move arrives.
+        onPointerEnter: (e) => {
+          syncFromPointer(e);
+          glareOpacityRaw.set(1);
+        },
         onPointerLeave: () => {
           // Spring everything home; the glare fades as it goes.
           rotateXRaw.set(0);
