@@ -4,6 +4,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { QUEUE_KEY, postContactMessage, readJSON, writeJSON } from '@/lib/contact';
 
+// Auto-drain cadence for items queued while already online — where there's no
+// offline→online transition to ride. First retry after RETRY_BASE_MS, doubling
+// up to RETRY_MAX_MS for as long as items keep failing, so a persistently-down
+// mail server is retried gently rather than in a hot loop.
+const RETRY_BASE_MS = 3000;
+const RETRY_MAX_MS = 60000;
+
 // useOfflineQueue — makes the contact form resilient to a dead connection.
 // When a send can't reach the server (the visitor is offline, or the request
 // fails at the transport layer), the message is parked in localStorage and
@@ -18,7 +25,9 @@ import { QUEUE_KEY, postContactMessage, readJSON, writeJSON } from '@/lib/contac
 //   pending    — number of messages waiting to be delivered
 //   enqueue()  — park a message for later delivery
 //   flush()    — attempt to deliver everything queued (also runs automatically
-//                on reconnect and on mount)
+//                on reconnect, on mount, and — with backoff — whenever we're
+//                online with a backlog, so items queued while already online
+//                still drain)
 export function useOfflineQueue() {
   // Default true so the SSR markup matches the common case; corrected on mount.
   const [online, setOnline] = useState(true);
@@ -93,6 +102,40 @@ export function useOfflineQueue() {
       window.removeEventListener('offline', onOffline);
     };
   }, [flush]);
+
+  // Auto-drain while online with a backlog. `flush()` above only fires on mount
+  // and the `online` event, so a message queued *while already online* — a
+  // transient send failure, the 500-retry path, or a `retryable` 409 — would be
+  // held but never retried until an offline→online transition that may never
+  // come. Keying on `pending` kicks the drain the moment something is queued.
+  useEffect(() => {
+    if (!online || pending === 0) return;
+
+    let cancelled = false;
+    let timer = null;
+    let delay = RETRY_BASE_MS;
+
+    const drain = async () => {
+      if (cancelled) return;
+      await flush();
+      if (cancelled) return;
+      // Re-arm from the live queue length, not `pending`: a failed flush leaves
+      // the count unchanged, which wouldn't re-run this effect, so the loop must
+      // reschedule itself (backing off) until the queue is actually empty.
+      const remaining = (readJSON(QUEUE_KEY) || []).length;
+      if (remaining === 0) return;
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      delay = Math.min(delay * 2, RETRY_MAX_MS);
+      timer = setTimeout(drain, delay);
+    };
+
+    timer = setTimeout(drain, delay);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [online, pending, flush]);
 
   return { online, pending, enqueue, flush };
 }

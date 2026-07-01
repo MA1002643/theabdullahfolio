@@ -110,6 +110,11 @@ export async function postContactMessage(params, signal) {
     // transport failure (keep it queued and retry) rather than a hard rejection
     // that would drop it. Reuses the `network` path both callers already re-queue.
     if (!res.ok && data?.retryable) return { ok: false, network: true };
+    // Any 5xx is a transient server-side failure (e.g. the SMTP send threw). The
+    // route releases the idempotency claim on such failures specifically so a
+    // retry can re-send, so honour that here: queue and retry rather than drop.
+    // 4xx stays a hard rejection below (validation etc. fails the same on retry).
+    if (res.status >= 500) return { ok: false, network: true };
     const errors = data?.errors ?? (data?.error ? [data.error] : ['Failed to send message']);
     return { ok: false, errors };
   } catch (err) {

@@ -27,8 +27,20 @@ const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 // server-side send attempt yet stay small: while a PENDING marker lingers,
 // retries are told to wait, so a crashed/killed request that never promotes or
 // releases would otherwise block delivery for the whole TTL. 120s comfortably
-// covers an SMTP send while bounding that self-heal window to two minutes.
+// covers an SMTP send (which we bound below) while keeping that self-heal window
+// to two minutes.
 const PENDING_TTL_SECONDS = 120;
+
+// Per-attempt SMTP timeouts. Their combined worst case MUST stay well under
+// PENDING_TTL_SECONDS so a send can NEVER outlive its PENDING claim: the claim
+// then always survives the whole attempt, so it can't expire mid-send and let a
+// concurrent retry reclaim the key. That removes the stale-attempt race at the
+// root — no older attempt can promote SENT (or DELETE the key) after a retry has
+// taken over, and no duplicate email goes out (only one attempt ever holds the
+// claim, so only one ever sends). Budget ≈ 10 + 10 + 20 = 40s, far below 120s.
+const SMTP_CONNECTION_TIMEOUT_MS = 10_000; // TCP connect
+const SMTP_GREETING_TIMEOUT_MS = 10_000; // wait for the server 220 greeting
+const SMTP_SOCKET_TIMEOUT_MS = 20_000; // idle-socket inactivity
 
 // Claim states stored under the idempotency key. PENDING = an attempt is in
 // flight (or recently died); SENT = the message was delivered. Only SENT dedupes
@@ -45,6 +57,18 @@ const CLAIM_SENT = 'sent';
 // never target arbitrary keys elsewhere in the database.
 const IDEMPOTENCY_KEY_PREFIX = 'contact:idempotency:';
 
+// The idempotency key arrives in a public, attacker-controllable request header,
+// so we constrain it to the shape the client actually produces (see
+// newIdempotencyKey in lib/contact.js — a UUID or a short base36 token) BEFORE it
+// becomes Redis key material. This bounds key length and cardinality so malformed
+// or malicious requests can't write oversized keys or flood the store with junk
+// entries (each would otherwise sit under a TTL). A key that fails this is treated
+// as absent → the request still sends, just without dedupe (fail open, matching
+// how we already degrade when the store is unreachable). The charset is a
+// deliberate superset of what the client emits; 128 is generous headroom over the
+// real max of 36.
+const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -57,7 +81,14 @@ function escapeHtml(str) {
 export async function POST(req) {
   // Stable per-message key from the client (see lib/contact.js). Same key on the
   // first send and every offline retry of that message — the dedupe hinges on it.
-  const idempotencyKey = req.headers.get('idempotency-key');
+  // Validate it against the expected client format before any use: a header that
+  // doesn't match is treated as no key (→ no dedupe), so malformed/malicious
+  // requests can't turn into oversized or unbounded Redis keys.
+  const rawIdempotencyKey = req.headers.get('idempotency-key')?.trim();
+  const idempotencyKey =
+    rawIdempotencyKey && IDEMPOTENCY_KEY_PATTERN.test(rawIdempotencyKey)
+      ? rawIdempotencyKey
+      : null;
   // Namespaced key actually used against Redis — never the raw client header. See
   // IDEMPOTENCY_KEY_PREFIX above for why. Null when the client sent no key.
   const idempotencyStoreKey = idempotencyKey
@@ -209,6 +240,13 @@ export async function POST(req) {
         user: process.env.SMTP_USER, // your email
         pass: process.env.SMTP_PASS, // app password or SMTP password
       },
+      // Bound the exchange so a send can't outlive its PENDING claim — this is
+      // what closes the stale-attempt race (see the timeout constants near
+      // PENDING_TTL_SECONDS). Without these, a hung SMTP server lets sendMail()
+      // run to the function's max duration, long past the claim's TTL.
+      connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
+      greetingTimeout: SMTP_GREETING_TIMEOUT_MS,
+      socketTimeout: SMTP_SOCKET_TIMEOUT_MS,
     });
 
     // 📧 Send email
@@ -232,7 +270,9 @@ export async function POST(req) {
       });
     } catch (sendErr) {
       // Send failed → release the claim so a legitimate retry isn't silently
-      // deduped into a lost message. Best-effort: the key's TTL is the backstop.
+      // deduped into a lost message. The DEL is unconditional but safe: the SMTP
+      // timeouts keep this attempt within PENDING_TTL_SECONDS, so the key we clear
+      // is still ours — never a newer retry's claim. TTL is the backstop.
       if (idempotencyKey && redis) {
         try {
           await redis.del(idempotencyStoreKey);
@@ -245,10 +285,10 @@ export async function POST(req) {
 
     // Delivered → promote the claim from PENDING to SENT and extend it to the
     // full retention TTL, so far-future offline retries of this same message
-    // dedupe to success. Best-effort: the email is already out, so a store blip
-    // here must not fail the request — the short PENDING TTL is the backstop (a
-    // retry within it gets a retryable response and stays queued; after it
-    // expires a retry could re-send, an acceptable fail-open duplicate).
+    // dedupe to success. The promote is unconditional but safe: the SMTP timeouts
+    // keep this attempt within PENDING_TTL_SECONDS, so we still own the claim and
+    // can't clobber a newer retry's state. Best-effort otherwise — the email is
+    // already out, so a store blip here must not fail the request.
     if (idempotencyKey && redis) {
       try {
         await redis.set(idempotencyStoreKey, CLAIM_SENT, { ex: IDEMPOTENCY_TTL_SECONDS });

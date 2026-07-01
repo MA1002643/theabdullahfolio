@@ -614,9 +614,16 @@ function FormContent({ onReset, queue }) {
       setLaunch('check');
       schedule(onReset, 2600);
     } else if (result.network) {
-      // The request reached the transport layer and dropped (connection lost
-      // mid-send) → hold it and auto-retry when we're back online.
-      toast('Saved — it will send when you reconnect.', { icon: '✦' });
+      // The send didn't complete — either we're offline, or it failed transiently
+      // while online (dropped connection, a 5xx, or an in-flight idempotent retry).
+      // Either way the queue holds it; only WHEN it drains differs — on reconnect
+      // vs. the online auto-drain's backoff — so the copy reflects that.
+      toast(
+        queue.online
+          ? 'Saved — retrying shortly…'
+          : 'Saved — it will send when you reconnect.',
+        { icon: '✦' },
+      );
       holdForLater(params);
     } else if (!result.aborted) {
       const messages = result.errors?.length
