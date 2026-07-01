@@ -106,6 +106,8 @@ const v = {
   // Data & Integration
   nodemailer: minorVersion(deps['nodemailer']),
   hookForm: minorVersion(deps['react-hook-form']),
+  ai: minorVersion(deps['ai']),
+  upstashRedis: minorVersion(deps['@upstash/redis']),
   analytics: minorVersion(deps['@vercel/analytics']),
   speedInsights: minorVersion(deps['@vercel/speed-insights']),
 
@@ -114,9 +116,11 @@ const v = {
   reactIcons: minorVersion(deps['react-icons']),
   sonner: minorVersion(deps['sonner']),
   clsx: minorVersion(deps['clsx']),
+  twMerge: minorVersion(deps['tailwind-merge']),
   sharp: minorVersion(deps['sharp']),
 
   // Meta
+  nodeEngine: minorVersion(pkg.engines.node),
   syncDate: today(),
 };
 
@@ -136,7 +140,7 @@ const QUALITY_BADGES = `<p align="center">
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
-  <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.17-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A5${v.nodeEngine}-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/last_synced-${v.syncDate.replace(/-/g, '--')}-ff6d05?style=flat-square" alt="Last synced" />
 </p>`;
 
@@ -171,6 +175,8 @@ const STACK_DATA = `| Technology | Version | Role |
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
 | [Nodemailer](https://nodemailer.com/) | \`^${v.nodemailer}\` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | \`^${v.hookForm}\` | Form state management and validation |
+| [AI SDK (\`ai\`)](https://sdk.vercel.ai/) | \`^${v.ai}\` | \`streamText\` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
+| [@upstash/redis](https://upstash.com/docs/redis) | \`^${v.upstashRedis}\` | Serverless Redis backing the idempotent contact-send dedupe store |
 | [@vercel/analytics](https://vercel.com/analytics) | \`^${v.analytics}\` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | \`^${v.speedInsights}\` | Core Web Vitals tracking |`;
 
@@ -180,6 +186,7 @@ const STACK_UI = `| Technology | Version | Role |
 | [React Icons](https://react-icons.github.io/react-icons/) | \`^${v.reactIcons}\` | Extended icon library |
 | [Sonner](https://sonner.emilkowal.ski/) | \`^${v.sonner}\` | Toast notification system |
 | [clsx](https://github.com/lukeed/clsx) | \`^${v.clsx}\` | Conditional class name utility |
+| [tailwind-merge](https://github.com/dcastil/tailwind-merge) | \`^${v.twMerge}\` | Conflict-free Tailwind class merging — the \`cn()\` helper in \`src/lib/utils.js\` |
 | [Sharp](https://sharp.pixelplumbing.com/) | \`^${v.sharp}\` | Server-side image optimisation pipeline |`;
 
 // ── Apply all replacements ────────────────────────────────────────────────────
