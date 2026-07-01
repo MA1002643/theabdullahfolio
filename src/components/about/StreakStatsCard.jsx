@@ -38,6 +38,69 @@ const EMPTY_FIELD_SET = new Set();
 const RING_RADIUS = 55;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
+/* ------------------------------ ANIMATED TITLE ------------------------------
+   Per-character blur-fade heading in the shared vivid orange (#ff6d05) — the
+   exact treatment the GitHub Stats / Languages / Skills / Repo cards use, so all
+   five About data cards share one headline animation and hue. This card used to
+   carry only a tiny eyebrow microlabel and no big title, so its heading read
+   noticeably smaller than its neighbours'; promoting it to this component brings
+   it into the system. Reduced motion renders a plain heading; the char spans are
+   aria-hidden with an aria-label so the accessible name stays a clean single
+   string. Plays on `settledInView` so the entrance replays on true re-entry. */
+function AnimatedTitle({ text, play }) {
+  const prefersReducedMotion = useReducedMotion();
+  const className =
+    "text-lg sm:text-xl md:text-2xl font-semibold break-words leading-tight";
+
+  if (prefersReducedMotion) {
+    return (
+      <h2 className={className} style={{ color: ORANGE, textShadow: "none" }}>
+        {text}
+      </h2>
+    );
+  }
+
+  const chars = Array.from(text);
+  const container = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.025, delayChildren: 0.2 } },
+  };
+  const charVariant = {
+    hidden: { opacity: 0, filter: "blur(6px)", y: 8 },
+    visible: {
+      opacity: 1,
+      filter: "blur(0px)",
+      y: 0,
+      transition: { duration: 0.35, ease: "easeOut" },
+    },
+  };
+  return (
+    <motion.h2
+      variants={container}
+      initial="hidden"
+      animate={play ? "visible" : "hidden"}
+      className={className}
+      style={{ color: ORANGE, textShadow: "none" }}
+      aria-label={text}
+    >
+      {chars.map((c, i) =>
+        c === " " ? (
+          <span key={i}>{" "}</span>
+        ) : (
+          <motion.span
+            key={i}
+            variants={charVariant}
+            style={{ display: "inline-block" }}
+            aria-hidden="true"
+          >
+            {c}
+          </motion.span>
+        ),
+      )}
+    </motion.h2>
+  );
+}
+
 /* ----------------------------- COUNT-UP NUMBER -----------------------------
    Imperative 0 → target count-up on a ref (no per-frame React re-render),
    driven by `playToken` so it re-fires on every TRUE viewport re-entry and
@@ -337,14 +400,19 @@ export default function StreakStatsCard({ data }) {
         variant="orange"
       />
 
-      {/* Eyebrow — same microlabel treatment as the sibling cards. */}
-      <p
-        aria-hidden="true"
-        className="text-[10px] uppercase tracking-[0.22em] mb-4 sm:mb-5"
-        style={{ color: AMBER, textShadow: "none" }}
-      >
-        Contribution streaks
-      </p>
+      {/* Header — big animated title over a quiet GitHub descriptor, matching
+          the sibling data cards' title-over-meta block so all five About cards
+          share one headline treatment. Was a lone tiny eyebrow, which read too
+          small against the other cards' titles. */}
+      <div className="mb-4 sm:mb-5">
+        <AnimatedTitle text="Contribution Streaks" play={settledInView} />
+        <p
+          className="text-[10px] uppercase tracking-[0.22em] mt-1"
+          style={{ color: AMBER, textShadow: "none" }}
+        >
+          GitHub activity
+        </p>
+      </div>
 
       {/* Stagger container — reveals Total Contributions → Current Streak →
           Longest Streak in a left-to-right cascade on each viewport entry. */}
