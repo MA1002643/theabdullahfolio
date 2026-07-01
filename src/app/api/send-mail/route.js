@@ -183,10 +183,19 @@ export async function POST(req) {
     // actually succeeds (below), so a claimed-but-unsent key is NEVER mistaken
     // for proof of delivery. If the store is unreachable we fail OPEN — better an
     // unlikely duplicate than a dropped message.
+    //
+    // `claimOwned` records whether THIS request atomically created the PENDING
+    // marker. Only the owner may later release (DEL) or promote (SET SENT) the
+    // key. The fail-open path (a thrown SET) deliberately leaves it false: we
+    // still send, but we must never touch a key that a concurrent attempt might
+    // legitimately own — deleting or overwriting it would strand or duplicate
+    // that attempt's message.
+    let claimOwned = false;
     if (idempotencyKey && redis) {
-      let claimed;
+      let claimResult;
+      let storeReachable = true;
       try {
-        claimed = await redis.set(idempotencyStoreKey, CLAIM_PENDING, {
+        claimResult = await redis.set(idempotencyStoreKey, CLAIM_PENDING, {
           nx: true,
           ex: PENDING_TTL_SECONDS,
         });
@@ -194,9 +203,13 @@ export async function POST(req) {
         console.warn('idempotency store unavailable; sending without dedupe', {
           name: storeErr?.name,
         });
-        claimed = 'OK';
+        storeReachable = false; // fail OPEN: send anyway, but own nothing
       }
-      if (claimed !== 'OK') {
+      if (storeReachable && claimResult === 'OK') {
+        // We atomically created the PENDING marker → we own the claim and are the
+        // only attempt allowed to release or promote it below.
+        claimOwned = true;
+      } else if (storeReachable) {
         // The key already exists. Only a SENT marker proves the message was
         // delivered — dedupe THAT to success. A PENDING marker means another
         // attempt is still in flight (or recently died); return a retryable
@@ -222,6 +235,8 @@ export async function POST(req) {
           { status: 409 },
         );
       }
+      // else: storeReachable === false → fall through and send without dedupe;
+      // claimOwned stays false so the release/promote steps below skip the key.
     }
 
     // 🔒 Set up transporter using your SMTP credentials
@@ -270,10 +285,12 @@ export async function POST(req) {
       });
     } catch (sendErr) {
       // Send failed → release the claim so a legitimate retry isn't silently
-      // deduped into a lost message. The DEL is unconditional but safe: the SMTP
-      // timeouts keep this attempt within PENDING_TTL_SECONDS, so the key we clear
-      // is still ours — never a newer retry's claim. TTL is the backstop.
-      if (idempotencyKey && redis) {
+      // deduped into a lost message. Guarded on claimOwned: only the attempt that
+      // atomically created this PENDING marker may delete it — a fail-open send
+      // (which owns nothing) must not clear a key a concurrent attempt holds. The
+      // SMTP timeouts keep this attempt within PENDING_TTL_SECONDS, so the key we
+      // clear is still ours, never a newer retry's claim. TTL is the backstop.
+      if (claimOwned) {
         try {
           await redis.del(idempotencyStoreKey);
         } catch {
@@ -285,11 +302,13 @@ export async function POST(req) {
 
     // Delivered → promote the claim from PENDING to SENT and extend it to the
     // full retention TTL, so far-future offline retries of this same message
-    // dedupe to success. The promote is unconditional but safe: the SMTP timeouts
-    // keep this attempt within PENDING_TTL_SECONDS, so we still own the claim and
-    // can't clobber a newer retry's state. Best-effort otherwise — the email is
-    // already out, so a store blip here must not fail the request.
-    if (idempotencyKey && redis) {
+    // dedupe to success. Guarded on claimOwned: only the owner promotes, so a
+    // fail-open send (which never created the marker) can't overwrite a key a
+    // concurrent attempt legitimately holds. The SMTP timeouts keep this attempt
+    // within PENDING_TTL_SECONDS, so we still own the claim and can't clobber a
+    // newer retry's state. Best-effort otherwise — the email is already out, so a
+    // store blip here must not fail the request.
+    if (claimOwned) {
       try {
         await redis.set(idempotencyStoreKey, CLAIM_SENT, { ex: IDEMPOTENCY_TTL_SECONDS });
       } catch {
