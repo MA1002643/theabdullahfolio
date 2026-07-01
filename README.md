@@ -23,7 +23,7 @@
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
-  <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.3-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.17-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/last_synced-2026--07--01-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
@@ -114,8 +114,6 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
 | [Nodemailer](https://nodemailer.com/) | `^7.0` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | `^7.61` | Form state management and validation |
-| [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
-| [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send dedupe store |
 | [@vercel/analytics](https://vercel.com/analytics) | `^2.0` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | `^2.0` | Core Web Vitals tracking |
 <!-- STACK-DATA:END -->
@@ -129,7 +127,6 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | [React Icons](https://react-icons.github.io/react-icons/) | `^5.5` | Extended icon library |
 | [Sonner](https://sonner.emilkowal.ski/) | `^1.7` | Toast notification system |
 | [clsx](https://github.com/lukeed/clsx) | `^2.1` | Conditional class name utility |
-| [tailwind-merge](https://github.com/dcastil/tailwind-merge) | `^3.6` | Conflict-free Tailwind class merging — the `cn()` helper in `src/lib/utils.js` |
 | [Sharp](https://sharp.pixelplumbing.com/) | `^0.34` | Server-side image optimisation pipeline |
 <!-- STACK-UI:END -->
 
