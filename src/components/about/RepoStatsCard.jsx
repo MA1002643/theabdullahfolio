@@ -14,6 +14,9 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { fastStartSlowFinish } from "@/utils/animationCurves";
+// Card-level + per-child entrance variants are shared so the "Projects shipped"
+// and "Years in the craft" feature cards reveal with the IDENTICAL gesture.
+import { cardVariants, childVariants } from "./revealVariants";
 
 // Convert a 3- or 6-digit hex color to an `rgba(r, g, b, a)` string. The
 // language-dot glow used to concat an alpha suffix onto `languageColor`
@@ -56,31 +59,9 @@ const POST_BANNER_BEAT_MS = 400;
 const EMPTY_FIELD_SET = new Set();
 
 // ----- Card-level variants -----
-const cardVariants = {
-  hidden: { opacity: 0, y: 56, scale: 0.97 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 70,
-      damping: 18,
-      staggerChildren: 0.07,
-      delayChildren: 0.15,
-    },
-  },
-};
-
-const childVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 120, damping: 20 },
-  },
-};
-
+// `cardVariants` + `childVariants` now live in ./revealVariants (shared with the
+// "Projects shipped" / "Years in the craft" cards). The metric-row stagger below
+// stays local — it's specific to this card's metric column.
 const metricContainerVariants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.06 } },

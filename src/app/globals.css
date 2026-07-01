@@ -8,6 +8,19 @@
     --foreground: 225 225 225;
     --muted: 115 115 115;
     --accent: 254 254 91;
+
+    /* Crisp amethyst-violet accent ramp for the contact fields. Violet is the
+       complement of the warm amber "dust" aurora behind the form, so it gives
+       the strongest, most premium separation from the background. Stored as
+       space-separated RGB triplets (like --background) so each can be used at
+       any alpha via `rgb(var(--token) / a)`.
+       NB: the hover/focus *shadow* blooms are mirrored as literals in
+       components/contact/Form.jsx — Tailwind arbitrary box-shadow can't take
+       the `rgb(var()/a)` token form cleanly — so keep those values in sync. */
+    --field-surface: 17 14 24; /* cool violet-black plate behind each field */
+    --violet-line: 168 85 247; /* rest border */
+    --violet-line-strong: 192 132 252; /* hover border + bloom core */
+    --violet-line-bright: 216 180 254; /* focus border + active label */
   }
 }
 
@@ -104,11 +117,307 @@
 
   .custom-bg-2 {
     @apply border border-solid;
-    border-color: rgba(155, 89, 182, 0.3);
-    /* amethyst-neon color */
-    background-color: rgb(var(--background) / 0.2);
+    /* Crisp jewel-violet hairline (was a muted rgba(155,89,182,0.3)) on a
+       cooler, more opaque violet-black plate — so the field reads as a
+       defined surface against the warm dust rather than a faint wash. */
+    border-color: rgb(var(--violet-line) / 0.5);
+    background-color: rgb(var(--field-surface) / 0.4);
     backdrop-filter: blur(6px);
     box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+  }
+
+  /* ── Contact inputs: floating labels with a NOTCHED OUTLINE ────────────
+     The label rests inside the field as its placeholder; on focus, or once
+     the field has a value, it floats up to sit ON the top border — and the
+     border itself BREAKS to receive it (a real gap, not an opaque chip laid
+     over the line). The gap is a native <fieldset>/<legend> notch
+     (.float-outline / .float-notch) whose width animates open/closed in
+     lock-step with the label, so the outline cleanly "splits" for the text
+     and seals back when the field empties. Driven by :has() +
+     :placeholder-shown — no JS — and the <label htmlFor> stays a real,
+     associated label. */
+  .float-field {
+    position: relative;
+    /* Smoothly settle the "ember charge-up" lift when the send completes and
+       the .field-charge class is removed (charge rules are defined below). */
+    transition: transform 200ms ease-out;
+  }
+  .float-label {
+    position: absolute;
+    left: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transform-origin: left center;
+    padding: 0 0.3rem;
+    /* At rest the label sits inside the field as the placeholder, so it keeps
+       the previous placeholder colour (vivid orange) rather than a dim grey. */
+    color: #ff6d05;
+    font-size: 1rem;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+    /* Springy-but-restrained easing shared with the notch so the text and the
+       opening line move as one. */
+    transition:
+      transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      top 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 200ms ease;
+  }
+  /* Textarea: the label rests near the top, not vertically centred. */
+  .float-field--area .float-label {
+    top: 0.6rem;
+    transform: none;
+  }
+  /* Floated — on focus, or when the field holds a value. No chip: the text
+     simply rises into the gap the outline opens for it. */
+  .float-field:has(.fire-input-real:focus) .float-label,
+  .float-field:has(.fire-input-real:not(:placeholder-shown)) .float-label,
+  .float-field:has(textarea:focus) .float-label,
+  .float-field:has(textarea:not(:placeholder-shown)) .float-label {
+    top: 0;
+    transform: translateY(-50%) scale(0.82);
+    /* Crisp bright lilac once floated (was a dimmer #c98be0) — same bright
+       violet as the focus border, so the active accent reads as one colour. */
+    color: rgb(var(--violet-line-bright));
+  }
+
+  /* The outline overlay. A <fieldset> owns the visible border so its native
+     <legend> can cut the notch; the real field's own border is hidden so the
+     two never double up. */
+  .float-field .fire-input-real,
+  .float-field .fire-textarea-real {
+    border-color: transparent;
+  }
+  /* Drop Tailwind's focus ring on these fields — the notched outline is the
+     focus indicator now, and a continuous ring would paper over the notch.
+     The focus/hover glow shadows (--tw-shadow) are left untouched. */
+  .float-field .fire-input-real:focus,
+  .float-field .fire-textarea-real:focus {
+    --tw-ring-shadow: 0 0 #0000 !important;
+  }
+  .float-outline {
+    position: absolute;
+    /* Raise the top by half the legend's line-height (0.82rem ÷ 2). A rendered
+       <legend> straddles the top border, so the browser paints that border
+       ~half a legend-height below the fieldset's top edge; lifting the box by
+       that much lands the line flush on the field's top boundary. bottom/left/
+       right stay at 0 so the other three sides remain flush. */
+    inset: -0.41rem 0 0 0;
+    margin: 0;
+    padding: 0 0.45rem; /* keeps the notch clear of the rounded corner */
+    border: 1px solid rgb(var(--violet-line) / 0.5); /* == .custom-bg-2 border */
+    border-radius: 0.375rem; /* matches the field's rounded-md */
+    min-inline-size: 0; /* reset the UA fieldset min-width */
+    pointer-events: none;
+    transition: border-color 200ms ease;
+  }
+  /* Hover lifts the resting hairline to a crisper, brighter violet — a clear
+     intermediate step below the focus colour. Declared BEFORE the focus rule
+     below so that, when a field is both hovered and focused (equal
+     specificity), the focus colour wins on source order. */
+  .float-field:hover .float-outline {
+    border-color: rgb(var(--violet-line-strong) / 0.7);
+  }
+  .float-notch {
+    width: auto;
+    padding: 0;
+    font-size: 0.82rem; /* == the floated label's scale, so the gap fits */
+    line-height: 1;
+    max-inline-size: 0; /* closed: a continuous, unbroken border */
+    white-space: nowrap;
+    overflow: hidden;
+    visibility: hidden; /* reserves the gap width only; text never shows */
+    transition: max-inline-size 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .float-notch > span {
+    display: inline-block;
+    padding-inline: 0.34rem; /* air around the label inside the gap */
+    opacity: 0;
+  }
+  /* Open the notch in lock-step with the label; brighten the outline on focus
+     to match the field's amethyst focus accent. */
+  .float-field:has(.fire-input-real:focus) .float-notch,
+  .float-field:has(.fire-input-real:not(:placeholder-shown)) .float-notch,
+  .float-field:has(textarea:focus) .float-notch,
+  .float-field:has(textarea:not(:placeholder-shown)) .float-notch {
+    max-inline-size: 100%;
+  }
+  .float-field:has(.fire-input-real:focus) .float-outline,
+  .float-field:has(textarea:focus) .float-outline {
+    /* Near-solid bright violet — the crispest border state, clearly above the
+       hover step. */
+    border-color: rgb(var(--violet-line-bright) / 0.95);
+  }
+
+  /* ── Message field: keep spellcheck / Grammarly underlines visible ─────────
+     The fire gradient is painted by an overlay that mirrors the (transparent)
+     real <textarea>. With that overlay ON TOP, the textarea's native spellcheck
+     squiggles — and Grammarly's underline layer, which tracks the textarea —
+     were buried beneath it. So flip the stack: the translucent card background
+     moves to the WRAP, the gradient overlay drops BEHIND the textarea, and the
+     transparent textarea sits on top — its underlines + caret now render above
+     the gradient, while the gradient still shows through the clear textarea.
+     (The drop shadow + inner glow stay on the textarea; box-shadow paints
+     regardless of a transparent background, so the field keeps its depth.) */
+  .float-field .fire-textarea-wrap {
+    border-radius: 0.375rem; /* rounded-md, matches the field */
+    background-color: rgb(var(--field-surface) / 0.4);
+    backdrop-filter: blur(6px);
+  }
+  .float-field .fire-textarea-real {
+    position: relative;
+    z-index: 1; /* above the gradient overlay → underlines/caret on top */
+    background-color: transparent; /* the card lives on the wrap now */
+    backdrop-filter: none;
+  }
+  .fire-textarea-overlay {
+    z-index: 0; /* gradient sits behind the transparent textarea */
+  }
+
+  /* ── Contact submit: "sliced" hover effect ─────────────────────────────────
+     The per-letter slice + the synced sweeping line now live in JS
+     (components/contact/SliceLabel.jsx): one `progress` motion value drives the
+     line AND every letter, so the cut tracks the blade frame-for-frame in both
+     directions — fixing the old fast-text / slow-line desync. The button only
+     needs to be a positioning context for SliceLabel's absolute line + the
+     SENDING…/SENT overlays. */
+  .btn-slice {
+    position: relative;
+  }
+
+  /* ── Contact send: "ember charge-up" on the input fields ───────────────────
+     While a message is in flight the fields would otherwise sit frozen while
+     the button does all the work. This ripples a warm ember glow DOWN the four
+     fields toward the submit button — each lifts a hair and blooms orange in
+     turn — so the form reads as gathering its content and feeding it into the
+     burst. The downward stagger is set per field via --charge-delay; it's pure
+     CSS so it keeps running off the main thread while the request ties it up.
+     Cohesive with the "SENDING…" fill and the ember swarm (same #ff6d05). */
+  .field-charge {
+    animation: field-charge-lift 1.5s ease-in-out infinite;
+    animation-delay: var(--charge-delay, 0ms);
+    will-change: transform;
+  }
+  /* The glow is an outer bloom on a transparent overlay (box-shadow paints
+     outside the box, so it never veils the input), pulsed via opacity to stay
+     GPU-cheap. */
+  .field-charge::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 0.375rem; /* matches the field's rounded-md box */
+    pointer-events: none;
+    box-shadow:
+      0 0 16px rgba(255, 109, 5, 0.5),
+      0 0 5px rgba(255, 160, 70, 0.45);
+    opacity: 0;
+    animation: field-charge-glow 1.5s ease-in-out infinite;
+    animation-delay: var(--charge-delay, 0ms);
+  }
+  @keyframes field-charge-lift {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    30% {
+      transform: translateY(-3px);
+    }
+  }
+  @keyframes field-charge-glow {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+  }
+  /* Reduced motion: keep the gentle ember glow (it signals activity without
+     moving anything) but drop the positional lift. */
+  @media (prefers-reduced-motion: reduce) {
+    .field-charge {
+      animation: none;
+    }
+  }
+
+  /* ── Contact send: content "combustion" as the form clears ─────────────────
+     After the swarm bursts from the button, the typed text in each field
+     shouldn't just blink away when the form remounts — it flares (catches
+     light) and then dissolves into a soft blur, top field first, so the whole
+     message reads as being consumed by the same fire that threw the embers.
+     ONLY opacity + filter animate (no transform), so this never fights the JS
+     scroll-sync `transform` on the overlay text or get clipped by the field's
+     overflow; `forwards` holds it cleared until the form remounts fresh. Reuses
+     the per-field --charge-delay so the fields combust in a downward cascade. */
+  .field-clearing .fire-input-overlay-text,
+  .field-clearing .fire-textarea-overlay-text {
+    animation: content-combust 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation-delay: var(--charge-delay, 0ms);
+  }
+  @keyframes content-combust {
+    0% {
+      opacity: 1;
+      filter: blur(0) brightness(1);
+    }
+    22% {
+      /* Flare — the text catches light an instant before it goes. */
+      opacity: 1;
+      filter: blur(0) brightness(1.7)
+        drop-shadow(0 0 6px rgba(255, 140, 50, 0.9));
+    }
+    100% {
+      opacity: 0;
+      filter: blur(7px) brightness(1.4)
+        drop-shadow(0 0 12px rgba(255, 120, 30, 0));
+    }
+  }
+
+  /* The field BOX dissolves WITH its own text instead of waiting for a hard
+     remount: as each field's content combusts, the whole field (border, label,
+     value) lifts a little, shrinks, blurs and fades — top field first, the SAME
+     --charge-delay cascade as the text — so every input visibly leaves with the
+     message it held rather than the form blinking away all at once. The box's
+     transform is independent of the overlay text's JS scroll-sync transform
+     (that lives on a child), so the two never fight. Held with `forwards` until
+     the form remounts fresh. */
+  .field-clearing {
+    animation: field-dissolve 800ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    /* +100ms over the text so the content catches light an instant before its
+       field is consumed; both finish together (800+100 = the text's 900ms). */
+    animation-delay: calc(var(--charge-delay, 0ms) + 100ms);
+  }
+  @keyframes field-dissolve {
+    0%,
+    12% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+    100% {
+      opacity: 0;
+      /* lifts and shrinks as it's consumed — ash rising off the fire */
+      transform: translateY(-10px) scale(0.96);
+      filter: blur(3px);
+    }
+  }
+  /* Reduced motion: a plain, gentle fade — no flare, no blur, no movement. */
+  @media (prefers-reduced-motion: reduce) {
+    .field-clearing .fire-input-overlay-text,
+    .field-clearing .fire-textarea-overlay-text {
+      animation: content-fade 500ms ease forwards;
+      animation-delay: var(--charge-delay, 0ms);
+    }
+    /* Box also fades with its text — just opacity, no lift/shrink/blur. */
+    .field-clearing {
+      animation: content-fade 500ms ease forwards;
+      animation-delay: calc(var(--charge-delay, 0ms) + 100ms);
+    }
+    @keyframes content-fade {
+      to {
+        opacity: 0;
+      }
+    }
   }
 
   .text-stroke-neon {
@@ -261,85 +570,24 @@
     pointer-events: none;
   }
 
-  /* Contact-form input + textarea text styling.
+  /* Contact-form field text styling.
 
-     Common to both: placeholder is flat #ff6d05 (matching the "4+"
-     digit on the years card) with no glow.
+     Both the single-line inputs (FireInput) and the message textarea
+     (FireTextarea) paint the fire-amber gradient on a decorative OVERLAY
+     element rather than on the real field. Clipping the gradient onto the
+     scrolling field itself (`background-clip: text` + transparent fill) breaks
+     WebKit/Blink scroll-to-cursor and, on iOS Safari, blanks large blocks of
+     text out entirely. Instead the real field keeps transparent text + a
+     visible caret and owns all scroll / resize / validation / AT semantics,
+     while a sibling overlay mirrors its value and scroll offset and shows the
+     gradient on a NON-scrolling element, where `background-clip: text` renders
+     reliably (including iOS and Firefox). See the `.fire-input-*` and
+     `.fire-textarea-*` rules below, plus FireInput.jsx / FireTextarea.jsx.
 
-     Typed-text rules differ by element type, on purpose:
-
-     - <textarea>: full vertical fire gradient from `.text-fire-amber`
-       (the about-page Architect of Enchantment paragraph), clipped to
-       text glyphs via `background-clip: text`. Two image layers — the
-       gradient (clipped to text) and a solid-color gradient holding
-       the `.custom-bg-2` dark fill (clipped to padding-box) — so the
-       interior background is preserved. `background-attachment: local`
-       anchors the gradient to scrolled content so the colors travel
-       with the glyphs as the textarea scrolls vertically. `color`
-       stays OPAQUE while `-webkit-text-fill-color: transparent` does
-       the actual transparent fill that reveals the clipped gradient;
-       WebKit/Blink prefer `-webkit-text-fill-color` for painting but
-       use `color`'s opacity to decide whether the cursor needs
-       auto-scroll-to-follow, so this combo keeps both the gradient
-       AND the scroll behavior working.
-
-     - <input> (single line): solid #ffaa2a (mid-stop of the fire
-       gradient) — NOT the clipped gradient. Reason: the same
-       `background-clip: text` + transparent-fill recipe that works
-       on the textarea breaks WebKit/Blink's horizontal auto-scroll
-       on single-line inputs. As the user types past the visible
-       width the cursor goes off-screen and the visible characters
-       appear frozen — even with `background-attachment: local`,
-       even with `color` opaque. Vertical scroll in <textarea>
-       works because content scroll and gradient direction align;
-       horizontal scroll in <input> doesn't have the same hook for
-       the gradient to ride along, and clipped-text backgrounds and
-       horizontal scroll just don't compose reliably in pure CSS.
-       Tying typed text to a solid `color` here keeps the input
-       acting like an input. The amber matches the textarea's
-       gradient mid-stop so the two read as the same color family.
-
-     Firefox path: ignores `-webkit-text-fill-color`. The textarea
-     falls back to solid `color: #ffaa2a` — same as the inputs — so
-     Firefox users get a consistent solid look across all four fields,
-     no gradient anywhere. Graceful degradation.
-
-     No text-shadow / filter glow on either: `text-shadow` over text
-     with `-webkit-text-fill-color: transparent` drifts during scroll
-     in WebKit; `filter: drop-shadow` halos the whole input box.
-
-     `.contact-fire-input` must load AFTER `.custom-bg-2` so its
-     `background-image` wins over `custom-bg-2`'s `background-color`. */
-  .contact-fire-input {
-    color: #ffaa2a;
-    -webkit-text-fill-color: #ffaa2a;
-    text-shadow: none;
-  }
-  textarea.contact-fire-input {
-    background-image:
-      linear-gradient(
-        180deg,
-        #ffd27d 0%,
-        #ffbb55 40%,
-        #ffaa2a 70%,
-        #ff6d05 100%
-      ),
-      linear-gradient(
-        rgb(var(--background) / 0.2),
-        rgb(var(--background) / 0.2)
-      );
-    -webkit-background-clip: text, padding-box;
-            background-clip: text, padding-box;
-    background-attachment: local, local;
-    background-color: transparent;
-    -webkit-text-fill-color: transparent;
-  }
-  .contact-fire-input::placeholder {
-    color: #ff6d05;
-    -webkit-text-fill-color: #ff6d05;
-    opacity: 1;
-    text-shadow: none;
-  }
+     Placeholder is flat #ff6d05 (matching the "4+" digit on the years card),
+     no glow. No text-shadow / filter glow on the gradient text either:
+     `text-shadow` over transparent-fill text drifts during scroll in WebKit;
+     `filter: drop-shadow` halos the whole field box. */
 
   /* FireInput overlay (see components/contact/FireInput.jsx).
      The pure-CSS gradient breaks horizontal auto-scroll on single-line
@@ -402,12 +650,12 @@
   .fire-input-real:-webkit-autofill:hover,
   .fire-input-real:-webkit-autofill:focus,
   .fire-input-real:-webkit-autofill:active,
-  textarea.contact-fire-input:-webkit-autofill,
-  textarea.contact-fire-input:-webkit-autofill:hover,
-  textarea.contact-fire-input:-webkit-autofill:focus,
-  textarea.contact-fire-input:-webkit-autofill:active {
+  .fire-textarea-real:-webkit-autofill,
+  .fire-textarea-real:-webkit-autofill:hover,
+  .fire-textarea-real:-webkit-autofill:focus,
+  .fire-textarea-real:-webkit-autofill:active {
     -webkit-box-shadow:
-      inset 0 0 0 1000px rgb(var(--background) / 0.2),
+      inset 0 0 0 1000px rgb(var(--field-surface) / 0.4),
       inset 0 0 10px rgba(255, 255, 255, 0.05);
     -webkit-text-fill-color: transparent !important;
     caret-color: #ff6d05;
@@ -443,6 +691,111 @@
     -webkit-text-fill-color: transparent;
     /* JS sets `transform: translateX(...)` on this element to mirror
        the input's scrollLeft so long values stay aligned. */
+  }
+
+  /* FireTextarea overlay (see components/contact/FireTextarea.jsx) — the
+     vertical-axis twin of the FireInput overlay above. Painting the clipped
+     gradient directly on the scrolling <textarea> drifts the colors against
+     the glyphs on scroll and blanks the text out on iOS for large content;
+     instead the real <textarea> keeps transparent text + a visible caret and
+     owns all scroll / resize / validation, while this overlay <div> mirrors
+     the value and scrollTop and paints the gradient on a NON-scrolling element
+     where `background-clip: text` is reliable.
+
+     The overlay must wrap EXACTLY like the textarea or the (invisible) caret
+     drifts from the visible gradient text, so it copies the textarea's box:
+     same padding, same (transparent) border, inherited font + line-height, and
+     full content width. The native scrollbar is hidden on the real textarea so
+     it never steals content width and shifts where lines break — the field is
+     still scrollable via wheel / touch / keyboard / drag, and resize-y still
+     works. */
+  .fire-textarea-wrap {
+    position: relative;
+    width: 100%;
+  }
+  .fire-textarea-real {
+    color: transparent;
+    caret-color: #ff6d05;
+    /* Hide the native scrollbar so it can't reduce the text wrapping width
+       (which would desync the overlay's line breaks from the textarea's). */
+    scrollbar-width: none; /* Firefox */
+  }
+  .fire-textarea-real::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  .fire-textarea-real::placeholder {
+    color: #ff6d05;
+    -webkit-text-fill-color: #ff6d05;
+    opacity: 1;
+  }
+
+  /* Consistent resting shadow across ALL four contact fields. Previously only
+     the message box looked raised: a native <textarea> (appearance: auto) is
+     drawn by the browser with its own drop shadow, while the single-line
+     <input>s render flat — so the textarea had depth the inputs lacked. We
+     reset the native control rendering (appearance: none) so the textarea no
+     longer paints its own shadow, then give every field one explicit drop
+     shadow + the subtle inner glow inherited from .custom-bg-2. This rule sits
+     after .custom-bg-2 (and after Tailwind's `shadow-lg`) in @layer utilities,
+     so it wins at rest; the `hover:`/`focus:` shadow utilities still win on
+     interaction (higher specificity), keeping the amethyst hover/focus glow. */
+  .fire-input-real,
+  .fire-textarea-real {
+    appearance: none;
+    -webkit-appearance: none;
+    /* Form controls default to display: inline-block / vertical-align: baseline,
+       which leaves a line-box descender gap BELOW the control — so the wrap (and
+       thus the notched border) ends up taller than the control's own dark box,
+       leaving a sliver between the field bottom and the border. block takes the
+       control out of the line box so the wrap collapses to its exact height and
+       the fill reaches the border on every edge, at any screen width. */
+    display: block;
+    width: 100%;
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.55),
+      inset 0 0 10px rgba(255, 255, 255, 0.05);
+  }
+  .fire-textarea-overlay {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    /* A transparent border the thickness of the field's 1px border PLUS the
+       0.5rem padding (p-2), with no padding of its own, so `overflow: hidden`
+       clips at the textarea's CONTENT box rather than its padding box. This
+       keeps a persistent 0.5rem gap between the field's border and the text on
+       every edge — including the TOP while scrolled, where a padded overlay
+       would otherwise let scrolled text run right up against the top line. The
+       resting text position is unchanged (still 0.5rem + 1px from the edge),
+       so it stays aligned with the real textarea's text + caret. */
+    padding: 0;
+    border: calc(0.5rem + 1px) solid transparent;
+    overflow: hidden;
+    pointer-events: none;
+    font: inherit;
+    line-height: inherit;
+  }
+  .fire-textarea-overlay-text {
+    /* Match the textarea's UA text flow so wrapping is identical. */
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    font: inherit;
+    line-height: inherit;
+    /* 180deg vertical fire gradient: the textarea spans many lines, so the
+       vertical sweep reads as multi-color (top amber → bottom orange), the
+       same axis as the about-page paragraph. JS sets `transform:
+       translateY(...)` on this element to mirror the textarea's scrollTop. */
+    background-image: linear-gradient(
+      180deg,
+      #ffd27d 0%,
+      #ffbb55 40%,
+      #ffaa2a 70%,
+      #ff6d05 100%
+    );
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
   }
 
   .behind-glow {
@@ -797,20 +1150,21 @@
 }
 
 /* Skills icon ENTRANCE (issue #20 follow-up, item 1). When a category becomes
-   the active one, each of its icons fades + sharpens + rises into place, in a
-   left-to-right stagger driven by the per-icon `--i`. Restarted imperatively in
-   SkillsCard on every activation so it replays each time the category is shown.
-   This is the per-appearance reveal — distinct from (and composing with) the
-   scrub reveal that fades icons entering from the right edge mid-scroll. */
+   the active one, each of its icons fades + rises into place, in a left-to-right
+   stagger driven by the per-icon `--i`. Restarted imperatively in SkillsCard on
+   every activation so it replays each time the category is shown. This is the
+   per-appearance reveal — distinct from (and composing with) the scrub reveal
+   that fades icons entering from the right edge mid-scroll.
+   NO `filter: blur()`: the blur left icons looking permanently smeared on mobile
+   (and an interrupted/re-fired animation could strand a half-applied blur), so
+   the reveal is now a pure opacity + translate that always settles crisp. */
 @keyframes skill-icon-reveal {
   from {
     opacity: 0;
-    filter: blur(6px);
     transform: translateY(10px);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translateY(0);
   }
 }
@@ -880,63 +1234,6 @@
   50% {
     filter: drop-shadow(0 0 2px #ff6d05e0) drop-shadow(0 0 3px #ff6d05e1);
   }
-}
-
-@keyframes glitter-shimmer {
-  0% {
-    background-position: 0% 0%;
-  }
-
-  100% {
-    background-position: 200% 0%;
-  }
-}
-
-.glitter-text {
-  font-weight: 300;
-  letter-spacing: 4px;
-  font-size: 3rem;
-  text-transform: uppercase;
-
-  /* 🎨 Use an image instead of a gradient */
-  background-image: url('../../public/glitter.jpg');
-  /* replace with your own */
-  background-size: 200% auto;
-  background-position: 0% 0%;
-  background-repeat: repeat;
-
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-
-  /* ✨ Animate the shimmer */
-  /* animation: glitter-shimmer 4s linear infinite; */
-
-  /* 🔥 Outer glow like before */
-  text-shadow:
-    0 0 5px #ff55f7,
-    0 0 10px #ff55f7,
-    0 0 20px #ff55f7;
-}
-
-.glitter-bg {
-  background: linear-gradient(
-    135deg,
-    #ff55f7 0%,
-    #ff82ff 25%,
-    #ffbdfc 50%,
-    #ff55f7 75%,
-    #ff55f7 100%
-  );
-  background-size: 200% 200%;
-  animation: glitter-shimmer 6s ease infinite;
-  box-shadow:
-    0 0 10px rgba(255, 85, 247, 0.4),
-    0 0 20px rgba(255, 85, 247, 0.3),
-    0 0 40px rgba(255, 85, 247, 0.2);
-  border: 1px solid rgba(255, 85, 247, 0.4);
-  border-radius: 1rem;
 }
 
 /* ── Firefly keyframes ────────────────────────────────── */
@@ -1215,17 +1512,12 @@ body[data-modal-open] .control-island {
    each particle element. */
 
 .not-found-bg {
-  /* Subtle off-centre vignette draws the eye toward the
-     vertical-mid-upper area where the "404" sits, leaving the
-     rest darker so particles feel like they're drifting through
-     deeper space at the edges.
-
-     Gradient uses the brand's dark tones — ember-950 (#1b100f,
-     a warm near-black) at the centre fading to night-950
-     (#01050b, the cool deep-blue-black) at the edges — so the
-     void reads as the same universe as the rest of the site
-     rather than a generic black box. */
-  background: radial-gradient(ellipse at 50% 40%, #1b100f 0%, #01050b 70%);
+  /* Layout helper only. The visual backdrop now mirrors the about / contact
+     pages — contact-bg.png at half opacity + a black overlay + the shared
+     aurora "dust" mount, all rendered as fixed layers inside NotFoundClient —
+     so the former radial-gradient + amethyst-orb treatment was dropped. This
+     rule survives purely to own the page height (and the portrait `100svh`
+     phantom-scroll fix below). */
   min-height: 100vh;
 }
 
@@ -1403,28 +1695,6 @@ body[data-modal-open] .control-island {
   }
 }
 
-/* ── 404 amethyst firefly orbs ──
-   Layered ABOVE the global FireFliesBackground (which paints
-   ember orbs on every page). Same `firefly-life` lifecycle so
-   the breathing is in sympathy, but tinted amethyst — the
-   void-page signature. Each orb's radial gradient colour is
-   set inline via `--orb-color` so a small fraction can be
-   ember orbs for cohesion without forking the CSS. */
-.not-found-orb {
-  position: absolute;
-  border-radius: 9999px;
-  background: radial-gradient(
-    50% 50% at 50% 50%,
-    var(--orb-color, rgba(252, 131, 255, 0.55)) 0%,
-    transparent 100%
-  );
-  /* `infinite` so each orb cycles continuously; randomised
-     `animation-delay` per orb (set inline) means the field as
-     a whole feels organic, not synced. */
-  animation: firefly-life var(--life-dur, 5s) ease-in-out var(--life-delay, 0s) infinite;
-  will-change: opacity, transform;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .glitch-text,
   .glitch-text::before,
@@ -1442,8 +1712,226 @@ body[data-modal-open] .control-island {
   .glitch-text.pulse-resolve {
     animation: none;
   }
-  .not-found-orb {
-    animation: none;
-    opacity: 0.4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Contact: AI "refine my message", draft-restore banner, and connection status.
+   Palette kept on the form's existing tokens — ember #ff6d05 for accents,
+   amethyst rgba(155,89,182,*) for hairline borders, the fire-amber gradient for
+   suggested copy. Deliberately restrained: thin borders, no halos, one tiny
+   spark drop-shadow — the feature is the intelligence, not the chrome.
+   ──────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  .refine-root {
+    text-align: left;
+  }
+
+  /* The quiet affordance that offers to polish the message. */
+  .refine-affordance {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: -0.15rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    color: rgba(255, 109, 5, 0.85);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition:
+      color 0.2s ease,
+      opacity 0.2s ease;
+  }
+  .refine-affordance:hover {
+    color: #ff8a33;
+  }
+  .refine-affordance:focus-visible {
+    outline: none;
+    color: #ff8a33;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .refine-spark {
+    font-size: 0.85em;
+    line-height: 1;
+    /* a single small spark, not a glow */
+    filter: drop-shadow(0 0 4px rgba(255, 109, 5, 0.35));
+  }
+
+  /* The streamed suggestion panel (height animates open/closed in Framer). */
+  .refine-panel {
+    width: 100%;
+    overflow: hidden;
+    margin-top: 0.1rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(155, 89, 182, 0.35);
+    background: rgba(20, 8, 30, 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .refine-suggestion {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    font-style: italic;
+    /* Same fire-amber gradient the page copy uses, clipped to the text, so the
+       proposed rewrite reads as part of the realm rather than a raw textbox. */
+    background-image: linear-gradient(
+      180deg,
+      #ffd27d 0%,
+      #ffbb55 40%,
+      #ffaa2a 70%,
+      #ff6d05 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .refine-error {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #ff6d05;
+  }
+  /* Blinking ember caret riding the end of the streaming text. */
+  .refine-caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    background: #ff6d05;
+    /* opt out of the parent's transparent text fill */
+    -webkit-text-fill-color: #ff6d05;
+    animation: refine-caret-blink 0.9s steps(1) infinite;
+  }
+  @keyframes refine-caret-blink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .refine-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+  }
+  .refine-btn {
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .refine-btn--use {
+    color: #ff6d05;
+    border: 1px solid rgba(255, 109, 5, 0.55);
+    background: rgba(255, 109, 5, 0.08);
+  }
+  .refine-btn--use:hover {
+    background: rgba(255, 109, 5, 0.16);
+    border-color: rgba(255, 109, 5, 0.8);
+  }
+  .refine-btn--ghost {
+    color: rgba(228, 228, 228, 0.7);
+    border: 1px solid transparent;
+    background: none;
+  }
+  .refine-btn--ghost:hover {
+    color: #e4e4e4;
+  }
+  .refine-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(155, 89, 182, 0.6);
+  }
+
+  /* Restored-draft banner. */
+  .draft-restored {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.45rem 0.7rem 0.45rem 0.85rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(155, 89, 182, 0.35);
+    background: rgba(20, 8, 30, 0.5);
+  }
+  .draft-restored__text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    color: rgba(255, 187, 85, 0.92);
+  }
+  .draft-restored__actions {
+    display: inline-flex;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  /* Connection-aware status line under the button. */
+  .contact-conn-status {
+    max-width: 28rem;
+    margin: 0.1rem auto 0;
+    text-align: center;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: rgba(255, 187, 85, 0.8);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .refine-caret {
+      animation: none;
+      opacity: 1;
+    }
   }
 }
+
+/* ── Custom cursor ──────────────────────────────────────────────────────────
+   Site-wide ember dot + lagging ring (see components/CustomCursor.jsx). Kept
+   OUTSIDE @layer so `cursor: none` reliably overrides element-level cursor
+   rules while active. It's added only on fine-pointer + motion-OK devices, so
+   touch / reduced-motion users keep the native cursor untouched. */
+html.custom-cursor-active,
+html.custom-cursor-active * {
+  cursor: none !important;
+}
+
+.custom-cursor-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  pointer-events: none;
+}
+
+.custom-cursor-ring,
+.custom-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.custom-cursor-ring {
+  border: 1.5px solid rgba(255, 109, 5, 0.85);
+}
+
+.custom-cursor-dot {
+  background-color: #ff6d05;
+}
+

@@ -23,8 +23,8 @@
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
-  <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.17-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--06--03-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.3-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/last_synced-2026--07--01-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -42,7 +42,7 @@
 
 **theabdullahfolio** is a cinematic developer portfolio that blends **Three.js 3D scenes**, **Framer Motion orchestration**, and **Next.js 14 App Router** into a single, performance-tuned experience. Every page tells a story — from the trigonometric orbital navigation ring on the home screen to the procedurally generated laptop keyboard in each project detail view.
 
-Built without a UI template or design kit, this project demonstrates deep frontend engineering: generative 3D graphics, real-time GitHub data via GraphQL, physics-based spring animations, and hardened Content Security Policy headers — all deployed on the edge.
+Built without a UI template or design kit, this project demonstrates deep frontend engineering: generative 3D graphics, real-time GitHub data via GraphQL, physics-based spring animations, an AI-assisted contact form with an offline-durable, idempotent send path, and hardened Content Security Policy headers — all deployed on the edge.
 
 ---
 
@@ -60,10 +60,12 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Completed Projects Breakdown** | "Projects shipped" card with an animated per-category proportional bar (Web / System, derived from the project data), a `\|`-separated count legend that wraps stacked→side-by-side responsively, count-ups that replay on every viewport entry, and an `sr-only` summary so screen readers get the breakdown |
 | **Years in the Craft** | Experience figure derived live from the earliest GitHub repo **and** software roles parsed from the résumé PDF, with a Personal vs Employment split bar and a click-to-open category breakdown modal |
 | **Current Streak** | Server-accurate streak from the GitHub contribution calendar (future-day-padding aware, "Present"-stable across midnight), shown in a git-commit-node progress ring with a staggered card entrance and a per-device change banner that fires only on real movement |
-| **Rocket Contact Form** | Multi-phase submit animation — shake → flame flicker → fly-up trail → checkmark spring, integrated with Nodemailer SMTP |
+| **Elite Contact Form** | Molten submit-CTA state machine (idle → sending → sent/held), a sliced-letter magnetic "SEND MESSAGE!" label, fire-gradient fields, a streaming AI **"Refine my message"** rewrite, an offline send queue with auto-retry, draft autosave/restore, and an idempotent Nodemailer + Upstash-Redis send path |
 | **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
-| **Ambient Fireflies** | Generative particle system with randomised spawn, duration, and drift paths |
-| **Cinematic Loader** | SVG `stroke-dashoffset` progress ring, percentage counter, `localStorage` first-visit gate |
+| **Aurora Fields** | Full-viewport WebGL domain-warped-fBm aurora (amber→ember, `mix-blend: screen`) on the Contact and About pages — cursor-bending, scroll-reactive on About, and reduced-motion-gated to a static image |
+| **Custom Cursor** | Site-wide ember dot + spring-lagged ring that swells and leans toward interactive elements; disabled on touch / reduced-motion |
+| **Cinematic Emblem Loader** | A self-forging SVG crest — stroking rings, an engraved MUHAMMAD / ABDULLAH name arc, and an MA flame monogram that ignites and radial-wipes into the page (first-visit gated, pointer-reactive) |
+| **Smart 404 Recovery** | Levenshtein "Did you mean …?" suggestion that maps a near-miss URL to the closest real route |
 | **Security Headers** | Full CSP policy, `frame-ancestors 'none'`, `upgrade-insecure-requests` via `next.config.mjs` |
 
 ---
@@ -112,6 +114,8 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
 | [Nodemailer](https://nodemailer.com/) | `^7.0` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | `^7.61` | Form state management and validation |
+| [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
+| [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send dedupe store |
 | [@vercel/analytics](https://vercel.com/analytics) | `^2.0` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | `^2.0` | Core Web Vitals tracking |
 <!-- STACK-DATA:END -->
@@ -125,6 +129,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | [React Icons](https://react-icons.github.io/react-icons/) | `^5.5` | Extended icon library |
 | [Sonner](https://sonner.emilkowal.ski/) | `^1.7` | Toast notification system |
 | [clsx](https://github.com/lukeed/clsx) | `^2.1` | Conditional class name utility |
+| [tailwind-merge](https://github.com/dcastil/tailwind-merge) | `^3.6` | Conflict-free Tailwind class merging — the `cn()` helper in `src/lib/utils.js` |
 | [Sharp](https://sharp.pixelplumbing.com/) | `^0.34` | Server-side image optimisation pipeline |
 <!-- STACK-UI:END -->
 
@@ -132,135 +137,124 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 
 ## 🏗 Architecture
 
+A single **Next.js 14 App Router** application. Server components and route handlers run on the edge; a Three.js + Framer Motion layer renders in the browser. Every dynamic surface — stats, skills, experience, live status, contact — is backed by a **cached, fail-open API route**, so the UI never blocks on an upstream and never renders empty.
+
 ```mermaid
+%%{init: {"theme":"dark","themeVariables":{"fontFamily":"ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif","lineColor":"#9a7a42","edgeLabelBackground":"#050a14","tertiaryColor":"#050a14"}}}%%
 graph TD
-    Browser([Browser]) --> AppRouter
+    subgraph Sys[" theabdullahfolio · architecture "]
+        Browser(["👤 Browser"])
 
-    subgraph AppRouter["Next.js 14 App Router"]
-        Root["Root layout.js<br/>─────────────<br/>Inter font · FireFlies<br/>Toaster · Analytics"]
+        subgraph App[" Next.js 14 · App Router "]
+            Root["Root layout<br/>Fonts · Loader · Cursor · Toaster · Analytics"]
+            Root --> Home["Home /<br/>Orbital nav · 3D laptop · Live status header"]
+            Root --> Pages["(sub pages)"]
+            Pages --> About["/about<br/>Stats · Skills · Languages · Streaks"]
+            Pages --> Projects["/projects · /projects/[id]<br/>Three.js scene · Aurora · Boot sequence"]
+            Pages --> Quals["/qualifications<br/>3D CSS carousel"]
+            Pages --> Contact["/contact<br/>GLSL aurora · Elite contact form"]
 
-        Root --> Home["Home page.js<br/>─────────────<br/>Orbital Nav Ring<br/>Floating 3D Laptop<br/>Neon Ripples"]
+            Root --> API{{"API Routes"}}
+            API --> Stats["/api/github-stats<br/>/api/github-skills"]
+            API --> Exp["/api/experience-summary"]
+            API --> Work["/api/work-status<br/>/api/github-webhook"]
+            API --> Mail["/api/send-mail<br/>/api/refine-message"]
+        end
 
-        Root --> SubLayout["Sub Pages layout.js<br/>─────────────<br/>HomeBtn · ProjectsBtn<br/>conditional routing"]
+        GitHub([GitHub API])
+        PDF([Résumé PDF])
+        Inbox([Email inbox])
+        Redis([Upstash Redis])
+        Gateway([Vercel AI Gateway])
 
-        SubLayout --> About["/about<br/>GitHub Stats<br/>Skills Grid<br/>Language Chart"]
-        SubLayout --> Projects["/projects<br/>Category Filter<br/>AnimatePresence Grid"]
-        SubLayout --> ProjectDetail["/projects/[id]<br/>Three.js Scene<br/>Aurora Parallax<br/>Boot Sequence"]
-        SubLayout --> Qualifications["/qualifications<br/>3D CSS Carousel<br/>Certificate Cards"]
-        SubLayout --> Contact["/contact<br/>Rocket Form<br/>Nodemailer SMTP"]
-
-        Root --> API["API Routes"]
-        API --> GHStats["/api/github-stats<br/>GraphQL + Cache<br/>Rank Calculator"]
-        API --> GHSkills["/api/github-skills<br/>Repo + Manifest Crawl<br/>Icon Resolver"]
-        API --> SendMail["/api/send-mail<br/>SMTP Handler"]
+        Browser --> Root
+        About -->|poll 10min| Stats
+        Home -->|poll 30s / webhook| Work
+        Contact -->|POST idempotent| Mail
+        Contact -->|stream| Mail
+        Stats -->|GraphQL| GitHub
+        Work -->|GraphQL| GitHub
+        Exp -->|read + parse| PDF
+        Mail -->|SMTP| Inbox
+        Mail -->|SET NX dedupe| Redis
+        Mail -->|provider/model| Gateway
     end
 
-    About -- "poll 10min" --> GHStats
-    About -- "poll 10min" --> GHSkills
-    Contact -- "POST" --> SendMail
-    SendMail -- "SMTP" --> Email([Email Inbox])
-    GHStats -- "GraphQL" --> GitHub([GitHub API])
-    GHSkills -- "GraphQL + REST" --> GitHub
+    classDef client fill:#0d1020,stroke:#8f99ad,stroke-width:1.25px,color:#e6e9f0;
+    classDef root fill:#0e1526,stroke:#eab53e,stroke-width:2px,color:#f4e3c2;
+    classDef page fill:#0b1424,stroke:#b78a3e,stroke-width:1.25px,color:#ecdcbf;
+    classDef api fill:#141009,stroke:#c96f2a,stroke-width:1.25px,color:#f0d3b4;
+    classDef gateway fill:#170f06,stroke:#c96f2a,stroke-width:1.5px,color:#f0d3b4;
+    classDef ext fill:#0c0e12,stroke:#5f5a50,stroke-width:1px,color:#c3bcae,stroke-dasharray:4 3;
+
+    class Browser client;
+    class Root root;
+    class Home,Pages,About,Projects,Quals,Contact page;
+    class Stats,Exp,Work,Mail api;
+    class API gateway;
+    class GitHub,PDF,Inbox,Redis,Gateway ext;
+
+    style Sys fill:#02040c,stroke:#5c4a24,stroke-width:1px,color:#d9b877;
+    style App fill:#050c18,stroke:#7a5f2c,stroke-width:1px,color:#d9b877;
 ```
 
-```mermaid
-graph LR
-    subgraph Rendering["Rendering Layers"]
-        R1["Three.js WebGL<br/>Canvas"]
-        R2["Framer Motion<br/>DOM Animations"]
-        R3["Tailwind CSS<br/>Utility Classes"]
-    end
+### Cross-cutting concerns
 
-    subgraph Data["Data Layer"]
-        D1["GitHub GraphQL<br/>Live Stats"]
-        D2["Nodemailer<br/>SMTP"]
-        D3["localStorage<br/>First-visit Gate"]
-    end
-
-    subgraph Perf["Performance"]
-        P1["Route-based<br/>Code Splitting"]
-        P2["Sharp<br/>Image Pipeline"]
-        P3["10-min<br/>API Cache"]
-        P4["next/font<br/>Self-hosted"]
-    end
-
-    subgraph Security["Security"]
-        S1["CSP Headers"]
-        S2["frame-ancestors none"]
-        S3["upgrade-insecure-requests"]
-    end
-```
+| Layer | Approach |
+|---|---|
+| **Rendering** | Three.js WebGL canvas · Framer Motion DOM orchestration · Tailwind utility system |
+| **Data** | GitHub GraphQL (live, multi-layer cached) · Nodemailer SMTP · Upstash Redis (send idempotency) · AI Gateway (message refine) · `localStorage` (draft · queue · loader gate) |
+| **Performance** | Route-based code splitting · `next/dynamic` for Three.js · Sharp image pipeline · `unstable_cache` + CDN `s-maxage` / `stale-while-revalidate` |
+| **Security** | Full CSP · `frame-ancestors 'none'` · `upgrade-insecure-requests` · server-only tokens · username allowlist · HMAC-verified webhooks |
 
 ---
 
 ## 📁 Project Structure
 
+Feature-grouped and directory-annotated — each folder owns one surface of the site.
+
 ```text
 theabdullahfolio/
-├── public/
-│   └── background/logo.png
+├── public/                     # Static assets — logo, backgrounds, résumé PDF
 ├── src/
-│   ├── app/
-│   │   ├── layout.js                   # Root layout — Inter font, FireFlies, Toaster, Analytics
-│   │   ├── page.js                     # Home — orbital nav, floating laptop, neon ripples
-│   │   ├── data.js                     # Central data store — projects array, nav button config
-│   │   ├── globals.css                 # Custom keyframes, glow utilities, CSS theme vars
-│   │   ├── (sub pages)/
-│   │   │   ├── layout.js               # Sub-page shell — conditional HomeBtn / ProjectsBtn
-│   │   │   ├── about/page.js           # GitHub stats, skills grid, language breakdown
-│   │   │   ├── projects/page.js        # Category-filtered project list with stagger
-│   │   │   ├── projects/[id]/page.js   # 3D scene — laptop model, aurora, boot sequence
-│   │   │   ├── contact/page.js         # Rocket-animated contact form + Nodemailer
-│   │   │   └── qualifications/page.js  # 3D carousel with certificate cards
-│   │   └── api/
-│   │       ├── github-stats/route.js   # GraphQL → cached stats + rank + per-repo language breakdown
-│   │       ├── github-skills/route.js  # Multi-ecosystem repo crawl → cached, icon-mapped skills grid
-│   │       └── send-mail/route.js      # SMTP email handler
+│   ├── app/                    # App Router — pages, layouts, API routes
+│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact
+│   │   ├── api/                # 9 route handlers (see API surface below)
+│   │   ├── data.js             # Central project + navigation data store
+│   │   └── globals.css         # Theme tokens · keyframes · glow utilities
 │   ├── components/
-│   │   ├── navigation/                 # Orbital ring — trig positioning, 5 breakpoints
-│   │   ├── project-detail/             # 3D laptop, aurora parallax, boot sequence, lantern sweep
-│   │   ├── about/                      # Stats/streaks/repo/languages cards, Skills grid + per-skill repo popover, Completed Projects + Years-in-the-Craft cards, experience modal, shared count-up hook, diff tracking
-│   │   ├── projects/                   # Filtered grid with AnimatePresence transitions
-│   │   ├── contact/                    # Multi-phase rocket form, react-hook-form
-│   │   ├── qualifications/             # 3D CSS carousel with category tabs
-│   │   ├── loaderWrapper/              # SVG progress ring, first-visit gate
-│   │   ├── FireFliesBackground.jsx     # Ambient generative particle system
-│   │   ├── HomeBtn.jsx                 # Fixed, mobile-safe navigation control
-│   │   └── ProjectsBtn.jsx             # Back button for dynamic project routes
-│   ├── hooks/
-│   │   ├── useExperienceSummary.js     # Years-in-the-craft data + localStorage hydration + change signal
-│   │   ├── useLanguagesUpdateSignal.js # Per-device language-change banner signal
-│   │   ├── useProjectCountSignal.js    # Per-device completed-projects count-change banner signal
-│   │   ├── useReliableInView.js        # Transform-safe viewport detection (geometry, not IntersectionObserver)
-│   │   ├── useSkillsUpdateSignal.js    # Per-device skills-change banner signal
-│   │   ├── useStreakUpdateSignal.js    # Per-device streak-change banner signal
-│   │   └── useViewportCountTrigger.js  # Latched "play once per entry" trigger + reversible settled-in-view flag
-│   └── utils/
-│       ├── rankCalculator.js           # GitHub developer rank algorithm
-│       ├── diffChanges.js              # State diff detection for live stat updates
-│       ├── languageDiff.js             # Language fingerprint + diff (client-computed)
-│       ├── statsDiff.js                # Per-stat GitHub-stats diff + banner summary
-│       ├── repoDiff.js                 # Most-active-repository change summary
-│       ├── streakDiff.js               # Streak fingerprint + diff (client-computed)
-│       ├── skillsDiff.js               # Skills fingerprint + diff (client-computed)
-│       ├── skillsIconMap.js            # Server-only skill detection → icon mapping (SKILL_MAP + Simple Icons fallback)
-│       ├── skillsIconUrl.js            # Client-safe icon-URL + category helpers (no heavy catalog)
-│       ├── manifestParsers.js          # Multi-ecosystem dependency-manifest parsers for the skills crawl
-│       ├── simpleIconsSlugs.js         # Bundled Simple Icons slug catalog (fallback membership set)
-│       ├── animationCurves.js          # Shared fast-start/slow-finish easing + imperative count-up (animateToTarget)
-│       ├── experience/                 # Résumé-PDF parsing + experience aggregation helpers
-│       └── emoji.js                    # Emoji name-to-symbol resolution
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml                      # Lint + build check on every push / PR
-│   │   └── sync-readme.yml             # Auto-sync README versions on merge to main
-│   └── scripts/
-│       └── update-readme.js            # README automation script
-├── .env.example                        # Placeholder environment variables
-├── next.config.mjs                     # CSP headers, image config
-├── tailwind.config.js                  # Custom ember / amethyst / night palette
-└── package.json
+│   │   ├── navigation/         # Orbital nav ring — trig positioning, 5 breakpoints
+│   │   ├── home/               # Live maintenance status header
+│   │   ├── about/              # Live GitHub stat / streak / language / skills cards + diff banners
+│   │   ├── projects/           # Category-filtered project grid (AnimatePresence)
+│   │   ├── project-detail/     # Three.js laptop scene · aurora parallax · boot sequence
+│   │   ├── contact/            # Elite contact form · GLSL aurora · AI refine · fire fields
+│   │   ├── qualifications/     # 3D CSS certificate carousel
+│   │   ├── not-found/          # 404 recovery — glitch text + Levenshtein "did you mean?"
+│   │   └── loaderWrapper/      # First-visit emblem-seal intro loader
+│   ├── hooks/                  # Reusable hooks — animation, live-data signals, form + offline queue
+│   ├── lib/                    # Client helpers — contact send, cn(), media-query subscribe
+│   ├── utils/                  # Rank calc · diff engines · skill/icon maps · manifest parsers
+│   │   └── experience/         # Résumé-PDF parsing + pure-JS DOMMatrix polyfill
+│   └── data/                   # Bundled GitHub-stats fallback snapshot
+├── .github/                    # CI · README sync · issue templates · CODEOWNERS
+├── next.config.mjs             # CSP headers · image pipeline · PDF output-file tracing
+├── tailwind.config.js          # Ember / amethyst / night palette
+└── vercel.json                 # Daily cron schedule (cache warm-up)
 ```
+
+### API surface
+
+| Route | Purpose |
+|---|---|
+| `/api/github-stats` | GraphQL aggregator — stats, streaks, languages, most-active repo (multi-layer cached) |
+| `/api/github-skills` | Multi-ecosystem repo crawl → icon-mapped skills grid (budget-bounded, cached) |
+| `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
+| `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
+| `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
+| `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
+| `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway |
+| `/api/daily-warmup` · `/api/repo-refresh` | Cron orchestrator + cache warmer (bearer-authenticated) |
 
 ---
 
@@ -268,7 +262,7 @@ theabdullahfolio/
 
 ### Prerequisites
 
-- **Node.js** ≥ 18.17
+- **Node.js** ≥ 22.3 — the AI SDK's gateway dependency (`@ai-sdk/gateway`) requires Node 22+, and `.npmrc` sets `engine-strict=true`, so an older Node fails `npm ci`
 - **npm** / **yarn** / **pnpm**
 - A [GitHub Personal Access Token](https://github.com/settings/tokens) — see [GitHub Stats Integration](#github-stats-integration) below for the exact scopes required
 - SMTP credentials — Gmail [App Password](https://support.google.com/accounts/answer/185833) recommended
@@ -304,67 +298,64 @@ RECEIVER_EMAIL=recipient@example.com
 # Optional
 # SMTP_SECURE=true                # force TLS on/off (auto when SMTP_PORT=465)
 # ABSTRACT_API_KEY=...            # email reputation check via abstractapi.com
+
+# Contact-send idempotency store (Upstash for Redis — optional; route fails OPEN)
+# Provision "Upstash for Redis" via the Vercel Marketplace (injects the KV_* names);
+# a native Upstash setup uses UPSTASH_REDIS_REST_URL / _TOKEN. Use the WRITE token.
+# When unset, /api/send-mail still sends — just without dedupe.
+# KV_REST_API_URL=https://your-db.upstash.io
+# KV_REST_API_TOKEN=your-upstash-rest-write-token
+
+# AI "Refine my message" (Vercel AI Gateway — optional; feature hides when unset)
+# On Vercel, `vercel env pull` provides VERCEL_OIDC_TOKEN automatically; for local
+# dev set a gateway key instead. REFINE_MODEL overrides the default model slug.
+# AI_GATEWAY_API_KEY=your-vercel-ai-gateway-key
+# REFINE_MODEL=anthropic/claude-haiku-4.5
 ```
 
 ### GitHub Stats Integration
 
-The `/about` page's data cards (Most Used Languages, GitHub Stats, Streaks, Repository card) are powered by `/api/github-stats`, a single GraphQL aggregator that runs against your own PAT instead of public unauthenticated requests. The **Skills grid** on the same page is powered by a companion `/api/github-skills` route — see point 13.
+The `/about` cards — **Most Used Languages**, **GitHub Stats**, **Streaks**, and the **Most Active Repository** — run live off your own PAT via `/api/github-stats`; the **Skills grid** is powered by a companion `/api/github-skills` crawl. Both are cached, username-allowlisted, and fail open to a bundled snapshot so the page never renders empty.
 
-**1. Create the token** — [github.com/settings/tokens](https://github.com/settings/tokens). Either:
-- **Fine-grained PAT** (recommended) scoped to your account with *read-only* access to `Public repositories` (Metadata) and `Contents`.
-- **Classic PAT** with the `public_repo` scope.
+**Setup**
 
-Set it as `GITHUB_TOKEN` in `.env.local`. The token is server-only — it is never exposed to the browser bundle (no `NEXT_PUBLIC_` prefix).
+1. **Create a token** at [github.com/settings/tokens](https://github.com/settings/tokens) — a fine-grained PAT with read-only `Metadata` + `Contents` (recommended), or a classic PAT with `public_repo`. Set it as `GITHUB_TOKEN` in `.env.local`; it's server-only (no `NEXT_PUBLIC_` prefix).
+2. **Set `NEXT_PUBLIC_GITHUB_USERNAME`** — both routes serve data *only* for this username (case-insensitive). Any other `?username=` returns `403`, closing a token / rate-limit exhaustion vector.
 
-**2. Most-active-repo selection** — the repository card is no longer hardcoded. `/api/github-stats` scores every repo the user contributed to in the last year (PRs/reviews × 5, commits × 4, issues × 3, ambient history × 1) and features the highest-scoring one, including externally-owned repos where you've done significant OSS work. The profile-README repo (the one named the same as the username) is always excluded because every push there is a meta-edit of the about page itself. Selection lives behind its own 24-hour `unstable_cache` layer since the scoring query is expensive and the answer changes slowly.
+**Caching** — four layers keep the GitHub API off the request hot path:
 
-**3. Username allowlist** — `/api/github-stats` only serves data for `NEXT_PUBLIC_GITHUB_USERNAME` (case-insensitive). Any other `?username=` returns `403 Username not allowed`, closing a token / rate-limit exhaustion vector where an attacker could vary the query param to flood the server's `GITHUB_TOKEN` quota with arbitrary lookups.
+| Layer | TTL |
+|---|---|
+| Most-active-repo `unstable_cache` (expensive scoring query) | 24 hr |
+| Display-data `unstable_cache` (user · stats · streaks · repo) | 10 min |
+| CDN `s-maxage` / `stale-while-revalidate` / `stale-if-error` | 10 min / 5 min / 24 hr |
+| `localStorage` last-good payload | until next successful fetch |
 
-**4. Caching behavior** — four layers protect the GitHub API from being hit on every request:
+<details>
+<summary><strong>Engineering deep-dive</strong> — repo selection · fallbacks · live diffing · skills crawl & privacy</summary>
+<br />
 
-| Layer | TTL | Where |
-|---|---|---|
-| Most-active-repo `unstable_cache` | 24 hr | The expensive scoring query is computed at most once per day per user |
-| Display-data `unstable_cache` | 10 min | The cheaper user/stats/streaks/repo-detail query refreshes every 10 minutes against the selected repo |
-| CDN `s-maxage` / `stale-while-revalidate` / `stale-if-error` | 10 min / 5 min / 24 hr | Edge caches the response and serves stale on upstream errors |
-| `localStorage` last-good payload | until next successful fetch | Hydrates the stat cards on cold page loads so they never render empty |
+**Most-active-repo selection** — no hardcoded repo. `/api/github-stats` scores every repo you contributed to in the last year (PRs/reviews ×5, commits ×4, issues ×3, ambient history ×1) and features the top-scorer, including externally-owned OSS. The profile-README repo is always excluded. Selection sits behind its own 24-hr cache since scoring is expensive and changes slowly.
 
-**5. Fallback on total failure** — if GitHub returns errors, the route serves the bundled snapshot at [src/data/github-stats-fallback.json](src/data/github-stats-fallback.json) with `X-Cache-Status: FALLBACK` (HTTP 200, `_fallback: true`). The client preserves whatever real data it already had on screen rather than overwriting it with the snapshot. (A narrower **languages-only** fallback covers the case where just the languages query times out while the rest succeeds — see point 9.) To refresh the snapshot, run the dev server, hit the API, and overwrite the file:
+**Fallbacks** — on total GitHub failure the route serves [src/data/github-stats-fallback.json](src/data/github-stats-fallback.json) (`X-Cache-Status: FALLBACK`, HTTP 200, `_fallback: true`); the client keeps whatever real data it already had rather than overwriting it. A narrower **languages-only** fallback (`languagesFallback: true`, no `_fallback`) covers a languages-query timeout so the card never blanks — the client treats it as a *soft default* that populates a cold card but never overwrites a returning visitor's fresher `localStorage`. To refresh the bundled snapshot, write to a tempfile first, then move it into place — a direct `curl > …fallback.json` truncates the file to 0 bytes before curl writes, and `next dev` HMR then imports the empty file:
 
 ```bash
-# Write to a tempfile first, then atomically move into place. A direct
-# `curl ... > src/data/github-stats-fallback.json` redirect truncates the
-# target file to 0 bytes *before* curl produces any output — `next dev`'s
-# HMR picks up the empty file and the route's `import fallbackStats` then
-# fails to parse it, so the very curl that was supposed to refresh the
-# snapshot starts hitting a broken endpoint and scrapes a 500 page back
-# into the file. The two-step form below avoids that race entirely.
 curl "http://localhost:3000/api/github-stats?username=YOUR_USERNAME" -o /tmp/fallback.json
 python3 -m json.tool /tmp/fallback.json > src/data/github-stats-fallback.json
 rm /tmp/fallback.json
 ```
 
-(Note: the `repo` query parameter no longer exists — the most-active repo is selected server-side.)
+**Invalidation & cron** — both cache layers expire on their own; force a refresh via `revalidateTag("github-stats")` / `revalidateTag("most-active-repo")`, a redeploy, or the daily `/api/daily-warmup` cron (`vercel.json`, `0 1 * * *` UTC) — a thin orchestrator that calls `/api/repo-refresh` and `/api/work-status?bust=1`. Consolidated into one cron because Hobby plans cap cron count; both stay individually invokable. All warm-up routes authenticate against `Authorization: Bearer ${CRON_SECRET}` (Vercel attaches it automatically), and the optional server-only `BASE_URL` overrides the warm-up fetch target.
 
-**6. Cache invalidation** — both `unstable_cache` layers expire automatically (10 min and 24 hr). To force a refresh sooner, you can either redeploy or call `revalidateTag("github-stats")` / `revalidateTag("most-active-repo")` from a Server Action. There's also a daily cron at `/api/daily-warmup` (defined in [vercel.json](vercel.json), schedule `0 1 * * *` UTC) — a thin orchestrator that calls `/api/repo-refresh` (which invalidates both tags and warms the cache by hitting `/api/github-stats` with a cache-busting query param) and `/api/work-status?bust=1` (which forces a fresh GitHub poll for the live-status header). Consolidated into a single cron because Hobby plans cap daily cron-job count; the two endpoints remain individually invokable with the bearer token for manual triggers.
+**Live diffing & change banners** — on each 10-min poll, `statsDiff.js` / `streakDiff.js` / `skillsDiff.js` / `languageDiff.js` compare snapshots and, on real movement, surface a signed-delta banner (e.g. `Total Stars +5 | Total Commits +50`) that auto-hides (~4.5s) and is gated on viewport visibility. Messages reconcile every poll so a non-stat change never replays a stale delta. All fingerprints are computed **client-side** so they keep working on fallback data and can't drift from the server. A **"Live GitHub Metrics"** / **"· live from GitHub"** label appears only when data is genuinely live, hiding on fallback/stale data.
 
-**7. Cron and warm-up env vars** — `/api/daily-warmup`, `/api/repo-refresh`, and `/api/work-status?bust=1` are all authenticated against `Authorization: Bearer ${CRON_SECRET}`, which Vercel Cron Jobs attaches automatically when `CRON_SECRET` is set in the project's environment variables. The optional `BASE_URL` env var (server-only — *not* `NEXT_PUBLIC_BASE_URL`, which would leak into client bundles) overrides the URL the cron's internal warm-up fetches hit; falls back to `https://${VERCEL_URL}` then `http://localhost:3000`.
+**Interactive language & per-repo breakdown** — each language row two-way spotlights with the stacked bar, is rank-numbered with a `PRIMARY` tag, and opens a body-portaled popover of `repos: [{ name, url, percentage }]` (each repo's share of *that* language's bytes, capped at 12) via hover / keyboard-focus / tap. Responsive: top 5 in one column through `lg`, up to 10 in two columns at `xl`+.
 
-**8. Most Used Languages card & per-repo breakdown** — the language card is more than a static list. Each row links two-ways with the stacked bar (hover or keyboard-focus a row to spotlight its segment and dim the rest, and vice-versa), is rank-numbered with a `PRIMARY` tag on the top language, and carries a `· live from GitHub` meta label that disappears whenever the displayed data is stale and returns once a live fetch lands (see point 9). `/api/github-stats` embeds a per-repo breakdown on every language — a `repos: [{ name, url, percentage }]` array giving each repo's share of *that language's* bytes (sorted biggest-first, capped at 12). Activating a row opens a "Career snapshot"-themed popover listing those repos, with the same fast-start/slow-finish count-up the card numbers use on each percentage. It opens by **hover** on a fine pointer, by **keyboard focus** (detected via input modality, so an attached keyboard behaves like hover even on a touch device), or by **tap** on touch (re-tap / tap-outside / Escape to close). The popover is portaled to `<body>` to escape the card's clip, clamps so it never overflows the viewport, and scrolls its repo list internally when a breakdown is taller than the available height. The list itself is **responsive**: a single column showing the **top 5** languages from mobile through `lg` (including iPad-landscape, where the card is already half-width beside the stats card), expanding to two columns showing **up to 10** at `xl`+ (≥1280px). In the two-column view the rank index and `PRIMARY` pill are hidden and the type drops to `text-sm` so even the longest names never truncate.
+**Skills crawl** — built **entirely from a live crawl** (no hardcoded list). Detects **languages** inline from GraphQL and **dependencies** from manifests at any depth (`package.json`, `requirements.txt` / `pyproject.toml` / `Pipfile`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `pubspec.yaml`, `pom.xml` / `build.gradle[.kts]` — `manifestParsers.js`). Names resolve through the server-only `skillsIconMap.js` (skillicons.dev → Simple Icons fallback against a ~3.4k-slug catalog); unmapped names are dropped, never rendered broken. Grouped into five buckets, each with a fully ARIA-exposed "used in repositories" popover.
 
-**9. Languages-only fallback** — distinct from the whole-payload fallback in point 5: when the languages GraphQL aborts mid-fetch but the user/stats/streaks queries succeed, the route substitutes the bundled snapshot's languages and flags them `languagesFallback: true` (HTTP 200, no `_fallback`) instead of serving an empty list that would blank the card and lock in for the 10-min TTL. The client treats those as a **soft default** — used to populate a cold card for a first-time visitor, but never allowed to overwrite a returning visitor's own (possibly fresher) `localStorage` last-good. In both the stale and partial cases the card keeps showing the last good breakdown and drops its `live from GitHub` label until a genuine live fetch returns. The per-language change-detection fingerprint is computed **client-side** from this list (`src/utils/languageDiff.js`), so it keeps working on the fallback and the two sides can't drift — there is no `languagesFingerprint` field on the wire.
+**Privacy & resilience** — the crawl uses `ownerAffiliations: [OWNER]`, so it never enumerates repos you only collaborate on. Private repos you own are crawled for *detection* but their names are withheld (the disclosure-safe id is `null` when `isPrivate`), so a private name never reaches the public payload. Results are 10-min `unstable_cache`d (key `github-skills-v3`) behind `s-maxage=600, stale-while-revalidate=300, stale-if-error=86400`, with a `localStorage` last-good and a **budget-bounded** crawl (shared `AsyncLocalStorage` deadline + per-call / cumulative / pagination caps) that retains partial results under the serverless time limit.
 
-**10. GitHub Stats card — per-stat change banner & live label** — the stats card (`src/components/about/StatsCard.jsx`) reuses the Most Active Repository card's design system (vivid-orange numbers, `text-fire-amber` labels, the `repo-card-breathe` container, a spring-staggered entrance, a per-character title, hover-spotlight rows, fast-start/slow-finish count-ups, and a rank arc with a breathing glow — all `prefers-reduced-motion` aware). On each 10-min poll, `src/utils/statsDiff.js` `computeStatsDiff(prev, current)` compares the previous and current snapshots and, when a value actually moved, produces a signed-delta summary (e.g. `Total Stars +5 | Total Commits +50`) shown as a banner that auto-hides after ~4.5s and is gated on viewport visibility (an update landing off-screen waits to show + time out until the card is scrolled into view). The message is reconciled every poll — cleared when stat values are unchanged — so a non-stat update (such as a display-name change) never replays a stale delta. A **"Live GitHub Metrics"** eyebrow appears only when the stats are genuinely live (driven by the client's `statsLive` flag); it's hidden whenever the card is showing the bundled `_fallback` snapshot or kept/stale data, mirroring the languages card's `· live from GitHub` label.
-
-**11. Completed Projects & Years-in-the-Craft cards** — the two feature cards beside the About paragraph share the Most Active Repository card's two-layer chrome (outer `custom-bg-abt` amber border + inner `repo-card-breathe` glow). *Completed Projects* renders `projectsData.length` with a count-up plus an animated per-category proportional bar (Web / System today, grouped from each project's `category` once at module scope as `PROJECT_CATEGORY_BREAKDOWN`), a responsive legend (stacked on mobile; side-by-side from `sm` with a vivid `#ff6d05` `|` divider, wrapping back to stacked when the pair won't fit), raw per-category counts, and an `sr-only` "Completed projects by category — …" line so screen readers get the breakdown while the decorative bar + legend stay `aria-hidden`. A per-device `useProjectCountSignal` surfaces a one-time "N new completed projects" banner when the count changes across a deploy. *Years in the Craft* shows the figure from `/api/experience-summary` with a Personal vs Employment split bar and a click-to-open breakdown modal. Every digit on both cards runs through a shared `useViewportCountUp` hook: it animates on a true viewport entry, **replays on re-entry**, and **debounces the out-of-view reset** (`COUNT_RESET_DELAY_MS`) so a brief `IntersectionObserver` flicker during the parent `ItemLayout`'s `scale: 0 → 1` entrance never snaps a number back to 0 — all `prefers-reduced-motion` aware.
-
-**12. Current Streak card** (`src/components/about/StreakStatsCard.jsx`) — three stat blocks (Total Contributions, the Current Streak progress ring, Longest Streak) that reveal in a **staggered left-to-right cascade** on every viewport entry. The ring is a flat-stroke arc whose fill encodes the current streak as a share of the longest, sweeping in once on entry with a `GitCommitVertical` "commit node" at the top; digits count up imperatively via `src/utils/animationCurves.js` `animateToTarget`. Streaks are computed **server-side** in `computeStreaks` (`/api/github-stats`): GitHub pads the contribution calendar with the rest of the current *week*, so future days are dropped (`<= today`) and the current streak is found by walking **backward**, treating an empty *today* as "not yet broken" (and keeping `end` pinned to today so the range reads **"Present"** and doesn't shift at midnight). A per-device `useStreakUpdateSignal` + `src/utils/streakDiff.js` (`computeStreakDiff` / `streakFingerprint`) surfaces a human-readable change banner via the shared `UpdateBanner` only when a tracked value actually moves — the fingerprint is **client-computed** from the streak values + current/longest ranges (the rolling `totalContributions` range is excluded so a daily window roll-over never reads as a change), and an empty `{}` loading placeholder is treated as *absent* so the first real payload doesn't fire a false banner. The adjacent **Most Used Languages** card was brought to full entrance-animation parity with the GitHub Stats card here (spring lift, per-character title, metric-row slide-in stagger), all driven off the reversible `settledInView` flag so the entrance replays on every re-entry, with a reduced-motion no-op path.
-
-**13. About-page Skills grid & `/api/github-skills`** — the skills section (`src/components/about/SkillsCard.jsx`) is built **entirely from a live GitHub crawl**; there is no hardcoded list, so it only ever shows what your repositories actually use. `/api/github-skills` pages your repos and detects skills two ways: **languages** inline from the GraphQL repo query, and **dependencies** parsed from manifests found at any depth in each repo's default-branch tree — `package.json`, `requirements.txt` / `pyproject.toml` / `Pipfile`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `pubspec.yaml`, and `pom.xml` / `build.gradle` / `build.gradle.kts` (`src/utils/manifestParsers.js`), skipping vendored/build directories. Detected names resolve to icons in the **server-only** `src/utils/skillsIconMap.js` — a curated table of skillicons.dev short names first, then a Simple Icons slug fallback against a bundled ~3.4k-slug catalog (`src/utils/simpleIconsSlugs.js`); an unmapped name is dropped, never rendered as a broken image. Icons render via skillicons.dev with `cdn.simpleicons.org` / devicon fallbacks, grouped into five ordered buckets, each with a **"used in repositories" popover** that opens by hover (fine pointer), keyboard focus (input-modality tracked), or tap — and is exposed to assistive tech as a `role="button"` with `aria-haspopup` / `aria-expanded` and Enter/Space activation. A per-device `useSkillsUpdateSignal` (`src/utils/skillsDiff.js`) surfaces a client-computed "skills changed" banner via the shared `UpdateBanner` only on a real change.
-
-   **Privacy** — the crawl uses `ownerAffiliations: [OWNER]` (matching `/api/github-stats`), so it never enumerates repos owned by other accounts/orgs that you only collaborate on. Private repositories you own are still crawled for **detection**, but their names are withheld from the public payload: each detection is attached to a disclosure-safe id that is `null` for any repo whose `isPrivate` is true, so a private repo's name never reaches the per-skill `repos` lists or the CDN-cached response. (Detecting skills from private repos requires a `GITHUB_TOKEN` with private read access; without it the PRIVATE scope simply yields nothing — degraded coverage, not an error.)
-
-   **Caching & resilience** — results are wrapped in a 10-min `unstable_cache` (key `github-skills-v3`) and served `public, s-maxage=600, stale-while-revalidate=300, stale-if-error=86400`; the client also keeps a `localStorage` last-good (`skillsCache:v3`) behind a 10-min TTL guard. The crawl is **budget-bounded** (a shared per-request deadline via `AsyncLocalStorage` plus per-call, cumulative, and pagination caps) so a slow GitHub response can't blow the serverless limit — partial results are retained. The same `NEXT_PUBLIC_GITHUB_USERNAME` allowlist applies (`403` otherwise), and a total failure returns an empty payload (`_fallback: true`) so the grid shows a "No skills detected" / couldn't-load state and retries on the next visit.
+</details>
 
 ### Commands
 
@@ -377,6 +368,62 @@ npm run lint     # ESLint check
 
 ---
 
+## 📨 Contact Form
+
+The `/contact` page pairs a cinematic front-end with a resilient, idempotent delivery pipeline — built on `react-hook-form`, posting to `/api/send-mail`, and degrading gracefully when its optional services (Upstash Redis, the AI Gateway) aren't configured, so it works out of the box on local dev.
+
+**Front-end anatomy** (`src/components/contact/`)
+
+| Piece | What it does |
+|---|---|
+| **Molten submit CTA** (`Form.jsx`) | One pill morphs in place across `idle → sending → sent/held` — a grey "SENDING…" swept by a turbulent molten-orange `feTurbulence` / `feDisplacementMap` wavefront driven by **real** request progress, a self-stroking "✓ SENT" on delivery, a self-drawing "✦ HELD" when parked offline. An always-mounted label locks the footprint. |
+| **Sliced-letter magnetic label** (`SliceLabel.jsx` + `useMagneticPull`) | "SEND MESSAGE!" letters part along one sweeping blade on hover — a single `progress` motion value drives blade + letters so hover can't desync — while the button leans toward the cursor. Precise-pointer / non-reduced-motion only. |
+| **Gradient fire fields** (`FireInput.jsx` / `FireTextarea.jsx`) | Typed text is painted with the fire-amber gradient via a sibling overlay mirroring value + scroll, working around WebKit/Blink/iOS `background-clip: text` bugs. Notched floating labels + an "ember charge-up" while sending. |
+| **Intro reveal + aurora** (`ContactIntro.jsx`, `AuroraBackground.jsx`) | Copy de-blurs word-by-word, held until the loader lifts. Behind it, a full-viewport GLSL domain-warped-fBm aurora bends toward the cursor at `mix-blend: screen` — a client-only `next/dynamic` import so `three` never enters the critical bundle (static image is the reduced-motion fallback). |
+
+<details>
+<summary><strong>AI "Refine my message"</strong> — streaming rewrite via the Vercel AI Gateway</summary>
+<br />
+
+A quiet ember affordance under the message field streams an AI rewrite of the visitor's note **token by token** into a ghosted panel they can accept or discard.
+
+- **Server** (`refine-message/route.js`) — AI SDK (`ai@7`) `streamText` through the **Vercel AI Gateway** with a plain `"provider/model"` string (no provider SDK, no per-provider key). Defaults to `anthropic/claude-haiku-4.5`, overridable via `REFINE_MODEL`.
+- **Auth is server-only** — resolves `AI_GATEWAY_API_KEY` or the auto-injected `VERCEL_OIDC_TOKEN`; when neither is present the route returns `503` and the client **hides the feature**, so keyless local dev is unaffected.
+- **Guards** — the untrusted message is wrapped in `<message>` delimiters (prompt-injection guard); a per-IP rate limit, a body-size cap, and length checks gate abuse; error logs record only `name` + `statusCode`, never the SDK's free-text body.
+- **Client** (`useMessageRefine`) reads the plain UTF-8 stream with a `ReadableStream` reader — no client-side AI dependencies.
+
+</details>
+
+<details>
+<summary><strong>Offline queue, draft autosave & idempotent send</strong> — never silently lose a message</summary>
+<br />
+
+A dropped connection, a timed-out response, or a closed tab all recover:
+
+- **Shared send** — the live form and the background queue both go through `postContactMessage` (`src/lib/contact.js`), returning a discriminated `{ ok | errors | network | aborted }` result (15 s timeout). Transport failures (offline / drop / timeout / any `5xx` / a retryable `409`) are queued and retried; a validation `4xx` is surfaced to the user.
+- **Offline queue** (`useOfflineQueue`) — unreachable sends are parked in `localStorage` and drained on reconnect with capped exponential backoff, durable across a tab close; the CTA morphs to "✦ HELD". It lives **above** the form's post-send remount so its pending state survives each send.
+- **Draft autosave** (`useFormDraft`) — all four fields debounce-save to `localStorage` and restore behind a "Keep / Clear" banner (7-day TTL, cleared on a successful send). Restore and AI-accept write through `setNativeValue` so react-hook-form **and** the gradient overlays repaint from one event.
+- **Idempotent server** (`/api/send-mail`) — a stable per-message `Idempotency-Key` lets the server dedupe via an atomic Upstash `SET NX` `PENDING` claim promoted to `SENT` only after delivery: an already-sent retry dedupes to `200`, an in-flight retry gets a retryable `409`, and only the attempt that won the claim (`claimOwned`) may release/promote it — so **no duplicate email goes out**. The header-supplied key is shape-validated and namespaced under `contact:idempotency:`. Bounded SMTP timeouts (≈40 s worst case) stay inside the 120 s `PENDING` TTL. **When the store is unreachable or unconfigured, the route fails open** (sends without dedupe).
+
+</details>
+
+<details>
+<summary><strong>Contact-form environment variables</strong></summary>
+<br />
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `SMTP_HOST` · `SMTP_PORT` · `SMTP_USER` · `SMTP_PASS` · `RECEIVER_EMAIL` | yes | Nodemailer SMTP delivery. A Gmail [App Password](https://support.google.com/accounts/answer/185833) is recommended. |
+| `SMTP_SECURE` | no | Force TLS on/off (defaults on when `SMTP_PORT=465`). |
+| `ABSTRACT_API_KEY` | no | Email-reputation check — deliverability + disposable-address block — via abstractapi.com. |
+| `KV_REST_API_URL` · `KV_REST_API_TOKEN` | no | Upstash Redis (WRITE token) for send idempotency. Also accepts `UPSTASH_REDIS_REST_URL` / `_TOKEN`. Unset → sends without dedupe. |
+| `AI_GATEWAY_API_KEY` | no | Vercel AI Gateway credential for message refine (or `VERCEL_OIDC_TOKEN` on Vercel). Unset → the refine feature hides. |
+| `REFINE_MODEL` | no | Overrides the refine model (default `anthropic/claude-haiku-4.5`). |
+
+</details>
+
+---
+
 ## ⚡ Performance & Security
 
 <details>
@@ -385,7 +432,7 @@ npm run lint     # ESLint check
 
 ```text
 default-src         'self'
-script-src          'self' 'unsafe-eval' 'unsafe-inline'
+script-src          'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com
 style-src           'self' 'unsafe-inline' https://fonts.googleapis.com
 font-src            'self' https://fonts.gstatic.com data:
 img-src             'self' data: blob: https:
@@ -407,8 +454,8 @@ upgrade-insecure-requests
 | Optimisation | Implementation |
 |---|---|
 | **Image pipeline** | Sharp — automatic WebP / AVIF conversion |
-| **Font loading** | `next/font` self-hosted Inter, zero layout shift |
-| **Code splitting** | Route-based automatic splitting; Three.js loaded only on `/projects/[id]` |
+| **Font loading** | `next/font` self-hosted Inter (body) + Varela Round + Montserrat (loader emblem), zero layout shift |
+| **Code splitting** | Route-based automatic splitting; Three.js loads on `/projects/[id]`, and lazily via client-only `next/dynamic` for the Contact / About aurora so it never enters the critical bundle |
 | **API caching** | `/api/github-stats` wrapped in two `unstable_cache` layers — 24-hr for the most-active-repo selection, 10-min for the display-data refresh; both invalidated by tag on demand via the daily `/api/repo-refresh` cron. CDN response is also `s-maxage=10min` / `stale-while-revalidate=5min` / `stale-if-error=24hr`, with a bundled JSON snapshot served on total upstream failure. `/api/github-skills` adds its own 10-min `unstable_cache` (key `github-skills-v3`) behind the same CDN policy, with a budget-bounded crawl that retains partial results under a shared wall-clock deadline |
 | **Analytics** | Vercel Speed Insights + Web Analytics for real-user Core Web Vitals |
 
@@ -424,7 +471,7 @@ upgrade-insecure-requests
 | `night-900` | `#030c18` | Card backgrounds |
 | `ember-neon` | `#eab53e` | Primary neon accent, borders, glows |
 | `ember-core` | `#b16612` | Inner glow core |
-| `neon-700` | `#ff6d05` | Firefly radial, CTA highlights |
+| `neon-700` | `#ff6d05` | Neon ripples, aurora warmth, CTA highlights |
 | `amethyst-neon` | `#fc83ff` | Subtitle glow, secondary accent |
 | `ember-halo` | `#fcf699` | Outer glow halos |
 | `foreground` | `rgb(225 225 225)` | Body text |
@@ -437,7 +484,7 @@ upgrade-insecure-requests
 ## 🎬 Animation Inventory
 
 <details>
-<summary><strong>View all 20 custom animations</strong></summary>
+<summary><strong>View the custom animation inventory</strong></summary>
 <br />
 
 | Animation | Technique | Location |
@@ -446,7 +493,9 @@ upgrade-insecure-requests
 | Floating laptop | `useFrame` sin-wave (Three.js render loop) | `project-detail/laptop-model.jsx` |
 | Aurora parallax | `useScroll` + `useTransform` + mouse tilt | `project-detail/aurora-bg.jsx` |
 | Boot sequence | Sequential `clipPath` chunk reveals | `project-detail/boot-on-sequence.jsx` |
-| Rocket launch | Multi-phase: shake → flame → fly → checkmark | `contact/Form.jsx` |
+| Molten submit CTA | `feTurbulence` / `feDisplacementMap` wavefront + self-stroking checkmark, driven by real request progress | `contact/Form.jsx` |
+| Sliced-letter magnetic label | Single `progress` motion value drives a sweeping blade + per-letter split; spring magnetic pull toward the cursor | `contact/SliceLabel.jsx` + `hooks/useMagneticPull.js` |
+| Contact intro reveal | Word-by-word de-blur held until the loader lifts (`useLoaderRevealed`) | `contact/ContactIntro.jsx` |
 | Stat counters | `requestAnimationFrame` fast-start/slow-finish count-up (simultaneous, reduced-motion aware) | `about/StatsCard.jsx` |
 | SVG rank arc | `stroke-dashoffset` sweep + breathing radial glow | `about/StatsCard.jsx` |
 | GitHub stat change banner | per-character reveal, ~4.5s auto-hide gated on viewport | `about/StatsCard.jsx` + `about/UpdateBanner.jsx` |
@@ -456,8 +505,9 @@ upgrade-insecure-requests
 | GitHub Stats / Languages card entrance | Spring card lift + per-character blur-in title + metric-row slide-in stagger; replays on each viewport entry via the reversible `settledInView` flag, reduced-motion aware | `about/StatsCard.jsx` + `about/LanguagesCard.jsx` |
 | Streak card entrance | Staggered left-to-right section cascade (Total Contributions → Current Streak ring → Longest Streak), replaying on each viewport entry | `about/StreakStatsCard.jsx` |
 | Streak progress ring | `stroke-dashoffset` one-shot fill sweep (current ÷ longest) on entry, with a git-commit node and `animateToTarget` count-ups | `about/StreakStatsCard.jsx` |
-| Firefly drift | `@keyframes` with randomised duration + paths | `FireFliesBackground.jsx` |
-| Loader progress | SVG `stroke-dashoffset` + percentage counter | `loaderWrapper/index.jsx` |
+| Aurora fields | Scroll- & cursor-reactive GLSL domain-warped-fBm aurora, `mix-blend: screen`, reduced-motion-gated | `contact/AuroraBackground.jsx` · `about/AboutAuroraDust.jsx` |
+| Custom cursor | Ember dot + spring-lagged ring that swells and sticks toward interactive elements | `CustomCursor.jsx` |
+| Emblem-seal loader | Self-stroking rings + engraved name arc + igniting molten flood → radial reveal wipe | `loaderWrapper/EmblemSeal.jsx` |
 | Stagger reveals | `staggerChildren` Framer Motion variants | Multiple components |
 | 3D carousel | CSS `perspective` + `translateZ` + `rotateY` | `qualifications/Carousel.jsx` |
 | Glowing project name | Bloom ring scale + random flicker interval | `project-detail/glowing-project-name.jsx` |
@@ -482,94 +532,96 @@ Or connect the GitHub repository to [vercel.com](https://vercel.com) for automat
 
 ### Function bundling notes — `/api/experience-summary`
 
-The Experience Summary route reads the resume PDF at `public/Muhammad_Abdullah_CV.pdf` and parses it with `pdf-parse` (which itself uses `pdfjs-dist`). Both run fine locally, but two Vercel-specific bundling gotchas have to stay handled or the deployed function silently returns `employment: null` and the Years in the Craft / Career Snapshot panels render `0+ months` of employment with `No software-engineering roles detected yet`:
+The Experience Summary route parses the résumé PDF (`public/Muhammad_Abdullah_CV.pdf`) with `pdf-parse` / `pdfjs-dist`. It runs fine locally, but three Vercel-specific bundling gotchas must stay handled — otherwise the deployed function silently returns `employment: null` and the Years-in-the-Craft / Career Snapshot panels render `0+ months`.
 
-1. **Static asset under `public/`.** Vercel ships `public/` to the static asset layer, **not** into the serverless function's filesystem. `next.config.mjs` therefore lists the resume PDF in `experimental.outputFileTracingIncludes["/api/experience-summary"]` so `@vercel/nft` copies the file into the function bundle. On the function the route reads it via `process.cwd()`-relative `fs.readFile`, which resolves identically in dev and prod once the file is bundled.
-2. **`@napi-rs/canvas` for `pdfjs-dist`'s DOM polyfill.** `pdfjs-dist` polyfills `DOMMatrix` / `ImageData` / `Path2D` by calling `createRequire(import.meta.url)("@napi-rs/canvas")` at runtime. `@vercel/nft` can't statically follow a runtime-created `require`, so without explicit help the JS shim and its platform-specific binary (`@napi-rs/canvas-linux-x64-gnu` on Vercel's Amazon Linux 2 build target) never ship with the function. The fix lives in three coordinated spots:
-   - `package.json` `overrides` pins `@napi-rs/canvas` to `0.1.80`. This eliminated the duplicated `node_modules/pdf-parse/node_modules/@napi-rs/canvas` install entirely, but npm did **not** flatten `pdfjs-dist`'s own copy — the committed lockfile still ships `node_modules/pdfjs-dist/node_modules/@napi-rs/canvas` at `0.1.100`. That nested copy is the one `pdfjs-dist`'s runtime require resolves first (Node walks up from its own directory), so the override alone is necessary but not sufficient.
-   - `next.config.mjs` `experimental.serverComponentsExternalPackages` lists `pdf-parse` and `@napi-rs/canvas` so Next leaves them as runtime requires rather than webpack-bundling them.
-   - `next.config.mjs` `experimental.outputFileTracingIncludes["/api/experience-summary"]` deliberately globs **both** the root install (`node_modules/@napi-rs/canvas/**/*`) and the surviving `pdfjs-dist` nest (`node_modules/pdfjs-dist/node_modules/@napi-rs/canvas/**/*`), plus the matching `linux-x64-gnu` binary paths under each. Tracing only the root would skip the file `createRequire` actually loads on the function; tracing both is belt-and-braces against whatever resolution order npm reproduces on Vercel.
+<details>
+<summary><strong>The three bundling gotchas &amp; how they're solved</strong></summary>
+<br />
 
-When the function is healthy the deployed preview's `/api/experience-summary?username=<allowed>` response carries `employment: { months, display, roles }` and `pdfStatus: null`. If the response shows `pdfStatus: { message: "DOMMatrix is not defined" }` after a fresh deploy, the canvas binary glob isn't catching the install path npm produced on Vercel — inspect `node_modules` on the build (Vercel dashboard → Deployment → Functions → `experience-summary` → Source), extend `outputFileTracingIncludes` to cover the new path, and redeploy. The same diagnostic also fires if the `overrides` block is removed and a third nested copy (e.g. `pdf-parse`'s 0.1.80) reappears.
+1. **Static asset under `public/`** — Vercel ships `public/` to the static layer, *not* the function filesystem. `next.config.mjs` lists the PDF in `experimental.outputFileTracingIncludes["/api/experience-summary"]` so `@vercel/nft` copies it into the bundle; the route reads it via `process.cwd()`-relative `fs.readFile`.
+2. **`pdfjs-dist` fake worker** — `pdfjs-dist` dynamically imports its worker bundle at runtime, which `@vercel/nft` can't statically trace (→ `Cannot find module …/pdf.worker.mjs`). `pdf-parse` v2 loads the **legacy** build, so `outputFileTracingIncludes` also traces `pdfjs-dist/legacy/build/pdf.worker.mjs` + `.min.mjs`.
+3. **Pure-JS `DOMMatrix` polyfill** — `pdfjs-dist` would otherwise `require("@napi-rs/canvas")`, whose native `.node` binary can't be traced (→ "DOMMatrix is not defined"). Instead the parser installs a **pure-JS `DOMMatrix`** on `globalThis` before `pdfjs` loads (`src/utils/experience/domMatrixPolyfill.js`); the canvas require then fails as a harmless warning. `pdf-parse` is marked in `serverComponentsExternalPackages` so Next leaves it as a runtime `require` rather than mangling its ESM globals.
+
+**Health check** — a healthy deploy returns `employment: { months, display, roles }` with `pdfStatus: null`. `pdfStatus: { message: "DOMMatrix is not defined" }` means the polyfill isn't installing before `pdfjs`; `Cannot find module …/pdf.worker.mjs` means the traced worker path drifted with a `pdfjs-dist` bump — extend `outputFileTracingIncludes` and redeploy.
+
+</details>
 
 ---
 
 ## 🛰️ Live Maintenance Header
 
-The home page renders a real-time development status header that reads activity from this repository **and** the linked Projects v2 board (`MA1002643/theabdullahfolio` and `users/MA1002643/projects/3` only — never any other repo or project).
-
-### What the header shows
+The home page renders a real-time development status header that reads activity from this repository **and** the linked Projects v2 board (`MA1002643/theabdullahfolio` + `users/MA1002643/projects/3` only — never any other repo or project). It degrades to a deterministic maintenance message when GitHub is unreachable or unconfigured.
 
 The chip displays one of five states, ordered by precedence:
 
 | State | Chip label | When it fires |
 | --- | --- | --- |
-| `SHIPPING` | **SHIPPING** + green pulsing dot | Items moved to the project board's **Done** column whose underlying issue/PR was closed in the last 48h |
+| `SHIPPING` | **SHIPPING** + green pulsing dot | Board items moved to **Done** whose issue/PR closed in the last 48h |
 | `LIVE` | **LIVE** + green pulsing dot | Any commit, PR, or issue updated in the last 2 hours |
-| `IN_PROGRESS` | **IN PROGRESS** | Project board has cards in **In Progress**, or there are open PRs |
-| `PLANNING` | **PLANNING** | Open issues exist but no open PRs and no recent activity |
-| `IDLE` | **MAINTENANCE** | No active `SHIPPING`/`LIVE` signal, no open PRs or issues, and no cards in **In Progress** |
+| `IN_PROGRESS` | **IN PROGRESS** | Board has cards in **In Progress**, or there are open PRs |
+| `PLANNING` | **PLANNING** | Open issues exist, but no open PRs and no recent activity |
+| `IDLE` | **MAINTENANCE** | No `SHIPPING`/`LIVE` signal, no open PRs or issues, no **In Progress** cards |
 
-When `SHIPPING` is active **and** there's also active In Progress work, the message rotates between "Just shipped #X …" and "Actively working on N tasks — #Y …" every 10 seconds (Pattern D).
+When `SHIPPING` and active In Progress work overlap, the message rotates between "Just shipped #X …" and "Actively working on N tasks — #Y …" every 10 seconds.
 
-### Required environment variables
-
-Add these to `.env.local` for local development and to your Vercel project for production:
+<details>
+<summary><strong>Environment variables &amp; token scopes</strong></summary>
+<br />
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `GITHUB_TOKEN` | yes | Read-only PAT used by `/api/work-status` to query open PRs, open issues, and recent commits. Fine-grained or classic both work. Without this, the header falls back to the deterministic maintenance message. |
-| `GITHUB_PROJECT_TOKEN` | recommended | Optional separate **classic** PAT with `read:project` + `public_repo` used only for the Projects v2 query. Falls back to `GITHUB_TOKEN` if unset. Needed because fine-grained PATs don't currently expose user-owned project read access. |
-| `GITHUB_WEBHOOK_SECRET` | yes (in production) | HMAC secret used by `/api/github-webhook` to validate `X-Hub-Signature-256`. Webhook deliveries with a missing or invalid signature are rejected. |
-| `CRON_SECRET` | yes (in production) | Bearer token required to invoke the cron-protected routes `/api/daily-warmup` (the scheduled entrypoint), `/api/work-status?bust=1`, and `/api/repo-refresh` (both individually invokable for manual triggers). Vercel Cron Jobs automatically include `Authorization: Bearer ${CRON_SECRET}` on scheduled requests. Without it the routes return 401 (or 500 in the case of `/api/daily-warmup` and `/api/repo-refresh`, which refuse to start if the secret is unset) — preventing unauthenticated callers from amplifying GitHub / OpenAI traffic or triggering cache rebuilds. |
-| `BASE_URL` | no | Optional. URL the `/api/daily-warmup` orchestrator and `/api/repo-refresh` use for their internal warm-up fetches. Server-only — **not** the `NEXT_PUBLIC_` prefix, which would inline the value into client bundles. Falls back to `https://${VERCEL_URL}` (Vercel's auto-injected per-deployment URL) and finally `http://localhost:3000` in dev. |
-| `WORK_STATUS_AI_ENABLED` | no | When set to `true`, the API attempts to rewrite the deterministic message via OpenAI before returning it. Default: disabled. |
-| `OPENAI_API_KEY` | only if AI is enabled | Required when `WORK_STATUS_AI_ENABLED=true`. The AI path always falls back to the deterministic message on error. |
+| `GITHUB_TOKEN` | yes | Read-only PAT for `/api/work-status` (open PRs, issues, recent commits). Fine-grained or classic. Without it, the header falls back to the deterministic message. |
+| `GITHUB_PROJECT_TOKEN` | recommended | Separate **classic** PAT (`read:project` + `public_repo`) for the Projects v2 query; falls back to `GITHUB_TOKEN`. Needed because fine-grained PATs can't read user-owned projects today. |
+| `GITHUB_WEBHOOK_SECRET` | yes (prod) | HMAC secret for `/api/github-webhook` `X-Hub-Signature-256` validation; unsigned/invalid deliveries are rejected. |
+| `CRON_SECRET` | yes (prod) | Bearer token for the cron-protected routes (`/api/daily-warmup`, `/api/work-status?bust=1`, `/api/repo-refresh`); Vercel attaches it automatically on scheduled requests. Missing → 401 (or 500 for the routes that refuse to start unset), blocking traffic amplification. |
+| `BASE_URL` | no | Server-only override for the warm-up fetch target. Falls back to `https://${VERCEL_URL}` then `http://localhost:3000`. |
+| `WORK_STATUS_AI_ENABLED` | no | `true` rewrites the deterministic message via OpenAI before returning. Default off. |
+| `OPENAI_API_KEY` | if AI enabled | Required when `WORK_STATUS_AI_ENABLED=true`; the AI path always falls back to the deterministic message on error. |
 
-### Token scopes
+**Token scopes**
 
-- **Fine-grained PAT for `GITHUB_TOKEN`**: Repository permissions → Contents: Read, Issues: Read, Pull requests: Read, Metadata: Read. Scope to `theabdullahfolio` only.
-- **Classic PAT for `GITHUB_PROJECT_TOKEN`**: `read:project` + `public_repo` (or `repo` if the repo is private). User-owned Projects v2 boards aren't accessible via fine-grained PATs today, hence the second token.
+- **Fine-grained `GITHUB_TOKEN`** — Contents: Read, Issues: Read, Pull requests: Read, Metadata: Read. Scope to `theabdullahfolio` only.
+- **Classic `GITHUB_PROJECT_TOKEN`** — `read:project` + `public_repo` (or `repo` if private). User-owned Projects v2 boards aren't reachable via fine-grained PATs today, hence the second token.
 
-### GitHub webhook setup
+</details>
 
-In `Settings → Webhooks` on the `theabdullahfolio` repository:
+<details>
+<summary><strong>Webhook setup &amp; refresh strategy</strong></summary>
+<br />
+
+**Webhook** — in `Settings → Webhooks` on `theabdullahfolio`:
 
 1. **Payload URL:** `https://<your-domain>/api/github-webhook`
-2. **Content type:** `application/json` *(critical — `application/x-www-form-urlencoded` breaks HMAC verification)*
+2. **Content type:** `application/json` *(critical — `x-www-form-urlencoded` breaks HMAC verification)*
 3. **Secret:** must match `GITHUB_WEBHOOK_SECRET` byte-for-byte
 4. **Events:** `push`, `pull_request`, `issues` (optionally `issue_comment`)
 
-The webhook validates the signature, ignores events from any other repository, and busts the in-memory cache so the next client poll receives fresh data.
+The webhook validates the signature, ignores events from other repos, and busts the in-memory cache so the next poll is fresh. *(Projects v2 column moves don't fire repo webhooks — they're picked up via the 30s cache TTL + client polling instead.)*
 
-> **Note:** GitHub Projects v2 column moves don't fire repository webhooks (they fire `projects_v2_item` events at the org level only). Column moves are picked up via the 30-second cache TTL + client polling instead — see *Refresh strategy* below.
+**Refresh** — four layers keep the header fresh on Vercel:
 
-### Refresh strategy
+- **Server cache** — in-memory, 30s; one GitHub fetch per 30s window per region regardless of traffic.
+- **Webhook** — invalidates the cache immediately on real events.
+- **Client polling** — every 30s while visible, every 15 min when hidden (Page Visibility API); the 30s rate aligns with the cache so board moves surface within ~30s.
+- **Cron fallback** — `/api/daily-warmup` (daily) hits `/api/work-status?bust=1` as a backstop for delayed webhook delivery. Consolidated under one schedule because Hobby plans cap cron count.
 
-Four layers keep the header fresh on Vercel:
+Worst-case usage is ~120 GraphQL calls/token/hour (~7–12 % of the 5,000-pt/hr limit). On upstream error the endpoint serves the last good payload (`X-Cache-Status: STALE`) before degrading to the deterministic message.
 
-- **Server cache** — in-memory cache holds responses for 30 seconds. Bounds GitHub API calls regardless of traffic; one fetch per 30s window per Vercel region.
-- **Webhook** — invalidates the cache immediately on real GitHub events (`push`, `pull_request`, `issues`).
-- **Client polling** — the component re-fetches every 30 seconds while the tab is visible, and every 15 minutes when hidden (Page Visibility API). The 30s rate aligns with the server cache so column-board moves become visible within ~30s.
-- **Cron fallback** — `vercel.json` schedules `/api/daily-warmup` once daily; the orchestrator's first step hits `/api/work-status?bust=1` as a backstop in case webhook delivery is delayed. (Vercel Hobby plans cap cron jobs at one execution per day and limit total cron count; both jobs are consolidated under one schedule for that reason. Pro plans can split them back out or use a tighter cadence if desired.)
+</details>
 
-Worst-case GitHub API usage with these settings is ~120 GraphQL calls per token per hour — about 7–12 % of the 5,000-point/hour rate limit per token, leaving plenty of headroom.
+<details>
+<summary><strong>UI choreography</strong></summary>
+<br />
 
-If the GitHub API is unreachable or returns an error, the endpoint serves the most recent successful payload (`X-Cache-Status: STALE`) before degrading to the deterministic maintenance message.
+A single status bar above the hero, with three layered animation systems:
 
-### UI choreography
+- **Container entrance** — `whileInView` 0 → 1 scale pop-in; re-fires on viewport entry so returning to `/` replays it.
+- **Loading skeleton** — shimmer-sweep placeholder matched to the live dimensions (no layout shift), crossfading to real content via `AnimatePresence`.
+- **Pulsing dot** — a green `live-dot` (`#22c55e`) breathing every 2.8s with holds at both extremes; active during `SHIPPING` / `LIVE`.
 
-The header is a single status bar at the top of the home page (above the hero) and uses three layered animation systems:
+Counters (PRs / Issues / Pushes 24h) animate 0 → target with a piecewise curve (linear to 75%, cubic ease-out for the last 25%; 1.1–2.2s scaled to the delta). The "Updated Xs ago" stamp uses an adaptive tick rate (1s → 30s → 1 min → 1 hour). All looping animation stops under `prefers-reduced-motion: reduce`.
 
-- **Container entrance** — `whileInView` 0 → 1 scale pop-in (matching the About page's ItemLayout). Re-fires when the section enters the viewport, so navigating back to `/` from another page replays the entrance.
-- **Loading skeleton** — shimmer-sweep placeholder with the same dimensions as the live content, so there's no layout shift on data load. Crossfades to real content via `AnimatePresence`.
-- **Pulsing dot** — a green `live-dot` (`#22c55e`) that fades in and out every 2.8s with timed holds at both extremes for a "lazy breathing" feel. Active during `SHIPPING` and `LIVE` states.
-
-Counter values (PRs / Issues / Pushes 24h) animate from 0 to the target on mount with a piecewise curve: linear "fast tick" to 75% of the value, then a cubic ease-out for the final 25%. Total duration scales with the delta (1.1–2.2s).
-
-The "Updated Xs ago" stamp uses an adaptive tick rate — 1s while showing seconds, 30s for minutes, 1 min for hours, 1 hour for days — so the seconds counter ticks up smoothly without wasting renders on stale displays.
-
-All looping animations stop under `prefers-reduced-motion: reduce`.
+</details>
 
 ## 🙏 Acknowledgements
 

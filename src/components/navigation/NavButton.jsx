@@ -63,6 +63,7 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
         <a
           href={link}
           target={newTab ? '_blank' : '_self'}
+          rel={newTab ? 'noopener noreferrer' : undefined}
           aria-label={label}
           name={label}
           tabIndex={visible ? 0 : -1}
@@ -91,6 +92,7 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
       <a
         href={link}
         target={newTab ? "_blank" : "_self"}
+        rel={newTab ? 'noopener noreferrer' : undefined}
         aria-label={label}
         name={label}
         onMouseEnter={() => setHovered(true)}

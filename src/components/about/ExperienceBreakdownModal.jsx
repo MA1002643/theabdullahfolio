@@ -959,15 +959,35 @@ export function ExperienceBreakdownModal({
                     viewport={revealViewport}
                     className="custom-bg-abt rounded-lg p-2 space-y-1.5"
                   >
-                    {visibleRepos.map((r) => {
+                    {visibleRepos.map((r, i) => {
                       const dateText = formatRepoDate(r.createdAt);
                       // This repo was just added AND its section is in view → pulse
                       // its name + date together (item 2 of the request).
                       const rowPulse = repoListPulsing && pulseRepoNames.has(r.name);
+                      // Rows beyond the initial limit only mount once "Show all" is
+                      // toggled — i.e. AFTER the parent <ul> has already settled into
+                      // its `whileInView="visible"` state. Framer Motion only
+                      // propagates the active variant to children present at the
+                      // moment the parent transitions, so these late-mounting rows
+                      // would inherit the parent's `initial="hidden"` (opacity 0,
+                      // x:-16) and stay there forever — visible in the layout (hence
+                      // clickable) but fully transparent. Driving them with their own
+                      // initial/animate makes each self-reveal on mount, cascading via
+                      // a per-row delay that matches the container's 0.06 stagger. The
+                      // first `REPO_INITIAL_LIMIT` rows keep inheriting the parent's
+                      // stagger untouched.
+                      const isExtra = i >= REPO_INITIAL_LIMIT;
                       return (
                         <motion.li
                           key={r.url ?? r.name}
                           variants={rowV}
+                          {...(isExtra
+                            ? {
+                                initial: "hidden",
+                                animate: "visible",
+                                transition: { delay: (i - REPO_INITIAL_LIMIT) * 0.06 },
+                              }
+                            : {})}
                           className="flex items-center gap-3 text-sm leading-snug"
                         >
                           <span

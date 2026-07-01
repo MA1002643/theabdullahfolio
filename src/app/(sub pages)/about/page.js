@@ -1,28 +1,34 @@
 "use client"
 import Image from "next/image";
-import bg from "../../../../public/background/about-bg.png";
+import bg from "../../../../public/background/contact-bg.png";
 import AboutDetails from "@/components/about";
+import AboutAuroraDustMount from "@/components/about/AboutAuroraDustMount";
 import PageTitle from "@/components/PageTitle";
 
 export default function About() {
   return (
     <main >
+      {/* Background mirrors the contact page exactly: the same contact-bg.png at
+          half opacity, a black overlay to deepen it, then the cursor-reactive
+          aurora composited over the top (screen blend) by the mount. `alt=""`
+          marks it decorative so screen readers skip it (matches NotFoundClient). */}
       <Image
+        src={bg}
+        alt=""
         priority
         sizes="100vw"
-        src={bg}
-        alt="background-image"
-        className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-100"
+        className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-50"
       />
+      <div className="-z-40 fixed top-0 left-0 w-full h-full bg-black/70" />
 
-      {/* <div className="relative w-full h-screen flex flex-col items-center justify-center">
-        <div className="absolute flex flex-col items-center text-center top-[60%] left-1/2 -translate-y-1/2 -translate-x-1/2">
-          <h1 className="font-bold text-9xl text-accent">Muhammad Abdullah</h1>
-          <p className="font-light text-foreground text-ls">
-            Meet the wizard behind this portfolio
-          </p>
-        </div>
-      </div> */}
+      {/* Contact-page aurora (drifts + bends toward the cursor), now also
+          scroll-reactive: a gentle vertical parallax shifts the whole aurora as
+          the page scrolls and eases to rest when it stops. (The earlier discrete
+          dust-mote particles were removed — the soft aurora itself carries the
+          scroll reaction.) Self-gates on motion preference + loader reveal; the
+          static image above is the reduced-motion fallback. */}
+      <AboutAuroraDustMount />
+
       {/* HEADLINE — uses shared PageTitle (issue #104). The
           decorative inline dashes around "WHO I AM" were dropped per
           the acceptance criteria: the subtitle now uses the same

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
+
 /**
  * A transform-safe "is this element in view?" hook.
  *
@@ -28,14 +30,45 @@ import { useEffect, useState } from "react";
  * visible portion and the element height equally, the ratio is scale-invariant
  * — so it reports correctly even mid-entrance.
  *
+ * Returns `{ inView, settledInView }`:
+ *   - `inView` is the RAW, instantaneous `ratio >= amount` reading. Use it for
+ *     count-ups, banners, and timer gating that want to react to true visibility
+ *     (the count-ups debounce internally via useViewportCountUp, so the raw
+ *     signal is correct for them).
+ *   - `settledInView` is a debounced, ASYMMETRIC-hysteresis boolean — the
+ *     geometry-measured twin of useViewportCountTrigger's `settledInView`, for
+ *     the cards that can't use that IntersectionObserver-based hook (they sit
+ *     behind the intro loader at scroll 0, where an observer reads zero area).
+ *     It flips TRUE at `ratio >= amount` and FALSE only after a *sustained FULL
+ *     exit* (no pixels visible) for `leaveDelayMs`. Drive whileInView-style
+ *     ENTRANCE variants off this: a reversible entrance whose own `translateY`
+ *     dips the card back under `amount` while it's parked partially on screen
+ *     can no longer reset itself, so the "content loads on and off when only
+ *     ~10% is visible" flicker loop is broken. It still replays on a genuine
+ *     scroll-away-and-back, because a real full exit re-arms it.
+ *
  * @param {React.RefObject<HTMLElement>} ref
  * @param {object} [opts]
  * @param {number} [opts.amount=0.3] - visible-height fraction threshold
  * @param {number} [opts.settleFrames=45] - rAF ticks (~0.75s) to watch the entrance
- * @returns {boolean} inView
+ * @param {number} [opts.leaveDelayMs=300] - hysteresis on exit for `settledInView`;
+ *   the element must stay fully out at least this long before the entrance re-arms
+ * @returns {{ inView: boolean, settledInView: boolean }}
  */
-export function useReliableInView(ref, { amount = 0.3, settleFrames = 45 } = {}) {
+export function useReliableInView(
+  ref,
+  { amount = 0.3, settleFrames = 45, leaveDelayMs = 300 } = {},
+) {
   const [inView, setInView] = useState(false);
+  const [settledInView, setSettledInView] = useState(false);
+  // The outer about cards reveal off `useLoaderRevealed`; consume the SAME
+  // signal here so the inner section's burst re-runs no matter HOW the loader
+  // completed — the `loaderdone` event (handled directly below), but also the
+  // already-done flag (loader lifted before mount) and the safety-timeout
+  // fallback, neither of which dispatches an event this hook would otherwise
+  // see. `revealed` flips false→true once; that re-runs the effect (burst
+  // included), keeping the count-ups in sync with the cards around them.
+  const revealed = useLoaderRevealed();
 
   useEffect(() => {
     const el = ref.current;
@@ -43,6 +76,12 @@ export function useReliableInView(ref, { amount = 0.3, settleFrames = 45 } = {})
 
     let rafId = 0;
     let frames = 0;
+    // Pending re-arm timer for the asymmetric `settledInView` hysteresis. A
+    // closure var (not a ref) because this effect's deps are stable, so it
+    // persists for the component's life; cleared in the cleanup below. A quick
+    // flicker back over `amount` — or any pixel staying on screen — cancels it
+    // before it can reverse the entrance.
+    let leaveTimer = 0;
 
     const check = () => {
       const r = el.getBoundingClientRect();
@@ -50,12 +89,44 @@ export function useReliableInView(ref, { amount = 0.3, settleFrames = 45 } = {})
       // Visible vertical extent of the element within the viewport.
       const visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
       const ratio = r.height > 0 ? visible / r.height : 0;
+      const isIn = ratio >= amount;
+      // Any part of the element on screen at all — the loop-breaker. The
+      // entrance's own transform can dip the card under `amount`, but it can't
+      // push a parked card fully off-screen, so while `anyVisible` holds we keep
+      // `settledInView` latched instead of resetting it.
+      const anyVisible = r.height > 0 && visible > 0;
+
       // Functional update so React bails when the value is unchanged — no
       // re-render churn from the rAF burst once the state has settled.
-      setInView((prev) => {
-        const next = ratio >= amount;
-        return prev === next ? prev : next;
-      });
+      setInView((prev) => (prev === isIn ? prev : isIn));
+
+      // ── Asymmetric hysteresis for `settledInView` (mirrors useViewportCountTrigger) ──
+      if (isIn) {
+        // True entry (or recovery from a sub-threshold dip). Cancel any pending
+        // reset and show the entrance immediately; idempotent so a flicker that
+        // never reset it is a no-op re-render.
+        if (leaveTimer) {
+          clearTimeout(leaveTimer);
+          leaveTimer = 0;
+        }
+        setSettledInView((prev) => (prev ? prev : true));
+      } else if (anyVisible) {
+        // Below `amount` but still partially visible — HOLD. Cancel any pending
+        // reset and schedule none, so the entrance COMPLETES rather than
+        // restarting. This is what stops the half-visible flicker loop.
+        if (leaveTimer) {
+          clearTimeout(leaveTimer);
+          leaveTimer = 0;
+        }
+      } else if (!leaveTimer) {
+        // Fully out of view — the genuine sustained-exit candidate. Wait the
+        // debounce before re-arming so momentum-scroll wobble past the edges is
+        // absorbed; only a real, complete exit reverses the entrance.
+        leaveTimer = window.setTimeout(() => {
+          setSettledInView((prev) => (prev ? false : prev));
+          leaveTimer = 0;
+        }, leaveDelayMs);
+      }
     };
 
     check();
@@ -68,18 +139,38 @@ export function useReliableInView(ref, { amount = 0.3, settleFrames = 45 } = {})
     // short burst, then stop — scroll/resize keep it accurate from there.
     const tick = () => {
       check();
-      if (frames++ < settleFrames) {
+      if (frames < settleFrames) {
+        frames++;
         rafId = window.requestAnimationFrame(tick);
+      } else {
+        rafId = 0;
       }
     };
-    rafId = window.requestAnimationFrame(tick);
+    // (Re)start the rAF burst. Runs on mount and again whenever the intro loader
+    // lifts. The cards that use this hook sit behind the full-screen loader (see
+    // LoaderWrapper): their wrapper is held at scale 0 — a zero-area box — until
+    // the reveal, then grows to full size only AFTER the mount-time burst has
+    // ended. That first burst therefore concludes "not in view" and, with no
+    // scroll/resize to re-check, the count-up would sit at 0 forever. Re-watching
+    // on `loaderdone` catches the post-reveal scale-up. Guarded so overlapping
+    // calls can't spawn parallel rAF loops.
+    const startBurst = () => {
+      frames = 0;
+      if (!rafId) rafId = window.requestAnimationFrame(tick);
+    };
+    startBurst();
+    window.addEventListener("loaderdone", startBurst);
 
     return () => {
       window.removeEventListener("scroll", onScrollResize);
       window.removeEventListener("resize", onScrollResize);
+      window.removeEventListener("loaderdone", startBurst);
       if (rafId) window.cancelAnimationFrame(rafId);
+      if (leaveTimer) window.clearTimeout(leaveTimer);
     };
-  }, [ref, amount, settleFrames]);
+    // `revealed` is a dep so the effect (and its mount burst) re-runs the moment
+    // the loader is considered revealed via ANY path, not only the event above.
+  }, [ref, amount, settleFrames, leaveDelayMs, revealed]);
 
-  return inView;
+  return { inView, settledInView };
 }

@@ -13,6 +13,8 @@ import { computeStatsDiff, statsIncreasedFields } from "@/utils/statsDiff";
 import { useExperienceSummary } from "@/hooks/useExperienceSummary";
 import { useProjectCountSignal } from "@/hooks/useProjectCountSignal";
 import { useReliableInView } from "@/hooks/useReliableInView";
+import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
+import { cardVariants, childVariants } from "./revealVariants";
 import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
@@ -487,6 +489,13 @@ const AboutDetails = () => {
   // hardcoded `repo` constant that used to live here is gone (issue #22).
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
 
+  // The two feature cards at the top of the page ("Projects shipped" / "Years in
+  // the craft") sit on screen at scroll 0 — behind the full-screen intro loader.
+  // Their scale 0 → 1 entrance is held until the loader lifts so it actually
+  // plays in view instead of finishing unseen behind the overlay. See
+  // useLoaderRevealed / ItemLayout's `revealWhen`.
+  const revealed = useLoaderRevealed();
+
   const [githubStats, setGithubStats] = useState(null)
   const [changedFields, setChangedFields] = useState([]);
   const [repoDiffMessage, setRepoDiffMessage] = useState(null);
@@ -627,7 +636,17 @@ const AboutDetails = () => {
   // `scale 0 → 1` entrance blinds an IntersectionObserver to the card — see the
   // hook's own docs. Measures real geometry so the count-up fires on /about
   // where this card is on screen at load and never gets a re-triggering scroll.
-  const isExperienceCardInView = useReliableInView(experienceInViewRef, {
+  //
+  // `inView` (raw) drives the count-up + banner + heartbeat timers (the count-up
+  // debounces internally). `settledInView` (debounced, asymmetric hysteresis)
+  // drives ONLY the card's entrance variants below — so the `y: 56 → 0` reveal
+  // can't reset itself into an on/off flicker loop while the card is parked at
+  // ~10% on screen. Same split the GitHub Stats / Languages cards use via
+  // useViewportCountTrigger.
+  const {
+    inView: isExperienceCardInView,
+    settledInView: settledExperienceCardInView,
+  } = useReliableInView(experienceInViewRef, {
     amount: 0.5,
   });
 
@@ -1084,7 +1103,15 @@ const AboutDetails = () => {
   // `useReliableInView` (not framer `useInView`): the ItemLayout's scale 0 → 1
   // entrance hides the card from an IntersectionObserver, so the count-up never
   // fired and the digit sat at 0 on /about. See the hook's docs.
-  const isCompletedProjectsInView = useReliableInView(completedProjectsRef, {
+  //
+  // `inView` (raw) drives the count-up + banner + heartbeat timers; `settledInView`
+  // (debounced, asymmetric hysteresis) drives ONLY the entrance variants below so
+  // the `y: 56 → 0` reveal can't flicker on/off while the card is parked at ~10%
+  // on screen — the same fix the GitHub Stats / Languages cards got.
+  const {
+    inView: isCompletedProjectsInView,
+    settledInView: settledCompletedProjectsInView,
+  } = useReliableInView(completedProjectsRef, {
     amount: 0.3,
   });
   // The signal now diffs the per-category BREAKDOWN (not just the total), so it
@@ -1199,6 +1226,16 @@ const AboutDetails = () => {
     <section className="py-20 px-6 sm:px-10 md:px-16 w-full">
       <div className="grid grid-cols-12 gap-4 xs:gap-6 md:gap-8 w-full">
         <ItemLayout
+          // Hero-row card 0. Previously used the default `whileInView` reveal,
+          // which — being on screen at scroll 0, behind the intro loader —
+          // fired and finished unseen behind the overlay (it read as "no
+          // animation"). Gating on `revealed` holds it until the loader lifts so
+          // it plays in view, and `revealOrder={0}` leads the orchestrated hero
+          // cascade ahead of the two feature cards. `tilt` adds the pointer tilt
+          // + ember glare (hover / non-reduced-motion only).
+          revealWhen={revealed}
+          revealOrder={0}
+          tilt
           className={
             // `!py-4 sm:!py-5` overrides the shared p-6/p-8 vertical
             // padding to tighten the gap above the heading and below
@@ -1242,6 +1279,14 @@ const AboutDetails = () => {
         </ItemLayout>
 
         <ItemLayout
+          // On screen at scroll 0 — behind the intro loader — so its entrance
+          // reveal is gated on the loader lifting (`revealed`) instead of a
+          // `whileInView` that would fire and finish unseen behind the overlay.
+          // See ItemLayout's `revealWhen` note. `revealOrder={1}` places it
+          // second in the hero cascade; `tilt` adds pointer tilt + ember glare.
+          revealWhen={revealed}
+          revealOrder={1}
+          tilt
           // Mirrors the "Years in the craft" card exactly: `!p-0` hands all
           // padding to the inner `repo-card-breathe` wrapper, and `group
           // relative` matches the sibling so the two feature cards share one
@@ -1261,12 +1306,30 @@ const AboutDetails = () => {
               false so the count-up never ran (the digit sat at 0). The inner
               div is not the scale target, so its observer reads a true ratio.
               Same reason the sibling stat cards observe their inner card. */}
-          <div ref={completedProjectsRef} className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center">
+          {/* Inner wrapper carries the SAME entrance reveal as the "Most Active
+              Repository" card — the whole card springs up + fades in while its
+              children (eyebrow → figure → split bar) stagger up after it (shared
+              cardVariants/childVariants). Driven by `isCompletedProjectsInView`,
+              which (because the outer ItemLayout holds scale 0 until the loader
+              lifts — see `revealWhen`) only turns true once this card is actually
+              visible, so the reveal plays in view instead of unseen behind the
+              loader, and replays on a real scroll re-entry just like the repo
+              card. */}
+          <motion.div
+            ref={completedProjectsRef}
+            variants={cardVariants}
+            initial="hidden"
+            // Entrance driven off the DEBOUNCED `settledInView` (not raw
+            // `inView`) so the `y: 56 → 0` reveal can't reset itself into an
+            // on/off flicker while the card is parked at ~10% visibility.
+            animate={settledCompletedProjectsInView ? "visible" : "hidden"}
+            className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center"
+          >
             {/* Count-change banner — appears only when the completed-projects
                 count changed since this device last saw it (issue #16). The
                 UpdateBanner's nodes are both out-of-flow (sr-only is absolute,
                 overlay is absolute inset-0), so it doesn't disturb the card's
-                stacked content. */}
+                stacked content. Not a stagger child — it owns its own visibility. */}
             <UpdateBanner
               message={projectCountBanner}
               visible={isCompletedProjectsInView}
@@ -1282,19 +1345,21 @@ const AboutDetails = () => {
             {/* Eyebrow — same uppercase micro-label treatment + amber tone as
                 the years card's "Years in the craft", so the two feature cards
                 announce themselves identically. */}
-            <p
+            <motion.p
+              variants={childVariants}
               aria-hidden="true"
               className="text-[10px] uppercase tracking-[0.22em] mb-2"
               style={{ color: "#ffaa2a", textShadow: "none" }}
             >
               Projects shipped
-            </p>
+            </motion.p>
 
             {/* Digit uses the vivid neon-orange (#ff6d05) of the sibling years
                 digit; the label now matches the years card's `text-fire-amber`
                 "of experience" tone (was the golden text-shadow-neon-light-orange)
                 so the two cards' colour systems are identical. */}
-            <h1
+            <motion.h1
+              variants={childVariants}
               className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
               style={{ color: "#ff6d05", textShadow: "none" }}
             >
@@ -1305,21 +1370,33 @@ const AboutDetails = () => {
               >
                 completed projects
               </span>
-            </h1>
+            </motion.h1>
 
             {/* Two-segment category split bar (Web / System) — the "elite &
                 complex" counterpart to the years card's Personal/Employment
-                split, same track, animated fill, legend, and percentages. */}
-            <ProjectsSplitBar
-              breakdown={PROJECT_CATEGORY_BREAKDOWN}
-              inView={isCompletedProjectsInView}
-              pulseCategories={pulseProjectCats}
-            />
-          </div>
+                split, same track, animated fill, legend, and percentages.
+                Wrapped so it joins the stagger; its own segment fill still keys
+                off `inView`. */}
+            <motion.div variants={childVariants} className="w-full">
+              <ProjectsSplitBar
+                breakdown={PROJECT_CATEGORY_BREAKDOWN}
+                inView={isCompletedProjectsInView}
+                pulseCategories={pulseProjectCats}
+              />
+            </motion.div>
+          </motion.div>
         </ItemLayout>
 
         <ItemLayout
           ref={experienceTriggerRef}
+          // On screen at scroll 0 — behind the intro loader — so its entrance
+          // reveal is gated on the loader lifting (`revealed`) instead of a
+          // `whileInView` that would fire and finish unseen behind the overlay.
+          // See ItemLayout's `revealWhen` note. `revealOrder={2}` makes it the
+          // tail of the hero cascade; `tilt` adds pointer tilt + ember glare.
+          revealWhen={revealed}
+          revealOrder={2}
+          tilt
           // Button semantics are only attached once `experienceData`
           // resolves. While loading, the card is a plain informational
           // region with `aria-busy` — exposing role="button" + click
@@ -1357,7 +1434,23 @@ const AboutDetails = () => {
               The content's flex-col stack + vertical centering moved
               from the outer to this inner so layout behaviour is
               unchanged after the restructure. */}
-          <div ref={experienceInViewRef} className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center">
+          {/* Inner wrapper carries the SAME entrance reveal as the "Most Active
+              Repository" card (shared cardVariants/childVariants): the card
+              springs up + fades in while its children — eyebrow → figure → split
+              bar — stagger up after it. Driven by `isExperienceCardInView`, which
+              (the outer ItemLayout holds scale 0 until the loader lifts — see
+              `revealWhen`) only turns true once the card is actually visible, so
+              the reveal plays in view and replays on a real scroll re-entry. */}
+          <motion.div
+            ref={experienceInViewRef}
+            variants={cardVariants}
+            initial="hidden"
+            // Entrance driven off the DEBOUNCED `settledInView` (not raw
+            // `inView`) so the `y: 56 → 0` reveal can't reset itself into an
+            // on/off flicker while the card is parked at ~10% visibility.
+            animate={settledExperienceCardInView ? "visible" : "hidden"}
+            className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center"
+          >
             <ExperienceUpdateBanner
               message={testExperienceMessage ?? experienceChangeMessage}
               inView={isExperienceCardInView}
@@ -1368,15 +1461,17 @@ const AboutDetails = () => {
             {/* Eyebrow — uppercase micro-label sets the "feature card"
                 tone before the eye lands on the digit. Amber tone reads
                 a touch warmer than the digit's vivid orange below it. */}
-            <p
+            <motion.p
+              variants={childVariants}
               aria-hidden="true"
               className="text-[10px] uppercase tracking-[0.22em] mb-2"
               style={{ color: "#ffaa2a", textShadow: "none" }}
             >
               Years in the craft
-            </p>
+            </motion.p>
 
-            <h1
+            <motion.h1
+              variants={childVariants}
               // `items-center` (not `items-baseline`): the Counter renders a
               // flex <div>, which doesn't expose a reliable text baseline to
               // the parent, so baseline alignment let the big number and the
@@ -1408,25 +1503,28 @@ const AboutDetails = () => {
                   —
                 </span>
               )}
-            </h1>
+            </motion.h1>
 
             {/* Two-segment split bar — Personal vs Employment as a share of
                 total. Renders when there's measured experience to split OR a
                 source is unavailable (so its "Unavailable" row still shows);
-                hidden only when both sources loaded and measured zero. */}
+                hidden only when both sources loaded and measured zero. Wrapped so
+                it joins the stagger; its own segment fill still keys off `inView`. */}
             {showExperienceSplit && (
-              <ExperienceSplitBar
-                personalMonths={experienceData?.personalProjects?.months ?? 0}
-                employmentMonths={experienceData?.employment?.months ?? 0}
-                // A `null` side = its source failed to load (GitHub down for
-                // personal; resume PDF missing/parse error for employment),
-                // distinct from a parsed-but-empty `{ months: 0 }`. Drives
-                // the "Unavailable" treatment instead of a misleading 0%.
-                personalAvailable={experiencePersonalAvailable}
-                employmentAvailable={experienceEmploymentAvailable}
-                inView={isExperienceCardInView}
-                pulseCategories={pulseExperienceCats}
-              />
+              <motion.div variants={childVariants} className="w-full">
+                <ExperienceSplitBar
+                  personalMonths={experienceData?.personalProjects?.months ?? 0}
+                  employmentMonths={experienceData?.employment?.months ?? 0}
+                  // A `null` side = its source failed to load (GitHub down for
+                  // personal; resume PDF missing/parse error for employment),
+                  // distinct from a parsed-but-empty `{ months: 0 }`. Drives
+                  // the "Unavailable" treatment instead of a misleading 0%.
+                  personalAvailable={experiencePersonalAvailable}
+                  employmentAvailable={experienceEmploymentAvailable}
+                  inView={isExperienceCardInView}
+                  pulseCategories={pulseExperienceCats}
+                />
+              </motion.div>
             )}
 
             {/* Hover affordance — fades in on group-hover/focus so the
@@ -1440,7 +1538,7 @@ const AboutDetails = () => {
             >
               View breakdown →
             </p>
-          </div>
+          </motion.div>
         </ItemLayout>
 
         {githubStats?.languages && <ItemLayout

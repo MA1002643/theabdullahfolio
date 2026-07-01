@@ -40,3 +40,9 @@ TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
 
 # claude code
 .claude/
+
+# editor / tool temp files (e.g. crash-leftover *.tmp.<pid>.<hash>)
+*.tmp
+*.tmp.*
+.env*
+!.env.example
