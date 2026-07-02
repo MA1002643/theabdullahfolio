@@ -87,10 +87,18 @@ function rateLimited(ip) {
 }
 
 export async function POST(req) {
-  // The gateway needs either a static key or an OIDC token. When neither is
-  // present (typically local dev before `vercel env pull`), fail with a clear,
-  // non-scary 503 so the client can simply hide the feature instead of erroring.
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+  // The gateway needs either a static key or an OIDC token. On Vercel
+  // deployments NEITHER is an env var at runtime: the OIDC token arrives
+  // per-request via the `x-vercel-oidc-token` request-context header, which
+  // @vercel/oidc reads inside the AI SDK — so running on Vercel (VERCEL=1)
+  // counts as configured. The env-var checks cover local dev, where we fail
+  // with a clear, non-scary 503 (typically before `vercel env pull`) so the
+  // client can simply hide the feature instead of erroring.
+  const gatewayConfigured =
+    process.env.AI_GATEWAY_API_KEY ||
+    process.env.VERCEL_OIDC_TOKEN ||
+    process.env.VERCEL === '1';
+  if (!gatewayConfigured) {
     return json(
       { error: 'unconfigured', message: 'Message polishing is not available right now.' },
       503,
