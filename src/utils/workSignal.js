@@ -56,6 +56,7 @@ export function computeWorkSignal({
   commits = [],
   totalActivePrs,
   totalActiveIssues,
+  totalRecentPushes,
   inProgressItems = null,
   shippedItems = null,
   now = new Date(),
@@ -72,6 +73,11 @@ export function computeWorkSignal({
     const d = safeDate(c.committedAt);
     return d && nowMs - d.getTime() <= 24 * HOUR_MS;
   });
+
+  // Like the PR/issue totals, prefer the GraphQL `history(since:).totalCount`
+  // when the caller supplies it — the node array is capped by `first:` so a
+  // very active day would otherwise under-count.
+  const pushCount = totalRecentPushes ?? recentPushes.length;
 
   const lastPrUpdate = mostRecent(
     ...activePrs.map((pr) => safeDate(pr.updatedAt)),
@@ -145,7 +151,7 @@ export function computeWorkSignal({
     (hasProjectInProgress ? 0.5 : 0) +
       (prCount > 0 ? 0.3 : 0) +
       (issueCount > 0 ? 0.1 : 0) +
-      (recentPushes.length > 0 ? 0.3 : 0),
+      (pushCount > 0 ? 0.3 : 0),
     0,
     1,
   );
@@ -154,7 +160,7 @@ export function computeWorkSignal({
     state,
     activePrs: prCount,
     activeIssues: issueCount,
-    recentPushes: recentPushes.length,
+    recentPushes: pushCount,
     topItems,
     shippedItems: hasRecentlyShipped
       ? shippedItems.slice(0, 3).map((item) => ({
@@ -172,6 +178,213 @@ export function computeWorkSignal({
 }
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+
+// ── Portfolio roll-up (issue #94) ────────────────────────────────────────
+//
+// Aggregates per-repo activity into a single portfolio-wide signal. Each
+// entry in `repos` is one tracked repo's raw GitHub data:
+//
+//   {
+//     displayName, nameWithOwner,
+//     pullRequests: [{ number, title, createdAt, updatedAt, url, state }],
+//     issues:       [{ number, title, createdAt, updatedAt, url, state }],
+//     commits:      [{ committedAt, messageHeadline, sha, url }],
+//     totalActivePrs, totalActiveIssues, totalRecentPushes,
+//     inProgressItems?, shippedItems?,   // project-board items, if any
+//   }
+//
+// The portfolio state is the highest-precedence state across all repos
+// (SHIPPING > LIVE > IN_PROGRESS > PLANNING > IDLE — same ordering as the
+// single-repo signal), counts are summed totals, and `breakdown` carries
+// the per-item lists that power the header's hover popovers.
+
+// Strongest signal first — index = precedence rank.
+const STATE_PRECEDENCE = Object.freeze([
+  WORK_STATES.SHIPPING,
+  WORK_STATES.LIVE,
+  WORK_STATES.IN_PROGRESS,
+  WORK_STATES.PLANNING,
+  WORK_STATES.IDLE,
+]);
+
+// Popover lists are capped server-side so the payload stays small; the
+// displayed counter still uses the summed totalCounts, and the client
+// renders "+ X more" for anything beyond the cap.
+const BREAKDOWN_LIMIT = 20;
+
+// Issues are capped PER REPO instead: the popover renders them as
+// collapsible per-project sections, so every tracked repo must keep its
+// own complete slice — a shared global cap would silently drop whole
+// repos once enough projects are tracked (N repos × 10 > 20). Mirrors
+// the GraphQL `first: 10` cap; the payload stays bounded by N × 10.
+const PER_REPO_ISSUE_LIMIT = 10;
+
+const byMostRecent = (key) => (a, b) => {
+  const da = safeDate(a[key])?.getTime() ?? 0;
+  const db = safeDate(b[key])?.getTime() ?? 0;
+  return db - da;
+};
+
+export function computePortfolioSignal({ repos = [], now = new Date() } = {}) {
+  const perRepo = repos.map((repo) => ({
+    repo,
+    signal: computeWorkSignal({
+      pullRequests: repo.pullRequests,
+      issues: repo.issues,
+      commits: repo.commits,
+      totalActivePrs: repo.totalActivePrs,
+      totalActiveIssues: repo.totalActiveIssues,
+      totalRecentPushes: repo.totalRecentPushes,
+      inProgressItems: repo.inProgressItems ?? null,
+      shippedItems: repo.shippedItems ?? null,
+      now,
+    }),
+  }));
+
+  const state = perRepo.reduce((strongest, { signal }) => {
+    const rank = STATE_PRECEDENCE.indexOf(signal.state);
+    return rank < STATE_PRECEDENCE.indexOf(strongest) ? signal.state : strongest;
+  }, WORK_STATES.IDLE);
+
+  const activePrs = sumBy(perRepo, (r) => r.signal.activePrs);
+  const activeIssues = sumBy(perRepo, (r) => r.signal.activeIssues);
+  const recentPushes = sumBy(perRepo, (r) => r.signal.recentPushes);
+  const projectInProgressCount = sumBy(
+    perRepo,
+    (r) => r.signal.projectInProgressCount,
+  );
+  const recentlyShippedCount = sumBy(
+    perRepo,
+    (r) => r.signal.recentlyShippedCount,
+  );
+
+  const byRepo = Object.fromEntries(
+    perRepo.map(({ repo, signal }) => [
+      repo.displayName,
+      {
+        activePrs: signal.activePrs,
+        activeIssues: signal.activeIssues,
+        recentPushes: signal.recentPushes,
+      },
+    ]),
+  );
+
+  // Flat, repo-tagged item lists for the popovers (§4.2 ActivityItem).
+  // `createdAt` drives the live "how long ago" label on the client, so
+  // the lists are sorted by it — the freshest item leads its group.
+  const tagPrIssue = (repo, type) => (node) => ({
+    repo: repo.displayName,
+    nameWithOwner: repo.nameWithOwner,
+    type,
+    number: node.number,
+    title: node.title,
+    createdAt: node.createdAt,
+    updatedAt: node.updatedAt,
+    url: node.url,
+  });
+
+  const nowMs = now.getTime();
+  const breakdown = {
+    prs: perRepo
+      .flatMap(({ repo }) => (repo.pullRequests ?? []).map(tagPrIssue(repo, 'pr')))
+      .sort(byMostRecent('createdAt'))
+      .slice(0, BREAKDOWN_LIMIT),
+    // Issues stay grouped by repo (tracked-repo order) rather than being
+    // interleaved into one global most-recent list: the popover shows one
+    // collapsible section per project, each holding that repo's 10 most
+    // recently updated open issues (the GraphQL orderBy), displayed
+    // newest-created first — the same createdAt ordering the flat list
+    // used before the accordion.
+    issues: perRepo.flatMap(({ repo }) =>
+      (repo.issues ?? [])
+        .map(tagPrIssue(repo, 'issue'))
+        .sort(byMostRecent('createdAt'))
+        .slice(0, PER_REPO_ISSUE_LIMIT),
+    ),
+    pushes: perRepo
+      .flatMap(({ repo }) =>
+        (repo.commits ?? [])
+          .filter((c) => {
+            const d = safeDate(c.committedAt);
+            return d && nowMs - d.getTime() <= 24 * HOUR_MS;
+          })
+          .map((c) => ({
+            repo: repo.displayName,
+            nameWithOwner: repo.nameWithOwner,
+            type: 'push',
+            sha: c.sha,
+            title: c.messageHeadline,
+            createdAt: c.committedAt,
+            url: c.url,
+          })),
+      )
+      .sort(byMostRecent('createdAt'))
+      .slice(0, BREAKDOWN_LIMIT),
+  };
+
+  // Project-board topItems stay authoritative when any repo has them
+  // (Phase 1: only the primary repo feeds the board). Otherwise fall back
+  // to the same PR-then-issue ordering as the single-repo signal, drawn
+  // from the whole portfolio. The issue picks use their own globally
+  // most-recent sort — breakdown.issues is grouped per repo, so its first
+  // two entries would always come from whichever repo happens to lead the
+  // tracked list rather than the freshest across the portfolio.
+  const freshestIssues = perRepo
+    .flatMap(({ repo }) => (repo.issues ?? []).map(tagPrIssue(repo, 'issue')))
+    .sort(byMostRecent('createdAt'));
+
+  const boardEntry = perRepo.find(
+    ({ signal }) => signal.projectInProgressCount > 0,
+  );
+  const topItems = boardEntry
+    ? boardEntry.signal.topItems
+    : [
+        ...breakdown.prs.slice(0, 2).map((item) => ({
+          type: 'pr',
+          number: item.number,
+          title: item.title,
+        })),
+        ...freshestIssues.slice(0, 2).map((item) => ({
+          type: 'issue',
+          number: item.number,
+          title: item.title,
+        })),
+      ].slice(0, 3);
+
+  const shippedItems = perRepo
+    .flatMap(({ signal }) => signal.shippedItems)
+    .slice(0, 3);
+
+  const lastActivity = mostRecent(
+    ...perRepo.map(({ signal }) => safeDate(signal.lastActivityAt)),
+  );
+
+  const confidence = clamp(
+    (projectInProgressCount > 0 ? 0.5 : 0) +
+      (activePrs > 0 ? 0.3 : 0) +
+      (activeIssues > 0 ? 0.1 : 0) +
+      (recentPushes > 0 ? 0.3 : 0),
+    0,
+    1,
+  );
+
+  return {
+    state,
+    activePrs,
+    activeIssues,
+    recentPushes,
+    topItems,
+    shippedItems,
+    byRepo,
+    breakdown,
+    lastActivityAt: lastActivity ? lastActivity.toISOString() : null,
+    confidence,
+    projectInProgressCount,
+    recentlyShippedCount,
+  };
+}
+
+const sumBy = (list, pick) => list.reduce((total, item) => total + pick(item), 0);
 
 // Deterministic message templates. Always available — used as the
 // baseline output, and as the fallback when AI refinement is disabled

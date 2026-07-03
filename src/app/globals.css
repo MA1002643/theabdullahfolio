@@ -1410,6 +1410,43 @@ body[data-modal-open] .control-island {
   animation: live-dot-pulse 2.8s ease-in-out infinite;
 }
 
+/* Maintenance-header delivery rail — active pipeline node breathe.
+   Opacity-only (no glow, no scale): the strip's restrained-ops direction
+   encodes urgency in cadence, not brightness. in_progress breathes at
+   2.4s; shipping tightens to 1.6s via the -fast modifier; LIVE holds a
+   steady light (stable in production) so it never takes a breathe class. */
+@keyframes rail-node-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.rail-node-breathe {
+  animation: rail-node-breathe 2.4s ease-in-out infinite;
+}
+
+.rail-node-breathe-fast {
+  animation: rail-node-breathe 1.6s ease-in-out infinite;
+}
+
+/* Vertical field rule for the maintenance header's segmented strip — the
+   elite-divider gradient rotated 90°, fading at both ends so the columns
+   read as metered instrument fields rather than boxed table cells. Kept
+   dimmer than the horizontal divider: it must separate, not decorate. */
+.elite-divider-v {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 109, 5, 0.55) 30%,
+    rgba(255, 109, 5, 0.55) 70%,
+    transparent 100%
+  );
+}
+
 .live-chip-breathe {
   animation: status-breathe 2.4s ease-in-out infinite;
 }
@@ -1435,6 +1472,8 @@ body[data-modal-open] .control-island {
 @media (prefers-reduced-motion: reduce) {
   .live-dot,
   .live-chip-breathe,
+  .rail-node-breathe,
+  .rail-node-breathe-fast,
   .status-sheen {
     animation: none !important;
   }

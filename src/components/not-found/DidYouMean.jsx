@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
-import Link from 'next/link';
+import TransitionLink from '@/components/pageTransition/TransitionLink';
 
 /**
  * Contextual recovery line for a near-miss URL. When the visitor
@@ -44,13 +44,14 @@ export default function DidYouMean({ suggestion }) {
       style={{ color: '#ffaa2a', textShadow: 'none' }}
     >
       Did you mean{' '}
-      <Link
+      <TransitionLink
         href={suggestion.href}
+        transitionLabel={suggestion.label}
         prefetch={false}
         className="font-semibold text-[#ff6d05] underline-offset-4 transition-colors duration-200 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05]"
       >
         {suggestion.label}
-      </Link>
+      </TransitionLink>
       ?
     </motion.p>
   );

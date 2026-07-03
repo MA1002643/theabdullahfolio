@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  computeWorkSignal,
+  computePortfolioSignal,
   buildMessage,
   buildSecondaryMessage,
   buildHeadline,
@@ -8,25 +8,46 @@ import {
 } from '@/utils/workSignal';
 import { refineMessageWithAI } from '@/utils/workMessageAI';
 import * as cache from '@/utils/workStatusCache';
+import {
+  TRACKED_REPOS,
+  getTrackedRepos,
+  nameWithOwnerOf,
+} from '@/utils/workTrackedRepos';
 
-// Hard-pinned per spec section 2.2 — this endpoint must NEVER report
-// activity from any other repo, even if env vars are misconfigured.
-const REPO_OWNER = 'MA1002643';
-const REPO_NAME = 'theabdullahfolio';
-const REPO_FULL_NAME = `${REPO_OWNER}/${REPO_NAME}`;
+// Multi-repo portfolio signal (issue #94). The repos this endpoint may
+// report on live in the workTrackedRepos allow-list — never in env vars —
+// so a misconfigured deployment can't widen the scope. One aliased
+// GraphQL query covers every tracked repo per request (§3.2): GraphQL
+// cost scales with `first:` caps, not with the number of aliases, so the
+// query stays at a handful of rate-limit points regardless of N.
 
 // Project board (Projects v2) at github.com/users/MA1002643/projects/3.
-// We read two columns:
+// Phase 1 of #94 keeps the board scoped to the primary (first) tracked
+// repo — generalising it across repos is Phase 3. We read two columns:
 //   - "In Progress" → drives the IN_PROGRESS state and current-work items.
 //   - "Done" (within last 48h) → drives the SHIPPING state and the
 //     "just shipped" rotating message.
 // If the PAT lacks Projects: Read or the query fails for any reason, the
 // route silently falls back to the repo-wide open-issues logic below.
+const PRIMARY_REPO_FULL_NAME = nameWithOwnerOf(TRACKED_REPOS[0]);
 const PROJECT_OWNER = 'MA1002643';
 const PROJECT_NUMBER = 3;
 const IN_PROGRESS_STATUS = 'in progress';
 const DONE_STATUS = 'done';
 const SHIPPED_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+// "Pushes 24h" counter window. Also passed to GraphQL as the commit
+// history `since:` bound so the query never pays for older history.
+const PUSH_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+// meta.activityTrace: merged per-UTC-day commit counts across tracked
+// repos for the header's ACTIVITY sparkline. 14 whole UTC-day buckets;
+// the last bucket is today (partial). The trace rides the existing
+// portfolio query as a second aliased history connection — capped at 100
+// commits per repo (~+1 GraphQL point each); overflow is flagged via
+// `truncated`, never paginated.
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TRACE_DAYS = 14;
 
 const GITHUB_API = 'https://api.github.com/graphql';
 const TOKEN = process.env.GITHUB_TOKEN;
@@ -38,6 +59,52 @@ const PROJECT_TOKEN = process.env.GITHUB_PROJECT_TOKEN ?? process.env.GITHUB_TOK
 // for the entire function timeout — surface the failure to the catch in
 // GET, which serves stale cache or the deterministic fallback.
 const GITHUB_TIMEOUT_MS = 5000;
+
+// Layered rate-limit defence (§4.2 / §5). Every portfolio query returns
+// `rateLimit { cost remaining resetAt }` in the same response, so the
+// route self-throttles instead of guessing:
+//   remaining < 200 (soft) → skip AI refinement, reject privileged busts.
+//   remaining < 50 (hard)  → stop calling GitHub entirely; serve cache
+//                            until the budget window resets.
+// Module-level like the in-memory cache: per-instance, reset on deploy.
+const RATE_SOFT_FLOOR = 200;
+const RATE_HARD_FLOOR = 50;
+let rateGuard = { remaining: null, resetAt: null };
+
+function recordRateLimit(rateLimit) {
+  if (!rateLimit || typeof rateLimit.remaining !== 'number') return;
+  const resetAtMs = rateLimit.resetAt ? Date.parse(rateLimit.resetAt) : NaN;
+  rateGuard = {
+    remaining: rateLimit.remaining,
+    resetAt: Number.isNaN(resetAtMs) ? null : resetAtMs,
+  };
+  if (process.env.NODE_ENV !== 'production') {
+    console.info(
+      `work-status rateLimit: cost=${rateLimit.cost} remaining=${rateLimit.remaining} resetAt=${rateLimit.resetAt}`,
+    );
+  }
+  if (typeof rateLimit.cost === 'number' && rateLimit.cost > 20) {
+    console.warn(
+      `work-status: GraphQL query cost ${rateLimit.cost} pts exceeds the 20-pt alert threshold — check TRACKED_REPOS size and 'first:' caps`,
+    );
+  }
+  if (rateLimit.remaining < RATE_SOFT_FLOOR) {
+    console.warn(
+      `work-status: GitHub rate budget low (${rateLimit.remaining} pts remaining, resets ${rateLimit.resetAt}) — pausing AI refinement and privileged busts`,
+    );
+  }
+}
+
+function rateGuardActive(floor) {
+  if (typeof rateGuard.remaining !== 'number') return false;
+  if (rateGuard.remaining >= floor) return false;
+  // The budget window has rolled over — clear the guard and resume.
+  if (rateGuard.resetAt && Date.now() >= rateGuard.resetAt) {
+    rateGuard = { remaining: null, resetAt: null };
+    return false;
+  }
+  return true;
+}
 
 async function fetchGitHubGraphQL(token, body) {
   const controller = new AbortController();
@@ -87,6 +154,19 @@ export async function GET(request) {
 
   const bust = bustRequested && bustAuthorized;
 
+  // Even authorized busts are refused while the GitHub budget is low —
+  // a bust exists to force spending, which is exactly what the guard is
+  // protecting against (§9.5).
+  if (bust && rateGuardActive(RATE_SOFT_FLOOR)) {
+    return NextResponse.json(
+      { error: 'GitHub rate-limit guard active — bust rejected' },
+      {
+        status: 429,
+        headers: { 'Cache-Control': 'private, no-store, must-revalidate' },
+      },
+    );
+  }
+
   if (!bust) {
     const fresh = cache.read();
     if (fresh) return jsonResponse(fresh, 'HIT');
@@ -102,14 +182,26 @@ export async function GET(request) {
     return jsonResponse(payload, 'FALLBACK', { bust });
   }
 
+  // Hard floor: below RATE_HARD_FLOOR remaining points the route stops
+  // calling GitHub entirely until the window resets — stale data beats
+  // burning the last of the budget.
+  if (rateGuardActive(RATE_HARD_FLOOR)) {
+    console.warn(
+      'work-status: hard rate-limit floor active — serving cache without fetching',
+    );
+    const stale = cache.readStale();
+    const payload =
+      stale ??
+      buildIdlePayload('GitHub rate budget exhausted — waiting for reset.');
+    return jsonResponse(payload, 'RATE_LIMITED', { bust });
+  }
+
   try {
-    // Project board query is authoritative when available; fall back to
-    // repo-wide open issues if the PAT lacks Projects: Read or the query
-    // returns no in-progress items. Run both in parallel — even when the
-    // project succeeds, the repo data feeds the counts and recent-commit
-    // detection.
-    const [raw, projectActivity] = await Promise.all([
-      fetchRepoActivity(),
+    // Portfolio query and project board query run in parallel. The board
+    // is authoritative for IN_PROGRESS/SHIPPING when available; the
+    // portfolio data always feeds the counts and popover breakdown.
+    const [portfolio, projectActivity] = await Promise.all([
+      fetchPortfolioActivity(getTrackedRepos()),
       fetchProjectActivity().catch((err) => {
         console.warn(
           'Project board unavailable, using fallback signal:',
@@ -119,22 +211,31 @@ export async function GET(request) {
       }),
     ]);
 
+    recordRateLimit(portfolio.rateLimit);
+
     const inProgressItems = projectActivity?.inProgressItems ?? null;
     const shippedItems = projectActivity?.shippedItems ?? null;
 
-    const signal = computeWorkSignal({
-      ...raw,
-      inProgressItems,
-      shippedItems,
-    });
+    // Board items belong to the primary repo (fetchProjectActivity already
+    // filters to it), so attach them to that repo's entry for the roll-up.
+    const repos = portfolio.repos.map((repo) =>
+      repo.nameWithOwner.toLowerCase() ===
+      PRIMARY_REPO_FULL_NAME.toLowerCase()
+        ? { ...repo, inProgressItems, shippedItems }
+        : repo,
+    );
+
+    const signal = computePortfolioSignal({ repos });
     const baseMessage = buildMessage(signal);
     const secondaryMessage = buildSecondaryMessage(signal);
     const headline = buildHeadline(signal);
 
-    const message = await refineMessageWithAI({
-      signal,
-      fallback: baseMessage,
-    });
+    // Soft floor: the deterministic template is free — skip the OpenAI
+    // call while the GitHub budget is under pressure (§4.5).
+    const softRateLimit = rateGuardActive(RATE_SOFT_FLOOR);
+    const message = softRateLimit
+      ? baseMessage
+      : await refineMessageWithAI({ signal, fallback: baseMessage });
 
     const payload = {
       state: signal.state,
@@ -146,15 +247,25 @@ export async function GET(request) {
       // shipped" get airtime in the same header.
       secondaryMessage,
       meta: {
+        // Summed portfolio totals — field names unchanged from the
+        // single-repo payload so stale client builds keep working (§4.6).
         activePrs: signal.activePrs,
         activeIssues: signal.activeIssues,
         recentPushes: signal.recentPushes,
         topItems: signal.topItems,
         shippedItems: signal.shippedItems,
         recentlyShippedCount: signal.recentlyShippedCount,
+        // Additive multi-repo fields powering the hover popovers.
+        byRepo: signal.byRepo,
+        breakdown: signal.breakdown,
+        // 14-day commit sparkline for the header's ACTIVITY field.
+        activityTrace: buildActivityTrace(repos, portfolio.traceSince),
         confidence: signal.confidence,
         lastUpdated: new Date().toISOString(),
         lastActivityAt: signal.lastActivityAt,
+        // Soft warning for the client's adaptive polling — it backs off
+        // to a slower cadence while the guard is active (§5).
+        ...(softRateLimit ? { softRateLimit: true } : {}),
       },
     };
 
@@ -187,6 +298,8 @@ const jsonResponse = (payload, cacheStatus, { bust = false } = {}) =>
     },
   });
 
+const EMPTY_BREAKDOWN = { prs: [], issues: [], pushes: [] };
+
 const buildIdlePayload = (note) => {
   const signal = {
     state: WORK_STATES.IDLE,
@@ -206,6 +319,9 @@ const buildIdlePayload = (note) => {
       activeIssues: 0,
       recentPushes: 0,
       topItems: [],
+      byRepo: {},
+      breakdown: EMPTY_BREAKDOWN,
+      activityTrace: emptyActivityTrace(),
       confidence: 0,
       lastUpdated: new Date().toISOString(),
       lastActivityAt: null,
@@ -214,40 +330,65 @@ const buildIdlePayload = (note) => {
   };
 };
 
-// Single GraphQL query covering open PRs, open issues, and recent commits
-// on the default branch. Smaller than three round-trips and stays within
-// the strict scope rule (one repo only).
-async function fetchRepoActivity() {
-  // totalCount on the connections gives the true count regardless of how
-  // many nodes we paginate. We still only fetch 10 detailed nodes per
-  // collection because they're only used for "top items" in the message
-  // and for the most-recent timestamp.
-  const query = `
-    query($owner: String!, $name: String!) {
-      repository(owner: $owner, name: $name) {
-        pullRequests(states: OPEN, first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
-          totalCount
-          nodes {
-            number
-            title
-            updatedAt
-          }
+// One aliased GraphQL query covering open PRs, open issues, and recent
+// default-branch commits for EVERY tracked repo (§3.2). Aliases share a
+// single HTTP round-trip and a single rate-limit read; `totalCount` on
+// each connection gives true counts regardless of the 10-node pagination
+// cap, which only bounds the popover lists.
+function buildPortfolioQuery(repos) {
+  const varDecls = repos
+    .map((_, i) => `$r${i}Owner: String!, $r${i}Name: String!`)
+    .join(', ');
+  const aliases = repos
+    .map(
+      (_, i) =>
+        `r${i}: repository(owner: $r${i}Owner, name: $r${i}Name) { ...RepoActivity }`,
+    )
+    .join('\n      ');
+
+  return `
+    query Portfolio($since: GitTimestamp!, $traceSince: GitTimestamp!, ${varDecls}) {
+      rateLimit { cost remaining resetAt }
+      ${aliases}
+    }
+    fragment RepoActivity on Repository {
+      nameWithOwner
+      pullRequests(states: OPEN, first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
+        totalCount
+        nodes {
+          number
+          title
+          createdAt
+          updatedAt
+          url
         }
-        issues(states: OPEN, first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
-          totalCount
-          nodes {
-            number
-            title
-            updatedAt
-          }
+      }
+      issues(states: OPEN, first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
+        totalCount
+        nodes {
+          number
+          title
+          createdAt
+          updatedAt
+          url
         }
-        defaultBranchRef {
-          target {
-            ... on Commit {
-              history(first: 100) {
-                nodes {
-                  committedDate
-                }
+      }
+      defaultBranchRef {
+        target {
+          ... on Commit {
+            history(first: 30, since: $since) {
+              totalCount
+              nodes {
+                committedDate
+                messageHeadline
+                abbreviatedOid
+                url
+              }
+            }
+            trace: history(first: 100, since: $traceSince) {
+              totalCount
+              nodes {
+                committedDate
               }
             }
           }
@@ -255,10 +396,62 @@ async function fetchRepoActivity() {
       }
     }
   `;
+}
+
+const mapRepoNode = (repo, node) => ({
+  displayName: repo.displayName,
+  nameWithOwner: node.nameWithOwner ?? nameWithOwnerOf(repo),
+  pullRequests: (node.pullRequests?.nodes ?? []).map((pr) => ({
+    number: pr.number,
+    title: pr.title,
+    createdAt: pr.createdAt,
+    updatedAt: pr.updatedAt,
+    url: pr.url,
+    state: 'open',
+  })),
+  issues: (node.issues?.nodes ?? []).map((i) => ({
+    number: i.number,
+    title: i.title,
+    createdAt: i.createdAt,
+    updatedAt: i.updatedAt,
+    url: i.url,
+    state: 'open',
+  })),
+  commits: (node.defaultBranchRef?.target?.history?.nodes ?? []).map((c) => ({
+    committedAt: c.committedDate,
+    messageHeadline: c.messageHeadline,
+    sha: c.abbreviatedOid,
+    url: c.url,
+  })),
+  totalActivePrs: node.pullRequests?.totalCount ?? 0,
+  totalActiveIssues: node.issues?.totalCount ?? 0,
+  totalRecentPushes: node.defaultBranchRef?.target?.history?.totalCount ?? 0,
+  // 14-day trace (additive; computePortfolioSignal destructures only the
+  // keys it knows, so these ride along inertly and can't shift the
+  // signal). Dates only — the trace needs day buckets, not commit detail.
+  traceCommitDates: (node.defaultBranchRef?.target?.trace?.nodes ?? []).map(
+    (c) => c.committedDate,
+  ),
+  traceTotalCount: node.defaultBranchRef?.target?.trace?.totalCount ?? 0,
+});
+
+async function fetchPortfolioActivity(repos) {
+  const since = new Date(Date.now() - PUSH_WINDOW_MS).toISOString();
+  // Trace bound: UTC midnight opening the oldest of the 14 buckets, so
+  // bucketing math in buildActivityTrace aligns exactly with the GraphQL
+  // `since:` bound (UTC has no DST — integer division by DAY_MS is exact).
+  const traceSinceDate = new Date(Date.now() - (TRACE_DAYS - 1) * DAY_MS);
+  traceSinceDate.setUTCHours(0, 0, 0, 0);
+  const traceSince = traceSinceDate.toISOString();
+  const variables = { since, traceSince };
+  repos.forEach((repo, i) => {
+    variables[`r${i}Owner`] = repo.owner;
+    variables[`r${i}Name`] = repo.name;
+  });
 
   const response = await fetchGitHubGraphQL(TOKEN, {
-    query,
-    variables: { owner: REPO_OWNER, name: REPO_NAME },
+    query: buildPortfolioQuery(repos),
+    variables,
   });
 
   if (!response.ok) {
@@ -266,41 +459,74 @@ async function fetchRepoActivity() {
   }
 
   const json = await response.json();
-  if (json.errors) {
-    throw new Error(json.errors[0]?.message ?? 'GraphQL error');
+
+  // Partial-failure tolerance (§9.2): when one alias errors (repo renamed,
+  // token scope, etc.) GitHub returns `null` for that alias plus an
+  // `errors` array while the other aliases still resolve. Keep whatever
+  // resolved; only fail the request when NO repo came back.
+  if (Array.isArray(json.errors) && json.errors.length > 0) {
+    console.warn(
+      'work-status GraphQL partial errors:',
+      json.errors.map((e) => e?.message ?? 'unknown').join('; '),
+    );
   }
 
-  const repo = json.data?.repository;
-  if (!repo) throw new Error('repository not found');
+  const results = [];
+  repos.forEach((repo, i) => {
+    const node = json.data?.[`r${i}`];
+    if (!node) {
+      console.warn(
+        `work-status: no data for tracked repo ${nameWithOwnerOf(repo)} — skipping`,
+      );
+      return;
+    }
+    results.push(mapRepoNode(repo, node));
+  });
 
-  const pullRequests = (repo.pullRequests?.nodes ?? []).map((pr) => ({
-    number: pr.number,
-    title: pr.title,
-    updatedAt: pr.updatedAt,
-    state: 'open',
-  }));
+  if (results.length === 0) {
+    throw new Error(
+      json.errors?.[0]?.message ?? 'no repository data returned',
+    );
+  }
 
-  const issues = (repo.issues?.nodes ?? []).map((i) => ({
-    number: i.number,
-    title: i.title,
-    updatedAt: i.updatedAt,
-    state: 'open',
-  }));
-
-  const commits = (repo.defaultBranchRef?.target?.history?.nodes ?? []).map(
-    (c) => ({
-      committedAt: c.committedDate,
-    }),
-  );
-
-  return {
-    pullRequests,
-    issues,
-    commits,
-    totalActivePrs: repo.pullRequests?.totalCount ?? pullRequests.length,
-    totalActiveIssues: repo.issues?.totalCount ?? issues.length,
-  };
+  return { repos: results, rateLimit: json.data?.rateLimit ?? null, traceSince };
 }
+
+// Merged per-UTC-day commit counts across tracked repos. counts[0] is the
+// oldest day (traceSince), counts[TRACE_DAYS - 1] is today (UTC, partial).
+// `total` carries the true GraphQL totalCounts, so it stays accurate even
+// when a repo's nodes were capped (in which case only the OLDEST buckets
+// under-count — history arrives newest-first — and `truncated` flags it).
+function buildActivityTrace(repos, sinceIso) {
+  const sinceMs = Date.parse(sinceIso);
+  const counts = new Array(TRACE_DAYS).fill(0);
+  let total = 0;
+  let truncated = false;
+  for (const repo of repos) {
+    const dates = repo.traceCommitDates ?? [];
+    total += repo.traceTotalCount ?? 0;
+    if ((repo.traceTotalCount ?? 0) > dates.length) truncated = true;
+    for (const iso of dates) {
+      const t = Date.parse(iso);
+      if (Number.isNaN(t)) continue;
+      const idx = Math.floor((t - sinceMs) / DAY_MS);
+      if (idx >= 0 && idx < TRACE_DAYS) counts[idx] += 1;
+    }
+  }
+  return { days: TRACE_DAYS, since: sinceIso, counts, total, truncated };
+}
+
+const emptyActivityTrace = () => {
+  const start = new Date(Date.now() - (TRACE_DAYS - 1) * DAY_MS);
+  start.setUTCHours(0, 0, 0, 0);
+  return {
+    days: TRACE_DAYS,
+    since: start.toISOString(),
+    counts: new Array(TRACE_DAYS).fill(0),
+    total: 0,
+    truncated: false,
+  };
+};
 
 // Reads the user's Projects v2 board and returns:
 //   - inProgressItems: items in the "In Progress" status column
@@ -388,7 +614,7 @@ async function fetchProjectActivity() {
     const c = item?.content;
     if (!c) continue;
     if (c.__typename !== 'Issue' && c.__typename !== 'PullRequest') continue;
-    if (c.repository?.nameWithOwner !== REPO_FULL_NAME) continue;
+    if (c.repository?.nameWithOwner !== PRIMARY_REPO_FULL_NAME) continue;
 
     const status = (item.fieldValues?.nodes ?? []).find(
       (v) =>

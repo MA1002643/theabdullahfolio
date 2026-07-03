@@ -18,8 +18,13 @@ import { CATEGORY_ORDER } from "./skillsIconUrl";
  * sequence is deterministic — which is what makes the fingerprint stable and
  * lets a pure add/remove be told apart from a reorder.
  *
- * @param {Record<string, Array<{ slug: string, displayName: string }>>} categories
- * @returns {Array<{ slug: string, displayName: string, category: string }>}
+ * Each flat item also carries the skill's per-repo usage data — public repo
+ * names (`repos`, already server-sorted) and the bare `privateRepoCount` — so
+ * the update signal can detect COUNT/list changes on an existing icon (a new
+ * repo using the skill) and heartbeat it, not just presence/category changes.
+ *
+ * @param {Record<string, Array<{ slug: string, displayName: string, repos?: Array<{nameWithOwner?: string, name?: string}>, privateRepoCount?: number }>>} categories
+ * @returns {Array<{ slug: string, displayName: string, category: string, repos: string[], privateRepoCount: number }>}
  */
 export function flattenCategories(categories) {
   if (!categories || typeof categories !== "object") return [];
@@ -33,6 +38,10 @@ export function flattenCategories(categories) {
         slug: item.slug,
         displayName: typeof item.displayName === "string" ? item.displayName : item.slug,
         category,
+        repos: Array.isArray(item.repos)
+          ? item.repos.map((r) => r?.nameWithOwner || r?.name || "").filter(Boolean)
+          : [],
+        privateRepoCount: Number.isFinite(item.privateRepoCount) ? item.privateRepoCount : 0,
       });
     }
   }
@@ -54,6 +63,64 @@ export function flattenCategories(categories) {
 export function skillsFingerprint(skills) {
   if (!Array.isArray(skills) || skills.length === 0) return "";
   return skills.map((s) => `${s?.slug ?? ""}:${s?.category ?? ""}`).join("|");
+}
+
+/**
+ * Data-level fingerprint — the structural pair PLUS each skill's repo usage
+ * (public repo names and private count). Registers everything the structural
+ * fingerprint does AND a repo starting/stopping to use an existing skill, which
+ * is what drives the per-icon "data updated" heartbeat. Kept SEPARATE from
+ * `skillsFingerprint` on purpose: the banner diffs presence/category only, and
+ * folding counts into its fingerprint would fire a banner with nothing to say.
+ * Deterministic for a given payload (repos arrive server-sorted, flatten order
+ * is CATEGORY_ORDER).
+ *
+ * @param {Array<{ slug: string, category?: string, repos?: string[], privateRepoCount?: number }>} skills
+ * @returns {string}
+ */
+export function skillsDataFingerprint(skills) {
+  if (!Array.isArray(skills) || skills.length === 0) return "";
+  return skills
+    .map(
+      (s) =>
+        `${s?.slug ?? ""}:${s?.category ?? ""}:${(Array.isArray(s?.repos) ? s.repos : []).join(",")}:${
+          Number.isFinite(s?.privateRepoCount) ? s.privateRepoCount : 0
+        }`,
+    )
+    .join("|");
+}
+
+/**
+ * Skills present in BOTH lists whose repo usage changed — the public repo list
+ * (by content, order-insensitive via the server's stable sort) or the private
+ * count. These get the icon heartbeat WITHOUT a banner entry (the banner
+ * vocabulary is Added/Removed/Moved; a count change isn't any of those).
+ * Baseline items saved before repo data existed (no `repos`/`privateRepoCount`
+ * fields) are skipped — "unknown" must not read as "changed", or the first
+ * visit after deploy would pulse every icon at once.
+ *
+ * @param {Array<{ slug: string, category?: string, repos?: string[], privateRepoCount?: number }>} prev
+ * @param {Array<{ slug: string, category?: string, repos?: string[], privateRepoCount?: number }>} next
+ * @returns {Array<{ slug: string, category: string|null }>}
+ */
+export function diffSkillData(prev, next) {
+  const hasSlug = (s) => s != null && typeof s.slug === "string" && s.slug.length > 0;
+  const prevBySlug = new Map(
+    (Array.isArray(prev) ? prev : []).filter(hasSlug).map((s) => [s.slug, s]),
+  );
+  const changed = [];
+  for (const s of Array.isArray(next) ? next : []) {
+    if (!hasSlug(s)) continue;
+    const before = prevBySlug.get(s.slug);
+    if (!before) continue; // brand-new skill — that's `added`, not `changed`
+    if (!Array.isArray(before.repos) || !Number.isFinite(before.privateRepoCount)) continue;
+    const reposChanged =
+      before.repos.join(",") !== (Array.isArray(s.repos) ? s.repos : []).join(",");
+    const privateChanged =
+      before.privateRepoCount !== (Number.isFinite(s.privateRepoCount) ? s.privateRepoCount : 0);
+    if (reposChanged || privateChanged) changed.push({ slug: s.slug, category: s.category ?? null });
+  }
+  return changed;
 }
 
 /**

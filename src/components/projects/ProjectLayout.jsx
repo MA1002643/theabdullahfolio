@@ -1,14 +1,14 @@
 "use client"
 
 import { motion } from "framer-motion"
-import Link from "next/link"
+import TransitionLink from "@/components/pageTransition/TransitionLink"
 
 const item = {
   hidden: { opacity: 0, y: 100 },
   show: { opacity: 1, y: 0 },
 }
 
-const ProjectLink = motion(Link)
+const ProjectLink = motion(TransitionLink)
 
 const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   const handleClick = () => {
@@ -21,6 +21,7 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
     <ProjectLink
       variants={item}
       href={`/projects/${id}`}
+      transitionLabel={name}
       onClick={handleClick}
       className="text-sm md:text-base flex items-center justify-between w-full relative rounded-lg overflow-hidden p-4 md:p-6 custom-bg-abt"
     >

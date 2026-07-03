@@ -199,13 +199,23 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
   }, [anchorRect]);
 
   const repos = Array.isArray(skill.repos) ? skill.repos : [];
+  // Private usage arrives as a bare COUNT (names are withheld server-side —
+  // this payload is public and CDN-cached). It shows only in the header's
+  // public/private breakdown — the list below stays public links alone.
+  const privateCount =
+    Number.isFinite(skill.privateRepoCount) && skill.privateRepoCount > 0
+      ? skill.privateRepoCount
+      : 0;
+  const publicCount = repos.length;
 
   // Staggered, replay-on-scroll reveal for the internal repo list (gated on
   // `pos` so it doesn't fire while the panel is still positioning off-screen).
   useStaggeredScrollReveal(listScrollRef, {
     enabled: Boolean(pos),
     prefersReducedMotion,
-    resetKey: repos.length,
+    // Rendered ROW count — the "All repositories are private" note occupies one
+    // row when there are no public rows to list.
+    resetKey: repos.length || (privateCount > 0 ? 1 : 0),
   });
 
   return createPortal(
@@ -264,13 +274,35 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
               <span className="truncate">{skill.displayName}</span>
             </h3>
             <p className="text-[11px] mb-3" style={{ color: "rgba(255, 170, 42, 0.6)" }}>
-              {/* Full count for assistive tech; the visible digits count up. */}
+              {/* Public/private breakdown — zero segments are omitted (a
+                  private-only skill reads "Repositories: 2 private"). The
+                  sr-only twin carries the final values with a comma (a slash
+                  reads as the word "slash" in most screen readers); the visible
+                  digits count up. */}
               <span className="sr-only">
-                {repos.length} {repos.length === 1 ? "repository" : "repositories"}
+                Repositories:{" "}
+                {[
+                  publicCount > 0 ? `${publicCount} public` : null,
+                  privateCount > 0 ? `${privateCount} private` : null,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
               </span>
               <span aria-hidden="true">
-                <RepoCount count={repos.length} play={Boolean(pos)} prefersReducedMotion={prefersReducedMotion} />{" "}
-                {repos.length === 1 ? "repository" : "repositories"}
+                Repositories:{" "}
+                {publicCount > 0 && (
+                  <>
+                    <RepoCount count={publicCount} play={Boolean(pos)} prefersReducedMotion={prefersReducedMotion} />{" "}
+                    public
+                  </>
+                )}
+                {publicCount > 0 && privateCount > 0 && "/"}
+                {privateCount > 0 && (
+                  <>
+                    <RepoCount count={privateCount} play={Boolean(pos)} prefersReducedMotion={prefersReducedMotion} />{" "}
+                    private
+                  </>
+                )}
               </span>
             </p>
             <div aria-hidden="true" className="h-px elite-divider mb-3" />
@@ -311,6 +343,23 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
                 )}
               </li>
             ))}
+            {publicCount === 0 && privateCount > 0 && (
+              // Private-only skill: where the public repo rows would list, a
+              // single muted note explains why the list is empty instead of the
+              // panel just stopping at the count. Same row anatomy (dot + text,
+              // data-reveal-row stagger) so it reads as part of the list, but
+              // dimmed and non-link — nothing here is clickable by design.
+              <li data-reveal-row className="text-xs flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ background: "rgba(255, 170, 42, 0.45)" }}
+                />
+                <span className="truncate italic" style={{ color: "rgba(255, 170, 42, 0.6)" }}>
+                  All repositories are private
+                </span>
+              </li>
+            )}
           </ul>
         </motion.div>
       </div>

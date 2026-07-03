@@ -391,7 +391,7 @@ export default function StreakStatsCard({ data }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: settledInView ? 1 : 0 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeOut" }}
-      className="repo-card-breathe rounded-lg w-full h-full relative overflow-hidden p-5 sm:p-6 flex flex-col justify-center"
+      className="repo-card-breathe rounded-lg w-full h-full relative overflow-hidden p-5 sm:p-6 flex flex-col"
     >
       <UpdateBanner
         message={bannerMessage}
@@ -415,12 +415,16 @@ export default function StreakStatsCard({ data }) {
       </div>
 
       {/* Stagger container — reveals Total Contributions → Current Streak →
-          Longest Streak in a left-to-right cascade on each viewport entry. */}
+          Longest Streak in a left-to-right cascade on each viewport entry.
+          `my-auto` centres the stats row in the height left under the header,
+          which stays pinned to the top like the sibling cards' headers (the
+          root deliberately has no `justify-center`, which would drag the
+          title toward the card's vertical middle when `h-full` stretches it). */}
       <motion.div
         variants={STAGGER_CONTAINER}
         initial="hidden"
         animate={settledInView ? "visible" : "hidden"}
-        className="flex flex-col sm:flex-row items-stretch justify-between gap-5 sm:gap-2"
+        className="my-auto flex flex-col sm:flex-row items-stretch justify-between gap-5 sm:gap-2"
       >
         {/* Total Contributions */}
         <StatBlock

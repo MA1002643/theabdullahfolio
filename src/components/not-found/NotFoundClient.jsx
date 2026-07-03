@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { track } from '@vercel/analytics';
 
 import bg from '../../../public/background/contact-bg.png';
-import AboutAuroraDustMount from '@/components/about/AboutAuroraDustMount';
+import AuroraDustMount from '@/components/AuroraDustMount';
 import { onMediaChange } from '@/lib/mediaQuery';
 import DidYouMean from './DidYouMean';
 import GlitchText from './GlitchText';
@@ -210,7 +210,7 @@ export default function NotFoundClient() {
         className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-50"
       />
       <div className="-z-40 fixed top-0 left-0 w-full h-full bg-black/70" />
-      <AboutAuroraDustMount />
+      <AuroraDustMount />
 
       <div className="relative z-10 flex flex-col items-center gap-6">
         <GlitchText

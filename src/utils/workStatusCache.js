@@ -12,20 +12,29 @@
 // misses/hour × 2 tokens = ~240 GraphQL queries/hour, well under each
 // token's 5,000 point/hour limit (~5% utilisation).
 const TTL_MS = 30 * 1000;
+
+// Payload schema version (issue #94 §4.4). The cache is in-memory today so
+// a deploy already clears it, but the version gate makes the invariant
+// explicit: if this module ever grows a persistent backend (Upstash is
+// already a dependency), an older-schema payload — v1 lacks
+// `meta.byRepo` / `meta.breakdown`, v2 lacks `meta.activityTrace` — can
+// never be served to a client build that expects the newer shape.
+const SCHEMA_VERSION = 'v3-activity-trace';
 let entry = null;
 
 export function read() {
-  if (!entry) return null;
+  if (!entry || entry.version !== SCHEMA_VERSION) return null;
   if (Date.now() - entry.timestamp > TTL_MS) return null;
   return entry.payload;
 }
 
 export function readStale() {
-  return entry?.payload ?? null;
+  if (!entry || entry.version !== SCHEMA_VERSION) return null;
+  return entry.payload;
 }
 
 export function write(payload) {
-  entry = { payload, timestamp: Date.now() };
+  entry = { payload, timestamp: Date.now(), version: SCHEMA_VERSION };
 }
 
 export function invalidate() {

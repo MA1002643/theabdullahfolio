@@ -2,7 +2,7 @@ import Image from 'next/image';
 import bg from '../../../../public/background/contact-bg.png';
 import Form from '@/components/contact/Form';
 import ContactIntro from '@/components/contact/ContactIntro';
-import AuroraMount from '@/components/contact/AuroraMount';
+import AuroraDustMount from '@/components/AuroraDustMount';
 import PageTitle from '@/components/PageTitle';
 
 export const metadata = {
@@ -21,10 +21,11 @@ export default function Contact() {
       />
       <div className="fixed left-0 top-0 -z-40 h-full w-full bg-black/70" />
 
-      {/* Ambient WebGL aurora gradient flow that drifts and bends toward the
-          cursor. Self-gates on motion preference + loader reveal; the static
-          image above stays the reduced-motion fallback. */}
-      <AuroraMount />
+      {/* Shared ambient WebGL aurora (same layer as the about and 404 pages):
+          drifts, bends toward the cursor, and parallax-shifts with scroll.
+          Self-gates on motion preference + loader reveal; the static image
+          above stays the reduced-motion fallback. */}
+      <AuroraDustMount />
 
       <article className="relative flex w-full flex-col items-center justify-center space-y-6 py-2 sm:py-0">
         <div className="flex w-full flex-col items-center justify-center space-y-6 sm:w-3/4">

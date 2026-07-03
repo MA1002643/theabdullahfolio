@@ -1,4 +1,4 @@
-import { streamText, toTextStream, createTextStreamResponse, APICallError } from 'ai';
+import { streamText, createTextStreamResponse } from 'ai';
 
 // Pin the Node.js runtime, matching the repo's other API routes. The AI SDK +
 // gateway stack targets Node >=22; pinning also prevents accidental Edge
@@ -162,27 +162,76 @@ export async function POST(req) {
       },
     });
 
-    // v7 stateless helpers: turn the result's stream into a plain UTF-8 text
-    // stream and hand it back as a streaming Response the client reads chunk by
-    // chunk. (`result.toTextStreamResponse()` still works but is deprecated.)
+    // `result.stream` reports model/gateway failures as `error` PARTS inside
+    // the stream — only transport errors throw. The `toTextStream` helper
+    // silently drops every non-text part, so piping it straight into the
+    // response would turn a pre-first-token failure (gateway auth, billing
+    // gate, upstream 5xx) into an empty 200 that the client can't tell from a
+    // real-but-empty rewrite and that status-code monitoring can't see at all.
+    // Instead, drain the stream by hand until the first text token arrives: up
+    // to that point the status line is still ours, so an early failure can
+    // surface as real JSON through the catch below. Only then start streaming.
+    const reader = result.stream.getReader();
+    let firstText;
+    for (;;) {
+      const { value: part, done } = await reader.read();
+      if (done) {
+        const err = new Error('model stream ended before any text');
+        err.name = 'EmptyStreamError';
+        throw err;
+      }
+      if (part.type === 'error') throw part.error;
+      if (part.type === 'text-delta' && part.text) {
+        firstText = part.text;
+        break;
+      }
+      // start/step bookkeeping parts — keep draining.
+    }
+
     return createTextStreamResponse({
-      stream: toTextStream({ stream: result.stream }),
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue(firstText);
+        },
+        async pull(controller) {
+          for (;;) {
+            const { value: part, done } = await reader.read();
+            if (done) return controller.close();
+            // Once tokens have flowed the 200 is already on the wire, so the
+            // only honest signal left for a failure is terminating the body:
+            // the client's read() rejects and it shows its retry copy instead
+            // of presenting a half-finished rewrite as done.
+            if (part.type === 'error') return controller.error(part.error);
+            if (part.type === 'text-delta' && part.text) return controller.enqueue(part.text);
+          }
+        },
+        cancel(reason) {
+          return reader.cancel(reason);
+        },
+      }),
     });
   } catch (err) {
-    if (APICallError.isInstance(err)) {
-      if (err.statusCode === 429)
-        return json({ error: 'rate_limited', message: 'Too many requests — try again in a moment.' }, 429);
-      if (err.statusCode === 402)
-        return json({ error: 'budget', message: 'Message polishing is paused right now.' }, 402);
+    // The visitor navigated away or aborted — nobody is listening; stay quiet.
+    if (err?.name === 'AbortError' || req.signal.aborted) {
+      return json({ error: 'aborted', message: 'Request cancelled.' }, 499);
     }
+    // Gateway errors and APICallErrors both carry a numeric statusCode; read it
+    // structurally so both families map without importing either error class.
+    const statusCode = typeof err?.statusCode === 'number' ? err.statusCode : undefined;
+    if (statusCode === 429)
+      return json({ error: 'rate_limited', message: 'Too many requests — try again in a moment.' }, 429);
+    if (statusCode === 402)
+      return json({ error: 'budget', message: 'Message polishing is paused right now.' }, 402);
     // Log only structural fields — never the raw error, and not the free-text
-    // `.message`: an AI SDK APICallError carries provider request/response bodies
-    // and can surface them in its message, which may echo the visitor's authored
+    // `.message`: AI SDK errors carry provider request/response bodies and can
+    // surface them in their message, which may echo the visitor's authored
     // content. `name` + `statusCode` are enough to diagnose without that leak.
-    console.error('refine-message failed', {
-      name: err?.name,
-      statusCode: APICallError.isInstance(err) ? err.statusCode : undefined,
-    });
+    console.error('refine-message failed', { name: err?.name, statusCode });
+    // 401/403 are service-side configuration problems (expired gateway auth,
+    // the billing gate's customer_verification_required) — retrying won't help
+    // the visitor, so reuse the same quiet copy as the unconfigured 503.
+    if (statusCode === 401 || statusCode === 403)
+      return json({ error: 'unavailable', message: 'Message polishing is not available right now.' }, 503);
     return json({ error: 'failed', message: 'Could not polish the message. Please try again.' }, 500);
   }
 }

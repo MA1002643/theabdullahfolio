@@ -1,9 +1,9 @@
 'use client';
 import { motion } from 'framer-motion';
 import { Home } from 'lucide-react';
-import Link from 'next/link';
+import TransitionLink from '@/components/pageTransition/TransitionLink';
 
-const NavLink = motion(Link);
+const NavLink = motion(TransitionLink);
 
 const HomeBtn = () => {
   return (
@@ -14,6 +14,7 @@ const HomeBtn = () => {
         transition={{ delay: 1 }}
         whileTap={{ scale: 0.96 }}
         href='/'
+        transitionLabel='Home'
         prefetch={false}
         className='text-foreground rounded-full flex items-center justify-center custom-bg touch-manipulation pointer-events-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05]'
       >
