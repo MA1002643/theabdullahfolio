@@ -353,6 +353,7 @@ export function computePortfolioSignal({ repos = [], now = new Date() } = {}) {
 
   const shippedItems = perRepo
     .flatMap(({ signal }) => signal.shippedItems)
+    .sort(byMostRecent('closedAt'))
     .slice(0, 3);
 
   const lastActivity = mostRecent(

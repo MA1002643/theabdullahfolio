@@ -756,7 +756,7 @@ export default function MetricPopover({
         // `underline={false}` opts a trigger out (the STATE column: its
         // delivery rail sits at the bottom edge, and an underline under
         // the rail reads as a fifth pipeline element).
-        className={`group relative inline-flex cursor-pointer items-baseline rounded-sm before:absolute before:-inset-x-1.5 before:-inset-y-3 before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]${
+        className={`group relative inline-flex cursor-pointer items-baseline rounded-sm before:absolute before:-inset-x-1.5 before:-inset-y-3 before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05] ${
           underline
             ? 'after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:bg-[#ff6d05]/60 after:opacity-0 after:transition-opacity hover:after:opacity-100'
             : ''
