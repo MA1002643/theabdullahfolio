@@ -49,7 +49,13 @@ const isRouteLink = (link) =>
 // the internal/external split.
 const NavLinkShell = ({ link, label, newTab, children, ...shared }) =>
   isRouteLink(link) ? (
-    <TransitionLink href={link} transitionLabel={label} {...shared}>
+    <TransitionLink
+      href={link}
+      transitionLabel={label}
+      target={newTab ? '_blank' : '_self'}
+      rel={newTab ? 'noopener noreferrer' : undefined}
+      {...shared}
+    >
       {children}
     </TransitionLink>
   ) : (

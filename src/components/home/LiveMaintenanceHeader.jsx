@@ -347,8 +347,15 @@ export default function LiveMaintenanceHeader() {
       : 'Monitoring tracked repositories';
 
   const confidence = meta.confidence ?? 0;
-  const syncTitle = `Signal confidence ${confidence} · polls every 30 seconds`;
   const softRateLimit = Boolean(meta.softRateLimit);
+  // Mirror the visible-tab cadence picked by the polling effect. The hidden
+  // 15-minute tier is deliberately omitted: a tooltip can't be read while
+  // the tab is hidden, so it would only add noise.
+  const pollSeconds =
+    (softRateLimit ? POLL_INTERVAL_SOFT_MS : POLL_INTERVAL_MS) / 1000;
+  const syncTitle = `Signal confidence ${confidence} · polls every ${pollSeconds} seconds${
+    softRateLimit ? ' while metered' : ''
+  }`;
 
   const isInitialLoading = loading && !data;
 

@@ -77,16 +77,28 @@ export default function PageTransitionProvider({ children }) {
   // When the overlay mounted — the showcase-minimum clock.
   const startedAtRef = useRef(0);
 
-  const navigate = useCallback((href, opts = {}) => {
-    if (phaseRef.current !== 'idle') return;
-    const dest = cleanPath(href);
-    // Same page: nothing to travel to. Let the click be a quiet no-op rather
-    // than sealing the screen for a route we're already on.
-    if (dest === cleanPath(pathnameRef.current)) return;
-    setTarget({ href, label: opts.label || deriveLabel(dest) });
-    startedAtRef.current = performance.now();
-    setPhase('covering');
-  }, []);
+  const navigate = useCallback(
+    (href, opts = {}) => {
+      if (phaseRef.current !== 'idle') return;
+      const dest = cleanPath(href);
+      // Same route: no passage to stage. A query/hash-only change is still a
+      // real navigation though — hand it straight to the router, sans overlay
+      // (the arrival check keys off pathname, which wouldn't change). Only a
+      // truly identical destination stays a quiet no-op.
+      if (dest === cleanPath(pathnameRef.current)) {
+        const current =
+          window.location.pathname +
+          window.location.search +
+          window.location.hash;
+        if (href !== current) router.push(href);
+        return;
+      }
+      setTarget({ href, label: opts.label || deriveLabel(dest) });
+      startedAtRef.current = performance.now();
+      setPhase('covering');
+    },
+    [router],
+  );
 
   // covering → push under the opaque cover → holding.
   useEffect(() => {
