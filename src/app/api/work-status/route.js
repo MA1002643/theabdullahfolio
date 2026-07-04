@@ -78,6 +78,15 @@ const RATE_SOFT_FLOOR = 200;
 const RATE_HARD_FLOOR = 50;
 let rateGuard = { remaining: null, resetAt: null };
 
+// Warn about a low soft-budget at most once per GitHub reset window.
+// recordRateLimit runs on every successful fetch, so during the tail of a
+// depleted window (with the client polling) an unguarded warn would repeat
+// on every poll. Keyed on the window's resetAt: a new window's resetAt
+// re-arms the warning. Sentinel start value guarantees the first warn fires
+// even when resetAt is absent (null window key).
+const SOFT_WARN_UNSET = Symbol('soft-warn-unset');
+let softWarnedResetAt = SOFT_WARN_UNSET;
+
 function recordRateLimit(rateLimit) {
   if (!rateLimit || typeof rateLimit.remaining !== 'number') return;
   const resetAtMs = rateLimit.resetAt ? Date.parse(rateLimit.resetAt) : NaN;
@@ -96,9 +105,12 @@ function recordRateLimit(rateLimit) {
     );
   }
   if (rateLimit.remaining < RATE_SOFT_FLOOR) {
-    console.warn(
-      `work-status: GitHub rate budget low (${rateLimit.remaining} pts remaining, resets ${rateLimit.resetAt}) — pausing AI refinement and privileged busts`,
-    );
+    if (softWarnedResetAt !== rateGuard.resetAt) {
+      softWarnedResetAt = rateGuard.resetAt;
+      console.warn(
+        `work-status: GitHub rate budget low (${rateLimit.remaining} pts remaining, resets ${rateLimit.resetAt}) — pausing AI refinement and privileged busts`,
+      );
+    }
   }
 }
 

@@ -67,7 +67,7 @@ export const nameWithOwnerOf = (repo) => `${repo.owner}/${repo.name}`;
 // signal without a code revert.
 export function getTrackedRepos() {
   if (process.env.MULTI_REPO_HEADER === 'false') {
-    return TRACKED_REPOS.slice(0, 1);
+    return Object.freeze(TRACKED_REPOS.slice(0, 1));
   }
   return TRACKED_REPOS;
 }
