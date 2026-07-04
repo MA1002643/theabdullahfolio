@@ -267,7 +267,13 @@ const getCachedGithubStats = unstable_cache(
       stats,
     };
   },
-  ["github-stats"],
+  // Key suffix bumped to v2 when each language gained `privateRepos` (count +
+  // combined share of private/fork/archived usage) and the crawl started
+  // including forks. Without the bump, a stale v1 entry — fork-less totals, no
+  // private aggregate — would keep serving for a TTL window after deploy.
+  // Mirrors the github-skills route's key-versioning discipline. The TAG stays
+  // "github-stats" so webhook-driven revalidation keeps working unchanged.
+  ["github-stats-v2"],
   { revalidate: REVALIDATE_SECONDS, tags: ["github-stats"] }
 );
 
@@ -337,14 +343,20 @@ export async function GET(request) {
 }
 
 async function getAllLanguages(username) {
+  // ALL owned repos count toward the language totals: public + private,
+  // forks + archived (no isFork/isArchived filter — a public fork/archived
+  // repo lists like any other repo in the breakdown; a private one folds into
+  // the private aggregate below). OWNER-only affiliation keeps other people's
+  // (and orgs') repos out — same disclosure rationale as /api/github-skills.
+  // `isPrivate` routes each repo's bytes into the public per-repo breakdown
+  // or the count-only private bucket.
   const query = `
     query($username: String!, $after: String) {
       user(login: $username) {
         repositories(
           first: 100,
           after: $after,
-          ownerAffiliations: OWNER,
-          isFork: false
+          ownerAffiliations: OWNER
         ) {
           pageInfo {
             hasNextPage
@@ -353,6 +365,7 @@ async function getAllLanguages(username) {
           nodes {
             name
             url
+            isPrivate
             languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
               edges {
                 size
@@ -428,14 +441,31 @@ async function getAllLanguages(username) {
     // lets each language expose the breakdown of which repos contribute its
     // bytes (the Most Used Languages card's hover popover). Keyed by repo
     // name; each entry also keeps the repo URL for the popover's links.
+    //
+    // Disclosure safety: a PRIVATE repo's name must never reach this public,
+    // CDN-cached payload (same rule as /api/github-skills). Private repos'
+    // bytes still count — into `privateSize` plus a name Set used only to
+    // COUNT distinct private repos per language; the names are dropped when
+    // the payload is built below ("N private repositories" + combined share).
     for (const repo of repos) {
+      const isPrivate = Boolean(repo.isPrivate);
       for (const { size, node } of repo.languages.edges) {
         if (!languageStats[node.name]) {
-          languageStats[node.name] = { size: 0, color: node.color, repos: {} };
+          languageStats[node.name] = {
+            size: 0,
+            color: node.color,
+            repos: {},
+            privateSize: 0,
+            privateNames: new Set(),
+          };
         }
         const entry = languageStats[node.name];
         entry.size += size;
-        if (repo.name) {
+        if (!repo.name) continue;
+        if (isPrivate) {
+          entry.privateSize += size;
+          entry.privateNames.add(repo.name);
+        } else {
           if (!entry.repos[repo.name]) {
             entry.repos[repo.name] = { size: 0, url: repo.url ?? null };
           }
@@ -470,10 +500,14 @@ async function getAllLanguages(username) {
   }
 
   // Sort and convert to percentage. Each language also carries its per-repo
-  // breakdown: for every repo that contains the language, the share of THAT
-  // language's bytes contributed by the repo (so the per-repo percentages sum
-  // to ~100% within the language). Sorted biggest-first and capped to keep the
-  // payload compact.
+  // breakdown: for every PUBLIC repo that contains the language, the share of
+  // THAT language's bytes contributed by the repo (so the per-repo percentages
+  // sum to ~100% within the language). Sorted biggest-first and capped to keep
+  // the payload compact. Private usage ships as `privateRepos` — a bare COUNT
+  // of distinct private repos plus their COMBINED share of the language's
+  // bytes; names never leave this function. Omitted entirely when a language
+  // has no private usage, so such rows stay byte-identical to before. The
+  // popover renders it as one "N private repositories" row pinned to the top.
   return Object.entries(languageStats)
     .sort((a, b) => b[1].size - a[1].size)
     .map(([language, info]) => ({
@@ -490,6 +524,17 @@ async function getAllLanguages(username) {
           percentage:
             info.size > 0 ? ((r.size / info.size) * 100).toFixed(2) : "0.00",
         })),
+      ...(info.privateNames.size > 0
+        ? {
+            privateRepos: {
+              count: info.privateNames.size,
+              percentage:
+                info.size > 0
+                  ? ((info.privateSize / info.size) * 100).toFixed(2)
+                  : "0.00",
+            },
+          }
+        : {}),
     }));
 }
 

@@ -255,8 +255,14 @@ export default function LanguagesCard({ data, isLive = false }) {
     (index) => {
       const lang = languages[index];
       // Stale/snapshot payloads (and the bundled fallback) carry no per-repo
-      // breakdown — skip the popover rather than show an empty panel.
-      return !!lang && Array.isArray(lang.repos) && lang.repos.length > 0;
+      // breakdown — skip the popover rather than show an empty panel. A
+      // language used ONLY in private repos has an empty public list but a
+      // private aggregate (`privateRepos.count`), and still gets its popover.
+      if (!lang) return false;
+      return (
+        (Array.isArray(lang.repos) && lang.repos.length > 0) ||
+        (lang.privateRepos?.count ?? 0) > 0
+      );
     },
     [languages],
   );
@@ -747,7 +753,12 @@ function AnimatedLangLabel({
 }) {
   const numRef = useRef(null);
   const target = parseFloat(lang.percentage || 0);
-  const hasRepos = Array.isArray(lang.repos) && lang.repos.length > 0;
+  // Popover affordance (cursor + aria-haspopup) — mirrors the parent's
+  // hasBreakdown: public repo rows OR a private-usage aggregate both mean
+  // there's a breakdown to show.
+  const hasRepos =
+    (Array.isArray(lang.repos) && lang.repos.length > 0) ||
+    (lang.privateRepos?.count ?? 0) > 0;
   // "Just rose" heartbeat — pulse the name + percentage together when this
   // language moved up / increased. CSS no-ops `.skill-heartbeat` under reduced
   // motion, but gate the class too for parity with the rest of the page.
@@ -1016,13 +1027,25 @@ function LanguageRepoPopover({
   }, [anchorRect]);
 
   const repos = Array.isArray(lang.repos) ? lang.repos : [];
+  // Private usage arrives as a bare COUNT plus the COMBINED share of this
+  // language's bytes those repos contribute (names are withheld server-side —
+  // the payload is public and CDN-cached; same model as the Skills popover's
+  // `privateRepoCount`). Renders as one aggregate row PINNED ABOVE the public
+  // repo rows.
+  const privateCount =
+    Number.isFinite(lang.privateRepos?.count) && lang.privateRepos.count > 0
+      ? lang.privateRepos.count
+      : 0;
+  const privatePercentage = privateCount > 0 ? lang.privateRepos.percentage : 0;
 
   // Staggered, replay-on-scroll reveal for the internal repo list (gated on
   // `pos` so it doesn't fire while the panel is still positioning off-screen).
   useStaggeredScrollReveal(listScrollRef, {
     enabled: Boolean(pos),
     prefersReducedMotion,
-    resetKey: repos.length,
+    // Rendered ROW count (the private aggregate row + public rows), so the
+    // observer re-registers if the row set ever changes in place.
+    resetKey: repos.length + (privateCount > 0 ? 1 : 0),
   });
 
   return createPortal(
@@ -1107,6 +1130,40 @@ function LanguageRepoPopover({
             ref={listScrollRef}
             className="space-y-2.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5"
           >
+            {privateCount > 0 && (
+              // Private aggregate — ALWAYS the first row, above every public
+              // repo regardless of share size. Count only, never names (muted,
+              // non-link label — the same treatment as the Skills popover's
+              // private row) but with the full row anatomy of its public
+              // siblings: count-up combined percentage + slim share bar. The
+              // bar drops the glow and dims so "private" reads quieter than
+              // the clickable public rows.
+              <li data-reveal-row className="text-xs">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="truncate"
+                    style={{ color: "rgba(255, 170, 42, 0.6)" }}
+                  >
+                    {privateCount} private{" "}
+                    {privateCount === 1 ? "repository" : "repositories"}
+                  </span>
+                  <AnimatedRepoPercent
+                    value={privatePercentage}
+                    prefersReducedMotion={prefersReducedMotion}
+                  />
+                </div>
+                <div className="mt-1 h-1 rounded-full overflow-hidden bg-white/5">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min(parseFloat(privatePercentage) || 0, 100)}%`,
+                      background: lang.color,
+                      opacity: 0.55,
+                    }}
+                  />
+                </div>
+              </li>
+            )}
             {repos.map((r) => {
               // This repo rose within the language → pulse its name + percentage
               // together (the popover's "name + %" pair).

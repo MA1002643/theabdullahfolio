@@ -3,6 +3,7 @@ import './globals.css';
 import clsx from 'clsx';
 import CustomCursor from '@/components/CustomCursor';
 import LoaderWrapper from '@/components/loaderWrapper';
+import PageTransitionProvider from '@/components/pageTransition/PageTransitionProvider';
 import GlobalToaster from '@/components/GlobalToaster';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
@@ -51,7 +52,9 @@ export default function RootLayout({ children }) {
           'bg-background text-foreground',
         )}
       >
-        <LoaderWrapper>{children}</LoaderWrapper>
+        <LoaderWrapper>
+          <PageTransitionProvider>{children}</PageTransitionProvider>
+        </LoaderWrapper>
         <GlobalToaster />
         <CustomCursor />
         <SpeedInsights />

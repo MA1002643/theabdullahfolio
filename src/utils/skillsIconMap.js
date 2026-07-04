@@ -478,30 +478,38 @@ export function categorizeSkills(names) {
 const MAX_REPOS_PER_SKILL = 60;
 
 /**
- * Like `categorizeSkills`, but the input is a map of detected-name → list of
- * repositories (`nameWithOwner`) that surfaced it, and each emitted item carries
- * the merged, de-duped repo list for its skill — so the UI can show "which repos
- * use this language/framework/tool". Aliases that resolve to the same slug merge
- * their repos (e.g. "next" + "nextjs" → Next.js).
+ * Like `categorizeSkills`, but the input maps each detected name to the
+ * repositories (`nameWithOwner`) that surfaced it — public ones in `repos`,
+ * private ones in `privateRepos` — and each emitted item carries the merged,
+ * de-duped PUBLIC repo list plus a bare `privateRepoCount`, so the UI can show
+ * "which repos use this language/framework/tool" and "N private repositories"
+ * without ever disclosing a private name. Aliases that resolve to the same slug
+ * merge their repos (e.g. "next" + "nextjs" → Next.js); private identities are
+ * needed here PRECISELY for that merge (per-slug dedupe), then reduced to a
+ * count — they must never be emitted. A plain string[] value is tolerated as a
+ * public-only list (the pre-privateRepos shape).
  *
- * @param {Record<string, string[]>} nameToRepos
- * @returns {Record<string, Array<{slug, displayName, source, repos: Array<{name, nameWithOwner, url}>}>>}
+ * @param {Record<string, string[] | { repos: string[], privateRepos?: string[] }>} nameToRepos
+ * @returns {Record<string, Array<{slug, displayName, source, repos: Array<{name, nameWithOwner, url}>, privateRepoCount: number}>>}
  */
 export function categorizeSkillsWithRepos(nameToRepos) {
   const categories = Object.fromEntries(CATEGORY_ORDER.map((c) => [c, []]));
   const bySlug = new Map();
   const entries = nameToRepos && typeof nameToRepos === "object" ? Object.entries(nameToRepos) : [];
-  for (const [name, repos] of entries) {
+  for (const [name, value] of entries) {
     const entry = resolveSkill(name);
     if (!entry) continue;
     let agg = bySlug.get(entry.slug);
     if (!agg) {
-      agg = { entry, repos: new Set() };
+      agg = { entry, repos: new Set(), privateRepos: new Set() };
       bySlug.set(entry.slug, agg);
     }
+    const repos = Array.isArray(value) ? value : value?.repos;
+    const privateRepos = Array.isArray(value) ? [] : value?.privateRepos;
     if (Array.isArray(repos)) for (const r of repos) if (r) agg.repos.add(r);
+    if (Array.isArray(privateRepos)) for (const r of privateRepos) if (r) agg.privateRepos.add(r);
   }
-  for (const { entry, repos } of bySlug.values()) {
+  for (const { entry, repos, privateRepos } of bySlug.values()) {
     const bucket = categories[entry.category];
     if (!bucket) continue;
     const repoList = [...repos]
@@ -512,7 +520,14 @@ export function categorizeSkillsWithRepos(nameToRepos) {
         nameWithOwner: nwo,
         url: `https://github.com/${nwo}`,
       }));
-    bucket.push({ slug: entry.slug, displayName: entry.displayName, source: entry.source, repos: repoList });
+    bucket.push({
+      slug: entry.slug,
+      displayName: entry.displayName,
+      source: entry.source,
+      repos: repoList,
+      // Count only — the private Set's contents stop here by design.
+      privateRepoCount: privateRepos.size,
+    });
   }
   // The crawl records detections concurrently (two privacy scopes + a per-repo
   // fan-out), so `bySlug` insertion order — and thus each bucket's order — varies

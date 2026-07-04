@@ -2,7 +2,7 @@
 import Image from "next/image";
 import bg from "../../../../public/background/contact-bg.png";
 import AboutDetails from "@/components/about";
-import AboutAuroraDustMount from "@/components/about/AboutAuroraDustMount";
+import AuroraDustMount from "@/components/AuroraDustMount";
 import PageTitle from "@/components/PageTitle";
 
 export default function About() {
@@ -21,13 +21,13 @@ export default function About() {
       />
       <div className="-z-40 fixed top-0 left-0 w-full h-full bg-black/70" />
 
-      {/* Contact-page aurora (drifts + bends toward the cursor), now also
-          scroll-reactive: a gentle vertical parallax shifts the whole aurora as
-          the page scrolls and eases to rest when it stops. (The earlier discrete
-          dust-mote particles were removed — the soft aurora itself carries the
-          scroll reaction.) Self-gates on motion preference + loader reveal; the
+      {/* Shared aurora (drifts + bends toward the cursor), scroll-reactive: a
+          gentle vertical parallax shifts the whole aurora as the page scrolls
+          and eases to rest when it stops. (The earlier discrete dust-mote
+          particles were removed — the soft aurora itself carries the scroll
+          reaction.) Self-gates on motion preference + loader reveal; the
           static image above is the reduced-motion fallback. */}
-      <AboutAuroraDustMount />
+      <AuroraDustMount />
 
       {/* HEADLINE — uses shared PageTitle (issue #104). The
           decorative inline dashes around "WHO I AM" were dropped per

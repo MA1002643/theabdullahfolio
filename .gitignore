@@ -41,6 +41,9 @@ TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
 # claude code
 .claude/
 
+# playwright mcp browser-session artifacts (console logs, page snapshots)
+.playwright-mcp/
+
 # editor / tool temp files (e.g. crash-leftover *.tmp.<pid>.<hash>)
 *.tmp
 *.tmp.*

@@ -1,9 +1,9 @@
 "use client";
 import { motion } from "framer-motion";
 import { Palette } from "lucide-react";
-import Link from "next/link";
+import TransitionLink from "@/components/pageTransition/TransitionLink";
 
-const NavLink = motion(Link);
+const NavLink = motion(TransitionLink);
 const ProjectsBtn = () => {
   return (
     <NavLink
@@ -11,6 +11,7 @@ const ProjectsBtn = () => {
       animate={{ scale: 1 }}
       transition={{ delay: 1 }}
       href={"/projects"}
+      transitionLabel={"Projects"}
       target={"_self"}
       className="text-foreground  rounded-full flex items-center justify-center
         custom-bg fixed top-4 left-4 w-fit self-start z-50

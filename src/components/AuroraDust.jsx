@@ -4,20 +4,19 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// ── About background: scroll-reactive contact aurora ──────────────────────────
-// Reproduces the contact page's aurora (AuroraBackground) — a domain-warped fBm
-// amber field that drifts and bends toward the cursor — and makes the WHOLE field
-// react to scroll: a gentle vertical parallax shifts the aurora as the page
-// scrolls and eases to rest when scrolling stops. The earlier discrete dust
-// motes (a GPU points field) were removed; the soft aurora "dust" itself now
-// carries the scroll reaction. Composited mix-blend:screen by the mount.
-
-// ── Aurora plane (clip-space quad; vertex shader bypasses the camera) ─────────
-// NOTE: AURORA_VERT / AURORA_FRAG started as a verbatim clone of
-// contact/AuroraBackground.jsx (so the contact hover-bend look is preserved),
-// with one deliberate divergence here: the `uScroll` uniform + the `p.y`
-// parallax shift that makes the about-page aurora scroll-reactive. Keep the
-// shared parts in sync with the contact sibling if that shader ever changes.
+// ── Shared page-background aurora ("dust") ───────────────────────────────────
+// The single ambient WebGL layer behind the about, contact, and 404 pages: a
+// domain-warped fBm amber field that drifts continuously, bends gently toward
+// the cursor, and parallax-shifts with scroll (easing to rest when scrolling
+// stops). Composited mix-blend:screen by AuroraDustMount, so it only adds warm
+// light over the dark backdrop — never neon.
+//
+// History: this started as two intentional clones — contact/AuroraBackground
+// (static) and about/AboutAuroraDust (+ scroll parallax). When the contact page
+// adopted the scroll reaction too, the clones collapsed into this one source.
+//
+// The plane is a clip-space-filling quad (the vertex shader bypasses the
+// camera), so the effect is resolution-independent.
 const AURORA_VERT = /* glsl */ `
   varying vec2 vUv;
   void main() {
@@ -69,7 +68,15 @@ const AURORA_FRAG = /* glsl */ `
     vec2 uva = vec2(uv.x * aspect.x, uv.y);
     float t = uTime * 0.05;
 
-    // Bend the field gently toward the cursor (the contact page's hover effect).
+    // Portrait compensation: aspect-corrected sampling means a phone-width
+    // viewport sees only a thin, often flat slice of the fBm field, and the
+    // landscape-tuned vertical falloff kills the top of a tall screen — so the
+    // aurora all but disappears on mobile. Ramp 0 (wide) -> 1 (phone portrait)
+    // off the aspect alone and use it below to tighten the field scale, lift
+    // the falloff, and raise the gain. Desktop output is unchanged (narrow=0).
+    float narrow = smoothstep(1.0, 0.6, aspect.x);
+
+    // Bend the field gently toward the cursor.
     vec2 pc = vec2(uPointer.x * aspect.x, uPointer.y);
     vec2 toC = uva - pc;
     float cd = length(toC);
@@ -78,8 +85,9 @@ const AURORA_FRAG = /* glsl */ `
     // Domain-warped fBm -> flowing soft field. The scroll parallax (uScroll)
     // shifts the whole field vertically so the aurora visibly drifts as the page
     // scrolls. fBm is infinite + seamless, so this can translate any distance
-    // with no wrap or popping.
-    vec2 p = uva * 1.8;
+    // with no wrap or popping. Slightly denser on narrow viewports so the thin
+    // visible slice still carries structure.
+    vec2 p = uva * mix(1.8, 2.3, narrow);
     p.y += uScroll;
     float w1 = fbm(p + vec2(0.0, t));
     float w2 = fbm(p + vec2(t * 0.7, 0.0) + 5.2);
@@ -99,16 +107,19 @@ const AURORA_FRAG = /* glsl */ `
     // A flowing aurora ribbon riding the warped field.
     float ribbon = sin((q.y * 1.6 + field * 4.0 + t * 1.5) * 3.14159);
     ribbon = smoothstep(0.55, 1.0, ribbon);
-    col += c3 * ribbon * 0.25;
+    col += c3 * ribbon * mix(0.25, 0.33, narrow);
 
-    // Denser low, softer toward the top.
-    float vfall = smoothstep(1.1, -0.05, uv.y);
+    // Denser low, softer toward the top. On portrait screens the falloff
+    // reaches higher so the top half is not left empty.
+    float vfall = smoothstep(mix(1.1, 1.55, narrow), mix(-0.05, -0.3, narrow), uv.y);
     col *= vfall;
 
     // Faint warmth pooling around the cursor.
     col += c2 * smoothstep(0.35, 0.0, cd) * 0.06;
 
-    col *= 0.7;
+    // Overall restraint (also screen-blended + opacity-capped by mount); eased
+    // on narrow viewports where the same gain reads as barely-there.
+    col *= mix(0.7, 0.98, narrow);
     col = clamp(col, 0.0, 1.0);
     float a = max(col.r, max(col.g, col.b));
     gl_FragColor = vec4(col, a);
@@ -157,7 +168,7 @@ function AuroraPlane({ pointer, scroll }) {
     // Scroll parallax: ease a vertical field offset toward the ABSOLUTE scroll
     // position (normalized by viewport height) so the aurora drifts as the page
     // scrolls and glides to rest when it stops. The 0.6 gain keeps it gentle
-    // relative to the field scale (p = uva * 1.8) — a restrained drift, not a
+    // relative to the field scale (p = uva * ~1.8-2.3) — a restrained drift, not a
     // jarring sweep. The exp-decay ease de-jitters wheel steps without lagging.
     const target = (scroll.current.y / vhRef.current) * 0.6;
     scrollOffset.current += (target - scrollOffset.current) * (1 - Math.exp(-delta * 4));
@@ -180,9 +191,9 @@ function AuroraPlane({ pointer, scroll }) {
   );
 }
 
-export default function AboutAuroraDust() {
-  // Pointer feeds the aurora bend (the preserved contact hover effect); scroll
-  // feeds the aurora's vertical parallax. One listener each, one shared space.
+export default function AuroraDust() {
+  // Pointer feeds the aurora's hover bend; scroll feeds its vertical parallax.
+  // One listener each, one shared space.
   const pointer = useRef({ x: 0.5, y: 0.5 });
   const scroll = useRef({ y: 0 });
 
@@ -214,7 +225,7 @@ export default function AboutAuroraDust() {
   }, []);
 
   // Coarse pointer = touch/mobile: cap DPR to 1 (the 6-octave fBm aurora is the
-  // real fragment cost; 1.5× would just burn fill-rate). Runs client-only (the
+  // real fragment cost; 1.5x would just burn fill-rate). Runs client-only (the
   // mount is dynamic ssr:false), so window is defined.
   const coarse =
     typeof window !== 'undefined' && window.matchMedia

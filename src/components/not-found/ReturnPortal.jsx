@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import { Home } from 'lucide-react';
-import Link from 'next/link';
+import TransitionLink from '@/components/pageTransition/TransitionLink';
 
 /**
  * Animated CTA back to the homepage. Reads as a "portal" — the
@@ -40,8 +40,9 @@ export default function ReturnPortal() {
       }
       className="relative inline-block"
     >
-      <Link
+      <TransitionLink
         href="/"
+        transitionLabel="Home"
         prefetch={false}
         className="group relative inline-flex items-center gap-3 rounded-full border border-[#ff6d05]/50 bg-black/60 px-8 py-4 font-mono text-sm tracking-wider transition-all duration-300 hover:border-[#ff6d05] hover:bg-[#ff6d05]/10 hover:shadow-[0_0_30px_#ff6d0540,0_0_60px_#ff6d0520] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
@@ -68,7 +69,7 @@ export default function ReturnPortal() {
               : { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
           }
         />
-      </Link>
+      </TransitionLink>
     </motion.div>
   );
 }

@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { invalidate } from '@/utils/workStatusCache';
+import { isTrackedRepo } from '@/utils/workTrackedRepos';
 
 // GitHub webhook receiver. Validates the X-Hub-Signature-256 header against
-// GITHUB_WEBHOOK_SECRET, ignores events from any repo other than
-// MA1002643/theabdullahfolio (spec section 2.2), and busts the work-status
-// cache so the next client poll picks up the new activity.
+// GITHUB_WEBHOOK_SECRET, ignores events from any repo outside the
+// workTrackedRepos allow-list (issue #94 §3.6 — the same webhook is
+// installed on every tracked repo), and busts the work-status cache so
+// the next client poll picks up the new activity.
 
-const ALLOWED_REPO = 'MA1002643/theabdullahfolio';
 const ALLOWED_EVENTS = new Set([
   'push',
   'pull_request',
@@ -52,9 +53,13 @@ export async function POST(request) {
     return NextResponse.json({ ok: true, pong: true });
   }
 
+  // Allow-list gate (§3.6): a webhook left installed on an untracked repo
+  // (or the MULTI_REPO_HEADER=false rollback narrowing the list) must not
+  // trigger work. 204 keeps GitHub's delivery log green — no error-loop,
+  // no redelivery storm — while doing nothing.
   const fullName = payload?.repository?.full_name;
-  if (fullName !== ALLOWED_REPO) {
-    return NextResponse.json({ ok: true, ignored: 'repo' });
+  if (!isTrackedRepo(fullName)) {
+    return new NextResponse(null, { status: 204 });
   }
 
   invalidate();

@@ -17,12 +17,14 @@ import { CATEGORY_ORDER, emptyCategories } from "@/utils/skillsIconUrl";
 // matches the Languages / Streak cards (issue #20, acceptance #15).
 const BANNER_AUTO_HIDE_MS = 4500;
 // Client-side refresh guard — 10 minutes (shortened from 24h) so live GitHub
-// changes surface quickly. The `:v3` key suffix force-invalidates any older
-// cached payload — bumped to v3 when each skill gained its `repos` breakdown, so
-// a device holding a v2 payload (no repos) refetches the richer shape.
+// changes surface quickly. The `:v4` key suffix force-invalidates any older
+// cached payload — bumped to v4 when each skill gained `privateRepoCount` (a
+// v3 payload without it would leave private-only skills non-interactive for a
+// TTL window); v3 was the earlier bump when skills gained their `repos`
+// breakdown.
 const CACHE_TTL_MS = 10 * 60 * 1000;
-const LAST_FETCHED_KEY = "skillsLastFetched:v3";
-const CACHE_KEY = "skillsCache:v3";
+const LAST_FETCHED_KEY = "skillsLastFetched:v4";
+const CACHE_KEY = "skillsCache:v4";
 
 // One clamp drives each cell so icons stay fluid from a 320px phone to a 1920px
 // desktop (issue #20, Task 4).
@@ -36,6 +38,13 @@ const CATEGORY_LABELS = {
   tools: "Tools",
   software: "Software",
 };
+
+// A skill's popover has something to disclose when it has PUBLIC repo names to
+// list OR a private-usage count to report ("N private repositories" — names
+// withheld server-side). Gates every open path and the tile's button semantics,
+// so a skill used only in private repos is still hoverable.
+const hasDisclosure = (item) =>
+  Boolean(item?.repos?.length) || (item?.privateRepoCount ?? 0) > 0;
 
 // The card body shows ONE category at a time: header + gap + one icon row, plus
 // vertical breathing room so the row never touches the clip edges (icons fully
@@ -266,7 +275,7 @@ function IconStrip({ items, rowRef, pulsingIcons, activeSlug, iconHandlers }) {
                 slug={item.slug}
                 displayName={item.displayName}
                 source={item.source}
-                hasRepos={Array.isArray(item.repos) && item.repos.length > 0}
+                hasRepos={hasDisclosure(item)}
                 active={activeSlug === item.slug}
                 pulsing={pulsingIcons?.has(item.slug)}
                 onIconEnter={(el) => iconHandlers.onIconEnter(item, el)}
@@ -305,6 +314,7 @@ function SkillsStage({
   settledInView,
   prefersReducedMotion,
   pulseSlugs,
+  headerPulseSlugs,
   onPulsed,
   bannerVisible,
   canHover,
@@ -337,7 +347,7 @@ function SkillsStage({
   const openHover = useCallback(
     (item, el) => {
       cancelClose();
-      if (!item?.repos?.length || !el) return;
+      if (!hasDisclosure(item) || !el) return;
       setPopover({ skill: item, rect: el.getBoundingClientRect(), mode: "hover" });
     },
     [cancelClose],
@@ -345,7 +355,7 @@ function SkillsStage({
   const toggleTap = useCallback(
     (item, el) => {
       cancelClose();
-      if (!item?.repos?.length || !el) {
+      if (!hasDisclosure(item) || !el) {
         setPopover(null);
         return;
       }
@@ -398,7 +408,7 @@ function SkillsStage({
   const onIconActivate = useCallback(
     (item, el) => {
       cancelClose();
-      if (!item?.repos?.length || !el) return;
+      if (!hasDisclosure(item) || !el) return;
       setPopover((cur) =>
         cur && cur.skill.slug === item.slug
           ? null
@@ -677,23 +687,32 @@ function SkillsStage({
     });
   }, [active, settledInView, prefersReducedMotion, bannerVisible]);
 
-  // "Just added" heartbeat (item 4). When the active category contains a freshly
-  // added slug, pulse its header (name + count) AND the icon itself for the same
-  // shared HEARTBEAT_MS window — each once, deduped — so the whole flag reads as
-  // one beat. Firing on activation (not on the scrub) means it plays the moment
-  // the user lands on the category, regardless of overflow.
+  // "Just added" / "data updated" heartbeat (item 4). When the active category
+  // contains a pulse-pending slug, beat it for the shared HEARTBEAT_MS window —
+  // each once, deduped. ADDED icons pulse their header (name + count) AND the
+  // icon so the whole flag reads as one beat; icons whose repo usage merely
+  // CHANGED (a new repo using the skill — `pulseSlugs` minus `headerPulseSlugs`)
+  // pulse the icon alone, since the category header's count didn't move. Firing
+  // on activation (not on the scrub) means it plays the moment the user lands on
+  // the category, regardless of overflow.
   // Gated on !bannerVisible so the pulse never runs while the update banner is
   // still showing — when the banner clears, bannerVisible flips to false and this
   // effect re-fires for the current active category.
   useEffect(() => {
     if (prefersReducedMotion || !pulseSlugs || pulseSlugs.size === 0) return undefined;
     if (bannerVisible) return undefined;
+    // Wait for the card itself to be on screen: a data-updated pulse has no
+    // banner holding it back (unlike adds), so without this gate a background
+    // refresh would burn the 2s beat while the card is below the fold.
+    if (!settledInView) return undefined;
     const g = groups[active];
     if (!g) return undefined;
     const idx = active;
     const fresh = g.items.map((it) => it.slug).filter((slug) => pulseSlugs.has(slug));
 
-    const freshHeader = fresh.filter((slug) => !headerDoneRef.current.has(slug));
+    const freshHeader = fresh.filter(
+      (slug) => headerPulseSlugs?.has(slug) && !headerDoneRef.current.has(slug),
+    );
     if (freshHeader.length > 0) {
       freshHeader.forEach((slug) => headerDoneRef.current.add(slug));
       setPulsingHeaders((prev) => new Set(prev).add(idx));
@@ -708,6 +727,10 @@ function SkillsStage({
           n.delete(idx);
           return n;
         });
+        // Un-latch after the beat: the source slug is cleared via onPulsed by
+        // then, and the SAME header must be able to pulse again if a future
+        // in-session update adds another icon to it.
+        freshHeader.forEach((slug) => headerDoneRef.current.delete(slug));
         heartbeatTimersRef.current.delete(headerTimer);
       }, HEARTBEAT_MS);
       heartbeatTimersRef.current.add(headerTimer);
@@ -731,11 +754,16 @@ function SkillsStage({
           return n;
         });
         freshIcons.forEach((slug) => onPulsedRef.current?.(slug));
+        // Un-latch after onPulsed has dropped the slug from its source list —
+        // the dedupe ref only guards the window between pulse-start and source
+        // clear. Left latched, an icon whose counts change AGAIN later in the
+        // session (10-min refresh cycles) could never pulse a second time.
+        freshIcons.forEach((slug) => iconDoneRef.current.delete(slug));
         heartbeatTimersRef.current.delete(iconTimer);
       }, HEARTBEAT_MS);
       heartbeatTimersRef.current.add(iconTimer);
     }
-  }, [active, pulseSlugs, groups, prefersReducedMotion, bannerVisible]);
+  }, [active, pulseSlugs, headerPulseSlugs, groups, prefersReducedMotion, bannerVisible, settledInView]);
 
   // NO scroll hijack. The scrub is driven purely by the inner scroller's OWN
   // native vertical scroll (the effect above maps its scrollTop → horizontal
@@ -789,7 +817,7 @@ function SkillsStage({
                       slug={item.slug}
                       displayName={item.displayName}
                       source={item.source}
-                      hasRepos={Array.isArray(item.repos) && item.repos.length > 0}
+                      hasRepos={hasDisclosure(item)}
                       active={activeSlug === item.slug}
                       onIconEnter={(el) => iconHandlers.onIconEnter(item, el)}
                       onIconLeave={iconHandlers.onIconLeave}
@@ -898,15 +926,63 @@ export default function SkillsCard({ username }) {
   const headerV = prefersReducedMotion ? noMotion : headerVariants;
 
   // Refresh guard (10-min TTL): use the last cached payload if fresh, otherwise
-  // fetch /api/github-skills live. Runs once on mount (username is stable).
+  // fetch /api/github-skills live. Then KEEP the grid live for the whole
+  // session: a 1-min ticker (plus a tab-return check) refetches whenever the
+  // last sync is older than the TTL, so a repo created while the page sits open
+  // surfaces within ~a TTL — new counts/rows land and the update signal
+  // heartbeats the affected icons, no reload needed.
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     let cancelled = false;
+    // When this mount last obtained data (cache read or fetch) — the ticker's
+    // staleness gate. Stamped optimistically before a background fetch so a
+    // slow response can't overlap with the next tick's; a failed background
+    // attempt simply waits out another TTL.
+    let lastSyncMs = 0;
 
     const applyCategories = (next) => {
       if (cancelled || !next || typeof next !== "object") return;
       setCategories(next);
       setLoaded(true);
+    };
+
+    const fetchLive = (isBackground) => {
+      fetch(`/api/github-skills?username=${encodeURIComponent(username ?? "")}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (cancelled) return;
+          if (!data?.categories) {
+            if (!isBackground) {
+              setLoaded(true);
+              setIsLive(false);
+            }
+            return;
+          }
+          // A background refresh must never DEGRADE a populated grid: a GitHub
+          // outage mid-session returns the empty `_fallback` payload, and
+          // applying it would wipe every icon the user is looking at. Keep the
+          // current data; the next cycle retries. (The initial load still
+          // applies whatever arrives — nothing is on screen yet.)
+          const hasAny = Object.values(data.categories).some(
+            (items) => Array.isArray(items) && items.length > 0,
+          );
+          if (isBackground && (data._fallback || !hasAny)) return;
+          lastSyncMs = Date.now();
+          applyCategories(data.categories);
+          setIsLive(!data._fallback);
+          try {
+            window.localStorage.setItem(LAST_FETCHED_KEY, String(Date.now()));
+            window.localStorage.setItem(CACHE_KEY, JSON.stringify(data.categories));
+          } catch {
+            // Quota / private mode — we lose the cache but the grid renders.
+          }
+        })
+        .catch(() => {
+          if (!cancelled && !isBackground) {
+            setLoaded(true);
+            setIsLive(false);
+          }
+        });
     };
 
     let lastFetched = null;
@@ -927,43 +1003,38 @@ export default function SkillsCard({ username }) {
     const needsRefresh =
       !Number.isFinite(lastFetchedMs) || Date.now() - lastFetchedMs > CACHE_TTL_MS;
 
+    let servedFromCache = false;
     if (!needsRefresh && cached) {
       try {
         applyCategories(JSON.parse(cached));
         if (!cancelled) setIsLive(false);
-        return undefined;
+        // Inherit the cached payload's age so the first background refresh
+        // fires a TTL after the ORIGINAL fetch, not a TTL after this mount.
+        lastSyncMs = lastFetchedMs;
+        servedFromCache = true;
       } catch {
         // Corrupt cache — fall through to a live fetch.
       }
     }
+    if (!servedFromCache) fetchLive(false);
 
-    fetch(`/api/github-skills?username=${encodeURIComponent(username ?? "")}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        if (!data?.categories) {
-          setLoaded(true);
-          setIsLive(false);
-          return;
-        }
-        applyCategories(data.categories);
-        setIsLive(!data._fallback);
-        try {
-          window.localStorage.setItem(LAST_FETCHED_KEY, String(Date.now()));
-          window.localStorage.setItem(CACHE_KEY, JSON.stringify(data.categories));
-        } catch {
-          // Quota / private mode — we lose the cache but the grid renders.
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoaded(true);
-          setIsLive(false);
-        }
-      });
+    // In-session liveness. A 1-min ticker (not one big TTL interval) so wake-
+    // from-sleep and long-hidden tabs re-sync within a minute of mattering; the
+    // visibilitychange listener makes returning to the tab check immediately.
+    // Hidden tabs never fetch — the wave/heartbeat would play unseen.
+    const maybeBackgroundRefresh = () => {
+      if (cancelled || document.visibilityState !== "visible") return;
+      if (Date.now() - lastSyncMs < CACHE_TTL_MS) return;
+      lastSyncMs = Date.now();
+      fetchLive(true);
+    };
+    const ticker = setInterval(maybeBackgroundRefresh, 60_000);
+    document.addEventListener("visibilitychange", maybeBackgroundRefresh);
 
     return () => {
       cancelled = true;
+      clearInterval(ticker);
+      document.removeEventListener("visibilitychange", maybeBackgroundRefresh);
     };
   }, [username]);
 
@@ -980,8 +1051,11 @@ export default function SkillsCard({ username }) {
   );
 
   // Change-aware banner — per-device, same model as the Languages card. Also
-  // surfaces the ADDED icons so the stage can heartbeat them (item 4).
-  const { pendingMessage, addedSkills, consume, clearAdded } = useSkillsUpdateSignal(flatSkills);
+  // surfaces the ADDED icons (banner + header + icon beat) and the icons whose
+  // repo usage CHANGED (icon beat only — same heartbeat, no banner) so the
+  // stage can pulse them (item 4).
+  const { pendingMessage, addedSkills, changedSkills, consume, clearAdded } =
+    useSkillsUpdateSignal(flatSkills);
   const [bannerMessage, setBannerMessage] = useState(null);
   // True from the moment the banner's message clears until its exit animation
   // has fully finished (UpdateBanner.onExitComplete). Folded into `bannerVisible`
@@ -990,8 +1064,14 @@ export default function SkillsCard({ username }) {
   // ~0.5–0.75s after the state clears, so starting the pulse on the state edge
   // alone would play its first frames under the still-exiting banner.
   const [bannerExiting, setBannerExiting] = useState(false);
-  // Slugs that were just added — pulse each once when the user scrolls to it.
-  const pulseSlugs = useMemo(() => new Set(addedSkills.map((a) => a.slug)), [addedSkills]);
+  // Slugs pending a heartbeat — added icons AND icons with updated repo data —
+  // each pulses once when the user scrolls to it. Only the ADDED subset also
+  // beats its category header (the header's icon count moved for those).
+  const pulseSlugs = useMemo(
+    () => new Set([...addedSkills, ...changedSkills].map((a) => a.slug)),
+    [addedSkills, changedSkills],
+  );
+  const headerPulseSlugs = useMemo(() => new Set(addedSkills.map((a) => a.slug)), [addedSkills]);
 
   useEffect(() => {
     if (!pendingMessage || !isInView) return;
@@ -1097,6 +1177,7 @@ export default function SkillsCard({ username }) {
           settledInView={settledInView}
           prefersReducedMotion={prefersReducedMotion}
           pulseSlugs={pulseSlugs}
+          headerPulseSlugs={headerPulseSlugs}
           onPulsed={clearAdded}
           bannerVisible={Boolean(bannerMessage) || Boolean(pendingMessage) || bannerExiting}
           canHover={canHover}

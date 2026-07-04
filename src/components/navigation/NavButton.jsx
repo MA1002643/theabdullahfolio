@@ -13,6 +13,7 @@ import {
   Briefcase,
   Clock,
 } from 'lucide-react';
+import TransitionLink from '@/components/pageTransition/TransitionLink';
 
 const getIcon = (icon, small = false) => {
   const cls = small ? 'h-auto w-[1.4rem]' : 'h-auto w-full md:w-[2.5rem] lg:w-[3rem]';
@@ -38,6 +39,36 @@ const getIcon = (icon, small = false) => {
   }
 };
 
+// In-app routes travel through the Sigil Passage (client-side navigation with
+// the emblem transition). Anything external — or a real file like the CV PDF,
+// which has an extension — keeps a plain anchor and native behaviour.
+const isRouteLink = (link) =>
+  link.startsWith('/') && !/\.[a-z0-9]+$/i.test(link);
+
+// One wrapper for both branches so the two layouts below don't each duplicate
+// the internal/external split.
+const NavLinkShell = ({ link, label, newTab, children, ...shared }) =>
+  isRouteLink(link) ? (
+    <TransitionLink
+      href={link}
+      transitionLabel={label}
+      target={newTab ? '_blank' : '_self'}
+      rel={newTab ? 'noopener noreferrer' : undefined}
+      {...shared}
+    >
+      {children}
+    </TransitionLink>
+  ) : (
+    <a
+      href={link}
+      target={newTab ? '_blank' : '_self'}
+      rel={newTab ? 'noopener noreferrer' : undefined}
+      {...shared}
+    >
+      {children}
+    </a>
+  );
+
 const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index, visible = true }) => {
 
   // xs-mobile two-column layout button
@@ -60,10 +91,10 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
         className={`cursor-pointer ${visible ? '' : 'pointer-events-none'}`}
         aria-hidden={!visible}
       >
-        <a
-          href={link}
-          target={newTab ? '_blank' : '_self'}
-          rel={newTab ? 'noopener noreferrer' : undefined}
+        <NavLinkShell
+          link={link}
+          label={label}
+          newTab={newTab}
           aria-label={label}
           name={label}
           tabIndex={visible ? 0 : -1}
@@ -76,7 +107,7 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
               {getIcon(icon, true)}
             </span>
           </span>
-        </a>
+        </NavLinkShell>
       </motion.div>
     );
   }
@@ -89,10 +120,10 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
         transform: `translate(${x}px, ${y}px)`,
       }}
     >
-      <a
-        href={link}
-        target={newTab ? "_blank" : "_self"}
-        rel={newTab ? 'noopener noreferrer' : undefined}
+      <NavLinkShell
+        link={link}
+        label={label}
+        newTab={newTab}
         aria-label={label}
         name={label}
         onMouseEnter={() => setHovered(true)}
@@ -112,7 +143,7 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
             {label}
           </span>
         </span>
-      </a>
+      </NavLinkShell>
 
     </div>
   );
