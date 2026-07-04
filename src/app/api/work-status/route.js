@@ -42,12 +42,19 @@ const PUSH_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // meta.activityTrace: merged per-UTC-day commit counts across tracked
 // repos for the header's ACTIVITY sparkline. 14 whole UTC-day buckets;
-// the last bucket is today (partial). The trace rides the existing
-// portfolio query as a second aliased history connection — capped at 100
-// commits per repo (~+1 GraphQL point each); overflow is flagged via
-// `truncated`, never paginated.
+// the last bucket is today (partial). The trace walks EVERY branch head
+// (refs/heads/*) per repo, not just the default branch, so feature-branch
+// work registers before it merges — a squash-merged week no longer
+// collapses into a single bar. Commits are deduped by oid per repo
+// (mapRepoNode) because each branch's history contains the default-branch
+// commits it forked from. Caps: 25 branches × 50 commits per branch; the
+// whole portfolio query still measures ~2 rate-limit points (refs can't
+// be ordered by recency, so the branch cap is generous). Overflow is
+// flagged via `truncated`, never paginated.
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TRACE_DAYS = 14;
+const TRACE_BRANCH_CAP = 25;
+const TRACE_COMMITS_PER_BRANCH = 50;
 
 const GITHUB_API = 'https://api.github.com/graphql';
 const TOKEN = process.env.GITHUB_TOKEN;
@@ -330,11 +337,13 @@ const buildIdlePayload = (note) => {
   };
 };
 
-// One aliased GraphQL query covering open PRs, open issues, and recent
-// default-branch commits for EVERY tracked repo (§3.2). Aliases share a
-// single HTTP round-trip and a single rate-limit read; `totalCount` on
-// each connection gives true counts regardless of the 10-node pagination
-// cap, which only bounds the popover lists.
+// One aliased GraphQL query covering open PRs, open issues, recent
+// default-branch commits, and the all-branch activity trace for EVERY
+// tracked repo (§3.2). Aliases share a single HTTP round-trip and a
+// single rate-limit read; `totalCount` on each connection gives true
+// counts regardless of the 10-node pagination cap, which only bounds the
+// popover lists. The pushes counter stays default-branch-only by design —
+// only the ACTIVITY trace reads all branch heads.
 function buildPortfolioQuery(repos) {
   const varDecls = repos
     .map((_, i) => `$r${i}Owner: String!, $r${i}Name: String!`)
@@ -385,10 +394,20 @@ function buildPortfolioQuery(repos) {
                 url
               }
             }
-            trace: history(first: 100, since: $traceSince) {
-              totalCount
-              nodes {
-                committedDate
+          }
+        }
+      }
+      refs(refPrefix: "refs/heads/", first: ${TRACE_BRANCH_CAP}) {
+        totalCount
+        nodes {
+          target {
+            ... on Commit {
+              trace: history(first: ${TRACE_COMMITS_PER_BRANCH}, since: $traceSince) {
+                totalCount
+                nodes {
+                  oid
+                  committedDate
+                }
               }
             }
           }
@@ -398,42 +417,65 @@ function buildPortfolioQuery(repos) {
   `;
 }
 
-const mapRepoNode = (repo, node) => ({
-  displayName: repo.displayName,
-  nameWithOwner: node.nameWithOwner ?? nameWithOwnerOf(repo),
-  pullRequests: (node.pullRequests?.nodes ?? []).map((pr) => ({
-    number: pr.number,
-    title: pr.title,
-    createdAt: pr.createdAt,
-    updatedAt: pr.updatedAt,
-    url: pr.url,
-    state: 'open',
-  })),
-  issues: (node.issues?.nodes ?? []).map((i) => ({
-    number: i.number,
-    title: i.title,
-    createdAt: i.createdAt,
-    updatedAt: i.updatedAt,
-    url: i.url,
-    state: 'open',
-  })),
-  commits: (node.defaultBranchRef?.target?.history?.nodes ?? []).map((c) => ({
-    committedAt: c.committedDate,
-    messageHeadline: c.messageHeadline,
-    sha: c.abbreviatedOid,
-    url: c.url,
-  })),
-  totalActivePrs: node.pullRequests?.totalCount ?? 0,
-  totalActiveIssues: node.issues?.totalCount ?? 0,
-  totalRecentPushes: node.defaultBranchRef?.target?.history?.totalCount ?? 0,
-  // 14-day trace (additive; computePortfolioSignal destructures only the
-  // keys it knows, so these ride along inertly and can't shift the
-  // signal). Dates only — the trace needs day buckets, not commit detail.
-  traceCommitDates: (node.defaultBranchRef?.target?.trace?.nodes ?? []).map(
-    (c) => c.committedDate,
-  ),
-  traceTotalCount: node.defaultBranchRef?.target?.trace?.totalCount ?? 0,
-});
+const mapRepoNode = (repo, node) => {
+  // 14-day all-branch trace (additive; computePortfolioSignal destructures
+  // only the keys it knows, so these ride along inertly and can't shift
+  // the signal). Dedupe by oid: every branch's history contains the
+  // default-branch commits it forked from, so summing branch histories
+  // would count main's commits once per branch. Dates only — the trace
+  // needs day buckets, not commit detail. `traceTruncated` means commits
+  // we never saw: more branches than the refs cap fetched, or a branch's
+  // history hitting its node cap.
+  const refsConn = node.refs ?? {};
+  const seenTraceOids = new Set();
+  const traceCommitDates = [];
+  let traceTruncated =
+    (refsConn.totalCount ?? 0) > (refsConn.nodes ?? []).length;
+  for (const ref of refsConn.nodes ?? []) {
+    const trace = ref?.target?.trace;
+    if (!trace) continue;
+    if ((trace.totalCount ?? 0) > (trace.nodes ?? []).length) {
+      traceTruncated = true;
+    }
+    for (const commit of trace.nodes ?? []) {
+      if (!commit?.oid || seenTraceOids.has(commit.oid)) continue;
+      seenTraceOids.add(commit.oid);
+      traceCommitDates.push(commit.committedDate);
+    }
+  }
+
+  return {
+    displayName: repo.displayName,
+    nameWithOwner: node.nameWithOwner ?? nameWithOwnerOf(repo),
+    pullRequests: (node.pullRequests?.nodes ?? []).map((pr) => ({
+      number: pr.number,
+      title: pr.title,
+      createdAt: pr.createdAt,
+      updatedAt: pr.updatedAt,
+      url: pr.url,
+      state: 'open',
+    })),
+    issues: (node.issues?.nodes ?? []).map((i) => ({
+      number: i.number,
+      title: i.title,
+      createdAt: i.createdAt,
+      updatedAt: i.updatedAt,
+      url: i.url,
+      state: 'open',
+    })),
+    commits: (node.defaultBranchRef?.target?.history?.nodes ?? []).map((c) => ({
+      committedAt: c.committedDate,
+      messageHeadline: c.messageHeadline,
+      sha: c.abbreviatedOid,
+      url: c.url,
+    })),
+    totalActivePrs: node.pullRequests?.totalCount ?? 0,
+    totalActiveIssues: node.issues?.totalCount ?? 0,
+    totalRecentPushes: node.defaultBranchRef?.target?.history?.totalCount ?? 0,
+    traceCommitDates,
+    traceTruncated,
+  };
+};
 
 async function fetchPortfolioActivity(repos) {
   const since = new Date(Date.now() - PUSH_WINDOW_MS).toISOString();
@@ -492,11 +534,14 @@ async function fetchPortfolioActivity(repos) {
   return { repos: results, rateLimit: json.data?.rateLimit ?? null, traceSince };
 }
 
-// Merged per-UTC-day commit counts across tracked repos. counts[0] is the
-// oldest day (traceSince), counts[TRACE_DAYS - 1] is today (UTC, partial).
-// `total` carries the true GraphQL totalCounts, so it stays accurate even
-// when a repo's nodes were capped (in which case only the OLDEST buckets
-// under-count — history arrives newest-first — and `truncated` flags it).
+// Merged per-UTC-day commit counts across tracked repos, all branches,
+// already deduped per repo by mapRepoNode. counts[0] is the oldest day
+// (traceSince), counts[TRACE_DAYS - 1] is today (UTC, partial). `total`
+// is the number of unique commits observed across fetched branch heads —
+// summing per-branch GraphQL totalCounts would double-count shared
+// history, so exactness now depends on `truncated`: when set, capped
+// branches under-count their OLDEST buckets (history arrives newest-
+// first) and uncounted branches may be missing entirely.
 function buildActivityTrace(repos, sinceIso) {
   const sinceMs = Date.parse(sinceIso);
   const counts = new Array(TRACE_DAYS).fill(0);
@@ -504,8 +549,8 @@ function buildActivityTrace(repos, sinceIso) {
   let truncated = false;
   for (const repo of repos) {
     const dates = repo.traceCommitDates ?? [];
-    total += repo.traceTotalCount ?? 0;
-    if ((repo.traceTotalCount ?? 0) > dates.length) truncated = true;
+    total += dates.length;
+    if (repo.traceTruncated) truncated = true;
     for (const iso of dates) {
       const t = Date.parse(iso);
       if (Number.isNaN(t)) continue;
@@ -614,7 +659,13 @@ async function fetchProjectActivity() {
     const c = item?.content;
     if (!c) continue;
     if (c.__typename !== 'Issue' && c.__typename !== 'PullRequest') continue;
-    if (c.repository?.nameWithOwner !== PRIMARY_REPO_FULL_NAME) continue;
+    // Case-insensitive like every other repo membership check: GitHub is
+    // case-preserving in payloads, so a repo re-case must not drop items.
+    if (
+      c.repository?.nameWithOwner?.toLowerCase() !==
+      PRIMARY_REPO_FULL_NAME.toLowerCase()
+    )
+      continue;
 
     const status = (item.fieldValues?.nodes ?? []).find(
       (v) =>

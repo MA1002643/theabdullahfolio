@@ -1,8 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import HoverHint from './HoverHint';
 import { useStaggeredScrollReveal } from '@/hooks/useStaggeredScrollReveal';
 import { animateToTarget } from '@/utils/animationCurves';
 import { useNow } from './useNow';
@@ -44,7 +52,13 @@ const panelVariants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: 'spring', stiffness: 70, damping: 18, delayChildren: 0.1, staggerChildren: 0.07 },
+    transition: {
+      type: 'spring',
+      stiffness: 70,
+      damping: 18,
+      delayChildren: 0.1,
+      staggerChildren: 0.07,
+    },
   },
   exit: { opacity: 0, transition: { duration: 0.15 } },
 };
@@ -56,7 +70,11 @@ const contentVariants = {
 // The header block (eyebrow + title + divider) slides up as one unit.
 const sectionVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 120, damping: 20 } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 120, damping: 20 },
+  },
 };
 // Reduced-motion no-op: hidden === visible, no transform — matching the
 // source card's reduced-motion behaviour (instant, static panel).
@@ -81,7 +99,9 @@ const canHover = () =>
   typeof window !== 'undefined' && window.matchMedia(HOVER_QUERY).matches;
 
 const focusablesIn = (panel) =>
-  panel ? Array.from(panel.querySelectorAll('a[href], button:not([disabled])')) : [];
+  panel
+    ? Array.from(panel.querySelectorAll('a[href], button:not([disabled])'))
+    : [];
 
 // The headline count — counts up 0 → N with the about page's shared elite
 // count-up (animateToTarget, 2s sprint-then-settle), exactly like the
@@ -279,7 +299,8 @@ export default function MetricPopover({
     if (!open) return undefined;
 
     const containsTarget = (target) =>
-      triggerRef.current?.contains(target) || panelRef.current?.contains(target);
+      triggerRef.current?.contains(target) ||
+      panelRef.current?.contains(target);
 
     const onKeyDown = (event) => {
       if (event.key !== 'Escape') return;
@@ -453,198 +474,261 @@ export default function MetricPopover({
       <div className="repo-card-breathe flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
         {/* Inner cascade orchestrator — staggers the header block, then the
             list, inheriting the panel's animation state. */}
-        <motion.div variants={contentV} className="flex min-h-0 flex-1 flex-col p-4">
+        <motion.div
+          variants={contentV}
+          className="flex min-h-0 flex-1 flex-col p-4"
+        >
           {panelContent ? (
             <motion.div variants={sectionV}>{panelContent}</motion.div>
           ) : (
             <>
-          {/* SR summary: static full text, announced once per real change —
+              {/* SR summary: static full text, announced once per real change —
               the visible count-up digits below are aria-hidden. */}
-          <p aria-live="polite" className="sr-only">
-            {summary}
-            {stale ? ' Showing last known activity.' : ''}
-          </p>
+              <p aria-live="polite" className="sr-only">
+                {summary}
+                {stale ? ' Showing last known activity.' : ''}
+              </p>
 
-          {/* Header block slides up as one unit. */}
-          <motion.div variants={sectionV} aria-hidden="true" className="shrink-0">
-            <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a]">
-              {metricLabel}
-            </p>
-            {(count ?? 0) > 0 ? (
-              <h3
-                className="mb-1 text-sm font-semibold sm:text-base"
-                style={{ color: '#ff6d05', textShadow: 'none' }}
+              {/* Header block slides up as one unit. */}
+              <motion.div
+                variants={sectionV}
+                aria-hidden="true"
+                className="shrink-0"
               >
-                <MetricCount count={count} play={ready} prefersReducedMotion={reduceMotion} />{' '}
-                across {projectCount} {projectCount === 1 ? 'project' : 'projects'}
-              </h3>
-            ) : (
-              <p className="mb-1 text-[11px]" style={{ color: 'rgba(255, 170, 42, 0.6)' }}>
-                {emptyLabel}
-              </p>
-            )}
-            {stale && (
-              <p className="mb-1 text-[11px]" style={{ color: 'rgba(255, 170, 42, 0.6)' }}>
-                Showing last known activity.
-              </p>
-            )}
-            <div aria-hidden="true" className="elite-divider mb-3 h-px" />
-          </motion.div>
+                <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a]">
+                  {metricLabel}
+                </p>
+                {(count ?? 0) > 0 ? (
+                  <h3
+                    className="mb-1 text-sm font-semibold sm:text-base"
+                    style={{ color: '#ff6d05', textShadow: 'none' }}
+                  >
+                    <MetricCount
+                      count={count}
+                      play={ready}
+                      prefersReducedMotion={reduceMotion}
+                    />{' '}
+                    across {projectCount}{' '}
+                    {projectCount === 1 ? 'project' : 'projects'}
+                  </h3>
+                ) : (
+                  <p
+                    className="mb-1 text-[11px]"
+                    style={{ color: 'rgba(255, 170, 42, 0.6)' }}
+                  >
+                    {emptyLabel}
+                  </p>
+                )}
+                {stale && (
+                  <p
+                    className="mb-1 text-[11px]"
+                    style={{ color: 'rgba(255, 170, 42, 0.6)' }}
+                  >
+                    Showing last known activity.
+                  </p>
+                )}
+                <div aria-hidden="true" className="elite-divider mb-3 h-px" />
+              </motion.div>
 
-          {/* Item list — its own scroll container AND the reveal observer's
+              {/* Item list — its own scroll container AND the reveal observer's
               root: rows slide in from the left, staggered, and replay on
               every scroll re-entry. `overflow-x-hidden` clips the -16px
               slide so it can't flash a horizontal scrollbar. `pr-3` +
               thin scrollbar keep the right-aligned ages clear of the
               thumb — overlay scrollbars (macOS) paint ON TOP of content,
               so the text needs real clearance, not a reserved gutter. */}
-          <ul
-            ref={listScrollRef}
-            className="min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pr-3 [scrollbar-width:thin]"
-          >
-            {groups.map((group, groupIndex) => {
-              const isExpanded = expandedRepo === group.repo;
-              const groupTotal = repoTotal(group);
-              const groupOverflow = Math.max(0, groupTotal - group.items.length);
-              const sectionId = `${id}-section-${groupIndex}`;
-              // "+ N more" links to the repo's list page for THIS metric —
-              // every item in a group shares one type, so the first item
-              // dictates the path (issue → /issues, pr → /pulls,
-              // push → /commits).
-              const groupType = group.items[0]?.type;
-              const moreUrl = `https://github.com/${group.items[0]?.nameWithOwner}/${
-                groupType === 'pr' ? 'pulls' : groupType === 'push' ? 'commits' : 'issues'
-              }`;
-              return (
-                <li key={group.repo}>
-                  <button
-                    type="button"
-                    data-reveal-row
-                    aria-expanded={isExpanded}
-                    aria-controls={sectionId}
-                    onClick={() => toggleGroup(group.repo)}
-                    className="mt-1 flex w-full items-center gap-1.5 rounded-sm py-0.5 text-left text-[10px] uppercase tracking-[0.18em] first:mt-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
-                    style={{ color: 'rgba(255, 170, 42, 0.75)' }}
-                  >
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 8 8"
-                      className={`h-2 w-2 shrink-0 ${reduceMotion ? '' : 'transition-transform duration-200'} ${isExpanded ? 'rotate-90' : ''}`}
-                    >
-                      <path
-                        d="M2.5 1l3 3-3 3"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span className="min-w-0 flex-1 truncate">{group.repo}</span>
-                    {/* Per-project total counts up 0 → N alongside the
+              <ul
+                ref={listScrollRef}
+                className="min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pr-3 [scrollbar-width:thin]"
+              >
+                {groups.map((group, groupIndex) => {
+                  const isExpanded = expandedRepo === group.repo;
+                  const groupTotal = repoTotal(group);
+                  const groupOverflow = Math.max(
+                    0,
+                    groupTotal - group.items.length,
+                  );
+                  const sectionId = `${id}-section-${groupIndex}`;
+                  // "+ N more" links to the repo's list page for THIS metric —
+                  // every item in a group shares one type, so the first item
+                  // dictates the path (issue → /issues, pr → /pulls,
+                  // push → /commits).
+                  const groupType = group.items[0]?.type;
+                  const moreUrl = `https://github.com/${group.items[0]?.nameWithOwner}/${
+                    groupType === 'pr'
+                      ? 'pulls'
+                      : groupType === 'push'
+                        ? 'commits'
+                        : 'issues'
+                  }`;
+                  return (
+                    <li key={group.repo}>
+                      <button
+                        type="button"
+                        data-reveal-row
+                        aria-expanded={isExpanded}
+                        aria-controls={sectionId}
+                        onClick={() => toggleGroup(group.repo)}
+                        className="mt-1 flex w-full items-center gap-1.5 rounded-sm py-0.5 text-left text-[10px] uppercase tracking-[0.18em] first:mt-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
+                        style={{ color: 'rgba(255, 170, 42, 0.75)' }}
+                      >
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 8 8"
+                          className={`h-2 w-2 shrink-0 ${reduceMotion ? '' : 'transition-transform duration-200'} ${isExpanded ? 'rotate-90' : ''}`}
+                        >
+                          <path
+                            d="M2.5 1l3 3-3 3"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span className="min-w-0 flex-1 truncate">
+                          {group.repo}
+                        </span>
+                        {/* Per-project total counts up 0 → N alongside the
                         headline (same shared elite count-up, gated on the
                         panel being positioned). The animating digits are
                         aria-hidden so the button's accessible name keeps
                         the stable final value from the sr-only twin. */}
-                    <span
-                      className="shrink-0 font-mono text-[0.65rem] font-semibold tabular-nums"
-                      style={{ color: '#ff6d05', textShadow: 'none' }}
-                    >
-                      <span aria-hidden="true">
-                        <MetricCount
-                          count={groupTotal}
-                          play={ready}
-                          prefersReducedMotion={reduceMotion}
-                        />
-                      </span>
-                      <span className="sr-only">{groupTotal}</span>
-                    </span>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {isExpanded && (
-                      <motion.div
-                        key="rows"
-                        id={sectionId}
-                        initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                        animate={reduceMotion ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
-                        exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                        transition={{ duration: reduceMotion ? 0.12 : 0.25, ease: 'easeOut' }}
-                        className="overflow-hidden"
-                      >
-                        <ul className="space-y-2 pt-1.5">
-                          {group.items.map((item) => (
-                            <li
-                              key={`${item.nameWithOwner}-${item.type}-${item.number ?? item.sha}`}
-                              data-reveal-row
-                            >
-                              <a
-                                href={item.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 rounded-md text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
-                              >
-                                <span
-                                  aria-hidden="true"
-                                  className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                                  style={{ background: '#ff6d05', boxShadow: '0 0 5px #ff6d05' }}
-                                />
-                                <span
-                                  className="shrink-0 font-mono text-[0.7rem] font-semibold"
-                                  style={{ color: '#ff6d05', textShadow: 'none' }}
+                        <span
+                          className="shrink-0 font-mono text-[0.65rem] font-semibold tabular-nums"
+                          style={{ color: '#ff6d05', textShadow: 'none' }}
+                        >
+                          <span aria-hidden="true">
+                            <MetricCount
+                              count={groupTotal}
+                              play={ready}
+                              prefersReducedMotion={reduceMotion}
+                            />
+                          </span>
+                          <span className="sr-only">{groupTotal}</span>
+                        </span>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isExpanded && (
+                          <motion.div
+                            key="rows"
+                            id={sectionId}
+                            initial={
+                              reduceMotion
+                                ? { opacity: 0 }
+                                : { height: 0, opacity: 0 }
+                            }
+                            animate={
+                              reduceMotion
+                                ? { opacity: 1 }
+                                : { height: 'auto', opacity: 1 }
+                            }
+                            exit={
+                              reduceMotion
+                                ? { opacity: 0 }
+                                : { height: 0, opacity: 0 }
+                            }
+                            transition={{
+                              duration: reduceMotion ? 0.12 : 0.25,
+                              ease: 'easeOut',
+                            }}
+                            className="overflow-hidden"
+                          >
+                            <ul className="space-y-2 pt-1.5">
+                              {group.items.map((item) => (
+                                <li
+                                  key={`${item.nameWithOwner}-${item.type}-${item.number ?? item.sha}`}
+                                  data-reveal-row
                                 >
-                                  {item.type === 'push' ? (
-                                    item.sha
-                                  ) : (
-                                    <>
-                                      {/* Folio typography: the digits carry
+                                  {/* Truncated titles get the header's styled
+                                  HoverHint (full title + destination)
+                                  instead of the native `title` tooltip;
+                                  its z-[70] floats over this z-[60] panel,
+                                  and the list's own scroll dismisses it. */}
+                                  <HoverHint
+                                    label="Open on GitHub ↗"
+                                    content={item.title}
+                                    reduceMotion={reduceMotion}
+                                  >
+                                    <a
+                                      href={item.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 rounded-md text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
+                                    >
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                                        style={{
+                                          background: '#ff6d05',
+                                          boxShadow: '0 0 5px #ff6d05',
+                                        }}
+                                      />
+                                      <span
+                                        className="shrink-0 font-mono text-[0.7rem] font-semibold"
+                                        style={{
+                                          color: '#ff6d05',
+                                          textShadow: 'none',
+                                        }}
+                                      >
+                                        {item.type === 'push' ? (
+                                          item.sha
+                                        ) : (
+                                          <>
+                                            {/* Folio typography: the digits carry
                                           the meaning, the hash is furniture. */}
-                                      <span style={{ color: 'rgba(255, 170, 42, 0.65)' }}>#</span>
-                                      {item.number}
-                                    </>
-                                  )}
-                                </span>
-                                <span
-                                  className="text-fire-amber min-w-0 flex-1 truncate underline-offset-2 transition-colors hover:underline"
-                                  title={item.title}
-                                >
-                                  {item.title}
-                                </span>
-                                <span className="shrink-0 whitespace-nowrap text-[0.7rem] tabular-nums text-[#f9d174]/90">
-                                  {formatAge(item.createdAt, now)}
-                                </span>
-                              </a>
-                            </li>
-                          ))}
-                          {groupOverflow > 0 && (
-                            <li data-reveal-row className="text-[11px]">
-                              <a
-                                href={moreUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-block rounded-sm underline-offset-2 transition-colors hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
-                                style={{ color: 'rgba(255, 170, 42, 0.6)' }}
-                              >
-                                + {groupOverflow} more on GitHub
-                              </a>
-                            </li>
-                          )}
-                        </ul>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </li>
-              );
-            })}
-            {unattributedOverflow > 0 && (
-              <li
-                data-reveal-row
-                className="pt-0.5 text-[11px]"
-                style={{ color: 'rgba(255, 170, 42, 0.6)' }}
-              >
-                + {unattributedOverflow} more on GitHub
-              </li>
-            )}
-          </ul>
+                                            <span
+                                              style={{
+                                                color:
+                                                  'rgba(255, 170, 42, 0.65)',
+                                              }}
+                                            >
+                                              #
+                                            </span>
+                                            {item.number}
+                                          </>
+                                        )}
+                                      </span>
+                                      <span className="text-fire-amber min-w-0 flex-1 truncate underline-offset-2 transition-colors hover:underline">
+                                        {item.title}
+                                      </span>
+                                      <span className="shrink-0 whitespace-nowrap text-[0.7rem] tabular-nums text-[#f9d174]/90">
+                                        {formatAge(item.createdAt, now)}
+                                      </span>
+                                    </a>
+                                  </HoverHint>
+                                </li>
+                              ))}
+                              {groupOverflow > 0 && (
+                                <li data-reveal-row className="text-[11px]">
+                                  <a
+                                    href={moreUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-block rounded-sm underline-offset-2 transition-colors hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
+                                    style={{ color: 'rgba(255, 170, 42, 0.6)' }}
+                                  >
+                                    + {groupOverflow} more on GitHub
+                                  </a>
+                                </li>
+                              )}
+                            </ul>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </li>
+                  );
+                })}
+                {unattributedOverflow > 0 && (
+                  <li
+                    data-reveal-row
+                    className="pt-0.5 text-[11px]"
+                    style={{ color: 'rgba(255, 170, 42, 0.6)' }}
+                  >
+                    + {unattributedOverflow} more on GitHub
+                  </li>
+                )}
+              </ul>
             </>
           )}
         </motion.div>
@@ -674,14 +758,17 @@ export default function MetricPopover({
         // the rail reads as a fifth pipeline element).
         className={`group relative inline-flex cursor-pointer items-baseline rounded-sm before:absolute before:-inset-x-1.5 before:-inset-y-3 before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]${
           underline
-            ? " after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:bg-[#ff6d05]/60 after:opacity-0 after:transition-opacity hover:after:opacity-100"
+            ? 'after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:bg-[#ff6d05]/60 after:opacity-0 after:transition-opacity hover:after:opacity-100'
             : ''
         }`}
       >
         {children}
       </button>
       {mounted &&
-        createPortal(<AnimatePresence>{open ? panel : null}</AnimatePresence>, document.body)}
+        createPortal(
+          <AnimatePresence>{open ? panel : null}</AnimatePresence>,
+          document.body,
+        )}
     </>
   );
 }

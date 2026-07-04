@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import MetricPopover from './MetricPopover';
+import HoverHint from './HoverHint';
 import { useNow } from './useNow';
 import { formatAge } from '@/utils/formatAge';
 
@@ -71,42 +72,117 @@ const ROTATION_MS = 12 * 1000;
 // the rotation takes too long to come back around to the primary item.
 const FOCUS_QUEUE_MAX = 3;
 
-// Field-level entrance: each labeled column fades and rises in, staggered
-// left-to-right, after the top hairline draws. Replaces the old section
-// scale-0 pop-in — an instrument strip powers on, it doesn't bounce.
-const contentVariants = {
-  hidden: { opacity: 0, y: 8 },
+// ── Entrance: the power-on sweep ────────────────────────────────────────
+// The previous entrance staggered every field through an opacity/y rise,
+// which read as elements *loading* one by one. An instrument strip doesn't
+// load — it powers on. Choreography: the top hairline energises first
+// (unchanged, it's now the lead-in), then ONE continuous clip-path wipe
+// sweeps the whole strip in behind it, its reveal edge carried by a 1px
+// read-head that dissolves on arrival; fields the sweep uncovers settle
+// from a soft blur into focus — they sharpen, they never "appear". All
+// materials are clip-path / transform / opacity / filter, and the metric
+// popovers are portalled to <body>, so the clip can never touch them.
+const EASE_SWEEP = [0.16, 1, 0.3, 1]; // ease-out-expo — confident, decisive
+const SWEEP_S = 0.7;
+const SWEEP_DELAY_S = 0.15; // lets the hairline lead on scroll re-entries
+
+// Content wrapper: crossfade only (AnimatePresence owns the skeleton
+// hand-off); the wipe lives one level down so the read-head, a sibling of
+// the clipped subtree, is never cut by its own reveal edge.
+const passThroughVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2, ease: 'easeOut' } },
+};
+
+// The single reveal. Non-sweeping insets rest at -8% so the finished clip
+// sits outside the box and can never shave descenders or focus rings; the
+// right inset overshoots to -8% for the same reason.
+const wipeVariants = {
+  hidden: { clipPath: 'inset(-8% 100% -8% -8%)' },
   visible: {
-    opacity: 1,
-    y: 0,
+    clipPath: 'inset(-8% -8% -8% -8%)',
+    transition: { duration: SWEEP_S, delay: SWEEP_DELAY_S, ease: EASE_SWEEP },
+  },
+};
+
+// Read-head: a full-width sled whose right edge carries the 1px rule, so
+// translating the sled walks the rule across the strip. Its span (-100% →
+// 8%) matches the wipe's 108-unit sweep exactly — same distance, duration,
+// delay, and ease keep the rule glued to the reveal edge for the whole
+// journey; opacity keyframes light it just after departure and dissolve it
+// on arrival. Hidden at rest via the class opacity-0, so reduced-motion
+// (variants undefined through v()) never shows it at all.
+const headVariants = {
+  hidden: { x: '-100%', opacity: 0 },
+  visible: {
+    x: '8%',
+    opacity: [0, 1, 1, 0],
     transition: {
-      duration: 0.35,
-      ease: 'easeOut',
-      staggerChildren: 0.06,
-      delayChildren: 0.12,
+      duration: SWEEP_S,
+      delay: SWEEP_DELAY_S,
+      ease: EASE_SWEEP,
+      opacity: {
+        duration: SWEEP_S,
+        delay: SWEEP_DELAY_S,
+        times: [0, 0.12, 0.82, 1],
+        ease: 'linear',
+      },
     },
   },
 };
 
-const childVariants = {
-  hidden: { opacity: 0, y: 6 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+// Orchestration only — the trees stagger their fields' focus-settle but no
+// longer move or fade themselves (the wipe owns the reveal).
+const contentVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.22 } },
 };
 
-// Vertical field rules scale open with the cascade so the strip reads as
-// being metered out left-to-right rather than popping in as a grid.
+// Fields settle from soft-focus into sharpness in the sweep's wake. The
+// opacity floor (0.35, not 0) is what kills the loading-list impression:
+// nothing pops into existence, it comes into focus.
+const childVariants = {
+  hidden: { opacity: 0.35, filter: 'blur(3px)' },
+  visible: {
+    opacity: 1,
+    filter: 'blur(0px)',
+    transition: { duration: 0.45, ease: 'easeOut' },
+  },
+};
+
+// Vertical field rules still extrude open in cascade order.
 const ruleVariants = {
   hidden: { opacity: 0, scaleY: 0 },
-  visible: { opacity: 1, scaleY: 1, transition: { duration: 0.3, ease: 'easeOut' } },
+  visible: {
+    opacity: 1,
+    scaleY: 1,
+    transition: { duration: 0.3, ease: 'easeOut' },
+  },
 };
 
-// Pass-through variant labels for the content branch: mount/exit opacity
-// lives here while each visible tree (desktop strip / mobile stack) runs
-// its own stagger orchestration via contentVariants.
-const passThroughVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-};
+// ── ACTIVITY reveal: carrier, then signal ───────────────────────────────
+// The sparkline is a strip-chart channel powering up. Phase A (carrier):
+// all 14 slots light as uniform 1px marks in a 12ms/slot left-to-right
+// wave — the eye locks the fortnight's rhythm as a gestalt before any
+// amplitude exists. Phase B (signal): nonzero days grow out of that
+// baseline with the strip's own ease-out-expo — development, not arrival;
+// nothing ever pops in. Today, the only saturated element, holds one 50ms
+// beat after the rise wave, then seats with the pass's single spring — a
+// needle catching the live value.
+//
+// The slots run on an absolute clock: grandchild transitions do NOT
+// inherit contentVariants' stagger (framer-motion 11 staggerChildren
+// delays direct children only), so each slot bakes its own delay.
+// ACTIVITY_T0 = delayChildren 0.22 + column index 10 × stagger 0.07 —
+// POSITIONAL: recompute if a motion child is added or removed before the
+// ACTIVITY wrapper in the desktop strip (CSS-hidden FieldRules count).
+const ACTIVITY_T0 = 0.92;
+const ACTIVITY_STEP = 0.012; // carrier wave: per-slot offset
+const ACTIVITY_RISE_DELAY = 0.1; // signal rise waits for the carrier to read
+// Scroll-exit re-arm: fast, unstaggered, silent beneath the content
+// wrapper's 0.2s exit fade — a clean hidden state so whileInView
+// (once: false) replays the full pass on every re-entry.
+const ACTIVITY_HIDDEN_RESET = { duration: 0.15, ease: 'easeOut' };
 
 export default function LiveMaintenanceHeader() {
   const [data, setData] = useState(null);
@@ -228,10 +304,14 @@ export default function LiveMaintenanceHeader() {
   // as the breakdown items' `repo` field. Defensive like `breakdown`:
   // a stale pre-#94 payload simply yields no totals and the popover falls
   // back to counting the items it was given.
-  const byRepo = meta.byRepo && typeof meta.byRepo === 'object' ? meta.byRepo : {};
+  const byRepo =
+    meta.byRepo && typeof meta.byRepo === 'object' ? meta.byRepo : {};
   const repoTotals = (key) =>
     Object.fromEntries(
-      Object.entries(byRepo).map(([repo, counts]) => [repo, counts?.[key] ?? 0]),
+      Object.entries(byRepo).map(([repo, counts]) => [
+        repo,
+        counts?.[key] ?? 0,
+      ]),
     );
 
   // The FOCUS queue: every current work item (multiple open PRs/issues,
@@ -304,8 +384,9 @@ export default function LiveMaintenanceHeader() {
     event.stopPropagation();
     setBeat((b) => (event.key === 'ArrowRight' ? b + 1 : b - 1));
   };
-  const queueHint =
-    queueLength > 1 ? '← → arrow keys cycle the focus queue' : undefined;
+  // The arrow-key affordance itself is surfaced by QueueDots — its hover
+  // hint and sr text — so the hint lives on the queue indicator, not as a
+  // field-wide tooltip fighting the FOCUS link's own hint.
 
   // Match by number AND title first — with multiple tracked repos, a bare
   // issue/PR number can exist in both, and a number-only match could
@@ -353,7 +434,32 @@ export default function LiveMaintenanceHeader() {
   // the tab is hidden, so it would only add noise.
   const pollSeconds =
     (softRateLimit ? POLL_INTERVAL_SOFT_MS : POLL_INTERVAL_MS) / 1000;
-  const syncTitle = `Signal confidence ${confidence} · polls every ${pollSeconds} seconds${
+  // Locale-formatted absolute time is client-safe here: the strip only
+  // renders after the first client-side fetch, so it never crosses SSR.
+  const lastSyncAbsolute = meta.lastUpdated
+    ? new Date(meta.lastUpdated).toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : null;
+  // SYNC's hover hint. One surface for everything the field abbreviates:
+  // the absolute wall-clock time (formerly a second nested native title
+  // on the relative age), then signal confidence + cadence — confidence
+  // is deliberately NOT rendered in the strip, this hint is its one home.
+  const syncHint = (
+    <>
+      {lastSyncAbsolute && <span className="block">{lastSyncAbsolute}</span>}
+      <span
+        className={`block ${lastSyncAbsolute ? 'mt-0.5 text-[#ffaa2a]/85' : ''}`}
+      >
+        Confidence {confidence} · polls every {pollSeconds}s
+        {softRateLimit ? ' · metered' : ''}
+      </span>
+    </>
+  );
+  // sr twin: the hover hint is mouse/keyboard-only, so the same facts stay
+  // readable to AT (the native title used to double as a description).
+  const syncDetail = `${lastSyncAbsolute ? `Last sync ${lastSyncAbsolute} · ` : ''}Signal confidence ${confidence} · polls every ${pollSeconds} seconds${
     softRateLimit ? ' while metered' : ''
   }`;
 
@@ -397,7 +503,9 @@ export default function LiveMaintenanceHeader() {
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       viewport={{ once: false, amount: 0.3 }}
-      transition={reduceMotion ? { duration: 0.12 } : { duration: 0.35, ease: 'easeOut' }}
+      transition={
+        reduceMotion ? { duration: 0.12 } : { duration: 0.35, ease: 'easeOut' }
+      }
       className={`custom-bg-abt relative isolate mx-auto w-full max-w-[min(100%,1400px)] overflow-hidden rounded-xl px-[clamp(0.6rem,2vw,1.5rem)] transition-[padding] duration-200 ${compressed ? 'py-[clamp(0.3rem,1vw,0.6rem)]' : 'py-[clamp(0.45rem,1.4vw,0.8rem)]'} ${isInitialLoading ? 'header-loading' : ''}`}
     >
       {/* Screen-reader-only live announcer. Holds the canonical status
@@ -418,7 +526,9 @@ export default function LiveMaintenanceHeader() {
         initial={{ opacity: 0, scaleX: 0 }}
         whileInView={{ opacity: 1, scaleX: 1 }}
         viewport={{ once: false, amount: 0.3 }}
-        transition={reduceMotion ? { duration: 0.12 } : { duration: 0.5, ease: 'easeOut' }}
+        transition={
+          reduceMotion ? { duration: 0.12 } : { duration: 0.5, ease: 'easeOut' }
+        }
       />
 
       <AnimatePresence mode="wait" initial={false}>
@@ -436,290 +546,112 @@ export default function LiveMaintenanceHeader() {
                 ? { opacity: 0 }
                 : { opacity: 0, y: -4, transition: { duration: 0.2 } }
             }
-            className="min-w-0"
+            className="relative min-w-0"
           >
-            {/* ── Desktop / tablet: segmented field strip ─────────────── */}
-            <motion.div
-              variants={v(contentVariants)}
-              className="hidden min-w-0 items-center gap-x-[clamp(0.7rem,1.7vw,1.4rem)] sm:flex"
-            >
-              {/* STATE — the whole column triggers the delivery-pipeline
-                  legend: the instrument explains itself on hover/focus,
-                  reusing the metric popover's floater and single-open
-                  slot. */}
-              <motion.div variants={v(childVariants)} className="shrink-0">
-                <MetricPopover
-                  id="work-popover-state"
-                  metricLabel="Delivery pipeline"
-                  panel={<StateLegendPanel state={state} repoCount={repoCount} />}
-                  widthClass="w-[min(17rem,calc(100vw-1rem))]"
-                  reduceMotion={reduceMotion}
-                  underline={false}
-                >
-                  <span className="flex flex-col gap-y-1.5 text-left">
-                    <Eyebrow
-                      compressed={compressed}
-                      className="group-hover:text-[#ffd27a]"
-                    >
-                      State
-                    </Eyebrow>
-                    <StateWord state={state} label={stateLabel} reduceMotion={reduceMotion} />
-                    <DeliveryRail state={state} reduceMotion={reduceMotion} />
-                  </span>
-                </MetricPopover>
-              </motion.div>
-
-              <FieldRule variants={v(ruleVariants)} />
-
-              {/* FOCUS — the strip's signature field. Hover/focus inside
-                  pauses the queue rotation so the link never swaps under
-                  an incoming click. */}
+            <motion.div variants={v(wipeVariants)} className="min-w-0">
+              {/* ── Desktop / tablet: segmented field strip ─────────────── */}
               <motion.div
-                variants={v(childVariants)}
-                className="flex min-w-0 flex-1 flex-col justify-center gap-y-1"
-                title={queueHint}
-                onKeyDown={handleQueueKeys}
-                {...pauseHandlers}
+                variants={v(contentVariants)}
+                className="hidden min-w-0 items-center gap-x-[clamp(0.7rem,1.7vw,1.4rem)] sm:flex"
               >
-                {/* Manual-stepping announcer: populated only while the
-                    user is interacting (paused), so the ambient 12s
-                    rotation never re-announces. */}
-                <span className="sr-only" aria-live="polite">
-                  {rotationPaused && focus
-                    ? `${focus.type === 'pr' ? 'Pull request' : 'Issue'} ${focus.number}: ${focus.title}`
-                    : ''}
-                </span>
-                <Eyebrow compressed={compressed} className="flex items-center gap-x-2">
-                  <span>{focusEyebrow}</span>
-                  <QueueDots
-                    count={queueLength}
-                    active={queueIndex}
-                    reduceMotion={reduceMotion}
-                  />
-                </Eyebrow>
-                {focus ? (
-                  <>
-                    <FocusLine
-                      focus={focus}
-                      url={focusDetail?.url}
-                      reserveCh={folioReserveCh}
-                      reduceMotion={reduceMotion}
-                    />
-                    <FocusSubRow
-                      repo={focusDetail?.repo}
-                      lastActivityAt={focusDetail?.updatedAt ?? meta.lastActivityAt}
-                      secondary={secondary}
-                      showSecondary={showSecondary}
-                      reduceMotion={reduceMotion}
-                      compressed={compressed}
-                      className="hidden min-[850px]:block"
-                    />
-                  </>
-                ) : (
-                  <p
-                    className="truncate text-[clamp(0.78rem,1.5vw,0.95rem)] font-medium leading-snug"
-                    style={{ color: 'rgba(255, 170, 42, 0.6)' }}
-                  >
-                    {monitoringCopy}
-                  </p>
-                )}
-              </motion.div>
-
-              <FieldRule variants={v(ruleVariants)} />
-
-              {/* METRICS */}
-              <motion.div variants={v(childVariants)} className="shrink-0">
-                <MetricPopover
-                  id="work-popover-prs"
-                  metricLabel="Active PRs"
-                  emptyLabel="No active PRs across tracked projects."
-                  count={meta.activePrs}
-                  items={breakdown.prs}
-                  totalsByRepo={repoTotals('activePrs')}
-                  stale={error}
-                  reduceMotion={reduceMotion}
-                >
-                  <MetricField
-                    eyebrow="PRs"
-                    value={meta.activePrs}
-                    reduceMotion={reduceMotion}
-                    compressed={compressed}
-                  />
-                </MetricPopover>
-              </motion.div>
-
-              <FieldRule variants={v(ruleVariants)} />
-
-              <motion.div variants={v(childVariants)} className="shrink-0">
-                <MetricPopover
-                  id="work-popover-issues"
-                  metricLabel="Open issues"
-                  emptyLabel="No open issues across tracked projects."
-                  count={meta.activeIssues}
-                  items={breakdown.issues}
-                  totalsByRepo={repoTotals('activeIssues')}
-                  stale={error}
-                  reduceMotion={reduceMotion}
-                >
-                  <MetricField
-                    eyebrow="Issues"
-                    value={meta.activeIssues}
-                    reduceMotion={reduceMotion}
-                    compressed={compressed}
-                  />
-                </MetricPopover>
-              </motion.div>
-
-              {/* Pushes column sheds below 1000px — the rule travels with
-                  its column so no divider ever dangles. */}
-              <FieldRule variants={v(ruleVariants)} className="hidden min-[1000px]:block" />
-
-              <motion.div variants={v(childVariants)} className="hidden shrink-0 min-[1000px]:block">
-                <MetricPopover
-                  id="work-popover-pushes"
-                  metricLabel="Pushes (24h)"
-                  emptyLabel="No pushes across tracked projects in the last 24h."
-                  count={meta.recentPushes}
-                  items={breakdown.pushes}
-                  totalsByRepo={repoTotals('recentPushes')}
-                  stale={error}
-                  reduceMotion={reduceMotion}
-                >
-                  <MetricField
-                    eyebrow="Pushes · 24h"
-                    value={meta.recentPushes}
-                    reduceMotion={reduceMotion}
-                    compressed={compressed}
-                  />
-                </MetricPopover>
-              </motion.div>
-
-              {/* ACTIVITY — 14-day commit trace. Sheds first (<1100px);
-                  the rule travels with its column. Not a popover trigger:
-                  the sparkline IS its own breakdown. */}
-              {activityTrace && (
-                <>
-                  <FieldRule
-                    variants={v(ruleVariants)}
-                    className="hidden min-[1100px]:block"
-                  />
-                  <motion.div
-                    variants={v(childVariants)}
-                    className="hidden shrink-0 min-[1100px]:block"
-                  >
-                    <ActivityField
-                      trace={activityTrace}
-                      reduceMotion={reduceMotion}
-                      compressed={compressed}
-                    />
-                  </motion.div>
-                </>
-              )}
-
-              <FieldRule variants={v(ruleVariants)} />
-
-              {/* SYNC — the one single-line field: label and value sit on
-                  one baseline ("SYNC ● 17s ago") instead of the stacked
-                  eyebrow-over-value column the other fields use. The row
-                  carries the anti-jitter width reservation (justify-end +
-                  min-w) so label, dot, and time stay a tight cluster with
-                  EQUAL gaps around the dot — reserving on the value put
-                  the slack between label and dot, off-centering it. */}
-              <motion.div
-                variants={v(childVariants)}
-                className="flex min-w-[7.5rem] shrink-0 items-baseline justify-end gap-x-1.5 whitespace-nowrap"
-                title={syncTitle}
-              >
-                <Eyebrow compressed={false} className="whitespace-nowrap">
-                  Sync
-                  {softRateLimit && <span className="text-[#f9d174]"> · metered</span>}
-                </Eyebrow>
-                <SyncValue meta={meta} stale={error} reduceMotion={reduceMotion} />
-              </motion.div>
-            </motion.div>
-
-            {/* ── Mobile (<640px): three micro-rows ───────────────────── */}
-            <motion.div
-              variants={v(contentVariants)}
-              className="flex min-w-0 flex-col gap-y-1.5 sm:hidden"
-            >
-              <motion.div
-                variants={v(childVariants)}
-                className="flex items-center justify-between gap-2"
-              >
-                <span className="flex items-center gap-1.5">
-                  <StateDot state={state} reduceMotion={reduceMotion} />
-                  <StateWord
-                    state={state}
-                    label={stateLabel}
-                    reduceMotion={reduceMotion}
-                    compact
-                  />
-                </span>
-                <span title={syncTitle}>
-                  <SyncValue meta={meta} stale={error} reduceMotion={reduceMotion} compact />
-                </span>
-              </motion.div>
-
-              <motion.div
-                variants={v(childVariants)}
-                aria-hidden="true"
-                className="elite-divider h-px opacity-50"
-              />
-
-              <motion.div
-                variants={v(childVariants)}
-                className="flex min-w-0 flex-col gap-y-1"
-                title={queueHint}
-                onKeyDown={handleQueueKeys}
-                {...pauseHandlers}
-              >
-                <Eyebrow className="flex items-center gap-x-2">
-                  <span>{focusEyebrow}</span>
-                  <QueueDots
-                    count={queueLength}
-                    active={queueIndex}
-                    reduceMotion={reduceMotion}
-                  />
-                </Eyebrow>
-                {focus ? (
-                  <>
-                    <FocusLine
-                      focus={focus}
-                      url={focusDetail?.url}
-                      reserveCh={folioReserveCh}
-                      reduceMotion={reduceMotion}
-                      compact
-                    />
-                    <FocusSubRow
-                      repo={focusDetail?.repo}
-                      lastActivityAt={focusDetail?.updatedAt ?? meta.lastActivityAt}
-                      secondary={secondary}
-                      showSecondary={showSecondary}
-                      reduceMotion={reduceMotion}
-                      compressed={false}
-                    />
-                  </>
-                ) : (
-                  <p
-                    className="text-[0.78rem] font-medium leading-snug"
-                    style={{ color: 'rgba(255, 170, 42, 0.6)' }}
-                  >
-                    {monitoringCopy}
-                  </p>
-                )}
-              </motion.div>
-
-              {/* Metric row — restores the counters on mobile (previously
-                  hidden below sm). Collapses first under compression. */}
-              <motion.div
-                variants={v(childVariants)}
-                className={`overflow-hidden transition-[max-height,opacity] duration-200 ${compressed ? 'max-h-0 opacity-0' : 'max-h-16 opacity-100'}`}
-              >
-                <div aria-hidden="true" className="elite-divider mb-1.5 h-px opacity-50" />
-                <div className="flex items-center justify-between gap-2">
+                {/* STATE — the whole column triggers the delivery-pipeline
+                    legend: the instrument explains itself on hover/focus,
+                    reusing the metric popover's floater and single-open
+                    slot. */}
+                <motion.div variants={v(childVariants)} className="shrink-0">
                   <MetricPopover
-                    id="work-popover-prs-m"
+                    id="work-popover-state"
+                    metricLabel="Delivery pipeline"
+                    panel={
+                      <StateLegendPanel state={state} repoCount={repoCount} />
+                    }
+                    widthClass="w-[min(17rem,calc(100vw-1rem))]"
+                    reduceMotion={reduceMotion}
+                    underline={false}
+                  >
+                    <span className="flex flex-col gap-y-1.5 text-left">
+                      <Eyebrow
+                        compressed={compressed}
+                        className="group-hover:text-[#ffd27a]"
+                      >
+                        State
+                      </Eyebrow>
+                      <StateWord
+                        state={state}
+                        label={stateLabel}
+                        reduceMotion={reduceMotion}
+                      />
+                      <DeliveryRail state={state} reduceMotion={reduceMotion} />
+                    </span>
+                  </MetricPopover>
+                </motion.div>
+
+                <FieldRule variants={v(ruleVariants)} />
+
+                {/* FOCUS — the strip's signature field. Hover/focus inside
+                    pauses the queue rotation so the link never swaps under
+                    an incoming click. */}
+                <motion.div
+                  variants={v(childVariants)}
+                  className="flex min-w-0 flex-1 flex-col justify-center gap-y-1"
+                  onKeyDown={handleQueueKeys}
+                  {...pauseHandlers}
+                >
+                  {/* Manual-stepping announcer: populated only while the
+                      user is interacting (paused), so the ambient 12s
+                      rotation never re-announces. */}
+                  <span className="sr-only" aria-live="polite">
+                    {rotationPaused && focus
+                      ? `${focus.type === 'pr' ? 'Pull request' : 'Issue'} ${focus.number}: ${focus.title}`
+                      : ''}
+                  </span>
+                  <Eyebrow
+                    compressed={compressed}
+                    className="flex items-center gap-x-2"
+                  >
+                    <span>{focusEyebrow}</span>
+                    <QueueDots
+                      count={queueLength}
+                      active={queueIndex}
+                      reduceMotion={reduceMotion}
+                    />
+                  </Eyebrow>
+                  {focus ? (
+                    <>
+                      <FocusLine
+                        focus={focus}
+                        url={focusDetail?.url}
+                        reserveCh={folioReserveCh}
+                        reduceMotion={reduceMotion}
+                      />
+                      <FocusSubRow
+                        repo={focusDetail?.repo}
+                        lastActivityAt={
+                          focusDetail?.updatedAt ?? meta.lastActivityAt
+                        }
+                        secondary={secondary}
+                        showSecondary={showSecondary}
+                        reduceMotion={reduceMotion}
+                        compressed={compressed}
+                        className="hidden min-[850px]:block"
+                      />
+                    </>
+                  ) : (
+                    <p
+                      className="truncate text-[clamp(0.78rem,1.5vw,0.95rem)] font-medium leading-snug"
+                      style={{ color: 'rgba(255, 170, 42, 0.6)' }}
+                    >
+                      {monitoringCopy}
+                    </p>
+                  )}
+                </motion.div>
+
+                <FieldRule variants={v(ruleVariants)} />
+
+                {/* METRICS */}
+                <motion.div variants={v(childVariants)} className="shrink-0">
+                  <MetricPopover
+                    id="work-popover-prs"
                     metricLabel="Active PRs"
                     emptyLabel="No active PRs across tracked projects."
                     count={meta.activePrs}
@@ -728,10 +660,20 @@ export default function LiveMaintenanceHeader() {
                     stale={error}
                     reduceMotion={reduceMotion}
                   >
-                    <MetricInline label="PRs" value={meta.activePrs} reduceMotion={reduceMotion} />
+                    <MetricField
+                      eyebrow="PRs"
+                      value={meta.activePrs}
+                      reduceMotion={reduceMotion}
+                      compressed={compressed}
+                    />
                   </MetricPopover>
+                </motion.div>
+
+                <FieldRule variants={v(ruleVariants)} />
+
+                <motion.div variants={v(childVariants)} className="shrink-0">
                   <MetricPopover
-                    id="work-popover-issues-m"
+                    id="work-popover-issues"
                     metricLabel="Open issues"
                     emptyLabel="No open issues across tracked projects."
                     count={meta.activeIssues}
@@ -740,14 +682,28 @@ export default function LiveMaintenanceHeader() {
                     stale={error}
                     reduceMotion={reduceMotion}
                   >
-                    <MetricInline
-                      label="Issues"
+                    <MetricField
+                      eyebrow="Issues"
                       value={meta.activeIssues}
                       reduceMotion={reduceMotion}
+                      compressed={compressed}
                     />
                   </MetricPopover>
+                </motion.div>
+
+                {/* Pushes column sheds below 1000px — the rule travels with
+                    its column so no divider ever dangles. */}
+                <FieldRule
+                  variants={v(ruleVariants)}
+                  className="hidden min-[1000px]:block"
+                />
+
+                <motion.div
+                  variants={v(childVariants)}
+                  className="hidden shrink-0 min-[1000px]:block"
+                >
                   <MetricPopover
-                    id="work-popover-pushes-m"
+                    id="work-popover-pushes"
                     metricLabel="Pushes (24h)"
                     emptyLabel="No pushes across tracked projects in the last 24h."
                     count={meta.recentPushes}
@@ -756,14 +712,229 @@ export default function LiveMaintenanceHeader() {
                     stale={error}
                     reduceMotion={reduceMotion}
                   >
-                    <MetricInline
-                      label="Pushes"
+                    <MetricField
+                      eyebrow="Pushes · 24h"
                       value={meta.recentPushes}
                       reduceMotion={reduceMotion}
+                      compressed={compressed}
                     />
                   </MetricPopover>
-                </div>
+                </motion.div>
+
+                {/* ACTIVITY — 14-day commit trace. Sheds first (<1100px);
+                    the rule travels with its column. Not a popover trigger:
+                    the sparkline IS its own breakdown. */}
+                {activityTrace && (
+                  <>
+                    <FieldRule
+                      variants={v(ruleVariants)}
+                      className="hidden min-[1100px]:block"
+                    />
+                    <motion.div
+                      variants={v(childVariants)}
+                      className="hidden shrink-0 min-[1100px]:block"
+                    >
+                      <ActivityField
+                        trace={activityTrace}
+                        reduceMotion={reduceMotion}
+                        compressed={compressed}
+                      />
+                    </motion.div>
+                  </>
+                )}
+
+                <FieldRule variants={v(ruleVariants)} />
+
+                {/* SYNC — the one single-line field: label and value sit on
+                    one baseline ("SYNC ● 17s ago") instead of the stacked
+                    eyebrow-over-value column the other fields use. The row
+                    carries the anti-jitter width reservation (justify-end +
+                    min-w) so label, dot, and time stay a tight cluster with
+                    EQUAL gaps around the dot — reserving on the value put
+                    the slack between label and dot, off-centering it. */}
+                <HoverHint
+                  label="Last sync"
+                  content={syncHint}
+                  reduceMotion={reduceMotion}
+                >
+                  <motion.div
+                    variants={v(childVariants)}
+                    className="flex min-w-[7.5rem] shrink-0 items-baseline justify-end gap-x-1.5 whitespace-nowrap"
+                  >
+                    <Eyebrow compressed={false} className="whitespace-nowrap">
+                      Sync
+                      {softRateLimit && (
+                        <span className="text-[#f9d174]"> · metered</span>
+                      )}
+                    </Eyebrow>
+                    <SyncValue
+                      meta={meta}
+                      stale={error}
+                      reduceMotion={reduceMotion}
+                    />
+                    <span className="sr-only">{syncDetail}</span>
+                  </motion.div>
+                </HoverHint>
               </motion.div>
+
+              {/* ── Mobile (<640px): three micro-rows ───────────────────── */}
+              <motion.div
+                variants={v(contentVariants)}
+                className="flex min-w-0 flex-col gap-y-1.5 sm:hidden"
+              >
+                <motion.div
+                  variants={v(childVariants)}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <StateDot state={state} reduceMotion={reduceMotion} />
+                    <StateWord
+                      state={state}
+                      label={stateLabel}
+                      reduceMotion={reduceMotion}
+                      compact
+                    />
+                  </span>
+                  <HoverHint
+                    label="Last sync"
+                    content={syncHint}
+                    reduceMotion={reduceMotion}
+                  >
+                    <span>
+                      <SyncValue
+                        meta={meta}
+                        stale={error}
+                        reduceMotion={reduceMotion}
+                        compact
+                      />
+                      <span className="sr-only">{syncDetail}</span>
+                    </span>
+                  </HoverHint>
+                </motion.div>
+
+                <motion.div
+                  variants={v(childVariants)}
+                  aria-hidden="true"
+                  className="elite-divider h-px opacity-50"
+                />
+
+                <motion.div
+                  variants={v(childVariants)}
+                  className="flex min-w-0 flex-col gap-y-1"
+                  onKeyDown={handleQueueKeys}
+                  {...pauseHandlers}
+                >
+                  <Eyebrow className="flex items-center gap-x-2">
+                    <span>{focusEyebrow}</span>
+                    <QueueDots
+                      count={queueLength}
+                      active={queueIndex}
+                      reduceMotion={reduceMotion}
+                    />
+                  </Eyebrow>
+                  {focus ? (
+                    <>
+                      <FocusLine
+                        focus={focus}
+                        url={focusDetail?.url}
+                        reserveCh={folioReserveCh}
+                        reduceMotion={reduceMotion}
+                        compact
+                      />
+                      <FocusSubRow
+                        repo={focusDetail?.repo}
+                        lastActivityAt={
+                          focusDetail?.updatedAt ?? meta.lastActivityAt
+                        }
+                        secondary={secondary}
+                        showSecondary={showSecondary}
+                        reduceMotion={reduceMotion}
+                        compressed={false}
+                      />
+                    </>
+                  ) : (
+                    <p
+                      className="text-[0.78rem] font-medium leading-snug"
+                      style={{ color: 'rgba(255, 170, 42, 0.6)' }}
+                    >
+                      {monitoringCopy}
+                    </p>
+                  )}
+                </motion.div>
+
+                {/* Metric row — restores the counters on mobile (previously
+                    hidden below sm). Collapses first under compression. */}
+                <motion.div
+                  variants={v(childVariants)}
+                  className={`overflow-hidden transition-[max-height,opacity] duration-200 ${compressed ? 'max-h-0 opacity-0' : 'max-h-16 opacity-100'}`}
+                >
+                  <div
+                    aria-hidden="true"
+                    className="elite-divider mb-1.5 h-px opacity-50"
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <MetricPopover
+                      id="work-popover-prs-m"
+                      metricLabel="Active PRs"
+                      emptyLabel="No active PRs across tracked projects."
+                      count={meta.activePrs}
+                      items={breakdown.prs}
+                      totalsByRepo={repoTotals('activePrs')}
+                      stale={error}
+                      reduceMotion={reduceMotion}
+                    >
+                      <MetricInline
+                        label="PRs"
+                        value={meta.activePrs}
+                        reduceMotion={reduceMotion}
+                      />
+                    </MetricPopover>
+                    <MetricPopover
+                      id="work-popover-issues-m"
+                      metricLabel="Open issues"
+                      emptyLabel="No open issues across tracked projects."
+                      count={meta.activeIssues}
+                      items={breakdown.issues}
+                      totalsByRepo={repoTotals('activeIssues')}
+                      stale={error}
+                      reduceMotion={reduceMotion}
+                    >
+                      <MetricInline
+                        label="Issues"
+                        value={meta.activeIssues}
+                        reduceMotion={reduceMotion}
+                      />
+                    </MetricPopover>
+                    <MetricPopover
+                      id="work-popover-pushes-m"
+                      metricLabel="Pushes (24h)"
+                      emptyLabel="No pushes across tracked projects in the last 24h."
+                      count={meta.recentPushes}
+                      items={breakdown.pushes}
+                      totalsByRepo={repoTotals('recentPushes')}
+                      stale={error}
+                      reduceMotion={reduceMotion}
+                    >
+                      <MetricInline
+                        label="Pushes"
+                        value={meta.recentPushes}
+                        reduceMotion={reduceMotion}
+                      />
+                    </MetricPopover>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+
+            {/* Read-head — rides the wipe's reveal edge, then dissolves.
+                Sibling of the clipped subtree so the clip never cuts it;
+                opacity-0 keeps it invisible whenever variants are off. */}
+            <motion.div
+              variants={v(headVariants)}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 w-full opacity-0"
+            >
+              <span className="elite-divider-v absolute inset-y-0 right-0 w-px" />
             </motion.div>
           </motion.div>
         )}
@@ -863,7 +1034,10 @@ function DeliveryRail({ state, reduceMotion }) {
                     style={{ transformOrigin: 'left center' }}
                     initial={reduceMotion ? false : { scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    transition={{ duration: 0.25, delay: reduceMotion ? 0 : i * 0.08 }}
+                    transition={{
+                      duration: 0.25,
+                      delay: reduceMotion ? 0 : i * 0.08,
+                    }}
                   />
                 )}
               </span>
@@ -872,7 +1046,10 @@ function DeliveryRail({ state, reduceMotion }) {
               key={`${stage.key}-${state}`}
               initial={reduceMotion ? false : { opacity: 0.2 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.25, delay: reduceMotion ? 0 : i * 0.08 }}
+              transition={{
+                duration: 0.25,
+                delay: reduceMotion ? 0 : i * 0.08,
+              }}
               className={`h-[5px] w-[5px] shrink-0 rounded-full ${breathe}`}
               style={
                 isActive
@@ -915,24 +1092,32 @@ function StateDot({ state, reduceMotion }) {
 // Micro queue-position rail inside the FOCUS eyebrow — one 3px dot per
 // queued work item, the active one at full opacity. The DeliveryRail's
 // dot vocabulary at eyebrow scale; renders only when there's an actual
-// queue (a single dot carries no information). Decorative: aria-hidden,
-// the SR announcement names the primary item.
+// queue (a single dot carries no information). The dots stay decorative
+// (aria-hidden; the live announcement names the primary item), but the
+// cluster is the queue hint's hover home — position plus the arrow-key
+// affordance — with a padded hit area because 3px dots aren't a target.
 function QueueDots({ count, active, reduceMotion }) {
   if (count <= 1) return null;
   return (
-    <span
-      aria-hidden="true"
-      title={`Focus rotation · item ${active + 1} of ${count}`}
-      className="flex shrink-0 items-center gap-x-1"
+    <HoverHint
+      label="Focus queue"
+      content={`Item ${active + 1} of ${count} · ← → to cycle`}
+      reduceMotion={reduceMotion}
     >
-      {Array.from({ length: count }, (_, i) => (
-        <span
-          key={i}
-          className={`h-[3px] w-[3px] rounded-full bg-[#ff6d05] ${reduceMotion ? '' : 'transition-opacity duration-200'}`}
-          style={{ opacity: i === active ? 1 : 0.35 }}
-        />
-      ))}
-    </span>
+      <span className="relative flex shrink-0 items-center gap-x-1 before:absolute before:-inset-x-1.5 before:-inset-y-2 before:content-['']">
+        {Array.from({ length: count }, (_, i) => (
+          <span
+            key={i}
+            aria-hidden="true"
+            className={`h-[3px] w-[3px] rounded-full bg-[#ff6d05] ${reduceMotion ? '' : 'transition-opacity duration-200'}`}
+            style={{ opacity: i === active ? 1 : 0.35 }}
+          />
+        ))}
+        <span className="sr-only">
+          {`Focus queue of ${count} — left and right arrow keys cycle`}
+        </span>
+      </span>
+    </HoverHint>
   );
 }
 
@@ -943,50 +1128,120 @@ function QueueDots({ count, active, reduceMotion }) {
 // use square-root scaling with a 3px floor so a 1-commit day clears the
 // tick line while a burst compresses to the full 14px without flattening
 // everything else. Flat fills only; today's bar is the accent orange.
-// No visible numeric total — the title and sr text carry it once.
+// No visible numeric total — the hover hint and sr text carry it once.
+//
+// Reveal: the carrier-then-signal pass (constants above), variants-driven
+// so it replays with the strip on every scroll re-entry — the old
+// mount-only scaleY fired once behind the power-on wipe and was never
+// seen. Bars are BORN at a 1px carrier seed (scaleY 1/height, visually a
+// tick) and only ever grow from it; height itself is a static style and
+// is never animated. Slots are keyed by index, so 30s polls re-render
+// heights without re-firing the entrance. Ticks never transform — at 2px
+// any transform is sub-resolvable; opacity is their whole vocabulary.
+// Under reduced motion every slot's variants strip to undefined and the
+// finished sparkline renders statically.
 function ActivityField({ trace, reduceMotion, compressed }) {
   const max = Math.max(...trace.counts, 1);
   const summary = `${trace.total} commit${trace.total === 1 ? '' : 's'} · last ${trace.counts.length} days${trace.truncated ? ' (oldest days undercounted)' : ''}`;
   return (
-    <span className="flex flex-col items-center gap-y-1.5" title={summary}>
-      <Eyebrow compressed={compressed} className="whitespace-nowrap">
-        Activity · 14d
-      </Eyebrow>
-      <span className="flex h-[14px] items-end gap-x-[2px]" aria-hidden="true">
-        {trace.counts.map((count, i) => {
-          if (count === 0) {
+    <HoverHint
+      label="Commit trace"
+      content={summary}
+      reduceMotion={reduceMotion}
+    >
+      <span className="flex flex-col items-center gap-y-1.5">
+        <Eyebrow compressed={compressed} className="whitespace-nowrap">
+          Activity · 14d
+        </Eyebrow>
+        <span
+          className="flex h-[14px] items-end gap-x-[2px]"
+          aria-hidden="true"
+        >
+          {trace.counts.map((count, i) => {
+            const carrierDelay = ACTIVITY_T0 + i * ACTIVITY_STEP;
+            if (count === 0) {
+              const tickVariants = {
+                hidden: { opacity: 0, transition: ACTIVITY_HIDDEN_RESET },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    duration: 0.12,
+                    delay: carrierDelay,
+                    ease: 'linear',
+                  },
+                },
+              };
+              return (
+                <motion.span
+                  key={i}
+                  variants={reduceMotion ? undefined : tickVariants}
+                  className="w-[2px] shrink-0"
+                  style={{ height: 1, background: 'rgba(255, 170, 42, 0.3)' }}
+                />
+              );
+            }
+            const height = Math.max(3, Math.round(14 * Math.sqrt(count / max)));
+            const isToday = i === trace.counts.length - 1;
+            // Carrier seed: this scaleY renders the bar ≈1px tall, so for
+            // the first ~100ms the whole rail is one uniform dotted line
+            // and amplitude then grows out of it — development, not
+            // arrival. Never scale from 0: nothing real appears from
+            // nothing.
+            const seed = 1 / height;
+            const barVariants = {
+              hidden: {
+                opacity: 0,
+                scaleY: seed,
+                transition: ACTIVITY_HIDDEN_RESET,
+              },
+              visible: {
+                opacity: 1,
+                scaleY: 1,
+                transition: {
+                  opacity: {
+                    duration: 0.12,
+                    delay: carrierDelay,
+                    ease: 'linear',
+                  },
+                  scaleY: isToday
+                    ? // The single accent moment: one held beat after the
+                      // rise wave, then the pass's only spring seats the
+                      // only saturated element. Bounce 0.12 is ≤1.7px of
+                      // overshoot on a 14px bar — a needle catching the
+                      // live value, not a bounce. The wipe's -8% clip
+                      // insets clear it; never wrap this rail in
+                      // overflow-hidden.
+                      {
+                        type: 'spring',
+                        duration: 0.24,
+                        bounce: 0.12,
+                        delay: carrierDelay + ACTIVITY_RISE_DELAY + 0.05,
+                      }
+                    : {
+                        duration: 0.22,
+                        delay: carrierDelay + ACTIVITY_RISE_DELAY,
+                        ease: EASE_SWEEP,
+                      },
+                },
+              },
+            };
             return (
-              <span
+              <motion.span
                 key={i}
+                variants={reduceMotion ? undefined : barVariants}
                 className="w-[2px] shrink-0"
-                style={{ height: 1, background: 'rgba(255, 170, 42, 0.3)' }}
+                style={{
+                  height,
+                  background: isToday ? '#ff6d05' : 'rgba(255, 170, 42, 0.65)',
+                  transformOrigin: 'bottom center',
+                }}
               />
             );
-          }
-          const height = Math.max(3, Math.round(14 * Math.sqrt(count / max)));
-          const isToday = i === trace.counts.length - 1;
-          return (
-            <motion.span
-              key={i}
-              className="w-[2px] shrink-0"
-              style={{
-                height,
-                background: isToday ? '#ff6d05' : 'rgba(255, 170, 42, 0.65)',
-                transformOrigin: 'bottom center',
-              }}
-              initial={reduceMotion ? false : { scaleY: 0 }}
-              animate={{ scaleY: 1 }}
-              transition={{
-                duration: 0.3,
-                delay: reduceMotion ? 0 : 0.15 + i * 0.02,
-                ease: 'easeOut',
-              }}
-            />
-          );
-        })}
+          })}
+        </span>
+        <span className="sr-only">{summary}</span>
       </span>
-      <span className="sr-only">{summary}</span>
-    </span>
+    </HoverHint>
   );
 }
 
@@ -1047,11 +1302,15 @@ function StateLegendPanel({ state, repoCount }) {
                 <span className="min-w-0">
                   <span
                     className="text-[11px] font-semibold uppercase tracking-[0.15em]"
-                    style={{ color: isActive ? '#ff6d05' : 'rgba(255, 170, 42, 0.75)' }}
+                    style={{
+                      color: isActive ? '#ff6d05' : 'rgba(255, 170, 42, 0.75)',
+                    }}
                   >
                     {stage.label}
                   </span>
-                  <span className="block text-[11px] leading-snug text-[#f9d174]/80">
+                  <span
+                    className={`block text-[11px] leading-snug ${isActive ? 'text-fire-amber' : 'text-[#f9d174]/80'}`}
+                  >
                     {STAGE_MEANINGS[stage.key]}
                   </span>
                 </span>
@@ -1073,7 +1332,9 @@ function StateLegendPanel({ state, repoCount }) {
             >
               Maintenance
             </span>
-            <span className="block text-[11px] leading-snug text-[#f9d174]/80">
+            <span
+              className={`block text-[11px] leading-snug ${idle ? 'text-fire-amber' : 'text-[#f9d174]/80'}`}
+            >
               Off pipeline — monitoring{' '}
               {repoCount > 0 ? `${repoCount} repos` : 'tracked repositories'}
             </span>
@@ -1156,13 +1417,32 @@ function RollingDigits({ value, reduceMotion }) {
 // is dimmed furniture (folio typography: the digits carry the meaning)
 // and never animates; `reserveCh` pins the folio's width to the widest
 // number in the queue so the title's left edge holds still all cycle.
-function FocusLine({ focus, url, reserveCh = 3, reduceMotion, compact = false }) {
+//
+// The truncated title's full text moves from the native `title` attr to a
+// HoverHint on the line itself: full item title as the body, and — when
+// the line is a link — the destination as the eyebrow, an affordance the
+// native tooltip never carried. The aria-label keeps the full title for
+// AT either way.
+function FocusLine({
+  focus,
+  url,
+  reserveCh = 3,
+  reduceMotion,
+  compact = false,
+}) {
   const typeWord = focus.type === 'pr' ? 'pull request' : 'issue';
+  const hintLabel = url
+    ? 'Open on GitHub ↗'
+    : `${focus.type === 'pr' ? 'Pull request' : 'Issue'} #${focus.number}`;
   const content = (
     <span className="flex min-w-0 items-baseline gap-x-2">
       <span
-        className={`shrink-0 font-mono font-semibold leading-none tabular-nums ${compact ? 'text-[0.95rem]' : 'text-[clamp(1.05rem,1.6vw,1.25rem)]'}`}
-        style={{ color: '#ff6d05', textShadow: 'none', minWidth: `${reserveCh}ch` }}
+        className={`shrink-0 font-mono font-semibold tabular-nums leading-none ${compact ? 'text-[0.95rem]' : 'text-[clamp(1.05rem,1.6vw,1.25rem)]'}`}
+        style={{
+          color: '#ff6d05',
+          textShadow: 'none',
+          minWidth: `${reserveCh}ch`,
+        }}
       >
         <span style={{ color: 'rgba(255, 170, 42, 0.65)' }}>#</span>
         <RollingDigits value={focus.number} reduceMotion={reduceMotion} />
@@ -1178,7 +1458,11 @@ function FocusLine({ focus, url, reserveCh = 3, reduceMotion, compact = false })
                 : {
                     opacity: 1,
                     y: 0,
-                    transition: { duration: 0.22, delay: 0.06, ease: 'easeOut' },
+                    transition: {
+                      duration: 0.22,
+                      delay: 0.06,
+                      ease: 'easeOut',
+                    },
                   }
             }
             exit={
@@ -1187,7 +1471,6 @@ function FocusLine({ focus, url, reserveCh = 3, reduceMotion, compact = false })
                 : { opacity: 0, y: -4, transition: { duration: 0.18 } }
             }
             className={`text-fire-amber block truncate font-medium leading-snug decoration-[#ffaa2a]/70 underline-offset-2 ${compact ? 'text-[0.78rem]' : 'text-[clamp(0.78rem,1.5vw,0.95rem)]'} ${url ? 'group-hover/focus:underline' : ''}`}
-            title={focus.title}
           >
             {focus.title}
           </motion.span>
@@ -1196,17 +1479,33 @@ function FocusLine({ focus, url, reserveCh = 3, reduceMotion, compact = false })
     </span>
   );
 
-  if (!url) return content;
+  if (!url) {
+    return (
+      <HoverHint
+        label={hintLabel}
+        content={focus.title}
+        reduceMotion={reduceMotion}
+      >
+        {content}
+      </HoverHint>
+    );
+  }
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Open ${typeWord} #${focus.number}: ${focus.title} on GitHub`}
-      className="group/focus relative block min-w-0 rounded-sm before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
+    <HoverHint
+      label={hintLabel}
+      content={focus.title}
+      reduceMotion={reduceMotion}
     >
-      {content}
-    </a>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Open ${typeWord} #${focus.number}: ${focus.title} on GitHub`}
+        className="group/focus relative block min-w-0 rounded-sm before:absolute before:-inset-y-2 before:inset-x-0 before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
+      >
+        {content}
+      </a>
+    </HoverHint>
   );
 }
 
@@ -1285,7 +1584,7 @@ function MetricField({ eyebrow, value, reduceMotion, compressed }) {
         {eyebrow}
       </Eyebrow>
       <span
-        className="min-w-[4ch] text-center font-mono text-[clamp(0.95rem,1.55vw,1.1rem)] font-semibold leading-none tabular-nums"
+        className="min-w-[4ch] text-center font-mono text-[clamp(0.95rem,1.55vw,1.1rem)] font-semibold tabular-nums leading-none"
         style={{ color: metricColor(value), textShadow: 'none' }}
       >
         <MetricValue value={value} reduceMotion={reduceMotion} />
@@ -1299,7 +1598,7 @@ function MetricInline({ label, value, reduceMotion }) {
   return (
     <span className="flex items-baseline gap-x-1 whitespace-nowrap">
       <span
-        className="font-mono text-[0.85rem] font-semibold leading-none tabular-nums"
+        className="font-mono text-[0.85rem] font-semibold tabular-nums leading-none"
         style={{ color: metricColor(value), textShadow: 'none' }}
       >
         <MetricValue value={value} reduceMotion={reduceMotion} />
@@ -1318,7 +1617,7 @@ function MetricInline({ label, value, reduceMotion }) {
 function SyncValue({ meta, stale, reduceMotion, compact = false }) {
   return (
     <span
-      className={`flex items-center gap-x-1.5 whitespace-nowrap leading-none tabular-nums ${compact ? 'text-[0.68rem]' : 'text-[clamp(0.7rem,1.4vw,0.85rem)]'}`}
+      className={`flex items-center gap-x-1.5 whitespace-nowrap tabular-nums leading-none ${compact ? 'text-[0.68rem]' : 'text-[clamp(0.7rem,1.4vw,0.85rem)]'}`}
     >
       {stale ? (
         <span
@@ -1333,7 +1632,9 @@ function SyncValue({ meta, stale, reduceMotion, compact = false }) {
           className="h-[5px] w-[5px] shrink-0 rounded-full"
           style={{ background: '#ff6d05' }}
           initial={{ opacity: 0.45 }}
-          animate={reduceMotion ? { opacity: 0.45 } : { opacity: [0.45, 1, 0.45] }}
+          animate={
+            reduceMotion ? { opacity: 0.45 } : { opacity: [0.45, 1, 0.45] }
+          }
           transition={{ duration: 0.3, times: [0, 0.5, 1] }}
         />
       )}
@@ -1390,7 +1691,8 @@ function MetricValue({ value, reduceMotion }) {
         eased = (t / FAST_END_TIME) * FAST_END_VALUE;
       } else {
         const tail = (t - FAST_END_TIME) / (1 - FAST_END_TIME);
-        eased = FAST_END_VALUE + (1 - FAST_END_VALUE) * (1 - Math.pow(1 - tail, 3));
+        eased =
+          FAST_END_VALUE + (1 - FAST_END_VALUE) * (1 - Math.pow(1 - tail, 3));
       }
       setDisplay(Math.round(target * eased));
       if (t < 1) raf = requestAnimationFrame(tick);
@@ -1454,8 +1756,11 @@ function RelativeTime({ iso }) {
   const formatted = formatRelative(diffMs);
   const match = /^(\d+)(\D.*)$/.exec(formatted);
 
+  // No title attr: the absolute wall-clock time lives in the SYNC field's
+  // HoverHint (and its sr twin) — a native tooltip nested inside the
+  // styled one would resurrect exactly the browser-chrome look it replaced.
   return (
-    <span title={new Date(iso).toLocaleString()}>
+    <span>
       {match ? (
         <>
           <span
@@ -1588,7 +1893,10 @@ function HeaderSkeleton({ reduceMotion }) {
           <div className="header-skeleton h-3 w-24 rounded" />
           <div className="header-skeleton h-3 w-16 rounded" />
         </SkeletonBlock>
-        <SkeletonBlock reduceMotion={reduceMotion} className="h-px bg-[#f9d174]/10" />
+        <SkeletonBlock
+          reduceMotion={reduceMotion}
+          className="h-px bg-[#f9d174]/10"
+        />
         <SkeletonBlock
           reduceMotion={reduceMotion}
           className="flex min-w-0 flex-col gap-y-1.5"
@@ -1596,7 +1904,10 @@ function HeaderSkeleton({ reduceMotion }) {
           <div className="header-skeleton h-2 w-14 rounded" />
           <div className="header-skeleton h-4 w-[80%] rounded" />
         </SkeletonBlock>
-        <SkeletonBlock reduceMotion={reduceMotion} className="h-px bg-[#f9d174]/10" />
+        <SkeletonBlock
+          reduceMotion={reduceMotion}
+          className="h-px bg-[#f9d174]/10"
+        />
         <SkeletonBlock
           reduceMotion={reduceMotion}
           className="flex items-center justify-between gap-2"
@@ -1643,7 +1954,9 @@ function SkeletonBlock({ reduceMotion, className, children }) {
   return (
     <motion.div
       variants={skeletonChildVariants}
-      transition={reduceMotion ? { duration: 0.12 } : { duration: 0.35, ease: 'easeOut' }}
+      transition={
+        reduceMotion ? { duration: 0.12 } : { duration: 0.35, ease: 'easeOut' }
+      }
       className={className}
     >
       {children}

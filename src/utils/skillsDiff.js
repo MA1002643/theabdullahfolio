@@ -92,8 +92,9 @@ export function skillsDataFingerprint(skills) {
 
 /**
  * Skills present in BOTH lists whose repo usage changed — the public repo list
- * (by content, order-insensitive via the server's stable sort) or the private
- * count. These get the icon heartbeat WITHOUT a banner entry (the banner
+ * (by content: both sides are sorted before comparing, so ordering — the
+ * server's, or a future change to it — can never read as a usage change) or
+ * the private count. These get the icon heartbeat WITHOUT a banner entry (the banner
  * vocabulary is Added/Removed/Moved; a count change isn't any of those).
  * Baseline items saved before repo data existed (no `repos`/`privateRepoCount`
  * fields) are skipped — "unknown" must not read as "changed", or the first
@@ -114,8 +115,12 @@ export function diffSkillData(prev, next) {
     const before = prevBySlug.get(s.slug);
     if (!before) continue; // brand-new skill — that's `added`, not `changed`
     if (!Array.isArray(before.repos) || !Number.isFinite(before.privateRepoCount)) continue;
+    // Sort copies before joining: repos arrive server-sorted today, but the
+    // baseline was saved under an older deploy — canonicalising here keeps a
+    // server-side ordering change from pulsing every icon at once.
+    const sortedJoin = (list) => [...list].sort().join(",");
     const reposChanged =
-      before.repos.join(",") !== (Array.isArray(s.repos) ? s.repos : []).join(",");
+      sortedJoin(before.repos) !== sortedJoin(Array.isArray(s.repos) ? s.repos : []);
     const privateChanged =
       before.privateRepoCount !== (Number.isFinite(s.privateRepoCount) ? s.privateRepoCount : 0);
     if (reposChanged || privateChanged) changed.push({ slug: s.slug, category: s.category ?? null });
