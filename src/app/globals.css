@@ -1974,3 +1974,1403 @@ html.custom-cursor-active * {
   background-color: #ff6d05;
 }
 
+/* ── Footer — "Portrait Ledger" (issue #30) ─────────────────────────────────
+   The route-wide sub-pages footer. Its signature is a cursor-reactive particle
+   portrait (ParticlePortrait.jsx) over an ELITE ATMOSPHERIC BACKGROUND: a cool
+   central depth lift + two large, slowly-drifting brand orbs (ember + amethyst)
+   + a fine grain overlay (.footer-atmosphere / .footer-grain below). The rest of
+   this block is chrome: the per-link underline sweep and the desktop column
+   rules. Kept OUTSIDE @layer — like the cursor / live-header sections — so these
+   feature styles reliably sit after Tailwind utilities in source order. */
+
+/* Atmospheric plate over the footer's solid bg-night-950. A cool radial "lift" pulls
+   the mid-field out of pure black for depth; the ::before / ::after are two big,
+   heavily-blurred brand-colour orbs (ember left, amethyst right) that drift on a
+   slow transform loop — the modern "expensive" ambient look, compositor-only
+   (no layout, no paint churn). The top edge (seamless with the page above) and
+   the bottom-centre (under the plucked-string wordmark) are deliberately left
+   dark, so the colour never pools where text or the wordmark sit. */
+.footer-atmosphere {
+  background: radial-gradient(
+    100% 80% at 50% 44%,
+    rgba(30, 34, 66, 0.58) 0%,
+    rgba(13, 15, 34, 0.24) 46%,
+    transparent 74%
+  );
+}
+.footer-atmosphere::before,
+.footer-atmosphere::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(72px);
+  will-change: transform;
+}
+/* Ember orb — mid-left, warming the portrait side. */
+.footer-atmosphere::before {
+  left: -6%;
+  top: 10%;
+  width: 50%;
+  height: 138%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 122, 32, 0.22),
+    rgba(255, 122, 32, 0) 72%
+  );
+  animation: footer-orb-a 22s ease-in-out infinite alternate;
+}
+/* Amethyst orb — right, drifting counter to the ember for a slow cross-fade. */
+.footer-atmosphere::after {
+  right: -8%;
+  top: 0%;
+  width: 46%;
+  height: 128%;
+  background: radial-gradient(
+    closest-side,
+    rgba(158, 92, 236, 0.2),
+    rgba(158, 92, 236, 0) 72%
+  );
+  animation: footer-orb-b 26s ease-in-out infinite alternate;
+}
+@keyframes footer-orb-a {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(7%, -9%, 0) scale(1.14);
+  }
+}
+@keyframes footer-orb-b {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.06);
+  }
+  to {
+    transform: translate3d(-8%, 10%, 0) scale(0.94);
+  }
+}
+
+/* Fine film grain over the plate — the premium texture that kills flat gradient
+   banding. A tiled greyscale fractal-noise SVG, blended soft-light so it only
+   perturbs the tone (never lightens the black). Static + pointer-inert. */
+.footer-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  opacity: 0.55;
+  mix-blend-mode: soft-light;
+}
+
+/* Reduced motion: still the drifting orbs (the layered depth + grain remain, so
+   the background is unchanged in richness — just not moving). */
+@media (prefers-reduced-motion: reduce) {
+  .footer-atmosphere::before,
+  .footer-atmosphere::after {
+    animation: none;
+  }
+}
+
+/* Animated underline sweep shared by every footer text link. A ::after hairline
+   that scales from the left on hover/focus (transform-only). The active-route
+   link holds it open via [data-active="true"]. */
+.footer-link-underline {
+  position: relative;
+}
+.footer-link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1px;
+  width: 100%;
+  background: #ff6d05;
+  box-shadow: 0 0 6px rgba(255, 109, 5, 0.55);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.footer-link-underline:hover::after,
+.footer-link-underline:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* ── Per-character label swap (HoverText.jsx) ──
+   On hover / keyboard-focus of a `.hover-swap` link, every glyph rolls up and
+   out of the line (micro-blur + fade) while a white clone rolls up into its
+   place from below, fired left-to-right by a per-char `--i` transition-delay —
+   so the resting grey word re-typesets itself into white, letter by letter,
+   under the orange underline. Face + clone are stacked INSIDE each char box, so
+   long values (the contact email) still wrap char-by-char. Transform/opacity/
+   filter only; the whole cascade is CSS, so it needs no JS and nothing at rest. */
+.hover-text {
+  display: inline;
+}
+.hover-text__char {
+  position: relative;
+  display: inline-block;
+  white-space: pre; /* preserve the width of a swapped-in non-breaking space */
+}
+.hover-text__face,
+.hover-text__clone {
+  display: inline-block;
+  transition:
+    transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 22ms);
+}
+/* The clone waits one glyph-height below, blurred and invisible. */
+.hover-text__clone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* Incoming glyph colour on hover: the about-page title orange (#ff6d05) at
+     82% — the SAME hue as the active-link highlight, just a touch dimmed, so a
+     hovered link reads as a softer orange and stays distinct from the full-
+     bright active (current-page) link. Lifts letter-by-letter via the --i
+     transition-delay above. */
+  color: rgba(255, 109, 5, 0.82);
+  transform: translateY(0.6em);
+  opacity: 0;
+  filter: blur(3px);
+}
+.hover-swap:hover .hover-text__face,
+.hover-swap:focus-visible .hover-text__face {
+  transform: translateY(-0.6em);
+  opacity: 0;
+  filter: blur(3px);
+}
+.hover-swap:hover .hover-text__clone,
+.hover-swap:focus-visible .hover-text__clone {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
+}
+/* Reduced motion: no roll — collapse to a plain per-link colour lift. */
+@media (prefers-reduced-motion: reduce) {
+  .hover-text__face,
+  .hover-text__clone {
+    transition: none;
+  }
+  .hover-text__clone {
+    display: none;
+  }
+  .hover-text__face {
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  .hover-swap:hover .hover-text__face,
+  .hover-swap:focus-visible .hover-text__face {
+    color: rgba(255, 109, 5, 0.82);
+  }
+}
+
+/* ── Decipher entrance (DecipherEmail.jsx) ──
+   The footer contact email resolves out of a cipher the first time it scrolls
+   into view (gated on the intro loader): each glyph scrambles through random
+   monospace characters then locks into its real character left→right — ember
+   while unsettled, cooling to the link's resting grey as it locks. It reuses
+   HoverText's exact per-char face/clone markup, so the per-glyph hover-roll and
+   char-by-char wrapping stay untouched; this scope only adds a colour/text-shadow
+   transition and the two entrance states (JS mutates only textContent, so there
+   is no layout shift), and the component drops these classes once the scramble
+   settles to hand a pristine resting word back to hover. */
+.hover-text--decipher .hover-text__face {
+  transition-property: transform, opacity, filter, color, text-shadow;
+  transition-duration: 0.52s, 0.52s, 0.52s, 0.34s, 0.34s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1),
+    cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1), ease, ease;
+  /* Keep the hover-roll's left→right stagger on transform/opacity/filter; the
+     tint reacts immediately (0s) so the lock cool-down isn't itself staggered. */
+  transition-delay: calc(var(--i, 0) * 22ms), calc(var(--i, 0) * 22ms),
+    calc(var(--i, 0) * 22ms), 0s, 0s;
+}
+.hover-text--decipher .hover-text__char.is-scanning .hover-text__face {
+  color: #ff8a2b;
+  text-shadow: 0 0 6px rgba(255, 138, 43, 0.22);
+}
+.hover-text--decipher .hover-text__char.is-locked .hover-text__face {
+  color: #a3a3a3;
+  text-shadow: 0 0 0 rgba(255, 138, 43, 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The engine never runs under reduced motion; make sure this more-specific
+     scope doesn't re-enable the transitions the base hover-text reduced-motion
+     rule above switched off. */
+  .hover-text--decipher .hover-text__face {
+    transition: none;
+  }
+}
+
+/* Vertical ledger rule between desktop columns. Applied to the non-brand
+   columns; only paints at >=1024px where the row is a 4-column ledger with a
+   1.5rem (gap-x-6) gutter, so the rule sits in the middle of the gap. */
+@media (min-width: 1024px) {
+  .footer-col-rule {
+    position: relative;
+  }
+  .footer-col-rule::before {
+    content: "";
+    position: absolute;
+    left: -0.75rem;
+    top: 0.15rem;
+    bottom: 0.15rem;
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(255, 109, 5, 0.4) 22%,
+      rgba(255, 109, 5, 0.4) 78%,
+      transparent 100%
+    );
+  }
+}
+
+/* ── Departure-board index ("Manifest", footer redesign, issue #30) ──
+   The site's primary nav, re-cut as a split-flap DEPARTURES board (see
+   FooterManifest.jsx). Each route is a row: a two-digit ordinal on mechanical
+   flap tiles, the destination (which keeps the per-glyph .hover-swap roll), a
+   monospace "gate" descriptor, and a status token — the current route reads NOW
+   BOARDING with a live pulse, the rest sit ON TIME. On reveal the flaps scramble
+   and settle row by row (driven from React); everything else is colour /
+   transform / opacity only, no layout shift, and collapses to a still board
+   under prefers-reduced-motion. Speaks the same graphite-keycap + mono-status
+   language as the GitHub CTA and the Elsewhere terminal. */
+.footer-index {
+  margin-top: 0.25rem;
+}
+/* Thin board chrome — a "DEPARTURES" marquee over a hairline. Deliberately
+   carries no clock: the footer surfaces live time exactly once (LiveLocation). */
+.footer-index__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.footer-index__marquee {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #8f887c;
+}
+.footer-index__rule {
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 109, 5, 0.4),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+.footer-index__board {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Row grid: [flaps] [dest / gate stacked] [status]. The flap group and the
+   status token each span both text rows; dest + gate share the middle column. */
+.footer-index__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.85rem;
+  row-gap: 0.1rem;
+  padding: 0.6rem 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background-color 0.25s ease;
+}
+.footer-index__board li:last-child .footer-index__row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.footer-index__row:hover,
+.footer-index__row:focus-visible {
+  background-color: rgba(255, 109, 5, 0.045);
+}
+
+/* Split-Flap Cascade entrance (issue #30 follow-up, owner pick). Each row rises
+   and fades on its own `--enter` delay (set inline per <li>) the first time the
+   board reveals — data-play flips "false" → "true" — so the rows arrive in
+   sequence, in step with their ordinal flap. The board owns this vertical
+   motion; the Index block's own entrance is a plain fade (see index.jsx) so
+   nothing double-translates. Rows hold hidden until play so the cascade isn't
+   spent behind the intro loader; reduced motion shows them settled (below). */
+.footer-index[data-play="false"] .footer-index__row {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.footer-index[data-play="true"] .footer-index__row {
+  opacity: 1;
+  transform: translateY(0);
+  /* keep the hover background transition; add the staggered entrance on top */
+  transition:
+    background-color 0.25s ease,
+    opacity 0.5s ease,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: 0s, var(--enter, 0ms), var(--enter, 0ms);
+}
+
+/* Split-flap tiles — graphite keycaps with a central fold seam. */
+.footer-index__flap {
+  grid-row: span 2;
+  display: inline-flex;
+  gap: 3px;
+  perspective: 220px;
+}
+.footer-index__tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.75rem;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  font-weight: 700;
+  font-size: 1.02rem;
+  font-variant-numeric: tabular-nums;
+  color: #ff6d05;
+  background: linear-gradient(180deg, #221d19, #171310);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-top-color: rgba(255, 255, 255, 0.13);
+  border-radius: 4px;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  text-shadow: 0 0 10px rgba(255, 109, 5, 0.35);
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+/* The split-flap fold line across the middle of each tile. */
+.footer-index__tile::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);
+  transform: translateY(-50%);
+}
+.footer-index__tile.is-flipping {
+  animation: mfFlapTick 0.11s linear infinite;
+}
+@keyframes mfFlapTick {
+  0% {
+    transform: rotateX(0);
+  }
+  45% {
+    transform: rotateX(-38deg);
+  }
+  46% {
+    transform: rotateX(38deg);
+  }
+  100% {
+    transform: rotateX(0);
+  }
+}
+.footer-index__tile.settled {
+  animation: mfFlapLand 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes mfFlapLand {
+  0% {
+    transform: rotateX(-24deg);
+  }
+  60% {
+    transform: rotateX(6deg);
+  }
+  100% {
+    transform: rotateX(0);
+  }
+}
+
+/* Destination + gate share the middle column, stacked around the centreline. */
+.footer-index__dest {
+  grid-column: 2;
+  align-self: end;
+  min-width: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #c9c3b8;
+  transition: color 0.25s ease;
+}
+.footer-index__gate {
+  grid-column: 2;
+  align-self: start;
+  min-width: 0;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  font-size: 0.63rem;
+  letter-spacing: 0.06em;
+  color: #6d675f;
+  transition: color 0.25s ease;
+}
+.footer-index__status {
+  grid-column: 3;
+  grid-row: span 2;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #8f887c;
+  transition: color 0.25s ease;
+}
+.footer-index__status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #6d675f;
+}
+.footer-index__row:hover .footer-index__dest,
+.footer-index__row:focus-visible .footer-index__dest {
+  color: #ece7de;
+}
+.footer-index__row:hover .footer-index__gate,
+.footer-index__row:focus-visible .footer-index__gate {
+  color: #8f887c;
+}
+.footer-index__row:hover .footer-index__status,
+.footer-index__row:focus-visible .footer-index__status {
+  color: #c9c3b8;
+}
+
+/* Current route — NOW BOARDING: amber flaps + a live pulsing ember status. */
+.footer-index__row[data-active="true"] .footer-index__tile {
+  color: #ffd7a8;
+  border-color: rgba(255, 109, 5, 0.34);
+}
+.footer-index__row[data-active="true"] .footer-index__dest {
+  color: #ece7de;
+}
+.footer-index__row[data-active="true"] .footer-index__status {
+  color: #ff6d05;
+  text-shadow: 0 0 8px rgba(255, 109, 5, 0.4);
+}
+.footer-index__row[data-active="true"] .footer-index__status i {
+  background: #ff6d05;
+  box-shadow: 0 0 6px rgba(255, 109, 5, 0.9);
+  animation: mfPulse 1.4s ease-in-out infinite;
+}
+@keyframes mfPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-index__row,
+  .footer-index__dest,
+  .footer-index__gate,
+  .footer-index__status {
+    transition: none;
+  }
+  /* Same specificity as the entrance rules above and placed after them, so the
+     cascade is fully cancelled: rows show settled, no rise, no stagger. */
+  .footer-index[data-play="false"] .footer-index__row,
+  .footer-index[data-play="true"] .footer-index__row {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .footer-index__tile.is-flipping,
+  .footer-index__tile.settled,
+  .footer-index__row[data-active="true"] .footer-index__status i {
+    animation: none;
+  }
+}
+
+/* ── Reach strip (Baseline Strip footer layout, issue #30) ──
+   A full-width band that closes the masthead: the availability flag, the contact
+   email and the live-location plate, lifted out of the identity + elsewhere
+   columns so the three columns stay tight and the lower edge reads as one
+   balanced rule. The hairline separators grow to space the three items across
+   the width; below the `sm` breakpoint the strip stacks and they drop out. Sits
+   above the unchanged meta row + wordmark. */
+.footer-reach-strip {
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  /* Same ember rule as the meta row below it (Tailwind border-[#ff6d05]/25), so
+     the two lines bracketing the strip read as one deliberate pair. */
+  border-top: 1px solid rgba(255, 109, 5, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.footer-reach-strip__sep {
+  flex: 1 1 28px;
+  min-width: 22px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 109, 5, 0.22),
+    rgba(255, 255, 255, 0.05)
+  );
+}
+@media (max-width: 640px) {
+  /* On a phone (no room for the three-across baseline strip) the reach items
+     stack — and, per the mobile brief, CENTRE rather than hang off the left
+     edge: the availability flag, the contact email and the live-location plate
+     each centre as a block, and their inner text centres with them. Tablet and
+     up keep the original left-aligned baseline strip untouched. */
+  .footer-reach-strip {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+  }
+  .footer-reach-strip__sep {
+    display: none;
+  }
+  /* The live-location plate is a glyph + body row; centre the body's own lines
+     (time, town · offset) so the whole plate reads centred, not just boxed. */
+  .footer-reach-strip .live-place__time,
+  .footer-reach-strip .live-place__meta {
+    justify-content: center;
+  }
+}
+
+/* ── Reach-strip staged reveal (issue #30 follow-up) ──
+   Rather than the shared block fade revealing the strip all at once, its three
+   items lead in one after another the first time it scrolls into view (gated on
+   the intro loader — `data-revealed` is set from index.jsx): the availability
+   flag rises in first (0s), then the contact email fades in AND deciphers in step
+   (DecipherEmail starts on the same gate, ~0.28s), then the live-location plate
+   rises in last (~1.25s), with the hairline separators drawing between. Each item
+   holds hidden until data-revealed so the sequence isn't spent behind the loader.
+   Opacity/transform only (GPU, no CLS); reduced motion shows the strip at rest. */
+.footer-reach-strip__reveal,
+.footer-reach-strip__mail,
+.footer-reach-strip .live-place,
+.footer-reach-strip__sep {
+  opacity: 0;
+}
+.footer-reach-strip[data-revealed] .footer-reach-strip__reveal {
+  animation: reach-item-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0s both;
+}
+.footer-reach-strip[data-revealed] .footer-reach-strip__sep {
+  transform-origin: left center;
+  animation: reach-sep-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.footer-reach-strip[data-revealed] .footer-reach-strip__sep:nth-of-type(1) {
+  animation-delay: 0.2s;
+}
+.footer-reach-strip[data-revealed] .footer-reach-strip__sep:nth-of-type(2) {
+  animation-delay: 1.05s;
+}
+.footer-reach-strip[data-revealed] .footer-reach-strip__mail {
+  animation: reach-item-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
+}
+.footer-reach-strip[data-revealed] .live-place {
+  animation: reach-item-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) 1.25s both;
+}
+@keyframes reach-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes reach-sep-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No staged motion — the strip is shown settled at rest (the email decode is
+     likewise skipped inside DecipherEmail). */
+  .footer-reach-strip__reveal,
+  .footer-reach-strip__mail,
+  .footer-reach-strip .live-place,
+  .footer-reach-strip__sep {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
+/* ── Footer identity masthead (issue #30) ──
+   The name + role, re-cut as an elite, glow-free wordmark — replacing the old
+   neon `.text-glow-neon` name and the off-palette magenta
+   `.text-glow-stroke-purple` role. Both moves choose restraint over effects
+   (see the design charter): refinement + one palette, not more glow.
+     • NAME — set in Inter 800 (the same family the giant submerged wordmark below
+       is rasterised in, so the masthead and the strings speak with one voice),
+       tightly tracked and filled with a warm amber → ember → rust gradient: the
+       brand colour worn with confidence, not a neon sign. A solid ember colour is
+       declared first as the fallback for engines without background-clip:text.
+     • RULE — a hairline ember underbar that draws out from the left on hover /
+       keyboard focus anywhere in the identity block. Transform-only (scaleX), so
+       no layout shift and it stays cheap.
+     • ROLE — a quiet uppercase "kicker" led by a short ember tick: wide tracking,
+       muted warm-neutral. Ember + neutral only — one object, one palette, one
+       story. */
+/* The drop-shadow floor-glow lives on an UNCLIPPED wrapper so the Wet Ink
+   clip-path ink-pour never hard-slices the glow (clip-path clips after filter);
+   the gradient + background-clip:text stay on the <p>. */
+.footer-identity__name-wrap {
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  filter: drop-shadow(0 3px 16px rgba(255, 109, 5, 0.22));
+}
+.footer-identity__name {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  width: max-content;
+  max-width: 100%;
+  color: #ff8a2b; /* solid ember fallback if background-clip:text is unsupported */
+  background: linear-gradient(
+    180deg,
+    #ffd7a8 0%,
+    #ff8a2b 42%,
+    #ff6d05 70%,
+    #c73b00 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  /* Wet Ink rest-before-reveal: clipped shut, offset, softly out of focus. */
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(6px);
+  filter: blur(4px);
+}
+
+.footer-identity__rule {
+  height: 1px;
+  width: 3rem;
+  transform-origin: left center;
+  transform: scaleX(0.28);
+  background: linear-gradient(90deg, #ff6d05, rgba(255, 109, 5, 0));
+  opacity: 0;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.footer-identity:hover .footer-identity__rule,
+.footer-identity:focus-within .footer-identity__rule {
+  transform: scaleX(1);
+}
+
+.footer-identity__role {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+  color: #c9c1b8;
+  opacity: 0;
+  transform: translateX(-8px);
+}
+.footer-identity__role::before {
+  content: "";
+  width: 2px;
+  height: 0.85rem;
+  border-radius: 1px;
+  background: #ff6d05;
+  box-shadow: 0 0 7px rgba(255, 109, 5, 0.5);
+  transform-origin: center;
+}
+
+.footer-identity__stmt {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(8px);
+}
+.footer-identity__divider {
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.footer-identity__cta {
+  opacity: 0;
+}
+
+/* ── Wet Ink entrance ── laid down like a signature once the block reveals
+   (`data-revealed` set by FooterIdentity on first scroll-in + loader done). The
+   RULE draws to full width then RETRACTS to rest, the NAME inks down top→bottom,
+   the ROLE snaps up from its (sparking) tick, the STATEMENT and divider settle,
+   and the CTA lands last. All transform/opacity/clip-path + one small blur → GPU,
+   no CLS. The rule uses the default (none) fill-mode so it returns to its CSS
+   rest transform and the scaleX hover keeps working after the entrance; its
+   resting opacity is pinned by the data-revealed selector. */
+.footer-identity[data-revealed="true"] .footer-identity__name {
+  animation: footer-ink-name 0.62s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
+}
+.footer-identity[data-revealed="true"] .footer-identity__rule {
+  opacity: 0.85;
+  animation: footer-ink-rule 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0s;
+}
+.footer-identity[data-revealed="true"] .footer-identity__role {
+  animation: footer-ink-role 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+.footer-identity[data-revealed="true"] .footer-identity__role::before {
+  animation: footer-ink-tick 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+.footer-identity[data-revealed="true"] .footer-identity__stmt {
+  animation: footer-ink-stmt 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.86s both;
+}
+.footer-identity[data-revealed="true"] .footer-identity__divider {
+  animation: footer-ink-divider 0.45s cubic-bezier(0.22, 1, 0.36, 1) 1.02s both;
+}
+.footer-identity[data-revealed="true"] .footer-identity__cta {
+  animation: footer-ink-cta 0.5s ease 1.14s both;
+}
+@keyframes footer-ink-name {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(6px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0% 0);
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+@keyframes footer-ink-rule {
+  0% {
+    transform: scaleX(0);
+  }
+  50% {
+    transform: scaleX(1);
+  }
+  66% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0.28);
+  }
+}
+@keyframes footer-ink-role {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes footer-ink-tick {
+  0% {
+    transform: scaleY(0);
+  }
+  60% {
+    transform: scaleY(1.18);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes footer-ink-stmt {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0% 0);
+    transform: translateY(0);
+  }
+}
+@keyframes footer-ink-divider {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+@keyframes footer-ink-cta {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion — no ink, no motion: the identity block is shown at rest
+   immediately (mirrors the footer's still fallback), the rule keeps its snap-
+   free hover. */
+@media (prefers-reduced-motion: reduce) {
+  .footer-identity__name {
+    opacity: 1;
+    clip-path: none;
+    transform: none;
+    filter: none;
+  }
+  .footer-identity__rule {
+    opacity: 0.85;
+    transform: scaleX(0.28);
+    transition: none;
+  }
+  .footer-identity__role {
+    opacity: 1;
+    transform: none;
+  }
+  .footer-identity__stmt {
+    opacity: 1;
+    clip-path: none;
+    transform: none;
+  }
+  .footer-identity__divider {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  .footer-identity__cta {
+    opacity: 1;
+  }
+  .footer-identity[data-revealed="true"] .footer-identity__name,
+  .footer-identity[data-revealed="true"] .footer-identity__rule,
+  .footer-identity[data-revealed="true"] .footer-identity__role,
+  .footer-identity[data-revealed="true"] .footer-identity__role::before,
+  .footer-identity[data-revealed="true"] .footer-identity__stmt,
+  .footer-identity[data-revealed="true"] .footer-identity__divider,
+  .footer-identity[data-revealed="true"] .footer-identity__cta {
+    animation: none;
+  }
+}
+
+/* Reduced motion: the footer falls back to the static plate + wordmark outline —
+   nothing missing, just still. Here we only drop the link underline sweep so it
+   snaps instead of animating. */
+@media (prefers-reduced-motion: reduce) {
+  .footer-link-underline::after {
+    transition: none !important;
+  }
+}
+
+/* ── Project-GitHub CTA (issue #30) ──
+   The colophon's one signature call-to-action, styled as a single etched-
+   graphite plate that IS a git graph (ProjectGithubCta.jsx). One object · one
+   palette · one story: brushed graphite + a single ember accent, no neon stack.
+   The self-draw (branch pathLength) and node pops are owned by framer-motion;
+   CSS owns the material, the hover commit-pulse, the rake light and the caret. */
+.gh-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 0.9rem 1.3rem 0.8rem;
+  color: #c9c3b8;
+  text-decoration: none;
+  /* Brushed-graphite plate: a faint diagonal grain over a warm graphite
+     gradient, with a top catch-light border and a dark seated bottom edge so
+     the plate reads as engraved metal rather than a flat chip. */
+  background:
+    repeating-linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.015) 0 2px,
+      transparent 2px 4px
+    ),
+    linear-gradient(180deg, #241f1b 0%, #14110e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-top-color: rgba(255, 255, 255, 0.13);
+  border-bottom-color: rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+    0 10px 24px -16px #000;
+}
+.gh-cta:hover,
+.gh-cta:focus-visible {
+  color: #ece7de;
+  border-color: rgba(255, 109, 5, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+    0 14px 34px -16px rgba(255, 109, 5, 0.42);
+}
+
+/* A single ember light that rakes across the engraving once on hover/focus. */
+.gh-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 109, 5, 0.28) 50%,
+    transparent 62%
+  );
+  transform: translateX(-130%);
+}
+.gh-cta:hover::after,
+.gh-cta:focus-visible::after {
+  animation: gh-rake 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gh-cta__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+/* Git graph. Rendered 1:1 with its 92×26 viewBox (px == user units) so the
+   commit pulse's offset-path coordinates land exactly on the drawn branch. */
+.gh-cta__graph {
+  position: relative;
+  width: 92px;
+  height: 26px;
+  flex: none;
+}
+.gh-cta__graph svg {
+  display: block;
+  width: 92px;
+  height: 26px;
+  overflow: visible;
+}
+.gh-cta__branch {
+  stroke: #ff6d05;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  fill: none;
+}
+.gh-cta__node {
+  fill: #14110e;
+  stroke: #ff6d05;
+  stroke-width: 1.6;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.gh-cta__head {
+  fill: #ff6d05;
+  stroke: none;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Commit pulse — a bright dot that travels the branch to HEAD on hover. Rides
+   the exact BRANCH_D path via offset-path; idle (opacity 0) until hovered. */
+.gh-cta__pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 8px 2px rgba(255, 140, 58, 0.9), 0 0 2px 1px #fff;
+  offset-path: path("M4 19 H40 M40 19 C40 8, 56 8, 56 8 H70 C84 8, 84 19, 84 19 H88");
+  offset-distance: 0%;
+  opacity: 0;
+}
+.gh-cta:hover .gh-cta__pulse,
+.gh-cta:focus-visible .gh-cta__pulse {
+  animation: gh-pulse 0.9s cubic-bezier(0.5, 0, 0.3, 1);
+}
+
+.gh-cta__mark {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+  color: #ff6d05;
+  transition: transform 0.3s ease;
+}
+.gh-cta:hover .gh-cta__mark {
+  transform: translateY(-1px) rotate(-5deg);
+}
+
+.gh-cta__label {
+  font-family: var(--font-varela-round), sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+
+.gh-cta__arrow {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: none;
+  color: #ff6d05;
+  opacity: 0.7;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.gh-cta:hover .gh-cta__arrow {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+
+/* Honest live caption — a terminal readout of this repo's real metadata. */
+.gh-cta__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding-left: 0.15rem;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
+  color: #8b857a;
+  font-variant-numeric: tabular-nums;
+  min-height: 1.1em; /* reserve the row so late-arriving data adds no CLS */
+}
+.gh-cta__prompt {
+  color: #ff6d05;
+  font-weight: 600;
+}
+.gh-cta__branchname {
+  color: #b8b2a6;
+}
+.gh-cta__num {
+  color: #d8cfc2;
+}
+.gh-cta__sep {
+  opacity: 0.4;
+}
+.gh-cta__caret {
+  width: 6px;
+  height: 0.95em;
+  margin-left: 1px;
+  background: #ff6d05;
+  opacity: 0.85;
+  animation: gh-blink 1.05s steps(1) infinite;
+}
+
+@keyframes gh-rake {
+  to {
+    transform: translateX(130%);
+  }
+}
+@keyframes gh-pulse {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+@keyframes gh-blink {
+  0%,
+  50% {
+    opacity: 0.85;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: keep the etched plate and the fully-drawn graph, drop every
+   looping/travelling effect. The self-draw + node pops are already collapsed to
+   duration 0 in the component; here we silence the rake, pulse and caret. */
+@media (prefers-reduced-motion: reduce) {
+  .gh-cta::after,
+  .gh-cta:hover::after,
+  .gh-cta:focus-visible::after {
+    animation: none;
+    opacity: 0;
+  }
+  .gh-cta:hover .gh-cta__pulse,
+  .gh-cta:focus-visible .gh-cta__pulse {
+    animation: none;
+    opacity: 0;
+  }
+  .gh-cta__caret {
+    animation: none;
+    opacity: 0.6;
+  }
+  .gh-cta__mark,
+  .gh-cta__arrow {
+    transition: none;
+  }
+}
+
+/* ── Elsewhere terminal (issue #30 follow-up, owner-chosen "Console") ──
+   The three professional links staged as a small graphite terminal that runs a
+   type-out session on reveal (ElsewhereTerminal.jsx owns the typing). CSS owns
+   the window chrome, the ember prompt, the reserved output rows and the blinking
+   caret. Extends the git-graph CTA's own "❯" prompt + ui-monospace, so the
+   footer's terminal moments read as one system. The contact micro-block below
+   the divider is deliberately left untouched. Colour / opacity only — no CLS. */
+.footer-term {
+  margin-top: 0.35rem;
+  width: 100%;
+  max-width: 22rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.7rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, #100e12 0%, #0a090c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 16px 36px -22px #000;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+}
+/* Window chrome — traffic lights + working directory. */
+.footer-term__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+.footer-term__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+.footer-term__dot--r { background: #ff5f57; }
+.footer-term__dot--y { background: #febc2e; }
+.footer-term__dot--g { background: #28c840; }
+.footer-term__path {
+  margin-left: 0.45rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: #6d675f;
+}
+/* Session body. */
+.footer-term__body {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.55rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+/* One command + output entry — the whole entry is the link. */
+.footer-term__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.45rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+.footer-term__entry:hover,
+.footer-term__entry:focus-visible {
+  background-color: rgba(255, 109, 5, 0.07);
+}
+.footer-term__cmdline {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.footer-term__prompt {
+  flex: none;
+  color: #ff6d05;
+  font-weight: 700;
+}
+.footer-term__cmd {
+  color: #ece7de;
+}
+/* Resolved destination — its row is always present (reserving height, so the
+   type-out prints with no layout shift) and fades in when the command runs. */
+.footer-term__out {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding-left: 1.1rem;
+  min-width: 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #6d675f;
+  opacity: 0;
+  transition:
+    opacity 0.3s ease,
+    color 0.2s ease;
+}
+.footer-term__out.is-shown {
+  opacity: 1;
+}
+.footer-term__branch {
+  flex: none;
+  color: rgba(255, 109, 5, 0.6);
+}
+.footer-term__handle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.footer-term__entry:hover .footer-term__handle,
+.footer-term__entry:focus-visible .footer-term__handle {
+  color: #ff8a2b;
+}
+/* Resting prompt + blinking ember caret. */
+.footer-term__promptline {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.5rem 0.1rem;
+}
+.footer-term__caret {
+  display: inline-block;
+  width: 7px;
+  height: 0.95em;
+  background: #ff6d05;
+  box-shadow: 0 0 6px rgba(255, 109, 5, 0.6);
+  animation: footer-term-blink 1.05s steps(1) infinite;
+}
+@keyframes footer-term-blink {
+  0%, 50% { opacity: 0.9; }
+  51%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer-term__entry,
+  .footer-term__out,
+  .footer-term__handle {
+    transition: none;
+  }
+  .footer-term__caret {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* ── Ember Meridian · live-location (issue #30 follow-up, owner-chosen) ──
+   Replaces the footer's static place line with the owner's LIVE town + local
+   time: a day/night glyph, an ember-gradient clock, the town as a kicker, the
+   UTC offset, and a LIVE pulse shown only when the GPS fix is fresh. Same
+   amber→ember→rust fill and ui-monospace numerals as the identity name and the
+   git-graph CTA, so the footer's live objects read as one system. Fed by
+   /api/location (LiveLocation.jsx). Colour / transform / opacity only. */
+.live-place {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.live-place__glyph {
+  display: flex;
+  flex: none;
+  color: #ff6d05;
+  opacity: 0.9;
+}
+.live-place__glyph svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.live-place__time {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  line-height: 1;
+}
+.live-place__digits {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #ffd7a8, #ff8a2b 46%, #ff6d05 74%, #c73b00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.live-place__ampm {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #ff8a2b;
+}
+.live-place__live {
+  margin-left: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #ff6d05;
+  transform: translateY(-1px);
+}
+.live-place__meta {
+  margin-top: 0.28rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.live-place__town {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c9c1b4;
+}
+.live-place__tz {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.62rem;
+  color: #7e776b;
+}
+/* Breathing live dot — steady core + one soft halo that breathes symmetrically
+   (rest → peak → rest) so the loop has no seam. */
+.live-place__dot {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 6px;
+  height: 6px;
+}
+.live-place__dot-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #ff6d05;
+  box-shadow: 0 0 6px rgba(255, 109, 5, 0.9);
+}
+.live-place__dot-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #ff6d05;
+  animation: live-place-breathe 2.6s ease-in-out infinite;
+}
+@keyframes live-place-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-place__dot-halo {
+    animation: none;
+  }
+}

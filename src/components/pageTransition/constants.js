@@ -23,9 +23,10 @@ export const COVER_MS = 540;
 export const PUSH_AT_MS = 560;
 
 // Minimum time the overlay holds from mount, even if the route arrives
-// instantly — guarantees the monogram finishes drawing and igniting instead
-// of being yanked mid-stroke on fast navigations.
-export const SHOWCASE_MIN_MS = 1250;
+// instantly — guarantees the slab lands and the monogram finishes being DRAWN
+// in stroke by stroke (draw starts ~500ms, runs ~1300ms, gap-fill ~240ms)
+// instead of being yanked mid-engraving on fast navigations.
+export const SHOWCASE_MIN_MS = 2100;
 
 // The radial mask wipe that uncovers the destination page.
 export const REVEAL_MS = 520;
