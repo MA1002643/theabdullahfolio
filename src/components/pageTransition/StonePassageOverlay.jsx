@@ -103,9 +103,21 @@ export default function StonePassageOverlay({ phase, label, reduced }) {
   const revealRadius = useMotionValue(0);
   const maskImage = useMotionTemplate`radial-gradient(circle at 50% 50%, transparent ${revealRadius}%, black calc(${revealRadius}% + 5%))`;
 
-  const [farthestCornerPx, setFarthestCornerPx] = useState(0);
+  // Half-diagonal of the viewport — the ring's full-bleed radius. Seeded from
+  // window on the first client render (not 0) so a fast route transition that
+  // begins the wipe before the mount effect runs never flashes a 0px ring that
+  // then pops to size; kept current on resize. SSR-guarded because a 'use
+  // client' overlay's first render can still execute on the server.
+  const cornerPx = () =>
+    typeof window !== 'undefined'
+      ? Math.hypot(window.innerWidth / 2, window.innerHeight / 2)
+      : 0;
+  const [farthestCornerPx, setFarthestCornerPx] = useState(cornerPx);
   useEffect(() => {
-    setFarthestCornerPx(Math.hypot(window.innerWidth / 2, window.innerHeight / 2));
+    const update = () => setFarthestCornerPx(cornerPx());
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
   }, []);
 
   const ringDiameter = useTransform(

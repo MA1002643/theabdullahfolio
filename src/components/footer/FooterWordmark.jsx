@@ -273,6 +273,21 @@ export default function FooterWordmark({
     };
     refreshRect();
 
+    // getBoundingClientRect() forces layout, and scroll can fire many times per
+    // frame, so coalesce scroll-driven refreshes into a single rAF per frame —
+    // and skip them entirely while the footer is off-screen (no pointer can hit
+    // it there). The IntersectionObserver below flips onScreen and refreshes the
+    // rect on (re)entry; resize stays immediate (rare, and the rect really moved).
+    let onScreen = true;
+    let rectRaf = 0;
+    const scheduleRectRefresh = () => {
+      if (!onScreen || rectRaf) return;
+      rectRaf = requestAnimationFrame(() => {
+        rectRaf = 0;
+        refreshRect();
+      });
+    };
+
     // Map a client point into the SVG viewBox. Aspect ratio matches (h-auto
     // w-full over a 5:1 viewBox), so the mapping is a uniform scale with no
     // letterboxing; the CSS translateY is already baked into the rect.
@@ -452,7 +467,7 @@ export default function FooterWordmark({
 
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerdown', onDown, { passive: true });
-    window.addEventListener('scroll', refreshRect, { passive: true });
+    window.addEventListener('scroll', scheduleRectRefresh, { passive: true });
     window.addEventListener('resize', refreshRect);
 
     // Pause the loop when the footer is off-screen.
@@ -460,7 +475,12 @@ export default function FooterWordmark({
     if (svgRef.current && typeof IntersectionObserver !== 'undefined') {
       io = new IntersectionObserver(
         ([entry]) => {
-          if (!entry.isIntersecting && rafRef.current) {
+          onScreen = entry.isIntersecting;
+          if (entry.isIntersecting) {
+            // Entering (120px early): take a fresh rect so the first pointer hit
+            // is accurate without waiting on a scroll tick.
+            refreshRect();
+          } else if (rafRef.current) {
             cancelAnimationFrame(rafRef.current);
             rafRef.current = 0;
           }
@@ -482,9 +502,10 @@ export default function FooterWordmark({
     return () => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('scroll', refreshRect);
+      window.removeEventListener('scroll', scheduleRectRefresh);
       window.removeEventListener('resize', refreshRect);
       if (io) io.disconnect();
+      if (rectRaf) cancelAnimationFrame(rectRaf);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
       hoverIdxRef.current = -1;
