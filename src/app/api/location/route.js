@@ -9,6 +9,7 @@ import {
   readLocation,
   effectiveLocation,
   roundCoord,
+  kvConfigured,
 } from '@/utils/liveLocation';
 
 // Live-location endpoint for the footer availability line (issue #30).
@@ -96,6 +97,19 @@ export async function POST(request) {
     return NextResponse.json(
       { ok: false, error: 'unauthorized' },
       { status: 401, headers: NO_STORE },
+    );
+  }
+
+  // Bail before any external work when the KV store isn't configured. The
+  // writeLocation below would fail and 503 anyway, so short-circuit here to
+  // avoid paying for a reverse-geocode request — and sending rounded coordinates
+  // to a third party — on an ingest that can never be persisted (e.g. a preview
+  // without KV linked). A configured-but-UNREACHABLE store isn't knowable up
+  // front; that transient case still surfaces via the writeLocation check below.
+  if (!kvConfigured) {
+    return NextResponse.json(
+      { ok: false, error: 'location storage not configured' },
+      { status: 503, headers: NO_STORE },
     );
   }
 

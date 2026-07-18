@@ -39,15 +39,30 @@ const TOKEN = process.env.GITHUB_TOKEN;
 // authenticated GitHub rate limit.
 const REVALIDATE_SECONDS = 10 * 60;
 
+// Finite-positive env validation, matching /api/experience-summary and
+// /api/repo-refresh. A plain `Number(env) || fallback` only rejects falsy
+// results (0, NaN): a negative value slips through (forcing immediate aborts)
+// and `Infinity` slips through (disabling the cap entirely).
+function envPositiveMs(envValue, fallback) {
+  const n = Number(envValue);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 // Per-call and cumulative wall-clock budgets — identical discipline to the
 // github-stats route so a slow GitHub response can't push this function past
 // the serverless limit (10 s Hobby / 60 s Pro). The crawl pages repos across
 // two privacy scopes and then fans out per-repo (recursive tree + manifest blob
 // fetch), so the cumulative cap is what actually bounds it; on exhaustion inner
 // calls abort and we keep whatever partial results were collected.
-const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
-const MAX_TOTAL_GITHUB_MS = Number(process.env.GITHUB_OVERALL_TIMEOUT_MS) || 9000;
-const GITHUB_OVERALL_BUDGET_MS = Number(process.env.GITHUB_OVERALL_BUDGET_MS) || 9000;
+const GITHUB_TIMEOUT_MS = envPositiveMs(process.env.GITHUB_TIMEOUT_MS, 8000);
+const MAX_TOTAL_GITHUB_MS = envPositiveMs(
+  process.env.GITHUB_OVERALL_TIMEOUT_MS,
+  9000,
+);
+const GITHUB_OVERALL_BUDGET_MS = envPositiveMs(
+  process.env.GITHUB_OVERALL_BUDGET_MS,
+  9000,
+);
 
 // Hard cap on repo pagination per privacy scope: 100 repos/page × 10 = ~1,000
 // repos per scope, far beyond a realistic account. Stops a malformed pageInfo
