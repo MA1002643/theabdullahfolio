@@ -8,7 +8,7 @@ import {
   useMotionValue,
   useTransform,
 } from 'framer-motion';
-import { REVEAL_MS } from './constants';
+import { REVEAL_MS, SLAB_PLAIN as PLAIN, SLAB_CARVED as CARVED } from './constants';
 
 // The visual body of the "Stone Passage" — mounted by PageTransitionProvider for
 // the covering / holding / revealing phases of a navigation.
@@ -32,8 +32,6 @@ import { REVEAL_MS } from './constants';
 // Layering note: the radial reveal mask sits on the inner "surface" div, NOT the
 // root — the portal ring is the surface's sibling so the mask can't clip it.
 
-const PLAIN = '/textures/rock/ma-slab-plain.webp';
-const CARVED = '/textures/rock/ma-slab-carved.webp';
 const INK = [0.65, 0, 0.35, 1];
 const SOFT_OUT = [0.22, 1, 0.36, 1];
 // Steady "engraving" pace — a touch of momentum, settles at the end.

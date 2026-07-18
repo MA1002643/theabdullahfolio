@@ -63,16 +63,22 @@ function headerToken(request) {
 // rotatable credential), and an Authorization header against the primary
 // INGEST_TOKEN. Each path fails closed when its own secret isn't configured, and
 // both reuse the constant-time compare in _utils/cronAuth so there's a single
-// vetted comparison path. A tracker presents exactly one of the two, so checking
-// the query param first never masks a valid header.
+// vetted comparison path.
+//
+// A tracker normally presents exactly ONE of the two, but a mixed-client / debug
+// setup can send both. So each token is an INDEPENDENT sufficient credential: we
+// try the query token first and, if it doesn't authorize (absent, empty, or
+// wrong), FALL BACK to the header — a valid header still authorizes even when a
+// stale/blank query token rides along, instead of the query check masking it.
+// Neither fallback relaxes a secret: an invalid token never passes its compare.
 function isAuthorized(request) {
   const fromQuery = new URL(request.url).searchParams.get('token');
-  if (fromQuery) {
-    return Boolean(QUERY_TOKEN) && safeBearerEqual(`Bearer ${fromQuery}`, QUERY_TOKEN);
+  if (fromQuery && Boolean(QUERY_TOKEN) && safeBearerEqual(`Bearer ${fromQuery}`, QUERY_TOKEN)) {
+    return true;
   }
   const fromHeader = headerToken(request);
-  if (fromHeader) {
-    return Boolean(INGEST_TOKEN) && safeBearerEqual(`Bearer ${fromHeader}`, INGEST_TOKEN);
+  if (fromHeader && Boolean(INGEST_TOKEN) && safeBearerEqual(`Bearer ${fromHeader}`, INGEST_TOKEN)) {
+    return true;
   }
   return false;
 }

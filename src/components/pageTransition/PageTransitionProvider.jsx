@@ -21,6 +21,7 @@ import {
   REVEAL_MS,
   ROUTE_LABELS,
   SHOWCASE_MIN_MS,
+  SLAB_TEXTURES,
 } from './constants';
 
 // Orchestrates the "Sigil Passage" between pages. TransitionLink (or any
@@ -86,10 +87,7 @@ export default function PageTransitionProvider({ children }) {
     // makes that independent of engine quirks and matches the setTimeout branch.
     const idle = supportsIdle ? (cb) => window.requestIdleCallback(cb) : (cb) => setTimeout(cb, 800);
     const handle = idle(() => {
-      for (const src of [
-        '/textures/rock/ma-slab-plain.webp',
-        '/textures/rock/ma-slab-carved.webp',
-      ]) {
+      for (const src of SLAB_TEXTURES) {
         const img = new Image();
         img.src = src;
       }

@@ -7,20 +7,25 @@
 // GitHub *profile*) — plus lucide icon identities per link, so it gets its own
 // small config rather than overloading the shared nav list.
 
+// GitHub owner + repository this site is built from. Both read from env — with
+// the same defaults as the API routes — so a fork retargets everything the footer
+// says about THIS project from env alone, no code edit: the "view this project on
+// GitHub" CTA link below AND the live /api/project-repo metadata caption (which
+// reads the same two vars). `githubUsername` is also the handle behind the
+// footer's live signals (CallingCard's contribution count).
+export const githubUsername =
+  process.env.NEXT_PUBLIC_GITHUB_USERNAME || 'MA1002643';
+const projectRepo = process.env.NEXT_PUBLIC_PROJECT_REPO || 'theabdullahfolio';
+
 // The repository this site is built from. MANDATORY, per the issue: the footer
 // must always surface a working "view this project on GitHub" call to action.
-export const projectGithubUrl = 'https://github.com/MA1002643/theabdullahfolio';
+export const projectGithubUrl = `https://github.com/${githubUsername}/${projectRepo}`;
 
 // Personal / professional destinations.
 export const profileGithubUrl = 'https://github.com/MA1002643';
 export const linkedInUrl = 'https://www.linkedin.com/in/muhammad-abdullah227/';
 // Served from /public — opens the CV PDF directly.
 export const resumeUrl = '/Muhammad_Abdullah_CV.pdf';
-// GitHub handle for the footer's live signals (CallingCard's contribution
-// count). Matches the default used across the API routes; override via
-// NEXT_PUBLIC_GITHUB_USERNAME when forking.
-export const githubUsername =
-  process.env.NEXT_PUBLIC_GITHUB_USERNAME || 'MA1002643';
 
 // Contact micro-block. `email` mirrors the contact form's RECEIVER_EMAIL so the
 // address shown here is the same inbox the form delivers to; `location` matches
