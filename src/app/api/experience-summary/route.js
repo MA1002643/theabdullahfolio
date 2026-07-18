@@ -6,6 +6,7 @@ import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { safeBearerEqual } from "../_utils/cronAuth";
+import { envPositiveMs } from "../_utils/env";
 import { formatDuration, monthsBetween } from "@/utils/experience/dateMath";
 import { parseExperienceFromPdf } from "@/utils/experience/pdfExperienceParser";
 
@@ -43,18 +44,6 @@ const RESPONSE_CACHE_HEADERS = {
 
 const GITHUB_API = "https://api.github.com/graphql";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-
-// Reads an env value, parses it as a Number, and returns it only when
-// it's a finite positive number. Anything else (missing, NaN, ≤0,
-// Infinity) falls back to the default. Using `Number(env) || fallback`
-// is NOT sufficient: it would only catch the falsy results (0, NaN),
-// letting a negative value through and forcing immediate budget
-// exhaustion at every call, or an `Infinity` through and disabling the
-// budget entirely.
-function envPositiveMs(envValue, fallback) {
-  const n = Number(envValue);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-}
 
 // Per-call ceiling. Must stay strictly below the serverless function
 // timeout (10 s on Hobby, 60 s on Pro). Same env var as `/api/github-stats`

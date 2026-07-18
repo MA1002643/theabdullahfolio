@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { categorizeSkills, categorizeSkillsWithRepos } from "@/utils/skillsIconMap";
 import { MANIFESTS, parseManifest } from "@/utils/manifestParsers";
+import { envPositiveMs } from "../_utils/env";
 
 // Record that `name` (a detected language / dependency) surfaced in `repo`.
 // `into` is a Map<detectedName, { repos: Set<nameWithOwner>, privateRepos:
@@ -38,15 +39,6 @@ const TOKEN = process.env.GITHUB_TOKEN;
 // crawl is budget-bounded, so revalidating this often stays well within the
 // authenticated GitHub rate limit.
 const REVALIDATE_SECONDS = 10 * 60;
-
-// Finite-positive env validation, matching /api/experience-summary and
-// /api/repo-refresh. A plain `Number(env) || fallback` only rejects falsy
-// results (0, NaN): a negative value slips through (forcing immediate aborts)
-// and `Infinity` slips through (disabling the cap entirely).
-function envPositiveMs(envValue, fallback) {
-  const n = Number(envValue);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-}
 
 // Per-call and cumulative wall-clock budgets — identical discipline to the
 // github-stats route so a slow GitHub response can't push this function past

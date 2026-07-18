@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { envPositiveMs } from "../_utils/env";
+
 // Live metadata for the ONE repository this site is built from — the footer's
 // "View this project on GitHub" CTA renders a tiny git graph and an honest
 // terminal caption ("main · N commits · pushed <rel>"), and this route feeds
@@ -20,14 +22,6 @@ const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 const REVALIDATE_SECONDS = 10 * 60;
 
-// Finite-positive env validation, matching /api/experience-summary and
-// /api/repo-refresh. A plain `Number(env) || fallback` only rejects falsy
-// results (0, NaN): a negative value slips through (forcing immediate aborts)
-// and `Infinity` slips through (disabling the timeout entirely).
-function envPositiveMs(envValue, fallback) {
-  const n = Number(envValue);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-}
 const GITHUB_TIMEOUT_MS = envPositiveMs(process.env.GITHUB_TIMEOUT_MS, 8000);
 
 // The repository the footer CTA points at. Owner mirrors the github-stats

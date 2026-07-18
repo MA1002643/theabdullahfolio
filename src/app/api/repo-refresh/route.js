@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 
 import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
+import { envPositiveMs } from "../_utils/env";
 
 // Pin to the Node runtime so `node:crypto` (transitively used by
 // `safeBearerEqual` for constant-time bearer-token compare) stays
@@ -17,15 +18,6 @@ export const runtime = "nodejs";
 // silently restore static eligibility and start serving a stale 200 from the
 // build cache instead of actually running the revalidate + warm-up.
 export const dynamic = "force-dynamic";
-
-// Same env-validation pattern as `/api/experience-summary`: accept only
-// finite positive numbers, fall back otherwise. Plain `Number(env) ||
-// fallback` would let a negative env force immediate abort, or
-// `Infinity` disable the timeout entirely.
-function envPositiveMs(envValue, fallback) {
-  const n = Number(envValue);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-}
 
 // Per-warm-fetch ceiling. Downstream `/api/github-stats` and
 // `/api/experience-summary` each enforce a ~9 s internal wall-clock

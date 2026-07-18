@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
 import fallbackStats from "@/data/github-stats-fallback.json";
+import { envPositiveMs } from "../_utils/env";
 
 // Pin to Node so `node:async_hooks` (used by the shared-deadline
 // AsyncLocalStorage below) and any future Node-only API stay available.
@@ -17,15 +18,6 @@ const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 const REVALIDATE_SECONDS = 10 * 60;
 const MOST_ACTIVE_REPO_REVALIDATE_SECONDS = 24 * 60 * 60;
-
-// Finite-positive env validation, matching /api/experience-summary and
-// /api/repo-refresh. A plain `Number(env) || fallback` only rejects falsy
-// results (0, NaN): a negative value slips through (forcing immediate aborts /
-// budget exhaustion) and `Infinity` slips through (disabling the cap entirely).
-function envPositiveMs(envValue, fallback) {
-  const n = Number(envValue);
-  return Number.isFinite(n) && n > 0 ? n : fallback;
-}
 
 // Per-request ceiling for GraphQL calls. Must stay strictly below the
 // serverless function timeout (10 s on Hobby, 60 s on Pro) so even a single
