@@ -135,9 +135,16 @@ export default function FooterManifest() {
   return (
     // data-play drives the Split-Flap Cascade: while "false" the rows sit hidden
     // (offset + transparent); when the board reveals it flips to "true" and each
-    // row rises on its own `--enter` delay, in step with its ordinal flap. See
-    // .footer-index[data-play] in globals.css.
-    <div className="footer-index" ref={ref} data-play={play ? 'true' : 'false'}>
+    // row rises on its own `--enter` delay, in step with its ordinal flap. It's
+    // omitted entirely until mount — with the attribute absent, neither
+    // [data-play] rule matches and the rows fall back to their visible base
+    // style, so SSR / JS-off / a stalled hydration still show the Index nav
+    // instead of an empty block. See .footer-index[data-play] in globals.css.
+    <div
+      className="footer-index"
+      ref={ref}
+      data-play={mounted ? (play ? 'true' : 'false') : undefined}
+    >
       {/* Board chrome — a "DEPARTURES" marquee over a hairline. Decorative. */}
       <div className="footer-index__head" aria-hidden="true">
         <span className="footer-index__marquee">Departures</span>

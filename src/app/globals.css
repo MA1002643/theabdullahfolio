@@ -2352,9 +2352,9 @@ html.custom-cursor-active * {
   transform: translateY(-50%);
 }
 .footer-index__tile.is-flipping {
-  animation: mfFlapTick 0.11s linear infinite;
+  animation: mf-flap-tick 0.11s linear infinite;
 }
-@keyframes mfFlapTick {
+@keyframes mf-flap-tick {
   0% {
     transform: rotateX(0);
   }
@@ -2369,9 +2369,9 @@ html.custom-cursor-active * {
   }
 }
 .footer-index__tile.settled {
-  animation: mfFlapLand 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: mf-flap-land 0.34s cubic-bezier(0.22, 1, 0.36, 1);
 }
-@keyframes mfFlapLand {
+@keyframes mf-flap-land {
   0% {
     transform: rotateX(-24deg);
   }
@@ -2453,9 +2453,9 @@ html.custom-cursor-active * {
 .footer-index__row[data-active="true"] .footer-index__status i {
   background: #ff6d05;
   box-shadow: 0 0 6px rgba(255, 109, 5, 0.9);
-  animation: mfPulse 1.4s ease-in-out infinite;
+  animation: mf-pulse 1.4s ease-in-out infinite;
 }
-@keyframes mfPulse {
+@keyframes mf-pulse {
   0%,
   100% {
     opacity: 1;
@@ -2545,31 +2545,35 @@ html.custom-cursor-active * {
    flag rises in first (0s), then the contact email fades in AND deciphers in step
    (DecipherEmail starts on the same gate, ~0.28s), then the live-location plate
    rises in last (~1.25s), with the hairline separators drawing between. Each item
-   holds hidden until data-revealed so the sequence isn't spent behind the loader.
-   Opacity/transform only (GPU, no CLS); reduced motion shows the strip at rest. */
-.footer-reach-strip__reveal,
-.footer-reach-strip__mail,
-.footer-reach-strip .live-place,
-.footer-reach-strip__sep {
+   holds hidden only once the client has staged the strip (index.jsx sets
+   data-revealed="false" after mount). With the attribute absent — SSR, JS off, a
+   failed hydration, no IntersectionObserver — the items keep their visible base
+   opacity, so the reach strip is never a blank block; the hide/stagger is a
+   progressive enhancement layered on top. Opacity/transform only (GPU, no CLS);
+   reduced motion shows the strip at rest (see below). */
+.footer-reach-strip[data-revealed="false"] .footer-reach-strip__reveal,
+.footer-reach-strip[data-revealed="false"] .footer-reach-strip__mail,
+.footer-reach-strip[data-revealed="false"] .live-place,
+.footer-reach-strip[data-revealed="false"] .footer-reach-strip__sep {
   opacity: 0;
 }
-.footer-reach-strip[data-revealed] .footer-reach-strip__reveal {
+.footer-reach-strip[data-revealed="true"] .footer-reach-strip__reveal {
   animation: reach-item-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0s both;
 }
-.footer-reach-strip[data-revealed] .footer-reach-strip__sep {
+.footer-reach-strip[data-revealed="true"] .footer-reach-strip__sep {
   transform-origin: left center;
   animation: reach-sep-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.footer-reach-strip[data-revealed] .footer-reach-strip__sep:nth-of-type(1) {
+.footer-reach-strip[data-revealed="true"] .footer-reach-strip__sep:nth-of-type(1) {
   animation-delay: 0.2s;
 }
-.footer-reach-strip[data-revealed] .footer-reach-strip__sep:nth-of-type(2) {
+.footer-reach-strip[data-revealed="true"] .footer-reach-strip__sep:nth-of-type(2) {
   animation-delay: 1.05s;
 }
-.footer-reach-strip[data-revealed] .footer-reach-strip__mail {
+.footer-reach-strip[data-revealed="true"] .footer-reach-strip__mail {
   animation: reach-item-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
 }
-.footer-reach-strip[data-revealed] .live-place {
+.footer-reach-strip[data-revealed="true"] .live-place {
   animation: reach-item-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) 1.25s both;
 }
 @keyframes reach-item-in {
@@ -2594,11 +2598,15 @@ html.custom-cursor-active * {
 }
 @media (prefers-reduced-motion: reduce) {
   /* No staged motion — the strip is shown settled at rest (the email decode is
-     likewise skipped inside DecipherEmail). */
-  .footer-reach-strip__reveal,
-  .footer-reach-strip__mail,
-  .footer-reach-strip .live-place,
-  .footer-reach-strip__sep {
+     likewise skipped inside DecipherEmail). Scoped to [data-revealed] (either
+     value) so it matches the specificity of the staged rules above and wins by
+     source order, forcing the items visible whether the client staged them
+     "false" or "true". With the attribute absent the items are already visible
+     from their base opacity, so this override isn't needed there. */
+  .footer-reach-strip[data-revealed] .footer-reach-strip__reveal,
+  .footer-reach-strip[data-revealed] .footer-reach-strip__mail,
+  .footer-reach-strip[data-revealed] .live-place,
+  .footer-reach-strip[data-revealed] .footer-reach-strip__sep {
     opacity: 1;
     transform: none;
     animation: none;

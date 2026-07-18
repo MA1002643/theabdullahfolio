@@ -25,6 +25,7 @@ import { availability } from './footer-data';
 
 const LOCATION_ENDPOINT = '/api/location';
 const LOCATION_POLL_MS = 5 * 60 * 1000; // re-check the city every 5 min
+const LOCATION_FETCH_TIMEOUT_MS = 10 * 1000; // abort a hung location fetch
 const CLOCK_TICK_MS = 15 * 1000; // advance the clock 4×/min
 
 // Everything the plate shows about "now", derived from an IANA zone. Intl does
@@ -83,25 +84,43 @@ export default function LiveLocation() {
   const [clock, setClock] = useState(null);
 
   // Poll the live-location endpoint; on any failure keep the current place.
+  // Polls are SERIALIZED — the next one is scheduled only once the current fetch
+  // settles (setTimeout chain, not setInterval), so a slow response can never
+  // overwrite a newer one and hung requests can't pile up. Each fetch is bounded
+  // by an AbortController that fires on timeout or on unmount.
   useEffect(() => {
     let cancelled = false;
+    let pollId;
+    let controller;
+
     const load = async () => {
+      controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), LOCATION_FETCH_TIMEOUT_MS);
       try {
-        const res = await fetch(LOCATION_ENDPOINT, { cache: 'no-store' });
+        const res = await fetch(LOCATION_ENDPOINT, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
         if (!res.ok) return;
         const data = await res.json();
         if (!cancelled && data && data.town && data.tz) {
           setPlace({ town: data.town, tz: data.tz, live: Boolean(data.live) });
         }
       } catch {
-        /* offline / endpoint down — keep showing the last known place */
+        /* offline / endpoint down / aborted — keep showing the last known place */
+      } finally {
+        clearTimeout(timeoutId);
+        // Re-arm from the tail of this request, not on a fixed interval. Skipped
+        // after unmount so the chain stops cleanly.
+        if (!cancelled) pollId = setTimeout(load, LOCATION_POLL_MS);
       }
     };
+
     load();
-    const id = setInterval(load, LOCATION_POLL_MS);
     return () => {
       cancelled = true;
-      clearInterval(id);
+      clearTimeout(pollId);
+      controller?.abort();
     };
   }, []);
 

@@ -118,11 +118,17 @@ export default function ProjectGithubCta() {
     };
   }, []);
 
-  // Relative "pushed" label is null until mounted (avoids a hydration mismatch)
-  // and recomputes when the timestamp arrives.
+  // Relative "pushed" label is null until mounted (avoids a hydration mismatch),
+  // recomputes when the timestamp arrives, and re-ticks every minute so a value
+  // like "59m ago" can't sit stale on the persistent footer.
   const [pushedLabel, setPushedLabel] = useState(null);
   useEffect(() => {
-    setPushedLabel(relativeTime(repo.pushedAt));
+    const update = () => setPushedLabel(relativeTime(repo.pushedAt));
+    update();
+    // No timestamp yet → nothing to keep fresh; skip the interval.
+    if (!repo.pushedAt) return undefined;
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
   }, [repo.pushedAt]);
 
   const commitsLabel = formatCount(repo.commits);

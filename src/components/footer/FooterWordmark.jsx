@@ -279,6 +279,12 @@ export default function FooterWordmark({
     const toViewBox = (clientX, clientY) => {
       const r = rectRef.current;
       if (!r || !r.width) return null;
+      // Listeners live on window, so most pointermoves land nowhere near the
+      // footer. Reject anything outside the SVG rect up front so the caller
+      // skips the stringAt scan on every off-target move.
+      if (clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) {
+        return null;
+      }
       return {
         x: (clientX - r.left) * (VIEW_W / r.width),
         y: (clientY - r.top) * (VIEW_H / r.height),
@@ -418,7 +424,12 @@ export default function FooterWordmark({
 
     const onMove = (e) => {
       const vb = toViewBox(e.clientX, e.clientY);
-      if (!vb) return;
+      if (!vb) {
+        // Off the wordmark: clear the hover so re-entering the same string
+        // re-plucks (matches the pre-bounds-check behaviour).
+        hoverIdxRef.current = -1;
+        return;
+      }
       const idx = stringAt(vb.x, vb.y);
       if (idx === hoverIdxRef.current) return;
       hoverIdxRef.current = idx;

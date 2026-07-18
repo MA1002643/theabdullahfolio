@@ -50,18 +50,31 @@ export const kvConfigured = Boolean(redis);
 export function parseCoords(body) {
   if (!body || typeof body !== 'object') return null;
 
+  // Coerce one coordinate scalar. Accept ONLY a real number or a non-empty
+  // numeric string; everything else — null, '', whitespace, booleans, objects,
+  // arrays — becomes NaN so the finite check below rejects it. A bare Number()
+  // would turn Number(null) / Number('') / Number(false) / Number([]) into a
+  // valid-looking 0 and publish "null island" (0,0) for a malformed (but
+  // authenticated) payload. Numeric strings stay supported (an iOS Shortcut may
+  // send "40.7" rather than 40.7).
+  const numeric = (value) => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string' && value.trim() !== '') return Number(value);
+    return NaN;
+  };
+
   let lat;
   let lon;
   if (Array.isArray(body.locations) && body.locations.length) {
     // GeoJSON-style: newest fix last, coordinates ordered [lon, lat].
     const coords = body.locations[body.locations.length - 1]?.geometry?.coordinates;
     if (Array.isArray(coords) && coords.length >= 2) {
-      lon = Number(coords[0]);
-      lat = Number(coords[1]);
+      lon = numeric(coords[0]);
+      lat = numeric(coords[1]);
     }
   } else {
-    lat = Number(body.lat ?? body.latitude);
-    lon = Number(body.lon ?? body.lng ?? body.longitude);
+    lat = numeric(body.lat ?? body.latitude);
+    lon = numeric(body.lon ?? body.lng ?? body.longitude);
   }
 
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
@@ -88,15 +101,27 @@ export function townFromTimeZone(tz) {
   return cleaned || null;
 }
 
+// Coordinate privacy floor: ~1km (2 dp). We never store — nor send to a third
+// party — a finer fix than this, and both sites round through here so the two
+// precisions can't drift apart (a looser geocoder precision would re-open the
+// leak). At the equator 2 dp ≈ 1.1km, which still resolves a town cleanly.
+const COORD_DP = 2;
+export function roundCoord(n) {
+  const f = 10 ** COORD_DP;
+  return Math.round(n * f) / f;
+}
+
 // Reverse-geocode coordinates to a town, server-side and keyless. BigDataCloud's
 // client endpoint works fine at this (personal-tracker) volume. Prefer the most
 // specific name: `locality` is the actual town ("Bolton"), where `city` is often
 // the wider metro ("Manchester"). Timed so a slow geocoder can't hang ingest; on
 // any failure returns null and the caller falls back to the tz-derived name.
 export async function reverseGeocode(lat, lon) {
+  // Round to the storage floor BEFORE the request so full-precision GPS never
+  // reaches the third-party geocoder's logs — only the ~1km cell we'd keep.
   const url =
     'https://api.bigdatacloud.net/data/reverse-geocode-client' +
-    `?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+    `?latitude=${roundCoord(lat)}&longitude=${roundCoord(lon)}&localityLanguage=en`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4000);
   try {

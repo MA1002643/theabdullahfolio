@@ -8,14 +8,18 @@ import {
   writeLocation,
   readLocation,
   effectiveLocation,
+  roundCoord,
 } from '@/utils/liveLocation';
 
 // Live-location endpoint for the footer availability line (issue #30).
 //
 //   POST — ingest a GPS fix from the owner's phone tracker (OwnTracks / Overland
-//          / an iOS Shortcut). Authenticated with LOCATION_INGEST_TOKEN; derives
-//          the timezone offline, reverse-geocodes to a town, and stores the
-//          latest fix in Upstash KV.
+//          / an iOS Shortcut). Header trackers authenticate with
+//          LOCATION_INGEST_TOKEN (Bearer/Basic); URL-only trackers (Overland)
+//          use the separate LOCATION_INGEST_QUERY_TOKEN via `?token=` so the
+//          log-exposed query secret is isolated from the header write token.
+//          Derives the timezone offline, reverse-geocodes to a town, and stores
+//          the latest fix in Upstash KV.
 //   GET  — public read for the footer. Returns ONLY { town, tz, live } — never
 //          coordinates — with the freshness guard applied so a stale fix falls
 //          back to the home city.
@@ -25,19 +29,21 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Primary write secret, presented via an Authorization header (Bearer or Basic).
 const INGEST_TOKEN = process.env.LOCATION_INGEST_TOKEN;
+// A SEPARATE secret for the `?token=` query path. Overland (and other URL-only
+// trackers) can't send headers, so they must put the token in the URL — where
+// it inevitably lands in proxy / platform / analytics logs. Giving that path its
+// own credential means the value exposed in URLs is NOT the primary write token:
+// it's rotatable on its own, and a leak from a log can't be replayed against the
+// header path. Leave it unset to disable URL-based ingestion entirely.
+const QUERY_TOKEN = process.env.LOCATION_INGEST_QUERY_TOKEN;
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
-// The presented secret can arrive three ways so any tracker works: a
-// `?token=` query param (OwnTracks/Overland can only customise the URL), a
-// `Authorization: Bearer <token>` header (Shortcuts / curl), or HTTP Basic
-// where the password carries the token (OwnTracks' built-in auth). We normalise
-// all three to a "Bearer <token>" string and reuse the vetted constant-time
-// compare in _utils/cronAuth so there's a single comparison path.
-function presentedToken(request) {
-  const fromQuery = new URL(request.url).searchParams.get('token');
-  if (fromQuery) return fromQuery;
-
+// Pull a token out of an Authorization header — Bearer (Shortcuts / curl) or
+// HTTP Basic where the password carries the token (OwnTracks' built-in auth).
+// Returns '' when neither scheme is present.
+function headerToken(request) {
   const auth = request.headers.get('authorization') || '';
   if (auth.startsWith('Bearer ')) return auth.slice('Bearer '.length);
   if (auth.startsWith('Basic ')) {
@@ -52,15 +58,35 @@ function presentedToken(request) {
   return '';
 }
 
+// Authorize a write. The two entry points are checked against DIFFERENT secrets:
+// a `?token=` query param against QUERY_TOKEN (the log-exposed, independently-
+// rotatable credential), and an Authorization header against the primary
+// INGEST_TOKEN. Each path fails closed when its own secret isn't configured, and
+// both reuse the constant-time compare in _utils/cronAuth so there's a single
+// vetted comparison path. A tracker presents exactly one of the two, so checking
+// the query param first never masks a valid header.
+function isAuthorized(request) {
+  const fromQuery = new URL(request.url).searchParams.get('token');
+  if (fromQuery) {
+    return Boolean(QUERY_TOKEN) && safeBearerEqual(`Bearer ${fromQuery}`, QUERY_TOKEN);
+  }
+  const fromHeader = headerToken(request);
+  if (fromHeader) {
+    return Boolean(INGEST_TOKEN) && safeBearerEqual(`Bearer ${fromHeader}`, INGEST_TOKEN);
+  }
+  return false;
+}
+
 export async function POST(request) {
-  // Fail closed if no token is configured — never accept anonymous writes.
-  if (!INGEST_TOKEN) {
+  // Fail closed if neither credential is configured — never accept anonymous
+  // writes. (isAuthorized also rejects per-path when a given secret is unset.)
+  if (!INGEST_TOKEN && !QUERY_TOKEN) {
     return NextResponse.json(
       { ok: false, error: 'location ingest not configured' },
       { status: 503, headers: NO_STORE },
     );
   }
-  if (!safeBearerEqual(`Bearer ${presentedToken(request)}`, INGEST_TOKEN)) {
+  if (!isAuthorized(request)) {
     return NextResponse.json(
       { ok: false, error: 'unauthorized' },
       { status: 401, headers: NO_STORE },
@@ -112,9 +138,10 @@ export async function POST(request) {
     region: geo?.region ?? null,
     country: geo?.country ?? null,
     tz,
-    // Rounded to ~1km (2 dp) — stored for possible future use, never returned.
-    lat: Math.round(coords.lat * 100) / 100,
-    lng: Math.round(coords.lon * 100) / 100,
+    // Rounded to the ~1km privacy floor — stored for possible future use, never
+    // returned. Same helper the geocoder request uses, so the two never drift.
+    lat: roundCoord(coords.lat),
+    lng: roundCoord(coords.lon),
     updatedAt: Date.now(),
   };
 

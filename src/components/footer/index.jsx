@@ -299,7 +299,11 @@ export default function Footer() {
             starts the decode from the same gate, so they stay in lockstep. */}
         <address
           ref={reachRef}
-          data-revealed={reachRevealed ? 'true' : undefined}
+          // Omit the attribute until mounted so the server / JS-off / failed-
+          // hydration render leaves the items at their visible base opacity
+          // (the CSS only hides on an explicit data-revealed="false"). After
+          // mount it stages "false" → "true" to drive the reveal.
+          data-revealed={mounted ? (reachRevealed ? 'true' : 'false') : undefined}
           className="footer-reach-strip not-italic"
         >
           <AvailabilityStatus className="footer-reach-strip__reveal" />

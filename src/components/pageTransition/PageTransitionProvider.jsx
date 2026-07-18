@@ -80,7 +80,8 @@ export default function PageTransitionProvider({ children }) {
   // Prime both stone slabs (blank + carved) into the HTTP cache during idle time
   // so the first navigation carves instantly under the cover. Fire-and-forget.
   useEffect(() => {
-    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 800));
+    const supportsIdle = typeof window.requestIdleCallback === 'function';
+    const idle = supportsIdle ? window.requestIdleCallback : (cb) => setTimeout(cb, 800);
     const handle = idle(() => {
       for (const src of [
         '/textures/rock/ma-slab-plain.webp',
@@ -91,8 +92,12 @@ export default function PageTransitionProvider({ children }) {
       }
     });
     return () => {
-      if (window.cancelIdleCallback && typeof handle === 'number') {
+      // Cancel via whichever scheduler we used — the setTimeout fallback needs
+      // clearTimeout, or its timer fires (and news up Image()) after unmount.
+      if (supportsIdle) {
         window.cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle);
       }
     };
   }, []);
