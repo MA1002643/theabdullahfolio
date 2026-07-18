@@ -81,7 +81,10 @@ export default function PageTransitionProvider({ children }) {
   // so the first navigation carves instantly under the cover. Fire-and-forget.
   useEffect(() => {
     const supportsIdle = typeof window.requestIdleCallback === 'function';
-    const idle = supportsIdle ? window.requestIdleCallback : (cb) => setTimeout(cb, 800);
+    // Wrap so requestIdleCallback keeps its window receiver. It's a global
+    // timer-style API and tolerates a bare call in practice, but the wrapper
+    // makes that independent of engine quirks and matches the setTimeout branch.
+    const idle = supportsIdle ? (cb) => window.requestIdleCallback(cb) : (cb) => setTimeout(cb, 800);
     const handle = idle(() => {
       for (const src of [
         '/textures/rock/ma-slab-plain.webp',
