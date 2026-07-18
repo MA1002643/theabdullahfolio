@@ -125,7 +125,11 @@ export async function reverseGeocode(lat, lon) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4000);
   try {
-    const res = await fetch(url, { signal: controller.signal });
+    // `no-store`: Next's patched fetch defaults to caching GETs in the Data
+    // Cache, keyed by URL. That URL embeds the coordinates, so caching would
+    // retain a location-derived response past a single ingest — opt out so each
+    // reverse-geocode is treated as non-cacheable.
+    const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
     if (!res.ok) return null;
     const d = await res.json();
     const town = d.locality || d.city || d.principalSubdivision || null;
