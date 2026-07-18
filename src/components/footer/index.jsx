@@ -103,6 +103,17 @@ export default function Footer() {
   useEffect(() => setMounted(true), []);
   const reduced = mounted && rawReduced;
 
+  // The copyright year is read from `new Date()` only AFTER mount. Evaluating it
+  // during the server render (and the first client render) risks a hydration
+  // mismatch if the page is served across a year boundary — server on Dec 31,
+  // client hydrating Jan 1 — since the two renders would emit different year
+  // strings. Pre-mount SSR + first client render omit the year so they agree; it
+  // fills in a frame later, well before the footer scrolls into view and the
+  // split-flap copyright cascade plays.
+  const copyright = mounted
+    ? `© ${new Date().getFullYear()} ${brand.name}`
+    : `© ${brand.name}`;
+
   // The reach strip reveals its three items in sequence (availability → email
   // decode → live-location) rather than as one block fade. `reachRevealed` is the
   // single source of truth for that timeline: it drives the CSS stagger
@@ -338,7 +349,7 @@ export default function Footer() {
           soundOn={soundOn}
           onToggle={toggleSound}
           canHover={canHover}
-          copyright={`© ${new Date().getFullYear()} ${brand.name}`}
+          copyright={copyright}
           className="mt-14 flex flex-col items-center gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between"
         />
       </div>

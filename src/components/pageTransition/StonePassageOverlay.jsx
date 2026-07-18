@@ -99,6 +99,21 @@ export default function StonePassageOverlay({ phase, label, reduced }) {
     return () => controls.stop();
   }, [carving, draw]);
 
+  // Re-derive the engrave state if the user toggles OS "reduced motion" while the
+  // overlay is still mounted. `drawn`, `showName` and `draw` are seeded from
+  // `reduced` only on the mount render (useState / useMotionValue ignore their
+  // argument afterwards), so without this the mark can be left stuck — half-drawn
+  // if reduced flips ON mid-carve, or shown finished with no draw if it flips OFF.
+  // Clearing `carving` also halts any in-flight draw animation via the carve
+  // effect's cleanup (so `draw.set` isn't clobbered by a live rAF tick) and lets
+  // the timed carve restart cleanly once reduced is off again.
+  useEffect(() => {
+    setCarving(false);
+    setDrawn(reduced);
+    setShowName(reduced);
+    draw.set(reduced ? 1 : 0);
+  }, [reduced, draw]);
+
   // Radial reveal — identical language to the intro loader's exit wipe.
   const revealRadius = useMotionValue(0);
   const maskImage = useMotionTemplate`radial-gradient(circle at 50% 50%, transparent ${revealRadius}%, black calc(${revealRadius}% + 5%))`;
