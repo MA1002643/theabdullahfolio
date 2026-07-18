@@ -16,6 +16,7 @@
 // has no seam — a calm heartbeat, not a strobe. Transform/opacity only (GPU);
 // under prefers-reduced-motion only the steady core remains.
 
+import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { availability } from './footer-data';
@@ -23,7 +24,13 @@ import { availability } from './footer-data';
 // `className` lets the caller place the line — it lives inline in the footer's
 // full-width reach strip (no top margin), but the prop keeps it reusable.
 export default function AvailabilityStatus({ className }) {
-  const reduced = useReducedMotion();
+  const rawReduced = useReducedMotion();
+
+  // useReducedMotion is null on the server; gate behind a mounted flag so SSR
+  // and first client render agree, then settle (same pattern as the footer).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const reduced = mounted && rawReduced;
 
   if (!availability.open) return null;
 
