@@ -94,7 +94,7 @@ export default function PageTransitionProvider({ children }) {
     });
     return () => {
       // Cancel via whichever scheduler we used — the setTimeout fallback needs
-      // clearTimeout, or its timer fires (and news up Image()) after unmount.
+      // clearTimeout, or its timer fires (and new up Image()) after unmount.
       if (supportsIdle) {
         window.cancelIdleCallback(handle);
       } else {

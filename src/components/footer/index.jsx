@@ -235,7 +235,7 @@ export default function Footer() {
       {/* Giant submerged wordmark — half-sunk below the footer edge and faded
           out toward the bottom (that fade is unchanged). Each letter is now an
           independent "guitar string": on hover it plucks (a damped spring),
-          flashes bright along its outline, and rings a soft note from a
+          flashes bright along its outline, and rings a soft note from
           an unfolding qawwali-style melody (Web Audio, synthesised — see FooterWordmark.jsx /
           pluckSynth.js). Sweeping the cursor across the name strums it. Purely
           decorative + aria-hidden; the vertical pluck is suppressed under
