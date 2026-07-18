@@ -61,6 +61,14 @@ const TIP_LEN = 0.03 * L;
 // shows; the image's own background is pure black to match the cavern.
 const SLAB_FADE = 'radial-gradient(circle at 50% 50%, #000 64%, transparent 84%)';
 
+// Half-diagonal of the viewport in px — the portal ring's full-bleed reference
+// radius. Module-scope so it isn't re-created each render; SSR-guarded because a
+// 'use client' overlay's first render can still execute on the server.
+const getCornerPx = () =>
+  typeof window !== 'undefined'
+    ? Math.hypot(window.innerWidth / 2, window.innerHeight / 2)
+    : 0;
+
 export default function StonePassageOverlay({ phase, label, reduced }) {
   const revealing = phase === 'revealing';
   const wipeActive = revealing && !reduced;
@@ -119,24 +127,23 @@ export default function StonePassageOverlay({ phase, label, reduced }) {
   // Half-diagonal of the viewport — the ring's full-bleed radius. Seeded from
   // window on the first client render (not 0) so a fast route transition that
   // begins the wipe before the mount effect runs never flashes a 0px ring that
-  // then pops to size; kept current on resize. SSR-guarded because a 'use
-  // client' overlay's first render can still execute on the server.
-  const cornerPx = () =>
-    typeof window !== 'undefined'
-      ? Math.hypot(window.innerWidth / 2, window.innerHeight / 2)
-      : 0;
-  const [farthestCornerPx, setFarthestCornerPx] = useState(cornerPx);
+  // then pops to size; kept current on resize.
+  const [farthestCornerPx, setFarthestCornerPx] = useState(getCornerPx);
   useEffect(() => {
-    const update = () => setFarthestCornerPx(cornerPx());
+    const update = () => setFarthestCornerPx(getCornerPx());
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const ringDiameter = useTransform(
-    revealRadius,
-    (r) => `${(r / 100) * farthestCornerPx * 2}px`,
-  );
+  // The ring expands via a compositor `scale` transform instead of animating
+  // width/height (which relayouts the box every frame). Fixed box = the full
+  // half-diagonal at scale 1; scale = revealRadius/100 reproduces the old
+  // diameter exactly (r=100 → full bleed, r=150 → 1.5×). Centering is
+  // scale-invariant: the -50% translate is a fixed px offset applied after the
+  // scale, so the box centre stays pinned regardless of scale.
+  const ringMaxPx = farthestCornerPx * 2;
+  const ringScale = useTransform(revealRadius, (r) => r / 100);
   const ringOpacity = useTransform(revealRadius, [0, 12, 80, 120, 150], [0, 0.7, 0.7, 0.35, 0]);
 
   useEffect(() => {
@@ -305,8 +312,9 @@ export default function StonePassageOverlay({ phase, label, reduced }) {
         <motion.div
           className="pointer-events-none absolute left-1/2 top-1/2 rounded-full"
           style={{
-            width: ringDiameter,
-            height: ringDiameter,
+            width: ringMaxPx,
+            height: ringMaxPx,
+            scale: ringScale,
             x: '-50%',
             y: '-50%',
             opacity: ringOpacity,

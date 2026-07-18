@@ -27,10 +27,17 @@ export const linkedInUrl = 'https://www.linkedin.com/in/muhammad-abdullah227/';
 // Served from /public — opens the CV PDF directly.
 export const resumeUrl = '/Muhammad_Abdullah_CV.pdf';
 
-// Contact micro-block. `email` mirrors the contact form's RECEIVER_EMAIL so the
-// address shown here is the same inbox the form delivers to; `location` matches
-// the identity stated across the site.
-export const email = 'muhammad.abdullah33176444@gmail.com';
+// Contact micro-block. `email` is the PUBLIC contact/reply-to address shown in
+// the footer — env-overridable with the literal below as its default (same
+// pattern as githubUsername/projectRepo above), so a fork retargets it from env
+// with no code edit. It is deliberately SEPARATE from the contact form's
+// RECEIVER_EMAIL: that is a server-only secret the /api/send-mail route delivers
+// to, unreadable from this client bundle, so the two can't share one var. They
+// point at the same inbox today by choice, not construction — if you want the
+// address shown here to stay equal to the delivery inbox, set both to the same
+// value. `location` matches the identity stated across the site.
+export const email =
+  process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'muhammad.abdullah33176444@gmail.com';
 export const location = 'Bolton, Manchester, England';
 
 // Brand/signature copy.
