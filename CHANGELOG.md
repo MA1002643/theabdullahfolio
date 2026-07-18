@@ -31,9 +31,97 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: the Repository Governance & Templates Suite; the Experience Summary live-data fix; the Unify Page Titles refactor; five About-page card overhauls (Most Used Languages, GitHub Stats, Completed Projects, Current Streak, and the Skills grid); and the Contact Form submit-animation feature. Each change below is its own table — field labels on the left, full detail on the right._
+_Scope: the Repository Governance & Templates Suite; the Experience Summary live-data fix; the Unify Page Titles refactor; five About-page card overhauls (Most Used Languages, GitHub Stats, Completed Projects, Current Streak, and the Skills grid); the Contact Form submit-animation feature; and the route-wide editorial footer ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)) — its live-location and project-metadata endpoints, guitar-string wordmark, and the "Stone Passage" page transition. Each change below is its own table — field labels on the left, full detail on the right._
 
 ### Added
+
+#### Route-wide editorial footer (colophon)
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/index.jsx`, `src/app/(sub pages)/layout.js` |
+| **Details** | **Route-wide editorial footer** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/footer/index.jsx`). An editorial "colophon" footer rendered **once** in the `(sub pages)` layout as a `contentinfo` sibling of `<main>`, so it appears on `/about`, `/qualifications`, `/projects`, and `/contact` with no per-page duplication. Composed as an asymmetric 5 / 4 / 3 masthead — **Identity** (name, role, positioning line, the mandatory project-GitHub CTA, and one honest availability signal), **Index** (a numbered, route-aware table of contents), and **Elsewhere** (professional links + a contact micro-block) — over a layered atmospheric plate and a giant "plucked-string" wordmark. Everything reuses the site's existing neon-orange glass design system; all motion is transform / opacity / colour (no layout, no CLS) and honours `prefers-reduced-motion`. |
+
+#### Footer Identity block — "Wet Ink" signature entrance
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/FooterIdentity.jsx`, `src/components/footer/AvailabilityStatus.jsx` |
+| **Details** | **Footer Identity block** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/footer/FooterIdentity.jsx`). On first scroll-into-view (gated on the intro loader) the block "writes itself on" like a signature — an ember rule draws to full width then retracts as the name lands, the name inks down top→bottom via `clip-path`, the role snaps up from a sparking tick, the statement rises "as the ink dries", and the GitHub CTA lands last and self-draws its git graph on top. Choreographed in pure CSS keyframes keyed off a `data-revealed` attribute (so the rule keeps its `:hover` transform). `AvailabilityStatus.jsx` contributes the one live, semantic signal the block earns — an honest "open to new roles" line with a single breathing dot — SSR-/hydration-safe and stilled under reduced motion. |
+
+#### Footer Index — split-flap "Departures" board
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/FooterManifest.jsx` |
+| **Details** | **Footer Index board** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/footer/FooterManifest.jsx`). The site's four routes staged as a mechanical split-flap **departures board** that "arrives" the first time the footer reveals: each row's two-digit ordinal scrambles across its flap tiles and settles, row by row, and the route you're on reads **NOW BOARDING** with a live pulse while the rest sit **ON TIME**. Rows stay real internal `<TransitionLink>`s — SPA page-transition preserved, keyboard-focusable, `aria-current`, with the per-glyph hover-swap on the destination; the scrambling flap glyphs are decorative (`aria-hidden`) so the accessible name never depends on how far they've settled. SSR-safe (final ordinals render on the server and first client render — correct with JS off, no hydration mismatch), every tile reserves its box (no CLS), and reduced motion shows the board already settled. |
+
+#### Footer Elsewhere — live terminal
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/ElsewhereTerminal.jsx` |
+| **Details** | **Footer Elsewhere terminal** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/footer/ElsewhereTerminal.jsx`). The three professional destinations (GitHub / LinkedIn / Résumé) staged as a small graphite terminal that "runs a session" on first reveal — each command types itself out, its resolved destination prints beneath, and a blinking ember caret waits at the prompt. Each command + output entry stays one real `<a>` with the honest `aria-label` from `footer-data`; the typed glyphs are decorative. SSR-safe (renders fully "run" server-side, no hydration mismatch), each output row reserves its height (no CLS), and reduced motion shows the session already run and still. |
+
+#### Live-location signal — "Ember Meridian"
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/LiveLocation.jsx`, `src/utils/liveLocation.js` |
+| **Details** | **Live-location signal** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/footer/LiveLocation.jsx`). The calling card's static place line replaced by the owner's **real current town + local time**, engraved into the graphite plate: a day/night glyph, an ember-gradient clock, the town kicker, the UTC offset, and a **LIVE** pulse shown only when the GPS fix is genuinely fresh. Fed by `/api/location` (below), which returns only `{ town, tz, live }` — never coordinates — with a freshness guard, so when the tracker is off it quietly shows the home city (Bolton) with no LIVE flag. Hydration-safe: the clock is `null` on the server and first client render (SSR and hydration agree), then fills in and ticks on mount, and the live time is surfaced exactly once across the whole footer. |
+
+#### `/api/location` — live-location ingest + read endpoint
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `/api/location`, `src/app/api/location/route.js`, `src/utils/liveLocation.js` |
+| **Details** | **`/api/location` endpoint** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/app/api/location/route.js`). `POST` ingests a GPS fix from the owner's phone tracker (OwnTracks / Overland / an iOS Shortcut). Two **independent** write secrets gate it — `LOCATION_INGEST_TOKEN` via an `Authorization` header and a separate `LOCATION_INGEST_QUERY_TOKEN` via `?token=`, so the inevitably-log-exposed query secret is isolated from the header token — each constant-time compared and failing closed when unset. The handler derives the timezone **offline** (`tz-lookup`), reverse-geocodes to a town, and stores the latest fix in Upstash KV. `GET` is a public read returning only `{ town, tz, live }` (never coordinates) with the freshness guard applied. Privacy-hardened: coordinates are rounded to a ~1 km floor **before** the third-party geocode and before storage, the geocode fetch is `cache: 'no-store'`, and the handler short-circuits to `503` before geocoding when KV is unconfigured. Node runtime, `force-dynamic`. |
+
+#### Footer project-GitHub CTA — self-drawing git graph
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/ProjectGithubCta.jsx` |
+| **Details** | **Project-GitHub CTA** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/footer/ProjectGithubCta.jsx`). The colophon's one mandatory "View this project on GitHub" call-to-action, built as a single etched-graphite plate that **is** a git graph — a hairline ember branch that forks and merges, self-drawn on scroll-in via framer's `pathLength` (the same language as the contact SEND check), commit nodes popping in along it. On hover a bright pulse travels the branch to HEAD (CSS `offset-path`), the octocat leans, and an ember light rakes across once; the plate leans magnetically toward the cursor (`useMagneticPull`). It carries an **honest** terminal caption — `❯ main · N commits · pushed <rel>` — fed live by `/api/project-repo`, degrading to the branch + "open source" (never a faked number) if the fetch can't complete. Transform / opacity / colour only (no CLS); reduced motion shows the graph fully drawn and still. |
+
+#### `/api/project-repo` — live repo-metadata endpoint
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `/api/project-repo`, `src/app/api/project-repo/route.js` |
+| **Details** | **`/api/project-repo` endpoint** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/app/api/project-repo/route.js`). A tiny, pinned GraphQL fetch of live metadata (default branch, commit count, last-push time) for the **one** repository this site is built from — deliberately distinct from `/api/github-stats`, whose `repo` field is the algorithmically-chosen *most active* repo. Pinned to a single owner/name with **no query params** (no cache-key surface to abuse; every caller gets the same cached payload), wrapped in `unstable_cache` with a 10-minute revalidate, Node runtime, and **fails soft** to a bundled snapshot so the CTA never renders an empty caption. Owner and repo name are env-overridable (`NEXT_PUBLIC_GITHUB_USERNAME` / `NEXT_PUBLIC_PROJECT_REPO`) so a fork retargets both the CTA link and this caption with no code change. |
+
+#### "Plucked-string" footer wordmark + Web Audio guitar
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/FooterWordmark.jsx`, `src/components/footer/pluckSynth.js`, `src/components/footer/footerMelody.js`, `src/components/footer/SoundControl.jsx` |
+| **Details** | **Plucked-string wordmark** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/footer/FooterWordmark.jsx`). The giant half-sunk wordmark rebuilt as horizontal "guitar strings" — the name is rasterised to an offscreen canvas and **scanline-sampled** into one horizontal line segment per filled run, reproducing the "letters made of lines" construction for arbitrary text. Hovering a string plucks it (a pinned-end standing wave that rings down ~0.9 s); sweeping the cursor strums the name. On hover-capable devices each pluck sounds the next note of an **original** qawwali-style melody (`footerMelody.js`) through an **original** Web Audio plucked-string synth (`pluckSynth.js`, ships no audio files); touch / keyboard-less devices instead play a self-hosted, royalty-free acoustic track (`SoundControl.jsx` owns the toggle and unlocks the `AudioContext` from the click gesture; provenance in `public/audio/README.md`). Physics run on one rAF, paused off-screen. Purely decorative (`aria-hidden`); reduced motion stills the strings. |
+
+#### Footer link micro-interactions — hover-swap, Decipher email, meta cascade
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/HoverText.jsx`, `src/components/footer/DecipherEmail.jsx`, `src/components/footer/FooterMetaReveal.jsx` |
+| **Details** | **Footer link micro-interactions** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)). `HoverText.jsx` gives the link columns a per-glyph "swap" hover — each letter rolls out as a fresh copy rolls up (with a per-letter colour lift), the face + clone stacked **inside** each character box so long values (e.g. the contact email) still wrap character-by-character; a pure CSS `transition-delay` stagger, so it works before hydration and costs nothing at rest. `DecipherEmail.jsx` resolves the contact address out of a cipher on first reveal (each glyph scrambles through monospace characters then locks in left→right). `FooterMetaReveal.jsx` ripples the meta row (sound toggle + copyright) in glyph-by-glyph as a split-flap cascade. All three expose the real, unsplit string via an `sr-only` node (decorative glyphs `aria-hidden`), run on text/colour only (no CLS), and collapse to a plain fade / colour lift under reduced motion. |
+
+#### Shared footer reveal gate (`useFooterReveal`)
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/useFooterReveal.js` |
+| **Details** | **Shared footer reveal gate** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/footer/useFooterReveal.js`). The single re-arming, loader-gated "is this footer block on screen?" primitive every footer entrance shares. Because the footer is rendered once and **persists** across SPA navigations, a `useInView(once)` observer would latch on a transient off-screen flicker during a route swap / page-transition overlay and leave entrances "spent" where nobody sees them. This fires when a meaningful `amount` of a block is on screen **and** the intro loader has lifted, then resets once it is fully out of view — two-threshold hysteresis so a partial scroll-away never blanks a still-visible block — so every entrance replays when the visitor actually scrolls it into view. |
 
 #### About-page Skills grid
 
@@ -365,6 +453,22 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 
 ### Changed
 
+#### Sub-pages layout now anchors the shared footer
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/app/(sub pages)/layout.js` |
+| **Details** | **Sub-pages layout** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/app/(sub pages)/layout.js`) became a `min-h-screen` flex column so the shared `<Footer>` anchors to the true bottom of every sub-page as a `contentinfo` sibling of `<main>`. The content region is now `flex-1`, so `justify-center` still centres it within the available space rather than lifting the footer up. This renders the footer **once** for `/about`, `/qualifications`, `/projects`, and `/contact` instead of per-page. The floating Home / Projects button is `position: fixed`, so it is unaffected by the wrapper. |
+
+#### Page transition redesigned — the "Stone Passage"
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/pageTransition/StonePassageOverlay.jsx`, `src/components/pageTransition/PageTransitionProvider.jsx`, `src/components/pageTransition/constants.js` |
+| **Details** | **Page transition redesigned** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)). The inter-page transition overlay was recut from the flame "Sigil" to a **"Stone Passage"**: a rough basalt slab rises out of the void and the MA monogram is **engraved** into it, drawn stroke-by-stroke by a chisel — an SVG stroke-mask sweeps a hand-authored centreline over a pixel-matched plain/carved image pair, a hot-cut tip riding the leading edge — before a radial mask wipe (the intro loader's language) uncovers the destination. `PageTransitionProvider` now mounts `StonePassageOverlay`; timing lives in `constants.js`, with a minimum showcase window so a fast route can't cut the engraving off mid-stroke. The ember portal ring expands via a compositor `scale` transform (not per-frame width/height). Reduced motion shows the finished mark with no draw. |
+
 #### `src/utils/skillsIconMap.js` is now server-only
 
 | | |
@@ -566,6 +670,46 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Details** | `@upstash/redis` and `ai` added as dependencies (`package.json`) for the idempotency store and the Gateway-routed refine endpoint; the Node engine was bumped to 22 (`package.json` + `.github/workflows`). The aurora reuses the already-present `three` / `@react-three/fiber`. |
 
 ### Fixed
+
+#### Finite-positive validation for GitHub timeout / budget env vars
+
+| | |
+|:--|:--|
+| **Ref** | — |
+| **Files** | `src/app/api/github-stats/route.js`, `src/app/api/github-skills/route.js`, `src/app/api/project-repo/route.js` |
+| **Details** | The GitHub routes parsed their timeout and wall-clock-budget env vars (`GITHUB_TIMEOUT_MS`, `GITHUB_OVERALL_TIMEOUT_MS`, `GITHUB_OVERALL_BUDGET_MS`) with `Number(env) || fallback`, which only rejects *falsy* results (`0`, `NaN`): a negative value slipped through and forced immediate aborts / instant budget exhaustion, and `Infinity` slipped through and disabled the cap entirely. All seven sites now route through a shared `envPositiveMs` guard that falls back unless the parsed value is finite and positive — matching the pattern already used by `/api/experience-summary` and `/api/repo-refresh`. |
+
+#### Reduced-motion hydration flash on the footer availability dot
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/AvailabilityStatus.jsx` |
+| **Details** | The breathing availability halo read `useReducedMotion()` directly. On the server that hook returns `null`, so SSR rendered the animated halo **even for reduced-motion users**, then the first client render removed it — a hydration mismatch and a visible flash. It is now gated behind a `mounted` flag (the pattern the other footer blocks already use): SSR and the first client render agree, then the real preference settles a frame after mount. |
+
+#### Copyright hydration mismatch across the year boundary
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/footer/index.jsx` |
+| **Details** | The footer copyright year is now read from `new Date()` **only after mount**. Evaluating it during the server render (and the first client render) risked a hydration mismatch when a page is served across a year boundary — server on Dec 31, client hydrating Jan 1 — because the two renders would emit different year strings. Pre-mount SSR and the first client render omit the year so they agree; it fills in a frame later, well before the split-flap copyright cascade plays. |
+
+#### Live-location freshness treats future timestamps as stale
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/utils/liveLocation.js` |
+| **Details** | `effectiveLocation`'s freshness test was upper-bound-only (`now - updatedAt <= STALE_AFTER_MS`), so a timestamp in the **future** (a forward clock skew on the ingest server) yields a negative age that trivially passes and could pin the footer to a stale "live" town for up to the whole stale window. The age is now bounded on both sides — within `[−CLOCK_SKEW_TOLERANCE_MS, STALE_AFTER_MS]` — with a small (1-minute) skew tolerance so benign cross-instance clock drift never false-negatives a just-written fix. |
+
+#### Reverse-geocode fetch marked non-cacheable
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/utils/liveLocation.js` |
+| **Details** | The third-party reverse-geocode `fetch` now sets `cache: 'no-store'`. Under Next.js 14 the App Router's patched `fetch` defaults to caching GET responses in the Data Cache keyed by URL — and that URL embeds the (rounded) coordinates — so caching would retain a location-derived response longer than intended, an avoidable privacy exposure. Opting out treats every reverse-geocode as non-cacheable. |
 
 #### Skills cache could pin stale data forever
 
