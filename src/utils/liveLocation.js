@@ -33,6 +33,14 @@ export const HOME_LOCATION = {
 // quiet) without risking a very stale city if the tracker actually dies.
 export const STALE_AFTER_MS = 12 * 60 * 60 * 1000; // 12 hours
 
+// Forward clock-skew tolerance for the freshness test. `updatedAt` is stamped by
+// the ingest server and compared against another instance's clock on read, so a
+// little cross-instance drift is normal and shouldn't flip a just-written fix to
+// "home". Beyond this, an `updatedAt` in the future is treated as invalid (stale)
+// rather than left "live" — a negative age would otherwise pass an upper-bound-
+// only staleness check and pin the footer to a bad town for up to the window.
+const CLOCK_SKEW_TOLERANCE_MS = 60 * 1000; // 1 minute
+
 // KV client — mirrors the instantiation in src/app/api/send-mail/route.js so
 // the whole app talks to Upstash the same way. Null (and every call a graceful
 // no-op) when the env isn't present, e.g. a preview without KV linked.
@@ -184,12 +192,16 @@ export async function clearLocation() {
 // live town when the fix is fresh, otherwise home. Coordinates are never part
 // of the returned shape.
 export function effectiveLocation(record, now = Date.now()) {
+  // Age must fall within [−skew, stale window]: a future timestamp (negative age
+  // from a forward clock skew) is invalid and must NOT read as fresh, so it's
+  // bounded below as well as above.
   const fresh =
     record &&
     typeof record.town === 'string' &&
     typeof record.tz === 'string' &&
     typeof record.updatedAt === 'number' &&
-    now - record.updatedAt <= STALE_AFTER_MS;
+    now - record.updatedAt <= STALE_AFTER_MS &&
+    now - record.updatedAt >= -CLOCK_SKEW_TOLERANCE_MS;
 
   if (fresh) {
     return { town: record.town, tz: record.tz, live: true };
