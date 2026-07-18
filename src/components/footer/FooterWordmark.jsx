@@ -437,7 +437,13 @@ export default function FooterWordmark({
     };
 
     const onDown = (e) => {
-      synth.unlock();
+      // No synth.unlock() here. Audio is opt-in and the SoundControl toggle owns
+      // the unlock gesture (it also resumes the shared AudioContext); soundOn
+      // defaults off, so there's no path where a click needs to unlock. These
+      // listeners are window-wide, so unlocking here would spin up an
+      // AudioContext for any click that merely lands over the footer with sound
+      // OFF (e.g. a link atop the SVG). The pluck stays visual; it only sounds
+      // once the toggle has unlocked + unmuted the synth.
       const vb = toViewBox(e.clientX, e.clientY);
       if (!vb) return;
       const idx = stringAt(vb.x, vb.y);

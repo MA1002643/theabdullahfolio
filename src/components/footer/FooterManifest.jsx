@@ -67,6 +67,7 @@ function Flap({ final, play, reduced, delayMs, ticks }) {
     let cancelled = false;
     let i = 0;
     let interval;
+    let settle; // settled → idle timer; captured so cleanup can clear it
     const start = setTimeout(() => {
       if (cancelled) return;
       setPhase('flipping');
@@ -77,7 +78,7 @@ function Flap({ final, play, reduced, delayMs, ticks }) {
           clearInterval(interval);
           setGlyph(final);
           setPhase('settled');
-          setTimeout(() => {
+          settle = setTimeout(() => {
             if (!cancelled) setPhase('idle');
           }, 340);
         } else {
@@ -89,6 +90,7 @@ function Flap({ final, play, reduced, delayMs, ticks }) {
       cancelled = true;
       clearTimeout(start);
       clearInterval(interval);
+      clearTimeout(settle); // no-op if it never reached the settled phase
     };
   }, [play, reduced, final, delayMs, ticks]);
 
