@@ -24,7 +24,7 @@ import {
   SLAB_TEXTURES,
 } from './constants';
 
-// Orchestrates the "Sigil Passage" between pages. TransitionLink (or any
+// Orchestrates the "Stone Passage" between pages. TransitionLink (or any
 // consumer of usePageTransition) hands navigation over to `navigate`, which
 // runs the phase machine:
 //
