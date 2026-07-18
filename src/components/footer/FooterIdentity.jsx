@@ -24,7 +24,7 @@
 // never spent by a page-transition transient and re-inks every time the block is
 // actually scrolled to. Same gate as FooterManifest / ElsewhereTerminal.
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFooterReveal } from './useFooterReveal';
 import ProjectGithubCta from './ProjectGithubCta';
 import { brand } from './footer-data';
@@ -33,10 +33,20 @@ export default function FooterIdentity() {
   const ref = useRef(null);
   const revealed = useFooterReveal(ref, 0.4);
 
+  // Progressive enhancement: omit data-revealed until the client has mounted, so
+  // the server / JS-off / failed-hydration render leaves the identity content at
+  // its visible base state (the Wet Ink hide + entrance only engage on an
+  // explicit data-revealed="false"). After mount we stage "false" → "true" to
+  // drive the signature. Same contract as the reach strip in index.jsx — without
+  // it, a render where the reveal hook never fires would leave the name, role,
+  // statement and CTA permanently invisible.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   return (
     <div
       ref={ref}
-      data-revealed={revealed ? 'true' : undefined}
+      data-revealed={mounted ? (revealed ? 'true' : 'false') : undefined}
       className="footer-identity relative isolate md:col-span-2 lg:col-span-1"
     >
       {/* Signature watermark — decorative, out of flow, aria-hidden. */}

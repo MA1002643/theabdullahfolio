@@ -2656,11 +2656,9 @@ html.custom-cursor-active * {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  /* Wet Ink rest-before-reveal: clipped shut, offset, softly out of focus. */
-  opacity: 0;
-  clip-path: inset(0 0 100% 0);
-  transform: translateY(6px);
-  filter: blur(4px);
+  /* Visible resting state — the Wet Ink pre-reveal (clip/offset/blur) is applied
+     ONLY under [data-revealed="false"] below, so a no-JS / failed-hydration
+     render leaves the name legible rather than clipped away. */
 }
 
 .footer-identity__rule {
@@ -2669,7 +2667,7 @@ html.custom-cursor-active * {
   transform-origin: left center;
   transform: scaleX(0.28);
   background: linear-gradient(90deg, #ff6d05, rgba(255, 109, 5, 0));
-  opacity: 0;
+  opacity: 0.85; /* resting; the pre-reveal opacity:0 lives on [data-revealed="false"] */
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .footer-identity:hover .footer-identity__rule,
@@ -2687,8 +2685,6 @@ html.custom-cursor-active * {
   text-transform: uppercase;
   letter-spacing: 0.26em;
   color: #c9c1b8;
-  opacity: 0;
-  transform: translateX(-8px);
 }
 .footer-identity__role::before {
   content: "";
@@ -2700,17 +2696,41 @@ html.custom-cursor-active * {
   transform-origin: center;
 }
 
-.footer-identity__stmt {
+/* Divider keeps only its animation origin at rest; the statement and CTA have no
+   resting styling of their own — their visible state is the CSS default. */
+.footer-identity__divider {
+  transform-origin: left;
+}
+
+/* Pre-reveal hidden state — applied ONLY once the client has staged the block
+   (FooterIdentity sets data-revealed="false" after mount). With the attribute
+   ABSENT (SSR, JS off, a failed hydration, no IntersectionObserver) the block
+   keeps its visible base state, so the identity content is never a permanently
+   invisible hole; the Wet Ink hide + entrance are a progressive enhancement
+   layered on top. Mirrors the reach strip's [data-revealed="false"] contract. */
+.footer-identity[data-revealed="false"] .footer-identity__name {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(6px);
+  filter: blur(4px);
+}
+.footer-identity[data-revealed="false"] .footer-identity__rule {
+  opacity: 0;
+}
+.footer-identity[data-revealed="false"] .footer-identity__role {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+.footer-identity[data-revealed="false"] .footer-identity__stmt {
   opacity: 0;
   clip-path: inset(0 0 100% 0);
   transform: translateY(8px);
 }
-.footer-identity__divider {
+.footer-identity[data-revealed="false"] .footer-identity__divider {
   opacity: 0;
   transform: scaleX(0);
-  transform-origin: left;
 }
-.footer-identity__cta {
+.footer-identity[data-revealed="false"] .footer-identity__cta {
   opacity: 0;
 }
 
@@ -2824,35 +2844,43 @@ html.custom-cursor-active * {
   }
 }
 
-/* Reduced motion — no ink, no motion: the identity block is shown at rest
-   immediately (mirrors the footer's still fallback), the rule keeps its snap-
-   free hover. */
+/* Reduced motion — no ink, no motion: the identity block is shown at rest, the
+   rule keeps its snap-free hover. With the attribute ABSENT the block is already
+   visible from its base state, so no override is needed there — only the rule's
+   hover transition is killed globally. The "force visible" rules are scoped to
+   [data-revealed] (either value) so they match the specificity of the staged
+   [data-revealed="false"] hide + [data-revealed="true"] animation rules above and
+   win by source order — forcing the block visible whether the client staged it
+   "false" or "true", instead of leaving a reduced-motion user with hidden
+   content and the un-hiding animation suppressed. */
 @media (prefers-reduced-motion: reduce) {
-  .footer-identity__name {
+  .footer-identity__rule {
+    transition: none;
+  }
+  .footer-identity[data-revealed] .footer-identity__name {
     opacity: 1;
     clip-path: none;
     transform: none;
     filter: none;
   }
-  .footer-identity__rule {
+  .footer-identity[data-revealed] .footer-identity__rule {
     opacity: 0.85;
     transform: scaleX(0.28);
-    transition: none;
   }
-  .footer-identity__role {
+  .footer-identity[data-revealed] .footer-identity__role {
     opacity: 1;
     transform: none;
   }
-  .footer-identity__stmt {
+  .footer-identity[data-revealed] .footer-identity__stmt {
     opacity: 1;
     clip-path: none;
     transform: none;
   }
-  .footer-identity__divider {
+  .footer-identity[data-revealed] .footer-identity__divider {
     opacity: 1;
     transform: scaleX(1);
   }
-  .footer-identity__cta {
+  .footer-identity[data-revealed] .footer-identity__cta {
     opacity: 1;
   }
   .footer-identity[data-revealed="true"] .footer-identity__name,

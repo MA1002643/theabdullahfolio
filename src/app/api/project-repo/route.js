@@ -107,7 +107,12 @@ const getCachedProjectRepo = unstable_cache(
       clearTimeout(timer);
     }
   },
-  ["project-repo-v1"],
+  // OWNER/REPO are folded into the key because the cached value depends on
+  // them but the fn takes no args (so unstable_cache's arg-hash can't capture
+  // them). Without this, a fork that retargets NEXT_PUBLIC_PROJECT_REPO /
+  // NEXT_PUBLIC_GITHUB_USERNAME could be served the previous repo's payload
+  // from Next's persistent cache until the TTL/cron revalidation fires.
+  ["project-repo-v1", OWNER, REPO],
   // Sharing the "github-stats" tag means the daily /api/repo-refresh cron
   // invalidates this cache too — free, coordinated refresh — while the 10-min
   // TTL keeps it current between cron runs.

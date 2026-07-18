@@ -91,6 +91,9 @@ export default function ProjectGithubCta() {
 
   // Live repo metadata — SSR-safe defaults, real values swap in after fetch.
   // `branch` shows immediately ("main"); commits/pushedAt fill in when present.
+  // The in-flight request is torn down on unmount via an AbortController (so it
+  // can't keep the connection alive) in addition to the `cancelled` guard that
+  // suppresses a late setState — same cleanup shape as LiveLocation.
   const [repo, setRepo] = useState({
     branch: 'main',
     commits: null,
@@ -98,9 +101,10 @@ export default function ProjectGithubCta() {
   });
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     (async () => {
       try {
-        const res = await fetch(REPO_ENDPOINT);
+        const res = await fetch(REPO_ENDPOINT, { signal: controller.signal });
         if (!res.ok) return;
         const data = await res.json();
         if (cancelled || !data) return;
@@ -110,11 +114,12 @@ export default function ProjectGithubCta() {
           pushedAt: data.pushedAt || null,
         });
       } catch {
-        /* offline / endpoint down — keep the SSR-safe default caption */
+        /* offline / endpoint down / aborted — keep the SSR-safe default caption */
       }
     })();
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, []);
 
