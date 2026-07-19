@@ -7,8 +7,9 @@
 // plate: a day/night glyph, an ember-gradient clock, the town as a kicker, the
 // UTC offset, and a LIVE pulse shown only when the GPS fix is genuinely fresh.
 //
-// Data is live from /api/location (a tracker app on the phone feeds it; see
-// docs/live-location.md). The endpoint only ever returns { town, tz, live } —
+// Data is live from /api/location (a tracker app on the phone feeds it; see the
+// "Route-wide Footer → Live-location" section in README.md for the full data
+// flow + privacy model). The endpoint only ever returns { town, tz, live } —
 // never coordinates — and applies a freshness guard, so when the tracker is off
 // this quietly shows the home city (Bolton) with no LIVE flag. Home is the
 // SSR-safe default; the live fix swaps in after fetch. Because the clock now

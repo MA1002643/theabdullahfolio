@@ -48,11 +48,11 @@ import { brand, email } from './footer-data';
 const FOCUS_RING =
   'rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05] focus-visible:ring-offset-2 focus-visible:ring-offset-night-950';
 
-// Touch-device audio: a self-hosted, royalty-free acoustic-guitar track that
-// plays when a visitor who CAN'T hover (phone / keyboard-less tablet) turns the
-// sound on — since there is no cursor to pluck the wordmark there. Hover-capable
-// devices play the live synth instead (see FooterWordmark). Drop the MP3 at the
-// path below; provenance + licence are in public/audio/README.md.
+// Touch-device audio: a self-hosted acoustic-guitar track that plays when a
+// visitor who CAN'T hover (phone / keyboard-less tablet) turns the sound on —
+// since there is no cursor to pluck the wordmark there. Hover-capable devices
+// play the live synth instead (see FooterWordmark). Drop the MP3 at the path
+// below (confirm you hold the rights to any track you ship here).
 const TRACK_SRC = '/audio/guitar-tabla-fusion.mp3';
 const TRACK_VOLUME = 0.5; // gentle, ambient — background, not foreground
 
@@ -144,8 +144,7 @@ export default function Footer() {
   // never sound at once (see FooterWordmark).
   const autoPlay = soundOn && !canHover;
 
-  // The recorded track element (touch only). Royalty-free & self-hosted; see
-  // public/audio/README.md for the source + licence.
+  // The recorded track element (touch only). Self-hosted at TRACK_SRC.
   const trackRef = useRef(null);
 
   const toggleSound = () => {
