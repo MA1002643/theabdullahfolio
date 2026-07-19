@@ -61,6 +61,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Years in the Craft** | Experience figure derived live from the earliest GitHub repo **and** software roles parsed from the résumé PDF, with a Personal vs Employment split bar and a click-to-open category breakdown modal |
 | **Current Streak** | Server-accurate streak from the GitHub contribution calendar (future-day-padding aware, "Present"-stable across midnight), shown in a git-commit-node progress ring with a staggered card entrance and a per-device change banner that fires only on real movement |
 | **Elite Contact Form** | Molten submit-CTA state machine (idle → sending → sent/held), a sliced-letter magnetic "SEND MESSAGE!" label, fire-gradient fields, a streaming AI **"Refine my message"** rewrite, an offline send queue with auto-retry, draft autosave/restore, and an idempotent Nodemailer + Upstash-Redis send path |
+| **Route-wide Colophon** | An editorial footer on every sub-page — a "Wet Ink" signature identity block, a split-flap *departures board* route index, a live-terminal links column, a **live-location** plate (real town + local time, coordinates never exposed), a self-drawing git-graph "view this project" CTA, and a giant guitar-string wordmark that plays an original melody as you strum it |
 | **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
 | **Aurora Fields** | Full-viewport WebGL domain-warped-fBm aurora (amber→ember, `mix-blend: screen`) on the Contact and About pages — cursor-bending, scroll-reactive on About, and reduced-motion-gated to a static image |
 | **Custom Cursor** | Site-wide ember dot + spring-lagged ring that swells and leans toward interactive elements; disabled on touch / reduced-motion |
@@ -115,7 +116,8 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | [Nodemailer](https://nodemailer.com/) | `^7.0` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | `^7.61` | Form state management and validation |
 | [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
-| [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send dedupe store |
+| [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
+| [tz-lookup](https://github.com/darkskyapp/tz-lookup) | `^6.1` | Offline coordinates→IANA-timezone lookup for the footer's live-location clock |
 | [@vercel/analytics](https://vercel.com/analytics) | `^2.0` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | `^2.0` | Core Web Vitals tracking |
 <!-- STACK-DATA:END -->
@@ -153,12 +155,14 @@ graph TD
             Pages --> Projects["/projects · /projects/[id]<br/>Three.js scene · Aurora · Boot sequence"]
             Pages --> Quals["/qualifications<br/>3D CSS carousel"]
             Pages --> Contact["/contact<br/>GLSL aurora · Elite contact form"]
+            Pages --> Footer["Footer · all sub-pages<br/>Live location · Project CTA · Wordmark"]
 
             Root --> API{{"API Routes"}}
             API --> Stats["/api/github-stats<br/>/api/github-skills"]
             API --> Exp["/api/experience-summary"]
             API --> Work["/api/work-status<br/>/api/github-webhook"]
             API --> Mail["/api/send-mail<br/>/api/refine-message"]
+            API --> Foot["/api/location<br/>/api/project-repo"]
         end
 
         GitHub([GitHub API])
@@ -166,6 +170,7 @@ graph TD
         Inbox([Email inbox])
         Redis([Upstash Redis])
         Gateway([Vercel AI Gateway])
+        Tracker([Phone GPS tracker])
 
         Browser --> Root
         About -->|poll 10min| Stats
@@ -178,6 +183,10 @@ graph TD
         Mail -->|SMTP| Inbox
         Mail -->|SET NX dedupe| Redis
         Mail -->|provider/model| Gateway
+        Footer -->|poll| Foot
+        Tracker -->|POST fix| Foot
+        Foot -->|GraphQL| GitHub
+        Foot -->|GET / SET fix| Redis
     end
 
     classDef client fill:#0d1020,stroke:#8f99ad,stroke-width:1.25px,color:#e6e9f0;
@@ -189,10 +198,10 @@ graph TD
 
     class Browser client;
     class Root root;
-    class Home,Pages,About,Projects,Quals,Contact page;
-    class Stats,Exp,Work,Mail api;
+    class Home,Pages,About,Projects,Quals,Contact,Footer page;
+    class Stats,Exp,Work,Mail,Foot api;
     class API gateway;
-    class GitHub,PDF,Inbox,Redis,Gateway ext;
+    class GitHub,PDF,Inbox,Redis,Gateway,Tracker ext;
 
     style Sys fill:#02040c,stroke:#5c4a24,stroke-width:1px,color:#d9b877;
     style App fill:#050c18,stroke:#7a5f2c,stroke-width:1px,color:#d9b877;
@@ -203,7 +212,7 @@ graph TD
 | Layer | Approach |
 |---|---|
 | **Rendering** | Three.js WebGL canvas · Framer Motion DOM orchestration · Tailwind utility system |
-| **Data** | GitHub GraphQL (live, multi-layer cached) · Nodemailer SMTP · Upstash Redis (send idempotency) · AI Gateway (message refine) · `localStorage` (draft · queue · loader gate) |
+| **Data** | GitHub GraphQL (live, multi-layer cached) · Nodemailer SMTP · Upstash Redis (send idempotency + live-location fix) · AI Gateway (message refine) · `tz-lookup` (offline timezone) · `localStorage` (draft · queue · loader gate) |
 | **Performance** | Route-based code splitting · `next/dynamic` for Three.js · Sharp image pipeline · `unstable_cache` + CDN `s-maxage` / `stale-while-revalidate` |
 | **Security** | Full CSP · `frame-ancestors 'none'` · `upgrade-insecure-requests` · server-only tokens · username allowlist · HMAC-verified webhooks |
 
@@ -219,7 +228,7 @@ theabdullahfolio/
 ├── src/
 │   ├── app/                    # App Router — pages, layouts, API routes
 │   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact
-│   │   ├── api/                # 9 route handlers (see API surface below)
+│   │   ├── api/                # 11 route handlers (see API surface below)
 │   │   ├── data.js             # Central project + navigation data store
 │   │   └── globals.css         # Theme tokens · keyframes · glow utilities
 │   ├── components/
@@ -231,6 +240,8 @@ theabdullahfolio/
 │   │   ├── contact/            # Elite contact form · GLSL aurora · AI refine · fire fields
 │   │   ├── qualifications/     # 3D CSS certificate carousel
 │   │   ├── not-found/          # 404 recovery — glitch text + Levenshtein "did you mean?"
+│   │   ├── footer/             # Route-wide editorial colophon — live location · project CTA · guitar wordmark
+│   │   ├── pageTransition/     # "Stone Passage" inter-page transition (engraved-monogram overlay)
 │   │   └── loaderWrapper/      # First-visit emblem-seal intro loader
 │   ├── hooks/                  # Reusable hooks — animation, live-data signals, form + offline queue
 │   ├── lib/                    # Client helpers — contact send, cn(), media-query subscribe
@@ -249,6 +260,8 @@ theabdullahfolio/
 |---|---|
 | `/api/github-stats` | GraphQL aggregator — stats, streaks, languages, most-active repo (multi-layer cached) |
 | `/api/github-skills` | Multi-ecosystem repo crawl → icon-mapped skills grid (budget-bounded, cached) |
+| `/api/project-repo` | Live metadata (branch · commits · last push) for the one repo the site is built from — feeds the footer CTA (pinned, cached, fails soft) |
+| `/api/location` | Live-location signal for the footer — `POST` ingests a GPS fix (dual-token auth), `GET` returns `{ town, tz, live }` only (never coordinates) |
 | `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
 | `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
@@ -311,6 +324,21 @@ RECEIVER_EMAIL=recipient@example.com
 # dev set a gateway key instead. REFINE_MODEL overrides the default model slug.
 # AI_GATEWAY_API_KEY=your-vercel-ai-gateway-key
 # REFINE_MODEL=anthropic/claude-haiku-4.5
+
+# Route-wide footer — project CTA + contact email (issue #30; all optional)
+# NEXT_PUBLIC_PROJECT_REPO defaults to "theabdullahfolio"; set it (with
+# NEXT_PUBLIC_GITHUB_USERNAME above) so a fork retargets the "view this project"
+# CTA and its live /api/project-repo caption with no code change.
+# NEXT_PUBLIC_CONTACT_EMAIL overrides the public address the footer displays.
+# NEXT_PUBLIC_PROJECT_REPO=theabdullahfolio
+# NEXT_PUBLIC_CONTACT_EMAIL=you@example.com
+
+# Footer live-location ingest (issue #30; optional — the footer shows the home
+# city until a phone tracker feeds /api/location, and reuses the KV_* store above).
+# Two SEPARATE write secrets, split by how the tracker authenticates so the
+# URL-exposed query token is never the primary header secret:
+# LOCATION_INGEST_TOKEN=your-header-ingest-secret         # Authorization: Bearer / Basic
+# LOCATION_INGEST_QUERY_TOKEN=your-separate-query-token   # ?token= (URL-only trackers)
 ```
 
 ### GitHub Stats Integration
@@ -512,6 +540,13 @@ upgrade-insecure-requests
 | 3D carousel | CSS `perspective` + `translateZ` + `rotateY` | `qualifications/Carousel.jsx` |
 | Glowing project name | Bloom ring scale + random flicker interval | `project-detail/glowing-project-name.jsx` |
 | Neon ripples | `animate-ripple-neon` on `rotateX(80deg)` plane | `app/page.js` |
+| Footer "Wet Ink" identity reveal | CSS-keyframe signature cascade (drawing rule → `clip-path` ink-down name → sparking role → self-drawing git-graph CTA), keyed off `data-revealed` | `footer/FooterIdentity.jsx` |
+| Footer split-flap departures board | Per-tile ordinal scramble that settles on reveal; live route reads NOW BOARDING with a pulse (SSR-safe, CLS-free) | `footer/FooterManifest.jsx` |
+| Footer terminal type-out | Command/output "session" that types on reveal with a blinking ember caret (height-reserved, SSR-safe) | `footer/ElsewhereTerminal.jsx` |
+| Footer email decipher | Per-glyph cipher scramble that locks left→right into the real address on reveal (single rAF, text/colour only) | `footer/DecipherEmail.jsx` |
+| Per-glyph hover-swap links | Face/clone rolls stacked inside each char box; pure CSS `transition-delay` stagger + colour lift | `footer/HoverText.jsx` |
+| Guitar-string wordmark | Scanline-sampled letters plucked into pinned-end standing waves on one rAF; each pluck sounds an original Web Audio note | `footer/FooterWordmark.jsx` + `footer/pluckSynth.js` |
+| Stone Passage page transition | Basalt slab rises, MA monogram engraved stroke-by-stroke via an SVG stroke-mask over a plain/carved image pair, then a radial mask wipe | `pageTransition/StonePassageOverlay.jsx` |
 
 </details>
 
@@ -620,6 +655,50 @@ A single status bar above the hero, with three layered animation systems:
 - **Pulsing dot** — a green `live-dot` (`#22c55e`) breathing every 2.8s with holds at both extremes; active during `SHIPPING` / `LIVE`.
 
 Counters (PRs / Issues / Pushes 24h) animate 0 → target with a piecewise curve (linear to 75%, cubic ease-out for the last 25%; 1.1–2.2s scaled to the delta). The "Updated Xs ago" stamp uses an adaptive tick rate (1s → 30s → 1 min → 1 hour). All looping animation stops under `prefers-reduced-motion: reduce`.
+
+</details>
+
+## 🧭 Route-wide Footer (Colophon)
+
+Every sub-page — `/about`, `/qualifications`, `/projects`, `/contact` — shares one editorial footer, rendered **once** in the `(sub pages)` layout as a `contentinfo` sibling of `<main>` (issue [#30](https://github.com/MA1002643/theabdullahfolio/issues/30)). It is composed as an asymmetric **5 / 4 / 3 masthead** from the site's existing neon-orange glass design system, so it reads as part of the same universe as the hero rather than bolted on. All motion is transform / opacity / colour only (no layout, no CLS) and every entrance honours `prefers-reduced-motion`.
+
+| Region | What it is |
+| --- | --- |
+| **Identity** | Name, role, and positioning line revealed with a "Wet Ink" signature cascade; the one mandatory **View this project on GitHub** CTA (a self-drawing git graph with an honest `❯ main · N commits · pushed <rel>` caption from `/api/project-repo`); and one honest availability signal ("open to new roles"). |
+| **Index** | A route-aware split-flap **departures board** — each of the four routes scrambles and settles, and the current route reads **NOW BOARDING**. Rows stay real `<TransitionLink>`s (SPA transition, keyboard-focusable, `aria-current`). |
+| **Elsewhere** | GitHub / LinkedIn / Résumé staged as a live **terminal** that types itself out, plus the contact micro-block (the email resolves out of a cipher on reveal). |
+| **Live location** | The **Ember Meridian** plate — the owner's real current town + local time from `/api/location`, with a **LIVE** pulse only when the GPS fix is fresh; falls back to the home city when the tracker is off. |
+| **Wordmark** | A giant half-sunk **guitar-string** wordmark: hover plucks a string (pinned-end standing wave) and sounds the next note of an original melody, so sweeping the cursor strums a phrase. |
+
+<details>
+<summary><strong>Live-location — data flow &amp; privacy model</strong></summary>
+<br />
+
+The footer's town + clock are fed by a phone tracker (OwnTracks / Overland / an iOS Shortcut) posting fixes to `/api/location`. The design keeps coordinates off the wire and out of the client entirely:
+
+- **`GET /api/location` returns only `{ town, tz, live }`** — never latitude/longitude. The home city (Bolton) is the SSR-safe default; a fresh fix swaps in after mount.
+- **~1 km privacy floor** — coordinates are rounded (2 dp) **before** the third-party reverse-geocode request *and* before storage, so no finer fix ever leaves the process or reaches the geocoder's logs. The geocode fetch is `cache: 'no-store'` so a location-derived response is never retained in the framework Data Cache.
+- **Freshness guard** — a fix older than `STALE_AFTER_MS` (12 h), or one with a future timestamp (forward clock skew, bounded by a small tolerance), is treated as stale and the plate quietly drops the LIVE flag and shows home.
+- **Offline timezone** — the IANA zone is derived from coordinates with `tz-lookup` (no network); `Intl` does all DST/offset work, so the clock is correct for any city with nothing hardcoded.
+- **Fails soft** — when Upstash KV isn't configured the ingest short-circuits to `503` (before any geocode) and the footer simply shows the home city.
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `LOCATION_INGEST_TOKEN` | for live location | Primary write secret, presented via `Authorization: Bearer` (Shortcuts / curl) or HTTP Basic (OwnTracks). |
+| `LOCATION_INGEST_QUERY_TOKEN` | for URL-only trackers | **Separate** secret for the `?token=` path (Overland and other trackers that can't send headers), so the log-exposed URL credential is never the primary header token and can be rotated independently. Leave unset to disable URL-based ingestion. |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | for live location | Upstash KV (the same store the contact form uses) holds the latest fix. When unset, `GET` just serves the home city. |
+| `NEXT_PUBLIC_PROJECT_REPO` | no | Repo name behind the project CTA + `/api/project-repo` caption (defaults to `theabdullahfolio`); with `NEXT_PUBLIC_GITHUB_USERNAME`, retargets a fork with no code change. |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | no | Overrides the public contact address the footer displays (defaults to the address baked into `footer-data.js`). |
+
+</details>
+
+<details>
+<summary><strong>Reveal choreography &amp; reduced motion</strong></summary>
+<br />
+
+The footer is rendered **once** and **persists** across client-side navigations, so a naïve `useInView(once)` observer would latch on a transient off-screen flicker during a route swap and leave entrances "spent" where nobody sees them. Instead every block shares `useFooterReveal` — a re-arming, loader-gated observer that fires only when a meaningful portion of the block is on screen **and** the intro loader has lifted, then resets once it is fully out of view (two-threshold hysteresis so a partial scroll-away never blanks a still-visible block). The result: each entrance replays exactly when the visitor scrolls it into view, every time.
+
+Under `prefers-reduced-motion: reduce` every block is shown already at rest — the signature is written, the departures board settled, the terminal already run, the wordmark's strings still (a hover still rings a note) — with nothing moving. All decorative, animated glyphs are `aria-hidden`, and each link exposes its real, unsplit text via an `sr-only` node so its accessible name is always correct regardless of how far an animation has progressed.
 
 </details>
 

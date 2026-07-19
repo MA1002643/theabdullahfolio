@@ -108,6 +108,7 @@ const v = {
   hookForm: minorVersion(deps['react-hook-form']),
   ai: minorVersion(deps['ai']),
   upstashRedis: minorVersion(deps['@upstash/redis']),
+  tzLookup: minorVersion(deps['tz-lookup']),
   analytics: minorVersion(deps['@vercel/analytics']),
   speedInsights: minorVersion(deps['@vercel/speed-insights']),
 
@@ -176,7 +177,8 @@ const STACK_DATA = `| Technology | Version | Role |
 | [Nodemailer](https://nodemailer.com/) | \`^${v.nodemailer}\` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | \`^${v.hookForm}\` | Form state management and validation |
 | [AI SDK (\`ai\`)](https://sdk.vercel.ai/) | \`^${v.ai}\` | \`streamText\` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
-| [@upstash/redis](https://upstash.com/docs/redis) | \`^${v.upstashRedis}\` | Serverless Redis backing the idempotent contact-send dedupe store |
+| [@upstash/redis](https://upstash.com/docs/redis) | \`^${v.upstashRedis}\` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
+| [tz-lookup](https://github.com/darkskyapp/tz-lookup) | \`^${v.tzLookup}\` | Offline coordinates→IANA-timezone lookup for the footer's live-location clock |
 | [@vercel/analytics](https://vercel.com/analytics) | \`^${v.analytics}\` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | \`^${v.speedInsights}\` | Core Web Vitals tracking |`;
 

@@ -23,9 +23,10 @@ export const COVER_MS = 540;
 export const PUSH_AT_MS = 560;
 
 // Minimum time the overlay holds from mount, even if the route arrives
-// instantly — guarantees the monogram finishes drawing and igniting instead
-// of being yanked mid-stroke on fast navigations.
-export const SHOWCASE_MIN_MS = 1250;
+// instantly — guarantees the slab lands and the monogram finishes being DRAWN
+// stroke by stroke (draw starts ~500ms, runs ~1300ms, gap-fill ~240ms)
+// instead of being yanked mid-engraving on fast navigations.
+export const SHOWCASE_MIN_MS = 2100;
 
 // The radial mask wipe that uncovers the destination page.
 export const REVEAL_MS = 520;
@@ -50,3 +51,15 @@ export const ROUTE_LABELS = {
   '/contact': 'Contact',
   '/my-past': 'My Past',
 };
+
+// Baked slab textures for the engrave: a PLAIN slab and its pixel-identical
+// CARVED twin (they differ ONLY in the recessed grooves — see StonePassageOverlay,
+// which draws the carve on along a stroke mask). Declared here, once, because two
+// files depend on them — the overlay that RENDERS them and the provider that
+// idle-PRELOADS them into the HTTP cache. If the paths lived in both, a rename
+// could drift them apart and the preload would silently prime the wrong asset (or
+// nothing), so the first navigation carves on a cold fetch. SLAB_TEXTURES is the
+// preload list, derived from the two scalars so it can't fall out of sync either.
+export const SLAB_PLAIN = '/textures/rock/ma-slab-plain.webp';
+export const SLAB_CARVED = '/textures/rock/ma-slab-carved.webp';
+export const SLAB_TEXTURES = [SLAB_PLAIN, SLAB_CARVED];

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, useReducedMotion } from 'framer-motion';
-import SigilOverlay from './SigilOverlay';
+import StonePassageOverlay from './StonePassageOverlay';
 import {
   FAILSAFE_MS,
   PUSH_AT_MS,
@@ -21,9 +21,10 @@ import {
   REVEAL_MS,
   ROUTE_LABELS,
   SHOWCASE_MIN_MS,
+  SLAB_TEXTURES,
 } from './constants';
 
-// Orchestrates the "Sigil Passage" between pages. TransitionLink (or any
+// Orchestrates the "Stone Passage" between pages. TransitionLink (or any
 // consumer of usePageTransition) hands navigation over to `navigate`, which
 // runs the phase machine:
 //
@@ -76,6 +77,31 @@ export default function PageTransitionProvider({ children }) {
 
   // When the overlay mounted — the showcase-minimum clock.
   const startedAtRef = useRef(0);
+
+  // Prime both stone slabs (blank + carved) into the HTTP cache during idle time
+  // so the first navigation carves instantly under the cover. Fire-and-forget.
+  useEffect(() => {
+    const supportsIdle = typeof window.requestIdleCallback === 'function';
+    // Wrap so requestIdleCallback keeps its window receiver. It's a global
+    // timer-style API and tolerates a bare call in practice, but the wrapper
+    // makes that independent of engine quirks and matches the setTimeout branch.
+    const idle = supportsIdle ? (cb) => window.requestIdleCallback(cb) : (cb) => setTimeout(cb, 800);
+    const handle = idle(() => {
+      for (const src of SLAB_TEXTURES) {
+        const img = new Image();
+        img.src = src;
+      }
+    });
+    return () => {
+      // Cancel via whichever scheduler we used — the setTimeout fallback needs
+      // clearTimeout, or its timer fires (and new up Image()) after unmount.
+      if (supportsIdle) {
+        window.cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle);
+      }
+    };
+  }, []);
 
   const navigate = useCallback(
     (href, opts = {}) => {
@@ -166,8 +192,8 @@ export default function PageTransitionProvider({ children }) {
       {children}
       <AnimatePresence>
         {phase !== 'idle' && target && (
-          <SigilOverlay
-            key="sigil-passage"
+          <StonePassageOverlay
+            key="stone-passage"
             phase={phase}
             label={target.label}
             reduced={prefersReducedMotion}

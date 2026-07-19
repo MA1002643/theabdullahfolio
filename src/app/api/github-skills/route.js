@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { categorizeSkills, categorizeSkillsWithRepos } from "@/utils/skillsIconMap";
 import { MANIFESTS, parseManifest } from "@/utils/manifestParsers";
+import { envPositiveMs } from "../_utils/env";
 
 // Record that `name` (a detected language / dependency) surfaced in `repo`.
 // `into` is a Map<detectedName, { repos: Set<nameWithOwner>, privateRepos:
@@ -45,9 +46,15 @@ const REVALIDATE_SECONDS = 10 * 60;
 // two privacy scopes and then fans out per-repo (recursive tree + manifest blob
 // fetch), so the cumulative cap is what actually bounds it; on exhaustion inner
 // calls abort and we keep whatever partial results were collected.
-const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
-const MAX_TOTAL_GITHUB_MS = Number(process.env.GITHUB_OVERALL_TIMEOUT_MS) || 9000;
-const GITHUB_OVERALL_BUDGET_MS = Number(process.env.GITHUB_OVERALL_BUDGET_MS) || 9000;
+const GITHUB_TIMEOUT_MS = envPositiveMs(process.env.GITHUB_TIMEOUT_MS, 8000);
+const MAX_TOTAL_GITHUB_MS = envPositiveMs(
+  process.env.GITHUB_OVERALL_TIMEOUT_MS,
+  9000,
+);
+const GITHUB_OVERALL_BUDGET_MS = envPositiveMs(
+  process.env.GITHUB_OVERALL_BUDGET_MS,
+  9000,
+);
 
 // Hard cap on repo pagination per privacy scope: 100 repos/page × 10 = ~1,000
 // repos per scope, far beyond a realistic account. Stops a malformed pageInfo

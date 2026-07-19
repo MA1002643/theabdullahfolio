@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
 import fallbackStats from "@/data/github-stats-fallback.json";
+import { envPositiveMs } from "../_utils/env";
 
 // Pin to Node so `node:async_hooks` (used by the shared-deadline
 // AsyncLocalStorage below) and any future Node-only API stay available.
@@ -17,6 +18,7 @@ const GITHUB_API = "https://api.github.com/graphql";
 const TOKEN = process.env.GITHUB_TOKEN;
 const REVALIDATE_SECONDS = 10 * 60;
 const MOST_ACTIVE_REPO_REVALIDATE_SECONDS = 24 * 60 * 60;
+
 // Per-request ceiling for GraphQL calls. Must stay strictly below the
 // serverless function timeout (10 s on Hobby, 60 s on Pro) so even a single
 // slow GitHub response can't push the route past the platform limit; the
@@ -28,7 +30,7 @@ const MOST_ACTIVE_REPO_REVALIDATE_SECONDS = 24 * 60 * 60;
 // payload. Note: with pagination, multiple sequential calls can each
 // consume up to this much time, so the cap should also respect
 // roughly: TIMEOUT × expected pages ≤ function budget.
-const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
+const GITHUB_TIMEOUT_MS = envPositiveMs(process.env.GITHUB_TIMEOUT_MS, 8000);
 // Cumulative wall-clock budget across all GitHub calls in a single
 // `findMostActiveRepo` / `getAllLanguages` invocation. Per-call timeouts
 // alone aren't enough: with `MAX_REPO_PAGES = 10` and an 8 s per-call
@@ -38,8 +40,10 @@ const GITHUB_TIMEOUT_MS = Number(process.env.GITHUB_TIMEOUT_MS) || 8000;
 // on time spent paginating, regardless of per-page latency. Default 9 s
 // keeps ~1 s of headroom under Hobby; raise via env on Pro/Enterprise
 // where the function budget is larger.
-const MAX_TOTAL_GITHUB_MS =
-  Number(process.env.GITHUB_OVERALL_TIMEOUT_MS) || 9000;
+const MAX_TOTAL_GITHUB_MS = envPositiveMs(
+  process.env.GITHUB_OVERALL_TIMEOUT_MS,
+  9000,
+);
 
 // Request-scoped wall-clock budget covering the *entire* cold-miss chain —
 // `findMostActiveRepo` then `getAllLanguages` + `fetchGitHubStats` in
@@ -49,8 +53,10 @@ const MAX_TOTAL_GITHUB_MS =
 // invalidates both unstable_cache layers and forces the full chain.
 // Default 9 s keeps total wall-clock under Hobby's 10 s even on a full cold
 // miss; raise via env on Pro/Enterprise where the function budget is larger.
-const GITHUB_OVERALL_BUDGET_MS =
-  Number(process.env.GITHUB_OVERALL_BUDGET_MS) || 9000;
+const GITHUB_OVERALL_BUDGET_MS = envPositiveMs(
+  process.env.GITHUB_OVERALL_BUDGET_MS,
+  9000,
+);
 
 // AsyncLocalStorage propagates the request deadline through every helper
 // and through `unstable_cache`'s cache-miss invocation without polluting
