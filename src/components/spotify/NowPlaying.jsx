@@ -106,16 +106,41 @@ export default function NowPlaying() {
 
   useEffect(() => {
     if (!isPlaying || serverProgress == null) return undefined;
-    const id = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return;
-      }
+
+    const tick = () => {
       const { base, at } = anchorRef.current;
       const now = typeof performance !== 'undefined' ? performance.now() : at;
       const next = base + (now - at);
       setDisplayMs(durationMs ? Math.min(durationMs, next) : next);
-    }, 1000);
-    return () => clearInterval(id);
+    };
+
+    // Only run the per-second clock while the tab is actually visible. A hidden
+    // tab has nothing to paint, and on mobile a wakeup every second drains
+    // battery for no benefit. Tear the interval down on `hidden` and rebuild it
+    // on `visible`; because performance.now() keeps advancing while hidden, the
+    // immediate tick on resume jumps straight to the correct position (no lag).
+    let id = null;
+    const start = () => {
+      if (id != null) return;
+      tick();
+      id = setInterval(tick, 1000);
+    };
+    const stop = () => {
+      if (id == null) return;
+      clearInterval(id);
+      id = null;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') stop();
+      else start();
+    };
+
+    if (document.visibilityState !== 'hidden') start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [isPlaying, serverProgress, durationMs, trackId]);
 
   // Render nothing during SSR / initial load / when there's genuinely no track —
@@ -135,6 +160,21 @@ export default function NowPlaying() {
   const open = () => setExpanded(true);
   const close = () => setExpanded(false);
 
+  // Spotify only supplies an external URL for real catalogue tracks; local
+  // files and other non-linkable items arrive with trackUrl: null (see
+  // buildTrackPayload). With no destination, render the card as a plain
+  // container instead of an <a> — an "#" href would open a dead tab to this
+  // very page and contradict the "Open on Spotify" cue. The card still shows
+  // the track and expands on hover; it just isn't a link.
+  const trackUrl = track.trackUrl || null;
+  const hasLink = Boolean(trackUrl);
+  const Card = hasLink ? motion.a : motion.div;
+  const linkProps = hasLink
+    ? { href: trackUrl, target: '_blank', rel: 'noopener noreferrer' }
+    : {};
+  const baseAria = `${label.toLowerCase()}: ${track.title} by ${track.artist}.`;
+  const ariaLabel = hasLink ? `${baseAria} Open on Spotify.` : baseAria;
+
   return (
     <motion.div
       className="fixed bottom-6 left-6 z-50"
@@ -150,17 +190,17 @@ export default function NowPlaying() {
           gold border, slate/gold gradient interior, backdrop blur and the
           neon glow (plus its brighter :hover glow, which fires exactly as the
           console expands). Only geometry is animated here. */}
-      <motion.a
-        href={track.trackUrl || '#'}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`${label.toLowerCase()}: ${track.title} by ${track.artist}. Open on Spotify.`}
+      <Card
+        {...linkProps}
+        aria-label={ariaLabel}
         title={`${isPlaying ? 'Now playing' : 'Last played'}: ${track.title} — ${track.artist}`}
         onMouseEnter={open}
         onMouseLeave={close}
         onFocus={open}
         onBlur={close}
-        className="custom-bg-abt group relative block cursor-pointer overflow-hidden text-left"
+        className={`custom-bg-abt group relative block overflow-hidden text-left ${
+          hasLink ? 'cursor-pointer' : 'cursor-default'
+        }`}
         animate={{
           width: showExpanded ? EXPANDED_W : COLLAPSED_W,
           borderRadius: showExpanded ? 20 : 9999,
@@ -247,15 +287,19 @@ export default function NowPlaying() {
                   />
                 </div>
 
-                <div className="mt-1 flex items-center gap-1.5 pb-0.5">
-                  <SiSpotify size={11} color="#1DB954" aria-hidden="true" focusable="false" />
-                  <span
-                    className="text-[9px] uppercase tracking-wider"
-                    style={{ color: GOLD_MUTED }}
-                  >
-                    Open on Spotify
-                  </span>
-                </div>
+                {/* Only advertise the Spotify link when there actually is one
+                    — a non-linkable item (local file) has no destination. */}
+                {hasLink && (
+                  <div className="mt-1 flex items-center gap-1.5 pb-0.5">
+                    <SiSpotify size={11} color="#1DB954" aria-hidden="true" focusable="false" />
+                    <span
+                      className="text-[9px] uppercase tracking-wider"
+                      style={{ color: GOLD_MUTED }}
+                    >
+                      Open on Spotify
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Hairline divider — warm gold, matching the card's border family. */}
@@ -352,7 +396,7 @@ export default function NowPlaying() {
             </AnimatePresence>
           </div>
         </div>
-      </motion.a>
+      </Card>
     </motion.div>
   );
 }

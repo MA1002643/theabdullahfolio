@@ -18,8 +18,10 @@ import { NextResponse } from 'next/server';
 //
 // This route HARD-REFUSES to run in production (returns 404), so it's safe to
 // leave in the repo as reproducible setup documentation rather than deleting it.
-// The redirect_uri is derived from the incoming request's own origin, so it
-// matches whatever host/port you're actually developing on.
+// The redirect_uri is a FIXED literal (http://127.0.0.1:3000/api/spotify/auth),
+// overridable via SPOTIFY_REDIRECT_URI — deliberately NOT derived from the
+// request origin, which reports `localhost` in dev and makes Spotify reject the
+// exchange (see the inline note at the redirectUri assignment for the full why).
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 

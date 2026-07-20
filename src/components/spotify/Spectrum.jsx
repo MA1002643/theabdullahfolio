@@ -56,6 +56,16 @@ export default function Spectrum({
     const cg = (int >> 8) & 255;
     const cb = int & 255;
 
+    // Vertical fill gradient — identical on every frame (it depends only on
+    // accent + height, both effect deps), so build it ONCE here instead of
+    // ~60×/sec inside draw(). Taller bars reach higher into its bright top, so
+    // amplitude reads as intensity. Gradient coords are user-space and mapped
+    // through the current transform at paint time, so reusing the object across
+    // frames — and across a resize (height is fixed per run) — is exact.
+    const grad = ctx.createLinearGradient(0, 0, 0, height);
+    grad.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, 0.85)`);
+    grad.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0.16)`);
+
     const gap = 3;
 
     function draw(t) {
@@ -67,12 +77,6 @@ export default function Spectrum({
       const barW = Math.max(2, (Math.min(width, 520) - gap * (BARS - 1)) / BARS);
       const usableW = barW * BARS + gap * (BARS - 1);
       const xOffset = Math.max(0, (width - usableW) / 2);
-
-      // One vertical gradient per frame (not one per bar): taller bars reach
-      // higher into its bright top, so amplitude reads as intensity.
-      const grad = ctx.createLinearGradient(0, 0, 0, height);
-      grad.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, 0.85)`);
-      grad.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0.16)`);
 
       for (let i = 0; i < BARS; i += 1) {
         // Sum of three incommensurate sines → an organic, non-repeating bob.
