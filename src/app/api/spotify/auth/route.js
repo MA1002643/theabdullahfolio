@@ -26,6 +26,20 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Extract the bare hostname from a Host header, dropping any :port. Bracketed
+// IPv6 literals (`[::1]:3000`) can't use a naive `split(':')` — the colons in
+// the address itself would shred it — so unwrap the brackets first. Everything
+// else (`127.0.0.1:3000`, `localhost:3000`, or a bare host) strips at the first
+// colon, which is the single :port separator.
+function loopbackHostname(hostHeader) {
+  const h = hostHeader.trim().toLowerCase();
+  if (h.startsWith('[')) {
+    const end = h.indexOf(']');
+    return end === -1 ? h.slice(1) : h.slice(1, end);
+  }
+  return h.split(':')[0];
+}
+
 export async function GET(request) {
   // This helper mints a LONG-LIVED refresh token, so it must be unreachable on
   // any deployed/public host — not merely on "production" builds. Layered guard:
@@ -40,11 +54,14 @@ export async function GET(request) {
   // loopback check is defence-in-depth against ACCIDENTAL exposure, not a hard
   // authz boundary — but the minted token is only ever for the account that
   // authorises, at read-only scopes, so the residual blast radius is low.
-  // Strip the :port. The token flow's redirect_uri is IPv4 loopback, and a
-  // browser sends the Host exactly as typed (not the resolved IP), so 127.0.0.1
-  // and localhost are the only loopback Host values that actually arise here.
-  const host = (request.headers.get('host') || '').split(':')[0].toLowerCase();
-  const isLoopback = host === '127.0.0.1' || host === 'localhost';
+  // Normalise the Host to a bare hostname (see loopbackHostname): strip the
+  // :port and unwrap bracketed IPv6 so `[::1]:3000` resolves to `::1` instead
+  // of being shredded by a naive `split(':')`. A browser sends the Host exactly
+  // as typed (not the resolved IP), so 127.0.0.1, localhost and ::1 are the
+  // loopback values that actually arise here.
+  const host = loopbackHostname(request.headers.get('host') || '');
+  const isLoopback =
+    host === '127.0.0.1' || host === 'localhost' || host === '::1';
   const allowRemote = process.env.SPOTIFY_AUTH_ALLOW_REMOTE === 'true';
 
   if (process.env.NODE_ENV === 'production' || (!isLoopback && !allowRemote)) {

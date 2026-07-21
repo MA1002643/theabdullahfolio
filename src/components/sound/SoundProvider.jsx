@@ -50,6 +50,15 @@ export default function SoundProvider({ children }) {
   // Enabling it also unlocks the shared AudioContext from that click gesture
   // (browser autoplay policy).
   const [soundOn, setSoundOn] = useState(false);
+  // Ref mirror of the latest `soundOn`. toggleSound reads THIS, not the value
+  // captured when the callback was last created, so two taps fired before React
+  // re-renders each flip reliably. Reading the state directly would let both
+  // taps see the same stale value, compute the same `willOn`, fail to toggle
+  // back Off, and fire a duplicate play(). Kept in sync below.
+  const soundOnRef = useRef(soundOn);
+  useEffect(() => {
+    soundOnRef.current = soundOn;
+  }, [soundOn]);
 
   // Can the visitor actually PLUCK the wordmark? True for a mouse or an iPad/
   // tablet with a trackpad (a fine, hover-capable pointer); false for a phone or
@@ -69,7 +78,10 @@ export default function SoundProvider({ children }) {
   const trackRef = useRef(null);
 
   const toggleSound = useCallback(() => {
-    const willOn = !soundOn;
+    const willOn = !soundOnRef.current;
+    // Advance the ref synchronously so a rapid second tap (before the state
+    // update commits) sees the value THIS tap just chose and flips back.
+    soundOnRef.current = willOn;
     if (willOn) {
       getPluckSynth().unlock();
       // Start the track from THIS user gesture (autoplay policy) when the visitor
@@ -82,7 +94,7 @@ export default function SoundProvider({ children }) {
       trackRef.current?.pause();
     }
     setSoundOn(willOn);
-  }, [soundOn, canHover]);
+  }, [canHover]);
 
   // Keep the track in lockstep with autoPlay — covers a keyboard/trackpad being
   // attached or removed mid-play (canHover flips live) and pausing on sound-off.
