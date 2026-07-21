@@ -13,9 +13,10 @@ import { useEffect, useRef } from 'react';
 // and it always cancels the loop on unmount / collapse — no orphaned frames.
 
 const BARS = 28;
+const DEFAULT_HEX = 'e6a34d'; // warm-amber fallback when `accent` isn't a valid #rrggbb
 
 export default function Spectrum({
-  accent = '#e6a34d',
+  accent = `#${DEFAULT_HEX}`,
   active = true,
   height = 34,
   className = '',
@@ -49,9 +50,15 @@ export default function Spectrum({
       typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
     if (ro) ro.observe(canvas);
 
-    // Parse the accent hex once per effect run for the fill gradient.
-    const hex = accent.replace('#', '');
-    const int = parseInt(hex.length === 6 ? hex : 'e6a34d', 16);
+    // Parse the accent hex once per effect run for the fill gradient. Validate
+    // it's a real 6-digit hex FIRST: a malformed accent would otherwise slip
+    // through parseInt as NaN (non-hex chars → bit-shifts to 0 → a silently
+    // BLACK gradient) or as a truncated wrong colour (a partial hex like
+    // 'e6a34z' parses only 'e6a34'). Falling back to the default amber here
+    // means `int` is provably never NaN and the ribbon always renders on-brand.
+    const raw = accent.replace('#', '');
+    const hex = /^[0-9a-f]{6}$/i.test(raw) ? raw : DEFAULT_HEX;
+    const int = parseInt(hex, 16);
     const cr = (int >> 16) & 255;
     const cg = (int >> 8) & 255;
     const cb = int & 255;

@@ -169,9 +169,16 @@ export default function NowPlaying() {
   const trackUrl = track.trackUrl || null;
   const hasLink = Boolean(trackUrl);
   const Card = hasLink ? motion.a : motion.div;
+  // A real <a href> is in the tab order for free and — as role=link — reliably
+  // exposes its aria-label. The non-link <div> is generic: not focusable, and
+  // the generic role PROHIBITS an accessible name, so its aria-label would be
+  // dropped (AT would read raw text instead). It still expands the console on
+  // focus/blur, so give that branch tabIndex={0} (keyboard users reach the same
+  // reveal a mouse gets on hover) plus role="group", a naming-supporting
+  // container role that restores the curated aria-label. The <a> needs neither.
   const linkProps = hasLink
     ? { href: trackUrl, target: '_blank', rel: 'noopener noreferrer' }
-    : {};
+    : { tabIndex: 0, role: 'group' };
   const baseAria = `${label.toLowerCase()}: ${track.title} by ${track.artist}.`;
   const ariaLabel = hasLink ? `${baseAria} Open on Spotify.` : baseAria;
 
@@ -193,6 +200,7 @@ export default function NowPlaying() {
       <Card
         {...linkProps}
         aria-label={ariaLabel}
+        aria-expanded={showExpanded}
         title={`${isPlaying ? 'Now playing' : 'Last played'}: ${track.title} — ${track.artist}`}
         onMouseEnter={open}
         onMouseLeave={close}
