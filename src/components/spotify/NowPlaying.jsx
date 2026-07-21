@@ -25,12 +25,14 @@ import { formatTime, formatPlayedAgo } from './format';
 // from the existing design system.
 //
 // Type ladder matches the card too: the #ffaa2a eyebrow microlabel, `.text-gold`
-// (#f4e3b8) for the live title, #d4af7a / #b8946a for supporting copy, and
-// #ff6d05 for every active accent (progress arc, bars, spectrum, bar fill).
-//
-// NOTE: the per-album adaptive tint was deliberately removed — a fixed card
-// theme and a colour that changes per album are mutually exclusive. The server
-// still runs the sharp pass, because the same pass produces `blurDataURL`.
+// (#f4e3b8) for the live title, and #d4af7a / #b8946a for supporting copy stay
+// fixed gold. The ACTIVE ACCENT elements — progress arc, bars, spectrum and
+// progress-bar fill — instead adopt the album-derived accent from /api/spotify
+// (extracted and clamped premium-safe server-side by extractArtwork/clampAccent),
+// so the widget's live colour tracks the current cover. EMBER (#ff6d05) is the
+// resting fallback when the payload has no accent — matching the server's own
+// warm-ember fallback (DEFAULT_ACCENT) when extraction fails. The fixed gold card
+// chrome (custom-bg-abt) stays constant, framing the shifting accent.
 //
 // Signature behaviour (unchanged): the album art is a small "record" wrapped in
 // a progress arc that advances in real time, re-anchored to Spotify's reported
@@ -43,7 +45,7 @@ import { formatTime, formatPlayedAgo } from './format';
 // prefers-reduced-motion (snaps instead of tweening).
 
 // ── Career-snapshot palette ─────────────────────────────────────────────────
-const EMBER = '#ff6d05'; // primary accent — arc, bars, spectrum, bar fill
+const EMBER = '#ff6d05'; // resting fallback accent when data.accent is absent
 const AMBER = '#ffaa2a'; // eyebrow microlabel
 const GOLD_MUTED = '#d4af7a'; // artist / album / timecode
 const GOLD_SOFT = '#b8946a'; // least-emphasis copy
@@ -148,6 +150,12 @@ export default function NowPlaying() {
   if (loading || !data?.track?.title) return null;
 
   const { track, blurDataURL, playedAt } = data;
+  // Active-accent colour — the album-derived accent from /api/spotify, extracted
+  // and clamped premium-safe server-side (extractArtwork / clampAccent), so the
+  // widget's live accent tracks the current cover. EMBER is the resting fallback;
+  // the server itself already falls back to a warm ember (DEFAULT_ACCENT) when
+  // extraction fails, so this only triggers if the field is missing entirely.
+  const accent = data.accent || EMBER;
   const progress = isPlaying && durationMs ? Math.min(1, displayMs / durationMs) : 0;
   const label = isPlaying ? 'NOW PLAYING' : 'LAST PLAYED';
   const playedAgo = !isPlaying ? formatPlayedAgo(playedAt) : null;
@@ -192,6 +200,10 @@ export default function NowPlaying() {
   // that actually matches "focus/click to toggle a region", and mirrors the
   // About page's experience-trigger card (index.jsx). No aria-haspopup: the
   // console is INLINE content, not a popup/dialog, so aria-expanded stands alone.
+  // Because BOTH branches are interactive (link / disclosure button), the card
+  // always gets cursor-pointer below — a cursor-default on the button branch
+  // would falsely read as "not clickable", worst on desktop where click is the
+  // only toggle besides hover.
   const linkProps = hasLink
     ? { href: trackUrl, target: '_blank', rel: 'noopener noreferrer' }
     : { tabIndex: 0, role: 'button', onClick: toggle, onKeyDown: onCardKeyDown };
@@ -222,9 +234,7 @@ export default function NowPlaying() {
         onMouseLeave={close}
         onFocus={open}
         onBlur={close}
-        className={`custom-bg-abt group relative block overflow-hidden text-left ${
-          hasLink ? 'cursor-pointer' : 'cursor-default'
-        }`}
+        className="custom-bg-abt group relative block cursor-pointer overflow-hidden text-left"
         animate={{
           width: showExpanded ? EXPANDED_W : COLLAPSED_W,
           borderRadius: showExpanded ? 20 : 9999,
@@ -255,7 +265,7 @@ export default function NowPlaying() {
                     {label}
                   </span>
                   {isPlaying ? (
-                    <SpotifyBars accent={EMBER} />
+                    <SpotifyBars accent={accent} />
                   ) : (
                     playedAgo && (
                       <span
@@ -288,7 +298,7 @@ export default function NowPlaying() {
                       className="h-full rounded-full"
                       style={{
                         width: `${(isPlaying ? progress : 0) * 100}%`,
-                        background: EMBER,
+                        background: accent,
                         transition: reduceMotion ? 'none' : 'width 900ms linear',
                       }}
                     />
@@ -305,7 +315,7 @@ export default function NowPlaying() {
                 {/* Ambient spectrum ribbon — animates only while truly playing. */}
                 <div className="mt-2">
                   <Spectrum
-                    accent={EMBER}
+                    accent={accent}
                     active={isPlaying && !reduceMotion}
                     height={30}
                   />
@@ -346,7 +356,7 @@ export default function NowPlaying() {
               size={RING}
               stroke={2}
               progress={progress}
-              accent={EMBER}
+              accent={accent}
               trackColor={WARM_TRACK}
               reduceMotion={reduceMotion}
             >
@@ -399,7 +409,7 @@ export default function NowPlaying() {
                 transition={{ duration: 0.3, ease: EASE }}
               >
                 <div className="flex items-center gap-1.5">
-                  {isPlaying && <SpotifyBars accent={EMBER} />}
+                  {isPlaying && <SpotifyBars accent={accent} />}
                   {/* Live title wears `.text-gold` (#f4e3b8 + soft warm halo),
                       the same treatment the card gives its headline values. */}
                   <Marquee

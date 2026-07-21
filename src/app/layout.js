@@ -55,24 +55,32 @@ export default function RootLayout({ children }) {
           'bg-background text-foreground',
         )}
       >
-        {/* Owns the footer guitar track's <audio> element + on/off state. It
-            MUST sit here, in the root layout: the (sub pages) layout that
-            renders <Footer /> is unmounted when you navigate to `/`, which
-            previously destroyed the audio node mid-play and cut the music off
-            (see SoundProvider). */}
+        {/* Owns the footer guitar track's <audio> element + on/off state. MUST
+            sit in the root layout: the (sub pages) layout that renders <Footer />
+            is unmounted when you navigate to `/`, which previously destroyed the
+            audio node mid-play and cut the music off (see SoundProvider).
+
+            Scoped to just its context consumers — the page subtree (its Footer
+            calls useSound) and FloatingSoundToggle. The purely-visual overlays
+            (NowPlaying, GlobalToaster, CustomCursor) don't consume the context,
+            so they render OUTSIDE it. Because RootLayout is a Server Component
+            they wouldn't re-render on toggle even inside (their `children`
+            reference is stable → React bails out of that subtree), but keeping
+            them out makes that independence explicit and stays true even if this
+            layout ever becomes a Client Component. */}
         <SoundProvider>
           <LoaderWrapper>
             <PageTransitionProvider>{children}</PageTransitionProvider>
           </LoaderWrapper>
-          {/* Live music presence — floats bottom-left on every page (issue #42).
-              Renders null until data arrives, so no SSR/hydration mismatch. */}
-          <NowPlaying />
           {/* Stop control for routes with no footer (the homepage), so the
               persisting track is always silenceable. Renders null elsewhere. */}
           <FloatingSoundToggle />
-          <GlobalToaster />
-          <CustomCursor />
         </SoundProvider>
+        {/* Live music presence — floats bottom-left on every page (issue #42).
+            Renders null until data arrives, so no SSR/hydration mismatch. */}
+        <NowPlaying />
+        <GlobalToaster />
+        <CustomCursor />
         <SpeedInsights />
         <Analytics />
       </body>

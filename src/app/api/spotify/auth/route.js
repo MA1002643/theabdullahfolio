@@ -100,21 +100,57 @@ export async function GET(request) {
   const redirectUri =
     process.env.SPOTIFY_REDIRECT_URI || 'http://127.0.0.1:3000/api/spotify/auth';
 
-  const res = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${basic}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: redirectUri,
-    }),
-    cache: 'no-store',
-  });
+  // The token exchange is a live network call to Spotify: it can reject (DNS /
+  // socket failure, or the AbortSignal.timeout below firing) and its body can
+  // fail to parse (a proxy or outage returning HTML or an empty payload). This
+  // is a one-time setup helper, so every failure should degrade to a readable
+  // 502 JSON error rather than bubbling an unhandled exception that Next
+  // surfaces as an opaque 500.
+  let res;
+  try {
+    res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${basic}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+      }),
+      cache: 'no-store',
+      // WHATWG fetch has no default timeout — bound it so an unreachable Spotify
+      // returns a clear error instead of hanging the setup flow indefinitely.
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch (err) {
+    // AbortSignal.timeout rejects with a DOMException named 'TimeoutError';
+    // anything else here is a transport-level failure.
+    const timedOut = err?.name === 'TimeoutError';
+    return NextResponse.json(
+      {
+        error: 'Could not reach Spotify to exchange the code',
+        reason: timedOut
+          ? 'Request timed out after 10s'
+          : err?.message || 'Network error',
+      },
+      { status: 502 },
+    );
+  }
 
-  const data = await res.json();
+  // A successful HTTP round-trip can still carry a non-JSON body — parse
+  // defensively so that too degrades to a 502 rather than throwing.
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Spotify returned a non-JSON response', status: res.status },
+      { status: 502 },
+    );
+  }
+
   if (!res.ok || !data.refresh_token) {
     return NextResponse.json(
       { error: 'Token exchange failed', details: data },
