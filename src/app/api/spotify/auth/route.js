@@ -16,7 +16,8 @@ import { NextResponse } from 'next/server';
 //   3. Copy the `refresh_token` from the JSON response into .env.local
 //   4. Restart the dev server. You're done.
 //
-// This route HARD-REFUSES to run in production (returns 404), so it's safe to
+// This route HARD-REFUSES to run in production AND, in any other build, serves
+// ONLY loopback hosts (404 everywhere else — see the GET guard), so it's safe to
 // leave in the repo as reproducible setup documentation rather than deleting it.
 // The redirect_uri is a FIXED literal (http://127.0.0.1:3000/api/spotify/auth),
 // overridable via SPOTIFY_REDIRECT_URI — deliberately NOT derived from the
@@ -26,8 +27,27 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  // Never expose the token-exchange helper on a production deployment.
-  if (process.env.NODE_ENV === 'production') {
+  // This helper mints a LONG-LIVED refresh token, so it must be unreachable on
+  // any deployed/public host — not merely on "production" builds. Layered guard:
+  //   1. Hard 404 whenever NODE_ENV=production — covers every Vercel deployment
+  //      (prod AND preview both build as production).
+  //   2. Otherwise require a LOOPBACK Host (127.0.0.1 / localhost / ::1), so a
+  //      staging/demo box that accidentally runs `next dev` on a public URL — or
+  //      a drive-by scanner hitting /api/spotify/auth — still gets a 404 rather
+  //      than a working token-exchange endpoint.
+  // Escape hatch: SPOTIFY_AUTH_ALLOW_REMOTE=true permits a non-loopback dev host
+  // (LAN IP, cloud dev box). The Host header is client-controlled, so the
+  // loopback check is defence-in-depth against ACCIDENTAL exposure, not a hard
+  // authz boundary — but the minted token is only ever for the account that
+  // authorises, at read-only scopes, so the residual blast radius is low.
+  // Strip the :port. The token flow's redirect_uri is IPv4 loopback, and a
+  // browser sends the Host exactly as typed (not the resolved IP), so 127.0.0.1
+  // and localhost are the only loopback Host values that actually arise here.
+  const host = (request.headers.get('host') || '').split(':')[0].toLowerCase();
+  const isLoopback = host === '127.0.0.1' || host === 'localhost';
+  const allowRemote = process.env.SPOTIFY_AUTH_ALLOW_REMOTE === 'true';
+
+  if (process.env.NODE_ENV === 'production' || (!isLoopback && !allowRemote)) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 

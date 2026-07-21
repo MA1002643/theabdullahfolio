@@ -30,15 +30,19 @@ export function formatPlayedAgo(iso) {
   return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
-// #rrggbb → { r, g, b }. Tolerates a missing/short value by returning the site's
-// warm ember default so a caller never has to null-check the result.
+// #rrggbb → { r, g, b }. Tolerates a missing/short/malformed value by returning
+// the site's warm ember default so a caller never has to null-check the result.
 export function hexToRgb(hex) {
   const fallback = { r: 230, g: 163, b: 77 }; // == DEFAULT_ACCENT #e6a34d
   if (typeof hex !== 'string') return fallback;
   const m = hex.trim().replace('#', '');
-  if (m.length !== 6) return fallback;
+  // Validate 6 hex DIGITS, not just length: parseInt(m, 16) partial-parses a
+  // 6-char non-hex string (e.g. 'e6a34z' → parses only 'e6a34' → 0xe6a34, a
+  // wrong colour that a downstream NaN check would NOT catch). Rejecting up
+  // front makes the fallback fire on any malformed input and makes `int`
+  // provably never NaN, so no post-parse guard is needed.
+  if (!/^[0-9a-f]{6}$/i.test(m)) return fallback;
   const int = parseInt(m, 16);
-  if (Number.isNaN(int)) return fallback;
   return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
 }
 

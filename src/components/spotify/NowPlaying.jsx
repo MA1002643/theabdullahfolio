@@ -159,6 +159,20 @@ export default function NowPlaying() {
 
   const open = () => setExpanded(true);
   const close = () => setExpanded(false);
+  // The non-link card is a disclosure BUTTON (role="button" below), so it needs
+  // real keyboard activation, not just focus-to-reveal. Enter/Space toggles the
+  // console (preventDefault stops Space from scrolling the page); Escape
+  // collapses it without moving focus. Mouse hover + focus still preview it via
+  // the handlers on <Card>.
+  const toggle = () => setExpanded((v) => !v);
+  const onCardKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle();
+    } else if (e.key === 'Escape') {
+      setExpanded(false);
+    }
+  };
 
   // Spotify only supplies an external URL for real catalogue tracks; local
   // files and other non-linkable items arrive with trackUrl: null (see
@@ -169,16 +183,18 @@ export default function NowPlaying() {
   const trackUrl = track.trackUrl || null;
   const hasLink = Boolean(trackUrl);
   const Card = hasLink ? motion.a : motion.div;
-  // A real <a href> is in the tab order for free and — as role=link — reliably
-  // exposes its aria-label. The non-link <div> is generic: not focusable, and
-  // the generic role PROHIBITS an accessible name, so its aria-label would be
-  // dropped (AT would read raw text instead). It still expands the console on
-  // focus/blur, so give that branch tabIndex={0} (keyboard users reach the same
-  // reveal a mouse gets on hover) plus role="group", a naming-supporting
-  // container role that restores the curated aria-label. The <a> needs neither.
+  // The <a href> is a link: focusable for free, and role=link exposes its
+  // aria-label + aria-expanded natively. The non-link branch is instead a
+  // disclosure BUTTON: role="button" + tabIndex={0} + onClick/onKeyDown make it
+  // an honest, keyboard-operable control. A bare/generic <div> here would be a
+  // focusable NON-interactive element — a11y-inaccurate and a lint smell — while
+  // role="group" (also non-interactive) has the same problem; button is the role
+  // that actually matches "focus/click to toggle a region", and mirrors the
+  // About page's experience-trigger card (index.jsx). No aria-haspopup: the
+  // console is INLINE content, not a popup/dialog, so aria-expanded stands alone.
   const linkProps = hasLink
     ? { href: trackUrl, target: '_blank', rel: 'noopener noreferrer' }
-    : { tabIndex: 0, role: 'group' };
+    : { tabIndex: 0, role: 'button', onClick: toggle, onKeyDown: onCardKeyDown };
   const baseAria = `${label.toLowerCase()}: ${track.title} by ${track.artist}.`;
   const ariaLabel = hasLink ? `${baseAria} Open on Spotify.` : baseAria;
 
