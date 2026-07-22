@@ -218,9 +218,17 @@ export default function HoverHint({
       // it sideways as it appears.
       const innerMax = Math.max(rect.width - INSIDE_INSET * 2, 40);
       const effWidth = Math.min(width, innerMax);
+      // Clamp against the RENDERED width, not the natural `width` baked into
+      // `maxLeft`: once re-wrapped the bubble is only `effWidth` wide, so it
+      // clears the right margin sooner and must not be shoved further left
+      // than its actual footprint needs.
+      const maxLeftInside = Math.max(
+        window.innerWidth - effWidth - VIEWPORT_MARGIN,
+        VIEWPORT_MARGIN,
+      );
       const left = Math.min(
         Math.max(rect.left + (rect.width - effWidth) / 2, VIEWPORT_MARGIN),
-        maxLeft,
+        maxLeftInside,
       );
       const top = Math.min(
         Math.max(rect.top + (rect.height - height) / 2, VIEWPORT_MARGIN),

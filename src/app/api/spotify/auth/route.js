@@ -152,8 +152,24 @@ export async function GET(request) {
   }
 
   if (!res.ok || !data.refresh_token) {
+    // Never reflect the raw body back. This guard also fires on a PARTIAL
+    // success (HTTP ok, no refresh_token), where `data` can carry an
+    // `access_token` or other sensitive fields — dev/loopback-gated or not,
+    // echoing the whole payload is a needless leak. Surface only Spotify's
+    // documented OAuth error fields (both strings on the token endpoint) and
+    // carry the HTTP status separately. Undefined fields drop out of the JSON.
     return NextResponse.json(
-      { error: 'Token exchange failed', details: data },
+      {
+        error: 'Token exchange failed',
+        status: res.status,
+        details: {
+          error: typeof data.error === 'string' ? data.error : undefined,
+          error_description:
+            typeof data.error_description === 'string'
+              ? data.error_description
+              : undefined,
+        },
+      },
       { status: 502 },
     );
   }
