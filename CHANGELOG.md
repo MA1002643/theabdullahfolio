@@ -31,7 +31,7 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: the Repository Governance & Templates Suite; the Experience Summary live-data fix; the Unify Page Titles refactor; five About-page card overhauls (Most Used Languages, GitHub Stats, Completed Projects, Current Streak, and the Skills grid); the Contact Form submit-animation feature; and the route-wide editorial footer ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)) — its live-location and project-metadata endpoints, guitar-string wordmark, and the "Stone Passage" page transition. Each change below is its own table — field labels on the left, full detail on the right._
+_Scope: the Repository Governance & Templates Suite; the Experience Summary live-data fix; the Unify Page Titles refactor; five About-page card overhauls (Most Used Languages, GitHub Stats, Completed Projects, Current Streak, and the Skills grid); the Contact Form submit-animation feature; and the route-wide editorial footer ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)) — its live-location and project-metadata endpoints, guitar-string wordmark, and the "Stone Passage" page transition; the Now Playing live-Spotify widget ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42)) with its data + one-time-token endpoints and the shared HoverHint tooltip primitive; and the site-wide sound control lifted out of the footer so the guitar track survives navigation. Each change below is its own table — field labels on the left, full detail on the right._
 
 ### Added
 
@@ -451,6 +451,30 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Files** | `src/app/api/send-mail/route.js`, `src/lib/contact.js` |
 | **Details** | **Idempotent contact-send path** ([#5](https://github.com/MA1002643/theabdullahfolio/issues/5), `src/app/api/send-mail/route.js`, `src/lib/contact.js`). A stable per-message key (`newIdempotencyKey`, generated once and reused on every retry) lets the server dedupe: an atomic Upstash Redis `SET NX` writes a short-lived `PENDING` claim promoted to `SENT` only after delivery, so a retry of an already-sent message dedupes to success (`200`) and a retry of an in-flight one gets a `retryable` `409` — never a duplicate email. Bounded SMTP connection/greeting/ socket timeouts keep every attempt inside the `PENDING` TTL. `src/lib/contact.js` adds `postContactMessage` — a discriminated `{ ok \| errors \| network \| aborted }` result with its own request timeout — shared by the live form and the queue flush, plus the DOM/storage helpers. |
 
+#### Now Playing widget — live Spotify presence
+
+| | |
+|:--|:--|
+| **Ref** | [#42](https://github.com/MA1002643/theabdullahfolio/issues/42) |
+| **Files** | `src/components/spotify/NowPlaying.jsx`, `src/components/spotify/{Marquee,ProgressRing,Spectrum,SpotifyBars}.jsx`, `src/components/spotify/{useNowPlaying.js,format.js}`, `src/app/layout.js`, `src/app/globals.css`, `public/spotify/demo-cover.svg` |
+| **Details** | **Now Playing widget** ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42), `src/components/spotify/NowPlaying.jsx`). A floating bottom-left badge — mounted once in the **root** layout so it rides every route — that surfaces the owner's currently-playing (or last-played) Spotify track and expands into a console on hover: album art with an accent + blur derived from the cover, a scrolling `Marquee` title, a live `ProgressRing` / progress bar that advances **locally** from the server-anchored `progressMs` (so a slightly-stale cached poll still renders a correct position), a CSS-only equaliser (`SpotifyBars`, animated off the main thread), and a `Spectrum` flourish. Polls `/api/spotify` on a visibility-gated interval (`useNowPlaying`), renders `null` until data arrives (no SSR/hydration mismatch), and honours `prefers-reduced-motion` (the entrance snaps; the bars hold a static mid-frame). Stays hidden in production when Spotify isn't configured, and shows a bundled demo track in dev or under `SPOTIFY_DEMO=true`. |
+
+#### `/api/spotify` + `/api/spotify/auth` — Now Playing data + one-time token helper
+
+| | |
+|:--|:--|
+| **Ref** | [#42](https://github.com/MA1002643/theabdullahfolio/issues/42) |
+| **Files** | `/api/spotify`, `/api/spotify/auth`, `src/app/api/spotify/route.js`, `src/app/api/spotify/auth/route.js`, `src/app/api/_utils/spotify.js` |
+| **Details** | **`/api/spotify` endpoint** ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42), `src/app/api/spotify/route.js`). `GET` exchanges the **server-only** `SPOTIFY_REFRESH_TOKEN` for a short-lived access token server-side and returns display-only fields (title / artist / album art / accent / blur / progress) — **never** a token or secret. Ads and podcast episodes are filtered out; a genuine empty state is a cacheable `200` (widget stays hidden) while an upstream/auth failure is an **uncached** `502` so the client keeps its previous track instead of blanking mid-session. Edge-cached `s-maxage=30, stale-while-revalidate=60` so Spotify sees ~2 calls/min regardless of visitor count; the access token + per-album accent are memoised in the KV store when present (pure optimisation — works without KV). Node runtime (`sharp` album-art colour extraction), `force-dynamic`. `/api/spotify/auth` is a **DEV-ONLY**, loopback-gated helper that mints the refresh token once: it hard-`404`s under `NODE_ENV=production` (so on every Vercel prod **and** preview deploy) and otherwise serves loopback hosts only, and on failure surfaces only Spotify's documented OAuth error fields (`error` / `error_description`) and the HTTP status — never the raw token-endpoint body. |
+
+#### HoverHint — styled tooltip primitive
+
+| | |
+|:--|:--|
+| **Ref** | [#42](https://github.com/MA1002643/theabdullahfolio/issues/42) · [#94](https://github.com/MA1002643/theabdullahfolio/issues/94) |
+| **Files** | `src/components/home/HoverHint.jsx` |
+| **Details** | **HoverHint** ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42), `src/components/home/HoverHint.jsx`). The site's in-page replacement for the un-styleable native `title` tooltip — the same `custom-bg-abt` glass surface as the rest of the chrome — portalled to `<body>` and positioned `fixed` so an `overflow-hidden` / transforming ancestor can't clip or re-anchor it. Two anchoring modes: `trigger` (centred above the trigger, flips below without headroom — the maintenance-header hint, a [#94](https://github.com/MA1002643/theabdullahfolio/issues/94) follow-up) and `inside` (centred **within** a large trigger and narrowed to fit — the Now Playing badge). Hover-intent open with a warm-open shortcut for reading across adjacent fields, `:focus-visible` keyboard support, touch-gated off (`matchMedia`), and dismissal on leave / Esc / scroll / pointerdown; the bubble is `pointer-events-none` (a label, never a hover target). Clamps against the **rendered** width in inside mode, keeps `placement` in its bail-when-unchanged position guard, and snaps its entrance under `prefers-reduced-motion`. |
+
 ### Changed
 
 #### Sub-pages layout now anchors the shared footer
@@ -668,6 +692,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Ref** | — |
 | **Files** | `@upstash/redis`, `.github/workflows`, `@react-three/fiber` |
 | **Details** | `@upstash/redis` and `ai` added as dependencies (`package.json`) for the idempotency store and the Gateway-routed refine endpoint; the Node engine was bumped to 22 (`package.json` + `.github/workflows`). The aurora reuses the already-present `three` / `@react-three/fiber`. |
+
+#### Footer audio lifted into a root-layout sound provider
+
+| | |
+|:--|:--|
+| **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
+| **Files** | `src/components/sound/SoundProvider.jsx`, `src/components/sound/FloatingSoundToggle.jsx`, `src/app/layout.js`, `src/components/footer/index.jsx` |
+| **Details** | **Persistent footer audio** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/sound/SoundProvider.jsx`). The footer guitar track's `<audio>` element and on/off state moved out of `Footer` into a `SoundProvider` mounted in the **root** layout. `Footer` is rendered by the `(sub pages)` layout, which **unmounts on navigation to `/`** — that was destroying the audio node mid-play and cutting the music off. The track now survives route changes; the footer renders the same visible control but reads its state from context (`useSound`). A new `FloatingSoundToggle` gives footerless routes (the homepage) an always-available stop control, rendering `null` where a footer already carries one. The purely-visual overlays (Now Playing, toaster, cursor) render **outside** the provider, so a toggle can't re-render them. |
 
 ### Fixed
 
@@ -974,6 +1006,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Ref** | [#5](https://github.com/MA1002643/theabdullahfolio/issues/5) |
 | **Files** | `src/app/api/send-mail/route.js` |
 | **Details** | **Idempotency claim could be released/promoted by a non-owner** ([#5](https://github.com/MA1002643/theabdullahfolio/issues/5), `src/app/api/send-mail/route.js`). When the initial `SET NX` claim write threw, the handler failed open by pretending it had acquired the claim, then ran the unconditional `DEL` (on send failure) and `SET … SENT` (on success) — which could delete or overwrite a `PENDING`/`SENT` key a **concurrent** attempt legitimately owned, stranding or duplicating that attempt's message. Ownership is now tracked with a `claimOwned` flag set only when the atomic `SET NX` returns `'OK'`; both the release and the promotion are gated on it, so a fail-open request still sends but never touches a key it doesn't own. |
+
+#### About "Architect" paragraph painted fully visible on GPU Chrome
+
+| | |
+|:--|:--|
+| **Ref** | [#20](https://github.com/MA1002643/theabdullahfolio/issues/20) |
+| **Files** | `src/components/about/index.jsx` |
+| **Details** | **About "Architect" paragraph** ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20), `src/components/about/index.jsx`). The scroll-revealed word-by-word gold→ember paragraph painted **fully visible** — ignoring its per-word `opacity` — in real GPU Chrome, while every headless / software-raster test passed. The `.text-fire-amber` gradient was clipped-to-text on the **parent** `<p>` while the reveal animated `opacity` on child word spans; inside the tilt card's GPU-promoted layer (`custom-bg-abt` `backdrop-filter` + hover `perspective()`), Blink rasterises the parent's clip-to-text fill **once**, so per-word `opacity:0` no longer fades the glyphs. Fixed by co-locating the gradient clip and the opacity on the **same** element (`WORD_FILL`) — each word owns its clip, robust in every compositing path (the pattern `ContactIntro` already uses). The reveal now starts fully hidden and is deliberately kept under `prefers-reduced-motion` (it is opacity-only and scroll-scrubbed — the reader drives it — so it isn't the autonomous motion the setting suppresses). |
 
 ### Removed
 

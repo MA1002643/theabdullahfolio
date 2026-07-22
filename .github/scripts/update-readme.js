@@ -174,6 +174,7 @@ const STACK_3D = `<p>
 const STACK_DATA = `| Technology | Version | Role |
 |------------|---------|------|
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
+| Spotify Web API | — | Live now-playing track for the floating widget — server-side refresh-token exchange (no secret reaches the browser) |
 | [Nodemailer](https://nodemailer.com/) | \`^${v.nodemailer}\` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | \`^${v.hookForm}\` | Form state management and validation |
 | [AI SDK (\`ai\`)](https://sdk.vercel.ai/) | \`^${v.ai}\` | \`streamText\` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |

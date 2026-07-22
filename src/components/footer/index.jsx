@@ -30,7 +30,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Mail } from 'lucide-react';
 import { useFooterReveal } from './useFooterReveal';
-import { usePointerCapability } from '@/hooks/usePointerCapability';
+import { useSound } from '@/components/sound/SoundProvider';
 import { cn } from '@/lib/utils';
 import FooterWordmark from './FooterWordmark';
 import FooterMetaReveal from './FooterMetaReveal';
@@ -40,7 +40,6 @@ import LiveLocation from './LiveLocation';
 import ElsewhereTerminal from './ElsewhereTerminal';
 import FooterManifest from './FooterManifest';
 import FooterIdentity from './FooterIdentity';
-import { getPluckSynth } from './pluckSynth';
 import { brand, email } from './footer-data';
 
 // Shared focus ring — a full-strength orange indicator against the dark plate,
@@ -48,13 +47,12 @@ import { brand, email } from './footer-data';
 const FOCUS_RING =
   'rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05] focus-visible:ring-offset-2 focus-visible:ring-offset-night-950';
 
-// Touch-device audio: a self-hosted acoustic-guitar track that plays when a
-// visitor who CAN'T hover (phone / keyboard-less tablet) turns the sound on —
-// since there is no cursor to pluck the wordmark there. Hover-capable devices
-// play the live synth instead (see FooterWordmark). Drop the MP3 at the path
-// below (confirm you hold the rights to any track you ship here).
-const TRACK_SRC = '/audio/guitar-tabla-fusion.mp3';
-const TRACK_VOLUME = 0.5; // gentle, ambient — background, not foreground
+// NOTE: the <audio> element, the sound on/off state and the recorded-track
+// plumbing used to live here. They now live in SoundProvider, mounted in the
+// ROOT layout — this footer is rendered by src/app/(sub pages)/layout.js, which
+// unmounts when you navigate to `/`, and that was destroying the audio node
+// mid-play. The footer still renders the visible control; it just reads the
+// state from context now.
 
 // Small uppercase column heading. A functional footer group label (Product /
 // Company style), not a decorative section eyebrow.
@@ -124,57 +122,17 @@ export default function Footer() {
   const reachRef = useRef(null);
   const reachRevealed = useFooterReveal(reachRef, 0.6);
 
-  // Footer guitar audio is opt-in (no surprise sound): OFF by default, toggled
-  // by the SoundControl below. Enabling it also unlocks the shared AudioContext
-  // from this click gesture (browser autoplay policy). soundOn is passed to
-  // FooterWordmark, which mutes/unmutes the same shared synth.
-  const [soundOn, setSoundOn] = useState(false);
-
-  // Can the visitor actually PLUCK the wordmark? True for a mouse or an iPad/
-  // tablet with a trackpad (a fine, hover-capable pointer); false for a phone or
-  // a keyboard-less iPad (coarse, touch-only). This is a live matchMedia signal,
-  // not UA sniffing — attaching a Magic Keyboard flips it with no reload. It
-  // decides the SOUND SOURCE: a hover-capable device plays the live synth (the
-  // visitor plucks the strings by hand), while a touch surface — with no cursor
-  // to perform the strings — plays the recorded acoustic-guitar track instead.
-  const canHover = usePointerCapability();
-
-  // `autoPlay` = "touch surface with the sound on" → play the recorded track (and
-  // run the wordmark's ambient visual strum). The synth is muted here so the two
-  // never sound at once (see FooterWordmark).
-  const autoPlay = soundOn && !canHover;
-
-  // The recorded track element (touch only). Self-hosted at TRACK_SRC.
-  const trackRef = useRef(null);
-
-  const toggleSound = () => {
-    const willOn = !soundOn;
-    if (willOn) {
-      getPluckSynth().unlock();
-      // Start the track from THIS user gesture (autoplay policy) when the visitor
-      // can't hover; hover-capable devices leave it paused and use the synth.
-      if (!canHover && trackRef.current) {
-        trackRef.current.volume = TRACK_VOLUME;
-        trackRef.current.play().catch(() => {});
-      }
-    } else {
-      trackRef.current?.pause();
-    }
-    setSoundOn(willOn);
-  };
-
-  // Keep the track in lockstep with autoPlay — covers a keyboard/trackpad being
-  // attached or removed mid-play (canHover flips live) and pausing on sound-off.
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    if (autoPlay) {
-      el.volume = TRACK_VOLUME;
-      el.play().catch(() => {});
-    } else {
-      el.pause();
-    }
-  }, [autoPlay]);
+  // Guitar audio state, owned by SoundProvider in the root layout so it outlives
+  // this footer's unmount on a route change to `/`:
+  //   • soundOn   — opt-in, OFF by default (no surprise sound). Passed to
+  //                 FooterWordmark, which mutes/unmutes the shared synth.
+  //   • canHover  — live matchMedia signal deciding the SOUND SOURCE: hover-
+  //                 capable devices play the synth (the visitor plucks the
+  //                 wordmark by hand), touch surfaces play the recorded track.
+  //   • autoPlay  — "touch surface with the sound on"; also runs the wordmark's
+  //                 ambient visual strum.
+  //   • toggleSound — flips it, unlocking the AudioContext from the click.
+  const { soundOn, canHover, autoPlay, toggleSound } = useSound();
 
   // The giant footer wordmark — now a per-letter "plucked string" interaction
   // (visual pluck + a synthesised guitar note on hover) — lives in its own
@@ -246,10 +204,6 @@ export default function Footer() {
         autoPlay={autoPlay}
         canHover={canHover}
       />
-
-      {/* Recorded acoustic-guitar track for touch surfaces (no cursor to pluck
-          the strings). Hidden + decorative; loads only when first played. */}
-      <audio ref={trackRef} src={TRACK_SRC} loop preload="none" aria-hidden="true" />
 
       <div className="mx-auto w-full max-w-6xl px-4 pb-32 pt-12 sm:px-6 md:px-10 md:pb-44 md:pt-16">
         {/* Editorial masthead. An asymmetric 5 / 4 / 3 ledger — a dominant
