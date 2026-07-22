@@ -48,6 +48,7 @@ const WARM_OPEN_MS = 80;
 const WARM_WINDOW_MS = 300;
 const CLOSE_GRACE_MS = 80;
 const TRIGGER_GAP = 7;
+const INSIDE_INSET = 10; // inset from the card edge in inside-anchored mode
 const VIEWPORT_MARGIN = 8;
 const HOVER_QUERY = '(hover: hover) and (pointer: fine)';
 
@@ -62,6 +63,13 @@ const canHover = () =>
 export default function HoverHint({
   label,
   content,
+  // 'trigger' (default) centres the bubble above the trigger — the
+  // maintenance-header behaviour. 'inside' pins it centred WITHIN the
+  // trigger and narrowed to fit, static (no pointer following) and revealed
+  // only once the cursor rests on the card, for a large trigger the hint
+  // should sit inside rather than beside (the NowPlaying badge that expands
+  // into a console on hover — #42).
+  anchor = 'trigger',
   reduceMotion = false,
   children,
 }) {
@@ -110,11 +118,26 @@ export default function HoverHint({
     if (!canHover()) return;
     clearTimeout(closeTimerRef.current);
     if (open) return;
+    // Inside mode reveals only on a settled dwell (see handleMouseMove), so
+    // it always pays the full intent delay; the warm-open shortcut is a
+    // header nicety for reading across adjacent fields.
     const delay =
-      Date.now() - lastClosedAt < WARM_WINDOW_MS
-        ? WARM_OPEN_MS
-        : OPEN_INTENT_MS;
+      anchor === 'inside'
+        ? OPEN_INTENT_MS
+        : Date.now() - lastClosedAt < WARM_WINDOW_MS
+          ? WARM_OPEN_MS
+          : OPEN_INTENT_MS;
     openTimerRef.current = setTimeout(openNow, delay);
+  };
+
+  const handleMouseMove = () => {
+    // Inside mode reveals on REST: any pointer movement before the hint
+    // opens restarts the dwell, so it appears only once the cursor settles
+    // on the card and never while sweeping across it. Once open it stays put
+    // (static) — leaving the trigger is what closes it.
+    if (anchor !== 'inside' || open || !canHover()) return;
+    clearTimeout(openTimerRef.current);
+    openTimerRef.current = setTimeout(openNow, OPEN_INTENT_MS);
   };
 
   const handleMouseLeave = () => {
@@ -158,51 +181,89 @@ export default function HoverHint({
     };
   }, [open, closeNow]);
 
-  // Centered above the trigger, clamped to the viewport, flipped below
-  // without headroom. Remeasured on resize and whenever live content
-  // resizes the bubble (arrow-stepping the focus queue swaps the title
-  // under an open keyboard-focused hint). Position resets on close so a
-  // reopen never flashes at the previous trigger's coordinates.
+  // Position the bubble. Both anchoring modes share the clamp + bail-when-
+  // unchanged tail (the guard keeps the resize / ResizeObserver callbacks
+  // from scheduling render loops):
+  //   - 'trigger' (default): centred above the trigger, flipped below
+  //     without headroom — the maintenance-header behaviour, unchanged.
+  //   - 'inside': centred WITHIN the trigger and narrowed to fit inside it,
+  //     so the hint sits contained in a large trigger instead of floating
+  //     outside (the NowPlaying badge that expands on hover — #42). Static:
+  //     no pointer following.
+  const positionUpdate = useCallback(() => {
+    const trigger = triggerRef.current;
+    const bubble = bubbleRef.current;
+    if (!trigger || !bubble) return;
+    const rect = trigger.getBoundingClientRect();
+    const width = bubble.offsetWidth;
+    const height = bubble.offsetHeight;
+    const maxLeft = Math.max(
+      window.innerWidth - width - VIEWPORT_MARGIN,
+      VIEWPORT_MARGIN,
+    );
+    const commit = (top, left, placement, maxWidth = null) =>
+      setPos((prev) =>
+        prev &&
+        prev.top === top &&
+        prev.left === left &&
+        prev.maxWidth === maxWidth
+          ? prev
+          : { top, left, placement, maxWidth },
+      );
+
+    if (anchor === 'inside') {
+      // Centre the bubble inside the trigger card, narrowed to fit within
+      // the card so it never spills outside. Centre using the effective
+      // (clamped) width so the one-frame re-wrap to `maxWidth` can't shift
+      // it sideways as it appears.
+      const innerMax = Math.max(rect.width - INSIDE_INSET * 2, 40);
+      const effWidth = Math.min(width, innerMax);
+      const left = Math.min(
+        Math.max(rect.left + (rect.width - effWidth) / 2, VIEWPORT_MARGIN),
+        maxLeft,
+      );
+      const top = Math.min(
+        Math.max(rect.top + (rect.height - height) / 2, VIEWPORT_MARGIN),
+        Math.max(window.innerHeight - height - VIEWPORT_MARGIN, VIEWPORT_MARGIN),
+      );
+      commit(top, left, 'inside', innerMax);
+      return;
+    }
+
+    const left = Math.min(
+      Math.max(rect.left + rect.width / 2 - width / 2, VIEWPORT_MARGIN),
+      maxLeft,
+    );
+    let top = rect.top - height - TRIGGER_GAP;
+    let placement = 'above';
+    if (top < VIEWPORT_MARGIN) {
+      top = rect.bottom + TRIGGER_GAP;
+      placement = 'below';
+    }
+    commit(top, left, placement);
+  }, [anchor]);
+
+  // Remeasure on resize and whenever live content resizes the bubble (the
+  // inside-mode re-wrap to `maxWidth`, or arrow-stepping the focus queue
+  // swapping the title under an open keyboard-focused hint). Position resets
+  // on close so a reopen never flashes at the previous coordinates.
   useLayoutEffect(() => {
     if (!open) {
       setPos(null);
       return undefined;
     }
-    const update = () => {
-      const trigger = triggerRef.current;
-      const bubble = bubbleRef.current;
-      if (!trigger || !bubble) return;
-      const rect = trigger.getBoundingClientRect();
-      const width = bubble.offsetWidth;
-      const height = bubble.offsetHeight;
-      const left = Math.min(
-        Math.max(rect.left + rect.width / 2 - width / 2, VIEWPORT_MARGIN),
-        Math.max(window.innerWidth - width - VIEWPORT_MARGIN, VIEWPORT_MARGIN),
-      );
-      let top = rect.top - height - TRIGGER_GAP;
-      let placement = 'above';
-      if (top < VIEWPORT_MARGIN) {
-        top = rect.bottom + TRIGGER_GAP;
-        placement = 'below';
-      }
-      // Bail-when-unchanged keeps the ResizeObserver callback from
-      // scheduling render loops.
-      setPos((prev) =>
-        prev && prev.top === top && prev.left === left
-          ? prev
-          : { top, left, placement },
-      );
-    };
-    update();
-    window.addEventListener('resize', update);
+    positionUpdate();
+    window.addEventListener('resize', positionUpdate);
     const bubbleResize =
-      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(positionUpdate)
+        : null;
     if (bubbleRef.current) bubbleResize?.observe(bubbleRef.current);
     return () => {
-      window.removeEventListener('resize', update);
+      window.removeEventListener('resize', positionUpdate);
       bubbleResize?.disconnect();
     };
-  }, [open]);
+  }, [open, positionUpdate]);
 
   // The reveal is gated on being positioned so the settle never plays at
   // the pre-measure coordinates.
@@ -223,6 +284,16 @@ export default function HoverHint({
       child.props.onMouseLeave?.(event);
       handleMouseLeave(event);
     },
+    // Inside mode only: rest-to-reveal needs per-move dwell resets. Omitted
+    // for other modes so their triggers don't carry a mousemove listener.
+    ...(anchor === 'inside'
+      ? {
+          onMouseMove: (event) => {
+            child.props.onMouseMove?.(event);
+            handleMouseMove(event);
+          },
+        }
+      : null),
     onFocus: (event) => {
       child.props.onFocus?.(event);
       handleFocus(event);
@@ -259,7 +330,11 @@ export default function HoverHint({
       className="custom-bg-abt pointer-events-none fixed z-[70] max-w-[min(20rem,calc(100vw-16px))] rounded-md px-3 py-2 text-left"
       style={
         pos
-          ? { top: pos.top, left: pos.left }
+          ? {
+              top: pos.top,
+              left: pos.left,
+              ...(pos.maxWidth ? { maxWidth: pos.maxWidth } : {}),
+            }
           : { top: 0, left: 0, visibility: 'hidden' }
       }
     >

@@ -26,10 +26,46 @@ const githubStatsStorageKey = (username) =>
 const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Beyond the visible enchantments, I tend the hidden machinery — conjuring resilient APIs and databases (the vaults where each realm's memory is safely kept) and weaving automated pipelines that carry my creations from the workshop to the cloud (the boundless aether where they finally awaken). I hold performance and accessibility as sacred vows, so every portal opens swiftly for every traveller, on any device and in any far-flung corner of the realm. Curiosity remains my truest compass, forever drawing me toward new grimoires, sharper instincts, and ideas bold enough to become living, breathing experiences. Join me as I continue to explore new spells and technologies to shape the future of the web.";
 const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
 
-const RevealWord = ({ children, progress, range, reducedMotion }) => {
-  const opacity = useTransform(progress, range, [0.15, 1]);
+// The gold→ember fill re-applied PER WORD. `.text-fire-amber` (globals.css)
+// clips this SAME vertical gradient to text — but as a class it was on the
+// PARENT <p>, while the reveal animates `opacity` on the child word spans. That
+// parent-clip / child-opacity split renders correctly in software raster
+// (headless, SwiftShader) yet BREAKS in real GPU Chrome: this paragraph sits
+// inside an ItemLayout `tilt` card whose `.custom-bg-abt` backdrop-filter +
+// hover-gated `perspective()` transform GPU-promote the paragraph's ancestor,
+// and in a promoted layer Blink rasterizes the parent's clip-to-text fill ONCE —
+// so per-word `opacity:0` no longer fades the glyphs and the copy paints fully
+// visible even though every span computes opacity 0. (It only reproduced on the
+// GPU path, which is why every headless/software-raster test wrongly passed.)
+//
+// Fix: co-locate the fill and the opacity on the SAME element — each word owns
+// its clip, so a word's opacity fades its OWN fill, robust in every compositing
+// path. This is the exact pattern ContactIntro already uses; kept in sync with
+// `.text-fire-amber`. The gradient is 180° (vertical) and every word shares the
+// line-height, so per-word fills are seamless — each glyph still runs gold→ember
+// exactly as one <p> did.
+const WORD_FILL = {
+  backgroundImage:
+    'linear-gradient(180deg, #ffd27d 0%, #ffbb55 40%, #ffaa2a 70%, #ff6d05 100%)',
+  WebkitBackgroundClip: 'text',
+  backgroundClip: 'text',
+  color: 'transparent',
+  WebkitTextFillColor: 'transparent',
+};
+
+const RevealWord = ({ children, progress, range }) => {
+  // Start fully hidden (0) and light to full (1) across this word's slice of
+  // the scroll range — at load the whole paragraph is invisible and only
+  // materialises word-by-word as the reader scrolls into it.
+  //
+  // Deliberately applied even under prefers-reduced-motion: the effect is
+  // opacity-only and *scroll-scrubbed* — the reader drives it with their own
+  // scroll, no autonomous movement — so it isn't the kind of motion the setting
+  // exists to suppress, and the copy still fully reveals as you reach it.
+  const opacity = useTransform(progress, range, [0, 1]);
   return (
-    <motion.span style={{ opacity: reducedMotion ? 1 : opacity }}>
+    // WORD_FILL (gradient clip) + opacity on the SAME element — see WORD_FILL.
+    <motion.span style={{ ...WORD_FILL, opacity }}>
       {children}{" "}
     </motion.span>
   );
@@ -521,7 +557,6 @@ const AboutDetails = () => {
   // document offset so the animation tracks paragraph visibility, not raw
   // page scroll.
   const paragraphRef = useRef(null);
-  const prefersReducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
   const [revealRange, setRevealRange] = useState({ start: 0, end: 1000 });
 
@@ -536,20 +571,47 @@ const AboutDetails = () => {
       // down the viewport (just entering the active area). Clamps to 0 when
       // the paragraph already sits above that line at load.
       const start = Math.max(docTop - vh * 0.8, 0);
-      // progress=1 anchor: whichever comes later of (a) scrollY at which the
-      // paragraph centers in the viewport — chosen so the whole paragraph is
-      // still on screen as the last word lights up — or (b) start + 200, a
-      // floor that keeps the active range wide enough for the per-word
-      // cadence to stay perceivable when the center anchor falls too close
-      // to start (e.g. tall viewports where the paragraph is already near
-      // center at load).
-      const end = Math.max(docTop + rect.height / 2 - vh / 2, start + 200);
-      setRevealRange({ start, end });
+      // progress=1 anchor: complete the reveal as the paragraph scrolls UP
+      // through the viewport — its bottom passing ~20% down the screen keeps
+      // the last words on screen as they light. Floored at HALF A VIEWPORT of
+      // scroll so the per-word wave is always a perceptible scrub.
+      //
+      // The old anchor was the paragraph's CENTER reaching viewport center,
+      // floored at a fixed +200px. For this above-the-fold paragraph that
+      // center point lands at ~60px, so the whole 185-word reveal collapsed
+      // into the first ~200px of scroll — a single trackpad flick blew past it
+      // and the copy snapped fully visible instantly, reading as "no reveal".
+      // Anchoring to the paragraph's full scroll-through (and a viewport-
+      // relative floor) spreads the wave across a distance you can actually
+      // watch, and scales naturally for below-the-fold placements too.
+      const end = Math.max(docTop + rect.height - vh * 0.2, start + vh * 0.5);
+      // Bail-when-unchanged keeps the ResizeObserver below from scheduling
+      // render loops when a reflow reports the same geometry.
+      setRevealRange((prev) =>
+        prev && prev.start === start && prev.end === end ? prev : { start, end },
+      );
     };
     measure();
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
+    // Re-measure after layout SETTLES, not only at mount. On a cold first visit
+    // the intro loader is still mounted when this effect first runs, pushing the
+    // paragraph far down the document — a once-only measurement then captures a
+    // docTop from that transient layout, places `start` beyond the page's max
+    // scroll, and leaves the copy PERMANENTLY hidden (progress can never leave
+    // 0). `revealed` (from useLoaderRevealed) re-runs this effect the instant
+    // the loader lifts, and a ResizeObserver on the document re-measures on any
+    // later reflow (stat cards populating, images/fonts loading). Together they
+    // make the reveal range correct on cold and warm loads alike.
+    window.addEventListener("load", measure);
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (typeof document !== "undefined") ro?.observe(document.documentElement);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("load", measure);
+      ro?.disconnect();
+    };
+  }, [revealed]);
 
   const paragraphScrollProgress = useTransform(
     scrollY,
@@ -1263,14 +1325,25 @@ const AboutDetails = () => {
           </h2>
           <p
             ref={paragraphRef}
-            className="font-light text-xs sm:text-sm md:text-base text-fire-amber"
+            className="font-light text-xs sm:text-sm md:text-base"
+            style={{
+              // Halo ONLY — the gold→ember fill now lives per-word (WORD_FILL)
+              // so the scroll-scrubbed opacity fades each glyph even in GPU-
+              // composited Chrome. `.text-fire-amber` is intentionally NOT on
+              // this parent: its `background-clip:text` fill would rasterize
+              // once at the promoted tilt-card layer and paint the words
+              // regardless of their opacity (the bug). A drop-shadow is a
+              // filter — it composites over the faded words correctly. Values
+              // match `.text-fire-amber`'s halo in globals.css.
+              filter:
+                'drop-shadow(0 0 4px rgba(255, 178, 60, 0.55)) drop-shadow(0 0 12px rgba(255, 73, 0, 0.35))',
+            }}
           >
             {ARCHITECT_WORDS.map((word, i) => (
               <RevealWord
                 key={i}
                 progress={paragraphScrollProgress}
                 range={[i / ARCHITECT_WORDS.length, (i + 1) / ARCHITECT_WORDS.length]}
-                reducedMotion={prefersReducedMotion}
               >
                 {word}
               </RevealWord>

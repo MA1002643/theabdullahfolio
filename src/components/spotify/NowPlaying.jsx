@@ -11,6 +11,7 @@ import SpotifyBars from './SpotifyBars';
 import ProgressRing from './ProgressRing';
 import Spectrum from './Spectrum';
 import Marquee from './Marquee';
+import HoverHint from '@/components/home/HoverHint';
 import { formatTime, formatPlayedAgo } from './format';
 
 // ── Now Playing widget (issue #42) ──────────────────────────────────────────
@@ -156,7 +157,8 @@ export default function NowPlaying() {
   // the server itself already falls back to a warm ember (DEFAULT_ACCENT) when
   // extraction fails, so this only triggers if the field is missing entirely.
   const accent = data.accent || EMBER;
-  const progress = isPlaying && durationMs ? Math.min(1, displayMs / durationMs) : 0;
+  const progress =
+    isPlaying && durationMs ? Math.min(1, displayMs / durationMs) : 0;
   const label = isPlaying ? 'NOW PLAYING' : 'LAST PLAYED';
   const playedAgo = !isPlaying ? formatPlayedAgo(playedAt) : null;
 
@@ -206,7 +208,12 @@ export default function NowPlaying() {
   // only toggle besides hover.
   const linkProps = hasLink
     ? { href: trackUrl, target: '_blank', rel: 'noopener noreferrer' }
-    : { tabIndex: 0, role: 'button', onClick: toggle, onKeyDown: onCardKeyDown };
+    : {
+        tabIndex: 0,
+        role: 'button',
+        onClick: toggle,
+        onKeyDown: onCardKeyDown,
+      };
   const baseAria = `${label.toLowerCase()}: ${track.title} by ${track.artist}.`;
   const ariaLabel = hasLink ? `${baseAria} Open on Spotify.` : baseAria;
 
@@ -221,216 +228,242 @@ export default function NowPlaying() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 2, duration: 0.6, ease: EASE }}
     >
-      {/* `custom-bg-abt` supplies the entire Career-snapshot card chrome —
-          gold border, slate/gold gradient interior, backdrop blur and the
-          neon glow (plus its brighter :hover glow, which fires exactly as the
-          console expands). Only geometry is animated here. */}
-      <Card
-        {...linkProps}
-        aria-label={ariaLabel}
-        aria-expanded={showExpanded}
-        title={`${isPlaying ? 'Now playing' : 'Last played'}: ${track.title} — ${track.artist}`}
-        onMouseEnter={open}
-        onMouseLeave={close}
-        onFocus={open}
-        onBlur={close}
-        className="custom-bg-abt group relative block cursor-pointer overflow-hidden text-left"
-        animate={{
-          width: showExpanded ? EXPANDED_W : COLLAPSED_W,
-          borderRadius: showExpanded ? 20 : 9999,
-          opacity: footerHidden ? 0 : 1,
-          y: footerHidden ? 14 : 0,
-        }}
-        transition={{ duration: expandDur, ease: EASE }}
-        style={{ pointerEvents: footerHidden ? 'none' : 'auto' }}
+      {/* Styled hover hint — the maintenance header's HoverHint, the site's
+          in-page replacement for the un-styleable native `title` tooltip
+          (issue #94): the same custom-bg-abt bubble as this widget's chrome,
+          carrying the amber NOW PLAYING / LAST PLAYED eyebrow over the track
+          and artist in cream. Touch-gated and keyboard-aware; the card's own
+          aria-label still carries the text for assistive tech and touch. */}
+      <HoverHint
+        label={label}
+        content={`${track.title} — ${track.artist}`}
+        anchor="inside"
+        reduceMotion={reduceMotion}
       >
-        {/* ── Expanded console (grows the card upward) ───────────────────── */}
-        <AnimatePresence initial={false}>
-          {showExpanded && (
-            <motion.div
-              key="panel"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.32, ease: EASE }}
-              className="relative overflow-hidden"
-            >
-              <div className="px-4 pt-3.5">
-                <div className="flex items-center justify-between">
-                  {/* Eyebrow microlabel — the Career snapshot's exact treatment */}
-                  <span
-                    className="loader-percent text-[10px] uppercase"
-                    style={{ color: AMBER, letterSpacing: '0.22em' }}
-                  >
-                    {label}
-                  </span>
-                  {isPlaying ? (
-                    <SpotifyBars accent={accent} />
-                  ) : (
-                    playedAgo && (
+        {/* `custom-bg-abt` supplies the entire Career-snapshot card chrome —
+            gold border, slate/gold gradient interior, backdrop blur and the
+            neon glow (plus its brighter :hover glow, which fires exactly as
+            the console expands). Only geometry is animated here. */}
+        <Card
+          {...linkProps}
+          aria-label={ariaLabel}
+          aria-expanded={showExpanded}
+          onMouseEnter={open}
+          onMouseLeave={close}
+          onFocus={open}
+          onBlur={close}
+          className="custom-bg-abt group relative block cursor-pointer overflow-hidden text-left"
+          animate={{
+            width: showExpanded ? EXPANDED_W : COLLAPSED_W,
+            borderRadius: showExpanded ? 20 : 9999,
+            opacity: footerHidden ? 0 : 1,
+            y: footerHidden ? 14 : 0,
+          }}
+          transition={{ duration: expandDur, ease: EASE }}
+          style={{ pointerEvents: footerHidden ? 'none' : 'auto' }}
+        >
+          {/* ── Expanded console (grows the card upward) ───────────────────── */}
+          <AnimatePresence initial={false}>
+            {showExpanded && (
+              <motion.div
+                key="panel"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.32, ease: EASE }}
+                className="relative overflow-hidden"
+              >
+                <div className="px-4 pt-3.5">
+                  <div className="flex items-center justify-between">
+                    {/* Eyebrow microlabel — the Career snapshot's exact treatment */}
+                    <span
+                      className="loader-percent text-[10px] uppercase"
+                      style={{ color: AMBER, letterSpacing: '0.22em' }}
+                    >
+                      {label}
+                    </span>
+                    {isPlaying ? (
+                      <SpotifyBars accent={accent} />
+                    ) : (
+                      playedAgo && (
+                        <span
+                          className="text-[9px] uppercase tracking-wider"
+                          style={{ color: GOLD_SOFT }}
+                        >
+                          {playedAgo}
+                        </span>
+                      )
+                    )}
+                  </div>
+
+                  {track.album && (
+                    <p
+                      className="mt-1 truncate text-[11px]"
+                      style={{ color: GOLD_MUTED }}
+                    >
+                      {track.album}
+                    </p>
+                  )}
+
+                  {/* Full progress bar + live timecode — only meaningful while
+                    playing; last-played shows the track's total length. */}
+                  <div className="mt-2.5">
+                    <div
+                      className="h-[3px] w-full overflow-hidden rounded-full"
+                      style={{ background: WARM_TRACK }}
+                    >
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(isPlaying ? progress : 0) * 100}%`,
+                          background: accent,
+                          transition: reduceMotion
+                            ? 'none'
+                            : 'width 900ms linear',
+                        }}
+                      />
+                    </div>
+                    <div
+                      className="loader-percent mt-1 flex justify-between text-[9px]"
+                      style={{ color: GOLD_MUTED }}
+                    >
+                      <span>{formatTime(isPlaying ? displayMs : 0)}</span>
+                      <span>
+                        {durationMs ? formatTime(durationMs) : '--:--'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Ambient spectrum ribbon — animates only while truly playing. */}
+                  <div className="mt-2">
+                    <Spectrum
+                      accent={accent}
+                      active={isPlaying && !reduceMotion}
+                      height={30}
+                    />
+                  </div>
+
+                  {/* Only advertise the Spotify link when there actually is one
+                    — a non-linkable item (local file) has no destination. */}
+                  {hasLink && (
+                    <div className="mt-1 flex items-center gap-1.5 pb-0.5">
+                      <SiSpotify
+                        size={11}
+                        color="#1DB954"
+                        aria-hidden="true"
+                        focusable="false"
+                      />
                       <span
                         className="text-[9px] uppercase tracking-wider"
-                        style={{ color: GOLD_SOFT }}
+                        style={{ color: GOLD_MUTED }}
                       >
-                        {playedAgo}
+                        Open on Spotify
                       </span>
-                    )
+                    </div>
                   )}
                 </div>
 
-                {track.album && (
-                  <p
-                    className="mt-1 truncate text-[11px]"
-                    style={{ color: GOLD_MUTED }}
-                  >
-                    {track.album}
-                  </p>
-                )}
+                {/* Hairline divider — warm gold, matching the card's border family. */}
+                <div
+                  className="mx-4 mt-3 h-px"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, transparent, rgb(255 205 91 / 0.45) 20%, rgb(255 205 91 / 0.45) 80%, transparent)',
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                {/* Full progress bar + live timecode — only meaningful while
-                    playing; last-played shows the track's total length. */}
-                <div className="mt-2.5">
-                  <div
-                    className="h-[3px] w-full overflow-hidden rounded-full"
-                    style={{ background: WARM_TRACK }}
-                  >
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(isPlaying ? progress : 0) * 100}%`,
-                        background: accent,
-                        transition: reduceMotion ? 'none' : 'width 900ms linear',
-                      }}
+          {/* ── Base row (always visible) ──────────────────────────────────── */}
+          <div className="relative flex items-center gap-3 px-3 py-2.5">
+            {/* Album "record" + live progress arc + Spotify pip */}
+            <div className="relative shrink-0">
+              <ProgressRing
+                size={RING}
+                stroke={2}
+                progress={progress}
+                accent={accent}
+                trackColor={WARM_TRACK}
+                reduceMotion={reduceMotion}
+              >
+                {track.albumArt ? (
+                  <Image
+                    src={track.albumArt}
+                    alt={track.album || track.title}
+                    fill
+                    sizes="46px"
+                    unoptimized
+                    className={`object-cover ${
+                      isPlaying ? '' : 'opacity-70 grayscale-[35%]'
+                    }`}
+                    {...(blurDataURL
+                      ? { placeholder: 'blur', blurDataURL }
+                      : {})}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-white/5">
+                    <Music
+                      className="h-4 w-4"
+                      style={{ color: GOLD_SOFT }}
+                      aria-hidden="true"
+                      focusable="false"
                     />
                   </div>
-                  <div
-                    className="loader-percent mt-1 flex justify-between text-[9px]"
-                    style={{ color: GOLD_MUTED }}
-                  >
-                    <span>{formatTime(isPlaying ? displayMs : 0)}</span>
-                    <span>{durationMs ? formatTime(durationMs) : '--:--'}</span>
-                  </div>
-                </div>
-
-                {/* Ambient spectrum ribbon — animates only while truly playing. */}
-                <div className="mt-2">
-                  <Spectrum
-                    accent={accent}
-                    active={isPlaying && !reduceMotion}
-                    height={30}
-                  />
-                </div>
-
-                {/* Only advertise the Spotify link when there actually is one
-                    — a non-linkable item (local file) has no destination. */}
-                {hasLink && (
-                  <div className="mt-1 flex items-center gap-1.5 pb-0.5">
-                    <SiSpotify size={11} color="#1DB954" aria-hidden="true" focusable="false" />
-                    <span
-                      className="text-[9px] uppercase tracking-wider"
-                      style={{ color: GOLD_MUTED }}
-                    >
-                      Open on Spotify
-                    </span>
-                  </div>
                 )}
-              </div>
+              </ProgressRing>
 
-              {/* Hairline divider — warm gold, matching the card's border family. */}
-              <div
-                className="mx-4 mt-3 h-px"
-                style={{
-                  background:
-                    'linear-gradient(90deg, transparent, rgb(255 205 91 / 0.45) 20%, rgb(255 205 91 / 0.45) 80%, transparent)',
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Base row (always visible) ──────────────────────────────────── */}
-        <div className="relative flex items-center gap-3 px-3 py-2.5">
-          {/* Album "record" + live progress arc + Spotify pip */}
-          <div className="relative shrink-0">
-            <ProgressRing
-              size={RING}
-              stroke={2}
-              progress={progress}
-              accent={accent}
-              trackColor={WARM_TRACK}
-              reduceMotion={reduceMotion}
-            >
-              {track.albumArt ? (
-                <Image
-                  src={track.albumArt}
-                  alt={track.album || track.title}
-                  fill
-                  sizes="46px"
-                  unoptimized
-                  className={`object-cover ${
-                    isPlaying ? '' : 'opacity-70 grayscale-[35%]'
-                  }`}
-                  {...(blurDataURL
-                    ? { placeholder: 'blur', blurDataURL }
-                    : {})}
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-white/5">
-                  <Music
-                    className="h-4 w-4"
-                    style={{ color: GOLD_SOFT }}
-                    aria-hidden="true"
-                    focusable="false"
-                  />
-                </div>
-              )}
-            </ProgressRing>
-
-            {/* Authentic Spotify badge — the constant brand + affordance mark.
+              {/* Authentic Spotify badge — the constant brand + affordance mark.
                 Static (no pulse): the equaliser bars already carry the play
                 signal, so a second forever-loop here would just add noise. */}
-            <span
-              aria-hidden="true"
-              className="absolute -bottom-0.5 -right-0.5 flex h-[15px] w-[15px] items-center justify-center rounded-full"
-              style={{ background: 'rgb(2 6 23 / 0.92)' }}
-            >
-              <SiSpotify size={12} color="#1DB954" aria-hidden="true" focusable="false" />
-            </span>
-          </div>
-
-          {/* Track title + artist, crossfading on track change */}
-          <div className="min-w-0 flex-1">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={trackId}
-                initial={reduceMotion ? false : { opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-                transition={{ duration: 0.3, ease: EASE }}
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-0.5 -right-0.5 flex h-[15px] w-[15px] items-center justify-center rounded-full"
+                style={{ background: 'rgb(2 6 23 / 0.92)' }}
               >
-                <div className="flex items-center gap-1.5">
-                  {isPlaying && <SpotifyBars accent={accent} />}
-                  {/* Live title wears `.text-gold` (#f4e3b8 + soft warm halo),
-                      the same treatment the card gives its headline values. */}
-                  <Marquee
-                    text={track.title}
-                    active={isPlaying}
-                    className={`text-xs font-semibold ${
-                      isPlaying ? 'text-gold' : 'text-[#d4af7a]'
-                    }`}
-                  />
-                </div>
-                <p
-                  className="mt-0.5 truncate text-[10px]"
-                  style={{ color: isPlaying ? GOLD_MUTED : GOLD_SOFT }}
+                <SiSpotify
+                  size={12}
+                  color="#1DB954"
+                  aria-hidden="true"
+                  focusable="false"
+                />
+              </span>
+            </div>
+
+            {/* Track title + artist, crossfading on track change */}
+            <div className="min-w-0 flex-1">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={trackId}
+                  initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  transition={{ duration: 0.3, ease: EASE }}
                 >
-                  {track.artist}
-                </p>
-              </motion.div>
-            </AnimatePresence>
+                  <div className="flex items-center gap-1.5">
+                    {isPlaying && <SpotifyBars accent={accent} />}
+                    {/* Live title wears `.text-gold` (#f4e3b8 + soft warm halo),
+                      the same treatment the card gives its headline values. */}
+                    <Marquee
+                      text={track.title}
+                      active={isPlaying}
+                      className={`text-xs font-semibold ${
+                        isPlaying ? 'text-gold' : 'text-[#d4af7a]'
+                      }`}
+                    />
+                  </div>
+                  <p
+                    className="mt-0.5 truncate text-[10px]"
+                    style={{ color: isPlaying ? GOLD_MUTED : GOLD_SOFT }}
+                  >
+                    {track.artist}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </HoverHint>
     </motion.div>
   );
 }

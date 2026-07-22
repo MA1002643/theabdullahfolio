@@ -32,8 +32,14 @@ export function useNowPlaying(pollInterval = 30000) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
       try {
+        // Deliberately NOT `cache: 'no-store'`. The route ships
+        // `Cache-Control: public, s-maxage=30, stale-while-revalidate=60`, so
+        // the browser's default caching lets the Vercel edge serve a ≤30s-old
+        // copy — that shield is what holds Spotify to ~2 calls/min no matter
+        // how many visitors poll (the cadence note at the top of this file).
+        // Forcing no-store sends `Cache-Control: no-cache` upstream and busts
+        // the edge cache, so origin + Spotify load would scale with traffic.
         const res = await fetch('/api/spotify', {
-          cache: 'no-store',
           signal: controller.signal,
         });
         // A non-2xx (the route returns 502 on an upstream Spotify failure) is
