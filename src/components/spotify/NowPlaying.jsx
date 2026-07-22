@@ -226,7 +226,7 @@ export default function NowPlaying() {
       }}
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 2, duration: 0.6, ease: EASE }}
+      transition={{ delay: 2, duration: reduceMotion ? 0 : 0.6, ease: EASE }}
     >
       {/* Styled hover hint — the maintenance header's HoverHint, the site's
           in-page replacement for the un-styleable native `title` tooltip

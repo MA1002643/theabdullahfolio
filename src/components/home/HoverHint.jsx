@@ -206,6 +206,7 @@ export default function HoverHint({
         prev &&
         prev.top === top &&
         prev.left === left &&
+        prev.placement === placement &&
         prev.maxWidth === maxWidth
           ? prev
           : { top, left, placement, maxWidth },
