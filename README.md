@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.3-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--07--19-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-2026--07--22-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
