@@ -62,6 +62,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Current Streak** | Server-accurate streak from the GitHub contribution calendar (future-day-padding aware, "Present"-stable across midnight), shown in a git-commit-node progress ring with a staggered card entrance and a per-device change banner that fires only on real movement |
 | **Elite Contact Form** | Molten submit-CTA state machine (idle → sending → sent/held), a sliced-letter magnetic "SEND MESSAGE!" label, fire-gradient fields, a streaming AI **"Refine my message"** rewrite, an offline send queue with auto-retry, draft autosave/restore, and an idempotent Nodemailer + Upstash-Redis send path |
 | **Route-wide Colophon** | An editorial footer on every sub-page — a "Wet Ink" signature identity block, a split-flap *departures board* route index, a live-terminal links column, a **live-location** plate (real town + local time, coordinates never exposed), a self-drawing git-graph "view this project" CTA, and a giant guitar-string wordmark that plays an original melody as you strum it |
+| **Now Playing (Spotify)** | A floating live-music badge that expands into a console on hover — currently-playing (or last-played) track with an album-derived accent, a progress ring that advances **locally** from the server-anchored position, and a CSS equaliser; server-side token exchange (no secret reaches the browser), with a demo track when unconfigured |
 | **3D Qualifications Carousel** | CSS perspective transforms, `translateZ` depth, `rotateY`, sepia overlay, category filtering |
 | **Aurora Fields** | Full-viewport WebGL domain-warped-fBm aurora (amber→ember, `mix-blend: screen`) on the Contact and About pages — cursor-bending, scroll-reactive on About, and reduced-motion-gated to a static image |
 | **Custom Cursor** | Site-wide ember dot + spring-lagged ring that swells and leans toward interactive elements; disabled on touch / reduced-motion |
@@ -113,6 +114,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | Technology | Version | Role |
 |------------|---------|------|
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
+| Spotify Web API | — | Live now-playing track for the floating widget — server-side refresh-token exchange (no secret reaches the browser) |
 | [Nodemailer](https://nodemailer.com/) | `^7.0` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | `^7.61` | Form state management and validation |
 | [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
@@ -163,6 +165,7 @@ graph TD
             API --> Work["/api/work-status<br/>/api/github-webhook"]
             API --> Mail["/api/send-mail<br/>/api/refine-message"]
             API --> Foot["/api/location<br/>/api/project-repo"]
+            API --> Music["/api/spotify"]
         end
 
         GitHub([GitHub API])
@@ -171,6 +174,7 @@ graph TD
         Redis([Upstash Redis])
         Gateway([Vercel AI Gateway])
         Tracker([Phone GPS tracker])
+        Spotify([Spotify API])
 
         Browser --> Root
         About -->|poll 10min| Stats
@@ -187,6 +191,8 @@ graph TD
         Tracker -->|POST fix| Foot
         Foot -->|GraphQL| GitHub
         Foot -->|GET / SET fix| Redis
+        Root -->|poll 30s| Music
+        Music -->|refresh → token| Spotify
     end
 
     classDef client fill:#0d1020,stroke:#8f99ad,stroke-width:1.25px,color:#e6e9f0;
@@ -199,9 +205,9 @@ graph TD
     class Browser client;
     class Root root;
     class Home,Pages,About,Projects,Quals,Contact,Footer page;
-    class Stats,Exp,Work,Mail,Foot api;
+    class Stats,Exp,Work,Mail,Foot,Music api;
     class API gateway;
-    class GitHub,PDF,Inbox,Redis,Gateway,Tracker ext;
+    class GitHub,PDF,Inbox,Redis,Gateway,Tracker,Spotify ext;
 
     style Sys fill:#02040c,stroke:#5c4a24,stroke-width:1px,color:#d9b877;
     style App fill:#050c18,stroke:#7a5f2c,stroke-width:1px,color:#d9b877;
@@ -212,7 +218,7 @@ graph TD
 | Layer | Approach |
 |---|---|
 | **Rendering** | Three.js WebGL canvas · Framer Motion DOM orchestration · Tailwind utility system |
-| **Data** | GitHub GraphQL (live, multi-layer cached) · Nodemailer SMTP · Upstash Redis (send idempotency + live-location fix) · AI Gateway (message refine) · `tz-lookup` (offline timezone) · `localStorage` (draft · queue · loader gate) |
+| **Data** | GitHub GraphQL (live, multi-layer cached) · Spotify Web API (now-playing, server-side token exchange) · Nodemailer SMTP · Upstash Redis (send idempotency + live-location fix) · AI Gateway (message refine) · `tz-lookup` (offline timezone) · `localStorage` (draft · queue · loader gate) |
 | **Performance** | Route-based code splitting · `next/dynamic` for Three.js · Sharp image pipeline · `unstable_cache` + CDN `s-maxage` / `stale-while-revalidate` |
 | **Security** | Full CSP · `frame-ancestors 'none'` · `upgrade-insecure-requests` · server-only tokens · username allowlist · HMAC-verified webhooks |
 
@@ -228,7 +234,7 @@ theabdullahfolio/
 ├── src/
 │   ├── app/                    # App Router — pages, layouts, API routes
 │   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact
-│   │   ├── api/                # 11 route handlers (see API surface below)
+│   │   ├── api/                # 13 route handlers (see API surface below)
 │   │   ├── data.js             # Central project + navigation data store
 │   │   └── globals.css         # Theme tokens · keyframes · glow utilities
 │   ├── components/
@@ -241,6 +247,8 @@ theabdullahfolio/
 │   │   ├── qualifications/     # 3D CSS certificate carousel
 │   │   ├── not-found/          # 404 recovery — glitch text + Levenshtein "did you mean?"
 │   │   ├── footer/             # Route-wide editorial colophon — live location · project CTA · guitar wordmark
+│   │   ├── spotify/            # "Now Playing" widget — live track, marquee, progress ring, equaliser
+│   │   ├── sound/              # Root-layout audio provider + footerless-route stop toggle
 │   │   ├── pageTransition/     # "Stone Passage" inter-page transition (engraved-monogram overlay)
 │   │   └── loaderWrapper/      # First-visit emblem-seal intro loader
 │   ├── hooks/                  # Reusable hooks — animation, live-data signals, form + offline queue
@@ -262,6 +270,8 @@ theabdullahfolio/
 | `/api/github-skills` | Multi-ecosystem repo crawl → icon-mapped skills grid (budget-bounded, cached) |
 | `/api/project-repo` | Live metadata (branch · commits · last push) for the one repo the site is built from — feeds the footer CTA (pinned, cached, fails soft) |
 | `/api/location` | Live-location signal for the footer — `POST` ingests a GPS fix (dual-token auth), `GET` returns `{ town, tz, live }` only (never coordinates) |
+| `/api/spotify` | Now Playing data for the floating widget — server-side refresh-token exchange → display-only fields (never a token); edge-cached, fails soft to `{ isPlaying: false }` |
+| `/api/spotify/auth` | **Dev-only**, loopback-gated one-time helper that mints the Spotify refresh token — hard-`404`s in production/preview |
 | `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
 | `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
@@ -339,6 +349,18 @@ RECEIVER_EMAIL=recipient@example.com
 # URL-exposed query token is never the primary header secret:
 # LOCATION_INGEST_TOKEN=your-header-ingest-secret         # Authorization: Bearer / Basic
 # LOCATION_INGEST_QUERY_TOKEN=your-separate-query-token   # ?token= (URL-only trackers)
+
+# Now Playing widget — live Spotify presence (issue #42; all optional — the widget
+# stays HIDDEN in production when unset, and shows a bundled demo track in dev).
+# SERVER-ONLY (never NEXT_PUBLIC_): /api/spotify exchanges the refresh token
+# server-side and returns only display data. The one-time token setup runs LOCALLY
+# via /api/spotify/auth (which 404s in production) — see .env.example or that route's
+# header comment for the full flow. Spotify BANS "localhost" redirect URIs — use the
+# loopback IP 127.0.0.1. Reuses the KV_* store above when present (pure optimisation).
+# SPOTIFY_CLIENT_ID=your-spotify-client-id
+# SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
+# SPOTIFY_REFRESH_TOKEN=your-refresh-token-from-the-auth-flow
+# SPOTIFY_DEMO=true            # force the demo track on in a prod/preview deploy
 ```
 
 ### GitHub Stats Integration
@@ -547,6 +569,7 @@ upgrade-insecure-requests
 | Per-glyph hover-swap links | Face/clone rolls stacked inside each char box; pure CSS `transition-delay` stagger + colour lift | `footer/HoverText.jsx` |
 | Guitar-string wordmark | Scanline-sampled letters plucked into pinned-end standing waves on one rAF; each pluck sounds an original Web Audio note | `footer/FooterWordmark.jsx` + `footer/pluckSynth.js` |
 | Stone Passage page transition | Basalt slab rises, MA monogram engraved stroke-by-stroke via an SVG stroke-mask over a plain/carved image pair, then a radial mask wipe | `pageTransition/StonePassageOverlay.jsx` |
+| Now Playing widget | Hover-expand console, scrolling title marquee, locally-advancing progress ring, CSS-only equaliser bars; entrance snaps under reduced motion | `spotify/NowPlaying.jsx` + `spotify/{Marquee,ProgressRing,SpotifyBars}.jsx` |
 
 </details>
 
