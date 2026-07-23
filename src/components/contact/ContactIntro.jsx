@@ -3,6 +3,7 @@
 import { Fragment, useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
+import { wordFill } from '@/lib/fireRamp';
 
 // The contact-page intro copy. It lives here (not in the server `page.js`)
 // because the reveal below is a client interaction; the page renders this
@@ -18,22 +19,13 @@ const INTRO =
 // clearly a wave (the "wow"), but confident rather than draggy. Tunable here.
 const STAGGER = 0.03;
 
-// `.text-fire-amber` clips a gradient to the text with `color: transparent`, but
-// `background` doesn't inherit — so once the copy is split into child spans, the
-// glyphs go transparent with nothing behind them. We re-apply the SAME vertical
-// gradient per word here (kept in sync with .text-fire-amber in globals.css).
-// Because the gradient is 180° and every word shares the line-height, per-word
-// fills are seamless — each glyph still runs gold→ember exactly as the single
-// <p> did. The parent keeps `.text-fire-amber` only for its drop-shadow halo (a
-// filter, which DOES apply to descendants).
-const WORD_FILL = {
-  backgroundImage:
-    'linear-gradient(180deg, #ffd27d 0%, #ffbb55 40%, #ffaa2a 70%, #ff6d05 100%)',
-  WebkitBackgroundClip: 'text',
-  backgroundClip: 'text',
-  color: 'transparent',
-  WebkitTextFillColor: 'transparent',
-};
+// The gold→ember fill is applied PER WORD via `wordFill` (@/lib/fireRamp): once
+// the copy is split into child spans for the reveal, a `background-clip:text`
+// fill on the parent doesn't inherit, so each word must carry its own clip.
+// Sampling the shared ramp by word position also darkens the copy gold→ember
+// from the first word to the last (the effect the About paragraph shares). The
+// parent keeps `.text-fire-amber` only for its drop-shadow halo (a filter, which
+// DOES apply to descendants).
 
 // "Materialize from the ether" — each word condenses out of a soft blur while
 // rising and fading in, staggered left→right. The de-blur is the signature
@@ -94,7 +86,7 @@ export default function ContactIntro({ className = '' }) {
               the paragraph still wraps naturally. */}
           <motion.span
             variants={word}
-            style={{ display: 'inline-block', ...WORD_FILL }}
+            style={{ display: 'inline-block', ...wordFill(i, words.length) }}
           >
             {w}
           </motion.span>

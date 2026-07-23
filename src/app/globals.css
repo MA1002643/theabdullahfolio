@@ -990,6 +990,23 @@
   }
 }
 
+/* Homepage hero laptop — full stillness under reduced motion (issue #87).
+   `animation: none` alone is not enough: `.laptop` also carries a
+   `transition: transform 0.4s` and `.laptop:hover/.active { transform:
+   scale(1.05) }`, so the laptop would still lurch on cursor proximity.
+   All three properties are pinned so the scene is genuinely static. The
+   `.animate-float-laptop` selector kills the Tailwind float utility. */
+@media (prefers-reduced-motion: reduce) {
+  .laptop,
+  .animate-float-laptop,
+  .laptop:hover,
+  .laptop.active {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
 /* One-shot light sweep across the Most Used Languages stacked bar when it
    scrolls into view. Reuses the global `shimmer-sweep` keyframe but plays
    exactly once (iteration-count 1) and keeps its final off-screen position

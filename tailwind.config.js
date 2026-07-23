@@ -93,11 +93,18 @@ module.exports = {
           },
         },
         "float-laptop": {
+          // Amplitude deliberately kept below the vection threshold (issue #87):
+          // the headline is CSS-stable, but a larger bob made the eye attribute
+          // the laptop's motion to the static title. translateY 20→6px,
+          // scale 1.1→1.02, rotateX 18→6deg. The filter pulses the ember glow
+          // in sync with the up-phase so the laptop still reads as "alive".
           "0%, 100%": {
-            transform: "translateY(0) rotateX(0deg) rotateZ(0deg)",
+            transform: "translateY(0) rotateX(0deg) rotateZ(0deg) scale(1)",
+            filter: "drop-shadow(0 0 0 #ff6d05) drop-shadow(0 0 0 #ff6d05)",
           },
           "50%": {
-            transform: "translateY(-20px) rotateX(18deg) rotateZ(-1deg) scale(1.1)",
+            transform: "translateY(-6px) rotateX(6deg) rotateZ(-0.5deg) scale(1.02)",
+            filter: "drop-shadow(0 0 2px #ff6d05e0) drop-shadow(0 0 3px #ff6d05e1)",
           },
         },
         "wiggle": {

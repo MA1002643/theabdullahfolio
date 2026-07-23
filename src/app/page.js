@@ -34,7 +34,12 @@ export default function Home() {
         </div>
 
         {/* HEADLINE */}
-        <div className="z-40 pb-2 pt-3 text-center sm:pt-5 md:pb-4 md:pt-6 lg:pb-6 lg:pt-8">
+        {/* GPU-isolated (issue #87): `transform-gpu` (translateZ(0)) gives the
+            headline its own compositor layer and `[backface-visibility:hidden]`
+            stops WebKit collapsing it back into the parent during the laptop's
+            per-frame transform, so no sub-pixel jitter couples across. No
+            `will-change` — the headline is static, so a warm layer is wasted. */}
+        <div className="z-40 transform-gpu pb-2 pt-3 text-center [backface-visibility:hidden] sm:pt-5 md:pb-4 md:pt-6 lg:pb-6 lg:pt-8">
           {/* Keep the original outline-only look for the hero name. The
               shared `.text-glow-stroke-neon` class was later changed (page-
               titles unification, PR #104) to a SOLID #ff6d05 fill so the
