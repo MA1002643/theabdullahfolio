@@ -14,7 +14,7 @@
 // text. First words sit in the bright-gold end of the ramp; last words sit in
 // the deep-ember end — a continuous reading-order darkening, per-word-clip safe.
 
-// Ramp stops as [position 0..1, [r,g,b]]. Matches .text-fire-amber.
+// Ramp stops, each { at: position 0..1, rgb: [r, g, b] }. Matches .text-fire-amber.
 const STOPS = [
   { at: 0.0, rgb: [0xff, 0xd2, 0x7d] }, // #ffd27d — bright gold (start)
   { at: 0.4, rgb: [0xff, 0xbb, 0x55] }, // #ffbb55

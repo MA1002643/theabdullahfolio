@@ -990,20 +990,33 @@
   }
 }
 
-/* Homepage hero laptop — full stillness under reduced motion (issue #87).
-   `animation: none` alone is not enough: `.laptop` also carries a
-   `transition: transform 0.4s` and `.laptop:hover/.active { transform:
-   scale(1.05) }`, so the laptop would still lurch on cursor proximity.
-   All three properties are pinned so the scene is genuinely static. The
-   `.animate-float-laptop` selector kills the Tailwind float utility. */
+/* Homepage hero — full stillness under reduced motion (issue #87).
+   The laptop needs all three properties pinned: `animation: none` alone
+   leaves its `transition: transform 0.4s` + `.laptop:hover/.active {
+   transform: scale(1.05) }`, so it would still lurch on cursor proximity
+   (`.animate-float-laptop` kills the Tailwind float utility).
+   The three `.animate-ripple-neon` rings (a 3s infinite ripple) and the
+   `.text-glow-stroke-neon` headline (a 0.3s filter transition) also carry
+   motion, so their animation + transition are stopped too — but NOT their
+   transform: the rings set `perspective(600px) rotateX(80deg)` INLINE, and
+   `transform: none !important` would beat that inline value and flatten
+   them. So `transform: none` stays scoped to the laptop selectors. */
 @media (prefers-reduced-motion: reduce) {
   .laptop,
   .animate-float-laptop,
   .laptop:hover,
-  .laptop.active {
+  .laptop.active,
+  .animate-ripple-neon,
+  .text-glow-stroke-neon {
     animation: none !important;
-    transform: none !important;
     transition: none !important;
+  }
+
+  .laptop,
+  .animate-float-laptop,
+  .laptop:hover,
+  .laptop.active {
+    transform: none !important;
   }
 }
 

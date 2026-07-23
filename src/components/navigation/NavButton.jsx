@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Github,
   Home,
@@ -70,6 +70,9 @@ const NavLinkShell = ({ link, label, newTab, children, ...shared }) =>
   );
 
 const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index, visible = true }) => {
+  // Declared before the `isMobileColumn` early return below — hooks must run
+  // unconditionally on every render path.
+  const reduceMotion = useReducedMotion();
 
   // xs-mobile two-column layout button
   if (isMobileColumn) {
@@ -77,7 +80,11 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
     const delay = index != null ? baseDelay + index * 0.08 : baseDelay;
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.6 }}
+        // Reduced motion drops the `scale` (a transform — actual movement) and
+        // reveals with a plain fade, the same collapse the rest of the site
+        // applies (issue #87). The fade itself is kept: it isn't vestibular
+        // motion, and the buttons still need to appear.
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
         // Drive the reveal from the parent's `visible` prop instead of
         // relying on the component being mounted/unmounted. The button
         // is always in the DOM (so its layout space is reserved from
@@ -86,7 +93,13 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
         // tabIndex={-1} removes it from the keyboard tab order, and
         // aria-hidden hides it from the AT tree — together that makes
         // the not-yet-revealed buttons truly inert.
-        animate={visible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
+        animate={
+          reduceMotion
+            ? { opacity: visible ? 1 : 0 }
+            : visible
+              ? { opacity: 1, scale: 1 }
+              : { opacity: 0, scale: 0.6 }
+        }
         transition={{ duration: 0.35, delay: visible ? delay : 0, type: 'tween', ease: 'easeOut' }}
         className={`cursor-pointer ${visible ? '' : 'pointer-events-none'}`}
         aria-hidden={!visible}
