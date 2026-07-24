@@ -1309,8 +1309,8 @@ const AboutDetails = () => {
             ref={paragraphRef}
             className="font-light text-xs sm:text-sm md:text-base"
             style={{
-              // Halo ONLY — the gold→ember fill now lives per-word (WORD_FILL)
-              // so the scroll-scrubbed opacity fades each glyph even in GPU-
+              // Halo ONLY — the gold→ember fill now lives per-word (wordFill in
+              // @/lib/fireRamp) so the scroll-scrubbed opacity fades each glyph even in GPU-
               // composited Chrome. `.text-fire-amber` is intentionally NOT on
               // this parent: its `background-clip:text` fill would rasterize
               // once at the promoted tilt-card layer and paint the words
