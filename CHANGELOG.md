@@ -31,7 +31,7 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: the Repository Governance & Templates Suite; the Experience Summary live-data fix; the Unify Page Titles refactor; five About-page card overhauls (Most Used Languages, GitHub Stats, Completed Projects, Current Streak, and the Skills grid); the Contact Form submit-animation feature; and the route-wide editorial footer ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)) — its live-location and project-metadata endpoints, guitar-string wordmark, and the "Stone Passage" page transition; the Now Playing live-Spotify widget ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42)) with its data + one-time-token endpoints and the shared HoverHint tooltip primitive; and the site-wide sound control lifted out of the footer so the guitar track survives navigation. Each change below is its own table — field labels on the left, full detail on the right._
+_Scope: the Repository Governance & Templates Suite; the Experience Summary live-data fix; the Unify Page Titles refactor; five About-page card overhauls (Most Used Languages, GitHub Stats, Completed Projects, Current Streak, and the Skills grid); the Contact Form submit-animation feature; and the route-wide editorial footer ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)) — its live-location and project-metadata endpoints, guitar-string wordmark, and the "Stone Passage" page transition; the Now Playing live-Spotify widget ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42)) with its data + one-time-token endpoints and the shared HoverHint tooltip primitive; and the site-wide sound control lifted out of the footer so the guitar track survives navigation; and the homepage hero's vection-drift fix ([#87](https://github.com/MA1002643/theabdullahfolio/issues/87)) — the calmed laptop float, the GPU-isolated title, the hero + glow-headline `prefers-reduced-motion` coverage, and the reading-order gold→ember fill shared by the About and contact prose. Each change below is its own table — field labels on the left, full detail on the right._
 
 ### Added
 
@@ -475,6 +475,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Files** | `src/components/home/HoverHint.jsx` |
 | **Details** | **HoverHint** ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42), `src/components/home/HoverHint.jsx`). The site's in-page replacement for the un-styleable native `title` tooltip — the same `custom-bg-abt` glass surface as the rest of the chrome — portalled to `<body>` and positioned `fixed` so an `overflow-hidden` / transforming ancestor can't clip or re-anchor it. Two anchoring modes: `trigger` (centred above the trigger, flips below without headroom — the maintenance-header hint, a [#94](https://github.com/MA1002643/theabdullahfolio/issues/94) follow-up) and `inside` (centred **within** a large trigger and narrowed to fit — the Now Playing badge). Hover-intent open with a warm-open shortcut for reading across adjacent fields, `:focus-visible` keyboard support, touch-gated off (`matchMedia`), and dismissal on leave / Esc / scroll / pointerdown; the bubble is `pointer-events-none` (a label, never a hover target). Clamps against the **rendered** width in inside mode, keeps `placement` in its bail-when-unchanged position guard, and snaps its entrance under `prefers-reduced-motion`. |
 
+#### Homepage hero & glow-headline reduced-motion coverage
+
+| | |
+|:--|:--|
+| **Ref** | [#87](https://github.com/MA1002643/theabdullahfolio/issues/87) |
+| **Files** | `src/app/globals.css`, `src/components/navigation/index.jsx`, `src/components/navigation/NavButton.jsx` |
+| **Details** | **Hero reduced-motion coverage** ([#87](https://github.com/MA1002643/theabdullahfolio/issues/87)). Everything that moved in the homepage hero now honours `prefers-reduced-motion: reduce`. CSS stills the laptop float + hover-scale and the three `.animate-ripple-neon` rings — `animation` / `transition` pinned, but `transform: none` scoped to the laptop selectors **only** so the rings keep their inline `perspective(600px) rotateX(80deg)` instead of flattening (a stylesheet `!important` would beat that non-important inline transform). The orbital navigation ring — an infinite `requestAnimationFrame` rotation a CSS query cannot reach — is gated in **JS**: the effect returns early under reduced motion, so no frame is ever scheduled and the ring holds its resting angle. Nav-button entrances drop their `scale` (a transform) for a plain opacity fade, with `scale` pinned to `1` in every target so an omitted-property animation can never strand a button undersized. Separately, `.text-glow-stroke-neon` — the shared glow-headline utility used **sitewide** (the hero title, page titles, the project name, the loader, the footer wordmark) — has its `filter` transition disabled sitewide in its own rule, so glow changes are instant everywhere; hover **colour** changes (not vestibular motion) are deliberately left intact. |
+
 ### Changed
 
 #### Sub-pages layout now anchors the shared footer
@@ -700,6 +708,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Ref** | [#30](https://github.com/MA1002643/theabdullahfolio/issues/30) |
 | **Files** | `src/components/sound/SoundProvider.jsx`, `src/components/sound/FloatingSoundToggle.jsx`, `src/app/layout.js`, `src/components/footer/index.jsx` |
 | **Details** | **Persistent footer audio** ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30), `src/components/sound/SoundProvider.jsx`). The footer guitar track's `<audio>` element and on/off state moved out of `Footer` into a `SoundProvider` mounted in the **root** layout. `Footer` is rendered by the `(sub pages)` layout, which **unmounts on navigation to `/`** — that was destroying the audio node mid-play and cutting the music off. The track now survives route changes; the footer renders the same visible control but reads its state from context (`useSound`). A new `FloatingSoundToggle` gives footerless routes (the homepage) an always-available stop control, rendering `null` where a footer already carries one. The purely-visual overlays (Now Playing, toaster, cursor) render **outside** the provider, so a toggle can't re-render them. |
+
+#### Architect & contact-intro copy darkens gold→ember in reading order
+
+| | |
+|:--|:--|
+| **Ref** | [#87](https://github.com/MA1002643/theabdullahfolio/issues/87) |
+| **Files** | `src/lib/fireRamp.js`, `src/components/about/index.jsx`, `src/components/contact/ContactIntro.jsx` |
+| **Details** | **Reading-order fire fill** ([#87](https://github.com/MA1002643/theabdullahfolio/issues/87), `src/lib/fireRamp.js`). The About "Architect of Enchantment" paragraph and the contact-page intro clipped an **identical** per-word vertical gold→ember gradient to every word, so the copy read as one flat colour band left-to-right. A new shared helper `wordFill(i, total)` samples the `.text-fire-amber` ramp at each word's position and slides its sheen window along it, so the paragraph now darkens from bright gold (first words) to deep ember (last words) **in reading order** — restoring the whole-paragraph gradient that per-word clipping (the earlier GPU-compositing fix) had flattened, without reintroducing the clip-once-per-layer bug: each word still owns its clip. `rampColor(t)` linearly interpolates the ramp and both paragraphs stay in sync via the single helper (mirroring the `.text-fire-amber` stops). The first word's top edge is still exactly `#ffd27d`, so the opening reads unchanged — only the tail darkens. |
 
 ### Fixed
 
@@ -1014,6 +1030,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Ref** | [#20](https://github.com/MA1002643/theabdullahfolio/issues/20) |
 | **Files** | `src/components/about/index.jsx` |
 | **Details** | **About "Architect" paragraph** ([#20](https://github.com/MA1002643/theabdullahfolio/issues/20), `src/components/about/index.jsx`). The scroll-revealed word-by-word gold→ember paragraph painted **fully visible** — ignoring its per-word `opacity` — in real GPU Chrome, while every headless / software-raster test passed. The `.text-fire-amber` gradient was clipped-to-text on the **parent** `<p>` while the reveal animated `opacity` on child word spans; inside the tilt card's GPU-promoted layer (`custom-bg-abt` `backdrop-filter` + hover `perspective()`), Blink rasterises the parent's clip-to-text fill **once**, so per-word `opacity:0` no longer fades the glyphs. Fixed by co-locating the gradient clip and the opacity on the **same** element (`WORD_FILL`) — each word owns its clip, robust in every compositing path (the pattern `ContactIntro` already uses). The reveal now starts fully hidden and is deliberately kept under `prefers-reduced-motion` (it is opacity-only and scroll-scrubbed — the reader drives it — so it isn't the autonomous motion the setting suppresses). |
+
+#### Homepage hero title vection drift
+
+| | |
+|:--|:--|
+| **Ref** | [#87](https://github.com/MA1002643/theabdullahfolio/issues/87) |
+| **Files** | `tailwind.config.js`, `src/app/page.js` |
+| **Details** | **Hero title vection drift** ([#87](https://github.com/MA1002643/theabdullahfolio/issues/87), `src/app/page.js`). The static hero name appeared to slowly **drift** while the laptop beneath it bobbed — an induced-motion (**vection**) illusion: the eye borrowed the laptop's large periodic transform and mis-attributed it to the neighbouring still title. Fixed on two fronts. (1) The `float-laptop` keyframe amplitude is cut below the vection threshold — `translateY` 20→6px, `scale` 1.1→1.02, `rotateX` 18→6deg — with an ember `drop-shadow` that pulses in sync with the up-phase so the laptop still reads as "alive" rather than merely smaller. (2) The headline is given its **own compositor layer** (`transform-gpu` → `translateZ(0)` plus `[backface-visibility:hidden]`) so WebKit can't fold it back into the parent and couple sub-pixel jitter across during the laptop's per-frame transform. No `will-change` — the headline is static, so a permanently-warmed layer would be wasted. |
 
 ### Removed
 

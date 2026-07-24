@@ -539,8 +539,9 @@ upgrade-insecure-requests
 
 | Animation | Technique | Location |
 |-----------|-----------|----------|
-| Orbital rotation | `requestAnimationFrame` + trigonometry | `navigation/index.jsx` |
-| Floating laptop | `useFrame` sin-wave (Three.js render loop) | `project-detail/laptop-model.jsx` |
+| Orbital rotation | `requestAnimationFrame` + trigonometry; the rAF loop is skipped entirely under `prefers-reduced-motion` (the ring holds its resting angle) | `navigation/index.jsx` |
+| Hero laptop float | `float-laptop` keyframe — a **vection-calibrated** bob (`translateY` 6px / `scale` 1.02) with an ember `drop-shadow` pulsed in sync, tuned low so the static title doesn't appear to drift; stilled under reduced motion | `tailwind.config.js` + `app/page.js` |
+| Floating laptop (3D) | `useFrame` sin-wave (Three.js render loop) | `project-detail/laptop-model.jsx` |
 | Aurora parallax | `useScroll` + `useTransform` + mouse tilt | `project-detail/aurora-bg.jsx` |
 | Boot sequence | Sequential `clipPath` chunk reveals | `project-detail/boot-on-sequence.jsx` |
 | Molten submit CTA | `feTurbulence` / `feDisplacementMap` wavefront + self-stroking checkmark, driven by real request progress | `contact/Form.jsx` |
@@ -561,7 +562,7 @@ upgrade-insecure-requests
 | Stagger reveals | `staggerChildren` Framer Motion variants | Multiple components |
 | 3D carousel | CSS `perspective` + `translateZ` + `rotateY` | `qualifications/Carousel.jsx` |
 | Glowing project name | Bloom ring scale + random flicker interval | `project-detail/glowing-project-name.jsx` |
-| Neon ripples | `animate-ripple-neon` on `rotateX(80deg)` plane | `app/page.js` |
+| Neon ripples | `animate-ripple-neon` on `rotateX(80deg)` plane; animation stopped under reduced motion (the `rotateX` perspective is preserved) | `app/page.js` |
 | Footer "Wet Ink" identity reveal | CSS-keyframe signature cascade (drawing rule → `clip-path` ink-down name → sparking role → self-drawing git-graph CTA), keyed off `data-revealed` | `footer/FooterIdentity.jsx` |
 | Footer split-flap departures board | Per-tile ordinal scramble that settles on reveal; live route reads NOW BOARDING with a pulse (SSR-safe, CLS-free) | `footer/FooterManifest.jsx` |
 | Footer terminal type-out | Command/output "session" that types on reveal with a blinking ember caret (height-reserved, SSR-safe) | `footer/ElsewhereTerminal.jsx` |
