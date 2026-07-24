@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import DIMS from './_dimensions.json';
+import { preloadQualificationCerts } from './preloadCerts';
 
 // Visibility/mount thresholds for the carousel. Stored as named
 // constants so the opacity/pointer-events logic below stays in sync
@@ -438,14 +439,56 @@ const Carousel3D = () => {
     );
   }, [activeCategory, activeSub]);
 
-  const [activeIndex, setActiveIndex] = useState(0);
+  // Initialise straight to the middle card. Deriving the first index
+  // synchronously (lazy useState initialiser) means the very first paint
+  // already mounts the correct window of cards — the `<Image>` fetches it
+  // starts are the ones we keep. Previously this was useState(0) + an effect
+  // that recentred on mount, so frame 1 mounted the wrong 7 cards, started 7
+  // `_next/image` requests, then frame 2 unmounted them and started 7 more —
+  // the first 7 showing up as (canceled) in the network panel. On first
+  // mount activeCategory is 'All', so filteredCards === CARDS and this yields
+  // the same index the effect used to compute.
+  const initialIndex = (cards) =>
+    cards.length > 0 ? Math.floor(cards.length / 2) : 0;
 
-  // Recenter on the middle card whenever the filter changes.
+  const [activeIndex, setActiveIndex] = useState(() => initialIndex(CARDS));
+
+  // Recenter on the middle card whenever the *filter* changes — but never on
+  // first mount (the lazy initialiser above already did that). Skipping the
+  // first run is what eliminates the cold-load recenter churn; subsequent
+  // filter switches still recentre, and there the transition is user-driven
+  // and expected.
+  const isFirstRun = useRef(true);
   useEffect(() => {
-    setActiveIndex(
-      filteredCards.length > 0 ? Math.floor(filteredCards.length / 2) : 0,
-    );
-  }, [activeCategory, activeSub, filteredCards.length]);
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    setActiveIndex(initialIndex(filteredCards));
+    // filteredCards is memoised on [activeCategory, activeSub], so its
+    // reference changes iff the filter changes — depending on it directly
+    // recenters on exactly those transitions and keeps exhaustive-deps happy.
+  }, [filteredCards]);
+
+  // Warm every certificate image into the HTTP cache once the carousel is up.
+  // NavButton already starts this on nav intent (so cards are cached before the
+  // Stone Passage reveal), but this covers direct entries — a deep link or a
+  // refresh, where there was no transition — and guarantees the OTHER buckets'
+  // images are cached before the visitor switches category, making switches
+  // instant too. requestIdleCallback keeps it off the critical path; the
+  // setTimeout branch covers Safari, which still lacks it. Idempotent, so it
+  // harmlessly overlaps the nav-intent warm (see preloadCerts).
+  useEffect(() => {
+    const supportsIdle = typeof window.requestIdleCallback === 'function';
+    const schedule = supportsIdle
+      ? (cb) => window.requestIdleCallback(cb)
+      : (cb) => setTimeout(cb, 300);
+    const handle = schedule(() => preloadQualificationCerts());
+    return () => {
+      if (supportsIdle) window.cancelIdleCallback(handle);
+      else clearTimeout(handle);
+    };
+  }, []);
 
   const normalizedIndex =
     filteredCards.length > 0
@@ -742,14 +785,19 @@ const Carousel3D = () => {
                         alt={card.title}
                         fill
                         sizes={imgSizes}
-                        // Only the centered card is the LCP candidate,
-                        // so only it gets priority (high fetchpriority +
-                        // preload). Near neighbours load eager so
-                        // they're ready before the user clicks next,
-                        // without competing with the centered card for
-                        // bandwidth. Far neighbours stay lazy.
+                        // Only the centered card is eager. Neighbours are
+                        // lazy so the browser — not us — schedules them, and
+                        // a filter-change recenter can cancel at most the one
+                        // in-flight centre fetch instead of five eager ones.
+                        // Neighbours still pre-warm because they're in the DOM
+                        // near the viewport; the browser just controls timing.
+                        // priority already gives the centre fetchpriority=high
+                        // + a preload link, so we only add an explicit low
+                        // hint to the neighbours to keep them off the centre
+                        // card's bandwidth.
                         priority={absOffset === 0}
-                        loading={absOffset <= 2 ? 'eager' : 'lazy'}
+                        loading={absOffset === 0 ? 'eager' : 'lazy'}
+                        fetchPriority={absOffset === 0 ? undefined : 'low'}
                         className="rounded-lg object-cover"
                       />
                       {/* Subtle ember tint to tie cards

@@ -51,6 +51,31 @@ const nextConfig = {
       ],
     },
   },
+  images: {
+    // Cap the image optimiser's variant set. The /qualifications carousel
+    // cards never exceed ~70vw of a 1920 viewport, and a height cap
+    // (--cert-cap: 68vh) bounds the card width further, so we never display a
+    // certificate wider than ~700 CSS px. With Next's default deviceSizes
+    // ([...1080, 1200, 1920, 2048, 3840]) a DPR≈3 mobile computes ~972 device
+    // px and snaps up to 1920 — a wasteful upscale that also lengthens the
+    // window in which an aborted <Image> shows as (canceled). Dropping the
+    // 1920/2048/3840 tiers makes that request resolve to 1080/1200 instead.
+    // NOTE: images.* is GLOBAL — every next/image with a `sizes` prop across
+    // the site is now capped at 1200 wide. That's intentional for this
+    // certificate-and-portrait portfolio; revisit if a full-bleed 4K hero is
+    // ever added.
+    deviceSizes: [640, 828, 1080, 1200],
+    imageSizes: [256, 384, 512],
+    // Certificate files are content-immutable (filename == qualification), so
+    // give the optimiser output a 1-year TTL. This stops the browser from
+    // sending an If-Modified-Since revalidation on every navigation — the
+    // revalidation round-trip is exactly what was mid-flight when the
+    // observed request got (canceled).
+    minimumCacheTTL: 31536000,
+    // Negotiate AVIF first (~20% smaller than WebP on mobile), fall back to
+    // WebP. Purely a wire-format choice; the source assets stay .webp.
+    formats: ['image/avif', 'image/webp'],
+  },
   async headers() {
     return [
       {
