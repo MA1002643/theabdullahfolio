@@ -19,6 +19,7 @@ import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
+import { wordFill } from "@/lib/fireRamp";
 
 const githubStatsStorageKey = (username) =>
   `github-stats:lastGood:${username}`;
@@ -26,34 +27,14 @@ const githubStatsStorageKey = (username) =>
 const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Beyond the visible enchantments, I tend the hidden machinery — conjuring resilient APIs and databases (the vaults where each realm's memory is safely kept) and weaving automated pipelines that carry my creations from the workshop to the cloud (the boundless aether where they finally awaken). I hold performance and accessibility as sacred vows, so every portal opens swiftly for every traveller, on any device and in any far-flung corner of the realm. Curiosity remains my truest compass, forever drawing me toward new grimoires, sharper instincts, and ideas bold enough to become living, breathing experiences. Join me as I continue to explore new spells and technologies to shape the future of the web.";
 const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
 
-// The gold→ember fill re-applied PER WORD. `.text-fire-amber` (globals.css)
-// clips this SAME vertical gradient to text — but as a class it was on the
-// PARENT <p>, while the reveal animates `opacity` on the child word spans. That
-// parent-clip / child-opacity split renders correctly in software raster
-// (headless, SwiftShader) yet BREAKS in real GPU Chrome: this paragraph sits
-// inside an ItemLayout `tilt` card whose `.custom-bg-abt` backdrop-filter +
-// hover-gated `perspective()` transform GPU-promote the paragraph's ancestor,
-// and in a promoted layer Blink rasterizes the parent's clip-to-text fill ONCE —
-// so per-word `opacity:0` no longer fades the glyphs and the copy paints fully
-// visible even though every span computes opacity 0. (It only reproduced on the
-// GPU path, which is why every headless/software-raster test wrongly passed.)
-//
-// Fix: co-locate the fill and the opacity on the SAME element — each word owns
-// its clip, so a word's opacity fades its OWN fill, robust in every compositing
-// path. This is the exact pattern ContactIntro already uses; kept in sync with
-// `.text-fire-amber`. The gradient is 180° (vertical) and every word shares the
-// line-height, so per-word fills are seamless — each glyph still runs gold→ember
-// exactly as one <p> did.
-const WORD_FILL = {
-  backgroundImage:
-    'linear-gradient(180deg, #ffd27d 0%, #ffbb55 40%, #ffaa2a 70%, #ff6d05 100%)',
-  WebkitBackgroundClip: 'text',
-  backgroundClip: 'text',
-  color: 'transparent',
-  WebkitTextFillColor: 'transparent',
-};
+// The gold→ember fill is applied PER WORD (not via `.text-fire-amber` on the
+// parent <p>): a single `background-clip:text` fill on the parent rasterises
+// ONCE inside this tilt card's GPU-promoted layer and paints every glyph
+// regardless of its per-word opacity (the headless-invisible GPU bug). Each word
+// owning its own clip fixes that AND lets the fill darken gold→ember across the
+// paragraph in reading order — see `wordFill` in @/lib/fireRamp.
 
-const RevealWord = ({ children, progress, range }) => {
+const RevealWord = ({ children, progress, range, index, total }) => {
   // Start fully hidden (0) and light to full (1) across this word's slice of
   // the scroll range — at load the whole paragraph is invisible and only
   // materialises word-by-word as the reader scrolls into it.
@@ -64,8 +45,9 @@ const RevealWord = ({ children, progress, range }) => {
   // exists to suppress, and the copy still fully reveals as you reach it.
   const opacity = useTransform(progress, range, [0, 1]);
   return (
-    // WORD_FILL (gradient clip) + opacity on the SAME element — see WORD_FILL.
-    <motion.span style={{ ...WORD_FILL, opacity }}>
+    // Per-word ramp fill (darkens toward the paragraph's end) + opacity on the
+    // SAME element, so a word's opacity fades its OWN clip. See wordFill.
+    <motion.span style={{ ...wordFill(index, total), opacity }}>
       {children}{" "}
     </motion.span>
   );
@@ -1327,8 +1309,8 @@ const AboutDetails = () => {
             ref={paragraphRef}
             className="font-light text-xs sm:text-sm md:text-base"
             style={{
-              // Halo ONLY — the gold→ember fill now lives per-word (WORD_FILL)
-              // so the scroll-scrubbed opacity fades each glyph even in GPU-
+              // Halo ONLY — the gold→ember fill now lives per-word (wordFill in
+              // @/lib/fireRamp) so the scroll-scrubbed opacity fades each glyph even in GPU-
               // composited Chrome. `.text-fire-amber` is intentionally NOT on
               // this parent: its `background-clip:text` fill would rasterize
               // once at the promoted tilt-card layer and paint the words
@@ -1342,6 +1324,8 @@ const AboutDetails = () => {
             {ARCHITECT_WORDS.map((word, i) => (
               <RevealWord
                 key={i}
+                index={i}
+                total={ARCHITECT_WORDS.length}
                 progress={paragraphScrollProgress}
                 range={[i / ARCHITECT_WORDS.length, (i + 1) / ARCHITECT_WORDS.length]}
               >

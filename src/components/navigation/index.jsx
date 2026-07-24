@@ -3,6 +3,7 @@
 import { BtnList } from '@/app/data';
 import NavButton from './NavButton';
 import React, { useEffect, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 
 const Navigation = ({ setHovered, hovered }) => {
   const angleIncrement = 360 / BtnList.length;
@@ -12,6 +13,7 @@ const Navigation = ({ setHovered, hovered }) => {
   const [multiplier, setMultiplier] = useState({ x: 2, y: 1.2 });
   const [visibleButtons, setVisibleButtons] = useState([]);
   const [screenSize, setScreenSize] = useState('desktop');
+  const reduceMotion = useReducedMotion();
 
   // Update radius/multipliers based on screen size
   useEffect(() => {
@@ -45,8 +47,17 @@ const Navigation = ({ setHovered, hovered }) => {
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // Infinite rotation loop
+  // Infinite rotation loop — the orbital ring's perpetual spin.
+  //
+  // Skipped ENTIRELY under prefers-reduced-motion (issue #87): the ring holds
+  // its resting angle and no rAF frame is ever scheduled, so there is no
+  // movement and no per-frame work. This gate has to live in JS — the rotation
+  // is React state written to an inline transform, so the CSS
+  // `prefers-reduced-motion` block that stills the laptop and the ripple rings
+  // (globals.css) cannot reach it.
   useEffect(() => {
+    if (reduceMotion) return undefined;
+
     let frame;
 
     const animate = () => {
@@ -58,7 +69,7 @@ const Navigation = ({ setHovered, hovered }) => {
 
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [hovered]);
+  }, [hovered, reduceMotion]);
 
   // Stagger button reveal
   useEffect(() => {
