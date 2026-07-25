@@ -75,7 +75,12 @@ export function preloadQualificationCerts() {
     navigator.connection ||
     navigator.mozConnection ||
     navigator.webkitConnection;
-  if (conn && (conn.saveData || /(^|\b)2g$/i.test(conn.effectiveType || ''))) {
+  // effectiveType is one of 'slow-2g' | '2g' | '3g' | '4g'. Treat BOTH 2G
+  // tiers as "too slow to bulk-warm" — slow-2g is the slowest of all, so it
+  // must skip too. Listed explicitly (not a regex) so it's unambiguous which
+  // tiers are excluded.
+  const et = conn?.effectiveType || '';
+  if (conn && (conn.saveData || et === '2g' || et === 'slow-2g')) {
     return;
   }
   started = true;
