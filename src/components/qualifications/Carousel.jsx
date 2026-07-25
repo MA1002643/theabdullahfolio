@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import DIMS from './_dimensions.json';
 import { preloadQualificationCerts } from './preloadCerts';
+import { certSizes } from './certSizes';
 
 // Visibility/mount thresholds for the carousel. Stored as named
 // constants so the opacity/pointer-events logic below stays in sync
@@ -15,6 +16,15 @@ import { preloadQualificationCerts } from './preloadCerts';
 //   absOffset > RENDER_WINDOW  : not rendered at all
 const RENDER_WINDOW = 3;
 const OPAQUE_WINDOW = 2;
+
+// Index of the middle card in a list — the carousel opens centred so the first
+// paint mounts the correct window (see the useState initialiser below). Pure
+// (closes over no component state), so it lives at module scope: stable
+// identity, never recreated per render, and safe to call from both the
+// useState initialiser AND the recenter effect without ever becoming an effect
+// dependency.
+const initialIndex = (cards) =>
+  cards.length > 0 ? Math.floor(cards.length / 2) : 0;
 
 // Look up the aspect ratio for an image path like "/qualifications/foo.webp".
 // Derived from width/height so a single source of truth in the JSON can't
@@ -447,10 +457,8 @@ const Carousel3D = () => {
   // `_next/image` requests, then frame 2 unmounted them and started 7 more —
   // the first 7 showing up as (canceled) in the network panel. On first
   // mount activeCategory is 'All', so filteredCards === CARDS and this yields
-  // the same index the effect used to compute.
-  const initialIndex = (cards) =>
-    cards.length > 0 ? Math.floor(cards.length / 2) : 0;
-
+  // the same index the effect used to compute. (initialIndex is a module-scope
+  // pure helper — see top of file.)
   const [activeIndex, setActiveIndex] = useState(() => initialIndex(CARDS));
 
   // Recenter on the middle card whenever the *filter* changes — but never on
@@ -704,11 +712,9 @@ const Carousel3D = () => {
             // viewports that can approach the --cert-w-cap upper bound,
             // so we use the cap as a conservative ceiling — undershooting
             // here makes Next/Image pick a too-small srcset entry and
-            // upscale it (blurry).
-            const imgSizes =
-              ar < 1
-                ? '(max-width: 768px) 90vw, 50vw'
-                : '(max-width: 768px) 90vw, 70vw';
+            // upscale it (blurry). Shared with the preloader via certSizes so
+            // the warmed URL and this request can't drift apart (cache hit).
+            const imgSizes = certSizes(ar);
             // Uniform slot width via the --slot-vh CSS var (set on
             // the carousel container, breakpoint-aware). Every
             // card sits at offset × var(--slot-vh) regardless of

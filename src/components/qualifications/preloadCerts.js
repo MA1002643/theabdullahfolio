@@ -9,7 +9,7 @@
 // every later view (first paint, category switch, revisit) into a cache hit.
 //
 // KEY DETAIL: the carousel renders through next/image, so the browser actually
-// requests `/_next/image?url=...&w=<picked>&q=75` — NOT the raw .webp. A naive
+// requests `/_next/image?url=...&w=<picked>&q=<default>` — NOT the raw .webp. A naive
 // `new Image().src = '/qualifications/foo.webp'` would warm a *different* URL
 // and never hit. So we ask next/image itself (getImageProps) for the exact
 // srcSet/sizes it would generate, then hand that to a detached Image(): setting
@@ -18,6 +18,7 @@
 
 import { getImageProps } from 'next/image';
 import DIMS from './_dimensions.json';
+import { certSizes } from './certSizes';
 
 // Every cert, derived from the dimensions manifest (verified 1:1 with the files
 // in public/qualifications). width/height give the aspect ratio, which decides
@@ -26,12 +27,6 @@ const CERTS = Object.entries(DIMS).map(([slug, dim]) => ({
   src: `/qualifications/${slug}.webp`,
   ar: dim?.width && dim?.height ? dim.width / dim.height : 0.71,
 }));
-
-// Mirror Carousel.jsx's per-aspect `sizes` so getImageProps emits an identical
-// srcSet and the browser picks the identical candidate → guaranteed cache hit.
-// (Portrait cards sit at 50vw on desktop, landscape at 70vw; both 90vw mobile.)
-const sizesFor = (ar) =>
-  ar < 1 ? '(max-width: 768px) 90vw, 50vw' : '(max-width: 768px) 90vw, 70vw';
 
 // Warm each src at most once per page load. The HTTP cache dedupes across
 // loads; this Set dedupes the redundant hover → press → mount triggers within
@@ -45,8 +40,12 @@ const warm = ({ src, ar }) => {
     src,
     alt: '',
     fill: true,
-    sizes: sizesFor(ar),
-    quality: 75,
+    sizes: certSizes(ar),
+    // Deliberately NOT setting quality. The carousel's <Image> omits it too, so
+    // both inherit the same next/image default — if that default ever changes
+    // app-wide, the preloaded URL and the carousel's request move together and
+    // stay a cache hit. Hardcoding a value here would pin the preloader and
+    // silently drift the moment the carousel's effective quality changed.
   });
   const img = new Image();
   // Low priority: warming must never steal bandwidth from the destination
