@@ -14,7 +14,26 @@ import {
   Clock,
 } from 'lucide-react';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
-import { preloadQualificationCerts } from '@/components/qualifications/preloadCerts';
+
+// Lazily load the /qualifications image preloader ONLY when a visitor actually
+// aims at that route (hover / focus / touch). A STATIC import would pull the
+// preloader — and its 49-entry dimensions manifest — into the nav bundle, and
+// therefore the homepage, for everyone, including visitors who never open
+// /qualifications. The import() promise is cached module-side so repeated intent
+// signals reuse a single chunk fetch; a failed fetch resets the cache so a later
+// intent can retry, and it never rejects into the navigation path.
+let certPreloadPromise;
+const warmQualCerts = () => {
+  if (!certPreloadPromise) {
+    certPreloadPromise = import(
+      '@/components/qualifications/preloadCerts'
+    ).catch(() => {
+      certPreloadPromise = undefined; // allow a later intent to retry the fetch
+      return null;
+    });
+  }
+  certPreloadPromise.then((m) => m?.preloadQualificationCerts?.());
+};
 
 const getIcon = (icon, small = false) => {
   const cls = small ? 'h-auto w-[1.4rem]' : 'h-auto w-full md:w-[2.5rem] lg:w-[3rem]';
@@ -80,10 +99,10 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
   // there — hover (desktop), focus (keyboard), or pointer-down (touch, fired
   // just before the click that navigates). The Stone Passage transition then
   // hides the ~2s fetch under its cover, so the cards are already cached when
-  // the page is revealed. preloadQualificationCerts is idempotent, so firing
-  // it from several intent signals costs nothing.
-  const warmQual =
-    link === '/qualifications' ? preloadQualificationCerts : undefined;
+  // the page is revealed. warmQualCerts lazy-loads the preloader on first use
+  // (see top of file) and the preloader is idempotent, so firing it from
+  // several intent signals costs nothing.
+  const warmQual = link === '/qualifications' ? warmQualCerts : undefined;
 
   // xs-mobile two-column layout button
   if (isMobileColumn) {
