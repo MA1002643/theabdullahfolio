@@ -51,6 +51,28 @@ const nextConfig = {
       ],
     },
   },
+  images: {
+    // Deliberately NO deviceSizes/imageSizes override. images.* is GLOBAL — a
+    // deviceSizes cap would clamp EVERY next/image with a `sizes` prop across
+    // the whole site, including the full-bleed 100vw backgrounds on /, /about
+    // and /projects, softening them on large / high-DPR displays. The
+    // /qualifications carousel — the one place that was requesting oversized
+    // (1920) variants — instead limits itself at the source: its `sizes` string
+    // (see certSizes.js) now declares the card's TRUE height-bound width, so
+    // the browser targets ~1080/1200 there without penalising anything else.
+    // Next's default deviceSizes ([...1200, 1920, 2048, 3840]) therefore stay
+    // available for the backgrounds that genuinely need them.
+    //
+    // Certificate (and other) files are content-immutable, so give the
+    // optimiser output a 1-year TTL. This stops the browser from sending an
+    // If-Modified-Since revalidation on every navigation — the revalidation
+    // round-trip is exactly what was mid-flight when the observed carousel
+    // request got (canceled) in issue #84.
+    minimumCacheTTL: 31536000,
+    // Negotiate AVIF first (~20% smaller than WebP on mobile), fall back to
+    // WebP. Purely a wire-format choice; the source assets stay .webp.
+    formats: ['image/avif', 'image/webp'],
+  },
   async headers() {
     return [
       {

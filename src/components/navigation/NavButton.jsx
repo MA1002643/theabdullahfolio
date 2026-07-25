@@ -15,6 +15,26 @@ import {
 } from 'lucide-react';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 
+// Lazily load the /qualifications image preloader ONLY when a visitor actually
+// aims at that route (hover / focus / touch). A STATIC import would pull the
+// preloader — and its 49-entry dimensions manifest — into the nav bundle, and
+// therefore the homepage, for everyone, including visitors who never open
+// /qualifications. The import() promise is cached module-side so repeated intent
+// signals reuse a single chunk fetch; a failed fetch resets the cache so a later
+// intent can retry, and it never rejects into the navigation path.
+let certPreloadPromise;
+const warmQualCerts = () => {
+  if (!certPreloadPromise) {
+    certPreloadPromise = import(
+      '@/components/qualifications/preloadCerts'
+    ).catch(() => {
+      certPreloadPromise = undefined; // allow a later intent to retry the fetch
+      return null;
+    });
+  }
+  certPreloadPromise.then((m) => m?.preloadQualificationCerts?.());
+};
+
 const getIcon = (icon, small = false) => {
   const cls = small ? 'h-auto w-[1.4rem]' : 'h-auto w-full md:w-[2.5rem] lg:w-[3rem]';
   switch (icon) {
@@ -74,6 +94,16 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
   // unconditionally on every render path.
   const reduceMotion = useReducedMotion();
 
+  // The /qualifications carousel loads 49 optimised certificate images. Start
+  // warming them into the HTTP cache the instant the user shows intent to go
+  // there — hover (desktop), focus (keyboard), or pointer-down (touch, fired
+  // just before the click that navigates). The Stone Passage transition then
+  // hides the ~2s fetch under its cover, so the cards are already cached when
+  // the page is revealed. warmQualCerts lazy-loads the preloader on first use
+  // (see top of file) and the preloader is idempotent, so firing it from
+  // several intent signals costs nothing.
+  const warmQual = link === '/qualifications' ? warmQualCerts : undefined;
+
   // xs-mobile two-column layout button
   if (isMobileColumn) {
     const baseDelay = 0.1;
@@ -129,8 +159,10 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
           aria-label={label}
           name={label}
           tabIndex={visible ? 0 : -1}
-          onMouseEnter={() => setHovered(true)}
+          onMouseEnter={() => { setHovered(true); warmQual?.(); }}
           onMouseLeave={() => setHovered(false)}
+          onFocus={warmQual}
+          onPointerDown={warmQual}
           className="group nav-button custom-bg flex items-center justify-center rounded-full transition-all duration-300"
         >
           <span className="relative flex items-center justify-center h-10 w-10 sm:h-[52px] sm:w-[52px] p-2 sm:p-[11px]">
@@ -157,8 +189,10 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
         newTab={newTab}
         aria-label={label}
         name={label}
-        onMouseEnter={() => setHovered(true)}
+        onMouseEnter={() => { setHovered(true); warmQual?.(); }}
         onMouseLeave={() => setHovered(false)}
+        onFocus={warmQual}
+        onPointerDown={warmQual}
         className="group nav-button custom-bg flex items-center justify-center rounded-full transition-all duration-300"
       >
         <span className="relative flex flex-col items-center h-14 sm:h-16 md:h-[4.5rem] lg:h-[5rem] w-14 sm:w-16 md:w-[4.5rem] lg:w-[5rem] sm:p-4 md:p-[0.75rem] lg:p-4 p-3">
