@@ -792,9 +792,12 @@ const Carousel3D = () => {
                         fill
                         sizes={imgSizes}
                         // Only the centered card is eager. Neighbours are
-                        // lazy so the browser — not us — schedules them, and
-                        // a filter-change recenter can cancel at most the one
-                        // in-flight centre fetch instead of five eager ones.
+                        // lazy so the browser — not us — schedules them. A
+                        // filter-change recenter can still cancel in-flight
+                        // lazy neighbour fetches (the rendered cards are all
+                        // in-view and begin loading immediately); what this
+                        // cuts is the number of HIGH-priority fetches that
+                        // contend for bandwidth — from five to one.
                         // Neighbours still pre-warm because they're in the DOM
                         // near the viewport; the browser just controls timing.
                         // priority already gives the centre fetchpriority=high
