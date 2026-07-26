@@ -3509,3 +3509,49 @@ html.custom-cursor-active * {
     animation: none;
   }
 }
+
+/* ── Scroll-driven category strip (issue #47) ───────────────────────────────
+   Chrome for the shared <ScrollHijackCategories /> row used by /projects and
+   /qualifications. Every rule here is applied ONLY while the strip is actually
+   hijacking scroll — a row that fits its space carries none of these classes
+   and renders exactly as it did before the component existed.
+
+   `.category-strip-pinned` is the pill the tabs travel inside. It needs a real
+   backdrop: while pinned, the row sits above page content that keeps scrolling
+   underneath it, and without an opaque-ish plate the project cards would read
+   straight through the tab labels. Border tint matches `.header-skeleton` so
+   the pill belongs to the same warm-gold card language as the rest of the site.
+
+   The two fade classes are the gradient masks rendered by FadeEdges.jsx —
+   page-black at the outer edge decaying to transparent, plus an inset ember
+   bloom so a clipped label fades into the strip's own neon palette instead of
+   a flat black vignette. */
+.category-strip-pinned {
+  background: linear-gradient(
+    180deg,
+    rgba(1, 5, 11, 0.92),
+    rgba(1, 5, 11, 0.82)
+  );
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 205, 91, 0.18);
+}
+
+.category-fade-left {
+  background: linear-gradient(
+    to right,
+    rgba(1, 5, 11, 0.95) 0%,
+    rgba(1, 5, 11, 0.6) 40%,
+    transparent 100%
+  );
+  box-shadow: inset 6px 0 12px -4px rgba(255, 109, 5, 0.15);
+}
+
+.category-fade-right {
+  background: linear-gradient(
+    to left,
+    rgba(1, 5, 11, 0.95) 0%,
+    rgba(1, 5, 11, 0.6) 40%,
+    transparent 100%
+  );
+  box-shadow: inset -6px 0 12px -4px rgba(255, 109, 5, 0.15);
+}
