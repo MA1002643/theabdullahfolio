@@ -3511,47 +3511,109 @@ html.custom-cursor-active * {
 }
 
 /* ── Scroll-driven category strip (issue #47) ───────────────────────────────
-   Chrome for the shared <ScrollHijackCategories /> row used by /projects and
-   /qualifications. Every rule here is applied ONLY while the strip is actually
-   hijacking scroll — a row that fits its space carries none of these classes
-   and renders exactly as it did before the component existed.
+   The shared <ScrollHijackCategories /> row on /projects and /qualifications,
+   applied ONLY once the row outgrows its space — a row that fits carries none
+   of this and renders exactly as it did before the component existed.
 
-   `.category-strip-pinned` is the pill the tabs travel inside. It needs a real
-   backdrop: while pinned, the row sits above page content that keeps scrolling
-   underneath it, and without an opaque-ish plate the project cards would read
-   straight through the tab labels. Border tint matches `.header-skeleton` so
-   the pill belongs to the same warm-gold card language as the rest of the site.
+   No plate, no border, no progress bar: the row is meant to read as the same
+   bare neon tabs it always was, just clipped. The only added cue is a fade at
+   whichever edge currently has content hidden behind it, and that fade is a
+   MASK rather than a painted gradient. Both pages sit on photographic
+   backgrounds, where an overlay dark enough to hide a label reads as a smudge
+   across the artwork; masking fades the tabs themselves and leaves whatever is
+   behind them untouched.
 
-   The two fade classes are the gradient masks rendered by FadeEdges.jsx —
-   page-black at the outer edge decaying to transparent, plus an inset ember
-   bloom so a clipped label fades into the strip's own neon palette instead of
-   a flat black vignette. */
-.category-strip-pinned {
-  background: linear-gradient(
-    180deg,
-    rgba(1, 5, 11, 0.92),
-    rgba(1, 5, 11, 0.82)
-  );
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 205, 91, 0.18);
-}
+   --edge-l / --edge-r are written from the scroll handler: 1 is a fully opaque
+   edge (nothing hidden that way), 0 a fully faded one. Defaulting both to 1
+   means the mask is a no-op until the first scroll, so a row that has only
+   just overflowed never flashes a fade it hasn't earned.
 
-.category-fade-left {
-  background: linear-gradient(
+   The scrollbar is hidden because the fades, the wheel-to-travel conversion and
+   native touch/keyboard scrolling all already expose the affordance, and a
+   permanent gutter under the tabs (Windows, Linux) would reintroduce exactly
+   the boxed-in look this row is meant to avoid. */
+.category-strip-scroller {
+  --edge-w: 2.5rem;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
     to right,
-    rgba(1, 5, 11, 0.95) 0%,
-    rgba(1, 5, 11, 0.6) 40%,
-    transparent 100%
+    rgba(0, 0, 0, var(--edge-l, 1)) 0,
+    #000 var(--edge-w),
+    #000 calc(100% - var(--edge-w)),
+    rgba(0, 0, 0, var(--edge-r, 1)) 100%
   );
-  box-shadow: inset 6px 0 12px -4px rgba(255, 109, 5, 0.15);
+  mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, var(--edge-l, 1)) 0,
+    #000 var(--edge-w),
+    #000 calc(100% - var(--edge-w)),
+    rgba(0, 0, 0, var(--edge-r, 1)) 100%
+  );
 }
 
-.category-fade-right {
-  background: linear-gradient(
-    to left,
-    rgba(1, 5, 11, 0.95) 0%,
-    rgba(1, 5, 11, 0.6) 40%,
-    transparent 100%
-  );
-  box-shadow: inset -6px 0 12px -4px rgba(255, 109, 5, 0.15);
+.category-strip-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* Edge arrows. They sit ON the faded band rather than outside the row: the
+   window is already centred to within a few pixels of the page gutter at
+   mobile widths, so hanging them outside would have pushed the document into
+   horizontal overflow. Anything under them is mask-faded anyway.
+
+   The drift is what turns a static glyph into a cue that the row moves — 3px,
+   slow, and away from the row's centre, i.e. pointing at the content that is
+   hidden. Small enough to register peripherally without pulling focus off the
+   page, and stilled entirely under prefers-reduced-motion. */
+.category-strip-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fc83ff;
+  filter: drop-shadow(0 0 4px rgba(255, 85, 247, 0.85));
+  transition: opacity 0.25s ease-in-out;
+}
+
+.category-strip-arrow--left {
+  left: -0.15rem;
+  transform: translateY(-50%);
+  animation: category-arrow-nudge-left 2.6s ease-in-out infinite;
+}
+
+.category-strip-arrow--right {
+  right: -0.15rem;
+  transform: translateY(-50%);
+  animation: category-arrow-nudge-right 2.6s ease-in-out infinite;
+}
+
+@keyframes category-arrow-nudge-left {
+  0%,
+  100% {
+    transform: translate(0, -50%);
+  }
+  50% {
+    transform: translate(-3px, -50%);
+  }
+}
+
+@keyframes category-arrow-nudge-right {
+  0%,
+  100% {
+    transform: translate(0, -50%);
+  }
+  50% {
+    transform: translate(3px, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-strip-arrow--left,
+  .category-strip-arrow--right {
+    animation: none;
+  }
 }

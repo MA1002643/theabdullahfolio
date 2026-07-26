@@ -3,48 +3,52 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
-import {
-  motion,
-  transform,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-} from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 
-import FadeEdges from './FadeEdges';
-import ScrollProgressBar from './ScrollProgressBar';
+import { onMediaChange } from '@/lib/mediaQuery';
+import { useViewportCountUp } from '@/hooks/useViewportCountUp';
 
 /* ── Scroll-driven category strip (issue #47) ──────────────────────────────
-   A single horizontal row of category filters that converts the page's own
-   VERTICAL scroll into HORIZONTAL travel across the row — Apple's sticky-pin
-   pattern (MacBook Pro chip strip). Shared by /projects and /qualifications
-   so both filter rows behave, and are styled, identically.
+   A single horizontal row of category filters that never wraps to a second
+   line, however many categories it holds. Shared by /projects and
+   /qualifications so both filter rows behave, and are styled, identically.
 
-   How the mechanism works:
+   THE PAGE IS NEVER DISPLACED. An earlier build followed §2 of the issue
+   literally — sticky pin over an injected "scroll runway" whose extra height
+   supplied the horizontal travel. It worked, but the runway IS empty vertical
+   space: it pushed the first project card 878px down a 900px viewport, so a
+   visitor landed on a page with no content on it, and on /qualifications it
+   shoved the sub-category row a screen and a half below its parent. Content
+   staying visible and injecting empty scroll space are mutually exclusive, so
+   the runway and the pin are both gone.
 
-     runway  height = pinHeight + overflow   ← the extra height IS the budget
-     └ pin   position: sticky; top: stickyTop
-       └ window  overflow: hidden; max-width = N visible slots
-         └ strip  motion.div, translateX driven by the runway's scroll progress
+   What drives the travel instead:
 
-   Scrolling from "runway top hits stickyTop" to "runway bottom hits
-   stickyTop + pinHeight" is exactly `overflow` pixels of scroll, so the
-   vertical→horizontal mapping is 1:1 and the strip finishes travelling at the
-   precise moment the pin releases — no dead zone in either direction (§1).
+     window  overflow-x: auto; max-width = N visible slots   ← the scroller
+     └ strip  flex, w-max                                    ← scrolled natively
 
-   IT ONLY ENGAGES WHEN IT HAS TO. If the row fits the space available (the
-   3–4 categories both pages ship today, on any viewport where they fit on one
-   line) `overflow` measures 0, and every hijack affordance switches off: no
-   runway, no sticky, no clipping, no fades, no progress bar, no depth
-   parallax. What renders is a plain centred flex row — the layout that was
-   there before this component existed (§3). */
+   • Wheel/trackpad over the row → horizontal travel, and ONLY while the row
+     still has somewhere to go. At either end the event passes through
+     untouched, so the page carries on scrolling and the row can never trap
+     anyone. Off the row, scrolling is completely ordinary.
+   • Touch swipe, drag, keyboard tabbing and the scrollbar all drive the same
+     scrollLeft, so no two inputs can disagree — there is one source of truth.
+   • Under prefers-reduced-motion the wheel conversion is skipped entirely
+     (WCAG 2.3.3 — motion triggered by interaction); everything else still
+     works, so no category becomes unreachable.
+
+   IT ONLY ENGAGES WHEN IT HAS TO. If the row fits the space available — the
+   3–4 categories both pages ship today, at any viewport where they fit on one
+   line — `overflow` measures 0 and every affordance switches off: no clipping,
+   no edge fades, no scroller. What renders is the plain centred flex row that
+   was there before this component existed (§3). */
 
 // SSR-safe layout effect. Measuring in useLayoutEffect (not useEffect) is what
-// keeps the clamp from flashing: the strip is sized before the browser paints,
+// keeps the clamp from flashing: the row is sized before the browser paints,
 // so an overflowing row is never briefly visible at full width.
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -61,13 +65,13 @@ const SLOT_BREAKPOINTS = [
 // 0.0001px on rows that visually fit perfectly.
 const EPSILON = 0.5;
 
-// Breathing room kept between an item and the window edge when the strip
-// auto-scrolls a category into view (§6.1).
+// Breathing room kept between a tab and the window edge when the row scrolls
+// one into view (§6.1).
 const EDGE_MARGIN = 12;
 
-// Pointer travel (px) above which a click on a tab is treated as the tail of a
-// swipe rather than a selection.
-const CLICK_SLOP = 6;
+// Scroll distance over which an edge fade ramps from off to full. Short enough
+// that the cue arrives immediately, long enough not to pop.
+const FADE_RAMP = 24;
 
 // Tab palette — lifted verbatim from the two inline implementations this
 // component replaces so the filters look exactly as they did before.
@@ -83,16 +87,29 @@ const INACTIVE_SHADOW_HOVER =
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-// Depth-of-field curves from §6.2, as pure mapping functions (Framer's
-// `transform` clamps at both ends). Module scope: they close over nothing, so
-// every tab on the page shares one instance of each.
-const SCALE_CURVE = transform([0, 0.5, 1], [0.85, 1, 0.85]);
-const BLUR_CURVE = transform([0, 0.3, 0.7, 1], [3, 0, 0, 3]);
+/**
+ * Smallest scrollLeft that brings the span [itemLeft, itemRight] fully inside
+ * a window of `windowWidth`, given where the row currently sits.
+ */
+const travelToReveal = (itemLeft, itemRight, travelled, windowWidth) => {
+  if (itemLeft - travelled < EDGE_MARGIN) return itemLeft - EDGE_MARGIN;
+  if (itemRight - travelled > windowWidth - EDGE_MARGIN) {
+    return itemRight - windowWidth + EDGE_MARGIN;
+  }
+  return travelled;
+};
 
 /**
  * Watch the breakpoint list and report how many categories may be visible at
  * once. matchMedia (not a resize listener) so this fires once per breakpoint
  * crossing instead of on every resize frame.
+ *
+ * Subscribes through the shared `onMediaChange` helper: iOS Safari < 14 and the
+ * WebViews built on it expose ONLY the deprecated addListener/removeListener on
+ * a MediaQueryList, where calling addEventListener throws and takes the whole
+ * effect — and with it the page — down. Bailing out entirely when matchMedia is
+ * missing leaves `slots` at the desktop ceiling, which is the same value the
+ * widest breakpoint resolves to.
  *
  * @param {number} maxVisible Desktop ceiling; narrower breakpoints only ever
  *   lower it.
@@ -101,6 +118,8 @@ const useVisibleSlots = (maxVisible) => {
   const [slots, setSlots] = useState(maxVisible);
 
   useIsomorphicLayoutEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+
     const lists = SLOT_BREAKPOINTS.map((entry) =>
       window.matchMedia(entry.query),
     );
@@ -113,19 +132,17 @@ const useVisibleSlots = (maxVisible) => {
       );
     };
     sync();
-    lists.forEach((list) => list.addEventListener('change', sync));
-    return () =>
-      lists.forEach((list) => list.removeEventListener('change', sync));
+    const unsubscribes = lists.map((list) => onMediaChange(list, sync));
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
   }, [maxVisible]);
 
   return slots;
 };
 
 /**
- * One category tab. Rendered as a `motion.button` so the hover halo is a
- * `whileHover` variant rather than the pair of inline onMouseEnter/onMouseLeave
- * handlers the pages used to carry, and so the depth-of-field parallax can
- * ride the shared `x` MotionValue without any React state (§6.2).
+ * One category tab. A `motion.button` so the hover halo is a `whileHover`
+ * variant rather than the pair of inline onMouseEnter/onMouseLeave handlers the
+ * pages used to carry.
  */
 const CategoryItem = ({
   label,
@@ -135,70 +152,54 @@ const CategoryItem = ({
   count,
   showCount,
   onSelect,
-  scrollYProgress,
-  overflow,
-  center,
-  windowWidth,
-  depth,
+  scrollerRef,
+  prefersReducedMotion,
 }) => {
-  // Both of these read the SAME MotionValue the strip's own `x` reads, and
-  // derive everything else inline. Chaining (progress → x → position → curve →
-  // gate → filter) also works, but each derived MotionValue settles a frame
-  // after the one it depends on, so a six-deep chain left the depth effect
-  // visibly trailing the strip it belongs to. One level = same frame.
-  const depthOf = (raw) => {
-    const travelled = clamp(raw, 0, 1);
-    // Where this tab's centre sits inside the visible window: 0 = left edge,
-    // 1 = right edge. The strip travels left, hence the minus.
-    const p =
-      windowWidth > 0 ? (center - overflow * travelled) / windowWidth : 0.5;
-    // Depth is a cue for content running off an edge, so it may only apply on
-    // a side that HAS content off it. Without this gate the first tab sits
-    // blurred and shrunken at the resting position, where nothing is hidden to
-    // its left — and the last tab does the same at the end of the travel. The
-    // thresholds match FadeEdges so blur and gradient arrive together, and
-    // both curves pass through "no effect" at the window centre, so a tab
-    // crossing the midpoint swaps gate with no visible step.
-    const gate =
-      p < 0.5
-        ? Math.min(1, travelled / 0.05)
-        : Math.min(1, (1 - travelled) / 0.05);
-    return { p, gate };
-  };
+  const itemRef = useRef(null);
+  const countRef = useRef(null);
 
-  const scale = useTransform(scrollYProgress, (raw) => {
-    const { p, gate } = depthOf(raw);
-    return 1 - (1 - SCALE_CURVE(p)) * gate;
-  });
-  // `filter: none` rather than `blur(0px)` in the sharp middle band: a live
-  // filter would otherwise force a filter layer on every tab for the whole
-  // scroll, for zero visual gain.
-  const filter = useTransform(scrollYProgress, (raw) => {
-    const { p, gate } = depthOf(raw);
-    const radius = BLUR_CURVE(p) * gate;
-    return radius < 0.05 ? 'none' : `blur(${radius}px)`;
+  // The count badge tallies up when its tab scrolls into the row's window —
+  // the HORIZONTAL equivalent of the about page's viewport counters, and what
+  // §6.4 describes. `root` is the scroller, so "in view" means inside the
+  // visible slots, not merely somewhere on the page; tabs waiting off the edge
+  // hold at 0 and animate the moment they are revealed. `amount: 'all'` waits
+  // until the tab is fully clear of the fade so the tally never starts under a
+  // half-faded label.
+  const inView = useInView(itemRef, { root: scrollerRef, amount: 'all' });
+  // Same shared controller the about page uses, so easing, the reduced-motion
+  // path (writes the final value with no tween) and the re-entry hysteresis are
+  // identical sitewide rather than a second implementation of the same idea.
+  useViewportCountUp(countRef, {
+    to: count ?? 0,
+    inView,
+    prefersReducedMotion,
+    enabled: showCount && typeof count === 'number',
   });
 
   return (
     <motion.button
+      ref={itemRef}
       type="button"
       data-category={label}
       aria-pressed={isActive}
+      // aria-disabled, NOT the native `disabled` attribute. An empty category is
+      // still a legitimate target: clicking it is what raises the "nothing in
+      // here yet" toast, and `disabled` would both swallow that click and drop
+      // the tab out of the tab order — leaving a keyboard user unable to reach it
+      // or find out why. Omitted rather than set to "false" on enabled tabs so
+      // the default carries no attribute at all.
+      aria-disabled={isDisabled || undefined}
       title={title}
-      onClick={(event) => onSelect(label, event)}
-      // `transition-colors`, NOT the blanket `transition` these tabs used to
-      // carry: Tailwind's default transition list includes `transform` and
-      // `filter`, which put a 150ms CSS ease on the two properties the depth
-      // parallax writes every frame — the effect visibly smeared behind the
-      // scroll and settled late. Colour is the only property here that ever
-      // transitions anyway, so nothing is lost.
+      onClick={() => onSelect(label)}
+      // `transition-colors`, not the blanket `transition` these tabs used to
+      // carry: Tailwind's default list includes `transform`, which would put a
+      // 150ms ease on any layout the browser applies while scrolling.
       className={`cursor-pointer whitespace-nowrap border-0 bg-transparent p-0 !text-[1rem] font-semibold uppercase transition-colors md:!text-[1.2rem] ${
         isDisabled ? 'opacity-40' : ''
       }`}
       style={{
         color: isActive ? ACTIVE_COLOR : INACTIVE_COLOR,
         textShadow: isActive ? ACTIVE_SHADOW : INACTIVE_SHADOW,
-        ...(depth ? { scale, filter } : null),
       }}
       whileHover={{
         textShadow: isActive ? ACTIVE_SHADOW_HOVER : INACTIVE_SHADOW_HOVER,
@@ -207,7 +208,9 @@ const CategoryItem = ({
       {label}
       {showCount && typeof count === 'number' && (
         <span className="ml-1 align-middle text-[0.65rem] tabular-nums opacity-40">
-          ({count})
+          {/* Only the digits carry the ref — useViewportCountUp writes straight
+            to textContent, so the brackets have to live outside it. */}
+          (<span ref={countRef}>0</span>)
         </span>
       )}
     </motion.button>
@@ -215,8 +218,8 @@ const CategoryItem = ({
 };
 
 /**
- * Horizontal category filter row that hijacks vertical page scroll once it
- * outgrows the space available.
+ * Horizontal category filter row that scrolls sideways once it outgrows the
+ * space available, instead of wrapping.
  *
  * @param {object}   props
  * @param {string[]} props.categories       Labels, in display order.
@@ -224,17 +227,16 @@ const CategoryItem = ({
  * @param {(cat: string) => void} props.onSelect
  *   Fired for EVERY click, including disabled tabs — the caller owns the
  *   "category is empty" toast and its dismissal lifecycle, which is why this
- *   component takes no `emptyMessage` (see the note in the PR for #47).
+ *   component takes no `emptyMessage`.
  * @param {(cat: string) => boolean} [props.isDisabled] Dim + title a tab.
  * @param {(cat: string) => string | undefined} [props.disabledTitle]
  *   Native tooltip for a disabled tab.
  * @param {Record<string, number>} [props.counts]
- *   Per-category totals. Rendered as small badges ONLY while the strip is
- *   hijacking, where they double as orientation aids; the un-hijacked row
- *   stays exactly as it looks today.
- * @param {number}   [props.stickyTop=0]    Pin offset from the viewport top, px.
+ *   Per-category totals. Rendered as small badges ONLY once the row overflows,
+ *   where they double as orientation aids; a row that fits stays exactly as it
+ *   looks today.
  * @param {number}   [props.maxVisible=4]   Desktop ceiling on visible tabs.
- * @param {string}   [props.className]      Classes for the outer runway.
+ * @param {string}   [props.className]      Classes for the outer container.
  * @param {string}   [props.label]          Accessible name for the group.
  */
 const ScrollHijackCategories = ({
@@ -244,44 +246,32 @@ const ScrollHijackCategories = ({
   isDisabled,
   disabledTitle,
   counts,
-  stickyTop = 0,
   maxVisible = 4,
   className = '',
   label = 'Category filters',
 }) => {
-  const runwayRef = useRef(null);
-  const pinRef = useRef(null);
+  const outerRef = useRef(null);
   const windowRef = useRef(null);
   const stripRef = useRef(null);
 
   const prefersReducedMotion = useReducedMotion();
   const slots = useVisibleSlots(maxVisible);
 
-  // Everything the hijack needs, measured from real layout boxes. Kept in one
-  // state object so a remeasure is a single render, and so the bail-out
-  // comparison below can reject no-op measurements wholesale.
-  const [metrics, setMetrics] = useState({
-    overflow: 0,
-    windowWidth: 0,
-    pinHeight: 0,
-    centers: [],
-  });
+  const [metrics, setMetrics] = useState({ overflow: 0, windowWidth: 0 });
+  // Which edge arrows are live. Kept as state (unlike the fade, which is a CSS
+  // variable) because their pointer-events have to switch too — an invisible
+  // arrow must not sit there swallowing clicks at the edge of the row.
+  const [arrows, setArrows] = useState({ left: false, right: false });
 
   const measure = useCallback(() => {
-    const runway = runwayRef.current;
+    const outer = outerRef.current;
     const strip = stripRef.current;
-    const pin = pinRef.current;
-    if (!runway || !strip || !pin) return;
+    if (!outer || !strip) return;
 
     const items = Array.from(strip.children);
     if (items.length === 0) return;
 
-    // offsetWidth/offsetLeft, never getBoundingClientRect: the tabs carry a
-    // live `scale` transform from the depth parallax, and rect measurements
-    // would feed those transforms straight back into the geometry that
-    // produces them.
     const widths = items.map((item) => item.offsetWidth);
-    const centers = items.map((item) => item.offsetLeft + item.offsetWidth / 2);
     const gap =
       items.length > 1
         ? Math.max(0, items[1].offsetLeft - (items[0].offsetLeft + widths[0]))
@@ -294,16 +284,8 @@ const ScrollHijackCategories = ({
     // widest run (rather than the first `slots`, or an average) guarantees no
     // label is ever permanently clipped — every tab can reach the window
     // fully — while still holding the visible count at roughly `slots`.
-    //
-    // The cap is a CEILING on the window once there are more categories than
-    // the row is meant to show at once — never the thing that triggers a
-    // hijack. Gating it on `maxVisible` (the desktop ceiling) rather than on
-    // `slots` is what keeps §3's promise: at 4 categories or fewer the row is
-    // measured against the full width available and hijacks only if it
-    // genuinely would not fit, so today's rows are untouched on every viewport
-    // — while a fifth category brings in the per-breakpoint 4/3/2 window of §4.
     let cap = Infinity;
-    if (items.length > maxVisible) {
+    if (items.length > slots) {
       cap = 0;
       for (let start = 0; start + slots <= items.length; start += 1) {
         let run = gap * (slots - 1) + padX;
@@ -312,29 +294,73 @@ const ScrollHijackCategories = ({
       }
     }
 
-    const windowWidth = Math.min(runway.clientWidth, cap);
+    const windowWidth = Math.min(outer.clientWidth, cap);
     const overflow = Math.max(0, strip.offsetWidth - windowWidth);
-    const pinHeight = pin.offsetHeight;
 
     setMetrics((prev) => {
       const unchanged =
         Math.abs(prev.overflow - overflow) < EPSILON &&
-        Math.abs(prev.windowWidth - windowWidth) < EPSILON &&
-        Math.abs(prev.pinHeight - pinHeight) < EPSILON &&
-        prev.centers.length === centers.length &&
-        centers.every((c, i) => Math.abs(c - prev.centers[i]) < EPSILON);
+        Math.abs(prev.windowWidth - windowWidth) < EPSILON;
       // Bailing out on an identical measurement is what stops the
-      // ResizeObserver → setState → layout → ResizeObserver cycle from
-      // becoming a loop.
-      return unchanged ? prev : { overflow, windowWidth, pinHeight, centers };
+      // ResizeObserver → setState → layout → ResizeObserver cycle from becoming
+      // a loop.
+      return unchanged ? prev : { overflow, windowWidth };
     });
-  }, [slots, maxVisible]);
+  }, [slots]);
+
+  const { overflow, windowWidth } = metrics;
+  const clipped = overflow > EPSILON;
+
+  /**
+   * Drive the edge fades from the live scroll position. Written as CSS custom
+   * properties consumed by the mask in `.category-strip-scroller`: 1 is a fully
+   * opaque edge (nothing hidden that way), 0 is a fully faded one. A mask, not
+   * a painted gradient overlay — these pages sit on photographic backgrounds,
+   * where a dark gradient would read as a smudge rather than a fade.
+   */
+  const syncEdges = useCallback(() => {
+    const el = windowRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    const left = 1 - clamp(el.scrollLeft / FADE_RAMP, 0, 1);
+    const right = 1 - clamp((max - el.scrollLeft) / FADE_RAMP, 0, 1);
+    el.style.setProperty('--edge-l', String(left));
+    el.style.setProperty('--edge-r', String(right));
+    // The arrows need the same information as booleans. Committed only on a
+    // CHANGE, so a scroll gesture costs at most two renders (one per edge
+    // crossing) rather than one per scroll event.
+    setArrows((prev) => {
+      const next = { left: left < 1, right: right < 1 };
+      return prev.left === next.left && prev.right === next.right ? prev : next;
+    });
+  }, []);
+
+  /**
+   * Nudge the row by one window's worth. Gives the arrows something to do for
+   * anyone who reaches for them rather than scrolling, and for pointers with no
+   * wheel at all.
+   */
+  const page = useCallback(
+    (direction) => {
+      const el = windowRef.current;
+      if (!el) return;
+      el.scrollBy({
+        left: direction * Math.max(windowWidth - EDGE_MARGIN * 2, 80),
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
+    },
+    [windowWidth, prefersReducedMotion],
+  );
 
   useIsomorphicLayoutEffect(() => {
     measure();
+    syncEdges();
 
-    const observer = new ResizeObserver(measure);
-    [runwayRef.current, stripRef.current, pinRef.current].forEach((el) => {
+    const observer = new ResizeObserver(() => {
+      measure();
+      syncEdges();
+    });
+    [outerRef.current, stripRef.current].forEach((el) => {
       if (el) observer.observe(el);
     });
 
@@ -347,7 +373,10 @@ const ScrollHijackCategories = ({
       document.fonts?.status === 'loading'
     ) {
       document.fonts.ready.then(() => {
-        if (!cancelled) measure();
+        if (!cancelled) {
+          measure();
+          syncEdges();
+        }
       });
     }
 
@@ -355,212 +384,173 @@ const ScrollHijackCategories = ({
       cancelled = true;
       observer.disconnect();
     };
-  }, [measure]);
-
-  const { overflow, windowWidth, pinHeight, centers } = metrics;
-  const needsHijack = overflow > EPSILON;
-
-  // Pin window in scroll coordinates: progress 0 when the runway's top reaches
-  // `stickyTop` (the pin engages), progress 1 when its bottom reaches
-  // `stickyTop + pinHeight` (the pin releases). Framer resolves the px edges
-  // against the live element box and re-subscribes whenever this array's
-  // contents change, so a resize re-derives the window for free.
-  //
-  // A row that fits tracks nothing at all: passing no target (rather than a
-  // target with a no-op offset) means Framer never measures this element, and
-  // its dev-only "container has a static position" advisory — which fires for
-  // any element-targeted useScroll against the window — stays out of the
-  // console on the pages that never hijack.
-  const scrollOptions = useMemo(
-    () =>
-      needsHijack
-        ? {
-            target: runwayRef,
-            offset: [`start ${stickyTop}px`, `end ${stickyTop + pinHeight}px`],
-          }
-        : {},
-    [needsHijack, stickyTop, pinHeight],
-  );
-  const { scrollYProgress } = useScroll(scrollOptions);
-  // scrollYProgress itself is deliberately unclamped by Framer (it keeps
-  // running past 0/1 outside the pin window); re-mapping through useTransform
-  // clamps it, which is what the fades, the progress bar and the travel below
-  // all assume. Both of these — and every consumer downstream — derive from
-  // scrollYProgress DIRECTLY rather than from each other, so they all land in
-  // the same frame instead of settling one level per frame.
-  const progress = useTransform(scrollYProgress, [0, 1], [0, 1]);
-  const x = useTransform(scrollYProgress, [0, 1], [0, -overflow]);
+  }, [measure, syncEdges]);
 
   /**
-   * Scroll the page so the tab at `index` sits fully inside the window.
-   * The 1:1 vertical→horizontal mapping means "how far the strip has
-   * travelled" and "how far into the pin we are" are the same number, so the
-   * target scroll position is just the pin's start plus the travel we want.
+   * Wheel/trackpad over the row becomes horizontal travel — but only while the
+   * row can still move the way the gesture is asking. At either end the event
+   * is left alone and the page scrolls as normal, so the row hands control back
+   * the instant it runs out rather than swallowing the gesture.
+   *
+   * Bound by hand with `{ passive: false }` instead of an onWheel prop: React
+   * registers wheel listeners at the root as PASSIVE, where preventDefault is
+   * a no-op that only earns a console warning.
    */
+  useEffect(() => {
+    const el = windowRef.current;
+    if (!el || !clipped || prefersReducedMotion) return undefined;
+
+    const onWheel = (event) => {
+      // Trackpads report both axes; a mouse wheel reports deltaY alone. Follow
+      // whichever axis the gesture actually favours.
+      const delta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+          ? event.deltaX
+          : event.deltaY;
+      if (!delta) return;
+
+      const max = el.scrollWidth - el.clientWidth;
+      const canTravel =
+        (delta < 0 && el.scrollLeft > 0) || (delta > 0 && el.scrollLeft < max);
+      if (!canTravel) return;
+
+      event.preventDefault();
+      el.scrollLeft = clamp(el.scrollLeft + delta, 0, max);
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [clipped, prefersReducedMotion]);
+
+  /** Scroll the row so the tab at `index` sits fully inside the window. */
   const scrollItemIntoView = useCallback(
-    (index, behavior) => {
-      const runway = runwayRef.current;
+    (index) => {
+      const el = windowRef.current;
       const item = stripRef.current?.children?.[index];
-      if (!runway || !item || overflow <= EPSILON) return;
+      if (!el || !item || !clipped) return;
 
-      const pinStartY =
-        window.scrollY + runway.getBoundingClientRect().top - stickyTop;
-      const travelled = clamp(window.scrollY - pinStartY, 0, overflow);
-      const itemLeft = item.offsetLeft;
-      const itemRight = itemLeft + item.offsetWidth;
-
-      let target = travelled;
-      if (itemLeft - travelled < EDGE_MARGIN) {
-        target = itemLeft - EDGE_MARGIN;
-      } else if (itemRight - travelled > windowWidth - EDGE_MARGIN) {
-        target = itemRight - windowWidth + EDGE_MARGIN;
-      }
-      target = clamp(target, 0, overflow);
+      const travelled = el.scrollLeft;
+      const target = clamp(
+        travelToReveal(
+          item.offsetLeft,
+          item.offsetLeft + item.offsetWidth,
+          travelled,
+          windowWidth,
+        ),
+        0,
+        el.scrollWidth - el.clientWidth,
+      );
       if (Math.abs(target - travelled) < 1) return;
 
-      window.scrollTo({ top: pinStartY + target, behavior });
+      el.scrollTo({
+        left: target,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
     },
-    [overflow, windowWidth, stickyTop],
+    [clipped, windowWidth, prefersReducedMotion],
   );
 
-  // Selecting a tab that is only half in the window pulls it fully into view.
-  // Keyed off a CHANGE in `active`, not off the effect's dependency list: the
-  // first measurement re-creates `scrollItemIntoView`, and a plain dep-array
-  // effect would take that as a selection and scroll the page on mount — a
-  // visible yank on any deep link or restored scroll position where the
-  // remembered category sits outside the window.
+  // Selecting a tab that is only half in the window pulls it fully in. Keyed
+  // off a CHANGE in `active`, not off the effect's dependency list: the first
+  // measurement re-creates `scrollItemIntoView`, and a plain dep-array effect
+  // would take that as a selection and scroll on mount.
   const lastActiveRef = useRef(active);
   const activeIndex = categories.indexOf(active);
   useEffect(() => {
     if (lastActiveRef.current === active) return;
     lastActiveRef.current = active;
-    if (activeIndex < 0) return;
-    scrollItemIntoView(activeIndex, prefersReducedMotion ? 'auto' : 'smooth');
-  }, [active, activeIndex, scrollItemIntoView, prefersReducedMotion]);
-
-  /**
-   * Keyboard traversal. Tabbing to a clipped button makes the browser scroll
-   * the nearest scrollable box to reveal it — here that is the overflow-hidden
-   * window, whose scrollLeft is NOT part of the transform chain, so the strip
-   * would silently desync. Undo that, then move the page instead, which is the
-   * one input this component treats as the source of truth.
-   */
-  const handleFocus = useCallback(
-    (event) => {
-      if (windowRef.current) windowRef.current.scrollLeft = 0;
-      if (!needsHijack) return;
-      const items = Array.from(stripRef.current?.children ?? []);
-      const index = items.findIndex((item) => item.contains(event.target));
-      if (index >= 0) scrollItemIntoView(index, 'auto');
-    },
-    [needsHijack, scrollItemIntoView],
-  );
-
-  /**
-   * Second input for touch (§5): a horizontal drag across the strip is
-   * translated into vertical page scroll rather than into `x` directly.
-   * Feeding the gesture back through the SAME scroll position the transform
-   * reads from means the two inputs can never disagree — no post-drag
-   * resync, no competing sources of truth.
-   */
-  const handlePan = useCallback((event, info) => {
-    window.scrollBy(0, -info.delta.x);
-  }, []);
-
-  // A swipe that starts and ends on the same tab still produces a click, so a
-  // flick to reach a further category would silently select whatever was under
-  // the finger. Compare the click against where the pointer went down and drop
-  // it if it travelled. `detail === 0` marks a keyboard-activated click (no
-  // pointer, clientX is 0), which must always go through.
-  const pointerDownXRef = useRef(null);
-  const handleItemClick = useCallback(
-    (cat, event) => {
-      if (
-        needsHijack &&
-        event?.detail > 0 &&
-        pointerDownXRef.current !== null &&
-        Math.abs(event.clientX - pointerDownXRef.current) > CLICK_SLOP
-      ) {
-        return;
-      }
-      onSelect(cat);
-    },
-    [needsHijack, onSelect],
-  );
-
-  const depth = needsHijack && !prefersReducedMotion;
+    if (activeIndex >= 0) scrollItemIntoView(activeIndex);
+  }, [active, activeIndex, scrollItemIntoView]);
 
   return (
-    <div
-      ref={runwayRef}
-      className={`w-full ${className}`}
-      // The runway's extra height IS the scroll budget. `undefined` (not
-      // "auto") when idle so nothing is written to the style attribute at all.
-      style={needsHijack ? { height: pinHeight + overflow } : undefined}
-    >
+    <div ref={outerRef} className={`w-full ${className}`}>
       <div
-        ref={pinRef}
-        style={
-          needsHijack
-            ? { position: 'sticky', top: stickyTop, zIndex: 30 }
-            : undefined
-        }
+        className="relative mx-auto w-fit"
+        style={clipped ? { maxWidth: windowWidth } : undefined}
       >
         <div
-          className="mx-auto w-fit"
-          style={needsHijack ? { maxWidth: windowWidth } : undefined}
+          ref={windowRef}
+          role="group"
+          aria-label={label}
+          onScroll={clipped ? syncEdges : undefined}
+          // Marks the row as an interactive region for CustomCursor, whose
+          // ring grows over anything matching `[data-cursor="grow"]`. Without
+          // it the row is the one place on these pages where the wheel does
+          // something unusual and the cursor gives no sign of it.
+          data-cursor={clipped ? 'grow' : undefined}
+          // `py-5 -my-5` only while clipped: overflow clips BOTH axes, which
+          // would shear the tabs' neon halo off top and bottom. The padding
+          // gives the halo room inside the scrollport and the equal negative
+          // margin takes it back out of the layout, so a clipped row occupies
+          // exactly the same vertical space as one that fits.
+          className={`relative ${
+            clipped
+              ? 'category-strip-scroller -my-5 overflow-x-auto overflow-y-hidden overscroll-x-contain py-5'
+              : ''
+          }`}
         >
           <div
-            ref={windowRef}
-            role="group"
-            aria-label={label}
-            onFocus={handleFocus}
-            className={`relative ${
-              needsHijack
-                ? 'category-strip-pinned overflow-hidden rounded-full py-4'
-                : ''
-            }`}
+            ref={stripRef}
+            className="flex w-max items-center justify-center gap-6 px-3"
           >
-            <motion.div
-              ref={stripRef}
-              style={{ x }}
-              onPan={needsHijack ? handlePan : undefined}
-              onPointerDownCapture={(event) => {
-                pointerDownXRef.current = event.clientX;
-              }}
-              className={`relative flex w-max items-center gap-6 px-3 ${
-                needsHijack
-                  ? 'touch-pan-y select-none will-change-transform'
-                  : ''
+            {categories.map((cat) => {
+              const disabled = isDisabled ? isDisabled(cat) : false;
+              return (
+                <CategoryItem
+                  key={cat}
+                  label={cat}
+                  isActive={active === cat}
+                  isDisabled={disabled}
+                  title={
+                    disabled && disabledTitle ? disabledTitle(cat) : undefined
+                  }
+                  count={counts?.[cat]}
+                  showCount={clipped && Boolean(counts)}
+                  onSelect={onSelect}
+                  scrollerRef={windowRef}
+                  prefersReducedMotion={prefersReducedMotion}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Edge arrows — the standing cue that this row moves. The fade alone
+            says "something is cut off"; an arrow says "and you can get to it".
+            Each one shows only while there is something hidden its way, drifts
+            gently to catch the eye, and pages the row when clicked, so a
+            pointer with no wheel is not stranded.
+
+            aria-hidden + tabIndex -1 deliberately: they duplicate scrolling
+            that the keyboard already does natively by tabbing through the tabs,
+            so exposing them would add two redundant stops in front of every
+            row without offering a single thing tabbing cannot already do. */}
+        {clipped && (
+          <>
+            <button
+              type="button"
+              aria-hidden
+              tabIndex={-1}
+              onClick={() => page(-1)}
+              className={`category-strip-arrow category-strip-arrow--left ${
+                arrows.left ? 'opacity-70' : 'pointer-events-none opacity-0'
               }`}
             >
-              {categories.map((cat, index) => {
-                const disabled = isDisabled ? isDisabled(cat) : false;
-                return (
-                  <CategoryItem
-                    key={cat}
-                    label={cat}
-                    isActive={active === cat}
-                    isDisabled={disabled}
-                    title={
-                      disabled && disabledTitle ? disabledTitle(cat) : undefined
-                    }
-                    count={counts?.[cat]}
-                    showCount={needsHijack && Boolean(counts)}
-                    onSelect={handleItemClick}
-                    scrollYProgress={scrollYProgress}
-                    overflow={overflow}
-                    center={centers[index] ?? 0}
-                    windowWidth={windowWidth}
-                    depth={depth}
-                  />
-                );
-              })}
-            </motion.div>
-            {needsHijack && <FadeEdges progress={scrollYProgress} />}
-          </div>
-          {needsHijack && <ScrollProgressBar progress={progress} />}
-        </div>
+              <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
+              aria-hidden
+              tabIndex={-1}
+              onClick={() => page(1)}
+              className={`category-strip-arrow category-strip-arrow--right ${
+                arrows.right ? 'opacity-70' : 'pointer-events-none opacity-0'
+              }`}
+            >
+              <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

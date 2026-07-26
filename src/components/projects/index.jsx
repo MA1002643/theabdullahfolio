@@ -24,7 +24,24 @@ const container = {
 // re-run them every render, omitting it would mask a real dependency.
 // Hoisting matches the naming convention used by `PARENT_CATEGORIES`
 // in `qualifications/Carousel.jsx`.
-const CATEGORIES = ["All", "Web", "System", "App"];
+/* ⚠️ ─── TEMPORARY DEMO CATEGORIES — issue #47 manual testing ──────────────
+   Eight extra tabs so the row outgrows the 4-slot desktop window (2 on mobile)
+   and the strip actually engages. Mobile / Design / Robotics / Data have demo
+   projects behind them in src/app/data.js and are SELECTABLE; Cloud / Security
+   / Embedded / Research have none, so they stay dimmed and raise the toast.
+   DELETE this const and drop the spread below to restore the shipping four. */
+const DEMO_CATEGORIES = [
+  "Mobile",
+  "Design",
+  "Robotics",
+  "Data",
+  "Cloud",
+  "Security",
+  "Embedded",
+  "Research",
+];
+
+const CATEGORIES = ["All", "Web", "System", "App", ...DEMO_CATEGORIES];
 
 const ProjectList = ({ projects }) => {
   const [active, setActive] = useState("All");
@@ -130,11 +147,10 @@ const ProjectList = ({ projects }) => {
 
             The row itself is the shared scroll-driven strip (issue #47):
             with today's four categories it measures as fitting and renders
-            as the plain centred row it always was. Grow CATEGORIES past
-            what the viewport can hold and it pins, converting vertical
-            scroll into horizontal travel instead of wrapping to a second
-            line. `stickyTop` clears the fixed home button (0.75rem inset +
-            up to a 3.5rem button). */}
+            as the plain centred row it always was. Grow CATEGORIES past what
+            the viewport can hold and it becomes a horizontal scroller — a
+            wheel over the row travels sideways — instead of wrapping to a
+            second line. The project list below never moves. */}
         <ScrollHijackCategories
           className="mb-4 mt-10"
           label="Project categories"
@@ -144,7 +160,6 @@ const ProjectList = ({ projects }) => {
           isDisabled={isCategoryDisabled}
           disabledTitle={() => "No projects in this category"}
           counts={categoryCounts}
-          stickyTop={72}
         />
 
       {/* PROJECT LIST */}

@@ -41,10 +41,48 @@ const aspectFor = (img) => {
   return 0.71;
 };
 
+/* ⚠️ ─── TEMPORARY DEMO CATEGORIES — issue #47 manual testing ──────────────
+   Grows BOTH rows past the visible-slot cap so each strip engages
+   independently — the parent row first, then the sub row once a parent with
+   subs is selected.
+
+   Aviation / Cartography / Horology have demo certificates behind them (see
+   the demo block at the end of CARDS) so they are SELECTABLE, which is what
+   lets you reach their sub rows. The remaining demo parents have none, so they
+   stay dimmed and raise the toast — an empty parent can't be opened, so it can
+   never show a sub row. Demo subs are all empty by design: the row still
+   renders, scrolls and dims correctly.
+
+   DELETE the two consts below, drop the two spreads out of CATEGORY_TREE, and
+   delete the demo block at the end of CARDS to restore shipping state. */
+const DEMO_SUBS = [
+  'Alpine',
+  'Baltic',
+  'Coastal',
+  'Delta',
+  'Estuary',
+  'Fjord',
+  'Glacier',
+  'Highland',
+];
+
+const DEMO_PARENT_TREE = {
+  Aviation: ['Ground School', 'Flight Hours', 'Night Rating', ...DEMO_SUBS],
+  Cartography: ['Survey', 'Relief', 'Projection'],
+  Horology: ['Escapement', 'Chronometry'],
+  Botany: null,
+  Ceramics: null,
+  Falconry: null,
+  Geology: null,
+  Philately: null,
+  Zoology: null,
+};
+
 const CATEGORY_TREE = {
   All: null,
-  Education: ['School', 'College', 'University'],
-  Employment: ['Security', 'Tech'],
+  Education: ['School', 'College', 'University', ...DEMO_SUBS],
+  Employment: ['Security', 'Tech', ...DEMO_SUBS],
+  ...DEMO_PARENT_TREE,
 };
 
 const PARENT_CATEGORIES = Object.keys(CATEGORY_TREE);
@@ -402,6 +440,63 @@ const CARDS = [
     sub: 'Tech',
     img: '/qualifications/unisys-data-privacy-2023-v2.webp',
   },
+
+  /* ⚠️ ─── TEMPORARY DEMO CERTIFICATES — issue #47 manual testing ──────────
+     Backing cards for three of the demo parents in DEMO_PARENT_TREE, so those
+     tabs can actually be opened and their sub rows reached. They reuse an
+     existing artwork (certificate-misc.webp) purely so the carousel has a real
+     image to lay out — _dimensions.json already carries its aspect ratio.
+     DELETE FROM THIS BANNER TO THE CLOSING MARKER to restore shipping data. */
+  {
+    id: 901,
+    title: 'Demo — Private Pilot Ground School',
+    category: 'Aviation',
+    sub: 'Ground School',
+    img: '/qualifications/certificate-misc.webp',
+  },
+  {
+    id: 902,
+    title: 'Demo — Logged Flight Hours',
+    category: 'Aviation',
+    sub: 'Flight Hours',
+    img: '/qualifications/certificate-misc.webp',
+  },
+  {
+    id: 903,
+    title: 'Demo — Night Rating',
+    category: 'Aviation',
+    sub: 'Night Rating',
+    img: '/qualifications/certificate-misc.webp',
+  },
+  {
+    id: 904,
+    title: 'Demo — Topographic Survey',
+    category: 'Cartography',
+    sub: 'Survey',
+    img: '/qualifications/certificate-misc.webp',
+  },
+  {
+    id: 905,
+    title: 'Demo — Relief Shading',
+    category: 'Cartography',
+    sub: 'Relief',
+    img: '/qualifications/certificate-misc.webp',
+  },
+  {
+    id: 906,
+    title: 'Demo — Escapement Servicing',
+    category: 'Horology',
+    sub: 'Escapement',
+    img: '/qualifications/certificate-misc.webp',
+  },
+  {
+    id: 907,
+    title: 'Demo — Chronometry Basics',
+    category: 'Horology',
+    sub: 'Chronometry',
+    img: '/qualifications/certificate-misc.webp',
+  },
+  /* ⚠️ ─── END TEMPORARY DEMO CERTIFICATES ────────────────────────────── */
 ];
 
 // Precomputed once at module load so the empty-tab logic doesn't re-scan
@@ -585,21 +680,21 @@ const Carousel3D = () => {
 
   return (
     // `overflow-clip`, not `overflow-hidden`. This wrapper exists to clip the
-    // 3D wheel's ±132vh of horizontal travel, and `hidden` does that by making
-    // the element a scroll container — which also makes it the scrollport that
-    // any `position: sticky` descendant sticks to, so the category strips
-    // below (issue #47) could never pin to the viewport. `clip` clips exactly
-    // the same box without creating a scroll container, so the strips see the
-    // viewport as their scrollport. Moving the clip down onto `.perspective-3d`
-    // is not an option either: `overflow` other than `visible` forces
+    // 3D wheel's ±132vh of horizontal travel, and `hidden` does that by turning
+    // the element into a scroll container — a scrollport the category strips
+    // below would then be measured against. `clip` clips exactly the same box
+    // without creating one. Moving the clip down onto `.perspective-3d` is not
+    // an option either: `overflow` other than `visible` forces
     // `transform-style: flat` and would collapse the coverflow depth.
     <div className="relative flex max-h-full w-full flex-col items-center justify-center overflow-clip">
-      {/* Parent category filters — the shared scroll-driven strip (issue #47).
-          At today's three categories it measures as fitting and renders as the
-          plain centred row it always was; add enough categories to outgrow the
-          viewport and it pins, turning vertical scroll into horizontal travel
-          instead of wrapping to a second line. `stickyTop` clears the fixed
-          home button (0.75rem inset + up to a 3.5rem button). */}
+      {/* Parent + sub category filters — the shared scroll-driven strip
+          (issue #47), stacked directly on top of each other. At today's three
+          parents each row measures as fitting and renders as the plain centred
+          row it always was; add enough to outgrow the viewport and the row
+          becomes a horizontal scroller (a wheel over it travels sideways)
+          rather than wrapping. Neither row injects any height, so the sub row
+          always sits immediately under its parent and the carousel below stays
+          exactly where it is. */}
       <ScrollHijackCategories
         className="mb-4 mt-10"
         label="Qualification categories"
@@ -609,7 +704,6 @@ const Carousel3D = () => {
         isDisabled={isParentEmpty}
         disabledTitle={(cat) => `No qualifications in ${cat} yet`}
         counts={parentCounts}
-        stickyTop={72}
       />
 
       {/* Sub-category filters (only when parent has subs) */}
@@ -623,7 +717,6 @@ const Carousel3D = () => {
           isDisabled={isSubEmpty}
           disabledTitle={(sub) => `No qualifications in ${sub} yet`}
           counts={subCounts}
-          stickyTop={72}
         />
       )}
 

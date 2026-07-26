@@ -97,6 +97,64 @@ export const projectsData = [
     demoLink: 'www.google.com',
     category: 'System',
   },
+
+  /* ⚠️ ─── TEMPORARY DEMO DATA — issue #47 manual testing ──────────────────
+     Projects for four of the demo categories declared in
+     src/components/projects/index.jsx, so those tabs are SELECTABLE and you
+     can watch the active glow travel, the list re-filter, and a half-cut tab
+     pull itself into the window when clicked. The other four demo categories
+     are deliberately left with no projects so the dimmed + toast path stays
+     testable too.
+     DELETE FROM THIS BANNER TO THE CLOSING MARKER to restore shipping data. */
+  {
+    id: 901,
+    name: 'PocketLedger',
+    description: 'Offline-first expense tracker',
+    date: '2023-03-02',
+    demoLink: 'www.google.com',
+    category: 'Mobile',
+  },
+  {
+    id: 902,
+    name: 'FieldNotes',
+    description: 'Voice-to-text notes for site surveys',
+    date: '2023-05-19',
+    demoLink: 'www.google.com',
+    category: 'Mobile',
+  },
+  {
+    id: 903,
+    name: 'Typeset',
+    description: 'Variable-font pairing playground',
+    date: '2023-07-08',
+    demoLink: 'www.google.com',
+    category: 'Design',
+  },
+  {
+    id: 904,
+    name: 'RoverKit',
+    description: 'Telemetry dashboard for a hobby rover',
+    date: '2023-09-27',
+    demoLink: 'www.google.com',
+    category: 'Robotics',
+  },
+  {
+    id: 905,
+    name: 'Tideline',
+    description: 'Coastal sensor readings, charted',
+    date: '2024-01-16',
+    demoLink: 'www.google.com',
+    category: 'Data',
+  },
+  {
+    id: 906,
+    name: 'Quarry',
+    description: 'Static-site search index builder',
+    date: '2024-04-11',
+    demoLink: 'www.google.com',
+    category: 'Data',
+  },
+  /* ⚠️ ─── END TEMPORARY DEMO DATA ─────────────────────────────────────── */
 ];
 
 export const BtnList = [
