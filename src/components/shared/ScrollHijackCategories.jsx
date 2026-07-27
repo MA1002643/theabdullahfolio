@@ -356,13 +356,25 @@ const ScrollHijackCategories = ({
     measure();
     syncEdges();
 
-    const observer = new ResizeObserver(() => {
+    const remeasure = () => {
       measure();
       syncEdges();
-    });
-    [outerRef.current, stripRef.current].forEach((el) => {
-      if (el) observer.observe(el);
-    });
+    };
+
+    // Guarded like every other ResizeObserver in this codebase: pre-2020
+    // WebKit and older Android webviews don't ship it, and an unguarded
+    // `new` would take the whole page down. The window-resize fallback
+    // only sees viewport changes, not content reflow, but that covers the
+    // remeasure that matters (rotation / window resize) on those browsers.
+    let observer = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(remeasure);
+      [outerRef.current, stripRef.current].forEach((el) => {
+        if (el) observer.observe(el);
+      });
+    } else {
+      window.addEventListener('resize', remeasure);
+    }
 
     // Web fonts land after first paint and change every label's width, so the
     // first measurement is taken against fallback metrics. Remeasure once the
@@ -382,7 +394,8 @@ const ScrollHijackCategories = ({
 
     return () => {
       cancelled = true;
-      observer.disconnect();
+      observer?.disconnect();
+      window.removeEventListener('resize', remeasure);
     };
   }, [measure, syncEdges]);
 
