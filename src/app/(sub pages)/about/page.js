@@ -7,7 +7,9 @@ import PageTitle from "@/components/PageTitle";
 
 export default function About() {
   return (
-    <main >
+    // Fragment, not <main>: the (sub pages) layout already provides the one
+    // <main> landmark (see issue #86 — nested <main> is invalid HTML).
+    <>
       {/* Background mirrors the contact page exactly: the same contact-bg.png at
           half opacity, a black overlay to deepen it, then the cursor-reactive
           aurora composited over the top (screen blend) by the mount. `alt=""`
@@ -36,6 +38,6 @@ export default function About() {
       <PageTitle title="ABOUT ME" subtitle="WHO I AM" id="about" />
 
       <AboutDetails />
-    </main>
+    </>
   );
 }
