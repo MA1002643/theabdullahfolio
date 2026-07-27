@@ -3534,6 +3534,7 @@ html.custom-cursor-active * {
    the boxed-in look this row is meant to avoid. */
 .category-strip-scroller {
   --edge-w: 2.5rem;
+
   scrollbar-width: none;
   -webkit-mask-image: linear-gradient(
     to right,
