@@ -56,6 +56,16 @@ export const TRACKED_REPOS = Object.freeze([
     name: 'aura-motion',
     displayName: 'aura-motion',
   }),
+  Object.freeze({
+    owner: 'MA1002643',
+    name: 'vigil',
+    displayName: 'vigil',
+  }),
+  Object.freeze({
+    owner: 'MA1002643',
+    name: 'tailorhawk',
+    displayName: 'tailorhawk',
+  }),
 ]);
 
 export const nameWithOwnerOf = (repo) => `${repo.owner}/${repo.name}`;

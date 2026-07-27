@@ -2209,6 +2209,23 @@ html.custom-cursor-active * {
   }
 }
 
+/* Colour-neutral variant (category strip tabs). The same per-glyph roll, but
+   the incoming clone inherits the label's own colour instead of lifting to
+   orange — on the strip, orange vs grey IS the active/inactive signal, so the
+   hover must not repaint it. Declared after the blocks above so the inherit
+   wins their equal-specificity colour rules in the cascade; under reduced
+   motion the roll is already collapsed, and inheriting here means no colour
+   lift either — those tabs simply don't respond, matching the no-colour brief. */
+.hover-swap--mono .hover-text__clone {
+  color: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hover-swap--mono:hover .hover-text__face,
+  .hover-swap--mono:focus-visible .hover-text__face {
+    color: inherit;
+  }
+}
+
 /* ── Decipher entrance (DecipherEmail.jsx) ──
    The footer contact email resolves out of a cipher the first time it scrolls
    into view (gated on the intro loader): each glyph scrambles through random
@@ -3506,6 +3523,132 @@ html.custom-cursor-active * {
   .animate-eq-bar-2,
   .animate-eq-bar-3 {
     height: 7px;
+    animation: none;
+  }
+}
+
+/* ── Scroll-driven category strip (issue #47) ───────────────────────────────
+   The shared <ScrollHijackCategories /> row on /projects and /qualifications,
+   applied ONLY once the row outgrows its space — a row that fits carries none
+   of this and renders exactly as it did before the component existed.
+
+   No plate, no border, no progress bar: the row is meant to read as the same
+   bare neon tabs it always was, just clipped. The only added cue is a fade at
+   whichever edge currently has content hidden behind it, and that fade is a
+   MASK rather than a painted gradient. Both pages sit on photographic
+   backgrounds, where an overlay dark enough to hide a label reads as a smudge
+   across the artwork; masking fades the tabs themselves and leaves whatever is
+   behind them untouched.
+
+   --edge-l / --edge-r are written from the scroll handler: 1 is a fully opaque
+   edge (nothing hidden that way), 0 a fully faded one. Defaulting both to 1
+   means the mask is a no-op until the first scroll, so a row that has only
+   just overflowed never flashes a fade it hasn't earned.
+
+   The scrollbar is hidden because the fades, the wheel-to-travel conversion and
+   native touch/keyboard scrolling all already expose the affordance, and a
+   permanent gutter under the tabs (Windows, Linux) would reintroduce exactly
+   the boxed-in look this row is meant to avoid. */
+.category-strip-scroller {
+  --edge-w: 2.5rem;
+
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, var(--edge-l, 1)) 0,
+    #000 var(--edge-w),
+    #000 calc(100% - var(--edge-w)),
+    rgba(0, 0, 0, var(--edge-r, 1)) 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, var(--edge-l, 1)) 0,
+    #000 var(--edge-w),
+    #000 calc(100% - var(--edge-w)),
+    rgba(0, 0, 0, var(--edge-r, 1)) 100%
+  );
+}
+
+.category-strip-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* Clips the qualification carousel's stage (Carousel.jsx) without making it a
+   scroll container — `hidden` would let focus-reveal silently scroll the
+   coverflow out of alignment. Safari < 16 and older WebViews don't parse
+   `overflow: clip` and would fall all the way back to `visible`, bleeding the
+   wheel's ±132vh travel across the page, so they get `hidden` — the behaviour
+   this wrapper always had before issue #47 — and `clip` applies only where it
+   parses. */
+.carousel-stage-clip {
+  overflow: hidden;
+}
+
+@supports (overflow: clip) {
+  .carousel-stage-clip {
+    overflow: clip;
+  }
+}
+
+/* Edge arrows. They sit ON the faded band rather than outside the row: the
+   window is already centred to within a few pixels of the page gutter at
+   mobile widths, so hanging them outside would have pushed the document into
+   horizontal overflow. Anything under them is mask-faded anyway.
+
+   The drift is what turns a static glyph into a cue that the row moves — 3px,
+   slow, and away from the row's centre, i.e. pointing at the content that is
+   hidden. Small enough to register peripherally without pulling focus off the
+   page, and stilled entirely under prefers-reduced-motion. */
+.category-strip-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fc83ff;
+  filter: drop-shadow(0 0 4px rgba(255, 85, 247, 0.85));
+  transition: opacity 0.25s ease-in-out;
+}
+
+.category-strip-arrow--left {
+  left: -0.15rem;
+  transform: translateY(-50%);
+  animation: category-arrow-nudge-left 2.6s ease-in-out infinite;
+}
+
+.category-strip-arrow--right {
+  right: -0.15rem;
+  transform: translateY(-50%);
+  animation: category-arrow-nudge-right 2.6s ease-in-out infinite;
+}
+
+@keyframes category-arrow-nudge-left {
+  0%,
+  100% {
+    transform: translate(0, -50%);
+  }
+  50% {
+    transform: translate(-3px, -50%);
+  }
+}
+
+@keyframes category-arrow-nudge-right {
+  0%,
+  100% {
+    transform: translate(0, -50%);
+  }
+  50% {
+    transform: translate(3px, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-strip-arrow--left,
+  .category-strip-arrow--right {
     animation: none;
   }
 }

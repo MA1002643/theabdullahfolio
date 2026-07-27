@@ -4,6 +4,7 @@ import ProjectLayout from "./ProjectLayout";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import PageTitle from "@/components/PageTitle";
+import ScrollHijackCategories from "@/components/shared/ScrollHijackCategories";
 
 const container = {
   hidden: { opacity: 0 },
@@ -74,6 +75,41 @@ const ProjectList = ({ projects }) => {
     return counts;
   }, [projects]);
 
+  // "All" is never disabled — it is the reset, even on an empty portfolio.
+  const isCategoryDisabled = (cat) => cat !== "All" && categoryCounts[cat] === 0;
+
+  // Fired for every tab click, disabled ones included: the toast and its
+  // dismissal lifecycle stay here rather than moving into the shared strip,
+  // so the precise "dismiss on switch / dismiss on unmount" behaviour this
+  // page already owns is untouched.
+  const handleSelect = (cat) => {
+    // Clear any prior empty-category toast first so two consecutive empty
+    // clicks don't stack and a disabled→enabled switch leaves the old
+    // message on screen for its full duration.
+    dismissEmptyToast();
+    if (isCategoryDisabled(cat)) {
+      lastToastIdRef.current = toast.info("No projects in this category", {
+        style: {
+          color: "#ff6d05",
+          backgroundColor: "rgb(0 0 0 / 0.7)",
+          border: "none",
+          textAlign: "center",
+          // Shrink the toast container to its content width on every
+          // viewport so it doesn't span the screen on mobile or leave dead
+          // space on desktop. `alignSelf: center` + auto inline margins opt
+          // the toast out of sonner's default flex-column stretch so it
+          // centers within the position-anchored wrapper.
+          width: "fit-content",
+          maxWidth: "min(90vw, 28rem)",
+          alignSelf: "center",
+          marginInline: "auto",
+        },
+      });
+      return;
+    }
+    setActive(cat);
+  };
+
   return (
     <motion.div
       variants={container}
@@ -90,86 +126,24 @@ const ProjectList = ({ projects }) => {
         {/* CATEGORY FILTERS — mirrors the qualifications carousel tab
             treatment: orange neon glow for the active tab, pink neon glow
             for inactive, brighter halo on hover. Disabled (empty) tabs
-            dim and surface a toast. */}
-        <div className="mb-4 mt-10 flex flex-wrap items-center justify-center gap-6">
-          {CATEGORIES.map((cat) => {
-            const isActive = active === cat;
-            const isDisabled = cat !== "All" && categoryCounts[cat] === 0;
-            const activeStyle = {
-              color: '#ff6d05',
-              textShadow:
-                '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)',
-            };
-            const inactiveStyle = {
-              color: '#fc83ff',
-              textShadow:
-                '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7',
-            };
-            return (
-              <button
-                key={cat}
-                type="button"
-                aria-pressed={isActive}
-                title={isDisabled ? "No projects in this category" : undefined}
-                onClick={() => {
-                  // Clear any prior empty-category toast first so two
-                  // consecutive empty clicks don't stack and a
-                  // disabled→enabled switch leaves the old message on
-                  // screen for its full duration.
-                  dismissEmptyToast();
-                  if (isDisabled) {
-                    lastToastIdRef.current = toast.info(
-                      "No projects in this category",
-                      {
-                        style: {
-                          color: "#ff6d05",
-                          backgroundColor: "rgb(0 0 0 / 0.7)",
-                          border: "none",
-                          textAlign: "center",
-                          // Shrink the toast container to its content
-                          // width on every viewport so it doesn't span
-                          // the screen on mobile or leave dead space on
-                          // desktop. `alignSelf: center` + auto inline
-                          // margins opt the toast out of sonner's
-                          // default flex-column stretch so it centers
-                          // within the position-anchored wrapper.
-                          width: "fit-content",
-                          maxWidth: "min(90vw, 28rem)",
-                          alignSelf: "center",
-                          marginInline: "auto",
-                        },
-                      },
-                    );
-                    return;
-                  }
-                  setActive(cat);
-                }}
-                className={`bg-transparent border-0 p-0 transition !text-[1rem] md:!text-[1.2rem] font-semibold uppercase cursor-pointer ${isDisabled ? 'opacity-40' : ''}`}
-                style={isActive ? activeStyle : inactiveStyle}
-                onMouseEnter={(e) => {
-                  if (isActive) {
-                    e.currentTarget.style.textShadow =
-                      '0 0 6px #ff6d05, 0 0 14px #ff6d05, 0 0 26px rgba(255, 106, 0, 0.8)';
-                  } else {
-                    e.currentTarget.style.textShadow =
-                      '0 0 6px #ff55f7, 0 0 14px #ff55f7, 0 0 26px #ff55f7';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (isActive) {
-                    e.currentTarget.style.textShadow =
-                      '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)';
-                  } else {
-                    e.currentTarget.style.textShadow =
-                      '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7';
-                  }
-                }}
-              >
-                {cat}
-              </button>
-            );
-          })}
-        </div>
+            dim and surface a toast.
+
+            The row itself is the shared scroll-driven strip (issue #47):
+            with today's four categories it measures as fitting and renders
+            as the plain centred row it always was. Grow CATEGORIES past what
+            the viewport can hold and it becomes a horizontal scroller — a
+            wheel over the row travels sideways — instead of wrapping to a
+            second line. The project list below never moves. */}
+        <ScrollHijackCategories
+          className="mb-4 mt-10"
+          label="Project categories"
+          categories={CATEGORIES}
+          active={active}
+          onSelect={handleSelect}
+          isDisabled={isCategoryDisabled}
+          disabledTitle={() => "No projects in this category"}
+          counts={categoryCounts}
+        />
 
       {/* PROJECT LIST */}
       <AnimatePresence mode="wait">

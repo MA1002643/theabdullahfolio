@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import ScrollHijackCategories from '@/components/shared/ScrollHijackCategories';
 import DIMS from './_dimensions.json';
 import { preloadQualificationCerts } from './preloadCerts';
 import { certSizes } from './certSizes';
@@ -579,96 +580,52 @@ const Carousel3D = () => {
     setActiveSub(sub);
   };
 
-  const tabClasses = () =>
-    // bg/border/padding resets undo the native <button> chrome so the
-    // tabs still read as text. Both states inherit the page font;
-    // colour/stroke comes from inline style below so the active tab
-    // picks up the title's neon palette without inheriting its font
-    // family from .text-glow-stroke-neon.
-    `bg-transparent border-0 p-0 transition !text-[1rem] md:!text-[1.2rem] font-semibold uppercase cursor-pointer`;
-
-  const tabHandlers = (isActive) => ({
-    style: isActive
-      ? {
-          // Solid orange fill (page-title palette) — keeps the same
-          // font shape as inactive tabs since both use plain colour
-          // fills, no stroke. Three-layer shadow matches the spread
-          // of the subtitle's neon halo so it's clearly visible.
-          color: '#ff6d05',
-          textShadow:
-            '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)',
-        }
-      : {
-          // Subtitle palette: pink fill with the exact same three-
-          // layer halo the page subtitle uses, for a noticeable glow.
-          color: '#fc83ff',
-          textShadow:
-            '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7',
-        },
-    onMouseEnter: (e) => {
-      if (isActive) {
-        e.currentTarget.style.textShadow =
-          '0 0 6px #ff6d05, 0 0 14px #ff6d05, 0 0 26px rgba(255, 106, 0, 0.8)';
-      } else {
-        e.currentTarget.style.textShadow =
-          '0 0 6px #ff55f7, 0 0 14px #ff55f7, 0 0 26px #ff55f7';
-      }
-    },
-    onMouseLeave: (e) => {
-      if (isActive) {
-        e.currentTarget.style.textShadow =
-          '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)';
-      } else {
-        e.currentTarget.style.textShadow =
-          '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7';
-      }
-    },
-  });
+  const isParentEmpty = (cat) => cat !== 'All' && parentCounts[cat] === 0;
+  const isSubEmpty = (sub) => subCounts[sub] === 0;
 
   return (
-    <div className="relative flex max-h-full w-full flex-col items-center justify-center overflow-hidden">
-      {/* Parent category filters */}
-      <div className="mb-4 mt-10 flex flex-wrap items-center justify-center gap-6">
-        {PARENT_CATEGORIES.map((cat) => {
-          const isActive = activeCategory === cat;
-          const isEmpty = cat !== 'All' && parentCounts[cat] === 0;
-          return (
-            <button
-              key={cat}
-              type="button"
-              aria-pressed={isActive}
-              title={isEmpty ? `No qualifications in ${cat} yet` : undefined}
-              onClick={() => handleParentClick(cat)}
-              className={`${tabClasses()} ${isEmpty ? 'opacity-40' : ''}`}
-              {...tabHandlers(isActive)}
-            >
-              {cat}
-            </button>
-          );
-        })}
-      </div>
+    // `carousel-stage-clip` (globals.css): `overflow: clip` where it parses,
+    // `overflow: hidden` where it doesn't. This wrapper exists to clip the
+    // 3D wheel's ±132vh of horizontal travel; `clip` is preferred because
+    // `hidden` turns the element into a scroll container that focus-reveal can
+    // silently scroll, but Safari < 16 drops the unparsed `clip` and would be
+    // left with `visible` — so the class falls back to `hidden`, the exact
+    // behaviour this wrapper shipped with before issue #47. Moving the clip
+    // down onto `.perspective-3d` is not an option either: `overflow` other
+    // than `visible` forces `transform-style: flat` and would collapse the
+    // coverflow depth.
+    <div className="carousel-stage-clip relative flex max-h-full w-full flex-col items-center justify-center">
+      {/* Parent + sub category filters — the shared scroll-driven strip
+          (issue #47), stacked directly on top of each other. At today's three
+          parents each row measures as fitting and renders as the plain centred
+          row it always was; add enough to outgrow the viewport and the row
+          becomes a horizontal scroller (a wheel over it travels sideways)
+          rather than wrapping. Neither row injects any height, so the sub row
+          always sits immediately under its parent and the carousel below stays
+          exactly where it is. */}
+      <ScrollHijackCategories
+        className="mb-4 mt-10"
+        label="Qualification categories"
+        categories={PARENT_CATEGORIES}
+        active={activeCategory}
+        onSelect={handleParentClick}
+        isDisabled={isParentEmpty}
+        disabledTitle={(cat) => `No qualifications in ${cat} yet`}
+        counts={parentCounts}
+      />
 
       {/* Sub-category filters (only when parent has subs) */}
       {subCategories && (
-        <div className="mb-8 flex flex-wrap items-center justify-center gap-6">
-          {subCategories.map((sub) => {
-            const isActive = activeSub === sub;
-            const isEmpty = subCounts[sub] === 0;
-            return (
-              <button
-                key={sub}
-                type="button"
-                aria-pressed={isActive}
-                title={isEmpty ? `No qualifications in ${sub} yet` : undefined}
-                onClick={() => handleSubClick(sub)}
-                className={`${tabClasses()} ${isEmpty ? 'opacity-40' : ''}`}
-                {...tabHandlers(isActive)}
-              >
-                {sub}
-              </button>
-            );
-          })}
-        </div>
+        <ScrollHijackCategories
+          className="mb-8"
+          label={`${activeCategory} sub-categories`}
+          categories={subCategories}
+          active={activeSub}
+          onSelect={handleSubClick}
+          isDisabled={isSubEmpty}
+          disabledTitle={(sub) => `No qualifications in ${sub} yet`}
+          counts={subCounts}
+        />
       )}
 
       {!subCategories && <div className="mb-6" />}
