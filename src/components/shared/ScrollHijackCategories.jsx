@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 
 import { onMediaChange } from '@/lib/mediaQuery';
+import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { useViewportCountUp } from '@/hooks/useViewportCountUp';
 import HoverText from '@/components/footer/HoverText';
 
@@ -74,19 +75,79 @@ const EDGE_MARGIN = 12;
 // that the cue arrives immediately, long enough not to pop.
 const FADE_RAMP = 24;
 
-// Tab palette — lifted verbatim from the two inline implementations this
-// component replaces so the filters look exactly as they did before.
+// Tab palette. The fills are the same ember/amethyst the pages have always
+// used; the halos were re-cut in issue #46's polish pass. The originals
+// (lifted verbatim from the old inline implementations) stacked three
+// full-intensity layers per state and bloomed hard enough to read as smear
+// rather than light. Each state now carries one tight 1px contact glow plus
+// one faint ambient pass at low alpha, so the glyphs stay crisp and the
+// COLOUR difference — not the glow — is what marks the active tab. Hover
+// lifts the ambient pass a step instead of flaring.
 const ACTIVE_COLOR = '#ff6d05';
 const INACTIVE_COLOR = '#fc83ff';
 const ACTIVE_SHADOW =
-  '0 0 5px #ff6d05, 0 0 10px #ff6d05, 0 0 20px rgba(255, 106, 0, 0.7)';
+  '0 0 1px rgba(255, 109, 5, 0.55), 0 0 14px rgba(255, 109, 5, 0.35)';
 const ACTIVE_SHADOW_HOVER =
-  '0 0 6px #ff6d05, 0 0 14px #ff6d05, 0 0 26px rgba(255, 106, 0, 0.8)';
-const INACTIVE_SHADOW = '0 0 5px #ff55f7, 0 0 10px #ff55f7, 0 0 20px #ff55f7';
+  '0 0 1px rgba(255, 109, 5, 0.7), 0 0 18px rgba(255, 109, 5, 0.5)';
+const INACTIVE_SHADOW =
+  '0 0 1px rgba(255, 85, 247, 0.45), 0 0 12px rgba(255, 85, 247, 0.28)';
 const INACTIVE_SHADOW_HOVER =
-  '0 0 6px #ff55f7, 0 0 14px #ff55f7, 0 0 26px #ff55f7';
+  '0 0 1px rgba(255, 85, 247, 0.6), 0 0 16px rgba(255, 85, 247, 0.45)';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+/* ── Entrance choreography (issues #28 / #46) ──────────────────────────────
+   The row lifts in as one group, then each tab floats up in sequence. The
+   variants live on the OUTER container and propagate down to every
+   CategoryItem's motion.button through framer-motion's variant context, so
+   the stagger needs no per-item delay bookkeeping — staggerChildren on the
+   container orchestrates the tabs wherever they sit in the DOM.
+
+   The entrance replays every time the row re-enters the viewport (the issues'
+   headline requirement), driven by useInView + the animate prop rather than
+   whileInView so it can ALSO be gated on useLoaderRevealed — an
+   IntersectionObserver counts the row as visible even under the intro
+   loader's z-9999 overlay, and an ungated entrance would play and finish
+   before the wipe ever lifts (same reasoning as PageTitle).
+
+   Blur is confined to the container level and the tabs animate only
+   transform/opacity — one brief filter transition total, not one per tab. */
+const ROW_VARIANTS = {
+  hidden: { opacity: 0, y: 20, filter: 'blur(4px)' },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.72,
+      ease: [0.22, 1, 0.36, 1],
+      staggerChildren: 0.09,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+const ITEM_VARIANTS = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: 'easeOut' },
+  },
+};
+
+// Reduced motion → the same states reached by plain cross-fades: no travel,
+// no blur, no stagger. Opacity alone isn't "motion", so the row still reads
+// as arriving rather than popping.
+const REDUCED_ROW_VARIANTS = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.3 } },
+};
+
+const REDUCED_ITEM_VARIANTS = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2 } },
+};
 
 /**
  * Smallest scrollLeft that brings the span [itemLeft, itemRight] fully inside
@@ -192,6 +253,10 @@ const CategoryItem = ({
       aria-disabled={isDisabled || undefined}
       title={title}
       onClick={() => onSelect(label)}
+      // Entrance: inherits "hidden"/"visible" from the row container's variant
+      // context (no initial/animate of its own), so the container's
+      // staggerChildren drives when each tab floats in.
+      variants={prefersReducedMotion ? REDUCED_ITEM_VARIANTS : ITEM_VARIANTS}
       // `transition-colors`, not the blanket `transition` these tabs used to
       // carry: Tailwind's default list includes `transform`, which would put a
       // 150ms ease on any layout the browser applies while scrolling.
@@ -215,6 +280,16 @@ const CategoryItem = ({
           : {
               textShadow: isActive ? ACTIVE_SHADOW_HOVER : INACTIVE_SHADOW_HOVER,
             }
+      }
+      // Press feedback (issue #46): pressable things compress. The subtle
+      // scale-DOWN is what reads as the tab hearing the click — the
+      // carousel's re-fan below is then the response. Skipped for disabled
+      // tabs (nothing will respond) and under reduced motion (it's a
+      // transform).
+      whileTap={
+        isDisabled || prefersReducedMotion
+          ? undefined
+          : { scale: 0.97, transition: { duration: 0.12 } }
       }
     >
       <HoverText text={label} />
@@ -268,6 +343,17 @@ const ScrollHijackCategories = ({
 
   const prefersReducedMotion = useReducedMotion();
   const slots = useVisibleSlots(maxVisible);
+
+  // Entrance gating — see the ROW_VARIANTS comment block. `once: false` is
+  // what makes the entrance replay on every viewport return — it happens to
+  // be useInView's default, but the replay is a hard requirement (issues
+  // #28/#46), so it's stated rather than inherited. amount 0.4 waits until
+  // the row is properly on screen so the replay never fires half-hidden at
+  // the viewport edge. Reduced motion pins the row at its final state from
+  // the first frame, exactly like PageTitle.
+  const revealed = useLoaderRevealed();
+  const rowInView = useInView(outerRef, { amount: 0.4, once: false });
+  const entranceShown = prefersReducedMotion || (revealed && rowInView);
 
   const [metrics, setMetrics] = useState({ overflow: 0, windowWidth: 0 });
   // Which edge arrows are live. Kept as state (unlike the fade, which is a CSS
@@ -508,7 +594,13 @@ const ScrollHijackCategories = ({
   }, [active, activeIndex, scrollItemIntoView]);
 
   return (
-    <div ref={outerRef} className={`w-full ${className}`}>
+    <motion.div
+      ref={outerRef}
+      className={`w-full ${className}`}
+      variants={prefersReducedMotion ? REDUCED_ROW_VARIANTS : ROW_VARIANTS}
+      initial={prefersReducedMotion ? 'visible' : 'hidden'}
+      animate={entranceShown ? 'visible' : 'hidden'}
+    >
       <div
         className="relative mx-auto w-fit"
         style={clipped ? { maxWidth: windowWidth } : undefined}
@@ -597,7 +689,7 @@ const ScrollHijackCategories = ({
           </>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

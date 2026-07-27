@@ -8,8 +8,10 @@ import PageTitle from '@/components/PageTitle'
 const page = () => {
   return (
     <>
-      {/* HEADLINE — uses shared PageTitle (issue #104). */}
-      <PageTitle title="QUALIFICATION" subtitle="accomplishments" />
+      {/* HEADLINE — uses shared PageTitle (issue #104). replayOnView makes the
+          letter-ignite re-run every time the heading scrolls back into view
+          (issue #46), instead of once per mount. */}
+      <PageTitle title="QUALIFICATION" subtitle="accomplishments" replayOnView />
       <Image
         priority
         sizes="100vw"
