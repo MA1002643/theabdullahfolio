@@ -207,9 +207,15 @@ const CategoryItem = ({
         color: isActive ? ACTIVE_COLOR : INACTIVE_COLOR,
         textShadow: isActive ? ACTIVE_SHADOW : INACTIVE_SHADOW,
       }}
-      whileHover={{
-        textShadow: isActive ? ACTIVE_SHADOW_HOVER : INACTIVE_SHADOW_HOVER,
-      }}
+      // Gated with the hover-roll above: a disabled tab that brightened under
+      // the pointer would look every bit as interactive as the roll would.
+      whileHover={
+        isDisabled
+          ? undefined
+          : {
+              textShadow: isActive ? ACTIVE_SHADOW_HOVER : INACTIVE_SHADOW_HOVER,
+            }
+      }
     >
       <HoverText text={label} />
       {showCount && typeof count === 'number' && (
