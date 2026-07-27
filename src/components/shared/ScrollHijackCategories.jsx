@@ -403,10 +403,18 @@ const ScrollHijackCategories = ({
     const onWheel = (event) => {
       // Trackpads report both axes; a mouse wheel reports deltaY alone. Follow
       // whichever axis the gesture actually favours.
-      const delta =
+      const raw =
         Math.abs(event.deltaX) > Math.abs(event.deltaY)
           ? event.deltaX
           : event.deltaY;
+      // Chrome and trackpads deliver pixels (deltaMode 0), but a Firefox
+      // mouse wheel delivers LINES (mode 1, ±3 per notch) and some Windows
+      // setups deliver PAGES (mode 2). Taken as pixels, a line notch would
+      // move the row ~3px while preventDefault below still swallowed the
+      // page scroll, so convert to a pixel distance first.
+      const unit =
+        event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? el.clientWidth : 1;
+      const delta = raw * unit;
       if (!delta) return;
 
       const max = el.scrollWidth - el.clientWidth;
