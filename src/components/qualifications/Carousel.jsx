@@ -41,48 +41,10 @@ const aspectFor = (img) => {
   return 0.71;
 };
 
-/* ⚠️ ─── TEMPORARY DEMO CATEGORIES — issue #47 manual testing ──────────────
-   Grows BOTH rows past the visible-slot cap so each strip engages
-   independently — the parent row first, then the sub row once a parent with
-   subs is selected.
-
-   Aviation / Cartography / Horology have demo certificates behind them (see
-   the demo block at the end of CARDS) so they are SELECTABLE, which is what
-   lets you reach their sub rows. The remaining demo parents have none, so they
-   stay dimmed and raise the toast — an empty parent can't be opened, so it can
-   never show a sub row. Demo subs are all empty by design: the row still
-   renders, scrolls and dims correctly.
-
-   DELETE the two consts below, drop the two spreads out of CATEGORY_TREE, and
-   delete the demo block at the end of CARDS to restore shipping state. */
-const DEMO_SUBS = [
-  'Alpine',
-  'Baltic',
-  'Coastal',
-  'Delta',
-  'Estuary',
-  'Fjord',
-  'Glacier',
-  'Highland',
-];
-
-const DEMO_PARENT_TREE = {
-  Aviation: ['Ground School', 'Flight Hours', 'Night Rating', ...DEMO_SUBS],
-  Cartography: ['Survey', 'Relief', 'Projection'],
-  Horology: ['Escapement', 'Chronometry'],
-  Botany: null,
-  Ceramics: null,
-  Falconry: null,
-  Geology: null,
-  Philately: null,
-  Zoology: null,
-};
-
 const CATEGORY_TREE = {
   All: null,
-  Education: ['School', 'College', 'University', ...DEMO_SUBS],
-  Employment: ['Security', 'Tech', ...DEMO_SUBS],
-  ...DEMO_PARENT_TREE,
+  Education: ['School', 'College', 'University'],
+  Employment: ['Security', 'Tech'],
 };
 
 const PARENT_CATEGORIES = Object.keys(CATEGORY_TREE);
@@ -440,63 +402,6 @@ const CARDS = [
     sub: 'Tech',
     img: '/qualifications/unisys-data-privacy-2023-v2.webp',
   },
-
-  /* ⚠️ ─── TEMPORARY DEMO CERTIFICATES — issue #47 manual testing ──────────
-     Backing cards for three of the demo parents in DEMO_PARENT_TREE, so those
-     tabs can actually be opened and their sub rows reached. They reuse an
-     existing artwork (certificate-misc.webp) purely so the carousel has a real
-     image to lay out — _dimensions.json already carries its aspect ratio.
-     DELETE FROM THIS BANNER TO THE CLOSING MARKER to restore shipping data. */
-  {
-    id: 901,
-    title: 'Demo — Private Pilot Ground School',
-    category: 'Aviation',
-    sub: 'Ground School',
-    img: '/qualifications/certificate-misc.webp',
-  },
-  {
-    id: 902,
-    title: 'Demo — Logged Flight Hours',
-    category: 'Aviation',
-    sub: 'Flight Hours',
-    img: '/qualifications/certificate-misc.webp',
-  },
-  {
-    id: 903,
-    title: 'Demo — Night Rating',
-    category: 'Aviation',
-    sub: 'Night Rating',
-    img: '/qualifications/certificate-misc.webp',
-  },
-  {
-    id: 904,
-    title: 'Demo — Topographic Survey',
-    category: 'Cartography',
-    sub: 'Survey',
-    img: '/qualifications/certificate-misc.webp',
-  },
-  {
-    id: 905,
-    title: 'Demo — Relief Shading',
-    category: 'Cartography',
-    sub: 'Relief',
-    img: '/qualifications/certificate-misc.webp',
-  },
-  {
-    id: 906,
-    title: 'Demo — Escapement Servicing',
-    category: 'Horology',
-    sub: 'Escapement',
-    img: '/qualifications/certificate-misc.webp',
-  },
-  {
-    id: 907,
-    title: 'Demo — Chronometry Basics',
-    category: 'Horology',
-    sub: 'Chronometry',
-    img: '/qualifications/certificate-misc.webp',
-  },
-  /* ⚠️ ─── END TEMPORARY DEMO CERTIFICATES ────────────────────────────── */
 ];
 
 // Precomputed once at module load so the empty-tab logic doesn't re-scan
