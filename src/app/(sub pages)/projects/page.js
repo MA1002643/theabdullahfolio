@@ -8,7 +8,7 @@ export default function Project() {
     // Fragment, not <main>: the (sub pages) layout already renders the one
     // <main> landmark this page lives in, and a second nested <main> is
     // invalid HTML that screen readers may announce twice (issue #86 bonus
-    // cleanup — same structure /qualifications always had).
+    // cleanup). The qualifications page already uses this fragment structure.
     <>
       <Image
         priority
