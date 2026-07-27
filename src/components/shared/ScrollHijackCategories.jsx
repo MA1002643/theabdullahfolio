@@ -399,6 +399,18 @@ const ScrollHijackCategories = ({
     };
   }, [measure, syncEdges]);
 
+  // Every syncEdges call above reads the DOM as it stood BEFORE the re-render
+  // that measure()'s setState triggers, so on the unclipped → clipped flip it
+  // sees a scroller that isn't a scroll container yet (scrollWidth ==
+  // clientWidth) and leaves the fades and arrows off — and the re-render that
+  // then applies `overflow-x-auto` and `maxWidth` never resizes the observed
+  // outer/strip elements, so no ResizeObserver delivery follows to correct it.
+  // Re-syncing on each committed measurement reads the final layout before
+  // paint; the calls above stay for scroll/resize where metrics DON'T change.
+  useIsomorphicLayoutEffect(() => {
+    syncEdges();
+  }, [overflow, windowWidth, syncEdges]);
+
   /**
    * Wheel/trackpad over the row becomes horizontal travel — but only while the
    * row can still move the way the gesture is asking. At either end the event
