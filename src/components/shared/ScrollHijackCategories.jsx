@@ -344,13 +344,15 @@ const ScrollHijackCategories = ({
   const prefersReducedMotion = useReducedMotion();
   const slots = useVisibleSlots(maxVisible);
 
-  // Entrance gating — see the ROW_VARIANTS comment block. `once: false` (the
-  // useInView default) is what makes the entrance replay on every viewport
-  // return; amount 0.4 waits until the row is properly on screen so the replay
-  // never fires half-hidden at the viewport edge. Reduced motion pins the row
-  // at its final state from the first frame, exactly like PageTitle.
+  // Entrance gating — see the ROW_VARIANTS comment block. `once: false` is
+  // what makes the entrance replay on every viewport return — it happens to
+  // be useInView's default, but the replay is a hard requirement (issues
+  // #28/#46), so it's stated rather than inherited. amount 0.4 waits until
+  // the row is properly on screen so the replay never fires half-hidden at
+  // the viewport edge. Reduced motion pins the row at its final state from
+  // the first frame, exactly like PageTitle.
   const revealed = useLoaderRevealed();
-  const rowInView = useInView(outerRef, { amount: 0.4 });
+  const rowInView = useInView(outerRef, { amount: 0.4, once: false });
   const entranceShown = prefersReducedMotion || (revealed && rowInView);
 
   const [metrics, setMetrics] = useState({ overflow: 0, windowWidth: 0 });

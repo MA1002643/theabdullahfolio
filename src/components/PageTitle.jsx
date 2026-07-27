@@ -94,12 +94,17 @@ const SUBTITLE_MOTION = {
 export default function PageTitle({ title, subtitle, id, replayOnView = false }) {
   const prefersReducedMotion = useReducedMotion();
   const revealed = useLoaderRevealed();
-  // Always observed (hooks can't be conditional) but only consulted when
-  // replayOnView is set. amount 0.35 = the block must be a third visible
-  // before it counts as "on screen" — enough that the replay starts while the
-  // user can actually see it, not while it's a sliver at the viewport edge.
+  // The hook always runs (hooks can't be conditional) but the value is only
+  // consulted when replayOnView is set — so on the play-once pages
+  // `once: true` lets the IntersectionObserver disconnect after the first
+  // intersection instead of pushing an unused state update on every
+  // scroll-past for the life of the page. Safe as a render-time expression
+  // because replayOnView is a static per-page prop, never flipped at runtime.
+  // amount 0.35 = the block must be a third visible before it counts as "on
+  // screen" — enough that the replay starts while the user can actually see
+  // it, not while it's a sliver at the viewport edge.
   const rootRef = useRef(null);
-  const inView = useInView(rootRef, { amount: 0.35 });
+  const inView = useInView(rootRef, { amount: 0.35, once: !replayOnView });
   // Reduced motion → start (and stay) at the final state, no transform. Else
   // hold hidden until the loader has revealed the page, then ignite — and,
   // with replayOnView, drop back to hidden whenever the block scrolls out of
