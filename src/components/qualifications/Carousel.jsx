@@ -584,14 +584,17 @@ const Carousel3D = () => {
   const isSubEmpty = (sub) => subCounts[sub] === 0;
 
   return (
-    // `overflow-clip`, not `overflow-hidden`. This wrapper exists to clip the
-    // 3D wheel's ±132vh of horizontal travel, and `hidden` does that by turning
-    // the element into a scroll container — a scrollport the category strips
-    // below would then be measured against. `clip` clips exactly the same box
-    // without creating one. Moving the clip down onto `.perspective-3d` is not
-    // an option either: `overflow` other than `visible` forces
-    // `transform-style: flat` and would collapse the coverflow depth.
-    <div className="relative flex max-h-full w-full flex-col items-center justify-center overflow-clip">
+    // `carousel-stage-clip` (globals.css): `overflow: clip` where it parses,
+    // `overflow: hidden` where it doesn't. This wrapper exists to clip the
+    // 3D wheel's ±132vh of horizontal travel; `clip` is preferred because
+    // `hidden` turns the element into a scroll container that focus-reveal can
+    // silently scroll, but Safari < 16 drops the unparsed `clip` and would be
+    // left with `visible` — so the class falls back to `hidden`, the exact
+    // behaviour this wrapper shipped with before issue #47. Moving the clip
+    // down onto `.perspective-3d` is not an option either: `overflow` other
+    // than `visible` forces `transform-style: flat` and would collapse the
+    // coverflow depth.
+    <div className="carousel-stage-clip relative flex max-h-full w-full flex-col items-center justify-center">
       {/* Parent + sub category filters — the shared scroll-driven strip
           (issue #47), stacked directly on top of each other. At today's three
           parents each row measures as fitting and renders as the plain centred

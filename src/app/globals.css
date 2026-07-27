@@ -3573,6 +3573,23 @@ html.custom-cursor-active * {
   display: none;
 }
 
+/* Clips the qualification carousel's stage (Carousel.jsx) without making it a
+   scroll container — `hidden` would let focus-reveal silently scroll the
+   coverflow out of alignment. Safari < 16 and older WebViews don't parse
+   `overflow: clip` and would fall all the way back to `visible`, bleeding the
+   wheel's ±132vh travel across the page, so they get `hidden` — the behaviour
+   this wrapper always had before issue #47 — and `clip` applies only where it
+   parses. */
+.carousel-stage-clip {
+  overflow: hidden;
+}
+
+@supports (overflow: clip) {
+  .carousel-stage-clip {
+    overflow: clip;
+  }
+}
+
 /* Edge arrows. They sit ON the faded band rather than outside the row: the
    window is already centred to within a few pixels of the page gutter at
    mobile widths, so hanging them outside would have pushed the document into
