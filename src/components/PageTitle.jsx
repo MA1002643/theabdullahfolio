@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 
 // Shared page-title block. Single source of truth for sub-page
@@ -38,6 +39,13 @@ import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 //   - `subtitle` — optional secondary text. Omit to render only h1.
 //   - `id`       — optional DOM id forwarded to the wrapping div so existing
 //                  anchor links (e.g. about/projects' `id="about"`) keep working.
+//   - `replayOnView` — opt-in scroll replay (issue #46). When set, the ignite
+//                  re-arms whenever the block leaves the viewport and plays
+//                  again on every return, instead of playing once per mount.
+//                  Off by default so the other sub-pages keep their
+//                  play-once behaviour until they opt in (issue #28 will for
+//                  /projects). No effect under prefers-reduced-motion, which
+//                  stays pinned at the final state.
 
 // Shared subtitle palette — extracted so flank pills and the h2
 // itself reference exactly the same pink fill + halo.
@@ -83,12 +91,20 @@ const SUBTITLE_MOTION = {
   },
 };
 
-export default function PageTitle({ title, subtitle, id }) {
+export default function PageTitle({ title, subtitle, id, replayOnView = false }) {
   const prefersReducedMotion = useReducedMotion();
   const revealed = useLoaderRevealed();
+  // Always observed (hooks can't be conditional) but only consulted when
+  // replayOnView is set. amount 0.35 = the block must be a third visible
+  // before it counts as "on screen" — enough that the replay starts while the
+  // user can actually see it, not while it's a sliver at the viewport edge.
+  const rootRef = useRef(null);
+  const inView = useInView(rootRef, { amount: 0.35 });
   // Reduced motion → start (and stay) at the final state, no transform. Else
-  // hold hidden until the loader has revealed the page, then ignite.
-  const play = prefersReducedMotion || revealed;
+  // hold hidden until the loader has revealed the page, then ignite — and,
+  // with replayOnView, drop back to hidden whenever the block scrolls out of
+  // view so the ignite replays on every return.
+  const play = prefersReducedMotion || (revealed && (!replayOnView || inView));
   const initial = prefersReducedMotion ? "visible" : "hidden";
 
   // Split into characters; spaces become non-animated spacer spans so word gaps
@@ -97,7 +113,7 @@ export default function PageTitle({ title, subtitle, id }) {
   const chars = Array.from(title);
 
   return (
-    <div id={id} className="z-50 pt-8 text-center">
+    <div ref={rootRef} id={id} className="z-50 pt-8 text-center">
       {/* No `text-transparent` here — `.text-glow-stroke-neon` paints a solid
           #ff6d05 fill so each letter renders as a filled orange glyph (closing
           the M / W hollow gap on CONTACT ME / ABOUT ME). The -webkit-text-stroke
