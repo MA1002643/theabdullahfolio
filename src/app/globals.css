@@ -2209,6 +2209,23 @@ html.custom-cursor-active * {
   }
 }
 
+/* Colour-neutral variant (category strip tabs). The same per-glyph roll, but
+   the incoming clone inherits the label's own colour instead of lifting to
+   orange — on the strip, orange vs grey IS the active/inactive signal, so the
+   hover must not repaint it. Declared after the blocks above so the inherit
+   wins their equal-specificity colour rules in the cascade; under reduced
+   motion the roll is already collapsed, and inheriting here means no colour
+   lift either — those tabs simply don't respond, matching the no-colour brief. */
+.hover-swap--mono .hover-text__clone {
+  color: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hover-swap--mono:hover .hover-text__face,
+  .hover-swap--mono:focus-visible .hover-text__face {
+    color: inherit;
+  }
+}
+
 /* ── Decipher entrance (DecipherEmail.jsx) ──
    The footer contact email resolves out of a cipher the first time it scrolls
    into view (gated on the intro loader): each glyph scrambles through random

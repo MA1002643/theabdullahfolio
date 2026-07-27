@@ -11,6 +11,7 @@ import { motion, useInView, useReducedMotion } from 'framer-motion';
 
 import { onMediaChange } from '@/lib/mediaQuery';
 import { useViewportCountUp } from '@/hooks/useViewportCountUp';
+import HoverText from '@/components/footer/HoverText';
 
 /* ── Scroll-driven category strip (issue #47) ──────────────────────────────
    A single horizontal row of category filters that never wraps to a second
@@ -194,8 +195,13 @@ const CategoryItem = ({
       // `transition-colors`, not the blanket `transition` these tabs used to
       // carry: Tailwind's default list includes `transform`, which would put a
       // 150ms ease on any layout the browser applies while scrolling.
+      // Enabled tabs carry the footer links' per-glyph hover-roll (HoverText),
+      // in its colour-neutral `--mono` variant: the label re-typesets itself
+      // letter by letter but keeps the tab's own active/inactive colour, which
+      // already carries meaning here. Disabled tabs stay static — a roll would
+      // advertise an interactivity their dimming is there to play down.
       className={`cursor-pointer whitespace-nowrap border-0 bg-transparent p-0 !text-[1rem] font-semibold uppercase transition-colors md:!text-[1.2rem] ${
-        isDisabled ? 'opacity-40' : ''
+        isDisabled ? 'opacity-40' : 'hover-swap hover-swap--mono'
       }`}
       style={{
         color: isActive ? ACTIVE_COLOR : INACTIVE_COLOR,
@@ -205,7 +211,7 @@ const CategoryItem = ({
         textShadow: isActive ? ACTIVE_SHADOW_HOVER : INACTIVE_SHADOW_HOVER,
       }}
     >
-      {label}
+      <HoverText text={label} />
       {showCount && typeof count === 'number' && (
         <span className="ml-1 align-middle text-[0.65rem] tabular-nums opacity-40">
           {/* Only the digits carry the ref — useViewportCountUp writes straight
