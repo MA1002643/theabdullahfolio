@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 
 import { onMediaChange } from '@/lib/mediaQuery';
@@ -76,23 +75,28 @@ const EDGE_MARGIN = 12;
 const FADE_RAMP = 24;
 
 // Tab palette. The fills are the same ember/amethyst the pages have always
-// used; the halos were re-cut in issue #46's polish pass. The originals
-// (lifted verbatim from the old inline implementations) stacked three
-// full-intensity layers per state and bloomed hard enough to read as smear
-// rather than light. Each state now carries one tight 1px contact glow plus
-// one faint ambient pass at low alpha, so the glyphs stay crisp and the
-// COLOUR difference — not the glow — is what marks the active tab. Hover
-// lifts the ambient pass a step instead of flaring.
+// used; the halos have been cut three times. The originals (lifted verbatim
+// from the old inline implementations) stacked three FULL-alpha layers
+// (5px/10px/20px solid) and bloomed hard enough to read as smear rather than
+// light. Issue #46's re-cut swung to the opposite wall — a 2px contact plus
+// an ~8px ambient at ≤0.5 alpha reads as barely-there at strip sizes and was
+// flagged as too weak on both consuming pages. This cut restores the
+// original's three-layer anatomy (contact / mid halo / outer bloom) but at
+// moderated alphas — roughly 60% of the original energy — so the glow is
+// unmistakably present without re-smearing the glyphs. The outer 20px pass
+// sits at low alpha purely to give the halo reach; the mid pass carries the
+// visible weight. Active still outguns inactive so colour + intensity mark
+// the selected tab, and hover lifts each pass a step instead of flaring.
 const ACTIVE_COLOR = '#ff6d05';
 const INACTIVE_COLOR = '#fc83ff';
 const ACTIVE_SHADOW =
-  '0 0 1px rgba(255, 109, 5, 0.55), 0 0 14px rgba(255, 109, 5, 0.35)';
+  '0 0 3px rgba(255, 109, 5, 0.8), 0 0 10px rgba(255, 109, 5, 0.6), 0 0 20px rgba(255, 109, 5, 0.3)';
 const ACTIVE_SHADOW_HOVER =
-  '0 0 1px rgba(255, 109, 5, 0.7), 0 0 18px rgba(255, 109, 5, 0.5)';
+  '0 0 4px rgba(255, 109, 5, 0.9), 0 0 13px rgba(255, 109, 5, 0.7), 0 0 26px rgba(255, 109, 5, 0.38)';
 const INACTIVE_SHADOW =
-  '0 0 1px rgba(255, 85, 247, 0.45), 0 0 12px rgba(255, 85, 247, 0.28)';
+  '0 0 3px rgba(255, 85, 247, 0.7), 0 0 10px rgba(255, 85, 247, 0.5), 0 0 20px rgba(255, 85, 247, 0.25)';
 const INACTIVE_SHADOW_HOVER =
-  '0 0 1px rgba(255, 85, 247, 0.6), 0 0 16px rgba(255, 85, 247, 0.45)';
+  '0 0 4px rgba(255, 85, 247, 0.8), 0 0 13px rgba(255, 85, 247, 0.6), 0 0 26px rgba(255, 85, 247, 0.32)';
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -148,6 +152,22 @@ const REDUCED_ITEM_VARIANTS = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0.2 } },
 };
+
+/**
+ * The edge cue's glyph: a slim double chevron drawn as two raw strokes so the
+ * CSS can draw them in via stroke-dashoffset (the monogram overlay's reveal
+ * language, scaled down to a signage cue). The dash lengths in
+ * `.arrow-stroke--near/--far` are the REAL path lengths (two equal segments
+ * each — 2·√98 ≈ 19.8 and 2·√40.5 ≈ 12.7, held with a hair of overshoot), not
+ * a normalised pathLength: normalising has burned this codebase before.
+ * Rendered pointing right; the left button mirrors it in CSS.
+ */
+const ArrowGlyph = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+    <path className="arrow-stroke arrow-stroke--far" d="M4 5.5 L8.5 10 L4 14.5" />
+    <path className="arrow-stroke arrow-stroke--near" d="M9.5 3 L16.5 10 L9.5 17" />
+  </svg>
+);
 
 /**
  * Smallest scrollLeft that brings the span [itemLeft, itemRight] fully inside
@@ -226,7 +246,8 @@ const CategoryItem = ({
   // visible slots, not merely somewhere on the page; tabs waiting off the edge
   // hold at 0 and animate the moment they are revealed. `amount: 'all'` waits
   // until the tab is fully clear of the fade so the tally never starts under a
-  // half-faded label.
+  // half-faded label. On a row that fits (no scrolling), every tab is inside
+  // the window from the first frame, so the tally simply runs once on mount.
   const inView = useInView(itemRef, { root: scrollerRef, amount: 'all' });
   // Same shared controller the about page uses, so easing, the reduced-motion
   // path (writes the final value with no tween) and the re-entry hysteresis are
@@ -319,9 +340,8 @@ const CategoryItem = ({
  * @param {(cat: string) => string | undefined} [props.disabledTitle]
  *   Native tooltip for a disabled tab.
  * @param {Record<string, number>} [props.counts]
- *   Per-category totals. Rendered as small badges ONLY once the row overflows,
- *   where they double as orientation aids; a row that fits stays exactly as it
- *   looks today.
+ *   Per-category totals, rendered as small badges beside every label at every
+ *   viewport. On a row that overflows they double as orientation aids.
  * @param {number}   [props.maxVisible=4]   Desktop ceiling on visible tabs.
  * @param {string}   [props.className]      Classes for the outer container.
  * @param {string}   [props.label]          Accessible name for the group.
@@ -338,6 +358,7 @@ const ScrollHijackCategories = ({
   label = 'Category filters',
 }) => {
   const outerRef = useRef(null);
+  const wrapperRef = useRef(null);
   const windowRef = useRef(null);
   const stripRef = useRef(null);
 
@@ -411,19 +432,24 @@ const ScrollHijackCategories = ({
 
   /**
    * Drive the edge fades from the live scroll position. Written as CSS custom
-   * properties consumed by the mask in `.category-strip-scroller`: 1 is a fully
-   * opaque edge (nothing hidden that way), 0 is a fully faded one. A mask, not
-   * a painted gradient overlay — these pages sit on photographic backgrounds,
-   * where a dark gradient would read as a smudge rather than a fade.
+   * properties: 1 is a fully opaque edge (nothing hidden that way), 0 is a
+   * fully faded one. Set on the WRAPPER (the scroller's parent) so they reach
+   * two consumers by inheritance: the mask in `.category-strip-scroller`, and
+   * the edge arrows, whose opacity and slide-out are calc()'d from the same
+   * values — which is what keeps cue and fade dissolving in lockstep with the
+   * finger rather than snapping at a threshold. A mask, not a painted gradient
+   * overlay — these pages sit on photographic backgrounds, where a dark
+   * gradient would read as a smudge rather than a fade.
    */
   const syncEdges = useCallback(() => {
     const el = windowRef.current;
-    if (!el) return;
+    const wrapper = wrapperRef.current;
+    if (!el || !wrapper) return;
     const max = el.scrollWidth - el.clientWidth;
     const left = 1 - clamp(el.scrollLeft / FADE_RAMP, 0, 1);
     const right = 1 - clamp((max - el.scrollLeft) / FADE_RAMP, 0, 1);
-    el.style.setProperty('--edge-l', String(left));
-    el.style.setProperty('--edge-r', String(right));
+    wrapper.style.setProperty('--edge-l', String(left));
+    wrapper.style.setProperty('--edge-r', String(right));
     // The arrows need the same information as booleans. Committed only on a
     // CHANGE, so a scroll gesture costs at most two renders (one per edge
     // crossing) rather than one per scroll event.
@@ -602,6 +628,7 @@ const ScrollHijackCategories = ({
       animate={entranceShown ? 'visible' : 'hidden'}
     >
       <div
+        ref={wrapperRef}
         className="relative mx-auto w-fit"
         style={clipped ? { maxWidth: windowWidth } : undefined}
       >
@@ -642,7 +669,7 @@ const ScrollHijackCategories = ({
                     disabled && disabledTitle ? disabledTitle(cat) : undefined
                   }
                   count={counts?.[cat]}
-                  showCount={clipped && Boolean(counts)}
+                  showCount={Boolean(counts)}
                   onSelect={onSelect}
                   scrollerRef={windowRef}
                   prefersReducedMotion={prefersReducedMotion}
@@ -654,9 +681,14 @@ const ScrollHijackCategories = ({
 
         {/* Edge arrows — the standing cue that this row moves. The fade alone
             says "something is cut off"; an arrow says "and you can get to it".
-            Each one shows only while there is something hidden its way, drifts
-            gently to catch the eye, and pages the row when clicked, so a
-            pointer with no wheel is not stranded.
+            Each is a slim double chevron that draws itself in stroke-by-stroke
+            whenever it earns its place (the `key` remounts the glyph on every
+            reveal so the draw replays), idles with a faint pulse travelling
+            toward the hidden content, and — via the --edge custom properties —
+            dissolves and slides out in lockstep with the mask fade as the row
+            approaches that end. Clicking pages the row, so a pointer with no
+            wheel is not stranded; visibility itself lives in CSS, so React only
+            toggles pointer-events (an invisible arrow must not swallow taps).
 
             aria-hidden + tabIndex -1 deliberately: they duplicate scrolling
             that the keyboard already does natively by tabbing through the tabs,
@@ -670,10 +702,10 @@ const ScrollHijackCategories = ({
               tabIndex={-1}
               onClick={() => page(-1)}
               className={`category-strip-arrow category-strip-arrow--left ${
-                arrows.left ? 'opacity-70' : 'pointer-events-none opacity-0'
+                arrows.left ? '' : 'pointer-events-none'
               }`}
             >
-              <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+              <ArrowGlyph key={arrows.left} />
             </button>
             <button
               type="button"
@@ -681,10 +713,10 @@ const ScrollHijackCategories = ({
               tabIndex={-1}
               onClick={() => page(1)}
               className={`category-strip-arrow category-strip-arrow--right ${
-                arrows.right ? 'opacity-70' : 'pointer-events-none opacity-0'
+                arrows.right ? '' : 'pointer-events-none'
               }`}
             >
-              <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+              <ArrowGlyph key={arrows.right} />
             </button>
           </>
         )}

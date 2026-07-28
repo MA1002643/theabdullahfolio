@@ -1,5 +1,11 @@
 'use client';
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import ScrollHijackCategories from '@/components/shared/ScrollHijackCategories';
@@ -424,6 +430,83 @@ const COUNTS = (() => {
   return { parent, sub };
 })();
 
+// Smallest font size FitOneLineTitle will shrink to. Below this the title
+// would be unreadable, so instead of shrinking further the h3 clips with an
+// ellipsis (overflow-hidden + text-ellipsis act as the fallback). 10px lets
+// the longest current title ("OCNLR Entry Level Certificate in Digital
+// Skills (Entry 3)") fit un-clipped at ~10.8px on a 390px-wide phone — the
+// floor only bites on narrower viewports than that.
+const TITLE_MIN_PX = 10;
+
+// Renders a certificate title on exactly ONE line, whatever its length.
+// CSS alone can only wrap or clip, so this measures the text's natural
+// single-line width (scrollWidth) against the available width and scales
+// font-size down proportionally — text width is linear in font size, so a
+// single pass lands on the right value; it never grows past the
+// class-declared base (text-lg). Tailwind's text-lg pins line-height at
+// 1.75rem independently of the inline font-size, so the title bar's height
+// is identical on every card — which is what keeps the bar→buttons gap
+// constant. Re-fits when the wrapper resizes (card widths are vh/vw-derived)
+// and once webfonts finish loading (glyph metrics change). Font size is
+// written straight to the DOM via refs: no React state, no re-render per
+// resize tick, and the observer only watches the wrapper's width — which
+// the font size can't influence — so there's no feedback loop.
+const FitOneLineTitle = ({ text }) => {
+  const boxRef = useRef(null);
+  const textRef = useRef(null);
+  // Class-derived base font size, captured on the first fit before any
+  // inline override exists.
+  const basePxRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const el = textRef.current;
+    if (!box || !el) return undefined;
+
+    const fit = () => {
+      if (basePxRef.current === null) {
+        // Clear any leftover inline size (e.g. after a Fast Refresh remount
+        // that reused the DOM node) so the base is the CLASS-declared size,
+        // not a previously shrunk one. Must happen BEFORE measuring
+        // scrollWidth so `natural` and `current` describe the same font size.
+        el.style.fontSize = '';
+        basePxRef.current = parseFloat(window.getComputedStyle(el).fontSize);
+      }
+      const available = box.clientWidth;
+      const natural = el.scrollWidth;
+      if (!available || !natural) return;
+      const current = parseFloat(window.getComputedStyle(el).fontSize);
+      // 1px of slack absorbs scrollWidth's integer rounding so the text
+      // never sits exactly on the overflow boundary.
+      const target = Math.min(
+        basePxRef.current,
+        Math.max((current * (available - 1)) / natural, TITLE_MIN_PX),
+      );
+      if (Math.abs(target - current) > 0.1) {
+        el.style.fontSize = `${target}px`;
+      }
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(box);
+    document.fonts?.ready?.then(fit);
+    return () => observer.disconnect();
+  }, [text]);
+
+  return (
+    <div ref={boxRef} className="relative z-10 w-full min-w-0 overflow-hidden">
+      <h3
+        ref={textRef}
+        className="text-fire-amber overflow-hidden text-ellipsis whitespace-nowrap text-center text-lg font-semibold tracking-wide"
+        style={{ textShadow: 'none' }}
+      >
+        {text}
+      </h3>
+    </div>
+  );
+};
+
 const Carousel3D = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeSub, setActiveSub] = useState(null);
@@ -725,12 +808,15 @@ const Carousel3D = () => {
                 }}
               >
                 {/* === IMAGE + REFLECTION SECTION === */}
-                {/* Landscape images (ar > 1) center vertically so the
-                                    shorter image + title sit in the middle of the card
-                                    instead of clinging to the top. Portrait stays top-aligned. */}
-                <div
-                  className={`relative flex h-full w-full flex-col items-center ${ar > 1 ? 'justify-center' : 'justify-start'} overflow-visible rounded-lg`}
-                >
+                {/* Bottom-anchored (justify-end) for BOTH orientations: the
+                    title bar always hugs the bottom of the fixed-height card,
+                    so the gap between it and the Prev/Next buttons below the
+                    stage is identical whether the certificate is portrait
+                    (fills the card, same result as the old justify-start) or
+                    landscape (shorter — the spare height now collects above
+                    the image instead of between the title and the buttons,
+                    which is what made the gap look inconsistent). */}
+                <div className="relative flex h-full w-full flex-col items-center justify-end overflow-visible rounded-lg">
                   {/* Main Image — width/height pinned to the image's aspect ratio so the frame hugs it edge-to-edge */}
                   <div
                     className="custom-bg-abt relative flex items-center justify-center rounded-lg p-[0.3rem]"
@@ -779,20 +865,16 @@ const Carousel3D = () => {
                   </div>
 
                   {/* Certificate Title + Reflection.
-                      min-h reserves space for 2 lines of text-lg
-                      (line-height 1.75rem × 2 + p-3 padding ≈ 5rem)
-                      so the title block stays the same visual height
-                      whether the title wraps or not — keeping the gap
-                      to the Prev/Next buttons constant on mobile and
-                      tablet. flex centring keeps single-line titles
-                      vertically aligned inside the reserved space. */}
-                  <div className="custom-bg-abt relative mt-3 flex min-h-[5rem] w-full items-center justify-center rounded-lg border p-3 text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg">
-                    <h3
-                      className="text-fire-amber relative z-10 text-center text-lg font-semibold tracking-wide"
-                      style={{ textShadow: 'none' }}
-                    >
-                      {card.title}
-                    </h3>
+                      Single-line title bar: FitOneLineTitle shrinks the
+                      font until the whole title fits on ONE line, so every
+                      bar is exactly one line-height (1.75rem) + p-3 tall.
+                      Constant bar height + the bottom-anchored wrapper
+                      above = the title→buttons gap never moves. shrink-0
+                      stops flex from squeezing the bar when a portrait
+                      image fills the card — the image area absorbs the
+                      squeeze instead, as it did before. */}
+                  <div className="custom-bg-abt relative mt-3 flex w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border p-3 text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg">
+                    <FitOneLineTitle text={card.title} />
                   </div>
                 </div>
               </div>

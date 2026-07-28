@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import bg from '../../public/background/home-bg.png';
+import bg from '../../public/background/home-bg.webp';
 import laptop from '../../public/background/laptop.png';
 import Navigation from '@/components/navigation';
 import LiveMaintenanceHeader from '@/components/home/LiveMaintenanceHeader';
