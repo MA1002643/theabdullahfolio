@@ -34,8 +34,10 @@ export default function About() {
       {/* HEADLINE — uses shared PageTitle (issue #104). The
           decorative inline dashes around "WHO I AM" were dropped per
           the acceptance criteria: the subtitle now uses the same
-          plain <h2> treatment as the qualifications page. */}
-      <PageTitle title="ABOUT ME" subtitle="WHO I AM" id="about" />
+          plain <h2> treatment as the qualifications page. replayOnView
+          re-arms the headline ignite whenever the block scrolls out of
+          view, matching /qualifications and /projects. */}
+      <PageTitle title="ABOUT ME" subtitle="WHO I AM" id="about" replayOnView />
 
       <AboutDetails />
     </>
