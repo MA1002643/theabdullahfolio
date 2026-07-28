@@ -14,9 +14,12 @@
  *
  *   2. WRONG NODE. Homebrew's `node` is v25 (odd-numbered, non-LTS,
  *      auto-bumped by brew) and crashes the Next 14 dev server with silent
- *      exits. The repo's `engines: >=22.3.0` is only a floor, so v25
- *      satisfies it. When the invoking Node is not an LTS major, the
- *      launcher re-runs Next under the newest nvm-installed v22/v24.
+ *      exits. `engines` now pins the LTS majors (`^22.3.0 || ^24.0.0`),
+ *      and engine-strict makes a mismatched `npm ci` fail loudly — but
+ *      that only guards INSTALL time; nothing stops an already-installed
+ *      repo from being launched with v25. When the invoking Node is not a
+ *      supported LTS major, the launcher re-runs Next under the newest
+ *      nvm-installed v22/v24.
  *
  *   3. iCLOUD CHURN. ~/Desktop is iCloud-synced and the file provider
  *      touches build artifacts mid-write (random ENOENT, silent exits).
@@ -139,11 +142,13 @@ if (bindError) {
 
 // ------------------------------------------------------- pick a sane node --
 // A runtime is supported when it's one of the LTS majors that don't crash
-// the Next dev server on this machine (22, 24) AND satisfies package.json's
-// `engines: >=22.3.0` floor. One predicate applied to BOTH the invoking
-// runtime and the nvm candidates — previously "even major ≤ 24" let Node 20
-// and 22.0–22.2 through as the invoker, and the nvm filter accepted any
-// v22.x, both of which violate the declared engines contract.
+// the Next dev server on this machine (22, 24) AND clears the 22.3.0 floor —
+// the same range package.json declares (`engines: ^22.3.0 || ^24.0.0`).
+// engine-strict enforces that range at install time; this predicate
+// re-enforces it at launch time, applied to BOTH the invoking runtime and
+// the nvm candidates — previously "even major ≤ 24" let Node 20 and
+// 22.0–22.2 through as the invoker, and the nvm filter accepted any v22.x,
+// both of which violate the declared engines contract.
 const ENGINE_FLOOR = [22, 3, 0]; // keep in sync with package.json engines
 const isSupportedNode = (version) => {
   const [major, minor = 0, patch = 0] = version.split(".").map(Number);

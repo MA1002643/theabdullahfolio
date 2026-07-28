@@ -493,6 +493,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 
 ### Changed
 
+#### `engines.node` tightened from a floor to the supported LTS majors
+
+| | |
+|:--|:--|
+| **Ref** | — |
+| **Files** | `package.json`, `scripts/dev.mjs`, `README.md`, `CONTRIBUTING.md` |
+| **Details** | **`engines.node` now declares `^22.3.0 \|\| ^24.0.0`** (was `>=22.3.0`). The dev launcher (`scripts/dev.mjs`) has always enforced the real constraint — LTS 22.x ≥ 22.3.0 or 24.x, because non-LTS majors (e.g. Homebrew's auto-bumped Node 25) crash the Next 14 dev server — but the floor-only `engines` range still admitted 25.x, so the mismatch only surfaced at `npm run dev`. With `.npmrc`'s `engine-strict=true`, the tightened range now fails `npm ci` / `npm install` immediately and loudly on any non-LTS major, surfacing the constraint at install time instead of as a surprising dev-script failure. The range and the launcher's `isSupportedNode` predicate were verified to agree on all boundary versions (22.2.x/22.3.0, 23.x, 24.0.0, 25.x); the launcher keeps its own check because `engines` only guards install time, not what an already-installed repo is launched with. Vercel deploys are unaffected (no Node pin in `vercel.json`; the platform's 22.x/24.x runtimes satisfy the range). Stale docs updated to match: `scripts/dev.mjs` header + node-picker comments, the README Node badge and Prerequisites bullet, and CONTRIBUTING.md's prerequisites table (which still advertised Node 18.17+). |
+
 #### Project-detail intent warming now respects Save-Data / 2G
 
 | | |
@@ -757,6 +765,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Ref** | — |
 | **Files** | `src/components/qualifications/Carousel.jsx` |
 | **Details** | **`FitOneLineTitle` hardened against missing `ResizeObserver` and post-unmount font callbacks** (`src/components/qualifications/Carousel.jsx`). The title-fitting effect called `new ResizeObserver(fit)` unconditionally — on pre-2020 WebKit and older Android webviews that don't ship the API this threw at mount and took the whole carousel down. It now follows the guard used by every other observer in the codebase (`typeof ResizeObserver !== 'undefined'`, per `ScrollHijackCategories`), with a `window` `resize` fallback listener on browsers without it — sufficient there because card widths are vh/vw-derived, so only viewport changes can move the title wrapper. Separately, the `document.fonts.ready.then(fit)` re-fit could resolve after the component unmounted (or after `text` changed and the effect re-ran), running `fit` against a detached DOM node; a per-effect-run `cancelled` flag, set in cleanup, now drops any late resolution. |
+
+#### Near-invisible category-strip edge arrows could swallow taps
+
+| | |
+|:--|:--|
+| **Ref** | — |
+| **Files** | `src/components/shared/ScrollHijackCategories.jsx` |
+| **Details** | **Edge-arrow hit targets now wait for meaningful visibility** (`src/components/shared/ScrollHijackCategories.jsx`). The category strip's edge arrows fade continuously in CSS (`opacity: calc(1 − var(--edge-*))` over the 24px `FADE_RAMP`), but their pointer-events were toggled by a plain `left < 1` / `right < 1` boolean — true from the first sub-pixel of scroll. Within a few pixels of either end, a ~2–10%-opaque arrow could sit over the row intercepting taps aimed at the tab underneath, defeating the component's own stated rule that "an invisible arrow must not swallow taps". The booleans are now thresholded on the arrow's calc()'d opacity: pointer-events (and the glyph's draw-in replay) only switch on once opacity clears `ARROW_HIT_OPACITY` (0.35, ≈8px into the ramp), so a nearly-transparent arrow is inert and taps fall through to the tabs. Below the threshold nothing else changes — the fade itself still tracks the finger continuously. |
 
 #### Finite-positive validation for GitHub timeout / budget env vars
 

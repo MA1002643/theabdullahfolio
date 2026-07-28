@@ -74,6 +74,14 @@ const EDGE_MARGIN = 12;
 // that the cue arrives immediately, long enough not to pop.
 const FADE_RAMP = 24;
 
+// Minimum arrow opacity (opacity = 1 − edge value) before its button accepts
+// pointer input. The arrow's visibility fades continuously in CSS, so without
+// a floor the hit target would switch on at the first sub-pixel of scroll —
+// a ~2%-opaque arrow swallowing taps meant for the tab underneath. 0.35
+// keeps the button inert until the arrow is unmistakably on screen (~8px
+// into the 24px ramp).
+const ARROW_HIT_OPACITY = 0.35;
+
 // Tab palette. The fills are the same ember/amethyst the pages have always
 // used; the halos have been cut three times. The originals (lifted verbatim
 // from the old inline implementations) stacked three FULL-alpha layers
@@ -379,7 +387,9 @@ const ScrollHijackCategories = ({
   const [metrics, setMetrics] = useState({ overflow: 0, windowWidth: 0 });
   // Which edge arrows are live. Kept as state (unlike the fade, which is a CSS
   // variable) because their pointer-events have to switch too — an invisible
-  // arrow must not sit there swallowing clicks at the edge of the row.
+  // arrow must not sit there swallowing clicks at the edge of the row. "Live"
+  // means past ARROW_HIT_OPACITY, not merely nonzero: the CSS fade is
+  // continuous, so the hit target waits until the arrow is actually visible.
   const [arrows, setArrows] = useState({ left: false, right: false });
 
   const measure = useCallback(() => {
@@ -450,11 +460,17 @@ const ScrollHijackCategories = ({
     const right = 1 - clamp((max - el.scrollLeft) / FADE_RAMP, 0, 1);
     wrapper.style.setProperty('--edge-l', String(left));
     wrapper.style.setProperty('--edge-r', String(right));
-    // The arrows need the same information as booleans. Committed only on a
-    // CHANGE, so a scroll gesture costs at most two renders (one per edge
-    // crossing) rather than one per scroll event.
+    // The arrows need the same information as booleans — thresholded, not
+    // `< 1`: pointer-events only switch on once the arrow's calc()'d opacity
+    // (1 − edge) clears ARROW_HIT_OPACITY, so a nearly-transparent arrow a
+    // few pixels from the edge can't intercept a tap. Committed only on a
+    // CHANGE, so a scroll gesture costs at most two renders (one per
+    // threshold crossing) rather than one per scroll event.
     setArrows((prev) => {
-      const next = { left: left < 1, right: right < 1 };
+      const next = {
+        left: 1 - left >= ARROW_HIT_OPACITY,
+        right: 1 - right >= ARROW_HIT_OPACITY,
+      };
       return prev.left === next.left && prev.right === next.right ? prev : next;
     });
   }, []);
