@@ -12,6 +12,17 @@ const item = {
 
 const ProjectLink = motion(TransitionLink)
 
+// Mirrors the signals Next's own viewport prefetch stands down for
+// (saveData, 2g/slow-2g). navigator.connection is Chromium-only; where it
+// doesn't exist there is no signal to respect, so we warm as usual.
+const isConstrainedConnection = () => {
+  const connection = navigator.connection
+  return (
+    !!connection &&
+    (connection.saveData || /2g/.test(connection.effectiveType || ""))
+  )
+}
+
 const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   const router = useRouter()
 
@@ -22,13 +33,16 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   }
 
   // Warm the destination while the visitor is still deciding (issue #83).
-  // <Link> already prefetches in-viewport, but Next skips that on slow
-  // connections / Save-Data — router.prefetch on intent re-covers those, and
-  // warmProjectScene starts the three.js chunk download that next/dynamic
-  // would otherwise only begin after navigation. Both calls dedupe, so
-  // re-hovering costs nothing. onTouchStart is the mobile "intent" signal —
-  // it fires a beat before click, which is enough to get the request going.
+  // <Link> prefetches the route in-viewport, and warmProjectScene starts the
+  // three.js chunk download that next/dynamic would otherwise only begin
+  // after navigation. Both calls dedupe, so re-hovering costs nothing.
+  // onTouchStart is the mobile "intent" signal — it fires a beat before
+  // click, which is enough to get the request going. On Save-Data / 2G we
+  // stand down entirely: hover is a hint, not a click, and a speculative
+  // ~1 MB scene chunk is exactly the spend that preference asks us to skip —
+  // those visitors pay the chunk on navigation itself, as before this branch.
   const warmDetail = () => {
+    if (isConstrainedConnection()) return
     router.prefetch(`/projects/${id}`)
     warmProjectScene()
   }

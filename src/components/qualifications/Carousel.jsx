@@ -488,10 +488,31 @@ const FitOneLineTitle = ({ text }) => {
     };
 
     fit();
-    const observer = new ResizeObserver(fit);
-    observer.observe(box);
-    document.fonts?.ready?.then(fit);
-    return () => observer.disconnect();
+    // Guarded like every other ResizeObserver in this codebase (see
+    // ScrollHijackCategories): pre-2020 WebKit and older Android webviews
+    // don't ship it, and an unguarded `new` would take the whole carousel
+    // down. Card widths are vh/vw-derived, so on those browsers a window
+    // resize is the only thing that moves the wrapper — the fallback
+    // listener covers every re-fit that matters there.
+    let observer = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(fit);
+      observer.observe(box);
+    } else {
+      window.addEventListener('resize', fit);
+    }
+    // fonts.ready resolves async and closes over this effect run's DOM
+    // nodes; the flag keeps a late resolution from writing to a detached
+    // node after unmount (or after `text` changed and re-ran the effect).
+    let cancelled = false;
+    document.fonts?.ready?.then(() => {
+      if (!cancelled) fit();
+    });
+    return () => {
+      cancelled = true;
+      observer?.disconnect();
+      window.removeEventListener('resize', fit);
+    };
   }, [text]);
 
   return (

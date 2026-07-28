@@ -31,7 +31,7 @@ the maintainer's discretion to mark coherent release boundaries.
 
 ## [Unreleased]
 
-_Scope: the Repository Governance & Templates Suite; the Experience Summary live-data fix; the Unify Page Titles refactor; five About-page card overhauls (Most Used Languages, GitHub Stats, Completed Projects, Current Streak, and the Skills grid); the Contact Form submit-animation feature; and the route-wide editorial footer ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)) — its live-location and project-metadata endpoints, guitar-string wordmark, and the "Stone Passage" page transition; the Now Playing live-Spotify widget ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42)) with its data + one-time-token endpoints and the shared HoverHint tooltip primitive; and the site-wide sound control lifted out of the footer so the guitar track survives navigation; and the homepage hero's vection-drift fix ([#87](https://github.com/MA1002643/theabdullahfolio/issues/87)) — the calmed laptop float, the GPU-isolated title, the hero + glow-headline `prefers-reduced-motion` coverage, and the reading-order gold→ember fill shared by the About and contact prose; and the `/qualifications` certificate carousel's image-loading overhaul ([#84](https://github.com/MA1002643/theabdullahfolio/issues/84)) — eliminating the `(canceled)` `_next/image` requests, adding intent-based certificate preloading, and self-limiting card image sizes without a global optimiser cap. Each change below is its own table — field labels on the left, full detail on the right._
+_Scope: the Repository Governance & Templates Suite; the Experience Summary live-data fix; the Unify Page Titles refactor; five About-page card overhauls (Most Used Languages, GitHub Stats, Completed Projects, Current Streak, and the Skills grid); the Contact Form submit-animation feature; and the route-wide editorial footer ([#30](https://github.com/MA1002643/theabdullahfolio/issues/30)) — its live-location and project-metadata endpoints, guitar-string wordmark, and the "Stone Passage" page transition; the Now Playing live-Spotify widget ([#42](https://github.com/MA1002643/theabdullahfolio/issues/42)) with its data + one-time-token endpoints and the shared HoverHint tooltip primitive; and the site-wide sound control lifted out of the footer so the guitar track survives navigation; and the homepage hero's vection-drift fix ([#87](https://github.com/MA1002643/theabdullahfolio/issues/87)) — the calmed laptop float, the GPU-isolated title, the hero + glow-headline `prefers-reduced-motion` coverage, and the reading-order gold→ember fill shared by the About and contact prose; and the `/qualifications` certificate carousel's image-loading overhaul ([#84](https://github.com/MA1002643/theabdullahfolio/issues/84)) — eliminating the `(canceled)` `_next/image` requests, adding intent-based certificate preloading, and self-limiting card image sizes without a global optimiser cap; and the `/projects` list's project-detail intent warming ([#83](https://github.com/MA1002643/theabdullahfolio/issues/83)) made connection-aware, so it respects Save-Data / 2G. Each change below is its own table — field labels on the left, full detail on the right._
 
 ### Added
 
@@ -493,7 +493,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 
 ### Changed
 
-#### Sub-pages layout now anchors the shared footer
+#### Project-detail intent warming now respects Save-Data / 2G
+
+| | |
+|:--|:--|
+| **Ref** | [#83](https://github.com/MA1002643/theabdullahfolio/issues/83) |
+| **Files** | `src/components/projects/ProjectLayout.jsx` |
+| **Details** | **Project-detail intent warming is now connection-aware** ([#83](https://github.com/MA1002643/theabdullahfolio/issues/83), `src/components/projects/ProjectLayout.jsx`). The hover/focus/touch warming on each `/projects` row — `router.prefetch` of the detail route plus the speculative download of the ~1 MB three.js scene chunk — previously ran unconditionally, deliberately re-covering the slow-connection cases Next's own in-viewport prefetch stands down for. That inverted an explicit user preference: hover is a hint, not a click, and Save-Data visitors could pay for megabytes of scene they never navigate to. `warmDetail` now checks `navigator.connection` first and skips both calls when `saveData` is set or `effectiveType` is `2g`/`slow-2g` — the same signals Next's built-in suppression uses — so constrained visitors simply fetch the chunk on navigation itself, as they did before the warming existed. The API is Chromium-only; where it is absent there is no signal to respect and warming behaves as before. |
+
 
 | | |
 |:--|:--|
@@ -742,6 +749,14 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Ref** | [#84](https://github.com/MA1002643/theabdullahfolio/issues/84) |
 | **Files** | `src/components/qualifications/Carousel.jsx` |
 | **Details** | **Carousel mount-churn** ([#84](https://github.com/MA1002643/theabdullahfolio/issues/84), `src/components/qualifications/Carousel.jsx`). On a cold load the carousel mounted with `activeIndex` at `0`, painted the wrong seven cards (starting seven `_next/image` fetches), then an effect immediately recentred to the middle — unmounting those seven `<Image>`s and firing seven fresh fetches. The browser aborted the first seven mid-flight, surfacing as `(canceled)` rows in the network panel. `activeIndex` now initialises **synchronously** to the middle via a lazy `useState` initialiser, and the recenter effect is guarded so it only fires on real filter changes, never on first mount — so the correct cards mount on the first paint and no fetch is ever thrown away. Eager neighbours were also cut from five to one — only the centred (LCP) card loads `eager` / high `fetchPriority`, neighbours `lazy` / low — which cuts the number of **high-priority** requests competing for bandwidth from five to one. (A fast filter switch can still cancel in-flight *lazy* neighbour fetches when their cards unmount, since the rendered cards are all in-viewport and begin loading immediately; the change reduces prioritised requests, not cancellations to one.) |
+
+#### Unguarded `ResizeObserver` in the carousel's `FitOneLineTitle`
+
+| | |
+|:--|:--|
+| **Ref** | — |
+| **Files** | `src/components/qualifications/Carousel.jsx` |
+| **Details** | **`FitOneLineTitle` hardened against missing `ResizeObserver` and post-unmount font callbacks** (`src/components/qualifications/Carousel.jsx`). The title-fitting effect called `new ResizeObserver(fit)` unconditionally — on pre-2020 WebKit and older Android webviews that don't ship the API this threw at mount and took the whole carousel down. It now follows the guard used by every other observer in the codebase (`typeof ResizeObserver !== 'undefined'`, per `ScrollHijackCategories`), with a `window` `resize` fallback listener on browsers without it — sufficient there because card widths are vh/vw-derived, so only viewport changes can move the title wrapper. Separately, the `document.fonts.ready.then(fit)` re-fit could resolve after the component unmounted (or after `text` changed and the effect re-ran), running `fit` against a detached DOM node; a per-effect-run `cancelled` flag, set in cleanup, now drops any late resolution. |
 
 #### Finite-positive validation for GitHub timeout / budget env vars
 
