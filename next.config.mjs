@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // This repo lives under ~/Desktop, which iCloud Drive syncs. iCloud's
+  // file provider churns build artifacts mid-write (random ENOENT, silent
+  // dev-server exits — see scripts/dev.mjs for the full failure story).
+  // Any folder whose name ends in `.nosync` is excluded from iCloud sync,
+  // so keep ALL local build output there. On Vercel there is no iCloud;
+  // keep the default `.next` so production builds are untouched.
+  distDir: process.env.VERCEL ? ".next" : ".next.nosync",
   // `pdf-parse` (used by /api/experience-summary) depends on `pdfjs-dist`,
   // an ESM bundle that touches browser-style globals (Object.defineProperty
   // on `globalThis`, etc.) that Next's RSC webpack pass mangles. Marking

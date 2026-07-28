@@ -23,7 +23,7 @@
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
-  <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.3-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Node.js-22.3%2B_%7C_24.x-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/last_synced-2026--07--22-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
@@ -285,7 +285,7 @@ theabdullahfolio/
 
 ### Prerequisites
 
-- **Node.js** ≥ 22.3 — the AI SDK's gateway dependency (`@ai-sdk/gateway`) requires Node 22+, and `.npmrc` sets `engine-strict=true`, so an older Node fails `npm ci`
+- **Node.js** 22.x (≥ 22.3.0) or 24.x — LTS majors only: the AI SDK's gateway dependency (`@ai-sdk/gateway`) requires Node 22+, non-LTS majors (e.g. Homebrew's auto-bumped Node 25) crash the Next 14 dev server, and `.npmrc` sets `engine-strict=true`, so any Node outside the `engines` range fails `npm ci`
 - **npm** / **yarn** / **pnpm**
 - A [GitHub Personal Access Token](https://github.com/settings/tokens) — see [GitHub Stats Integration](#github-stats-integration) below for the exact scopes required
 - SMTP credentials — Gmail [App Password](https://support.google.com/accounts/answer/185833) recommended

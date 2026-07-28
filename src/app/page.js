@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import bg from '../../public/background/home-bg.png';
+import bg from '../../public/background/home-bg.webp';
 import laptop from '../../public/background/laptop.png';
 import Navigation from '@/components/navigation';
 import LiveMaintenanceHeader from '@/components/home/LiveMaintenanceHeader';
@@ -10,11 +10,12 @@ export default function Home() {
   const [hovered, setHovered] = useState(false);
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      {/* full-screen background image */}
+      {/* full-screen background image — alt="" marks it decorative so
+          screen readers skip it instead of announcing "background, image" */}
       <Image
         priority
         src={bg}
-        alt="background"
+        alt=""
         fill
         quality={100}
         sizes="100vw"

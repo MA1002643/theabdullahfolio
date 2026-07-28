@@ -3595,10 +3595,26 @@ html.custom-cursor-active * {
    mobile widths, so hanging them outside would have pushed the document into
    horizontal overflow. Anything under them is mask-faded anyway.
 
-   The drift is what turns a static glyph into a cue that the row moves — 3px,
-   slow, and away from the row's centre, i.e. pointing at the content that is
-   hidden. Small enough to register peripherally without pulling focus off the
-   page, and stilled entirely under prefers-reduced-motion. */
+   Anatomy of the cue (ArrowGlyph in ScrollHijackCategories.jsx):
+
+   • DRAW-ON. The two chevron strokes draw themselves in via stroke-dashoffset
+     whenever the arrow earns its place — the monogram overlay's reveal
+     language at signage scale. --len is each path's REAL length (with a hair
+     of overshoot so the stroke starts fully hidden), never pathLength.
+   • TRAVELLING PULSE. Instead of a whole-glyph drift, a faint brightness
+     pulse runs inner-to-outer through the pair every 2.8s — pointing at the
+     hidden content the way departure-board chevrons do. The near stroke
+     carries the glyph (0.92); the far one is an echo (0.4).
+   • FINGER-COUPLED EXIT. Opacity and a 4px outward slide are calc()'d from
+     the same --edge-l/--edge-r the scroller's mask fade reads (inherited from
+     the shared wrapper), so the cue dissolves in lockstep with the fade and
+     with the drag itself. No transition on opacity — smoothing here would lag
+     the finger. React only toggles pointer-events.
+   • TAP KICK. :active nudges the glyph 3px toward the content it will reveal,
+     springing back on release; the paged scroll is the response.
+
+   The button is a 2.25rem box — a finger-sized target for what is, on these
+   pages, primarily a touch affordance — with the 20px glyph centred in it. */
 .category-strip-arrow {
   position: absolute;
   top: 50%;
@@ -3606,49 +3622,108 @@ html.custom-cursor-active * {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
   border: 0;
   background: transparent;
   color: #fc83ff;
-  filter: drop-shadow(0 0 4px rgba(255, 85, 247, 0.85));
-  transition: opacity 0.25s ease-in-out;
+  filter: drop-shadow(0 0 4px rgba(255, 85, 247, 0.7));
 }
 
 .category-strip-arrow--left {
-  left: -0.15rem;
-  transform: translateY(-50%);
-  animation: category-arrow-nudge-left 2.6s ease-in-out infinite;
+  left: -0.65rem;
+  transform: translateY(-50%) translateX(calc(var(--edge-l, 1) * -4px));
+  opacity: calc(1 - var(--edge-l, 1));
 }
 
 .category-strip-arrow--right {
-  right: -0.15rem;
-  transform: translateY(-50%);
-  animation: category-arrow-nudge-right 2.6s ease-in-out infinite;
+  right: -0.65rem;
+  transform: translateY(-50%) translateX(calc(var(--edge-r, 1) * 4px));
+  opacity: calc(1 - var(--edge-r, 1));
 }
 
-@keyframes category-arrow-nudge-left {
-  0%,
-  100% {
-    transform: translate(0, -50%);
+/* The left button mirrors the right-pointing glyph. The kick composes with
+   the mirror so "3px toward the hidden content" holds on both sides. */
+.category-strip-arrow svg {
+  transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.category-strip-arrow--left svg {
+  transform: scaleX(-1);
+}
+
+.category-strip-arrow--left:active svg {
+  transform: scaleX(-1) translateX(3px);
+}
+
+.category-strip-arrow--right:active svg {
+  transform: translateX(3px);
+}
+
+.arrow-stroke {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: var(--len);
+  opacity: var(--base);
+  animation:
+    category-arrow-draw 0.42s cubic-bezier(0.22, 1, 0.36, 1) both,
+    category-arrow-wave 2.8s ease-in-out calc(0.42s + var(--wave-delay))
+      infinite;
+}
+
+.arrow-stroke--near {
+  --len: 20.5;
+  --base: 0.92;
+  --wave-delay: 0.12s;
+}
+
+.arrow-stroke--far {
+  --len: 13.3;
+  --base: 0.4;
+  --wave-delay: 0s;
+}
+
+@keyframes category-arrow-draw {
+  from {
+    stroke-dashoffset: var(--len);
   }
-  50% {
-    transform: translate(-3px, -50%);
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
-@keyframes category-arrow-nudge-right {
+@keyframes category-arrow-wave {
   0%,
+  16%,
   100% {
-    transform: translate(0, -50%);
+    opacity: var(--base);
   }
-  50% {
-    transform: translate(3px, -50%);
+  6% {
+    opacity: 1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .category-strip-arrow--left,
-  .category-strip-arrow--right {
+  /* Static cue: no draw, no pulse, no kick. Opacity still tracks the scroll
+     position — that's state display under direct manipulation, not motion. */
+  .arrow-stroke {
     animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .category-strip-arrow svg {
+    transition: none;
+  }
+
+  .category-strip-arrow--left:active svg {
+    transform: scaleX(-1);
+  }
+
+  .category-strip-arrow--right:active svg {
+    transform: none;
   }
 }

@@ -13,7 +13,7 @@ If you have been invited to contribute, this document tells you exactly how.
 
 | Tool            | Version                                                                     |
 | --------------- | --------------------------------------------------------------------------- |
-| Node.js         | **18.17+** (Next.js 14 requirement)                                         |
+| Node.js         | **22.x (≥ 22.3.0) or 24.x** — LTS majors only; `engine-strict` fails `npm ci` outside this range |
 | Package manager | **npm** (a `package-lock.json` is committed; do not switch to yarn or pnpm) |
 | Git             | Any modern version                                                          |
 
