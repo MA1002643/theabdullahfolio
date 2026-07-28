@@ -29,8 +29,10 @@ export default function Contact() {
 
       <article className="relative flex w-full flex-col items-center justify-center space-y-6 py-2 sm:py-0">
         <div className="flex w-full flex-col items-center justify-center space-y-6 sm:w-3/4">
-          {/* HEADLINE — uses shared PageTitle (issue #104). */}
-          <PageTitle title="CONTACT ME" subtitle="get in touch" />
+          {/* HEADLINE — uses shared PageTitle (issue #104). replayOnView
+              re-arms the headline ignite whenever the block scrolls out
+              of view, matching the other sub-pages. */}
+          <PageTitle title="CONTACT ME" subtitle="get in touch" replayOnView />
           {/* Copy + its "materialize from the ether" reveal live in the client
               component; the classes below keep the exact prior typography. */}
           <ContactIntro className="xs:text-base text-fire-amber text-center text-sm font-light" />

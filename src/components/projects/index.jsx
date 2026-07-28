@@ -120,8 +120,11 @@ const ProjectList = ({ projects }) => {
       {/* HEADER — uses shared PageTitle (issue #104). The decorative
           dashes around "MY WORK" were dropped per the acceptance
           criteria: the subtitle now uses the same plain <h2>
-          treatment as the qualifications page. */}
-      <PageTitle title="PROJECTS" subtitle="MY WORK" />
+          treatment as the qualifications page. replayOnView (issue #28)
+          re-arms the headline ignite whenever the block scrolls out of
+          view, so it replays alongside the category row's entrance
+          instead of sitting static after the first load. */}
+      <PageTitle title="PROJECTS" subtitle="MY WORK" replayOnView />
 
         {/* CATEGORY FILTERS — mirrors the qualifications carousel tab
             treatment: orange neon glow for the active tab, pink neon glow

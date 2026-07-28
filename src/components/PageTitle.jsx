@@ -42,10 +42,13 @@ import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 //   - `replayOnView` — opt-in scroll replay (issue #46). When set, the ignite
 //                  re-arms whenever the block leaves the viewport and plays
 //                  again on every return, instead of playing once per mount.
-//                  Off by default so the other sub-pages keep their
-//                  play-once behaviour until they opt in (issue #28 will for
-//                  /projects). No effect under prefers-reduced-motion, which
-//                  stays pinned at the final state.
+//                  Every current sub-page opts in (/qualifications via issue
+//                  #46, then /projects per issue #28 and /about + /contact to
+//                  match), but the default stays off so a future consumer
+//                  makes the choice explicitly — play-once is the cheaper
+//                  mode (its observer disconnects after the first reveal).
+//                  No effect under prefers-reduced-motion, which stays
+//                  pinned at the final state.
 
 // Shared subtitle palette — extracted so flank pills and the h2
 // itself reference exactly the same pink fill + halo.
