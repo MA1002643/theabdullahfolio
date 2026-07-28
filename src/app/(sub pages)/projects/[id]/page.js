@@ -68,9 +68,11 @@ export default async function ProjectDetailPage({ params }) {
     return (
         <>
             {/* Your Original Background Image - Full Screen */}
+            {/* alt="" — decorative: screen readers skip it entirely instead of
+                announcing "background, image" (matches the loading.js fallback) */}
             <Image
                 src={bg}
-                alt="background"
+                alt=""
                 fill
                 priority
                 className="fixed top-0 left-0 w-full h-full object-cover object-center -z-10"

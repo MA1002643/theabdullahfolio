@@ -19,7 +19,10 @@ const ProjectScene = dynamic(() => import("@/components/project-detail/scene"), 
 // idempotent — repeat calls resolve from the module cache, and webpack emits
 // the SAME chunk as the dynamic() call above, so nothing is fetched twice.
 export function warmProjectScene() {
-    import("@/components/project-detail/scene")
+    // Best-effort: a failed prefetch (offline, blocked, deploy skew) must not
+    // surface as an unhandled rejection — navigation's own dynamic() import
+    // retries the fetch and is the right place for a real failure to show.
+    import("@/components/project-detail/scene").catch(() => {})
 }
 
 export default function SceneLoader() {
