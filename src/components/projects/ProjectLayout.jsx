@@ -88,7 +88,7 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
         <p className="project-meta hidden sm:inline-block">{description}</p>
       </div>
 
-      <div aria-hidden className="project-separator-dot self-end flex-1 mx-2 mb-2" />
+      <div aria-hidden="true" className="project-separator-dot self-end flex-1 mx-2 mb-2" />
 
       <p id="date" className="project-meta">
         {new Date(date).toDateString()}

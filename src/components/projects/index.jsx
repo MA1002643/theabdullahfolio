@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import PageTitle from "@/components/PageTitle";
 import ScrollHijackCategories from "@/components/shared/ScrollHijackCategories";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
+import { normalizeCategory } from "@/lib/categories";
 
 // List reveal (issue #27 §3.2) — slowed from the original 0.15/0.3 so the
 // cards read as settling into place one at a time rather than racing in.
@@ -27,15 +28,6 @@ const container = {
 const reducedContainer = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.3 } },
-};
-
-// Labels are normalised (trimmed, Title-cased) before they are compared or
-// displayed, so a `category: "web"` typo in data.js folds into the existing
-// "Web" tab instead of minting a lookalike tab beside it.
-const normalizeCategory = (raw) => {
-  const label = String(raw ?? "").trim();
-  if (!label) return "";
-  return label[0].toUpperCase() + label.slice(1).toLowerCase();
 };
 
 // §2.3 — the one place the empty-category wording lives: the disabled-tab
@@ -86,11 +78,16 @@ const ProjectList = ({ projects }) => {
   // project and its tab disappears — there is no second, hand-kept list to
   // fall out of sync with the data. (The old module-scope CATEGORIES
   // constant this replaces was exactly that second list.)
+  // "All" is RESERVED: it's pinned as the first tab and its count is
+  // projects.length, so a project whose category folds to "All" must be
+  // excluded here — otherwise it would mint a duplicate tab (colliding
+  // with the strip's key={cat}) and inflate the All count past the real
+  // total. Such a project stays reachable through the All view itself.
   const categories = useMemo(() => {
     const derived = [];
     projects.forEach((project) => {
       const cat = normalizeCategory(project.category);
-      if (cat && !derived.includes(cat)) derived.push(cat);
+      if (cat && cat !== "All" && !derived.includes(cat)) derived.push(cat);
     });
     return ["All", ...derived];
   }, [projects]);
@@ -99,7 +96,7 @@ const ProjectList = ({ projects }) => {
     const counts = { All: projects.length };
     projects.forEach((project) => {
       const cat = normalizeCategory(project.category);
-      if (cat) counts[cat] = (counts[cat] ?? 0) + 1;
+      if (cat && cat !== "All") counts[cat] = (counts[cat] ?? 0) + 1;
     });
     return counts;
   }, [projects]);
@@ -137,13 +134,24 @@ const ProjectList = ({ projects }) => {
     if (restoredRef.current) return;
     restoredRef.current = true;
     const saved = localStorage.getItem("projects-category");
-    if (!saved || saved === "All") return;
-    if (categories.includes(saved) && (categoryCounts[saved] ?? 0) > 0) {
-      setActive(saved);
+    if (saved === null) return;
+    // Fold the stored label through the same normalisation the tabs are
+    // derived through: a legacy "web" (written by a pre-normalisation
+    // version, or hand-edited) must match today's "Web" tab rather than
+    // failing includes() and bouncing the visitor to "All" behind a
+    // misleading fallback note. Heal storage to the canonical casing so
+    // the value on disk always mirrors a real tab label.
+    const normalized = normalizeCategory(saved);
+    if (saved !== normalized) {
+      localStorage.setItem("projects-category", normalized || "All");
+    }
+    if (!normalized || normalized === "All") return;
+    if (categories.includes(normalized) && (categoryCounts[normalized] ?? 0) > 0) {
+      setActive(normalized);
       return;
     }
     localStorage.setItem("projects-category", "All");
-    pendingFallbackNoteRef.current = saved;
+    pendingFallbackNoteRef.current = normalized;
   }, [categories, categoryCounts]);
 
   // Announce the stored-filter fallback once the loader has lifted.
