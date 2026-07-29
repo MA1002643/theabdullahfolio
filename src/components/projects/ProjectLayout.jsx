@@ -1,13 +1,32 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import TransitionLink from "@/components/pageTransition/TransitionLink"
 import { warmProjectScene } from "@/components/project-detail/scene-loader"
 
+// Per-card reveal (issue #27 §3.2): a short rise while the card pulls into
+// focus — replaces the original y:100 leap, whose full-viewport travel read
+// as dramatic rather than elegant at the parent's slower stagger. The 2px
+// blur is deliberately faint: enough to sell "coming into focus", cheap
+// enough that the 3–4 cards mid-flight at any moment (0.22s stagger, 0.7s
+// item) don't tax the compositor.
 const item = {
-  hidden: { opacity: 0, y: 100 },
-  show: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 28, filter: "blur(2px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+  },
+}
+
+// Reduced motion → a plain fade: travel and blur are both motion. Same
+// REDUCED_* pattern as ScrollHijackCategories, so the two halves of the
+// page stand down together.
+const reducedItem = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.3 } },
 }
 
 const ProjectLink = motion(TransitionLink)
@@ -25,6 +44,7 @@ const isConstrainedConnection = () => {
 
 const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   const router = useRouter()
+  const prefersReducedMotion = useReducedMotion()
 
   const handleClick = () => {
     if (category) {
@@ -47,9 +67,14 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
     warmProjectScene()
   }
 
+  // Text roles are semantic classes in globals.css (issue #27 §5) — no
+  // per-element colour/shadow overrides here. Title glows softly; the
+  // description and date share the flat "eyebrow amber" the About page
+  // settled on for its headings (#14); the leader between them is real
+  // dots in the title's colour, not the dashed border it replaces.
   return (
     <ProjectLink
-      variants={item}
+      variants={prefersReducedMotion ? reducedItem : item}
       href={`/projects/${id}`}
       transitionLabel={name}
       onClick={handleClick}
@@ -59,22 +84,13 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
       className="text-sm md:text-base flex items-center justify-between w-full relative rounded-lg overflow-hidden p-4 md:p-6 custom-bg-abt"
     >
       <div className="flex items-center justify-center space-x-2">
-        <h2 style={{ color: "#ff6d05", textShadow: "none" }}>{name}</h2>
-        <p
-          className="text-fire-amber hidden sm:inline-block"
-          style={{ textShadow: "none" }}
-        >
-          {description}
-        </p>
+        <h2 className="project-title">{name}</h2>
+        <p className="project-meta hidden sm:inline-block">{description}</p>
       </div>
 
-      <div className="self-end flex-1 mx-2 mb-2 bg-transparent border-b border-dashed border-[#ffaa2a]" />
+      <div aria-hidden="true" className="project-separator-dot self-end flex-1 mx-2 mb-2" />
 
-      <p
-        id="date"
-        className="text-[#ff6d05]"
-        style={{ textShadow: "none" }}
-      >
+      <p id="date" className="project-meta">
         {new Date(date).toDateString()}
       </p>
     </ProjectLink>

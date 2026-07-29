@@ -12,6 +12,7 @@ import ScrollHijackCategories from '@/components/shared/ScrollHijackCategories';
 import DIMS from './_dimensions.json';
 import { preloadQualificationCerts } from './preloadCerts';
 import { certSizes } from './certSizes';
+import { normalizeCategory } from '@/lib/categories';
 
 // Visibility/mount thresholds for the carousel. Stored as named
 // constants so the opacity/pointer-events logic below stays in sync
@@ -47,13 +48,9 @@ const aspectFor = (img) => {
   return 0.71;
 };
 
-const CATEGORY_TREE = {
-  All: null,
-  Education: ['School', 'College', 'University'],
-  Employment: ['Security', 'Tech'],
-};
-
-const PARENT_CATEGORIES = Object.keys(CATEGORY_TREE);
+// CATEGORY_TREE / PARENT_CATEGORIES are DERIVED from CARDS — see the block
+// right after the CARDS array (it can't live up here: `const CARDS` is in
+// its temporal dead zone until the array literal below runs).
 
 const CARDS = [
   // Education > School
@@ -410,21 +407,77 @@ const CARDS = [
   },
 ];
 
+// Category labels, normalised once per card (trim + Title-case, the same
+// fold /projects uses — shared via @/lib/categories) so a
+// `category: 'education'` typo folds into the existing "Education" tab
+// instead of minting a lookalike. Derivation, counts, and the filter
+// comparisons below all go through these two helpers, never through the
+// raw fields, so a fold can't be missed in one place.
+const cardParent = (card) => normalizeCategory(card.category);
+const cardSub = (card) => normalizeCategory(card.sub);
+
+// The parent → sub tree is DERIVED from CARDS (issue #27's derivation
+// pattern, ported from /projects): parents in first-appearance order behind
+// the forced "All" reset, each parent's subs in first-appearance order
+// within it. Add a card under a brand-new category (or sub) and its tab
+// appears already enabled; remove a category's last card and its tab
+// disappears — there is no second, hand-kept tree to fall out of sync
+// with the data.
+//
+// ORDER CONTRACT: the cards are authored grouped and in display order
+// (Education: School → College → University, then Employment: Security →
+// Tech), so first-appearance order IS the curated order. Keep new cards
+// grouped with their category block when adding them, or the tab order
+// will follow the data.
+//
+// `All: null` (no sub row) is the one structural fact not in the data. A
+// parent whose cards carry no `sub` collapses to null too, so the sub row
+// simply doesn't render for it.
+const CATEGORY_TREE = (() => {
+  const tree = { All: null };
+  for (const card of CARDS) {
+    const parentLabel = cardParent(card);
+    // "All" is RESERVED (seeded above as the sub-less reset tab): a card
+    // whose category folds to "All" must be skipped, both to keep the
+    // reset semantics and because `'All' in tree` is already true — the
+    // array-creation branch would be skipped and `tree.All.includes`
+    // would throw on null AT MODULE LOAD, taking the whole page down.
+    // Such a card stays reachable through the All view itself.
+    if (!parentLabel || parentLabel === 'All') continue;
+    if (!(parentLabel in tree)) tree[parentLabel] = [];
+    const subLabel = cardSub(card);
+    if (subLabel && !tree[parentLabel].includes(subLabel)) {
+      tree[parentLabel].push(subLabel);
+    }
+  }
+  for (const parentLabel of Object.keys(tree)) {
+    if (tree[parentLabel]?.length === 0) tree[parentLabel] = null;
+  }
+  return tree;
+})();
+
+const PARENT_CATEGORIES = Object.keys(CATEGORY_TREE);
+
 // Precomputed once at module load so the empty-tab logic doesn't re-scan
 // CARDS on every render. parent[cat] gives the total per parent category;
 // sub[`${cat}/${sub}`] gives the per-subcategory total.
 const COUNTS = (() => {
-  // Seed every declared parent at 0 so a freshly added category in
-  // CATEGORY_TREE without any cards yet still reads as empty (instead of
-  // returning undefined and slipping past the empty-tab guard).
+  // Seed every parent at 0. With a derived tree every parent has at least
+  // one card, so the seeding is belt-and-braces — it keeps the empty-tab
+  // guard honest should the tab source ever widen beyond pure derivation
+  // (mirrors the retained isDisabled guard on /projects).
   const parent = Object.fromEntries(
     PARENT_CATEGORIES.map((category) => [category, 0]),
   );
   parent.All = CARDS.length;
   const sub = {};
   for (const card of CARDS) {
-    parent[card.category] = (parent[card.category] || 0) + 1;
-    const key = `${card.category}/${card.sub}`;
+    const parentLabel = cardParent(card);
+    // Same reserved-"All" skip as the tree derivation above: parent.All is
+    // already CARDS.length, so counting such a card here would inflate it.
+    if (!parentLabel || parentLabel === 'All') continue;
+    parent[parentLabel] = (parent[parentLabel] || 0) + 1;
+    const key = `${parentLabel}/${cardSub(card)}`;
     sub[key] = (sub[key] || 0) + 1;
   }
   return { parent, sub };
@@ -548,9 +601,13 @@ const Carousel3D = () => {
 
   const filteredCards = useMemo(() => {
     if (activeCategory === 'All') return CARDS;
-    if (!activeSub) return CARDS.filter((c) => c.category === activeCategory);
+    // Compare through the same normalisation fold the tabs were derived
+    // through (cardParent/cardSub, never the raw fields): the active labels
+    // come from the derived tree, so a raw-field comparison would drop any
+    // card whose data casing differs from its canonical tab.
+    if (!activeSub) return CARDS.filter((c) => cardParent(c) === activeCategory);
     return CARDS.filter(
-      (c) => c.category === activeCategory && c.sub === activeSub,
+      (c) => cardParent(c) === activeCategory && cardSub(c) === activeSub,
     );
   }, [activeCategory, activeSub]);
 
