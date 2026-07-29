@@ -3727,3 +3727,47 @@ html.custom-cursor-active * {
     transform: none;
   }
 }
+
+/* ── Project list text roles (issue #27) ────────────────────────────────────
+   The /projects card colours, named once instead of scattered as inline
+   overrides in ProjectLayout. Shadow governance (§4.5): the title is the
+   only role allowed a glow — and a soft one, the PROJECTS headline's ember
+   at a fraction of its energy, so a row reads as an index entry under the
+   headline rather than a second headline.
+
+   Description and date share the flat "eyebrow amber" the About page
+   settled on for the Architect of Enchantment heading (issue #14 —
+   `#ffaa2a`, `text-shadow: none`), so both pages' secondary text speaks in
+   one hue. Deliberately FLAT rather than `.text-fire-amber`: that class
+   clips a gradient to the glyphs (`background-clip: text`), the exact
+   pattern that has painted at full opacity inside GPU-promoted animated
+   containers before (see the About tilt-card notes), and these cards
+   animate opacity + blur on every category switch. */
+.project-title {
+  color: #ff6d05;
+  text-shadow:
+    0 0 6px rgba(255, 109, 5, 0.45),
+    0 0 16px rgba(255, 109, 5, 0.18);
+}
+
+.project-meta {
+  color: #ffaa2a;
+  text-shadow: none;
+}
+
+/* The leader between name and date — real dots in the title's colour
+   (§4.3), replacing a dashed bottom-border. A repeating radial gradient
+   paints one 1px dot per 9px tile, so the leader is a single element that
+   stretches to any card width without spawning a node per dot. Colour
+   only, no glow (§4.5). */
+.project-separator-dot {
+  height: 3px;
+  background-image: radial-gradient(
+    circle,
+    #ff6d05 1px,
+    rgb(255 109 5 / 0) 1.6px
+  );
+  background-size: 9px 3px;
+  background-position: left center;
+  background-repeat: repeat-x;
+}
