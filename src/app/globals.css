@@ -3771,3 +3771,8 @@ html.custom-cursor-active * {
   background-position: left center;
   background-repeat: repeat-x;
 }
+
+/* NOTE (issue #52): the CSS/SVG water-surface layer that lived here
+   (wave-drift + lantern-reflect keyframes for WaterReflection.jsx) was
+   replaced by the ambient scene video — see
+   src/components/qualifications/SceneVideo.jsx. */
