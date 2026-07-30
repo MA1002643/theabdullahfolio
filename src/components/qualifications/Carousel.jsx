@@ -7,6 +7,7 @@ import React, {
   useRef,
 } from 'react';
 import Image from 'next/image';
+import { useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 import ScrollHijackCategories from '@/components/shared/ScrollHijackCategories';
 import DIMS from './_dimensions.json';
@@ -24,6 +25,21 @@ import { normalizeCategory } from '@/lib/categories';
 //   absOffset > RENDER_WINDOW  : not rendered at all
 const RENDER_WINDOW = 3;
 const OPAQUE_WINDOW = 2;
+
+// Entrance choreography (issue #52): cards ripple in from the CENTRE card
+// outward — ring 0 (the centred card) flies in first, then both ring-1
+// neighbours together, then ring 2, ring 3. The wrapped `offset` computed in
+// the render loop already measures wheel distance from the centre, so a
+// card's ring IS its absOffset and its delay is absOffset × STAGGER. Each
+// card's title banner follows its card by BANNER_LAG so the reveal reads as
+// two beats (card, then label) instead of one blob. The whole sequence
+// re-runs on every category/sub switch — see the entrance effect below.
+const ENTRANCE_STAGGER_MS = 150;
+const ENTRANCE_MS = 600;
+// Matches the issue's spring-like ease-out; also used by the banner.
+const ENTRANCE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const BANNER_LAG_MS = 200;
+const BANNER_MS = 400;
 
 // Index of the middle card in a list — the carousel opens centred so the first
 // paint mounts the correct window (see the useState initialiser below). Pure
@@ -584,7 +600,18 @@ const FitOneLineTitle = ({ text }) => {
 const Carousel3D = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeSub, setActiveSub] = useState(null);
-  const [hasAnimated, setHasAnimated] = useState(false);
+
+  // Centre-out entrance state machine (issue #52):
+  //   'hidden'   — cards sit at the entrance-start pose (sunk into the stage,
+  //                opacity 0); no transition delays apply yet.
+  //   'entering' — cards fly to their wheel positions, each ring delayed by
+  //                absOffset × ENTRANCE_STAGGER_MS; banners lag their cards.
+  //   'done'     — poses identical to 'entering' but every delay is cleared,
+  //                so Prev/Next navigation is never queued behind a stagger.
+  // Under prefers-reduced-motion the machine jumps straight to 'done': cards
+  // appear in place, no flight, no ripple (mirrors PageTitle's handling).
+  const reduceMotion = useReducedMotion();
+  const [entrancePhase, setEntrancePhase] = useState('hidden');
 
   const subCategories = CATEGORY_TREE[activeCategory];
 
@@ -676,12 +703,51 @@ const Carousel3D = () => {
     );
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHasAnimated(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+  // Run (and re-run) the entrance: on first mount AND on every filter change
+  // — filteredCards' identity changes exactly when activeCategory/activeSub
+  // do, so depending on it re-triggers the ripple on each switch without a
+  // separate "animation key" to keep in sync. A LAYOUT effect so the reset
+  // to 'hidden' commits before the browser paints the new card set — with a
+  // passive effect the first painted frame after a switch would show the new
+  // cards fully visible at the OLD centre, then blink hidden (the recenter
+  // effect above has the same after-paint timing, but its one-frame jump was
+  // invisible only because the old code never hid the cards).
+  useLayoutEffect(() => {
+    if (reduceMotion) {
+      setEntrancePhase('done');
+      return undefined;
+    }
+    setEntrancePhase('hidden');
+    // Double rAF: the first fires before the hidden pose has painted, the
+    // second is guaranteed to be a frame after it — flipping to 'entering'
+    // any earlier would let the browser coalesce the two styles and skip
+    // the transition entirely (the old code used a 100ms timer for this).
+    let raf2 = 0;
+    let doneTimer = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        setEntrancePhase('entering');
+        // Clear the stagger delays as soon as the last motion lands. A ring's
+        // banner runs CONCURRENTLY with its card's flight (it just starts
+        // BANNER_LAG_MS in), so the sequence ends at the outermost ring's
+        // delay plus whichever chain runs longer — not the sum of both.
+        const rings = Math.min(
+          RENDER_WINDOW,
+          Math.floor(filteredCards.length / 2),
+        );
+        doneTimer = setTimeout(
+          () => setEntrancePhase('done'),
+          rings * ENTRANCE_STAGGER_MS +
+            Math.max(ENTRANCE_MS, BANNER_LAG_MS + BANNER_MS),
+        );
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      clearTimeout(doneTimer);
+    };
+  }, [filteredCards, reduceMotion]);
 
   // Track the id of the most recent "empty category" toast so we can
   // dismiss it precisely when the message stops being relevant — i.e.
@@ -849,15 +915,28 @@ const Carousel3D = () => {
             const rotateY = offset * -20;
             const scale = offset === 0 ? 1 : 0.85;
 
+            // Centre-out ripple (issue #52): absOffset — the wrapped wheel
+            // distance computed above — IS the entrance ring, so the centre
+            // card gets 0 delay, both ring-1 flanks share one delay, etc.
+            // Delays only exist while 'entering'; in 'done' they're cleared
+            // so a Prev/Next click moves every card immediately. The delay
+            // ALWAYS travels inside the `transition` shorthand (its second
+            // time value), never as a separate transitionDelay: React warns
+            // (and can mis-style) when a shorthand and its longhand coexist
+            // in one style object across rerenders.
+            const entranceDelayMs = absOffset * ENTRANCE_STAGGER_MS;
+            const isHidden = entrancePhase === 'hidden';
+            const isEntering = entrancePhase === 'entering';
+
             return (
               <div
                 key={card.id}
                 className="absolute flex h-full flex-col items-center justify-between gap-6 rounded-2xl py-6 text-xl font-bold text-[#ff6d05]"
                 style={{
                   width: imgW,
-                  transform: hasAnimated
-                    ? `translateX(${translateX}) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`
-                    : 'translateX(0px) translateZ(-400px) rotateY(0deg) scale(0.5)',
+                  transform: isHidden
+                    ? 'translateX(0px) translateZ(-400px) rotateY(0deg) scale(0.5)'
+                    : `translateX(${translateX}) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                   zIndex: 100 - absOffset,
                   // Cards within the visible window stay fully
                   // opaque (Swiper-coverflow look). Anything
@@ -870,7 +949,7 @@ const Carousel3D = () => {
                   // further than RENDER_WINDOW would never render here
                   // (the early return above unmounts it), so the final
                   // 0 branch is just defensive.
-                  opacity: !hasAnimated
+                  opacity: isHidden
                     ? 0
                     : absOffset <= OPAQUE_WINDOW
                       ? 1
@@ -878,10 +957,13 @@ const Carousel3D = () => {
                         ? 0.55
                         : 0,
                   filter: `brightness(${1 - absOffset * 0.18})`,
-                  // Same timing for every card so they move
-                  // as a single wheel — no staggered ripple.
-                  transition:
-                    'transform 650ms ease-in-out, opacity 400ms ease-in-out',
+                  // Entrance flight uses the springy ease + ring delay; once
+                  // 'done', the original wheel timing (no delay) returns —
+                  // same for every card, so navigation still moves them as a
+                  // single wheel.
+                  transition: isEntering
+                    ? `transform ${ENTRANCE_MS}ms ${ENTRANCE_EASE} ${entranceDelayMs}ms, opacity ${ENTRANCE_MS}ms ${ENTRANCE_EASE} ${entranceDelayMs}ms`
+                    : 'transform 650ms ease-in-out, opacity 400ms ease-in-out',
                   pointerEvents: absOffset > RENDER_WINDOW ? 'none' : 'auto',
                 }}
               >
@@ -951,7 +1033,25 @@ const Carousel3D = () => {
                       stops flex from squeezing the bar when a portrait
                       image fills the card — the image area absorbs the
                       squeeze instead, as it did before. */}
-                  <div className="custom-bg-abt relative mt-3 flex w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border p-3 text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg">
+                  <div
+                    className="custom-bg-abt relative mt-3 flex w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border p-3 text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg"
+                    style={{
+                      // Second beat of the entrance (issue #52): the banner
+                      // slides up into place BANNER_LAG_MS after its card
+                      // starts flying. The card's own opacity multiplies
+                      // this one, so the banner can never appear before its
+                      // card. In 'done' (incl. reduced motion) it's simply
+                      // visible with no delay.
+                      opacity: isHidden ? 0 : 1,
+                      transform: isHidden
+                        ? 'translateY(20px) scaleX(0.8)'
+                        : 'translateY(0px) scaleX(1)',
+                      // Delay lives inside the shorthand — see the card note.
+                      transition: isEntering
+                        ? `opacity ${BANNER_MS}ms ${ENTRANCE_EASE} ${entranceDelayMs + BANNER_LAG_MS}ms, transform ${BANNER_MS}ms ${ENTRANCE_EASE} ${entranceDelayMs + BANNER_LAG_MS}ms`
+                        : `opacity ${BANNER_MS}ms ${ENTRANCE_EASE}, transform ${BANNER_MS}ms ${ENTRANCE_EASE}`,
+                    }}
+                  >
                     <FitOneLineTitle text={card.title} />
                   </div>
                 </div>
