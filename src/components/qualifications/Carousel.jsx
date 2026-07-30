@@ -727,15 +727,18 @@ const Carousel3D = () => {
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
         setEntrancePhase('entering');
-        // Clear the stagger delays once the LAST banner has landed: outermost
-        // ring's card delay + card flight + banner lag + banner flight.
+        // Clear the stagger delays as soon as the last motion lands. A ring's
+        // banner runs CONCURRENTLY with its card's flight (it just starts
+        // BANNER_LAG_MS in), so the sequence ends at the outermost ring's
+        // delay plus whichever chain runs longer — not the sum of both.
         const rings = Math.min(
           RENDER_WINDOW,
           Math.floor(filteredCards.length / 2),
         );
         doneTimer = setTimeout(
           () => setEntrancePhase('done'),
-          rings * ENTRANCE_STAGGER_MS + ENTRANCE_MS + BANNER_LAG_MS + BANNER_MS,
+          rings * ENTRANCE_STAGGER_MS +
+            Math.max(ENTRANCE_MS, BANNER_LAG_MS + BANNER_MS),
         );
       });
     });

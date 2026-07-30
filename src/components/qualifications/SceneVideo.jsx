@@ -51,7 +51,8 @@ const SceneVideo = () => {
       preload="metadata"
       disablePictureInPicture
       disableRemotePlayback
-      // Decorative: the Image underneath carries the accessible description.
+      // Decorative, like the still Image underneath (alt="") — hidden from
+      // assistive tech entirely.
       aria-hidden
       tabIndex={-1}
       onError={() => setFailed(true)}

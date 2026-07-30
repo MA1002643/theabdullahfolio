@@ -22,7 +22,7 @@ const page = () => {
         priority
         sizes="100vw"
         src={bg}
-        alt="background-image"
+        alt=""
         className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-80 bg-black"
       />
       {/* The same scene, living: water ripples + lantern flicker (issue #52
