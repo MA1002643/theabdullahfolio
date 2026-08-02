@@ -11,8 +11,17 @@
  *
  * Empty / missing labels return "" — callers skip those.
  */
+
+// Acronym labels the default fold would mangle ("AI" → "Ai"). Keyed by the
+// lowercased label so every authored variant ("ai", "AI", "Ai ") lands on
+// the one display form — the same no-lookalikes guarantee as the fold.
+const ACRONYMS = { ai: "AI" };
+
 export const normalizeCategory = (raw) => {
   const label = String(raw ?? "").trim();
   if (!label) return "";
-  return label[0].toUpperCase() + label.slice(1).toLowerCase();
+  return (
+    ACRONYMS[label.toLowerCase()] ??
+    label[0].toUpperCase() + label.slice(1).toLowerCase()
+  );
 };

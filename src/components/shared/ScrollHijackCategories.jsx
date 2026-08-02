@@ -294,7 +294,10 @@ const CategoryItem = ({
       // letter by letter but keeps the tab's own active/inactive colour, which
       // already carries meaning here. Disabled tabs stay static — a roll would
       // advertise an interactivity their dimming is there to play down.
-      className={`cursor-pointer whitespace-nowrap border-0 bg-transparent p-0 !text-[1rem] font-semibold uppercase transition-colors md:!text-[1.2rem] ${
+      // Font size is the `.category-tab` semantic class (issue #50): its base
+      // rules are the old !text-[1rem] md:!text-[1.2rem] exactly, and inside
+      // a `.fluid-scale` scope it rides the page's fluid factor instead.
+      className={`category-tab cursor-pointer whitespace-nowrap border-0 bg-transparent p-0 font-semibold uppercase transition-colors ${
         isDisabled ? 'opacity-40' : 'hover-swap hover-swap--mono'
       }`}
       style={{
@@ -323,7 +326,7 @@ const CategoryItem = ({
     >
       <HoverText text={label} />
       {showCount && typeof count === 'number' && (
-        <span className="ml-1 align-middle text-[0.65rem] tabular-nums opacity-40">
+        <span className="category-tab-count ml-1 align-middle tabular-nums opacity-40">
           {/* Only the digits carry the ref — useViewportCountUp writes straight
             to textContent, so the brackets have to live outside it. */}
           (<span ref={countRef}>0</span>)
@@ -352,6 +355,10 @@ const CategoryItem = ({
  *   viewport. On a row that overflows they double as orientation aids.
  * @param {number}   [props.maxVisible=4]   Desktop ceiling on visible tabs.
  * @param {string}   [props.className]      Classes for the outer container.
+ * @param {object}   [props.style]          Inline styles for the outer
+ *   container — how a fluid-scale page (issue #50) hands the strip calc()'d
+ *   margins, since Tailwind spacing utilities can't carry a var()-derived
+ *   value.
  * @param {string}   [props.label]          Accessible name for the group.
  */
 const ScrollHijackCategories = ({
@@ -363,6 +370,7 @@ const ScrollHijackCategories = ({
   counts,
   maxVisible = 4,
   className = '',
+  style,
   label = 'Category filters',
 }) => {
   const outerRef = useRef(null);
@@ -639,6 +647,7 @@ const ScrollHijackCategories = ({
     <motion.div
       ref={outerRef}
       className={`w-full ${className}`}
+      style={style}
       variants={prefersReducedMotion ? REDUCED_ROW_VARIANTS : ROW_VARIANTS}
       initial={prefersReducedMotion ? 'visible' : 'hidden'}
       animate={entranceShown ? 'visible' : 'hidden'}
@@ -671,7 +680,10 @@ const ScrollHijackCategories = ({
         >
           <div
             ref={stripRef}
-            className="flex w-max items-center justify-center gap-6 px-3"
+            // gap/padding via `.category-strip-track` (issue #50): base values
+            // are the old gap-6 px-3; a `.fluid-scale` scope scales them. The
+            // measure() above reads the rendered layout, so it follows either.
+            className="category-strip-track flex w-max items-center justify-center"
           >
             {categories.map((cat) => {
               const disabled = isDisabled ? isDisabled(cat) : false;

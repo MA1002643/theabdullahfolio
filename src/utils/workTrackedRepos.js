@@ -4,67 +4,108 @@
 // the work-status route builds its GraphQL query from this list and the
 // webhook handler gates cache busts against it.
 //
-// `displayName` is what the popover UI shows. `owner`/`name` are the
+// `displayName` is what the popover UI shows (the section headers under
+// PRS / ISSUES / PUSHES) AND the key of the signal's `byRepo` totals —
+// items and totals both derive from this one field, so renaming it here
+// renames both sides of the join at once. Where a repo has a Projects v2
+// board, the displayName mirrors the board's title (minus phase suffixes
+// like "— Delivery"); boardless repos get a clean product name instead
+// of their raw slug. `owner`/`name` are the
 // GraphQL lookup keys; `nameWithOwner` (owner/name) is the join key
 // against GitHub payloads. Exact casing verified via
 // `gh repo view <owner>/<name> --json nameWithOwner` per issue #94 §3.4
-// — note AfaaqX's capital X. `ma.codes` from the original issue text
+// — note AfaaqX's capital X. CAUTION on repo renames: GitHub redirects
+// LOOKUPS from an old name, but payloads carry the NEW nameWithOwner, so
+// a renamed repo silently falls out of every join here until this list
+// is updated (six hits in two days: ai-powered-recipe-search-platform
+// → culina, article-server-full-stack-blogging-platform → colophon,
+// fullstack-singer-platform → dhun, vevox-real-time-chat-web-application
+// → plenary, still-do-decide → auxo, hgv → clearway — repos get renamed
+// as they productise, so expect more and re-verify this list whenever a
+// project is renamed anywhere). `ma.codes` from the original issue text
 // does not exist under this account yet; add it here once created.
+//
+// `projectNumber` (optional) is the user-level Projects v2 board that
+// tracks the repo — github.com/users/MA1002643/projects/<number>. The
+// work-status route reads the In Progress / Done columns of every board
+// listed here in one aliased query (issue #94 Phase 3); repos without a
+// board simply fall back to the repo-wide PR/issue signal.
 export const TRACKED_REPOS = Object.freeze([
   Object.freeze({
     owner: 'MA1002643',
     name: 'theabdullahfolio',
-    displayName: 'theabdullahfolio',
+    displayName: 'ma.codes',
+    projectNumber: 3,
   }),
   Object.freeze({
     owner: 'MA1002643',
     name: 'AfaaqX',
     displayName: 'AfaaqX',
+    projectNumber: 2,
   }),
   Object.freeze({
     owner: 'MA1002643',
     name: 'muhammadabdullah-portfolio',
     displayName: 'muhammadabdullah-portfolio',
+    projectNumber: 7,
   }),
   Object.freeze({
     owner: 'MA1002643',
-    name: 'ai-powered-recipe-search-platform',
-    displayName: 'ai-powered-recipe-search-platform',
+    name: 'culina',
+    displayName: 'Culina',
+    projectNumber: 8,
   }),
   Object.freeze({
     owner: 'MA1002643',
-    name: 'article-server-full-stack-blogging-platform',
-    displayName: 'article-server-full-stack-blogging-platform',
+    name: 'colophon',
+    displayName: 'Colophon',
+    projectNumber: 9,
   }),
   Object.freeze({
     owner: 'MA1002643',
-    name: 'fullstack-singer-platform',
-    displayName: 'fullstack-singer-platform',
+    name: 'dhun',
+    displayName: 'Dhun',
+    projectNumber: 10,
   }),
   Object.freeze({
     owner: 'MA1002643',
     name: 'jokes-platform',
-    displayName: 'jokes-platform',
+    displayName: 'Jokes Platform',
   }),
   Object.freeze({
     owner: 'MA1002643',
-    name: 'vevox-real-time-chat-web-application',
-    displayName: 'vevox-real-time-chat-web-application',
+    name: 'plenary',
+    displayName: 'Plenary',
+    projectNumber: 11,
   }),
   Object.freeze({
     owner: 'MA1002643',
     name: 'aura-motion',
-    displayName: 'aura-motion',
+    displayName: 'Aura Motion',
   }),
   Object.freeze({
     owner: 'MA1002643',
     name: 'vigil',
     displayName: 'vigil',
+    projectNumber: 4,
   }),
   Object.freeze({
     owner: 'MA1002643',
     name: 'tailorhawk',
-    displayName: 'tailorhawk',
+    displayName: 'Tailorhawk',
+    projectNumber: 5,
+  }),
+  Object.freeze({
+    owner: 'MA1002643',
+    name: 'auxo',
+    displayName: 'Auxo',
+    projectNumber: 12,
+  }),
+  Object.freeze({
+    owner: 'MA1002643',
+    name: 'clearway',
+    displayName: 'Clearway',
+    projectNumber: 13,
   }),
 ]);
 

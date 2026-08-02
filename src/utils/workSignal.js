@@ -125,23 +125,28 @@ export function computeWorkSignal({
 
   // Project-board items are authoritative when present — they reflect the
   // user's "In Progress" column directly. Fall back to PR-then-issue
-  // ordering only when the column is empty/unavailable.
+  // ordering only when the column is empty/unavailable. `updatedAt` rides
+  // along so the portfolio roll-up can interleave several repos' board
+  // items freshest-first (#94 Phase 3); the UI ignores it.
   const topItems = hasProjectInProgress
     ? inProgressItems.slice(0, 3).map((item) => ({
         type: item.type,
         number: item.number,
         title: item.title,
+        updatedAt: item.updatedAt,
       }))
     : [
         ...activePrs.slice(0, 2).map((pr) => ({
           type: 'pr',
           number: pr.number,
           title: pr.title,
+          updatedAt: pr.updatedAt,
         })),
         ...activeIssues.slice(0, 2).map((i) => ({
           type: 'issue',
           number: i.number,
           title: i.title,
+          updatedAt: i.updatedAt,
         })),
       ].slice(0, 3);
 
@@ -322,8 +327,11 @@ export function computePortfolioSignal({ repos = [], now = new Date() } = {}) {
       .slice(0, BREAKDOWN_LIMIT),
   };
 
-  // Project-board topItems stay authoritative when any repo has them
-  // (Phase 1: only the primary repo feeds the board). Otherwise fall back
+  // Project-board topItems stay authoritative when any repo has them —
+  // and since #94 Phase 3 every tracked repo may carry its own board's
+  // items, they're merged across repos freshest-first (the per-repo
+  // records carry updatedAt for exactly this interleave) instead of
+  // whichever repo happens to lead the tracked list. Otherwise fall back
   // to the same PR-then-issue ordering as the single-repo signal, drawn
   // from the whole portfolio. The issue picks use their own globally
   // most-recent sort — breakdown.issues is grouped per repo, so its first
@@ -333,11 +341,13 @@ export function computePortfolioSignal({ repos = [], now = new Date() } = {}) {
     .flatMap(({ repo }) => (repo.issues ?? []).map(tagPrIssue(repo, 'issue')))
     .sort(byMostRecent('createdAt'));
 
-  const boardEntry = perRepo.find(
-    ({ signal }) => signal.projectInProgressCount > 0,
-  );
-  const topItems = boardEntry
-    ? boardEntry.signal.topItems
+  const boardTopItems = perRepo
+    .filter(({ signal }) => signal.projectInProgressCount > 0)
+    .flatMap(({ signal }) => signal.topItems)
+    .sort(byMostRecent('updatedAt'))
+    .slice(0, 3);
+  const topItems = boardTopItems.length > 0
+    ? boardTopItems
     : [
         ...breakdown.prs.slice(0, 2).map((item) => ({
           type: 'pr',

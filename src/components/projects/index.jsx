@@ -7,6 +7,7 @@ import PageTitle from "@/components/PageTitle";
 import ScrollHijackCategories from "@/components/shared/ScrollHijackCategories";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 import { normalizeCategory } from "@/lib/categories";
+import { fluid, fluidText } from "@/lib/fluidScale";
 
 // List reveal (issue #27 §3.2) — slowed from the original 0.15/0.3 so the
 // cards read as settling into place one at a time rather than racing in.
@@ -202,11 +203,23 @@ const ProjectList = ({ projects }) => {
   const listVariants = prefersReducedMotion ? reducedContainer : container;
 
   return (
+    // Sizing (issue #50): every dimension on this page derives from the one
+    // `--fluid-scale` factor the sub-page layout's `fluid-scale` scope
+    // computes — the fluid() values below replace the old xl:max-w-4xl /
+    // px-4 lg:px-10 / space-y-6 md:space-y-8 breakpoint jumps. max-width is
+    // the old 4xl (56rem) at scale 1; space-y-* becomes a flex gap so the
+    // title → strip → list rhythm is one scaled property, not per-child
+    // margins.
     <motion.div
       variants={listVariants}
       initial="hidden"
       animate="show"
-      className="w-full max-w-full xl:max-w-4xl px-4 mx-auto lg:px-10 space-y-6 md:space-y-8 flex flex-col items-center"
+      className="fluid-scale w-full mx-auto flex flex-col items-center"
+      style={{
+        maxWidth: fluid(56),
+        paddingInline: fluid(1),
+        gap: fluid(1.5),
+      }}
     >
       {/* HEADER — uses shared PageTitle (issue #104). The decorative
           dashes around "MY WORK" were dropped per the acceptance
@@ -229,7 +242,10 @@ const ProjectList = ({ projects }) => {
             wheel over the row travels sideways — instead of wrapping to a
             second line. The project list below never moves. */}
         <ScrollHijackCategories
-          className="mb-4 mt-10"
+          // Fluid margins (issue #50) — the old mt-10/mb-4 at scale 1,
+          // breathing with the page instead of sitting fixed while
+          // everything around them scales.
+          style={{ marginTop: fluid(2.5), marginBottom: fluid(1) }}
           label="Project categories"
           categories={categories}
           active={active}
@@ -254,15 +270,22 @@ const ProjectList = ({ projects }) => {
             opacity: 0,
             transition: { duration: 0.25, ease: "easeIn" },
           }}
-          className="w-full space-y-4"
+          // space-y-4 → scaled flex gap (issue #50): gap lives on the
+          // container, so AnimatePresence's exiting copy can't leave a
+          // double margin behind mid-handoff.
+          className="w-full flex flex-col"
+          style={{ gap: fluid(1) }}
         >
           {filteredProjects.length >= 1 ? (
             filteredProjects.map((project, index) => (
               <ProjectLayout key={index} {...project} category={active}/>
             ))
           ) : (
-            <div className="custom-bg-abt rounded-md p-3">
-              <h3 className="text-center text-lg font-semibold text-[#FFB627] tracking-wide relative z-10 drop-shadow-[0_0_5px_#ffb627]">
+            <div className="custom-bg-abt rounded-md" style={{ padding: fluid(0.75) }}>
+              <h3
+                className="text-center font-semibold text-[#FFB627] tracking-wide relative z-10 drop-shadow-[0_0_5px_#ffb627]"
+                style={{ fontSize: fluidText(1.125, 0.85) }}
+              >
                 No Projects Found !
               </h3>
             </div>
