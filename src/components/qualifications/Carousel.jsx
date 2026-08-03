@@ -14,6 +14,7 @@ import DIMS from './_dimensions.json';
 import { preloadQualificationCerts } from './preloadCerts';
 import { certSizes } from './certSizes';
 import { normalizeCategory } from '@/lib/categories';
+import { fluid, fluidText } from '@/lib/fluidScale';
 
 // Visibility/mount thresholds for the carousel. Stored as named
 // constants so the opacity/pointer-events logic below stays in sync
@@ -512,9 +513,9 @@ const TITLE_MIN_PX = 10;
 // single-line width (scrollWidth) against the available width and scales
 // font-size down proportionally — text width is linear in font size, so a
 // single pass lands on the right value; it never grows past the
-// class-declared base (text-lg). Tailwind's text-lg pins line-height at
-// 1.75rem independently of the inline font-size, so the title bar's height
-// is identical on every card — which is what keeps the bar→buttons gap
+// class-declared base (.qual-title). That class pins line-height in rem
+// independently of the inline font-size, so the title bar's height is
+// identical on every card — which is what keeps the bar→buttons gap
 // constant. Re-fits when the wrapper resizes (card widths are vh/vw-derived)
 // and once webfonts finish loading (glyph metrics change). Font size is
 // written straight to the DOM via refs: no React state, no re-render per
@@ -523,9 +524,6 @@ const TITLE_MIN_PX = 10;
 const FitOneLineTitle = ({ text }) => {
   const boxRef = useRef(null);
   const textRef = useRef(null);
-  // Class-derived base font size, captured on the first fit before any
-  // inline override exists.
-  const basePxRef = useRef(null);
 
   useLayoutEffect(() => {
     const box = boxRef.current;
@@ -533,25 +531,26 @@ const FitOneLineTitle = ({ text }) => {
     if (!box || !el) return undefined;
 
     const fit = () => {
-      if (basePxRef.current === null) {
-        // Clear any leftover inline size (e.g. after a Fast Refresh remount
-        // that reused the DOM node) so the base is the CLASS-declared size,
-        // not a previously shrunk one. Must happen BEFORE measuring
-        // scrollWidth so `natural` and `current` describe the same font size.
-        el.style.fontSize = '';
-        basePxRef.current = parseFloat(window.getComputedStyle(el).fontSize);
-      }
+      // Re-derive the class base on EVERY fit, not once: under the fluid
+      // scope (issue #53) .qual-title's size is viewport-derived, so a
+      // window resize changes the base itself — a cached first value would
+      // pin titles at the old scale. Clearing the inline size first means
+      // `natural` (scrollWidth) is measured at exactly that base, and both
+      // reads happen inside one layout pass before paint, so nothing
+      // flashes. The observer still only watches the wrapper's width, which
+      // the font size can't influence — no feedback loop.
+      el.style.fontSize = '';
+      const basePx = parseFloat(window.getComputedStyle(el).fontSize);
       const available = box.clientWidth;
       const natural = el.scrollWidth;
-      if (!available || !natural) return;
-      const current = parseFloat(window.getComputedStyle(el).fontSize);
+      if (!available || !natural || !basePx) return;
       // 1px of slack absorbs scrollWidth's integer rounding so the text
       // never sits exactly on the overflow boundary.
       const target = Math.min(
-        basePxRef.current,
-        Math.max((current * (available - 1)) / natural, TITLE_MIN_PX),
+        basePx,
+        Math.max((basePx * (available - 1)) / natural, TITLE_MIN_PX),
       );
-      if (Math.abs(target - current) > 0.1) {
+      if (Math.abs(target - basePx) > 0.1) {
         el.style.fontSize = `${target}px`;
       }
     };
@@ -588,7 +587,7 @@ const FitOneLineTitle = ({ text }) => {
     <div ref={boxRef} className="relative z-10 w-full min-w-0 overflow-hidden">
       <h3
         ref={textRef}
-        className="text-fire-amber overflow-hidden text-ellipsis whitespace-nowrap text-center text-lg font-semibold tracking-wide"
+        className="qual-title text-fire-amber overflow-hidden text-ellipsis whitespace-nowrap text-center font-semibold tracking-wide"
         style={{ textShadow: 'none' }}
       >
         {text}
@@ -831,7 +830,10 @@ const Carousel3D = () => {
           always sits immediately under its parent and the carousel below stays
           exactly where it is. */}
       <ScrollHijackCategories
-        className="mb-4 mt-10"
+        // Fluid margins (issue #53) — the strip's own tab/gap sizing already
+        // rides the scope via the shared .category-tab/.category-strip-track
+        // rules from issue #50; only these page-level margins live here.
+        style={{ marginTop: fluid(2.5), marginBottom: fluid(1) }}
         label="Qualification categories"
         categories={PARENT_CATEGORIES}
         active={activeCategory}
@@ -844,7 +846,7 @@ const Carousel3D = () => {
       {/* Sub-category filters (only when parent has subs) */}
       {subCategories && (
         <ScrollHijackCategories
-          className="mb-8"
+          style={{ marginBottom: fluid(2) }}
           label={`${activeCategory} sub-categories`}
           categories={subCategories}
           active={activeSub}
@@ -855,18 +857,47 @@ const Carousel3D = () => {
         />
       )}
 
-      {!subCategories && <div className="mb-6" />}
+      {!subCategories && <div style={{ marginBottom: fluid(1.5) }} />}
 
-      {/* Carousel 3D Container. CSS vars feed every dimension so we can
-                tune them per breakpoint and the gap-to-card ratio
-                (slot/cap ≈ 0.65) stays constant on mobile, tablet, and
-                desktop:
-                  --cert-cap   — image height cap
-                  --cert-w-cap — image width cap (mobile uses ~90vw so cards
-                                 nearly fill the screen width; desktop value
-                                 is academic because the height cap wins)
-                  --slot-vh    — translateX spacing between cards            */}
-      <div className="perspective-3d relative flex h-[68vh] w-full items-center justify-center [--cert-cap:56vh] [--cert-w-cap:90vw] [--slot-vh:36vh] md:h-[80vh] md:[--cert-cap:68vh] md:[--cert-w-cap:70vw] md:[--slot-vh:44vh]">
+      {/* Carousel 3D Container. CSS vars feed every dimension so the
+          gap-to-card ratio (slot/cap ≈ 0.65) stays constant at every width:
+            --cert-cap   — image height cap
+            --cert-w-cap — image width cap (near-phone widths use ~90vw so
+                           cards nearly fill the screen; the desktop value is
+                           academic because the height cap wins there)
+            --slot-vh    — translateX spacing between cards
+            --card-depth — coverflow translateZ step (see the card transform)
+
+          Fluid geometry (issue #53): these caps are vh/vw-based — already
+          height-responsive — so multiplying them straight by --fluid-scale
+          would wrongly shrink phones (68vh × 0.6 ≈ 41vh). What the old
+          md: variants encoded was a WIDTH-driven jump between two authored
+          endpoint sets; --carousel-t re-expresses exactly that as a smooth
+          morph: 0 at the scale floor (≤864px, the old mobile values), 1 at
+          the 1440px design anchor (the old md: values), interpolating in
+          between and HELD at the design endpoint beyond it — heights are
+          viewport-fit caps, so unlike font sizes they must not grow past
+          their design value on ultrawide. Pre-CSS-trig engines resolve
+          --fluid-scale to 1 → t = 1 → the design values everywhere, the same
+          scale-1 pinning the rest of the #50 system accepts.
+
+          --card-depth DOES ride the factor beyond 1 — and .perspective-3d's
+          perspective scales by the same factor (globals.css), so the
+          depth/perspective RATIO (200/1200) is invariant: the wheel's
+          recession and tilt read identically at every width while all
+          real px sizes breathe. */}
+      <div
+        className="perspective-3d relative flex w-full items-center justify-center"
+        style={{
+          '--carousel-t':
+            'clamp(0, calc((var(--fluid-scale, 1) - 0.6) / 0.4), 1)',
+          '--cert-cap': 'calc(56vh + 12vh * var(--carousel-t))',
+          '--cert-w-cap': 'calc(90vw - 20vw * var(--carousel-t))',
+          '--slot-vh': 'calc(36vh + 8vh * var(--carousel-t))',
+          '--card-depth': 'calc(200px * var(--fluid-scale, 1))',
+          height: 'calc(68vh + 12vh * var(--carousel-t))',
+        }}
+      >
         {filteredCards.length > 0 ? (
           filteredCards.map((card, index) => {
             let offset = index - normalizedIndex;
@@ -911,7 +942,11 @@ const Carousel3D = () => {
             // ~200px per step and tilt 20° inward — this is what
             // sells the "centred card sits in front of its
             // neighbours" effect rather than just being a row.
-            const translateZ = -absOffset * 200;
+            // The step rides --card-depth (200px × the fluid factor,
+            // set on the container) — calc() is valid inside
+            // translateZ(), so no JS scale number is ever needed.
+            // rotateY stays static: degrees are viewport-independent.
+            const translateZ = `calc(${-absOffset} * var(--card-depth))`;
             const rotateY = offset * -20;
             const scale = offset === 0 ? 1 : 0.85;
 
@@ -931,12 +966,23 @@ const Carousel3D = () => {
             return (
               <div
                 key={card.id}
-                className="absolute flex h-full flex-col items-center justify-between gap-6 rounded-2xl py-6 text-xl font-bold text-[#ff6d05]"
+                // Fluid card chrome (issue #53): py-6 → scaled paddingBlock,
+                // text-xl → scaled font size (children with explicit sizes
+                // override it as before). gap-6 and rounded-2xl were INERT —
+                // one flex child, and no background/border/clip for a radius
+                // to paint on — so they're dropped rather than scaled.
+                className="absolute flex h-full flex-col items-center justify-between font-bold text-[#ff6d05]"
                 style={{
                   width: imgW,
+                  paddingBlock: fluid(1.5),
+                  fontSize: fluidText(1.25, 0.875),
+                  // The entrance origin's -400px plunge scales with the page
+                  // factor so the flight distance keeps its proportion to the
+                  // card sizes; scale(0.5) is a ratio — resolution-independent
+                  // — and stays static.
                   transform: isHidden
-                    ? 'translateX(0px) translateZ(-400px) rotateY(0deg) scale(0.5)'
-                    : `translateX(${translateX}) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                    ? 'translateX(0px) translateZ(calc(-400px * var(--fluid-scale, 1))) rotateY(0deg) scale(0.5)'
+                    : `translateX(${translateX}) translateZ(${translateZ}) rotateY(${rotateY}deg) scale(${scale})`,
                   zIndex: 100 - absOffset,
                   // Cards within the visible window stay fully
                   // opaque (Swiper-coverflow look). Anything
@@ -979,8 +1025,14 @@ const Carousel3D = () => {
                 <div className="relative flex h-full w-full flex-col items-center justify-end overflow-visible rounded-lg">
                   {/* Main Image — width/height pinned to the image's aspect ratio so the frame hugs it edge-to-edge */}
                   <div
-                    className="custom-bg-abt relative flex items-center justify-center rounded-lg p-[0.3rem]"
-                    style={{ width: imgW, height: imgH, background: '#00000020' }}
+                    className="custom-bg-abt relative flex items-center justify-center"
+                    style={{
+                      width: imgW,
+                      height: imgH,
+                      background: '#00000020',
+                      padding: fluid(0.3),
+                      borderRadius: fluid(0.5),
+                    }}
                   >
                     <a
                       href={card.img}
@@ -1010,7 +1062,8 @@ const Carousel3D = () => {
                         priority={absOffset === 0}
                         loading={absOffset === 0 ? 'eager' : 'lazy'}
                         fetchPriority={absOffset === 0 ? undefined : 'low'}
-                        className="rounded-lg object-cover"
+                        className="object-cover"
+                        style={{ borderRadius: fluid(0.5) }}
                       />
                       {/* Subtle ember tint to tie cards
                                                 into the page palette. Lives
@@ -1019,7 +1072,8 @@ const Carousel3D = () => {
                                                 new tab with no overlay. */}
                       <div
                         aria-hidden
-                        className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-br from-[#ff6d05]/85 via-[#ff6d05]/65 to-[#ff6d05]/80 mix-blend-multiply"
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#ff6d05]/85 via-[#ff6d05]/65 to-[#ff6d05]/80 mix-blend-multiply"
+                        style={{ borderRadius: fluid(0.5) }}
                       />
                     </a>
                   </div>
@@ -1034,8 +1088,14 @@ const Carousel3D = () => {
                       image fills the card — the image area absorbs the
                       squeeze instead, as it did before. */}
                   <div
-                    className="custom-bg-abt relative mt-3 flex w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border p-3 text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg"
+                    // qual-banner: under the fluid scope, globals.css scales
+                    // the radius on BOTH the element and its ::before ring in
+                    // one rule — an inline borderRadius could never reach the
+                    // pseudo-element and the two would visibly mismatch.
+                    className="qual-banner custom-bg-abt relative flex w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border text-center before:pointer-events-none before:absolute before:inset-0 before:rounded-lg"
                     style={{
+                      marginTop: fluid(0.75),
+                      padding: fluid(0.75),
                       // Second beat of the entrance (issue #52): the banner
                       // slides up into place BANNER_LAG_MS after its card
                       // starts flying. The card's own opacity multiplies
@@ -1059,7 +1119,10 @@ const Carousel3D = () => {
             );
           })
         ) : (
-          <div className="text-lg font-semibold text-[#FFB627] drop-shadow-[0_0_5px_#ffb627]">
+          <div
+            className="font-semibold text-[#FFB627] drop-shadow-[0_0_5px_#ffb627]"
+            style={{ fontSize: fluidText(1.125, 0.875) }}
+          >
             No items found in this category!
           </div>
         )}
@@ -1067,21 +1130,39 @@ const Carousel3D = () => {
 
       {/* Next / Prev Buttons + Reflection */}
       {filteredCards.length > 0 && (
-        <div className="relative mb-4 mt-[clamp(1rem,4vh,2.5rem)] flex flex-col items-center">
-          <div className="z-10 flex gap-6">
+        // The clamp()'d top margin is already continuous (vh-driven, no
+        // breakpoint) so it stays; only the static bottom margin, gap, and
+        // button chrome pick up the fluid factor. Button text floors at
+        // 0.875rem so the primary carousel controls never shrink below
+        // readable.
+        <div
+          className="relative mt-[clamp(1rem,4vh,2.5rem)] flex flex-col items-center"
+          style={{ marginBottom: fluid(1) }}
+        >
+          <div className="z-10 flex" style={{ gap: fluid(1.5) }}>
             <button
               type="button"
               onClick={prevSlide}
-              className="custom-bg-abt text-fire-amber rounded-lg px-4 py-2"
-              style={{ textShadow: 'none' }}
+              className="custom-bg-abt text-fire-amber"
+              style={{
+                textShadow: 'none',
+                padding: `${fluid(0.5)} ${fluid(1)}`,
+                borderRadius: fluid(0.5),
+                fontSize: fluidText(1, 0.875),
+              }}
             >
               Prev
             </button>
             <button
               type="button"
               onClick={nextSlide}
-              className="custom-bg-abt text-fire-amber rounded-lg px-4 py-2"
-              style={{ textShadow: 'none' }}
+              className="custom-bg-abt text-fire-amber"
+              style={{
+                textShadow: 'none',
+                padding: `${fluid(0.5)} ${fluid(1)}`,
+                borderRadius: fluid(0.5),
+                fontSize: fluidText(1, 0.875),
+              }}
             >
               Next
             </button>
