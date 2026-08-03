@@ -22,11 +22,23 @@
 // the real painted width, so the carousel self-limits to ~1080/1200 without
 // needing a global images.deviceSizes cap in next.config — that cap would clamp
 // EVERY next/image site-wide (full-bleed 100vw backgrounds included) and soften
-// them on large/high-DPR screens. The container CSS vars drive the numbers:
-//   mobile (<768px):  --cert-w-cap 90vw, --cert-cap 56vh
-//   desktop (>=768px):--cert-w-cap 70vw, --cert-cap 68vh
-// This is the exact painted size (not a conservative undershoot), so the
-// browser still picks a candidate >= width×DPR — sharp, just not oversized.
+// them on large/high-DPR screens.
+//
+// FLUID GEOMETRY (issue #53): the container vars now MORPH between the two
+// authored endpoint sets across the fluid band instead of jumping at 768px —
+//   scale floor (<=864px):    --cert-w-cap 90vw, --cert-cap 56vh
+//   morph band (865-1439px):  w-cap 90vw -> 70vw, cap 56vh -> 68vh
+//   design anchor (>=1440px): --cert-w-cap 70vw, --cert-cap 68vh
+// `sizes` can't express that morph (the interpolation factor needs a unitless
+// length ratio, which calc() inside a sizes attribute can't produce), so the
+// morph band declares the UPPER ENVELOPE of both caps: min(90vw, ar * 68vh).
+// Declared >= painted everywhere, so the browser never picks a too-small
+// candidate — that upscale is exactly what made landscape certs soft on
+// portrait tablets under the old 768px bands, where the real 90vw-bound
+// width exceeded the declared 70vw. The cost is at most one srcset bucket
+// of over-fetch mid-band; the two endpoint bands remain the exact painted
+// size (not a conservative undershoot), so the browser still picks a
+// candidate >= width×DPR — sharp, just not oversized.
 //
 // NOTE on quality: there is intentionally no shared `quality` here. Neither the
 // carousel nor the preloader sets it, so both inherit the same next/image
@@ -38,7 +50,8 @@ export const certSizes = (ar) => {
   // headroom when the browser rounds up to the next srcSet candidate.
   const a = Number(ar).toFixed(4);
   return (
-    `(max-width: 767.98px) min(90vw, calc(${a} * 56vh)), ` +
+    `(max-width: 864.98px) min(90vw, calc(${a} * 56vh)), ` +
+    `(max-width: 1439.98px) min(90vw, calc(${a} * 68vh)), ` +
     `min(70vw, calc(${a} * 68vh))`
   );
 };

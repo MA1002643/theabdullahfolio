@@ -4107,6 +4107,42 @@ html.custom-cursor-active * {
   font-size: max(0.75rem, calc(0.875rem * var(--fluid-scale, 1)));
 }
 
+/* ── Qualifications carousel under a fluid scope (issue #53) ──────────────
+   Same contract as the blocks above: bases keep their legacy values, the
+   scoped rules re-derive from the factor, all unlayered.
+
+   Perspective rides the SAME factor as the coverflow's --card-depth step
+   (Carousel.jsx), so the depth/perspective ratio — what actually determines
+   how strongly side cards recede and tilt — is invariant: the wheel reads
+   identically at 320px and 2560px while every real px dimension breathes. */
+.fluid-scale .perspective-3d {
+  perspective: calc(1200px * var(--fluid-scale, 1));
+}
+
+/* Certificate title (FitOneLineTitle's h3). The base reproduces text-lg
+   exactly (1.125rem / 1.75rem). The rem line-height is deliberate — NOT
+   unitless: the fitter shrinks each title's font-size independently, and
+   the bar's height must come from the class line-height alone so every
+   card's bar is identical and the bar→buttons gap never moves. Under the
+   scope both scale together; the line-height floor is the font floor × the
+   same 1.75/1.125 ratio, so the pairing holds while the floors bind. */
+.qual-title {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+.fluid-scale .qual-title {
+  font-size: max(0.875rem, calc(1.125rem * var(--fluid-scale, 1)));
+  line-height: max(1.3611rem, calc(1.75rem * var(--fluid-scale, 1)));
+}
+
+/* Banner radius must change on the element AND its ::before ring together
+   (an inline style can't reach the pseudo-element) — one rule, no drift.
+   Base stays the utilities' rounded-lg / before:rounded-lg. */
+.fluid-scale .qual-banner,
+.fluid-scale .qual-banner::before {
+  border-radius: calc(0.5rem * var(--fluid-scale, 1));
+}
+
 /* Touch hit-slop for the small text buttons (issue #9 acceptance: ≥44px
    targets on mobile). The visible pills stay their quiet size; on coarse
    pointers an invisible ::after extends each button's hit area to 2.75rem
