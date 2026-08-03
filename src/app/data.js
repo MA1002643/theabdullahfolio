@@ -152,12 +152,17 @@ export const projectsData = [
     // mobile fitness/nutrition app (TestFlight/Play beta, watch apps, HealthKit
     // / Health Connect, StoreKit & Play Billing) with a large AI coaching
     // layer — "Mobile" is the product form, AI one component. Date = repo
-    // creation; the repo is private with no homepage yet, so the demo link is
-    // the repo itself (plenary precedent).
+    // creation. The repo is PRIVATE with no homepage yet — a github.com
+    // link would 404 for every visitor, so unlike the public-repo entries
+    // (plenary precedent) there is no URL to offer: `demoLink: null` +
+    // `private` let a consumer render an explicit private-project state
+    // instead of a dead link. Swap in a real URL once a public landing
+    // page or repo exists.
     name: 'auxo',
     description: 'AI-powered fitness coaching platform',
     date: '2026-08-02',
-    demoLink: 'https://github.com/MA1002643/auxo',
+    demoLink: null,
+    private: true,
     category: 'Mobile',
   },
   {
@@ -167,12 +172,14 @@ export const projectsData = [
     // HGV navigation (constraint routing, bridge-strike prevention, CarPlay /
     // Android Auto, offline maps) with a deterministic EU/UK/US drivers'-hours
     // compliance engine — a cross-platform mobile app like auxo, hence
-    // "Mobile". Date = repo creation; the repo is private with no homepage
-    // yet, so the demo link is the repo itself (plenary precedent).
+    // "Mobile". Date = repo creation. PRIVATE repo, no homepage — same
+    // no-dead-links rule as auxo: `demoLink: null` + `private` until a
+    // public URL exists.
     name: 'clearway',
     description: 'Truck-legal navigation and compliance',
     date: '2026-08-02',
-    demoLink: 'https://github.com/MA1002643/clearway',
+    demoLink: null,
+    private: true,
     category: 'Mobile',
   },
 ];

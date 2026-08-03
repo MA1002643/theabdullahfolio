@@ -632,6 +632,8 @@ async function fetchProjectActivity() {
             ... on Issue {
               number
               title
+              url
+              createdAt
               updatedAt
               closedAt
               state
@@ -640,6 +642,8 @@ async function fetchProjectActivity() {
             ... on PullRequest {
               number
               title
+              url
+              createdAt
               updatedAt
               closedAt
               state
@@ -703,10 +707,17 @@ async function fetchProjectActivity() {
       if (!item.status?.name) continue;
       const statusName = item.status.name.toLowerCase();
 
+      // `url` + `createdAt` make the record self-contained (the full
+      // ActivityItem shape minus repo tags, which the roll-up adds) —
+      // board items must not depend on the capped per-repo breakdown
+      // lists for Focus-link resolution or age labels, because an item
+      // outside a repo's 10 most-recently-updated has no entry there.
       const baseRecord = {
         type: c.__typename === 'Issue' ? 'issue' : 'pr',
         number: c.number,
         title: c.title,
+        url: c.url,
+        createdAt: c.createdAt,
         updatedAt: c.updatedAt,
       };
 

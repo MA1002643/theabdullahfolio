@@ -127,12 +127,17 @@ export function computeWorkSignal({
   // user's "In Progress" column directly. Fall back to PR-then-issue
   // ordering only when the column is empty/unavailable. `updatedAt` rides
   // along so the portfolio roll-up can interleave several repos' board
-  // items freshest-first (#94 Phase 3); the UI ignores it.
+  // items freshest-first (#94 Phase 3). `url` + `createdAt` ride along so
+  // each item is self-contained (Focus link, age label) — board items may
+  // fall outside the capped per-repo breakdown lists, so nothing about an
+  // item may depend on a breakdown entry existing for it.
   const topItems = hasProjectInProgress
     ? inProgressItems.slice(0, 3).map((item) => ({
         type: item.type,
         number: item.number,
         title: item.title,
+        url: item.url,
+        createdAt: item.createdAt,
         updatedAt: item.updatedAt,
       }))
     : [
@@ -140,12 +145,16 @@ export function computeWorkSignal({
           type: 'pr',
           number: pr.number,
           title: pr.title,
+          url: pr.url,
+          createdAt: pr.createdAt,
           updatedAt: pr.updatedAt,
         })),
         ...activeIssues.slice(0, 2).map((i) => ({
           type: 'issue',
           number: i.number,
           title: i.title,
+          url: i.url,
+          createdAt: i.createdAt,
           updatedAt: i.updatedAt,
         })),
       ].slice(0, 3);
@@ -341,9 +350,20 @@ export function computePortfolioSignal({ repos = [], now = new Date() } = {}) {
     .flatMap(({ repo }) => (repo.issues ?? []).map(tagPrIssue(repo, 'issue')))
     .sort(byMostRecent('createdAt'));
 
+  // Each topItem is tagged with its repo attribution (same shape as
+  // tagPrIssue) and carries its own `url`, so the client's Focus line
+  // resolves without rejoining against the capped breakdown lists — a
+  // board item outside its repo's 10 most-recently-updated open PRs or
+  // issues has no breakdown entry to join with.
   const boardTopItems = perRepo
     .filter(({ signal }) => signal.projectInProgressCount > 0)
-    .flatMap(({ signal }) => signal.topItems)
+    .flatMap(({ repo, signal }) =>
+      signal.topItems.map((item) => ({
+        ...item,
+        repo: repo.displayName,
+        nameWithOwner: repo.nameWithOwner,
+      })),
+    )
     .sort(byMostRecent('updatedAt'))
     .slice(0, 3);
   const topItems = boardTopItems.length > 0
@@ -353,11 +373,21 @@ export function computePortfolioSignal({ repos = [], now = new Date() } = {}) {
           type: 'pr',
           number: item.number,
           title: item.title,
+          repo: item.repo,
+          nameWithOwner: item.nameWithOwner,
+          url: item.url,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
         })),
         ...freshestIssues.slice(0, 2).map((item) => ({
           type: 'issue',
           number: item.number,
           title: item.title,
+          repo: item.repo,
+          nameWithOwner: item.nameWithOwner,
+          url: item.url,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
         })),
       ].slice(0, 3);
 

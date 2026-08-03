@@ -15,13 +15,15 @@
 // Acronym labels the default fold would mangle ("AI" → "Ai"). Keyed by the
 // lowercased label so every authored variant ("ai", "AI", "Ai ") lands on
 // the one display form — the same no-lookalikes guarantee as the fold.
-const ACRONYMS = { ai: "AI" };
+// A Map, not an object literal: bare-object indexing also reads inherited
+// keys, so a "constructor" / "__proto__" label would return a non-string.
+const ACRONYMS = new Map([["ai", "AI"]]);
 
 export const normalizeCategory = (raw) => {
   const label = String(raw ?? "").trim();
   if (!label) return "";
   return (
-    ACRONYMS[label.toLowerCase()] ??
+    ACRONYMS.get(label.toLowerCase()) ??
     label[0].toUpperCase() + label.slice(1).toLowerCase()
   );
 };
