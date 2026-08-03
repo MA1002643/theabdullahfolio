@@ -3970,3 +3970,161 @@ html.custom-cursor-active * {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ── Contact form under a fluid scope (issue #9) ──────────────────────────
+   Same contract as the #50 blocks above: the @layer rules earlier in this
+   file keep their legacy values (the out-of-scope render), and these
+   unlayered rules re-derive every size from `--fluid-scale` when /contact
+   opts in. Unlayered-vs-layered is what makes the overrides stick without
+   !important — and it's also why the floated-label `top: 0` is RE-DECLARED
+   here: the original lives in @layer utilities, so any unlayered resting
+   `top` would out-cascade it and pin the label inside the field.
+
+   The whole field system hangs off three custom properties declared once on
+   .float-field, because FOUR elements must stay in pixel lock-step: the real
+   input, the gradient overlay that mirrors it (its padding is encoded as a
+   transparent border on the textarea flavour), the resting label, and the
+   notch that reserves the floated label's gap in the outline. Deriving them
+   all from one --field-font / --field-pad means no scale can desync the
+   caret from the gradient text or the notch from the label.
+
+   Floors follow the system's rule — type stops where it stays readable,
+   spacing shrinks — with one deliberate exception: --field-pad floors at
+   0.4rem because field padding is TOUCH-TARGET size, not layout air; a
+   0.3rem-padded input at 320px would be ~28px tall. */
+.fluid-scale .contact-form > :not([hidden]) ~ :not([hidden]) {
+  /* Scales space-y-4's 1rem. Same child-combinator shape as Tailwind's rule,
+     so the error spans' inline margins keep overriding it to hug their
+     fields — the reason the form kept space-y over a flex gap. */
+  margin-top: calc(1rem * var(--fluid-scale, 1));
+}
+.fluid-scale .float-field {
+  --field-font: max(0.875rem, calc(1rem * var(--fluid-scale, 1)));
+  --field-pad: max(0.4rem, calc(0.5rem * var(--fluid-scale, 1)));
+  --field-radius: calc(0.375rem * var(--fluid-scale, 1));
+  /* On the wrapper (not the input) so the overlay's `font: inherit` picks up
+     the same size — setting it on .fire-*-real alone would desync the two. */
+  font-size: var(--field-font);
+}
+.fluid-scale .float-field .fire-input-real,
+.fluid-scale .float-field .fire-textarea-real {
+  padding: var(--field-pad);
+  border-radius: var(--field-radius);
+}
+.fluid-scale .float-field .fire-input-overlay {
+  padding: var(--field-pad);
+}
+.fluid-scale .float-field .fire-textarea-overlay {
+  /* The overlay's "padding" is a transparent border (pad + the field's 1px
+     border) so overflow clips at the content box — see the base rule. */
+  border-width: calc(var(--field-pad) + 1px);
+}
+.fluid-scale .float-field .fire-textarea-wrap {
+  border-radius: var(--field-radius);
+}
+.fluid-scale .float-label {
+  font-size: var(--field-font);
+  /* Resting label tracks the field text's start (pad + the ~1px border),
+     so it stays seated on the text at every scale, floors included. */
+  left: calc(var(--field-pad) + 0.05rem);
+  padding: 0 calc(var(--field-font) * 0.3);
+}
+.fluid-scale .float-field--area .float-label {
+  top: calc(var(--field-pad) + 0.1rem);
+}
+/* Floated state re-declared (see header comment): identical to the @layer
+   original, present only so the unlayered --area `top` above can't win. */
+.fluid-scale .float-field:has(.fire-input-real:focus) .float-label,
+.fluid-scale .float-field:has(.fire-input-real:not(:placeholder-shown)) .float-label,
+.fluid-scale .float-field:has(textarea:focus) .float-label,
+.fluid-scale .float-field:has(textarea:not(:placeholder-shown)) .float-label {
+  top: 0;
+}
+.fluid-scale .float-outline {
+  /* Half the legend's line: the floated label renders at 0.82 × font (the
+     scale() in its transform), and the border sits half that below the
+     fieldset top — 1 × -0.41 = 0.82 ÷ 2, the base rule's -0.41rem. */
+  inset: calc(var(--field-font) * -0.41) 0 0 0;
+  padding: 0 calc(0.45rem * var(--fluid-scale, 1));
+  border-radius: var(--field-radius);
+}
+.fluid-scale .float-notch {
+  /* == the floated label's rendered size, so the gap fits it exactly. */
+  font-size: calc(var(--field-font) * 0.82);
+}
+.fluid-scale .float-notch > span {
+  padding-inline: calc(var(--field-font) * 0.34);
+}
+
+/* Refine affordance / panel, draft banner, connection status: bases at the
+   @layer originals' values, meta-text floored at 0.75rem (0.7rem for the
+   banner's 0.82rem base) so feedback never drops below readable. The
+   connection/error base is 0.875rem per the issue — a deliberate unification
+   of the form's meta-text size (the old status base was 0.8rem). */
+.fluid-scale .refine-affordance {
+  gap: calc(0.4rem * var(--fluid-scale, 1));
+  margin-top: calc(-0.15rem * var(--fluid-scale, 1));
+  font-size: max(0.75rem, calc(0.8rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .refine-panel {
+  margin-top: calc(0.1rem * var(--fluid-scale, 1));
+  padding: calc(0.7rem * var(--fluid-scale, 1)) calc(0.85rem * var(--fluid-scale, 1));
+  border-radius: calc(0.6rem * var(--fluid-scale, 1));
+}
+.fluid-scale .refine-suggestion {
+  font-size: max(0.75rem, calc(0.92rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .refine-error {
+  font-size: max(0.75rem, calc(0.88rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .refine-actions {
+  gap: calc(0.5rem * var(--fluid-scale, 1));
+  margin-top: calc(0.6rem * var(--fluid-scale, 1));
+}
+.fluid-scale .refine-btn {
+  font-size: max(0.75rem, calc(0.8rem * var(--fluid-scale, 1)));
+  /* max(base, base×f): the pills grow on large screens but never shrink
+     below today's size — they're tap targets, not decoration. */
+  padding: max(0.25rem, calc(0.25rem * var(--fluid-scale, 1)))
+    max(0.7rem, calc(0.7rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .draft-restored {
+  gap: calc(0.75rem * var(--fluid-scale, 1));
+  padding: calc(0.45rem * var(--fluid-scale, 1)) calc(0.7rem * var(--fluid-scale, 1))
+    calc(0.45rem * var(--fluid-scale, 1)) calc(0.85rem * var(--fluid-scale, 1));
+  border-radius: calc(0.6rem * var(--fluid-scale, 1));
+}
+.fluid-scale .draft-restored__text {
+  gap: calc(0.45rem * var(--fluid-scale, 1));
+  font-size: max(0.7rem, calc(0.82rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .draft-restored__actions {
+  gap: calc(0.35rem * var(--fluid-scale, 1));
+}
+.fluid-scale .contact-conn-status {
+  max-width: calc(28rem * var(--fluid-scale, 1));
+  margin-top: calc(0.1rem * var(--fluid-scale, 1));
+  font-size: max(0.75rem, calc(0.875rem * var(--fluid-scale, 1)));
+}
+
+/* Touch hit-slop for the small text buttons (issue #9 acceptance: ≥44px
+   targets on mobile). The visible pills stay their quiet size; on coarse
+   pointers an invisible ::after extends each button's hit area to 2.75rem
+   (44px) tall. Vertical only — the buttons sit in rows with sub-0.5rem
+   gaps, so horizontal slop would overlap the neighbour's target. */
+@media (pointer: coarse) {
+  .refine-btn,
+  .refine-affordance {
+    position: relative;
+  }
+  .refine-btn::after,
+  .refine-affordance::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: max(100%, 2.75rem);
+    transform: translateY(-50%);
+  }
+}

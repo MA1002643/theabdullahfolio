@@ -39,7 +39,7 @@ const STAGGER = 0.03;
 // would play AND finish unseen behind the overlay — reading as "no animation".
 // We hold every word in its hidden (blurred) state until the loader wipes away,
 // then play, so the reveal lands exactly as the user first sees the page.
-export default function ContactIntro({ className = '' }) {
+export default function ContactIntro({ className = '', style }) {
   const reduced = useReducedMotion();
   const revealed = useLoaderRevealed();
   const words = useMemo(() => INTRO.split(' '), []);
@@ -75,6 +75,7 @@ export default function ContactIntro({ className = '' }) {
   return (
     <motion.p
       className={className}
+      style={style}
       variants={container}
       initial="hidden"
       animate={revealed ? 'visible' : 'hidden'}

@@ -25,6 +25,7 @@ import { useMagneticPull } from '../../hooks/useMagneticPull';
 import { useFormDraft } from '../../hooks/useFormDraft';
 import { useOfflineQueue } from '../../hooks/useOfflineQueue';
 import { DRAFT_FIELDS, newIdempotencyKey, postContactMessage, setNativeValue } from '../../lib/contact';
+import { fluid, fluidText } from '../../lib/fluidScale';
 
 const container = {
   hidden: { opacity: 0 },
@@ -112,22 +113,30 @@ function SendingLabel({ fill, reduced }) {
   // edge (kept out of the word so each dot lifts and ignites independently).
   const [dots, setDots] = useState(null);
 
-  // Measure the rendered word once, before paint, so the viewBox frames it 1:1
-  // and the dots can be positioned relative to its right edge.
+  // Measure the rendered word before paint, so the viewBox frames it 1:1 and
+  // the dots can be positioned relative to its right edge. Re-measured on
+  // window resize (issue #9): the button's font now rides the fluid scale, so
+  // a resize DURING an in-flight send re-derives the word's metrics — without
+  // this the overlay would stay drawn at the old size over a re-sized button.
   useLayoutEffect(() => {
     const el = baseRef.current;
     if (!el) return;
-    const b = el.getBBox();
-    setBox({ x: b.x, y: b.y, w: b.width, h: b.height });
-    const fs = parseFloat(getComputedStyle(el).fontSize) || b.height;
-    const wordRight = b.x + b.width;
-    const gap = fs * 0.05; // breathing room between the word and the first dot
-    const step = fs * 0.3; // '.' advance + a little tracking
-    setDots({
-      xs: [0, 1, 2].map((i) => wordRight + gap + i * step),
-      lift: fs * 0.34,
-      right: wordRight + gap + 3 * step,
-    });
+    const measure = () => {
+      const b = el.getBBox();
+      setBox({ x: b.x, y: b.y, w: b.width, h: b.height });
+      const fs = parseFloat(getComputedStyle(el).fontSize) || b.height;
+      const wordRight = b.x + b.width;
+      const gap = fs * 0.05; // breathing room between the word and the first dot
+      const step = fs * 0.3; // '.' advance + a little tracking
+      setDots({
+        xs: [0, 1, 2].map((i) => wordRight + gap + i * step),
+        lift: fs * 0.34,
+        right: wordRight + gap + 3 * step,
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
   }, []);
 
   // The sweep front travels from just before the word (−0.1) to just past it
@@ -646,7 +655,16 @@ function FormContent({ onReset, queue }) {
         initial="hidden"
         animate="show"
         onSubmit={handleSubmit(onSubmit)}
-        className="flex h-full w-full max-w-xl flex-col items-center justify-center space-y-4 px-12 py-6"
+        // Fluid container (issue #9): max-w-xl / px-12 / py-6 become fluid()
+        // values. The horizontal base is DELIBERATELY 1.5rem, not the old
+        // px-12's 3rem — that padding was the main cause of the cramped 320px
+        // layout, and at desktop the narrower headline column already bounds
+        // the form. space-y-4 STAYS as the between-children mechanism (scaled
+        // under the scope by the .contact-form rule in globals.css) because
+        // the error spans' inline margins must keep overriding it to hug
+        // their fields — a flex gap can't be overridden per-child.
+        className="contact-form flex h-full w-full flex-col items-center justify-center space-y-4"
+        style={{ maxWidth: fluid(36), padding: fluid(1.5) }}
       >
         {/* Restored-draft banner: shown when an unsent message was repopulated
             from a previous visit. The visitor can keep it (dismiss the banner)
@@ -724,12 +742,20 @@ function FormContent({ onReset, queue }) {
             </label>
           </div>
         </motion.div>
+        {/* Validation errors ride the fluid scale with a 0.75rem legibility
+            floor (issue #9): feedback may shrink with the page but never below
+            readable. The inline margins override the scaled space-y so each
+            error hugs its own field. */}
         {errors.name && (
           <span
             id="name-error"
             role="alert"
             className="inline-block self-start"
-            style={{ color: '#ff6d05', marginTop: '2px' }}
+            style={{
+              color: '#ff6d05',
+              marginTop: fluid(0.125),
+              fontSize: fluidText(0.875, 0.75),
+            }}
           >
             {errors.name.message}
           </span>
@@ -761,7 +787,11 @@ function FormContent({ onReset, queue }) {
             id="email-error"
             role="alert"
             className="inline-block self-start"
-            style={{ color: '#ff6d05', marginTop: '2px' }}
+            style={{
+              color: '#ff6d05',
+              marginTop: fluid(0.125),
+              fontSize: fluidText(0.875, 0.75),
+            }}
           >
             {errors.email.message}
           </span>
@@ -799,7 +829,11 @@ function FormContent({ onReset, queue }) {
             id="subject-error"
             role="alert"
             className="inline-block self-start"
-            style={{ color: '#ff6d05', marginTop: '2px' }}
+            style={{
+              color: '#ff6d05',
+              marginTop: fluid(0.125),
+              fontSize: fluidText(0.875, 0.75),
+            }}
           >
             {errors.subject.message}
           </span>
@@ -840,7 +874,11 @@ function FormContent({ onReset, queue }) {
             id="message-error"
             role="alert"
             className="inline-block self-start"
-            style={{ color: '#ff6d05', marginTop: '-0.25rem' }}
+            style={{
+              color: '#ff6d05',
+              marginTop: fluid(-0.25),
+              fontSize: fluidText(0.875, 0.75),
+            }}
           >
             {errors.message.message}
           </span>
@@ -886,7 +924,17 @@ function FormContent({ onReset, queue }) {
             // Magnetic lean is a per-frame translate (motion values) merged over
             // the button's own colour; pointer handlers are wired only while
             // idle. Both are inert on touch / reduced motion.
-            style={{ color: '#ff6d05', textShadow: 'none', ...magnetic.style }}
+            // Fluid sizing (issue #9): px-6 py-2 become fluid() padding, and
+            // the font gets ONE explicit fluid size that SliceLabel, SENDING…,
+            // ✓ SENT and ✦ HELD all inherit — the locked-footprint mechanism
+            // stays intact because every state derives from this single value.
+            style={{
+              color: '#ff6d05',
+              textShadow: 'none',
+              padding: `${fluid(0.5)} ${fluid(1.5)}`,
+              fontSize: fluidText(1, 0.875),
+              ...magnetic.style,
+            }}
             {...(launch === 'idle' ? magnetic.handlers : undefined)}
             // Framer hover events (pointer-based, never fire on touch) toggle
             // the slice sweep. Distinct from the magnetic pointer handlers; both
@@ -897,7 +945,7 @@ function FormContent({ onReset, queue }) {
             // transform is driven per-frame by Framer (magnetic x/y + scale
             // spring), and a CSS transition on transform would lag the magnetic
             // follow into a rubber-band swim.
-            className={`btn-slice custom-bg-abt inline-flex items-center justify-center rounded-full px-6 py-2 font-semibold tracking-wide shadow-sm transition-[box-shadow,opacity] duration-300 ${
+            className={`btn-slice custom-bg-abt inline-flex items-center justify-center rounded-full font-semibold tracking-wide shadow-sm transition-[box-shadow,opacity] duration-300 ${
               launch === 'idle'
                 ? 'cursor-pointer hover:shadow-[0_0_8px_rgba(255,109,5,0.65),0_0_20px_rgba(255,109,5,0.4)]'
                 : launch === 'sending'
