@@ -42,7 +42,10 @@ const SceneVideo = () => {
 
   return (
     <video
-      className="fixed left-0 top-0 -z-[45] h-full w-full object-cover object-center opacity-80"
+      // .qualifications-backdrop (globals.css) supplies fixed + 100lvh
+      // sizing shared with the still image and the dimmer, so the mobile
+      // URL bar collapsing can't resize this layer and re-zoom the crop.
+      className="qualifications-backdrop -z-[45] object-cover object-center opacity-80"
       src="/background/qualifications-water.mp4"
       autoPlay
       loop

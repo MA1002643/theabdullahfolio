@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import TransitionLink from "@/components/pageTransition/TransitionLink"
 import { warmProjectScene } from "@/components/project-detail/scene-loader"
+import { fluid, fluidText } from "@/lib/fluidScale"
 
 // Per-card reveal (issue #27 §3.2): a short rise while the card pulls into
 // focus — replaces the original y:100 leap, whose full-viewport travel read
@@ -72,6 +73,17 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   // description and date share the flat "eyebrow amber" the About page
   // settled on for its headings (#14); the leader between them is real
   // dots in the title's colour, not the dashed border it replaces.
+  //
+  // Sizing (issue #50): padding, radius and base font ride the page's
+  // fluid factor — the old text-sm md:text-base / p-4 md:p-6 jumps are
+  // gone. The description is ALWAYS in the layout now (the old
+  // `hidden sm:inline-block` popped it in at 640px, the page's most
+  // abrupt breakpoint): `.project-card-desc` lets it shrink and
+  // ellipsize inside the min-w-0 group instead, so on a narrow card the
+  // blurb trails off while name, leader and date always keep their
+  // place. shrink-0 on title and date marks the description as the one
+  // flexible passenger; the leader's min-width guarantees a few dots
+  // survive between them at any width.
   return (
     <ProjectLink
       variants={prefersReducedMotion ? reducedItem : item}
@@ -81,16 +93,32 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
       onMouseEnter={warmDetail}
       onFocus={warmDetail}
       onTouchStart={warmDetail}
-      className="text-sm md:text-base flex items-center justify-between w-full relative rounded-lg overflow-hidden p-4 md:p-6 custom-bg-abt"
+      className="flex items-center w-full relative overflow-hidden custom-bg-abt"
+      style={{
+        fontSize: fluidText(1, 0.78),
+        padding: fluid(1.25),
+        borderRadius: fluid(0.5),
+      }}
     >
-      <div className="flex items-center justify-center space-x-2">
-        <h2 className="project-title">{name}</h2>
-        <p className="project-meta hidden sm:inline-block">{description}</p>
+      <div className="flex min-w-0 items-center" style={{ gap: fluid(0.5) }}>
+        <h2 className="project-title shrink-0">{name}</h2>
+        <p className="project-meta project-card-desc">{description}</p>
       </div>
 
-      <div aria-hidden="true" className="project-separator-dot self-end flex-1 mx-2 mb-2" />
+      <div
+        aria-hidden="true"
+        className="project-separator-dot self-end"
+        // grow:1 fills whatever the description leaves; shrink:0 with a
+        // scaled basis is the leader's floor — the row can never squeeze
+        // it out entirely, so a few dots always separate blurb from date.
+        style={{
+          marginInline: fluid(0.5),
+          marginBottom: fluid(0.5),
+          flex: `1 0 ${fluid(0.75)}`,
+        }}
+      />
 
-      <p id="date" className="project-meta">
+      <p id="date" className="project-meta shrink-0">
         {new Date(date).toDateString()}
       </p>
     </ProjectLink>

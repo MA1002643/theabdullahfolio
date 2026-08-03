@@ -3776,3 +3776,197 @@ html.custom-cursor-active * {
    (wave-drift + lantern-reflect keyframes for WaterReflection.jsx) was
    replaced by the ambient scene video — see
    src/components/qualifications/SceneVideo.jsx. */
+
+/* Full-bleed backdrop layers on /qualifications — the still image, the
+   ambient scene video (SceneVideo.jsx) and the black dimmer all share this
+   one rule so they can never drift out of alignment. It replaces Tailwind's
+   `fixed top-0 left-0 w-full h-full` because the HEIGHT needs a fallback
+   chain that two competing utilities (`h-screen h-lvh`) can't express —
+   which of those wins is stylesheet order, not class order.
+
+   Why not `height: 100%`: a fixed element's percentage height resolves
+   against the mobile LAYOUT viewport, which grows when the browser's URL
+   bar collapses mid-scroll — so all three layers resized on every toolbar
+   show/hide and the object-cover crop visibly re-zoomed (with a possible
+   bottom gap mid-transition) while scrolling on phones and tablets.
+   `100lvh` pins the layers to the LARGE viewport height (URL bar hidden):
+   at least as tall as the visible area in every toolbar state, so the crop
+   is rock-steady. The `100vh` line above it is the fallback for pre-lvh
+   engines (Safari < 15.4, Chrome < 108), which measure mobile vh against
+   the large viewport anyway — the exact lvh behaviour.
+
+   Width stays 100%: the layout viewport's width doesn't change with
+   browser chrome, and 100vw would only add desktop scrollbar width. */
+.qualifications-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
+}
+
+/* ── Fluid page scale (issue #50) ─────────────────────────────────────────
+   ONE unitless factor, `--fluid-scale`, drives every size on a page that
+   opts in — font sizes, padding, gaps, max-widths — so nothing ever jumps
+   at a breakpoint: there are no breakpoints, just a straight line from 0.6
+   at ≤864px through 1.0 at 1440px to 1.3 at ≥1872px, held flat beyond the
+   clamps (2560px ultrawide included).
+
+   The 1440px anchor is deliberate hardware truth, not a round number: the
+   scale-1 reference sizes ARE the legacy md:+ Tailwind values, which were
+   designed against a 13" MacBook (1440×900 logical). The original 1000px
+   base put that same laptop at the 1.3 ceiling — every element rendered
+   30% over its design size on the very screen the design targets. Anchor
+   at the design viewport; let phones shrink and monitors grow from there.
+
+   REUSABLE BY DESIGN, off by default. The factor exists only inside a
+   `.fluid-scale` scope; every consumer reads `var(--fluid-scale, 1)`, so on
+   a page that hasn't opted in the same markup resolves to its scale-1
+   reference size (or, for the semantic classes below, keeps its original
+   breakpoint values — those rules only match under the scope). To adopt a
+   page: add its pathname to FLUID_SCALE_PAGES in (sub pages)/layout.js.
+   To tune a page: override the three knobs inline on the scoped element,
+   e.g. style={{ '--fluid-min': 0.7 }} — they're substituted where
+   `--fluid-scale` is DECLARED, so overrides must live on the same element
+   that carries the class (inheritance alone won't re-derive the factor).
+
+   `tan(atan2(100vw, base))` is how a UNITLESS viewport ratio is obtained in
+   pure CSS: atan2 of two lengths cancels the units, tan returns the plain
+   number 100vw/base. Pure CSS (not the resize-listener alternative from the
+   issue) means no hydration risk, no first-paint jump, and live response to
+   resize/zoom for free. The @supports guard pins pre-2023 engines (no CSS
+   trig) at the scale-1 reference sizes instead of letting an unresolvable
+   var() invalidate every declaration that consumes it. */
+.fluid-scale {
+  --fluid-min: 0.6;
+  --fluid-max: 1.3;
+  --fluid-base: 1440px;
+  --fluid-scale: 1;
+}
+@supports (width: calc(1px * tan(atan2(1px, 1px)))) {
+  .fluid-scale {
+    --fluid-scale: clamp(
+      var(--fluid-min),
+      tan(atan2(100vw, var(--fluid-base))),
+      var(--fluid-max)
+    );
+  }
+}
+
+/* ── PageTitle sizing (shared: /about /contact /qualifications /projects) ──
+   The base rules reproduce the exact Tailwind arbitrary values the component
+   carried before issue #50 (text-[2rem] md:text-[3rem], pt-8, gap-4 mt-1
+   text-[1rem] md:text-[1.6rem], w-6 h-[2px]) so pages OUTSIDE a fluid scope
+   render pixel-identical. Under `.fluid-scale` the same classes re-derive
+   from the factor — the scoped rules' higher specificity (0,2,0) beats the
+   media queries regardless of order. Text sizes carry max() legibility
+   floors: spacing may shrink to 0.6×, type stops where it stays readable. */
+.page-title-block {
+  padding-top: 2rem;
+}
+.page-title-heading {
+  font-size: 2rem;
+}
+.page-title-subtitle {
+  font-size: 1rem;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+.page-title-flank {
+  width: 1.5rem;
+  height: 2px;
+}
+@media (min-width: 768px) {
+  .page-title-heading {
+    font-size: 3rem;
+  }
+  .page-title-subtitle {
+    font-size: 1.6rem;
+  }
+}
+.fluid-scale .page-title-block {
+  padding-top: calc(2rem * var(--fluid-scale, 1));
+}
+.fluid-scale .page-title-heading {
+  font-size: max(1.6rem, calc(3rem * var(--fluid-scale, 1)));
+  /* The headline utility's 3px stroke + 2px tracking are sized for desktop
+     glyphs; ride the factor so small titles don't read as all-outline.
+     Scale-1 resolves to exactly the sitewide values. */
+  -webkit-text-stroke-width: max(1.5px, calc(3px * var(--fluid-scale, 1)));
+  letter-spacing: calc(2px * var(--fluid-scale, 1));
+}
+.fluid-scale .page-title-subtitle {
+  font-size: max(0.85rem, calc(1.6rem * var(--fluid-scale, 1)));
+  gap: calc(1rem * var(--fluid-scale, 1));
+  margin-top: calc(0.25rem * var(--fluid-scale, 1));
+}
+.fluid-scale .page-title-flank {
+  width: calc(1.5rem * var(--fluid-scale, 1));
+  height: max(1.5px, calc(2px * var(--fluid-scale, 1)));
+}
+
+/* ── Category strip sizing (shared: /projects /qualifications) ────────────
+   Same contract as the PageTitle block above: bases mirror the pre-#50
+   classes exactly (!text-[1rem] md:!text-[1.2rem], text-[0.65rem], gap-6
+   px-3 — the !important carries over from the original important-flagged
+   utilities), fluid values engage only inside a scope. The strip's JS
+   measures the rendered layout (offsetWidth/offsetLeft), so it follows
+   whatever these rules resolve to — no constant needs to move. */
+.category-tab {
+  font-size: 1rem !important;
+}
+@media (min-width: 768px) {
+  .category-tab {
+    font-size: 1.2rem !important;
+  }
+}
+.fluid-scale .category-tab {
+  font-size: max(0.78rem, calc(1.2rem * var(--fluid-scale, 1))) !important;
+}
+.category-tab-count {
+  font-size: 0.65rem;
+}
+.fluid-scale .category-tab-count {
+  font-size: max(0.5rem, calc(0.65rem * var(--fluid-scale, 1)));
+}
+.category-strip-track {
+  gap: 1.5rem;
+  padding-inline: 0.75rem;
+}
+.fluid-scale .category-strip-track {
+  gap: calc(1.5rem * var(--fluid-scale, 1));
+  padding-inline: calc(0.75rem * var(--fluid-scale, 1));
+}
+
+/* ── Project-card text roles under a fluid scope (issue #50) ──────────────
+   .project-title / .project-meta keep colour + glow above (issue #27); here
+   they gain scale-derived sizes so the card's roles breathe with the page.
+   The leader's dot tile scales too — dot pitch and line height shrink
+   together so the leader stays a row of dots, never a smear. */
+.fluid-scale .project-title {
+  font-size: max(0.75rem, calc(1rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .project-meta {
+  font-size: max(0.7rem, calc(0.875rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .project-separator-dot {
+  height: max(2px, calc(3px * var(--fluid-scale, 1)));
+  background-size:
+    max(6px, calc(9px * var(--fluid-scale, 1)))
+    max(2px, calc(3px * var(--fluid-scale, 1)));
+}
+
+/* The card description, always in the layout (issue #50 §12 replaces the old
+   `hidden sm:inline-block`, whose appearance at 640px was the page's most
+   jarring jump). No fixed max-width — the flex contract on the card (title
+   and date shrink-0, leader flex-basis it can't shrink below, this the only
+   shrinkable item via min-width:0) means it uses every pixel the row can
+   spare and ellipsizes ONLY when the row genuinely runs out, instead of
+   truncating a blurb on a desktop card with room to hold it. */
+.project-card-desc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

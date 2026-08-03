@@ -315,10 +315,9 @@ export default function LiveMaintenanceHeader() {
     );
 
   // The FOCUS queue: every current work item (multiple open PRs/issues,
-  // same or different projects), cycled by the shared rotation beat. The
-  // matching breakdown entry (when the item is within the per-repo cap)
-  // contributes each item's repo attribution and the GitHub URL that
-  // makes the block a link.
+  // same or different projects), cycled by the shared rotation beat.
+  // Items are self-contained — the server tags each with its repo
+  // attribution and the GitHub URL that makes the block a link.
   const focusItems = Array.isArray(meta.topItems)
     ? meta.topItems.slice(0, FOCUS_QUEUE_MAX)
     : [];
@@ -388,17 +387,21 @@ export default function LiveMaintenanceHeader() {
   // hint and sr text — so the hint lives on the queue indicator, not as a
   // field-wide tooltip fighting the FOCUS link's own hint.
 
-  // Match by number AND title first — with multiple tracked repos, a bare
-  // issue/PR number can exist in both, and a number-only match could
-  // attribute the wrong repo and URL. Number-only remains the fallback
-  // for stale payloads whose titles were normalized differently.
+  // The item's own repo/url fields are authoritative — a board item can
+  // fall outside the capped per-repo breakdown lists, so a breakdown
+  // join must not be the only path to a link. The number+title join
+  // remains solely for stale cached payloads that predate the
+  // self-contained fields. No number-only fallback: with multiple
+  // tracked repos a bare number can exist in several, so a number-only
+  // match can attribute the wrong repo and URL — degrading to a
+  // non-link beats linking to the wrong item.
   const focusPool = focus?.type === 'pr' ? breakdown.prs : breakdown.issues;
   const focusDetail = focus
-    ? (focusPool.find(
-        (item) => item.number === focus.number && item.title === focus.title,
-      ) ??
-      focusPool.find((item) => item.number === focus.number) ??
-      null)
+    ? (focus.url
+        ? focus
+        : (focusPool.find(
+            (item) => item.number === focus.number && item.title === focus.title,
+          ) ?? null))
     : null;
   const focusEyebrow = focus
     ? `Focus · ${focus.type === 'pr' ? 'PR' : 'Issue'}`

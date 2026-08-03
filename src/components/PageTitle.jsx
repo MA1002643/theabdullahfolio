@@ -115,13 +115,20 @@ export default function PageTitle({ title, subtitle, id, replayOnView = false })
   const play = prefersReducedMotion || (revealed && (!replayOnView || inView));
   const initial = prefersReducedMotion ? "visible" : "hidden";
 
+  // Sizing lives in the .page-title-* semantic classes (globals.css, issue
+  // #50), not Tailwind arbitrary values: their base rules ARE the old
+  // classes' exact values, and inside a `.fluid-scale` scope (only /projects
+  // today) the same markup re-derives every size from the page's single
+  // fluid factor. Adopting fluid titles on another page needs no change
+  // here — opt the page in and these follow.
+  //
   // Split into characters; spaces become non-animated spacer spans so word gaps
   // survive the inline-block letters (a transformed inline-block needs explicit
   // whitespace between words).
   const chars = Array.from(title);
 
   return (
-    <div ref={rootRef} id={id} className="z-50 pt-8 text-center">
+    <div ref={rootRef} id={id} className="page-title-block z-50 text-center">
       {/* No `text-transparent` here — `.text-glow-stroke-neon` paints a solid
           #ff6d05 fill so each letter renders as a filled orange glyph (closing
           the M / W hollow gap on CONTACT ME / ABOUT ME). The -webkit-text-stroke
@@ -131,7 +138,7 @@ export default function PageTitle({ title, subtitle, id, replayOnView = false })
         variants={TITLE_CONTAINER}
         initial={initial}
         animate={play ? "visible" : "hidden"}
-        className="text-[2rem] font-extrabold uppercase leading-tight md:text-[3rem] text-glow-stroke-neon"
+        className="page-title-heading font-extrabold uppercase leading-tight text-glow-stroke-neon"
       >
         {chars.map((char, i) =>
           char === " " ? (
@@ -158,18 +165,18 @@ export default function PageTitle({ title, subtitle, id, replayOnView = false })
           variants={SUBTITLE_MOTION}
           initial={initial}
           animate={play ? "visible" : "hidden"}
-          className="flex items-center justify-center gap-4 mt-1 text-[1rem] uppercase leading-snug md:text-[1.6rem]"
+          className="page-title-subtitle flex items-center justify-center uppercase leading-snug"
           style={SUBTITLE_STYLE}
         >
           <span
             aria-hidden="true"
-            className="w-6 h-[2px] rounded-full"
+            className="page-title-flank rounded-full"
             style={FLANK_PILL_STYLE}
           />
           <h2>{subtitle}</h2>
           <span
             aria-hidden="true"
-            className="w-6 h-[2px] rounded-full"
+            className="page-title-flank rounded-full"
             style={FLANK_PILL_STYLE}
           />
         </motion.div>

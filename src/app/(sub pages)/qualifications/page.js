@@ -20,16 +20,28 @@ const page = () => {
           upscale). */}
       <Image
         priority
-        sizes="100vw"
+        // NOT 100vw: this image is object-cover'd, so on any viewport
+        // NARROWER than the scene's 16:9 (every portrait phone, both iPad
+        // orientations) it paints height-bound at ~178vh CSS px wide
+        // (100vh × 16/9) with the sides cropped off. 100vw made the browser
+        // pick a srcset entry sized to the viewport and then stretch it into
+        // that wider paint box — a 640w file blown up ~2.3× on a 390px phone
+        // (worse at 3× DPR), i.e. a blurry background. max() describes the
+        // real painted width in both regimes; engines too old to parse math
+        // in `sizes` treat the value as invalid and fall back to 100vw —
+        // exactly the old behaviour, never worse.
+        sizes="max(100vw, 178vh)"
         src={bg}
         alt=""
-        className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-80 bg-black"
+        className="qualifications-backdrop -z-50 object-cover object-center opacity-80 bg-black"
       />
       {/* The same scene, living: water ripples + lantern flicker (issue #52
           follow-up, casadisolare.com pattern). Sits BETWEEN the image and
-          the dimmer so both frames get identical darkening. */}
+          the dimmer so both frames get identical darkening. All three fixed
+          layers share .qualifications-backdrop (globals.css): 100lvh-pinned
+          so the mobile URL bar collapsing can't re-zoom the cover crop. */}
       <SceneVideo />
-      <div className='fixed -z-40 top-0 left-0 w-full h-full bg-black/80' />
+      <div className='qualifications-backdrop -z-40 bg-black/80' />
       <Carousel />
 
     </>

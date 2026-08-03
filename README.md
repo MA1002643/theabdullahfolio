@@ -252,7 +252,7 @@ theabdullahfolio/
 │   │   ├── pageTransition/     # "Stone Passage" inter-page transition (engraved-monogram overlay)
 │   │   └── loaderWrapper/      # First-visit emblem-seal intro loader
 │   ├── hooks/                  # Reusable hooks — animation, live-data signals, form + offline queue
-│   ├── lib/                    # Client helpers — contact send, cn(), media-query subscribe
+│   ├── lib/                    # Client helpers — contact send, cn(), media-query subscribe, fluid-scale calc()
 │   ├── utils/                  # Rank calc · diff engines · skill/icon maps · manifest parsers
 │   │   └── experience/         # Résumé-PDF parsing + pure-JS DOMMatrix polyfill
 │   └── data/                   # Bundled GitHub-stats fallback snapshot
@@ -610,7 +610,7 @@ The Experience Summary route parses the résumé PDF (`public/Muhammad_Abdullah_
 
 ## 🛰️ Live Maintenance Header
 
-The home page renders a real-time development status header that reads activity from this repository **and** the linked Projects v2 board (`MA1002643/theabdullahfolio` + `users/MA1002643/projects/3` only — never any other repo or project). It degrades to a deterministic maintenance message when GitHub is unreachable or unconfigured.
+The home page renders a real-time development status header that reads activity from every repo in the tracked-repo allow-list (`src/utils/workTrackedRepos.js`) **and** each tracked repo's linked Projects v2 board (`users/MA1002643/projects/2·3·4·5·7·8·9·10·11·12·13` — AfaaqX, ma.codes, vigil, Tailorhawk, muhammadabdullah-portfolio, Culina, Colophon, Dhun, Plenary, Auxo, and Clearway). The allow-list is the sole authority on scope — a board card pointing at an untracked repo is dropped, and no env var can widen coverage. It degrades to a deterministic maintenance message when GitHub is unreachable or unconfigured.
 
 The chip displays one of five states, ordered by precedence:
 

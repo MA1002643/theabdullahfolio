@@ -9,8 +9,8 @@ import {
 import { refineMessageWithAI } from '@/utils/workMessageAI';
 import * as cache from '@/utils/workStatusCache';
 import {
-  TRACKED_REPOS,
   getTrackedRepos,
+  isTrackedRepo,
   nameWithOwnerOf,
 } from '@/utils/workTrackedRepos';
 
@@ -21,17 +21,22 @@ import {
 // cost scales with `first:` caps, not with the number of aliases, so the
 // query stays at a handful of rate-limit points regardless of N.
 
-// Project board (Projects v2) at github.com/users/MA1002643/projects/3.
-// Phase 1 of #94 keeps the board scoped to the primary (first) tracked
-// repo — generalising it across repos is Phase 3. We read two columns:
+// Project boards (Projects v2) — issue #94 Phase 3. Every tracked repo
+// may declare its user-level board via `projectNumber` in
+// workTrackedRepos.js (the same allow-list that scopes the repo query),
+// and ONE aliased GraphQL query reads them all per request — like the
+// portfolio query, cost scales with the `first:` caps, not the alias
+// count, though each extra board does add its own items subtree. We read
+// two columns per board:
 //   - "In Progress" → drives the IN_PROGRESS state and current-work items.
 //   - "Done" (within last 48h) → drives the SHIPPING state and the
 //     "just shipped" rotating message.
-// If the PAT lacks Projects: Read or the query fails for any reason, the
-// route silently falls back to the repo-wide open-issues logic below.
-const PRIMARY_REPO_FULL_NAME = nameWithOwnerOf(TRACKED_REPOS[0]);
+// Items are grouped by their issue/PR's repository and attached to the
+// matching tracked repo, so the roll-up in workSignal.js (already
+// multi-repo) merges boards exactly like it merges repo activity. If the
+// PAT lacks Projects: Read or the query fails for any reason, the route
+// silently falls back to the repo-wide open-issues logic below.
 const PROJECT_OWNER = 'MA1002643';
-const PROJECT_NUMBER = 3;
 const IN_PROGRESS_STATUS = 'in progress';
 const DONE_STATUS = 'done';
 const SHIPPED_WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -58,9 +63,13 @@ const TRACE_COMMITS_PER_BRANCH = 50;
 
 const GITHUB_API = 'https://api.github.com/graphql';
 const TOKEN = process.env.GITHUB_TOKEN;
-// Optional separate token for the Projects v2 query — see fetchProjectInProgress.
+// Optional separate token for the Projects v2 query — see fetchProjectActivity.
 // Falls back to the main token when not set so single-token setups still work.
-const PROJECT_TOKEN = process.env.GITHUB_PROJECT_TOKEN ?? process.env.GITHUB_TOKEN;
+// `||`, not `??`: env files routinely carry the var as an EMPTY string
+// (GITHUB_PROJECT_TOKEN=""), and `??` would pass that through as a real
+// value — the route then sends `Bearer ` and every board query silently
+// 401s into the no-board fallback with nothing logged.
+const PROJECT_TOKEN = process.env.GITHUB_PROJECT_TOKEN || process.env.GITHUB_TOKEN;
 
 // Cap each GraphQL round-trip so a slow GitHub doesn't stall the handler
 // for the entire function timeout — surface the failure to the catch in
@@ -232,17 +241,14 @@ export async function GET(request) {
 
     recordRateLimit(portfolio.rateLimit);
 
-    const inProgressItems = projectActivity?.inProgressItems ?? null;
-    const shippedItems = projectActivity?.shippedItems ?? null;
-
-    // Board items belong to the primary repo (fetchProjectActivity already
-    // filters to it), so attach them to that repo's entry for the roll-up.
-    const repos = portfolio.repos.map((repo) =>
-      repo.nameWithOwner.toLowerCase() ===
-      PRIMARY_REPO_FULL_NAME.toLowerCase()
-        ? { ...repo, inProgressItems, shippedItems }
-        : repo,
-    );
+    // Attach each repo's board items (fetchProjectActivity groups items
+    // by the underlying issue/PR's repository, lower-cased) so the
+    // roll-up merges every board's signal, not just the primary repo's.
+    const repos = portfolio.repos.map((repo) => {
+      const boardItems =
+        projectActivity?.byRepo?.[repo.nameWithOwner.toLowerCase()];
+      return boardItems ? { ...repo, ...boardItems } : repo;
+    });
 
     const signal = computePortfolioSignal({ repos });
     const baseMessage = buildMessage(signal);
@@ -585,53 +591,67 @@ const emptyActivityTrace = () => {
   };
 };
 
-// Reads the user's Projects v2 board and returns:
+// Reads every tracked Projects v2 board (issue #94 Phase 3) in ONE
+// aliased query and returns { byRepo }: a lower-cased nameWithOwner →
 //   - inProgressItems: items in the "In Progress" status column
 //   - shippedItems: items in the "Done" column whose underlying issue/PR
 //                   was closed within SHIPPED_WINDOW_MS (last 48h). Older
 //                   Done items don't qualify as "just shipped" and are
 //                   silently dropped.
-// Returns null on auth failure (PAT missing Projects: Read) so the caller
-// can fall back to the repo-wide signal. Returns { inProgressItems: [],
-// shippedItems: [] } if the board is reachable but both columns are empty.
+// map covering only TRACKED repos — an item whose issue lives outside the
+// allow-list is dropped, so a board can never widen the header's scope.
+// Board numbers come from `projectNumber` in workTrackedRepos.js; they're
+// our own frozen integers, which is why interpolating them as aliases is
+// safe. Returns null when no board is configured or on auth failure (PAT
+// missing Projects: Read) so the caller can fall back to the repo-wide
+// signal. Returns { byRepo: {} } if boards are reachable but the tracked
+// columns are empty.
 async function fetchProjectActivity() {
+  const boardNumbers = [
+    ...new Set(
+      getTrackedRepos()
+        .map((repo) => repo.projectNumber)
+        .filter(Number.isInteger),
+    ),
+  ];
+  if (boardNumbers.length === 0) return null;
+
   const query = `
-    query($login: String!, $number: Int!) {
+    query($login: String!) {
       user(login: $login) {
-        projectV2(number: $number) {
-          items(first: 100) {
-            nodes {
-              content {
-                __typename
-                ... on Issue {
-                  number
-                  title
-                  updatedAt
-                  closedAt
-                  state
-                  repository { nameWithOwner }
-                }
-                ... on PullRequest {
-                  number
-                  title
-                  updatedAt
-                  closedAt
-                  state
-                  repository { nameWithOwner }
-                }
-              }
-              fieldValues(first: 20) {
-                nodes {
-                  __typename
-                  ... on ProjectV2ItemFieldSingleSelectValue {
-                    name
-                    field {
-                      ... on ProjectV2SingleSelectField { name }
-                    }
-                  }
-                }
-              }
+        ${boardNumbers
+          .map((n) => `board${n}: projectV2(number: ${n}) { ...BoardItems }`)
+          .join('\n        ')}
+      }
+    }
+    fragment BoardItems on ProjectV2 {
+      items(first: 100) {
+        nodes {
+          content {
+            __typename
+            ... on Issue {
+              number
+              title
+              url
+              createdAt
+              updatedAt
+              closedAt
+              state
+              repository { nameWithOwner }
             }
+            ... on PullRequest {
+              number
+              title
+              url
+              createdAt
+              updatedAt
+              closedAt
+              state
+              repository { nameWithOwner }
+            }
+          }
+          status: fieldValueByName(name: "Status") {
+            ... on ProjectV2ItemFieldSingleSelectValue { name }
           }
         }
       }
@@ -640,7 +660,7 @@ async function fetchProjectActivity() {
 
   const response = await fetchGitHubGraphQL(PROJECT_TOKEN, {
     query,
-    variables: { login: PROJECT_OWNER, number: PROJECT_NUMBER },
+    variables: { login: PROJECT_OWNER },
   });
 
   if (response.status === 401 || response.status === 403 || response.status === 404) {
@@ -659,64 +679,75 @@ async function fetchProjectActivity() {
     throw new Error(json.errors[0]?.message ?? 'Projects v2 GraphQL error');
   }
 
-  const project = json.data?.user?.projectV2;
-  if (!project) return null;
+  const user = json.data?.user;
+  if (!user) return null;
 
   const nowMs = Date.now();
-  const items = project.items?.nodes ?? [];
-  const inProgressItems = [];
-  const shippedItems = [];
+  const byRepo = {};
+  const bucketFor = (key) =>
+    (byRepo[key] ??= { inProgressItems: [], shippedItems: [] });
 
-  for (const item of items) {
-    const c = item?.content;
-    if (!c) continue;
-    if (c.__typename !== 'Issue' && c.__typename !== 'PullRequest') continue;
-    // Case-insensitive like every other repo membership check: GitHub is
-    // case-preserving in payloads, so a repo re-case must not drop items.
-    if (
-      c.repository?.nameWithOwner?.toLowerCase() !==
-      PRIMARY_REPO_FULL_NAME.toLowerCase()
-    )
-      continue;
+  for (const boardNumber of boardNumbers) {
+    const items = user[`board${boardNumber}`]?.items?.nodes ?? [];
+    for (const item of items) {
+      const c = item?.content;
+      if (!c) continue;
+      if (c.__typename !== 'Issue' && c.__typename !== 'PullRequest') continue;
+      // Case-insensitive like every other repo membership check: GitHub is
+      // case-preserving in payloads, so a repo re-case must not drop items.
+      // Only tracked repos may receive items — a board card pointing at an
+      // untracked repo is dropped, keeping the allow-list authoritative.
+      const repoKey = c.repository?.nameWithOwner?.toLowerCase();
+      if (!repoKey || !isTrackedRepo(repoKey)) continue;
 
-    const status = (item.fieldValues?.nodes ?? []).find(
-      (v) =>
-        v?.__typename === 'ProjectV2ItemFieldSingleSelectValue' &&
-        v?.field?.name?.toLowerCase() === 'status',
-    );
-    if (!status?.name) continue;
-    const statusName = status.name.toLowerCase();
+      // `status` is the aliased fieldValueByName(name: "Status") — the
+      // only field the signal needs, so the query skips the full
+      // fieldValues subtree (a ~20× node saving per item, which keeps six
+      // aliased boards inside the 5s fetch timeout and the rate budget).
+      if (!item.status?.name) continue;
+      const statusName = item.status.name.toLowerCase();
 
-    const baseRecord = {
-      type: c.__typename === 'Issue' ? 'issue' : 'pr',
-      number: c.number,
-      title: c.title,
-      updatedAt: c.updatedAt,
-    };
+      // `url` + `createdAt` make the record self-contained (the full
+      // ActivityItem shape minus repo tags, which the roll-up adds) —
+      // board items must not depend on the capped per-repo breakdown
+      // lists for Focus-link resolution or age labels, because an item
+      // outside a repo's 10 most-recently-updated has no entry there.
+      const baseRecord = {
+        type: c.__typename === 'Issue' ? 'issue' : 'pr',
+        number: c.number,
+        title: c.title,
+        url: c.url,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      };
 
-    if (statusName === IN_PROGRESS_STATUS) {
-      // In-progress items must be open — closed items in this column
-      // are usually stale and skip into Done by themselves.
-      if (c.state && c.state !== 'OPEN') continue;
-      inProgressItems.push(baseRecord);
-    } else if (statusName === DONE_STATUS) {
-      // Use closedAt as the "moved to Done" proxy. If the item has no
-      // closedAt (rare — Done item that's still open), treat it as not
-      // recent. Items closed > 48h ago are silently dropped.
-      const closed = c.closedAt ? Date.parse(c.closedAt) : null;
-      if (!closed || nowMs - closed > SHIPPED_WINDOW_MS) continue;
-      shippedItems.push({ ...baseRecord, closedAt: c.closedAt });
+      if (statusName === IN_PROGRESS_STATUS) {
+        // In-progress items must be open — closed items in this column
+        // are usually stale and skip into Done by themselves.
+        if (c.state && c.state !== 'OPEN') continue;
+        bucketFor(repoKey).inProgressItems.push(baseRecord);
+      } else if (statusName === DONE_STATUS) {
+        // Use closedAt as the "moved to Done" proxy. If the item has no
+        // closedAt (rare — Done item that's still open), treat it as not
+        // recent. Items closed > 48h ago are silently dropped.
+        const closed = c.closedAt ? Date.parse(c.closedAt) : null;
+        if (!closed || nowMs - closed > SHIPPED_WINDOW_MS) continue;
+        bucketFor(repoKey).shippedItems.push({ ...baseRecord, closedAt: c.closedAt });
+      }
     }
   }
 
-  inProgressItems.sort((a, b) => {
-    const da = a.updatedAt ? Date.parse(a.updatedAt) : 0;
-    const db = b.updatedAt ? Date.parse(b.updatedAt) : 0;
-    return db - da;
-  });
+  for (const bucket of Object.values(byRepo)) {
+    bucket.inProgressItems.sort((a, b) => {
+      const da = a.updatedAt ? Date.parse(a.updatedAt) : 0;
+      const db = b.updatedAt ? Date.parse(b.updatedAt) : 0;
+      return db - da;
+    });
+    // Most recently shipped first.
+    bucket.shippedItems.sort(
+      (a, b) => Date.parse(b.closedAt) - Date.parse(a.closedAt),
+    );
+  }
 
-  // Most recently shipped first.
-  shippedItems.sort((a, b) => Date.parse(b.closedAt) - Date.parse(a.closedAt));
-
-  return { inProgressItems, shippedItems };
+  return { byRepo };
 }
