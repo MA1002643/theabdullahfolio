@@ -516,11 +516,13 @@ const TITLE_MIN_PX = 10;
 // class-declared base (.qual-title). That class pins line-height in rem
 // independently of the inline font-size, so the title bar's height is
 // identical on every card — which is what keeps the bar→buttons gap
-// constant. Re-fits when the wrapper resizes (card widths are vh/vw-derived)
-// and once webfonts finish loading (glyph metrics change). Font size is
-// written straight to the DOM via refs: no React state, no re-render per
-// resize tick, and the observer only watches the wrapper's width — which
-// the font size can't influence — so there's no feedback loop.
+// constant. Re-fits when the wrapper resizes (card widths are vh/vw-derived),
+// on every window resize (the fluid .qual-title base is viewport-width-
+// derived, which can move without the wrapper moving — see the listener
+// note below), and once webfonts finish loading (glyph metrics change).
+// Font size is written straight to the DOM via refs: no React state, no
+// re-render per resize tick, and the observer only watches the wrapper's
+// width — which the font size can't influence — so there's no feedback loop.
 const FitOneLineTitle = ({ text }) => {
   const boxRef = useRef(null);
   const textRef = useRef(null);
@@ -559,16 +561,25 @@ const FitOneLineTitle = ({ text }) => {
     // Guarded like every other ResizeObserver in this codebase (see
     // ScrollHijackCategories): pre-2020 WebKit and older Android webviews
     // don't ship it, and an unguarded `new` would take the whole carousel
-    // down. Card widths are vh/vw-derived, so on those browsers a window
-    // resize is the only thing that moves the wrapper — the fallback
-    // listener covers every re-fit that matters there.
+    // down.
     let observer = null;
     if (typeof ResizeObserver !== 'undefined') {
       observer = new ResizeObserver(fit);
       observer.observe(box);
-    } else {
-      window.addEventListener('resize', fit);
     }
+    // The window listener is NOT just a no-observer fallback — it must run
+    // alongside the observer. Beyond the 1440px geometry anchor a
+    // height-bound card's width is pure-vh, but the .qual-title base still
+    // tracks viewport WIDTH via --fluid-scale (until the 1872px ceiling), so
+    // a width-only resize can move the base without moving the wrapper — the
+    // observer alone would miss it and a title that fit at base could grow
+    // into an ellipsis. (The banner's fluid padding usually nudges the
+    // wrapper anyway, but by ~1/60px per window px — below the layout
+    // quantum for small resizes, and an accident of the padding, not a
+    // guarantee.) Double-firing with the observer is harmless: fit is
+    // idempotent, and a window resize can't be influenced by the font size,
+    // so the no-feedback-loop property holds.
+    window.addEventListener('resize', fit);
     // fonts.ready resolves async and closes over this effect run's DOM
     // nodes; the flag keeps a late resolution from writing to a detached
     // node after unmount (or after `text` changed and re-ran the effect).
@@ -881,6 +892,17 @@ const Carousel3D = () => {
           --fluid-scale to 1 → t = 1 → the design values everywhere, the same
           scale-1 pinning the rest of the #50 system accepts.
 
+          The floor endpoint reads var(--fluid-min), not a literal 0.6: the
+          knobs are the documented per-page tuning surface (globals.css) and
+          inherit here from the .fluid-scale element, so a page that raises
+          the floor keeps t = 0 pinned to "scale is at its floor" — with a
+          hard-coded 0.6 a 0.7 floor would strand phones at t = 0.25, a
+          quarter-desktop blend instead of the authored mobile endpoint.
+          The anchor 1 stays literal on purpose: scale-1 IS the design
+          anchor where the legacy values render exactly — a contract of the
+          #50 system, not a knob — and t saturates there before --fluid-max
+          could ever matter.
+
           --card-depth DOES ride the factor beyond 1 — and .perspective-3d's
           perspective scales by the same factor (globals.css), so the
           depth/perspective RATIO (200/1200) is invariant: the wheel's
@@ -890,7 +912,7 @@ const Carousel3D = () => {
         className="perspective-3d relative flex w-full items-center justify-center"
         style={{
           '--carousel-t':
-            'clamp(0, calc((var(--fluid-scale, 1) - 0.6) / 0.4), 1)',
+            'clamp(0, calc((var(--fluid-scale, 1) - var(--fluid-min, 0.6)) / (1 - var(--fluid-min, 0.6))), 1)',
           '--cert-cap': 'calc(56vh + 12vh * var(--carousel-t))',
           '--cert-w-cap': 'calc(90vw - 20vw * var(--carousel-t))',
           '--slot-vh': 'calc(36vh + 8vh * var(--carousel-t))',
