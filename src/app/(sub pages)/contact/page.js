@@ -57,7 +57,7 @@ export default function Contact() {
             style={{ fontSize: fluidText(1, 0.875), lineHeight: 1.5 }}
           />
         </div>
-        <div className="flex w-full justify-center gap-6">
+        <div className="flex w-full justify-center">
           <Form />
         </div>
       </article>
