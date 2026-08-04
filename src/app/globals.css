@@ -4143,6 +4143,38 @@ html.custom-cursor-active * {
   border-radius: calc(0.5rem * var(--fluid-scale, 1));
 }
 
+/* ── About page under a fluid scope (issue #25) ───────────────────────────
+   Same contract as the blocks above, but via the PageTitle mechanism only:
+   the JSX KEEPS its legacy utility classes as the base (so outside a scope,
+   and on pre-CSS-trig engines pinned at scale 1, the page renders exactly
+   as before), and these scoped rules — specificity (0,2,0) — out-rank the
+   utilities (0,1,0) under the scope regardless of source order. The scale-1
+   values below are each site's md:+ legacy value, per the #50 anchor rule.
+
+   .abt-card    — ItemLayout's shared card chrome (p-6 sm:p-8, rounded-xl).
+                  Call-site `!p-0` overrides still win (important), which is
+                  correct: those cards hand padding to an inner wrapper that
+                  scales inline.
+   .abt-title   — the per-card AnimatedTitle headings (md:text-2xl anchor).
+                  The 1.125rem floor is the smallest legacy base (text-lg);
+                  unitless leading-tight rides the computed size for free.
+   .abt-micro   — the 10px uppercase eyebrows/legends. Floor = base: micro-
+                  labels never shrink below their designed 10px, only grow.
+   .abt-micro-md— the 10px → md:12px meta lines (languages/skills counts). */
+.fluid-scale .abt-card {
+  padding: calc(2rem * var(--fluid-scale, 1));
+  border-radius: calc(0.75rem * var(--fluid-scale, 1));
+}
+.fluid-scale .abt-title {
+  font-size: max(1.125rem, calc(1.5rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .abt-micro {
+  font-size: max(0.625rem, calc(0.625rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .abt-micro-md {
+  font-size: max(0.625rem, calc(0.75rem * var(--fluid-scale, 1)));
+}
+
 /* Touch hit-slop for the small text buttons (issue #9 acceptance: ≥44px
    targets on mobile). The visible pills stay their quiet size; on coarse
    pointers an invisible ::after extends each button's hit area to 2.75rem

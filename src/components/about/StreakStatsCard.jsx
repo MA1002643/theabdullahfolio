@@ -8,6 +8,7 @@ import { UpdateBanner } from "./UpdateBanner";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { useStreakUpdateSignal } from "@/hooks/useStreakUpdateSignal";
 import { animateToTarget, fastStartSlowFinish } from "@/utils/animationCurves";
+import { fluid, fluidText } from "@/lib/fluidScale";
 
 // ---------------------------------------------------------------------------
 // Palette — exact parity with the rest of the About design system:
@@ -50,7 +51,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 function AnimatedTitle({ text, play }) {
   const prefersReducedMotion = useReducedMotion();
   const className =
-    "text-lg sm:text-xl md:text-2xl font-semibold break-words leading-tight";
+    "abt-title text-lg sm:text-xl md:text-2xl font-semibold break-words leading-tight";
 
   if (prefersReducedMotion) {
     return (
@@ -202,17 +203,17 @@ function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion, v
         playToken={playToken}
         prefersReducedMotion={prefersReducedMotion}
         className={`text-2xl sm:text-3xl lg:text-4xl font-bold tabular-nums mb-2${pulse}`}
-        style={{ color: ORANGE, textShadow: "none" }}
+        style={{ color: ORANGE, textShadow: "none", fontSize: fluidText(2.25, 1.5) }}
       />
       <span
         className={`text-sm md:text-base mb-1 font-semibold text-fire-amber${pulse}`}
-        style={{ textShadow: "none" }}
+        style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
       >
         {label}
       </span>
       <span
         className="text-[10px] sm:text-xs md:text-sm font-light break-words"
-        style={{ color: DATE_TONE }}
+        style={{ color: DATE_TONE, fontSize: fluidText(0.875, 0.625) }}
       >
         {dateRange}
       </span>
@@ -392,6 +393,9 @@ export default function StreakStatsCard({ data }) {
       animate={{ opacity: settledInView ? 1 : 0 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeOut" }}
       className="repo-card-breathe rounded-lg w-full h-full relative overflow-hidden p-5 sm:p-6 flex flex-col"
+      // Card padding + glow radius ride the factor (issue #25); the p-5
+      // sm:p-6 rounded-lg utilities stay as the out-of-scope base.
+      style={{ padding: fluid(1.5), borderRadius: fluid(0.5) }}
     >
       <UpdateBanner
         message={bannerMessage}
@@ -404,10 +408,10 @@ export default function StreakStatsCard({ data }) {
           the sibling data cards' title-over-meta block so all five About cards
           share one headline treatment. Was a lone tiny eyebrow, which read too
           small against the other cards' titles. */}
-      <div className="mb-4 sm:mb-5">
+      <div className="mb-4 sm:mb-5" style={{ marginBottom: fluid(1.25) }}>
         <AnimatedTitle text="Contribution Streaks" play={settledInView} />
         <p
-          className="text-[10px] uppercase tracking-[0.22em] mt-1"
+          className="abt-micro text-[10px] uppercase tracking-[0.22em] mt-1"
           style={{ color: AMBER, textShadow: "none" }}
         >
           GitHub activity
@@ -451,7 +455,12 @@ export default function StreakStatsCard({ data }) {
               level and ties with the UpdateBanner's `z-10` — and being later in
               the DOM, the number would paint OVER the banner text. Isolating
               keeps the number above its ring but below the full-card banner. */}
-          <div className="relative isolate w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 flex items-center justify-center mb-2">
+          <div
+            className="relative isolate w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 flex items-center justify-center mb-2"
+            // Fluid ring: 7rem = the lg:w-28 anchor; 5rem floor = the legacy
+            // w-20 mobile size. The viewBox-drawn SVG scales with the wrapper.
+            style={{ width: fluidText(7, 5), height: fluidText(7, 5) }}
+          >
             <svg
               className="absolute w-full h-full"
               viewBox="0 0 120 120"
@@ -531,20 +540,20 @@ export default function StreakStatsCard({ data }) {
               className={`z-10 text-2xl sm:text-3xl lg:text-4xl font-bold tabular-nums${
                 pulsingFields.has("currentStreak") ? " skill-heartbeat" : ""
               }`}
-              style={{ color: ORANGE, textShadow: "none" }}
+              style={{ color: ORANGE, textShadow: "none", fontSize: fluidText(2.25, 1.5) }}
             />
           </div>
           <span
             className={`text-sm md:text-base mb-1 font-semibold text-fire-amber${
               pulsingFields.has("currentStreak") ? " skill-heartbeat" : ""
             }`}
-            style={{ textShadow: "none" }}
+            style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
           >
             Current Streak
           </span>
           <span
             className="text-[10px] sm:text-xs md:text-sm font-light break-words"
-            style={{ color: DATE_TONE }}
+            style={{ color: DATE_TONE, fontSize: fluidText(0.875, 0.625) }}
           >
             {currentStreak?.dateRange}
           </span>

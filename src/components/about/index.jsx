@@ -20,6 +20,7 @@ import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
 import { wordFill } from "@/lib/fireRamp";
+import { fluid, fluidText } from "@/lib/fluidScale";
 
 const githubStatsStorageKey = (username) =>
   `github-stats:lastGood:${username}`;
@@ -245,7 +246,7 @@ function ExperienceSplitBar({
             row — pushes the wrap point out on its own, so the unavailable
             state stacks precisely when the pair no longer fits. */}
       <div
-        className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
+        className="abt-micro flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
         style={{ color: "#d4af7a" }}
       >
         <span className="flex items-center justify-between gap-2 sm:grow sm:basis-[130px]">
@@ -407,15 +408,22 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
           />
         ))}
       </div>
-      {/* Legend — mirrors the years card's responsive layout exactly: a
-          stacked column below `sm` (full-width rows, `justify-between`), and a
-          wrapping side-by-side row from `sm` up. Each item grows to fill when
-          it's alone on a line (the wrapped/stacked fallback), and a vivid
-          #ff6d05 `|` divider — same colour as the count digit above — sits
-          between adjacent items in the side-by-side row (hidden below `sm`). */}
+      {/* Legend — mirrors the years card's responsive layout: a stacked
+          column below `sm` (full-width rows, `justify-between`), and PAIRED
+          side-by-side rows from `sm` up. With 4+ categories a single flat
+          wrap container broke lines wherever accumulated width said to —
+          "Web | System" paired on line one, but the next orphaned divider +
+          `grow` left AI stretched alone with Mobile beneath it. So the wrap
+          points are now deterministic: the vivid #ff6d05 `|` divider renders
+          only INSIDE a pair (odd i), and each pair boundary (even i > 0)
+          emits a zero-height `basis-full` break that forces the next pair
+          onto its own line — "Web | System" over "AI | Mobile". Both the
+          divider and the break are hidden below `sm`, so the stacked mobile
+          column is byte-identical to before. An odd trailing category falls
+          back to a lone full-width row (`grow`), same as the old wrap. */}
       <div
         aria-hidden="true"
-        className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
+        className="abt-micro flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-1 text-[10px] uppercase tracking-[0.16em] mt-2 tabular-nums"
         style={{ color: "#d4af7a" }}
       >
         {segments.map((s, i) => {
@@ -427,7 +435,7 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
             !prefersReducedMotion && pulseCategories.includes(s.label) ? "skill-heartbeat" : "";
           return (
             <React.Fragment key={s.label}>
-              {i > 0 && (
+              {i > 0 && i % 2 === 1 && (
                 <span
                   aria-hidden="true"
                   className="hidden sm:block select-none px-3"
@@ -435,6 +443,9 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
                 >
                   |
                 </span>
+              )}
+              {i > 0 && i % 2 === 0 && (
+                <span aria-hidden="true" className="hidden sm:block basis-full" />
               )}
               <span className="flex items-center justify-between gap-2 sm:grow sm:basis-[130px]">
                 <span className="flex items-center gap-1.5">
@@ -1262,13 +1273,38 @@ const AboutDetails = () => {
   }, [pulseProjectCats, isCompletedProjectsInView]);
 
   return (
-    // Horizontal padding scales with viewport: a flat `px-16` (64px) left
-    // phones only ~247px of content width, cramping every card and truncating
-    // the longest language name. Now `px-6` (24px) on mobile → `px-10` at `sm`
-    // → the original `px-16` from `md`+ up, so desktop is unchanged while small
-    // screens gain real breathing room.
-    <section className="py-20 px-6 sm:px-10 md:px-16 w-full">
-      <div className="grid grid-cols-12 gap-4 xs:gap-6 md:gap-8 w-full">
+    // Fluid section shell (issue #25). The breakpoint utilities stay as the
+    // out-of-scope base; the inline styles override them under the fluid
+    // scope (inline beats utilities, and /about is in FLUID_SCALE_PAGES).
+    //
+    // The inline padding cannot be a plain fluid(): at the 1440 anchor the
+    // legacy inset is main px-16 + section px-16 = 128px (the fluid main
+    // contributes fluid(1), so this section owes 7rem), but phones only ever
+    // had ~32px total — a 4× range that a 0.6-floored factor can't span
+    // linearly. So the inline axis rides the same floor→anchor morph the
+    // qualifications carousel uses (t: 0 at the configured scale floor via
+    // var(--fluid-min), 1 at the anchor, held beyond): 2.5rem at the floor
+    // (×0.6 ≈ the legacy phone inset) morphing to 7rem at the anchor, the
+    // whole thing × the factor so it keeps breathing on ultrawide.
+    //
+    // Vertical padding is a plain ride: py-20 was never breakpoint-jumpy, and
+    // at scale 1 the totals must match legacy (top: main's static pt-20 + 5rem
+    // here = 160px; bottom: main's fluid(1.5) + 8.5rem here = 160px).
+    <section
+      className="py-20 px-6 sm:px-10 md:px-16 w-full"
+      style={{
+        "--abt-t":
+          "clamp(0, calc((var(--fluid-scale, 1) - var(--fluid-min, 0.6)) / (1 - var(--fluid-min, 0.6))), 1)",
+        paddingInline:
+          "calc((2.5rem + 4.5rem * var(--abt-t)) * var(--fluid-scale, 1))",
+        paddingTop: fluid(5),
+        paddingBottom: fluid(8.5),
+      }}
+    >
+      <div
+        className="grid grid-cols-12 gap-4 xs:gap-6 md:gap-8 w-full"
+        style={{ gap: fluid(2) }}
+      >
         <ItemLayout
           // Hero-row card 0. Previously used the default `whileInView` reveal,
           // which — being on screen at scroll 0, behind the intro loader —
@@ -1280,18 +1316,22 @@ const AboutDetails = () => {
           revealWhen={revealed}
           revealOrder={0}
           tilt
-          className={
-            // `!py-4 sm:!py-5` overrides the shared p-6/p-8 vertical
-            // padding to tighten the gap above the heading and below
-            // the paragraph (per the request — the card had "too
-            // much space on top and at the end"). `!` is needed
-            // because both rules target padding on the same element.
-            " col-span-full lg:col-span-8 row-span-2 flex-col items-start !py-4 sm:!py-5"
-          }
+          // The tightened vertical padding (was `!py-4 sm:!py-5`) is now an
+          // inline fluid ride: important utilities would beat the scoped
+          // .abt-card rule AND an inline style, so they're the one kind of
+          // legacy class the fluid conversion must remove rather than keep
+          // as base. 1.25rem is the sm:!py-5 anchor value; the inline-axis
+          // padding still comes from .abt-card's scoped rule.
+          style={{ paddingBlock: fluid(1.25) }}
+          className={" col-span-full lg:col-span-8 row-span-2 flex-col items-start"}
         >
           <h2
             className="text-xl md:text-2xl text-left w-full capitalize mb-3"
             style={{
+              // Fluid heading (issue #25): overrides the utility base under
+              // the scope; 1.5rem = the md:text-2xl anchor.
+              fontSize: fluidText(1.5, 1.125),
+              marginBottom: fluid(0.75),
               // Matches the "YEARS IN THE CRAFT" eyebrow on the years
               // card (eyebrow amber from the 5-tone warm palette) so
               // every uppercase / heading microlabel on the about
@@ -1309,6 +1349,11 @@ const AboutDetails = () => {
             ref={paragraphRef}
             className="font-light text-xs sm:text-sm md:text-base"
             style={{
+              // Fluid body copy: 1rem/1.5rem = the md:text-base anchor pair.
+              // The line-height floor keeps the same 1.5 ratio as the font
+              // floor so the paragraph's rhythm never drifts as either binds.
+              fontSize: fluidText(1, 0.75),
+              lineHeight: "max(1.125rem, calc(1.5rem * var(--fluid-scale, 1)))",
               // Halo ONLY — the gold→ember fill now lives per-word (wordFill in
               // @/lib/fireRamp) so the scroll-scrubbed opacity fades each glyph even in GPU-
               // composited Chrome. `.text-fire-amber` is intentionally NOT on
@@ -1381,6 +1426,14 @@ const AboutDetails = () => {
             // on/off flicker while the card is parked at ~10% visibility.
             animate={settledCompletedProjectsInView ? "visible" : "hidden"}
             className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center"
+            // Inner wrapper owns this card's real padding (the outer
+            // ItemLayout is `!p-0`), so it scales inline; radius rides too so
+            // the breathing glow's rounded perimeter keeps its proportion.
+            style={{
+              paddingInline: fluid(1.5),
+              paddingBlock: fluid(1),
+              borderRadius: fluid(0.5),
+            }}
           >
             {/* Count-change banner — appears only when the completed-projects
                 count changed since this device last saw it (issue #16). The
@@ -1405,7 +1458,7 @@ const AboutDetails = () => {
             <motion.p
               variants={childVariants}
               aria-hidden="true"
-              className="text-[10px] uppercase tracking-[0.22em] mb-2"
+              className="abt-micro text-[10px] uppercase tracking-[0.22em] mb-2"
               style={{ color: "#ffaa2a", textShadow: "none" }}
             >
               Projects shipped
@@ -1418,12 +1471,15 @@ const AboutDetails = () => {
             <motion.h1
               variants={childVariants}
               className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
-              style={{ color: "#ff6d05", textShadow: "none" }}
+              // Fluid figure: 3rem = the sm:text-5xl anchor; the 1.5rem floor
+              // is the legacy mobile text-2xl, so phones never drop below
+              // today's smallest rendering.
+              style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(3, 1.5), gap: fluid(0.5) }}
             >
               <Counter from={0} to={projectsData.length} plusIcon={false} inView={isCompletedProjectsInView}></Counter>
               <span
                 className="font-semibold text-base text-fire-amber"
-                style={{ textShadow: "none" }}
+                style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
               >
                 completed projects
               </span>
@@ -1507,6 +1563,14 @@ const AboutDetails = () => {
             // on/off flicker while the card is parked at ~10% visibility.
             animate={settledExperienceCardInView ? "visible" : "hidden"}
             className="repo-card-breathe relative w-full h-full overflow-hidden rounded-lg px-6 py-4 flex flex-col items-stretch justify-center"
+            // Inner wrapper owns this card's real padding (the outer
+            // ItemLayout is `!p-0`), so it scales inline; radius rides too so
+            // the breathing glow's rounded perimeter keeps its proportion.
+            style={{
+              paddingInline: fluid(1.5),
+              paddingBlock: fluid(1),
+              borderRadius: fluid(0.5),
+            }}
           >
             <ExperienceUpdateBanner
               message={testExperienceMessage ?? experienceChangeMessage}
@@ -1521,7 +1585,7 @@ const AboutDetails = () => {
             <motion.p
               variants={childVariants}
               aria-hidden="true"
-              className="text-[10px] uppercase tracking-[0.22em] mb-2"
+              className="abt-micro text-[10px] uppercase tracking-[0.22em] mb-2"
               style={{ color: "#ffaa2a", textShadow: "none" }}
             >
               Years in the craft
@@ -1536,14 +1600,17 @@ const AboutDetails = () => {
               // consistently at every width — and matches the sibling
               // "Completed projects" card, which already uses items-center.
               className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
-              style={{ color: "#ff6d05", textShadow: "none" }}
+              // Fluid figure: 3rem = the sm:text-5xl anchor; the 1.5rem floor
+              // is the legacy mobile text-2xl, so phones never drop below
+              // today's smallest rendering.
+              style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(3, 1.5), gap: fluid(0.5) }}
             >
               {experienceData ? (
                 <>
                   <Counter from={0} to={experienceCounterValue} inView={isExperienceCardInView}></Counter>
                   <span
                     className="font-semibold text-base text-fire-amber"
-                    style={{ textShadow: "none" }}
+                    style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
                   >
                     {experienceCounterUnit} of experience
                   </span>
@@ -1591,7 +1658,7 @@ const AboutDetails = () => {
             <p
               aria-hidden="true"
               className="text-[11px] tracking-wide mt-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
-              style={{ color: "#ffd27d", textShadow: "none" }}
+              style={{ color: "#ffd27d", textShadow: "none", fontSize: fluidText(0.6875, 0.6875) }}
             >
               View breakdown →
             </p>
