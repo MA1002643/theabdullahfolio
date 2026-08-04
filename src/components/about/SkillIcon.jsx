@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { useStaggeredScrollReveal } from "@/hooks/useStaggeredScrollReveal";
 import { animateToTarget } from "@/utils/animationCurves";
 import { getIconUrl } from "@/utils/skillsIconUrl";
+import { fluid, fluidText } from "@/lib/fluidScale";
 
 // ── "Used in repositories" popover reveal — the Most Active Repository card's
 // entrance, applied to this floating panel. The panel springs up as a unit
@@ -256,13 +257,17 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
       <div className="repo-card-breathe rounded-lg overflow-hidden flex flex-col min-h-0 flex-1">
         {/* Inner cascade orchestrator — staggers the header block, then the list,
             inheriting the panel's animation state through the plain wrapper. */}
-        <motion.div variants={contentV} className="p-4 flex flex-col min-h-0 flex-1">
+        <motion.div
+          variants={contentV}
+          className="p-4 flex flex-col min-h-0 flex-1"
+          style={{ padding: fluid(1) }}
+        >
           {/* Header block slides up as one unit (the card's childVariants). */}
           <motion.div variants={sectionV} className="shrink-0">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">Used in repositories</p>
+            <p className="abt-micro text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">Used in repositories</p>
             <h3
               className="text-sm sm:text-base font-semibold mb-1 flex items-center gap-2"
-              style={{ color: "#ff6d05", textShadow: "none" }}
+              style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(1, 0.875) }}
             >
               <img
                 src={getIconUrl(skill.slug, skill.source)}
@@ -273,7 +278,10 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
               />
               <span className="truncate">{skill.displayName}</span>
             </h3>
-            <p className="text-[11px] mb-3" style={{ color: "rgba(255, 170, 42, 0.6)" }}>
+            <p
+              className="text-[11px] mb-3"
+              style={{ color: "rgba(255, 170, 42, 0.6)", fontSize: fluidText(0.6875, 0.6875) }}
+            >
               {/* Public/private breakdown — zero segments are omitted (a
                   private-only skill reads "Repositories: 2 private"). The
                   sr-only twin carries the final values with a comma (a slash

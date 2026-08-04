@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { fluidText } from "@/lib/fluidScale";
 
 // Visual variants. Each variant ships every token needed by the full
 // banner choreography (entrance flash, sweep, aurora drift, ember
@@ -129,7 +130,10 @@ function EmberLayer({ emberColor, emberShadow }) {
 function AnimatedMessage({ message, prefersReducedMotion }) {
   if (prefersReducedMotion) {
     return (
-      <span className="relative z-10 font-medium text-lg md:text-xl tracking-wide text-center px-6 text-fire-amber">
+      <span
+        className="relative z-10 font-medium text-lg md:text-xl tracking-wide text-center px-6 text-fire-amber"
+        style={{ fontSize: fluidText(1.25, 1.125) }}
+      >
         {message}
       </span>
     );
@@ -170,6 +174,7 @@ function AnimatedMessage({ message, prefersReducedMotion }) {
       animate="visible"
       exit="exit"
       className="relative z-10 inline-block max-w-full font-medium text-lg md:text-xl tracking-wide text-center px-6 break-words"
+      style={{ fontSize: fluidText(1.25, 1.125) }}
       aria-label={message}
     >
       {chars.map((c, i) => {

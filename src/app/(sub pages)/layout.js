@@ -12,7 +12,7 @@ import { fluid } from '@/lib/fluidScale';
 // breakpoint jump. Adopting another page is adding its pathname here; the
 // unlisted pages keep today's classes untouched, which is why this is a
 // list and not a blanket change to a layout four routes share.
-const FLUID_SCALE_PAGES = ['/projects', '/contact', '/qualifications'];
+const FLUID_SCALE_PAGES = ['/projects', '/contact', '/qualifications', '/about'];
 
 export default function SubPagesLayout({ children }) {
   const pathname = usePathname();

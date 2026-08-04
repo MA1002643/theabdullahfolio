@@ -18,6 +18,7 @@ import { useStaggeredScrollReveal } from "@/hooks/useStaggeredScrollReveal";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { fastStartSlowFinish } from "@/utils/animationCurves";
 import { onMediaChange } from "@/lib/mediaQuery";
+import { fluid, fluidText } from "@/lib/fluidScale";
 
 // Shared count-up window. Every row animates over the same duration with no
 // per-row stagger so all percentages reach their targets *simultaneously*
@@ -96,8 +97,10 @@ const noMotionVariants = {
    aria-hidden with an aria-label so the accessible name stays clean. */
 function AnimatedTitle({ text, play }) {
   const prefersReducedMotion = useReducedMotion();
+  // `abt-title` re-derives the size from --fluid-scale under the /about
+  // fluid scope (issue #25); the utilities stay as the out-of-scope base.
   const className =
-    "text-xl md:text-2xl text-left font-semibold mb-1 break-words leading-tight";
+    "abt-title text-xl md:text-2xl text-left font-semibold mb-1 break-words leading-tight";
 
   if (prefersReducedMotion) {
     return (
@@ -497,6 +500,9 @@ export default function LanguagesCard({ data, isLive = false }) {
       // layer adds the same baseline + breathing orange glow on the rounded
       // perimeter — identical structure to the years card's inner div.
       className="repo-card-breathe rounded-lg p-6 w-full relative overflow-hidden h-full"
+      // Card padding + glow radius ride the factor (issue #25); the p-6
+      // rounded-lg utilities stay as the out-of-scope base.
+      style={{ padding: fluid(1.5), borderRadius: fluid(0.5) }}
     >
       <UpdateBanner
         message={bannerMessage}
@@ -521,7 +527,7 @@ export default function LanguagesCard({ data, isLive = false }) {
             claims "live" over stale data — it returns the moment a live
             fetch succeeds again. */}
         <p
-          className="flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.18em]"
+          className="abt-micro-md flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.18em]"
           style={{ color: "rgba(255, 170, 42, 0.6)", textShadow: "none" }}
         >
           <span>
@@ -562,6 +568,10 @@ export default function LanguagesCard({ data, isLive = false }) {
         variants={childV}
         aria-hidden="true"
         className="relative w-full h-2 md:h-3 rounded-full overflow-hidden flex mb-5 bg-gray-700/30"
+        // Fluid bar: 0.75rem = the md:h-3 anchor. No floor — the track can
+        // thin all the way down with the card (it's decorative; the list
+        // below carries the data).
+        style={{ height: fluid(0.75), marginBottom: fluid(1.25) }}
       >
         {languages.map((lang, idx) => (
           <AnimatedBarSegment
@@ -602,6 +612,10 @@ export default function LanguagesCard({ data, isLive = false }) {
       <motion.ul
         variants={listContainerV}
         className="grid grid-cols-1 xl:grid-cols-2 gap-y-3 gap-x-6 pt-2 text-sm md:text-base xl:text-sm"
+        // 0.875rem = the xl:text-sm value in force at the 1440 anchor (the
+        // two-column view). The single fluid size replaces the sm→base→sm
+        // zig-zag; the xl: column switch itself stays structural.
+        style={{ fontSize: fluidText(0.875, 0.75) }}
       >
         {languages.slice(0, 10).map((lang, idx) => (
           <AnimatedLangLabel
@@ -850,7 +864,7 @@ function AnimatedLangLabel({
           smaller widths, where the single full-width column has room to spare. */}
       <span
         aria-hidden="true"
-        className="font-mono tabular-nums text-[10px] md:text-xs select-none w-5 shrink-0 xl:hidden"
+        className="abt-micro-md font-mono tabular-nums text-[10px] md:text-xs select-none w-5 shrink-0 xl:hidden"
         style={{ color: "rgba(255, 170, 42, 0.45)", textShadow: "none" }}
       >
         {String(rank).padStart(2, "0")}
@@ -1098,17 +1112,21 @@ function LanguageRepoPopover({
       <div className="repo-card-breathe rounded-lg overflow-hidden flex flex-col min-h-0 flex-1">
         {/* Inner cascade orchestrator — staggers the header block, then the list,
             inheriting the panel's animation state through the plain wrapper. */}
-        <motion.div variants={contentV} className="p-4 flex flex-col min-h-0 flex-1">
+        <motion.div
+          variants={contentV}
+          className="p-4 flex flex-col min-h-0 flex-1"
+          style={{ padding: fluid(1) }}
+        >
           {/* Header — stays fixed while the repo list below scrolls. */}
           <motion.div variants={sectionV} className="shrink-0">
             {/* Eyebrow — same microlabel treatment as the modal's "Career
                 snapshot". */}
-            <p className="text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">
+            <p className="abt-micro text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">
               Repository breakdown
             </p>
             <h3
               className="text-sm sm:text-base font-semibold mb-3 flex items-center gap-2"
-              style={{ color: "#ff6d05", textShadow: "none" }}
+              style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(1, 0.875) }}
             >
               <span
                 aria-hidden="true"

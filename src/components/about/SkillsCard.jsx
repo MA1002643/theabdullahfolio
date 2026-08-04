@@ -12,6 +12,7 @@ import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { flattenCategories } from "@/utils/skillsDiff";
 import { CATEGORY_ORDER, emptyCategories } from "@/utils/skillsIconUrl";
+import { fluid, fluidText } from "@/lib/fluidScale";
 
 // How long the change banner lingers once the section scrolls into view —
 // matches the Languages / Streak cards (issue #20, acceptance #15).
@@ -26,9 +27,13 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const LAST_FETCHED_KEY = "skillsLastFetched:v4";
 const CACHE_KEY = "skillsCache:v4";
 
-// One clamp drives each cell so icons stay fluid from a 320px phone to a 1920px
-// desktop (issue #20, Task 4).
-const CELL_SIZE = "clamp(2.5rem,7vw,4rem)";
+// One expression drives each cell so icons stay fluid from a 320px phone to
+// ultrawide (issue #20, Task 4). Issue #25 moved it off the old bespoke
+// `clamp(2.5rem,7vw,4rem)` onto the page's unified --fluid-scale factor:
+// same 4rem design size and ~2.5rem phone floor, but the cell now grows past
+// 4rem on ultrawide with the rest of the page instead of capping at 914px,
+// and it breathes in lockstep with every other fluid dimension.
+const CELL_SIZE = fluidText(4, 2.5);
 
 // Visible category headings.
 const CATEGORY_LABELS = {
@@ -112,7 +117,9 @@ const noMotion = { hidden: { opacity: 1, y: 0, scale: 1 }, visible: { opacity: 1
    aria-label so the accessible name stays clean. */
 function AnimatedTitle({ text, play }) {
   const prefersReducedMotion = useReducedMotion();
-  const className = "text-xl md:text-2xl text-left font-semibold mb-1 break-words leading-tight";
+  // `abt-title` re-derives the size from --fluid-scale under the /about
+  // fluid scope (issue #25); the utilities stay as the out-of-scope base.
+  const className = "abt-title text-xl md:text-2xl text-left font-semibold mb-1 break-words leading-tight";
 
   if (prefersReducedMotion) {
     return (
@@ -252,7 +259,11 @@ function CategoryHeader({ label, count, heartbeat, prefersReducedMotion, isActiv
 function IconStrip({ items, rowRef, pulsingIcons, activeSlug, iconHandlers }) {
   return (
     <div className="mt-2 overflow-hidden py-2.5">
-      <div ref={rowRef} className="flex w-max flex-nowrap gap-3 sm:gap-4 will-change-transform">
+      <div
+        ref={rowRef}
+        className="flex w-max flex-nowrap gap-3 sm:gap-4 will-change-transform"
+        style={{ gap: fluid(1) }}
+      >
         {items.map((item, idx) => (
           // Flex child = the unit the scrub engine maps (data-slug, offsetLeft)
           // and writes the per-icon scrub reveal (opacity) onto. NO `will-change`:
@@ -809,7 +820,10 @@ function SkillsStage({
               />
               <div
                 className="mt-2 grid gap-3"
-                style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${CELL_SIZE}, 1fr))` }}
+                style={{
+                  gridTemplateColumns: `repeat(auto-fill, minmax(${CELL_SIZE}, 1fr))`,
+                  gap: fluid(0.75),
+                }}
               >
                 {g.items.map((item) => (
                   <div key={item.slug} data-slug={item.slug} style={{ width: CELL_SIZE, height: CELL_SIZE }}>
@@ -1108,6 +1122,9 @@ export default function SkillsCard({ username }) {
       initial="hidden"
       animate={settledInView ? "visible" : "hidden"}
       className="repo-card-breathe rounded-lg p-6 w-full relative overflow-hidden h-full"
+      // Card padding + glow radius ride the factor (issue #25); the p-6
+      // rounded-lg utilities stay as the out-of-scope base.
+      style={{ padding: fluid(1.5), borderRadius: fluid(0.5) }}
     >
       <UpdateBanner
         message={bannerMessage}
@@ -1120,7 +1137,7 @@ export default function SkillsCard({ username }) {
       <motion.div variants={headerV} className="mb-4">
         <AnimatedTitle text="Skills & Technologies" play={settledInView} />
         <p
-          className="flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.18em]"
+          className="abt-micro-md flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.18em]"
           style={{ color: "rgba(255, 170, 42, 0.6)", textShadow: "none" }}
         >
           {!loaded ? (

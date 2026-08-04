@@ -85,8 +85,12 @@ const ItemLayout = forwardRef(function ItemLayout(
       // ExperienceUpdateBanner as a second direct child, pushing the h1
       // 2rem off the centered axis. Dropping the utility is a true no-op for
       // every other ItemLayout instance and unbreaks the centering.
+      // `abt-card`: under the /about fluid scope (issue #25) a globals.css
+      // rule re-derives the padding + radius from --fluid-scale; the p-6
+      // sm:p-8 rounded-xl utilities stay as the out-of-scope base. Call-site
+      // `!p-*` overrides still beat both (important), unchanged.
       className={clsx(
-        "custom-bg-abt relative p-6 sm:p-8 rounded-xl flex items-center justify-center",
+        "custom-bg-abt abt-card relative p-6 sm:p-8 rounded-xl flex items-center justify-center",
         className
       )}
       {...rest}

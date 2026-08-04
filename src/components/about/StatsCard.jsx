@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { fastStartSlowFinish } from "@/utils/animationCurves";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
+import { fluid, fluidText } from "@/lib/fluidScale";
 
 // ---------------------------------------------------------------------------
 // Palette — deliberately the SAME tokens the "Most Active Repository" card
@@ -86,8 +87,10 @@ const metricRowVariants = {
    accessible name stays clean. */
 function AnimatedTitle({ text, play }) {
     const prefersReducedMotion = useReducedMotion();
+    // `abt-title` re-derives the size from --fluid-scale under the /about
+    // fluid scope (issue #25); the utilities stay as the out-of-scope base.
     const className =
-        "text-lg sm:text-xl md:text-2xl font-semibold break-words leading-tight";
+        "abt-title text-lg sm:text-xl md:text-2xl font-semibold break-words leading-tight";
 
     if (prefersReducedMotion) {
         return (
@@ -207,9 +210,15 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
                     transition={{ type: "spring", stiffness: 400 }}
                     className="flex-shrink-0"
                 >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: AMBER }} />
+                    <Icon
+                        className="w-4 h-4 sm:w-5 sm:h-5"
+                        style={{ color: AMBER, width: fluidText(1.25, 1), height: fluidText(1.25, 1) }}
+                    />
                 </motion.span>
-                <span className={`text-xs sm:text-sm md:text-base truncate text-fire-amber${heartbeat ? " skill-heartbeat" : ""}`} style={{ textShadow: "none" }}>
+                <span
+                    className={`text-xs sm:text-sm md:text-base truncate text-fire-amber${heartbeat ? " skill-heartbeat" : ""}`}
+                    style={{ textShadow: "none", fontSize: fluidText(1, 0.75) }}
+                >
                     {label}
                 </span>
             </div>
@@ -220,7 +229,7 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
                 // (skill-heartbeat) on BOTH the label (above) and this number,
                 // independent of the local `pulse` scale-bounce on count-up landing.
                 className={`text-xs sm:text-sm md:text-base font-semibold tabular-nums whitespace-nowrap${heartbeat ? " skill-heartbeat" : ""}`}
-                style={{ color: ORANGE, textShadow: "none" }}
+                style={{ color: ORANGE, textShadow: "none", fontSize: fluidText(1, 0.75) }}
             >
                 <span className="sr-only">{target.toLocaleString()}</span>
                 <span aria-hidden="true">{display.toLocaleString()}</span>
@@ -261,7 +270,13 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
     }, [playToken, finalOffset, circumference, controls, prefersReducedMotion]);
 
     return (
-        <div className="relative w-[120px] h-[120px] sm:w-36 sm:h-36 lg:w-40 lg:h-40 flex-shrink-0">
+        <div
+            className="relative w-[120px] h-[120px] sm:w-36 sm:h-36 lg:w-40 lg:h-40 flex-shrink-0"
+            // Fluid ring: 10rem = the lg:w-40 anchor; 7.5rem floor = the
+            // legacy 120px mobile size. The SVG inside is viewBox-drawn, so
+            // scaling the wrapper scales the whole arc proportionally.
+            style={{ width: fluidText(10, 7.5), height: fluidText(10, 7.5) }}
+        >
             {/* Breathing radial glow behind the ring — the "beyond elite"
                 flourish. Held static (no pulse) under reduced motion. */}
             <motion.div
@@ -304,11 +319,12 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
                     style={{
                         color: ORANGE,
                         textShadow: "0 0 10px rgba(255,109,5,0.55), 0 0 22px rgba(255,109,5,0.3)",
+                        fontSize: fluidText(2.25, 1.875),
                     }}
                 >
                     {level}
                 </span>
-                <span className="text-[10px] uppercase tracking-[0.22em] mt-1 text-fire-amber" style={{ textShadow: "none" }}>
+                <span className="abt-micro text-[10px] uppercase tracking-[0.22em] mt-1 text-fire-amber" style={{ textShadow: "none" }}>
                     Rank
                 </span>
             </div>
@@ -474,6 +490,9 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             initial="hidden"
             animate={settledInView ? "visible" : "hidden"}
             className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg h-full"
+            // Card padding + glow radius ride the factor (issue #25); the
+            // p-6 rounded-lg utilities stay as the out-of-scope base.
+            style={{ padding: fluid(1.5), borderRadius: fluid(0.5) }}
         >
             <UpdateBanner
                 message={bannerMessage}
@@ -503,7 +522,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
                             animate={prefersReducedMotion ? undefined : { opacity: [0.4, 1, 0.4], scale: [0.85, 1.15, 0.85] }}
                             transition={prefersReducedMotion ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         />
-                        <span className="text-[10px] uppercase tracking-[0.22em] text-fire-amber" style={{ textShadow: "none" }}>
+                        <span className="abt-micro text-[10px] uppercase tracking-[0.22em] text-fire-amber" style={{ textShadow: "none" }}>
                             Live GitHub Metrics
                         </span>
                     </div>
@@ -522,7 +541,11 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
 
             {/* Metric column + rank arc — column full-width on mobile (labels
                 left, values right), side-by-side and centered at sm+. */}
-            <motion.div variants={childVariants} className="flex flex-col items-center gap-4 sm:gap-6 sm:flex-row sm:flex-wrap sm:justify-center">
+            <motion.div
+                variants={childVariants}
+                className="flex flex-col items-center gap-4 sm:gap-6 sm:flex-row sm:flex-wrap sm:justify-center"
+                style={{ gap: fluid(1.5) }}
+            >
                 <motion.div
                     variants={metricContainerVariants}
                     className="flex flex-col gap-1 w-full sm:w-auto sm:flex-1 sm:min-w-[220px]"

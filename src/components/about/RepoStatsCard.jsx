@@ -3,6 +3,7 @@
 import { motion, useAnimation, useReducedMotion } from "framer-motion";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
+import { fluid, fluidText } from "@/lib/fluidScale";
 import {
   Clock,
   GitCommitHorizontal,
@@ -86,7 +87,7 @@ function AnimatedTitle({ text, play, heartbeat = false }) {
     return (
       <h3
         className={`text-xl font-semibold break-words${pulseClass}`}
-        style={{ color: "#ff6d05", textShadow: "none" }}
+        style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(1.25, 1.125) }}
       >
         {text}
       </h3>
@@ -114,7 +115,7 @@ function AnimatedTitle({ text, play, heartbeat = false }) {
       initial="hidden"
       animate={play ? "visible" : "hidden"}
       className={`text-xl font-semibold break-words${pulseClass}`}
-      style={{ color: "#ff6d05", textShadow: "none" }}
+      style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(1.25, 1.125) }}
       aria-label={text}
     >
       {chars.map((c, i) => (
@@ -225,11 +226,14 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
           transition={{ type: "spring", stiffness: 400 }}
           className={`flex-shrink-0${beatClass}`}
         >
-          <Icon className="w-4 h-4" style={{ color: "#ffaa2a" }} />
+          <Icon
+            className="w-4 h-4"
+            style={{ color: "#ffaa2a", width: fluidText(1, 0.875), height: fluidText(1, 0.875) }}
+          />
         </motion.span>
         <span
           className={`text-xs sm:text-sm truncate text-fire-amber${beatClass}`}
-          style={{ textShadow: "none" }}
+          style={{ textShadow: "none", fontSize: fluidText(0.875, 0.75) }}
         >
           {label}
         </span>
@@ -245,6 +249,7 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
         style={{
           color: "#ff6d05",
           textShadow: "none",
+          fontSize: fluidText(0.875, 0.75),
         }}
       >
         {/* `display` cycles through 0 → target during the count-up, then
@@ -355,8 +360,11 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
 
   return (
     <div className="flex flex-col items-center gap-1 flex-shrink-0">
-      <div className="relative w-20 h-20">
-        <svg className="absolute inset-0" width="80" height="80" viewBox="0 0 90 90">
+      {/* Fluid ring: 5rem = the legacy w-20 at the anchor, 4rem floor. The
+          svg drops its fixed 80px attrs for w-full/h-full so the viewBox
+          drawing scales with the wrapper. */}
+      <div className="relative w-20 h-20" style={{ width: fluidText(5, 4), height: fluidText(5, 4) }}>
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 90 90">
           <circle
             cx="45"
             cy="45"
@@ -396,7 +404,7 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
             // only the number beats (the arc + "score"/"Activity Score" labels
             // hold). CSS no-ops `skill-heartbeat` under reduced motion.
             className={`text-xs font-bold leading-none tabular-nums${heartbeat ? " skill-heartbeat" : ""}`}
-            style={{ color: "#ff6d05", textShadow: "none" }}
+            style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(0.75, 0.625) }}
           >
             {/* Same accessibility split as MetricRow: `displayScore` cycles
                 through 0 → target and resets to 0 when out of view, so
@@ -417,7 +425,7 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
         </div>
       </div>
       <span
-        className="text-[10px] text-fire-amber"
+        className="abt-micro text-[10px] text-fire-amber"
         style={{ textShadow: "none" }}
       >
         Activity Score
@@ -614,6 +622,9 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
       initial="hidden"
       animate={settledInView ? "visible" : "hidden"}
       className="repo-card-breathe w-full p-6 relative overflow-hidden rounded-lg"
+      // Card padding + glow radius ride the factor (issue #25); the p-6
+      // rounded-lg utilities stay as the out-of-scope base.
+      style={{ padding: fluid(1.5), borderRadius: fluid(0.5) }}
     >
       <UpdateBanner
         message={bannerMessage}
@@ -643,6 +654,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
           style={{
             textShadow: "none",
             border: "1px solid #ffaa2a",
+            fontSize: fluidText(0.75, 0.625),
           }}
         >
           <span className="text-fire-amber">Most Active Repository</span>
@@ -653,7 +665,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
       <motion.p
         variants={childVariants}
         className="text-sm font-light mb-4 text-fire-amber"
-        style={{ textShadow: "none" }}
+        style={{ textShadow: "none", fontSize: fluidText(0.875, 0.75) }}
       >
         {description}
       </motion.p>
@@ -694,7 +706,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
           // only the language NAME beats (the dot keeps its own breathing glow).
           // CSS no-ops `skill-heartbeat` under reduced motion.
           className={`text-sm font-light text-fire-amber${pulsing.has("language") ? " skill-heartbeat" : ""}`}
-          style={{ textShadow: "none" }}
+          style={{ textShadow: "none", fontSize: fluidText(0.875, 0.75) }}
         >
           {language}
         </span>
