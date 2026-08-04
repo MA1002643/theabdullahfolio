@@ -1093,7 +1093,13 @@ function LanguageRepoPopover({
         onPointerLeave?.();
       }}
       data-lang-popover=""
-      className="custom-bg-abt rounded-xl flex flex-col"
+      // `fluid-scale` re-declared: this panel portals to document.body,
+      // outside the /about layout's scoped <main>, so the page's
+      // `--fluid-scale` can't inherit in — without it the fluid padding,
+      // heading, and .abt-micro eyebrow inside pin at the scale-1 fallback.
+      // The factor derives from 100vw (not inherited data), so the class
+      // reproduces the page's exact value (see SkillIcon's popover twin).
+      className="fluid-scale custom-bg-abt rounded-xl flex flex-col"
       style={{
         position: "fixed",
         left: pos ? pos.left : -9999,

@@ -241,7 +241,16 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
         onPointerLeave?.();
       }}
       data-skill-popover=""
-      className="custom-bg-abt rounded-xl flex flex-col"
+      // `fluid-scale` re-declared here because this panel portals to
+      // document.body — OUTSIDE the /about layout's scoped <main> — so the
+      // page's `--fluid-scale` can't inherit in and every fluid consumer
+      // inside (padding, heading, .abt-micro eyebrow) would silently pin at
+      // the scale-1 fallback. The factor is computed from 100vw, not
+      // inherited data, so re-declaring the class reproduces the exact value
+      // the page uses (same pattern as /projects' scope re-declaration). The
+      // fixed 280px panel width stays static on purpose: it's a positioning
+      // constraint of the anchored overlay, not a design size.
+      className="fluid-scale custom-bg-abt rounded-xl flex flex-col"
       style={{
         position: "fixed",
         left: pos ? pos.left : -9999,

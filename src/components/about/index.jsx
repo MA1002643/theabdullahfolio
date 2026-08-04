@@ -1610,7 +1610,7 @@ const AboutDetails = () => {
                   <Counter from={0} to={experienceCounterValue} inView={isExperienceCardInView}></Counter>
                   <span
                     className="font-semibold text-base text-fire-amber"
-                    style={{ textShadow: "none" }}
+                    style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
                   >
                     {experienceCounterUnit} of experience
                   </span>
