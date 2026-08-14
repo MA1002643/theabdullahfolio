@@ -5,6 +5,7 @@ import CustomCursor from '@/components/CustomCursor';
 import LoaderWrapper from '@/components/loaderWrapper';
 import PageTransitionProvider from '@/components/pageTransition/PageTransitionProvider';
 import GlobalToaster from '@/components/GlobalToaster';
+import ProjectFilterHandoffGuard from '@/components/projects/ProjectFilterHandoffGuard';
 import NowPlaying from '@/components/spotify/NowPlaying';
 import SoundProvider from '@/components/sound/SoundProvider';
 import FloatingSoundToggle from '@/components/sound/FloatingSoundToggle';
@@ -79,6 +80,10 @@ export default function RootLayout({ children }) {
         {/* Live music presence — floats bottom-left on every page (issue #42).
             Renders null until data arrives, so no SSR/hydration mismatch. */}
         <NowPlaying />
+        {/* Expires the /projects filter handoff on any route outside the
+            projects area. Renders null; lives at the ROOT (not in the
+            (sub pages) layout) so it also observes the homepage. */}
+        <ProjectFilterHandoffGuard />
         <GlobalToaster />
         <CustomCursor />
         <SpeedInsights />

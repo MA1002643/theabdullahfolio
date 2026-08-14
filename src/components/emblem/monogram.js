@@ -1,6 +1,7 @@
 // The MA flame monogram — exact path data from the emblem artwork, shared by
-// the intro loader's EmblemSeal and the page-transition SigilOverlay so the
-// two rituals are guaranteed to draw the very same mark.
+// the intro loader's EmblemSeal and the page-transition Ember Passage (which
+// samples points uniformly over its area, see emberField.js) so the two rituals
+// are guaranteed to draw the very same mark.
 //
 // Coordinates live in the original 1024×1024 emblem space. Consumers that
 // render the monogram alone (without the rings/name arcs) should use

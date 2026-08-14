@@ -95,6 +95,11 @@ const GRAD_ID = 'footer-wordmark-strings'; // <linearGradient> id referenced by 
 const GRAD_X1 = (VIEW_W - TARGET_W) / 2; // left edge of the wordmark span (=20)
 const GRAD_X2 = VIEW_W - GRAD_X1; // right edge of the wordmark span (=1180)
 const STROKE_OPACITY = 0.95; // near-solid so the lines are bold, not ghosted
+// A constant hairline, held there by `vector-effect: non-scaling-stroke` on every
+// string. That is not cosmetic: STROKE_W is in viewBox units, so letting it scale
+// would render the strings at 0.4px on a 390px phone (where the whole 1200-unit
+// viewBox is squeezed to a third) and at 2.6px on a 2560px display. The constant
+// stroke is also why the draw-in must not use a dash — see the <path> note below.
 const STROKE_W = 1.2; // slightly heavier hairline for a crisper edge
 
 // Resolve next/font's generated Inter family name so canvas can render it.
@@ -217,6 +222,10 @@ export default function FooterWordmark({
 
   const loaderRevealed = useLoaderRevealed();
   const [revealed, setRevealed] = useState(false);
+  // Entrance over — see the draw-in note on the <path> below. Once it is true the
+  // per-string inline style is dropped entirely, so the resting wordmark carries
+  // no transform, no transition and nothing for the rAF's `d` writes to fight.
+  const [drawnIn, setDrawnIn] = useState(false);
 
   // Left/right x-extent of the whole wordmark, so both the CSS draw-in delay and
   // the pluck ripple can be positioned by each string's horizontal spot.
@@ -370,6 +379,10 @@ export default function FooterWordmark({
           p.amp = 0;
           p.speed = 0;
           p.phase = 0;
+          // Re-resolve a missing node before writing the resting path: dropping
+          // this write is how a string gets stranded mid-wave with its physics
+          // already zeroed, and nothing would ever straighten it again.
+          if (!p.el) p.el = elsRef.current[i] || null;
           if (p.el) p.el.setAttribute('d', pathFor(p, 0, 0));
         }
       }
@@ -377,6 +390,62 @@ export default function FooterWordmark({
         rafRef.current = requestAnimationFrame(tick);
       } else {
         rafRef.current = 0;
+      }
+    };
+
+    // --- The resting-state invariant -----------------------------------------
+    // A string's RESTING shape is a straight line; the wave is a transient that
+    // only the rAF erases, one frame at a time. So the loop may never be stopped
+    // while a string still holds energy: whatever `d` the last frame happened to
+    // write is then frozen into the DOM, and since nothing restarts the loop the
+    // wordmark keeps those crooked strings for good — letters visibly mis-shapen
+    // (a bend of a few units reads clearly when the rows are only ROW_STEP
+    // apart). settleAll() is the guarantee: every stop that is not already "all
+    // at rest" flushes the strings home first.
+    const settleAll = () => {
+      const list = physRef.current;
+      for (let i = 0; i < list.length; i++) {
+        const p = list[i];
+        if (!p.el) p.el = elsRef.current[i] || null;
+        p.amp = 0;
+        p.speed = 0;
+        p.phase = 0;
+        if (p.el) p.el.setAttribute('d', pathFor(p, 0, 0));
+      }
+      // Drop the entrance sweep with them. It is anchored to a wall-clock start,
+      // so leaving one armed across a pause would put the front way past every
+      // remaining string and slam them all in a single frame on resume.
+      sweepRef.current = null;
+    };
+
+    // Stop the loop. Passing settle=true is what makes the stop safe to resume
+    // from; it is the right choice for every stop we initiate (off-screen, tab
+    // hidden, teardown), because none of them can finish the ring-down.
+    const stopLoop = (settle) => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
+      lastTRef.current = 0;
+      hoverIdxRef.current = -1; // so re-entering the same string plucks it again
+      if (settle) settleAll();
+    };
+
+    // Restart the loop iff something still needs driving. Paired with settleAll()
+    // this is normally a no-op — it is the second line of defence, so that any
+    // stop which does leave a string ringing still gets driven back to rest
+    // instead of freezing there.
+    const resumeLoop = () => {
+      if (sweepRef.current) {
+        ensureRunning();
+        return;
+      }
+      const list = physRef.current;
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].amp > 0.02 || list[i].speed > 0.02) {
+          ensureRunning();
+          return;
+        }
       }
     };
 
@@ -465,12 +534,26 @@ export default function FooterWordmark({
       if (idx >= 0) pluck(idx, CLICK_AMP, CLICK_SPEED, 0.72);
     };
 
+    // A backgrounded tab is the same freeze by another route: rAF stops firing
+    // there, so whatever `d` the last frame wrote is what you come back to.
+    // Settle on the way out, pick the loop back up on the way in.
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        stopLoop(true);
+      } else if (onScreen) {
+        refreshRect();
+        resumeLoop();
+      }
+    };
+
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerdown', onDown, { passive: true });
     window.addEventListener('scroll', scheduleRectRefresh, { passive: true });
     window.addEventListener('resize', refreshRect);
+    document.addEventListener('visibilitychange', onVisibility);
 
-    // Pause the loop when the footer is off-screen.
+    // Pause the loop when the footer is off-screen — settling the strings on the
+    // way out, so "paused" always means "at rest" and never "frozen mid-wave".
     let io = null;
     if (svgRef.current && typeof IntersectionObserver !== 'undefined') {
       io = new IntersectionObserver(
@@ -480,9 +563,9 @@ export default function FooterWordmark({
             // Entering (120px early): take a fresh rect so the first pointer hit
             // is accurate without waiting on a scroll tick.
             refreshRect();
-          } else if (rafRef.current) {
-            cancelAnimationFrame(rafRef.current);
-            rafRef.current = 0;
+            resumeLoop();
+          } else {
+            stopLoop(true);
           }
         },
         { rootMargin: '120px 0px' },
@@ -504,11 +587,13 @@ export default function FooterWordmark({
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('scroll', scheduleRectRefresh);
       window.removeEventListener('resize', refreshRect);
+      document.removeEventListener('visibilitychange', onVisibility);
       if (io) io.disconnect();
       if (rectRaf) cancelAnimationFrame(rectRaf);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = 0;
-      hoverIdxRef.current = -1;
+      // Settle on teardown too: this effect re-runs whenever the strings are
+      // rebuilt, and the <path> nodes outlive it, so a bare cancel would hand
+      // the next run a set of half-bent strings it has no reason to touch.
+      stopLoop(true);
       autoTickRef.current = null;
     };
   }, [strings, xBounds]);
@@ -567,6 +652,18 @@ export default function FooterWordmark({
     if (revealed) strumRef.current?.();
   }, [revealed]);
 
+  // Retire the entrance once the last string has landed. The draw-in is the ONLY
+  // reason these paths carry an inline style; leaving it on afterwards would keep
+  // 456 transforms + transitions live under a loop that rewrites `d` every frame.
+  useEffect(() => {
+    if (!revealed || drawnIn) return undefined;
+    // Longest possible entrance: the right-most string's stagger (a full sweep)
+    // plus its own draw, plus a frame or two of slack.
+    const ms = reduced ? 600 : REVEAL_SWEEP_MS + REVEAL_DRAW_S * 1000 + 200;
+    const t = setTimeout(() => setDrawnIn(true), ms);
+    return () => clearTimeout(t);
+  }, [revealed, drawnIn, reduced]);
+
   return (
     <svg
       ref={svgRef}
@@ -597,20 +694,37 @@ export default function FooterWordmark({
       </defs>
       <g fill="none" stroke={`url(#${GRAD_ID})`} strokeOpacity={STROKE_OPACITY} strokeLinecap="round">
         {strings.map((s, i) => {
-          // Each string draws itself in (dash offset 1→0) with a left→right
-          // stagger keyed to its x, so the name is "written on" as a sweep; the
-          // pluck ripple (rAF) then rings each as it lands. pathLength normalises
-          // the dash to 1 so the draw works even while a plucked `d` is a wave,
-          // not a straight line. Reduced motion swaps the draw for a plain fade.
+          // Each string draws itself in with a left→right stagger keyed to its x,
+          // so the name is "written on" as a sweep; the pluck ripple (rAF) then
+          // rings each as it lands. Reduced motion swaps the draw for a plain fade.
+          //
+          // The draw is a scaleX GROW, never a stroke dash. `vector-effect:
+          // non-scaling-stroke` (which this wordmark needs — see STROKE_W) strokes
+          // the path in the OUTERMOST viewport's coordinates, while `pathLength`
+          // normalises in the path's own user space. A dash length is expressed in
+          // one space and consumed in the other, so `stroke-dasharray: 1` only
+          // covers a whole string when the two spaces coincide — i.e. only at a
+          // viewport exactly VIEW_W wide. Anywhere wider, every string is painted
+          // for just 1/scale of its length and the wordmark comes out DOTTED (67%
+          // at 1800px, 47% at 2560px). scaleX is plain geometry, so it is immune:
+          // the string is grown from its own left end, at any scale.
+          //
+          // opacity rides along with a 0s transition on the SAME delay: it snaps
+          // on exactly as the grow starts, because scaleX(0) still paints a round
+          // linecap dot, and 456 of those would stipple the name before the sweep.
           const tx = (s.x1 - xBounds.min) / xBounds.span;
           const drawDelay = reduced ? 0 : (tx * REVEAL_SWEEP_MS) / 1000;
-          const style = reduced
-            ? { opacity: revealed ? 1 : 0, transition: 'opacity 0.5s ease' }
-            : {
-                strokeDasharray: 1,
-                strokeDashoffset: revealed ? 0 : 1,
-                transition: `stroke-dashoffset ${REVEAL_DRAW_S}s cubic-bezier(0.22, 1, 0.36, 1) ${drawDelay.toFixed(3)}s`,
-              };
+          const style = drawnIn
+            ? undefined
+            : reduced
+              ? { opacity: revealed ? 1 : 0, transition: 'opacity 0.5s ease' }
+              : {
+                  transformBox: 'fill-box',
+                  transformOrigin: 'left center',
+                  transform: revealed ? 'scaleX(1)' : 'scaleX(0)',
+                  opacity: revealed ? 1 : 0,
+                  transition: `transform ${REVEAL_DRAW_S}s cubic-bezier(0.22, 1, 0.36, 1) ${drawDelay.toFixed(3)}s, opacity 0s linear ${drawDelay.toFixed(3)}s`,
+                };
           return (
             <path
               key={i}
@@ -618,7 +732,6 @@ export default function FooterWordmark({
                 elsRef.current[i] = el;
               }}
               d={`M ${s.x1.toFixed(2)} ${s.y.toFixed(2)} H ${s.x2.toFixed(2)}`}
-              pathLength="1"
               strokeWidth={STROKE_W}
               vectorEffect="non-scaling-stroke"
               style={style}

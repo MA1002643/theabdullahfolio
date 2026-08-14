@@ -86,15 +86,41 @@ export function useReliableInView(
     const check = () => {
       const r = el.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
+      // Un-apply the element's OWN transform before computing visibility.
+      // The consumers of this hook drive the element's entrance variants off
+      // the very ratio measured here, and the entrance's hidden pose
+      // (y:56 + scale .97) shifts the element DOWN — so a card resting just
+      // over `amount` reads UNDER it while hidden, the entrance never fires,
+      // and the pose never lifts: a deadlock that parked the years card's
+      // count-ups at 0 until a real scroll. Measuring the layout box (own
+      // transform removed) breaks the feedback loop. Ancestor transforms are
+      // deliberately KEPT: the outer ItemLayout's loader-held `scale: 0`
+      // must still zero the box so the entrance can't play unseen behind
+      // the intro loader. The scale correction ignores transform-origin
+      // (default center, 0.97 scale ≈ ±2px on this card) — noise next to
+      // the 56px translate that causes the deadlock.
+      let top = r.top;
+      let height = r.height;
+      const ownTransform = window.getComputedStyle(el).transform;
+      if (ownTransform && ownTransform !== "none" && typeof DOMMatrixReadOnly !== "undefined") {
+        try {
+          const m = new DOMMatrixReadOnly(ownTransform);
+          const scaleY = m.m22 || 1;
+          top = r.top - m.m42;
+          if (scaleY > 0) height = r.height / scaleY;
+        } catch {
+          // Unparseable transform — fall back to the raw rect.
+        }
+      }
       // Visible vertical extent of the element within the viewport.
-      const visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
-      const ratio = r.height > 0 ? visible / r.height : 0;
+      const visible = Math.min(top + height, vh) - Math.max(top, 0);
+      const ratio = height > 0 ? visible / height : 0;
       const isIn = ratio >= amount;
       // Any part of the element on screen at all — the loop-breaker. The
       // entrance's own transform can dip the card under `amount`, but it can't
       // push a parked card fully off-screen, so while `anyVisible` holds we keep
       // `settledInView` latched instead of resetting it.
-      const anyVisible = r.height > 0 && visible > 0;
+      const anyVisible = height > 0 && visible > 0;
 
       // Functional update so React bails when the value is unchanged — no
       // re-render churn from the rAF burst once the state has settled.

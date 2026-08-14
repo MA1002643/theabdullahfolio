@@ -865,9 +865,15 @@ export function ExperienceBreakdownModal({
                 personalMonths={personalMonths}
                 employmentMonths={employmentMonths}
               />
-              <dl className="flex-1 w-full space-y-4">
-                <div>
-                  <dt className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[#ffaa2a] mb-1">
+              {/* Phone: the two category blocks sit SIDE BY SIDE split by the
+                  vertical divider (stacked under the donut they read as a tall
+                  totem); sm+ restores the stacked layout with the horizontal
+                  rule. Two divider elements because elite-divider(-v) are
+                  custom classes responsive prefixes can't retarget — the same
+                  split the Project Progress popup's hero uses. */}
+              <dl className="flex-1 w-full flex items-stretch justify-evenly gap-4 sm:block sm:space-y-4">
+                <div className="text-center sm:text-left">
+                  <dt className="flex items-center justify-center sm:justify-start gap-2 text-[10px] uppercase tracking-[0.18em] text-[#ffaa2a] mb-1">
                     <span
                       aria-hidden="true"
                       className="inline-block w-2.5 h-2.5 rounded-full"
@@ -897,12 +903,10 @@ export function ExperienceBreakdownModal({
                     )}
                   </dd>
                 </div>
-                <div
-                  aria-hidden="true"
-                  className="h-px elite-divider"
-                />
-                <div>
-                  <dt className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[#ffaa2a] mb-1">
+                <div aria-hidden="true" className="w-px self-stretch elite-divider-v sm:hidden" />
+                <div aria-hidden="true" className="hidden sm:block h-px elite-divider" />
+                <div className="text-center sm:text-left">
+                  <dt className="flex items-center justify-center sm:justify-start gap-2 text-[10px] uppercase tracking-[0.18em] text-[#ffaa2a] mb-1">
                     <span
                       aria-hidden="true"
                       className="inline-block w-2.5 h-2.5 rounded-full"

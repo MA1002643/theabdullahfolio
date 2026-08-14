@@ -100,10 +100,17 @@ export async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
 // result is cached in KV for (expires_in − 60s) so a burst of polls reuses one
 // token instead of hammering the token endpoint. Returns null on any failure so
 // the caller degrades gracefully.
-export async function getAccessToken() {
+//
+// `forceRefresh` skips the KV read and mints a new token, overwriting the
+// cached one. The route uses it when Spotify rejects a token with 401. Without
+// that escape hatch a cached token that stops being accepted mid-life — the
+// user revokes the app, the secret is rotated, Spotify invalidates it early —
+// is handed out unchanged until its TTL lapses, so every poll 401s and the
+// widget stays dark for up to an hour with nothing in the logs to say why.
+export async function getAccessToken({ forceRefresh = false } = {}) {
   if (!spotifyConfigured) return null;
 
-  if (redis) {
+  if (redis && !forceRefresh) {
     try {
       const cached = await redis.get(TOKEN_KEY);
       if (typeof cached === 'string' && cached) return cached;
@@ -127,9 +134,30 @@ export async function getAccessToken() {
       }),
       cache: 'no-store',
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Status + Spotify's `error` code only — never the response body, which
+      // echoes credentials back on some failures. A 400 invalid_grant here
+      // means SPOTIFY_REFRESH_TOKEN itself is dead and needs re-issuing;
+      // that is worth saying out loud rather than degrading in silence.
+      let code = '';
+      try {
+        code = (await res.json())?.error ?? '';
+      } catch {
+        // Body wasn't JSON — the status alone still identifies the failure.
+      }
+      console.error(
+        `[api/spotify] token refresh failed: ${res.status}${code ? ` ${code}` : ''}` +
+          (res.status === 400
+            ? ' — SPOTIFY_REFRESH_TOKEN looks revoked or invalid; re-issue it'
+            : ''),
+      );
+      return null;
+    }
     data = await res.json();
-  } catch {
+  } catch (err) {
+    console.error(
+      `[api/spotify] token refresh threw: ${err?.name ?? 'Error'} ${err?.message ?? ''}`.trim(),
+    );
     return null;
   }
 

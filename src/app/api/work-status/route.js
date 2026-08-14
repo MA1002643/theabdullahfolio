@@ -23,11 +23,32 @@ import {
 
 // Project boards (Projects v2) — issue #94 Phase 3. Every tracked repo
 // may declare its user-level board via `projectNumber` in
-// workTrackedRepos.js (the same allow-list that scopes the repo query),
-// and ONE aliased GraphQL query reads them all per request — like the
-// portfolio query, cost scales with the `first:` caps, not the alias
-// count, though each extra board does add its own items subtree. We read
-// two columns per board:
+// workTrackedRepos.js (the same allow-list that scopes the repo query).
+//
+// Boards are read ONE QUERY PER BOARD, all boards in flight concurrently.
+// They used to share a single aliased query like the portfolio read, but
+// unlike the portfolio query that shape does not hold up here: GraphQL
+// *cost* scales with the `first:` caps (the aliased board query billed a
+// flat 1 point), while *latency* scales with the number of items whose
+// `content` has to be resolved. At 11 boards × up to 100 items the single
+// query measured 4.8–8.7s against this route's 5s fetch ceiling, so it
+// aborted more often than not and every board silently vanished from the
+// signal together. Per-board queries measure ~1s each and ~2.0–2.4s wall
+// concurrently — a ~2.6s margin under the ceiling — at 13 points instead
+// of 1. That is the deliberate trade: a few more rate-limit points (still
+// a fraction of the 5,000/hr budget, and now actually recorded via
+// recordRateLimit) in exchange for a board signal that arrives at all.
+// Splitting per board also buys failure isolation: one slow or broken
+// board degrades to "no items from that board" instead of taking the
+// whole board read down with it.
+//
+// Each board is paginated to completion rather than capped at one page.
+// The old single-page `first: 100` silently truncated any board with more
+// items (ma.codes 141, AfaaqX 169 at the time of writing) and Projects v2
+// returns items in board order, not status order — so an "In Progress"
+// card sitting past position 100 was invisible to the header.
+//
+// We read two columns per board:
 //   - "In Progress" → drives the IN_PROGRESS state and current-work items.
 //   - "Done" (within last 48h) → drives the SHIPPING state and the
 //     "just shipped" rotating message.
@@ -74,7 +95,26 @@ const PROJECT_TOKEN = process.env.GITHUB_PROJECT_TOKEN || process.env.GITHUB_TOK
 // Cap each GraphQL round-trip so a slow GitHub doesn't stall the handler
 // for the entire function timeout — surface the failure to the catch in
 // GET, which serves stale cache or the deterministic fallback.
-const GITHUB_TIMEOUT_MS = 5000;
+//
+// These are sized from measured latency, not guessed. A single 5s cap used
+// to cover both queries and sat far too close to their real cost:
+//   - the portfolio query measures 2.7–3.2s (13 repos, and the all-branch
+//     activity trace alone can walk 25 branches × 50 commits per repo), so
+//     5s left under 2s of headroom on a query GitHub routinely varies by
+//     seconds — it tipped over the edge under any extra load.
+//   - a single board page measures ~1s.
+// Each therefore gets a ceiling proportional to its own weight. The two
+// run concurrently, so the handler's worst case is the larger of them,
+// and a breach still degrades to stale cache rather than an error page.
+const PORTFOLIO_TIMEOUT_MS = 10000;
+const BOARD_TIMEOUT_MS = 6000;
+
+// Boards are fetched concurrently, but not all at once: the portfolio
+// query shares the same origin and connection pool, and saturating it
+// with a dozen simultaneous board requests measurably slowed the
+// portfolio read. A small pool keeps board wall-time near its floor
+// without crowding out the heavier query running alongside it.
+const BOARD_CONCURRENCY = 5;
 
 // Layered rate-limit defence (§4.2 / §5). Every portfolio query returns
 // `rateLimit { cost remaining resetAt }` in the same response, so the
@@ -123,6 +163,15 @@ function recordRateLimit(rateLimit) {
   }
 }
 
+// The tighter of two `rateLimit { cost remaining resetAt }` reads. Both
+// the portfolio and the board queries draw on the same hourly budget, so
+// the guard should track whichever saw less of it left.
+function lowerBudget(a, b) {
+  if (!a || typeof a.remaining !== 'number') return b ?? null;
+  if (!b || typeof b.remaining !== 'number') return a;
+  return b.remaining < a.remaining ? b : a;
+}
+
 function rateGuardActive(floor) {
   if (typeof rateGuard.remaining !== 'number') return false;
   if (rateGuard.remaining >= floor) return false;
@@ -134,9 +183,9 @@ function rateGuardActive(floor) {
   return true;
 }
 
-async function fetchGitHubGraphQL(token, body) {
+async function fetchGitHubGraphQL(token, body, timeoutMs) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), GITHUB_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(GITHUB_API, {
       method: 'POST',
@@ -239,7 +288,12 @@ export async function GET(request) {
       }),
     ]);
 
-    recordRateLimit(portfolio.rateLimit);
+    // Boards are now several queries rather than one aliased query, so
+    // their spend is material and must reach the guard — previously only
+    // the portfolio's rateLimit was recorded and board cost was invisible.
+    // recordRateLimit overwrites the guard wholesale, so pick the tighter
+    // of the two reads rather than letting call order decide.
+    recordRateLimit(lowerBudget(portfolio.rateLimit, projectActivity?.rateLimit));
 
     // Attach each repo's board items (fetchProjectActivity groups items
     // by the underlying issue/PR's repository, lower-cased) so the
@@ -509,10 +563,11 @@ async function fetchPortfolioActivity(repos) {
     variables[`r${i}Name`] = repo.name;
   });
 
-  const response = await fetchGitHubGraphQL(TOKEN, {
-    query: buildPortfolioQuery(repos),
-    variables,
-  });
+  const response = await fetchGitHubGraphQL(
+    TOKEN,
+    { query: buildPortfolioQuery(repos), variables },
+    PORTFOLIO_TIMEOUT_MS,
+  );
 
   if (!response.ok) {
     throw new Error(`GitHub API ${response.status}`);
@@ -591,8 +646,134 @@ const emptyActivityTrace = () => {
   };
 };
 
-// Reads every tracked Projects v2 board (issue #94 Phase 3) in ONE
-// aliased query and returns { byRepo }: a lower-cased nameWithOwner →
+// One board's worth of items, paginated to completion. `after: null` on
+// the first page is the GraphQL spec's "start from the beginning", so the
+// same document serves every page. Returns { nodes, rateLimit } — the
+// rateLimit ride-along lets the caller feed real board spend into the
+// same guard the portfolio query already updates, instead of the boards
+// drawing down the budget invisibly.
+//
+// AUTH_FAILURE is a sentinel rather than a throw: a PAT without
+// Projects: Read fails identically for every board, and that's a
+// configuration state the caller reports once, not a per-board error.
+const BOARD_PAGE_SIZE = 100;
+// Safety stop so a runaway cursor can't loop forever. 5 × 100 items is
+// well clear of the largest board today (169) with room to grow.
+const BOARD_MAX_PAGES = 5;
+const AUTH_FAILURE = Symbol('projects-auth-failure');
+
+const BOARD_ITEM_FIELDS = `
+  content {
+    __typename
+    ... on Issue {
+      number
+      title
+      url
+      createdAt
+      updatedAt
+      closedAt
+      state
+      repository { nameWithOwner }
+    }
+    ... on PullRequest {
+      number
+      title
+      url
+      createdAt
+      updatedAt
+      closedAt
+      state
+      repository { nameWithOwner }
+    }
+  }
+  status: fieldValueByName(name: "Status") {
+    ... on ProjectV2ItemFieldSingleSelectValue { name }
+  }
+`;
+
+// $number is a real GraphQL variable now that each board gets its own
+// query — no interpolation of board numbers into the document at all.
+const BOARD_QUERY = `
+  query($login: String!, $number: Int!, $after: String) {
+    rateLimit { cost remaining resetAt }
+    user(login: $login) {
+      projectV2(number: $number) {
+        items(first: ${BOARD_PAGE_SIZE}, after: $after) {
+          totalCount
+          pageInfo { hasNextPage endCursor }
+          nodes { ${BOARD_ITEM_FIELDS} }
+        }
+      }
+    }
+  }
+`;
+
+async function fetchBoardItems(boardNumber) {
+  const nodes = [];
+  let rateLimit = null;
+  let after = null;
+
+  for (let page = 0; page < BOARD_MAX_PAGES; page += 1) {
+    const response = await fetchGitHubGraphQL(
+      PROJECT_TOKEN,
+      {
+        query: BOARD_QUERY,
+        variables: { login: PROJECT_OWNER, number: boardNumber, after },
+      },
+      BOARD_TIMEOUT_MS,
+    );
+
+    if (
+      response.status === 401 ||
+      response.status === 403 ||
+      response.status === 404
+    ) {
+      return AUTH_FAILURE;
+    }
+    if (!response.ok) {
+      throw new Error(`Projects v2 API ${response.status}`);
+    }
+
+    const json = await response.json();
+    if (json.errors) {
+      const msg = (json.errors[0]?.message ?? '').toLowerCase();
+      if (
+        msg.includes('scope') ||
+        msg.includes('permission') ||
+        msg.includes('forbidden')
+      ) {
+        return AUTH_FAILURE;
+      }
+      throw new Error(json.errors[0]?.message ?? 'Projects v2 GraphQL error');
+    }
+
+    // Every page reports the budget; the last one read is the freshest.
+    if (json.data?.rateLimit) rateLimit = json.data.rateLimit;
+
+    const conn = json.data?.user?.projectV2?.items;
+    // A board number that doesn't resolve (deleted/renumbered board) comes
+    // back as a null projectV2 with no error — treat it as an empty board
+    // rather than a failure, so one stale projectNumber in the allow-list
+    // can't take the rest of the signal down.
+    if (!conn) break;
+
+    nodes.push(...(conn.nodes ?? []));
+    if (!conn.pageInfo?.hasNextPage) break;
+    after = conn.pageInfo.endCursor;
+
+    if (page === BOARD_MAX_PAGES - 1) {
+      console.warn(
+        `work-status: board ${boardNumber} still had pages after ${BOARD_MAX_PAGES} × ${BOARD_PAGE_SIZE} items — raise BOARD_MAX_PAGES`,
+      );
+    }
+  }
+
+  return { nodes, rateLimit };
+}
+
+// Reads every tracked Projects v2 board (issue #94 Phase 3) — one
+// paginated query per board, all boards concurrently — and returns
+// { byRepo, rateLimit }. byRepo maps a lower-cased nameWithOwner →
 //   - inProgressItems: items in the "In Progress" status column
 //   - shippedItems: items in the "Done" column whose underlying issue/PR
 //                   was closed within SHIPPED_WINDOW_MS (last 48h). Older
@@ -600,12 +781,13 @@ const emptyActivityTrace = () => {
 //                   silently dropped.
 // map covering only TRACKED repos — an item whose issue lives outside the
 // allow-list is dropped, so a board can never widen the header's scope.
-// Board numbers come from `projectNumber` in workTrackedRepos.js; they're
-// our own frozen integers, which is why interpolating them as aliases is
-// safe. Returns null when no board is configured or on auth failure (PAT
-// missing Projects: Read) so the caller can fall back to the repo-wide
-// signal. Returns { byRepo: {} } if boards are reachable but the tracked
-// columns are empty.
+// Board numbers come from `projectNumber` in workTrackedRepos.js.
+// Returns null when no board is configured, or when EVERY board failed —
+// including the auth case (PAT missing Projects: Read) — so the caller
+// falls back to the repo-wide signal. A partial failure is not fatal: the
+// boards that did resolve still contribute, and the ones that didn't are
+// logged individually. Returns { byRepo: {} } if boards are reachable but
+// the tracked columns are empty.
 async function fetchProjectActivity() {
   const boardNumbers = [
     ...new Set(
@@ -616,80 +798,65 @@ async function fetchProjectActivity() {
   ];
   if (boardNumbers.length === 0) return null;
 
-  const query = `
-    query($login: String!) {
-      user(login: $login) {
-        ${boardNumbers
-          .map((n) => `board${n}: projectV2(number: ${n}) { ...BoardItems }`)
-          .join('\n        ')}
-      }
-    }
-    fragment BoardItems on ProjectV2 {
-      items(first: 100) {
-        nodes {
-          content {
-            __typename
-            ... on Issue {
-              number
-              title
-              url
-              createdAt
-              updatedAt
-              closedAt
-              state
-              repository { nameWithOwner }
-            }
-            ... on PullRequest {
-              number
-              title
-              url
-              createdAt
-              updatedAt
-              closedAt
-              state
-              repository { nameWithOwner }
-            }
-          }
-          status: fieldValueByName(name: "Status") {
-            ... on ProjectV2ItemFieldSingleSelectValue { name }
+  // Bounded fan-out: BOARD_CONCURRENCY workers draining a shared queue,
+  // writing each result back at its board's own index so the output order
+  // is stable regardless of which worker finished first.
+  const settled = new Array(boardNumbers.length).fill(null);
+  let next = 0;
+  await Promise.all(
+    Array.from(
+      { length: Math.min(BOARD_CONCURRENCY, boardNumbers.length) },
+      async () => {
+        while (next < boardNumbers.length) {
+          const index = next;
+          next += 1;
+          const boardNumber = boardNumbers[index];
+          try {
+            settled[index] = await fetchBoardItems(boardNumber);
+          } catch (err) {
+            console.warn(
+              `work-status: board ${boardNumber} unavailable —`,
+              err?.message ?? err,
+            );
           }
         }
-      }
+      },
+    ),
+  );
+
+  const authFailures = settled.filter((r) => r === AUTH_FAILURE).length;
+  const boards = settled.filter((r) => r && r !== AUTH_FAILURE);
+
+  if (boards.length === 0) {
+    // Every board failed. Auth is the common, actionable case and is worth
+    // naming explicitly — it means the PAT is missing Projects: Read.
+    if (authFailures === boardNumbers.length) {
+      console.warn(
+        'work-status: Projects v2 unreadable for every board — check the PAT has Projects: Read',
+      );
     }
-  `;
-
-  const response = await fetchGitHubGraphQL(PROJECT_TOKEN, {
-    query,
-    variables: { login: PROJECT_OWNER },
-  });
-
-  if (response.status === 401 || response.status === 403 || response.status === 404) {
     return null;
   }
-  if (!response.ok) {
-    throw new Error(`Projects v2 API ${response.status}`);
+  if (boards.length < boardNumbers.length) {
+    console.warn(
+      `work-status: ${boardNumbers.length - boards.length}/${boardNumbers.length} project boards unavailable — signal built from the rest`,
+    );
   }
 
-  const json = await response.json();
-  if (json.errors) {
-    const msg = (json.errors[0]?.message ?? '').toLowerCase();
-    if (msg.includes('scope') || msg.includes('permission') || msg.includes('forbidden')) {
-      return null;
-    }
-    throw new Error(json.errors[0]?.message ?? 'Projects v2 GraphQL error');
-  }
-
-  const user = json.data?.user;
-  if (!user) return null;
+  // Report the tightest budget any board saw, so the guard reacts to the
+  // real remaining allowance rather than the most optimistic page.
+  const rateLimit = boards
+    .map((b) => b.rateLimit)
+    .filter((r) => r && typeof r.remaining === 'number')
+    .reduce((lowest, r) => (!lowest || r.remaining < lowest.remaining ? r : lowest), null);
 
   const nowMs = Date.now();
   const byRepo = {};
   const bucketFor = (key) =>
     (byRepo[key] ??= { inProgressItems: [], shippedItems: [] });
 
-  for (const boardNumber of boardNumbers) {
-    const items = user[`board${boardNumber}`]?.items?.nodes ?? [];
-    for (const item of items) {
+  for (const board of boards) {
+    for (const item of board.nodes) {
       const c = item?.content;
       if (!c) continue;
       if (c.__typename !== 'Issue' && c.__typename !== 'PullRequest') continue;
@@ -702,8 +869,8 @@ async function fetchProjectActivity() {
 
       // `status` is the aliased fieldValueByName(name: "Status") — the
       // only field the signal needs, so the query skips the full
-      // fieldValues subtree (a ~20× node saving per item, which keeps six
-      // aliased boards inside the 5s fetch timeout and the rate budget).
+      // fieldValues subtree (a ~20× node saving per item, which is what
+      // keeps a whole board's page inside the 5s fetch timeout).
       if (!item.status?.name) continue;
       const statusName = item.status.name.toLowerCase();
 
@@ -749,5 +916,5 @@ async function fetchProjectActivity() {
     );
   }
 
-  return { byRepo };
+  return { byRepo, rateLimit };
 }

@@ -11,7 +11,9 @@ import {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, useReducedMotion } from 'framer-motion';
-import StonePassageOverlay from './StonePassageOverlay';
+import EmberPassageOverlay from './EmberPassageOverlay';
+import { warmSwarm } from './emberSwarm';
+import { warmEmberField } from './emberField';
 import {
   FAILSAFE_MS,
   PUSH_AT_MS,
@@ -21,19 +23,18 @@ import {
   REVEAL_MS,
   ROUTE_LABELS,
   SHOWCASE_MIN_MS,
-  SLAB_TEXTURES,
 } from './constants';
 
-// Orchestrates the "Stone Passage" between pages. TransitionLink (or any
+// Orchestrates the "Ember Passage" between pages. TransitionLink (or any
 // consumer of usePageTransition) hands navigation over to `navigate`, which
 // runs the phase machine:
 //
 //   idle → covering → holding → revealing → idle
 //
-// The actual router.push happens once the overlay is opaque, and the reveal
-// waits for BOTH the destination pathname to arrive AND the minimum showcase
-// time to elapse — fast routes don't cut the monogram off mid-stroke, slow
-// routes keep the emblem breathing as a de-facto loading indicator.
+// The actual router.push happens once the veil is closed, and the reveal waits
+// for BOTH the destination pathname to arrive AND the minimum showcase time to
+// elapse — fast routes never scatter a half-formed mark, slow routes keep
+// the mark breathing as a de-facto loading indicator.
 
 const TransitionContext = createContext({
   navigate: null,
@@ -66,7 +67,7 @@ export default function PageTransitionProvider({ children }) {
 
   // 'idle' | 'covering' | 'holding' | 'revealing'
   const [phase, setPhase] = useState('idle');
-  const [target, setTarget] = useState(null); // { href, label }
+  const [target, setTarget] = useState(null); // { href, label, origin }
 
   // Refs mirror state so `navigate` stays referentially stable — links all
   // over the tree consume it and shouldn't re-render on every phase change.
@@ -78,30 +79,28 @@ export default function PageTransitionProvider({ children }) {
   // When the overlay mounted — the showcase-minimum clock.
   const startedAtRef = useRef(0);
 
-  // Prime both stone slabs (blank + carved) into the HTTP cache during idle time
-  // so the first navigation carves instantly under the cover. Fire-and-forget.
+  // Get the swarm ready during idle time, so the first click of the session draws
+  // on frame one like every click after it. A page transition is the worst
+  // possible moment to build 90k ember targets or compile a shader.
+  //
+  // Deliberately TWO idle callbacks rather than one. The field build is tens of ms of
+  // typed-array work and the GL setup is another compile; run together they blow
+  // straight past the ~50ms an idle slice is meant to use, which is the jank
+  // this is supposed to avoid. Scheduled in this order the field is cached by
+  // the time the gate asks for it, so the second slice only does GL work.
+  //
+  // Neither is required: a visitor who clicks before idle fires simply gets the
+  // work done under the already-opaque cover, and a browser without WebGL never
+  // gets here at all — the overlay's static branch handles both.
   useEffect(() => {
-    const supportsIdle = typeof window.requestIdleCallback === 'function';
-    // Wrap so requestIdleCallback keeps its window receiver. It's a global
-    // timer-style API and tolerates a bare call in practice, but the wrapper
-    // makes that independent of engine quirks and matches the setTimeout branch.
-    const idle = supportsIdle ? (cb) => window.requestIdleCallback(cb) : (cb) => setTimeout(cb, 800);
-    const handle = idle(() => {
-      for (const src of SLAB_TEXTURES) {
-        const img = new Image();
-        img.src = src;
-      }
-    });
+    if (prefersReducedMotion) return undefined;
+    const cancelField = warmEmberField();
+    const cancelGate = warmSwarm();
     return () => {
-      // Cancel via whichever scheduler we used — the setTimeout fallback needs
-      // clearTimeout, or its timer fires (and new up Image()) after unmount.
-      if (supportsIdle) {
-        window.cancelIdleCallback(handle);
-      } else {
-        clearTimeout(handle);
-      }
+      cancelField();
+      cancelGate();
     };
-  }, []);
+  }, [prefersReducedMotion]);
 
   const navigate = useCallback(
     (href, opts = {}) => {
@@ -119,7 +118,15 @@ export default function PageTransitionProvider({ children }) {
         if (href !== current) router.push(href);
         return;
       }
-      setTarget({ href, label: opts.label || deriveLabel(dest) });
+      // `origin` is where on screen the visitor actually pressed. The embers
+      // nearest it lift first, so the page visibly comes apart at the button
+      // they hit rather than everywhere at once. Optional — callers without a
+      // pointer position leave it undefined and the overlay uses the centre.
+      setTarget({
+        href,
+        label: opts.label || deriveLabel(dest),
+        origin: opts.origin,
+      });
       startedAtRef.current = performance.now();
       setPhase('covering');
     },
@@ -151,8 +158,8 @@ export default function PageTransitionProvider({ children }) {
     return () => clearTimeout(t);
   }, [phase, pathname, target, prefersReducedMotion]);
 
-  // revealing → idle once the wipe has fully opened (small buffer so the
-  // portal ring's last frames aren't clipped by the unmount).
+  // revealing → idle once the scatter has finished (small buffer so the last
+  // embers aren't clipped by the unmount).
   useEffect(() => {
     if (phase !== 'revealing') return;
     const revealMs = prefersReducedMotion ? REDUCED_REVEAL_MS : REVEAL_MS;
@@ -192,10 +199,11 @@ export default function PageTransitionProvider({ children }) {
       {children}
       <AnimatePresence>
         {phase !== 'idle' && target && (
-          <StonePassageOverlay
-            key="stone-passage"
+          <EmberPassageOverlay
+            key="ember-passage"
             phase={phase}
             label={target.label}
+            origin={target.origin}
             reduced={prefersReducedMotion}
           />
         )}

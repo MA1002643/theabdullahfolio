@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import TransitionLink from "@/components/pageTransition/TransitionLink"
 import { warmProjectScene } from "@/components/project-detail/scene-loader"
 import { fluid, fluidText } from "@/lib/fluidScale"
+import { saveProjectFilterHandoff } from "@/lib/projectFilterHandoff"
 
 // Per-card reveal (issue #27 §3.2): a short rise while the card pulls into
 // focus — replaces the original y:100 leap, whose full-viewport travel read
@@ -47,10 +48,14 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   const router = useRouter()
   const prefersReducedMotion = useReducedMotion()
 
+  // Hand the current filter forward so that coming BACK from this project's
+  // page returns the visitor to the list they left. A one-hop token, not a
+  // saved preference: it is spent the moment /projects reads it, and voided if
+  // the visitor goes anywhere outside /projects in between — a single card
+  // click used to pin the tab permanently, so a first visit landed on a filter
+  // rather than on "All". See lib/projectFilterHandoff.
   const handleClick = () => {
-    if (category) {
-      localStorage.setItem("projects-category", category)
-    }
+    saveProjectFilterHandoff(category)
   }
 
   // Warm the destination while the visitor is still deciding (issue #83).

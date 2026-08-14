@@ -74,13 +74,21 @@ module.exports = {
           "100%": { transform: "rotate(-360deg)" },
         },
         "ripple-neon": {
+          // The launch bloom. It was a fully-opaque `0 0 140px #ff6d05`, which
+          // over the photographic causeway read as a neon sign firing rather
+          // than light spreading across stone; it then moved onto the scene's
+          // own fire (rgba(224,163,92), measured at h~32/s~35 for its real
+          // flames). It is back on `#ff6d05` by request, so the rings match the
+          // MUHAMMAD ABDULLAH headline — but the ALPHA stays: 0.5 rather than
+          // an opaque hex is what keeps the bloom reading as spreading light,
+          // and that was the half of the fix worth keeping. Matches the ring
+          // material in globals.css (.borderline), which carries the full note.
           "0%": {
             transform: "perspective(600px) rotateX(80deg) scale(0)",
-            boxShadow: " 0 0 140px #ff6d05",
-            // borderColor: "#eab53e",
+            boxShadow: "0 0 140px rgba(255, 109, 5, 0.5)",
           },
           "20%": {
-            boxShadow: " 0 0 140px #ff6d05",
+            boxShadow: "0 0 140px rgba(255, 109, 5, 0.5)",
           },
           "70%": {
             opacity: ".8",

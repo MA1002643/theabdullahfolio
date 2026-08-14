@@ -49,6 +49,90 @@ async function withArtwork(base, track, extra) {
   return { ...base, track, accent, blurDataURL, ...extra };
 }
 
+// One full pass over the player endpoints with a given token. Split out of GET
+// so the whole sequence can be replayed with a fresh token when Spotify
+// rejects the one we had. Returns exactly one of:
+//   { payload }  — a track to render
+//   { failure }  — { endpoint, status } for a genuine upstream error
+//   { empty }    — a legitimate "nothing to show" (idle player, no history)
+async function readPlayer(accessToken) {
+  const authHeader = { Authorization: `Bearer ${accessToken}` };
+
+  // Records a genuine upstream error status (401/429/5xx) as opposed to a
+  // legitimate "nothing to show" (204 / empty recent list). Only the former
+  // should signal a non-2xx to the client.
+  let failure = null;
+
+  // 1) Currently playing. 200 = something is loaded in the player; 204 = the
+  //    player is idle (a genuine "nothing playing"); anything else is an
+  //    upstream failure. Timed so a stalled endpoint can't hang the function.
+  const nowRes = await fetchWithTimeout(
+    NOW_PLAYING_ENDPOINT,
+    { headers: authHeader, cache: 'no-store' },
+    5000,
+  );
+
+  if (nowRes.status === 200) {
+    const data = await nowRes.json();
+    // Only surface music tracks — ads and podcast episodes are filtered out so
+    // the widget never shows a non-track "currently_playing_type". A non-track
+    // isn't an error; fall through to recently-played.
+    if (data?.currently_playing_type === 'track' && data.item) {
+      const track = buildTrackPayload(data.item);
+      if (track) {
+        return {
+          payload: await withArtwork(
+            { isPlaying: Boolean(data.is_playing) },
+            track,
+            {
+              progressMs:
+                typeof data.progress_ms === 'number' ? data.progress_ms : null,
+              durationMs:
+                typeof data.item.duration_ms === 'number'
+                  ? data.item.duration_ms
+                  : null,
+              playedAt: null,
+            },
+          ),
+        };
+      }
+    }
+  } else if (nowRes.status !== 204) {
+    failure = { endpoint: 'currently-playing', status: nowRes.status };
+  }
+
+  // 2) Nothing playing (or a non-track was loaded) — show the last track.
+  const recentRes = await fetchWithTimeout(
+    RECENTLY_PLAYED_ENDPOINT,
+    { headers: authHeader, cache: 'no-store' },
+    5000,
+  );
+  if (recentRes.status === 200) {
+    const recent = await recentRes.json();
+    const item = recent?.items?.[0];
+    const track = buildTrackPayload(item?.track);
+    if (track) {
+      // A track here is a success even if step 1 errored — real data beats
+      // reporting a fault the visitor would never have noticed.
+      return {
+        payload: await withArtwork({ isPlaying: false }, track, {
+          progressMs: null,
+          durationMs:
+            typeof item.track?.duration_ms === 'number'
+              ? item.track.duration_ms
+              : null,
+          playedAt: item.played_at || null,
+        }),
+      };
+    }
+    // 200 with an empty history → genuinely nothing to show (not an error).
+  } else {
+    failure = { endpoint: 'recently-played', status: recentRes.status };
+  }
+
+  return failure ? { failure } : { empty: true };
+}
+
 export async function GET() {
   // No credentials wired: show the demo track in dev / explicit demo mode, else
   // stay invisible. Never mints a fake "now playing" in production by accident.
@@ -63,95 +147,53 @@ export async function GET() {
       // Token refresh failed. In demo mode still showcase the demo; otherwise
       // this is an upstream/auth failure (502, uncached) so the client keeps
       // whatever it was showing rather than blanking on a transient hiccup.
+      // getAccessToken has already logged the specific reason.
       if (demoEnabled) {
         return NextResponse.json(demoPayload(), { headers: LIVE_CACHE });
       }
       return NextResponse.json(EMPTY, { status: 502, headers: ERROR_CACHE });
     }
-    const authHeader = { Authorization: `Bearer ${accessToken}` };
 
-    // Tracks whether any player call returned a genuine upstream error status
-    // (401/429/5xx) as opposed to a legitimate "nothing to show" (204 / empty
-    // recent list). Only the former should signal a non-2xx to the client.
-    let upstreamError = false;
+    let result = await readPlayer(accessToken);
 
-    // 1) Currently playing. 200 = something is loaded in the player; 204 = the
-    //    player is idle (a genuine "nothing playing"); anything else is an
-    //    upstream failure. Timed so a stalled endpoint can't hang the function.
-    const nowRes = await fetchWithTimeout(
-      NOW_PLAYING_ENDPOINT,
-      { headers: authHeader, cache: 'no-store' },
-      5000,
-    );
-
-    if (nowRes.status === 200) {
-      const data = await nowRes.json();
-      // Only surface music tracks — ads and podcast episodes are filtered out so
-      // the widget never shows a non-track "currently_playing_type". A non-track
-      // isn't an error; fall through to recently-played.
-      if (data?.currently_playing_type === 'track' && data.item) {
-        const track = buildTrackPayload(data.item);
-        if (track) {
-          const payload = await withArtwork(
-            { isPlaying: Boolean(data.is_playing) },
-            track,
-            {
-              progressMs:
-                typeof data.progress_ms === 'number' ? data.progress_ms : null,
-              durationMs:
-                typeof data.item.duration_ms === 'number'
-                  ? data.item.duration_ms
-                  : null,
-              playedAt: null,
-            },
-          );
-          return NextResponse.json(payload, { headers: LIVE_CACHE });
-        }
+    // A KV-cached token can stop being accepted long before its TTL runs out.
+    // Left alone that wedges the widget: the same rejected token is re-served
+    // to every poll until it expires, so the route 502s continuously for up to
+    // an hour. Mint a fresh one and replay the sequence once — the retry is
+    // bounded (only on 401, only when the new token actually differs) so a
+    // genuinely dead refresh token can't turn into a request loop.
+    if (result.failure?.status === 401) {
+      const refreshed = await getAccessToken({ forceRefresh: true });
+      if (refreshed && refreshed !== accessToken) {
+        console.warn(
+          '[api/spotify] cached access token was rejected (401) — refreshed and retrying',
+        );
+        result = await readPlayer(refreshed);
       }
-    } else if (nowRes.status !== 204) {
-      upstreamError = true;
     }
 
-    // 2) Nothing playing (or a non-track was loaded) — show the last track.
-    const recentRes = await fetchWithTimeout(
-      RECENTLY_PLAYED_ENDPOINT,
-      { headers: authHeader, cache: 'no-store' },
-      5000,
-    );
-    if (recentRes.status === 200) {
-      const recent = await recentRes.json();
-      const item = recent?.items?.[0];
-      const track = buildTrackPayload(item?.track);
-      if (track) {
-        const payload = await withArtwork(
-          { isPlaying: false },
-          track,
-          {
-            progressMs: null,
-            durationMs:
-              typeof item.track?.duration_ms === 'number'
-                ? item.track.duration_ms
-                : null,
-            playedAt: item.played_at || null,
-          },
-        );
-        return NextResponse.json(payload, { headers: LIVE_CACHE });
-      }
-      // 200 with an empty history → genuinely nothing to show (not an error).
-    } else {
-      upstreamError = true;
+    if (result.payload) {
+      return NextResponse.json(result.payload, { headers: LIVE_CACHE });
     }
 
     // Nothing to show. A genuine empty state is a cacheable 200 (the widget
     // stays hidden); an upstream failure is an uncached 502 so the client keeps
-    // its previous track instead of blanking mid-session.
-    if (upstreamError) {
+    // its previous track instead of blanking mid-session. Say which endpoint
+    // failed and how — a bare 502 in the log is not diagnosable after the fact.
+    if (result.failure) {
+      console.error(
+        `[api/spotify] ${result.failure.endpoint} returned ${result.failure.status} — serving 502`,
+      );
       return NextResponse.json(EMPTY, { status: 502, headers: ERROR_CACHE });
     }
     return NextResponse.json(EMPTY, { headers: LIVE_CACHE });
-  } catch {
+  } catch (err) {
     // Timeout/abort or unexpected exception is an upstream failure: never cache
-    // it, and signal non-2xx so the client preserves the previous track.
+    // it, and signal non-2xx so the client preserves the previous track. An
+    // AbortError here means a player call passed its 5s budget.
+    console.error(
+      `[api/spotify] request failed: ${err?.name ?? 'Error'} ${err?.message ?? ''}`.trim(),
+    );
     return NextResponse.json(EMPTY, { status: 502, headers: ERROR_CACHE });
   }
 }

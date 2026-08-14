@@ -12,23 +12,55 @@ import {
 // software-experience aggregate. The role-keyword filter is a second
 // gate so a non-software role accidentally inside the main section also
 // gets dropped.
+// Both casings per heading: the 2026 CV redesign sets every section
+// heading in ALL CAPS ("EXPERIENCE", "PROJECTS", …) where the previous
+// layout used title case. Matching stays case-SENSITIVE — a case-
+// insensitive match would let mid-prose words ("projects", "education")
+// on a wrapped line terminate the block early.
 const SECTION_TERMINATORS = [
   "Additional Experience",
+  "ADDITIONAL EXPERIENCE",
   "Interpersonal Skills",
+  "INTERPERSONAL SKILLS",
   "Languages",
+  "LANGUAGES",
   "Education",
+  "EDUCATION",
   "Technical Skills",
+  "TECHNICAL SKILLS",
   "Projects",
+  "PROJECTS",
   "Personal Profile",
+  "PERSONAL PROFILE",
+  "Profile",
+  "PROFILE",
   "Awards",
+  "AWARDS",
 ];
 
-// Match every role line within the experience block. The shape we expect
-// (validated against the real CV): "<title> [–|-] <company>, <location>
-// (<startDate> [–|-] <endDate>)". The leading `[^•\n]` guard excludes
-// bullet sub-items; the en-dash / hyphen alternation covers both common
-// glyphs without normalising the source text first. Multiline + global
-// so a single `exec` loop reads every role in the block.
+// Role matcher for the CURRENT (2026) CV layout, where a role spans TWO
+// lines (validated against the real PDF's text layer):
+//
+//   DevOps Engineer FEB 2026 – MAY 2026
+//   C365Cloud • Wakefield, UK
+//
+// Line 1: title, then a date range ending the line — month tokens in any
+// case ("FEB 2026", "Feb 2026"), optional bare-year endpoints, or a
+// Current/Present sentinel. Line 2: company, a "•" separator, location.
+// The leading `[^•\n]` guards exclude bullet sub-items on both lines
+// (bullets START with "•"; the company line only CONTAINS one mid-line),
+// and requiring line 1 to END with the range keeps page-footer artifacts
+// ("MUHAMMAD ABDULLAH • SOFTWARE ENGINEER 01") from matching. The range
+// separator mirrors DATE_RANGE_SEPARATOR (whitespace-flanked dash) so
+// what this matches, parseDateRange can always re-split.
+const STACKED_ROLE_REGEX =
+  /^([^•\n]+?)\s+((?:[A-Za-z]{3,9}\.?\s+)?\d{4}\s+[–-]\s+(?:(?:[A-Za-z]{3,9}\.?\s+)?\d{4}|Current|Present))\s*\n([^•\n]+?)\s+•\s+[^\n]+$/gim;
+
+// Legacy single-line matcher for the pre-2026 layout — "<title> [–|-]
+// <company>, <location> (<startDate> [–|-] <endDate>)" — kept as a
+// fallback so reverting to the old CV design (or exporting from the old
+// template) degrades to the previous behaviour instead of an empty
+// employment side.
 const ROLE_LINE_REGEX =
   /^([^•\n]+?)\s+[–-]\s+([^,\n]+),\s+[^()\n]*?\(([^)]+)\)\s*$/gm;
 
@@ -46,10 +78,12 @@ const DATE_RANGE_SEPARATOR = /\s+[–-]\s+/;
 // gracefully rather than throw — a CV layout change shouldn't take down
 // the about page.
 function extractExperienceBlock(text) {
-  // Anchor on the *line* "Experience" so we don't false-match the word
-  // inside Personal Profile prose ("over two years' commercial
-  // experience"). The newline before the header is required.
-  const startMatch = text.match(/(?:^|\n)Experience\s*\n/);
+  // Anchor on the *line* "Experience" / "EXPERIENCE" (2026 layout) so we
+  // don't false-match the word inside Profile prose ("over two years'
+  // commercial experience"). The newline before the header is required —
+  // which is also what keeps the "ADDITIONAL EXPERIENCE" heading from
+  // matching: its line doesn't START with the word.
+  const startMatch = text.match(/(?:^|\n)(?:EXPERIENCE|Experience)\s*\n/);
   if (!startMatch) return "";
   const blockStart = startMatch.index + startMatch[0].length;
 
@@ -123,22 +157,49 @@ export async function parseExperienceFromPdf(pdfBuffer) {
   const block = extractExperienceBlock(text);
   if (!block) return { roles: [], rawText: text };
 
+  // Current stacked two-line layout first; the legacy single-line layout
+  // only when that matches nothing — an either/or, so the two patterns
+  // can never double-count a role. Capture ORDER differs per layout
+  // (stacked: title, range, company; legacy: title, company, range),
+  // hence the per-pattern pickers.
+  const roles = collectRoles(block, STACKED_ROLE_REGEX, (m) => ({
+    title: m[1],
+    dateRange: m[2],
+    company: m[3],
+  }));
+  if (roles.length === 0) {
+    roles.push(
+      ...collectRoles(block, ROLE_LINE_REGEX, (m) => ({
+        title: m[1],
+        company: m[2],
+        dateRange: m[3],
+      })),
+    );
+  }
+
+  return { roles, rawText: text };
+}
+
+// Shared exec loop for one role pattern. `pick` maps the raw match to
+// { title, company, dateRange } so the two layouts' differing capture
+// orders converge on one filter/parse/push path.
+function collectRoles(block, regex, pick) {
   const roles = [];
-  // Reset lastIndex because the regex is module-scoped (global flag
-  // makes it stateful across calls). Without this, a second invocation
+  // Reset lastIndex because the regexes are module-scoped (global flag
+  // makes them stateful across calls). Without this, a second invocation
   // would resume mid-text and skip the first role.
-  ROLE_LINE_REGEX.lastIndex = 0;
+  regex.lastIndex = 0;
   let match;
-  while ((match = ROLE_LINE_REGEX.exec(block)) !== null) {
-    const [, rawTitle, rawCompany, rawDateRange] = match;
-    const title = rawTitle.trim();
-    const company = rawCompany.trim();
+  while ((match = regex.exec(block)) !== null) {
+    const picked = pick(match);
+    const title = picked.title.trim();
+    const company = picked.company.trim();
 
     // Section filter is implicit (we only look at the main Experience
     // block); keyword filter is the second gate per the spec.
     if (!isSoftwareRole(title)) continue;
 
-    const range = parseDateRange(rawDateRange);
+    const range = parseDateRange(picked.dateRange);
     if (!range) continue;
 
     // Months are clamped non-negative: an inverted range on the CV
@@ -156,6 +217,5 @@ export async function parseExperienceFromPdf(pdfBuffer) {
       display: `${formatDuration(months)} with ${company} as a ${title}`,
     });
   }
-
-  return { roles, rawText: text };
+  return roles;
 }

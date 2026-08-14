@@ -7,9 +7,9 @@
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "build": "node scripts/next-cmd.mjs build",
+    "start": "node scripts/next-cmd.mjs start",
+    "lint": "node scripts/next-cmd.mjs lint"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
@@ -37,12 +37,11 @@
     "tz-lookup": "^6.1.25"
   },
   "devDependencies": {
-    "@eslint/js": "^9.31.0",
     "autoprefixer": "^10.0.1",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.1.1",
     "eslint-plugin-react": "^7.37.5",
-    "globals": "^16.3.0",
+    "ffmpeg-static": "^5.3.0",
     "postcss": "^8",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
