@@ -7,6 +7,7 @@ import PageTitle from "@/components/PageTitle";
 import ScrollHijackCategories from "@/components/shared/ScrollHijackCategories";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 import { normalizeCategory } from "@/lib/categories";
+import { consumeProjectFilterHandoff } from "@/lib/projectFilterHandoff";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
 // List reveal (issue #27 §3.2) — slowed from the original 0.15/0.3 so the
@@ -111,15 +112,23 @@ const ProjectList = ({ projects }) => {
   const isCategoryDisabled = (cat) =>
     cat !== "All" && (categoryCounts[cat] ?? 0) === 0;
 
-  // ✅ Restore the saved category — validated against TODAY'S tabs (§2.5).
-  // The stored label can predate a data change: its category may have lost
-  // its last project (tab gone — tabs are derived from the data above) or
-  // been renamed away. Restoring it blind would land a returning visitor on
-  // a bare "No Projects Found!" panel with no explanation. Instead fall back
-  // to "All" (the default state — no setActive needed), say why once, and
-  // heal the stored value so the note doesn't repeat every visit (§2.4).
-  // The ref makes the restore once-per-mount even though the memoised
-  // categories/counts are in the dep array for lint honesty.
+  // ✅ Restore the category the visitor left on — but ONLY when they left it
+  // to open a project's detail page and have just come back. The handoff is
+  // minted by the card click, spent by the read below, and voided by any route
+  // outside /projects (see lib/projectFilterHandoff), so every other way onto
+  // this page — a first visit, a reload, a return from /about or the homepage,
+  // a second tab — finds nothing and keeps the "All" default. This was a
+  // localStorage preference, which made one card click pin that tab on every
+  // future visit.
+  //
+  // Validated against TODAY'S tabs even so (§2.5): a deploy landing mid-hop
+  // serves the returning page a new data.js while the token still names the
+  // old category, whose tab may have lost its last project or been renamed
+  // away. Restoring it blind would land the visitor on a bare "No Projects
+  // Found!" panel with no explanation, so fall back to "All" (the default
+  // state — no setActive needed) and say why once (§2.4). The ref makes the
+  // restore once-per-mount even though the memoised categories/counts are in
+  // the dep array for lint honesty.
   //
   // The fallback NOTE is deferred, not shown here: this effect runs during
   // initial mount, which is (a) before the root layout's <Toaster> has
@@ -134,24 +143,21 @@ const ProjectList = ({ projects }) => {
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
-    const saved = localStorage.getItem("projects-category");
+    // Reading SPENDS the handoff — nothing to heal or reset afterwards, since
+    // the token is gone either way and the next arrival starts on "All".
+    const saved = consumeProjectFilterHandoff();
     if (saved === null) return;
-    // Fold the stored label through the same normalisation the tabs are
-    // derived through: a legacy "web" (written by a pre-normalisation
-    // version, or hand-edited) must match today's "Web" tab rather than
-    // failing includes() and bouncing the visitor to "All" behind a
-    // misleading fallback note. Heal storage to the canonical casing so
-    // the value on disk always mirrors a real tab label.
+    // Fold the label through the same normalisation the tabs are derived
+    // through: the token carries the raw data.js label, so a "web" authored
+    // in lower case must match today's "Web" tab rather than failing
+    // includes() and bouncing the visitor to "All" behind a misleading
+    // fallback note.
     const normalized = normalizeCategory(saved);
-    if (saved !== normalized) {
-      localStorage.setItem("projects-category", normalized || "All");
-    }
     if (!normalized || normalized === "All") return;
     if (categories.includes(normalized) && (categoryCounts[normalized] ?? 0) > 0) {
       setActive(normalized);
       return;
     }
-    localStorage.setItem("projects-category", "All");
     pendingFallbackNoteRef.current = normalized;
   }, [categories, categoryCounts]);
 
