@@ -116,7 +116,16 @@ export function useViewportCountUp(
     return undefined;
   }, [from, to, inView, prefersReducedMotion, enabled, nodeRef]);
 
-  // Stop the tween and clear any pending reset on unmount.
+  // Stop the tween and clear any pending reset on unmount — and RE-ARM the
+  // latch. On a real unmount the refs die with the instance, so the re-arm
+  // is free; but under dev StrictMode this cleanup runs as the SIMULATED
+  // unmount between the double-mount's two effect passes. Without the
+  // re-arm, a counter that mounts while already in view (the years card's
+  // data-gated Counter: `inView` is true the moment data arrives) starts
+  // its tween on pass one, has it stopped HERE at ~frame zero, and then
+  // pass two reads `armedRef=false, lastToRef===to` — "already played" —
+  // and declines to restart: the digit sits frozen at 0 until a full
+  // scroll-away re-arms it. Re-arming makes the second pass replay.
   useEffect(
     () => () => {
       if (resetTimerRef.current) {
@@ -127,6 +136,8 @@ export function useViewportCountUp(
         controlsRef.current.stop();
         controlsRef.current = null;
       }
+      armedRef.current = true;
+      lastToRef.current = null;
     },
     [],
   );
