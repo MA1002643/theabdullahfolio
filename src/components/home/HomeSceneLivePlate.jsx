@@ -117,6 +117,9 @@ const link = (gl, vertSrc, fragSrc, attribs) => {
   gl.deleteShader(fs);
   if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
     console.error('[HomeSceneLivePlate] link failed:', gl.getProgramInfoLog(p));
+    // The caller only learns `null`, so the program it never sees has to be
+    // released here or it outlives every failed attempt.
+    gl.deleteProgram(p);
     return null;
   }
   const u = {};
@@ -178,17 +181,40 @@ const HomeSceneLivePlate = ({ onUnsupported }) => {
       canvas.getContext('webgl', { alpha: true, antialias: false, depth: false }) ||
       canvas.getContext('experimental-webgl', { alpha: true, antialias: false, depth: false });
     if (!gl) {
-      // No WebGL: tell the parent so it can mount the 2D fallback instead of
+      // No WebGL: tell the parent so it drops to the still tier instead of
       // leaving the page with a dead canvas over it.
       onUnsupported?.();
       return undefined;
     }
 
-    const fire = link(gl, FIRE_VERT, FIRE_FRAG, ['aPos']);
-    if (!fire) {
+    // Every path that gives up goes through here. A context obtained and then
+    // abandoned is not free — browsers cap live WebGL contexts and drop the
+    // oldest, so a layer that bails without releasing can evict a context some
+    // other part of the page is still drawing with.
+    const giveUp = () => {
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
       onUnsupported?.();
       return undefined;
+    };
+
+    // The plate has to fit the GPU before anything is allocated for it.
+    // Oversizing does not throw: texImage2D raises INVALID_VALUE, the sampler
+    // stays INCOMPLETE, and texture2D then returns (0,0,0,1) — which through
+    // this layer's premultiplied blend (`vec4(col * uPlateAlpha * box, box)`
+    // over ONE / ONE_MINUS_SRC_ALPHA) resolves to dst * (1 - box) and punches
+    // the eleven flame boxes to BLACK over the lanterns. Failing silently into
+    // a worse-looking page is the one outcome this tier must not have, and the
+    // still plate underneath is already the correct answer.
+    const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    if (plate.naturalWidth > maxTex || plate.naturalHeight > maxTex) {
+      console.error(
+        `[HomeSceneLivePlate] plate ${plate.naturalWidth}x${plate.naturalHeight} exceeds MAX_TEXTURE_SIZE ${maxTex} — staying on the still plate`,
+      );
+      return giveUp();
     }
+
+    const fire = link(gl, FIRE_VERT, FIRE_FRAG, ['aPos']);
+    if (!fire) return giveUp();
 
     const quad = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, quad);

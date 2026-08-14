@@ -57,9 +57,13 @@ const HomeSceneWater = () => {
   // No element to observe at this level; the children bring their own gate.
   const { mounted } = useSceneGate(null);
   const [videoFailed, setVideoFailed] = useState(false);
-  // Stable: HomeSceneVideo takes it as a prop, so a fresh identity each render
-  // would churn it.
+  const [plateUnsupported, setPlateUnsupported] = useState(false);
+  // Stable: both are props on a child whose effect lists them as deps, so a
+  // fresh identity each render would tear that effect down and rebuild it —
+  // for the plate that means dropping and re-creating a WebGL context per
+  // render.
   const onVideoFail = useCallback(() => setVideoFailed(true), []);
+  const onPlateUnsupported = useCallback(() => setPlateUnsupported(true), []);
 
   if (!mounted) return null;
 
@@ -69,7 +73,19 @@ const HomeSceneWater = () => {
   // fire would be there and simply never visible. On a decode or network
   // failure the lake drops back to the still and the flames to the warp, which
   // needs no network and cannot fail the same way.
-  return videoFailed ? <HomeSceneLivePlate /> : <HomeSceneVideo onFail={onVideoFail} />;
+  // The third tier is real and reachable, not just documented above: the warp
+  // gives up when there is no WebGL, when its shader will not build, or when
+  // the plate is larger than the GPU can hold. `onUnsupported` had never been
+  // passed, so every one of those paths left a mounted canvas that would never
+  // draw — and the size case would have drawn something worse than nothing.
+  // Rendering null IS the still tier: the plate `<img>` is always underneath.
+  if (plateUnsupported) return null;
+
+  return videoFailed ? (
+    <HomeSceneLivePlate onUnsupported={onPlateUnsupported} />
+  ) : (
+    <HomeSceneVideo onFail={onVideoFail} />
+  );
 };
 
 export default HomeSceneWater;

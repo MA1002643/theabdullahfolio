@@ -1079,7 +1079,21 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 
 ### Fixed
 
-#### `npm run build` still inherited whatever Node invoked it — the one Next command most exposed to the v25 bug
+#### The WebGL flame layer had no texture-size guard, and its give-up path was wired to nothing
+
+| | |
+|:--|:--|
+| **Ref** | — (review finding on [#144](https://github.com/MA1002643/theabdullahfolio/pull/144)) |
+| **Files** | `src/components/home/HomeSceneLivePlate.jsx`, `src/components/home/HomeSceneWater.jsx` |
+| **Details** | `HomeSceneLivePlate` uploaded the plate — up to **2560×1440**, the source cap on every srcset rung — without ever asking the GPU whether it fits. Oversizing does not throw: `texImage2D` raises `INVALID_VALUE`, the sampler stays INCOMPLETE, and `texture2D` then returns `(0,0,0,1)`. Traced through this layer's own blend that is not a subtle degradation — the fragment shader emits `vec4(col * uPlateAlpha * box, box)`, so a black sample keeps full coverage in alpha, and premultiplied `ONE / ONE_MINUS_SRC_ALPHA` resolves to `dst * (1 - box)`: the eleven flame boxes get punched to **black over the lit lanterns**, which is worse than not mounting at all. `MAX_TEXTURE_SIZE` is now read before a buffer, texture or program exists, and the layer declines rather than allocating for an upload that cannot land. **The bigger half was that declining did nothing.** `onUnsupported` was documented as the way this tier hands back to the still plate and was called on both existing failures (no WebGL, shader build failure) — but `HomeSceneWater` mounted `<HomeSceneLivePlate />` with no prop, so every give-up path left a mounted canvas that would never draw. The parent now carries a `plateUnsupported` state and renders `null`, which IS the still tier its own header comment already described ("still → nothing mounted; the plate alone"). Both callbacks are `useCallback`-stable because the child lists them in an effect's deps — a fresh identity per render would drop and rebuild a WebGL context every render. Also released what was previously leaked: a failed `link()` deleted neither shaders' program, and an abandoned context was never lost, which matters because browsers cap live WebGL contexts and evict the oldest. **Scope, honestly stated:** this needs a GPU whose `MAX_TEXTURE_SIZE` is under 2560 (essentially all current hardware reports ≥4096) *and* a video decode failure, since the warp only mounts as the video's fallback. Rare — but the failure it produces is the visible kind, and the guard costs one `getParameter`. |
+
+#### The Node-version launchers reported SUCCESS for a signal-killed build
+
+| | |
+|:--|:--|
+| **Ref** | — (review finding on [#144](https://github.com/MA1002643/theabdullahfolio/pull/144)) |
+| **Files** | `scripts/next-cmd.mjs`, `scripts/dev.mjs` |
+| **Details** | Node sets `code` to `null` and `signal` to the signal name when a child dies from a signal, so `process.exit(code ?? 0)` exited **zero** — and both launchers had exactly that line. The failure class it silently passed is the one the wrapper exists to guard: a `next build` killed by the OOM killer (`SIGKILL`) or by a CI runner's `SIGTERM` leaves a half-written `.next`, and `npm run build` would report success over it. Reproduced against the real wrapper before changing anything — `SIGTERM` mid-`next lint` measured `exit code=0`. Signals now map to **128+n**, the shell convention, so the status also says which signal: measured 143 for `SIGTERM` and 130 for `SIGINT`, with a clean run still exiting 0. The normal path is `code ?? 1` rather than `?? 0`, since a null code with no signal is not a success anyone can vouch for. **The finding's second half did not survive checking.** It reported that a missing `next` binary surfaces as an unhandled `error` event; it does not — the child Node spawns fine, fails `MODULE_NOT_FOUND`, and that status propagates correctly (measured: exit 1). The `error` event fires when the **runtime** cannot be spawned, i.e. `resolveSupportedNodeBin` returning an nvm path whose version has since been uninstalled. That case did already exit non-zero, so it was never a false success — but it surfaced as a stack trace into `internal/child_process`, and now reads `[build] could not start <path>: spawn … ENOENT`. Both files were fixed, not just the one the finding named: `dev.mjs` is where the pattern the other launchers copied came from. |
 
 | | |
 |:--|:--|

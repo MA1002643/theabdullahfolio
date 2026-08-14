@@ -18,7 +18,10 @@
  * port gate; these commands need none of that, only the runtime check.
  */
 import { spawn } from "node:child_process";
+import { constants } from "node:os";
 import path from "node:path";
+
+const { signals } = constants;
 import { resolveSupportedNodeBin } from "./supported-node.mjs";
 
 const [subcommand, ...args] = process.argv.slice(2);
@@ -43,7 +46,26 @@ const child = spawn(nodeBin, [nextBin, subcommand, ...args], {
 });
 
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => child.kill(sig));
+
+// A spawn failure means the RUNTIME never started — most plausibly a stale nvm
+// path from resolveSupportedNodeBin after that version was uninstalled. Node
+// does exit non-zero on an unhandled 'error' event, but it buries "that node is
+// gone" under a stack trace pointing into internal/child_process.
+child.on("error", (err) => {
+  console.error(`[${subcommand}] could not start ${nodeBin}: ${err.message}`);
+  process.exit(1);
+});
+
+// A signal death sets code=null and signal=NAME, so the old `code ?? 0`
+// reported SUCCESS for exactly the failure class this wrapper exists to catch:
+// a `next build` killed by the OOM killer (SIGKILL) or by a CI runner's
+// SIGTERM would leave a half-written .next behind and still let `npm run build`
+// pass. Signals map to 128+n — the shell convention — so the status says WHICH
+// signal rather than a flat 1.
 child.on("exit", (code, signal) => {
-  if (signal) console.error(`[${subcommand}] killed with ${signal}`);
-  process.exit(code ?? 0);
+  if (signal) {
+    console.error(`[${subcommand}] killed with ${signal}`);
+    process.exit(128 + (signals[signal] ?? 1));
+  }
+  process.exit(code ?? 1);
 });

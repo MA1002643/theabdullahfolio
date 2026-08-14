@@ -32,6 +32,7 @@
  */
 import { execSync, spawn } from "node:child_process";
 import net from "node:net";
+import { constants as osConstants } from "node:os";
 import path from "node:path";
 import { resolveSupportedNodeBin } from "./supported-node.mjs";
 
@@ -159,7 +160,20 @@ const nodeBin = resolveSupportedNodeBin({
 const nextBin = path.join(repoRoot, "node_modules/next/dist/bin/next");
 const child = spawn(nodeBin, [nextBin, "dev", ...args], { stdio: "inherit" });
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => child.kill(sig));
+
+// See next-cmd.mjs for why these two handlers exist: a signal death sets
+// code=null, so `code ?? 0` turned "the dev server was killed" into a clean
+// exit, and a runtime that cannot be spawned surfaced only as an unhandled
+// 'error' event. Same defect, same fix — dev.mjs is where the pattern the
+// other launchers copied came from.
+child.on("error", (err) => {
+  console.error(`[dev] could not start ${nodeBin}: ${err.message}`);
+  process.exit(1);
+});
 child.on("exit", (code, signal) => {
-  if (signal) console.error(`[dev] dev server was killed with ${signal}`);
-  process.exit(code ?? 0);
+  if (signal) {
+    console.error(`[dev] dev server was killed with ${signal}`);
+    process.exit(128 + (osConstants.signals[signal] ?? 1));
+  }
+  process.exit(code ?? 1);
 });
