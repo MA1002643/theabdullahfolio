@@ -19,7 +19,11 @@
  *      that only guards INSTALL time; nothing stops an already-installed
  *      repo from being launched with v25. When the invoking Node is not a
  *      supported LTS major, the launcher re-runs Next under the newest
- *      nvm-installed v22/v24.
+ *      nvm-installed v22/v24. That check now lives in
+ *      scripts/supported-node.mjs, shared with scripts/next-cmd.mjs, so
+ *      `build`/`start`/`lint` are covered by the same rule — a build runs
+ *      the very webpack cache serialization the v25 bug lives in, and used
+ *      to inherit whatever Node happened to invoke npm.
  *
  *   3. iCLOUD CHURN. ~/Desktop is iCloud-synced and the file provider
  *      touches build artifacts mid-write (random ENOENT, silent exits).
@@ -27,10 +31,9 @@
  *      `.next.nosync/` — the `.nosync` suffix is iCloud's opt-out.
  */
 import { execSync, spawn } from "node:child_process";
-import { readdirSync } from "node:fs";
 import net from "node:net";
-import { homedir } from "node:os";
 import path from "node:path";
+import { resolveSupportedNodeBin } from "./supported-node.mjs";
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -141,49 +144,16 @@ if (bindError) {
 }
 
 // ------------------------------------------------------- pick a sane node --
-// A runtime is supported when it's one of the LTS majors that don't crash
-// the Next dev server on this machine (22, 24) AND clears the 22.3.0 floor —
-// the same range package.json declares (`engines: ^22.3.0 || ^24.0.0`).
-// engine-strict enforces that range at install time; this predicate
-// re-enforces it at launch time, applied to BOTH the invoking runtime and
-// the nvm candidates — previously "even major ≤ 24" let Node 20 and
-// 22.0–22.2 through as the invoker, and the nvm filter accepted any v22.x,
-// both of which violate the declared engines contract.
-const ENGINE_FLOOR = [22, 3, 0]; // keep in sync with package.json engines
-const isSupportedNode = (version) => {
-  const [major, minor = 0, patch = 0] = version.split(".").map(Number);
-  if (major !== 22 && major !== 24) return false;
-  return (
-    major - ENGINE_FLOOR[0] || minor - ENGINE_FLOOR[1] || patch - ENGINE_FLOOR[2]
-  ) >= 0;
-};
-
-let nodeBin = process.execPath;
-if (!isSupportedNode(process.versions.node)) {
-  const nvmDir = path.join(homedir(), ".nvm/versions/node");
-  let installed = [];
-  try {
-    installed = readdirSync(nvmDir)
-      .filter((v) => isSupportedNode(v.replace(/^v/, "")))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  } catch {
-    /* no nvm — handled below */
-  }
-  const best = installed.at(-1);
-  if (!best) {
-    console.error(
-      `[dev] node ${process.versions.node} is outside the supported range for this` +
-        ` repo's dev server (LTS 22.x >= 22.3.0, or 24.x), and no usable build was` +
-        ` found in ${nvmDir}.`,
-    );
-    console.error(`[dev] install one with: nvm install 22`);
-    process.exit(1);
-  }
-  nodeBin = path.join(nvmDir, best, "bin/node");
-  console.log(
-    `[dev] node ${process.versions.node} is unsupported here — running Next with ${best} from nvm`,
-  );
-}
+// The range itself lives in scripts/supported-node.mjs so `next build` /
+// `start` / `lint` enforce the same one — they used to be bare Next calls
+// that inherited whatever Node invoked npm. `required: true` keeps dev's
+// original fail-closed behaviour: refusing to start beats starting on a
+// runtime that corrupts the dist dir.
+const nodeBin = resolveSupportedNodeBin({
+  tag: "dev",
+  what: "dev server",
+  required: true,
+});
 
 // ------------------------------------------------------------------ launch --
 const nextBin = path.join(repoRoot, "node_modules/next/dist/bin/next");

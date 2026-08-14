@@ -34,7 +34,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
-package-lock.json
+
+# scene-script working dir (raw clips + intermediate frames; override with SCRATCH=)
+/.scene-work/
 
 # local planning docs
 TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
