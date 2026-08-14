@@ -94,11 +94,31 @@
     box-shadow: 0 0 8px rgba(255, 109, 5, 0.3);
   }
 
+  /* The nav ring's buttons.
+     `background-color` was rgb(var(--background) / 0.2) — 20% of the page's own
+     near-black. Over the old empty murk plate that was invisible AND harmless:
+     the page behind it was already black, so the white icons had all the
+     contrast they needed. Over a photograph it is neither. 20% of black over
+     bright teal water leaves the glyph sitting on whatever happens to be behind
+     it, and what is behind these particular buttons is the causeway's receding
+     lanterns and the mist — the brightest, busiest part of the frame.
+
+     So the buttons get a real substrate: a mostly-opaque dark plate with a
+     radial falloff, densest at the centre where the glyph is and easing at the
+     rim so it still reads as a lens rather than a coin. The orange ring and its
+     halo are untouched; this only gives them something to sit on. */
   .custom-bg {
     @apply border border-solid;
     border-color: #ff6d05;
     background-color: rgb(var(--background) / 0.2);
-    backdrop-filter: blur(6px);
+    background-image: radial-gradient(
+      closest-side,
+      rgb(2 8 14 / 0.82) 0%,
+      rgb(2 8 14 / 0.74) 58%,
+      rgb(2 8 14 / 0.52) 85%,
+      rgb(2 8 14 / 0.34) 100%
+    );
+    backdrop-filter: blur(6px) saturate(0.75);
     box-shadow:
       inset 0 0 10px rgba(255, 255, 255, 0.05),
       0 0 15px rgba(255, 109, 5, 0.3),
@@ -890,34 +910,228 @@
     letter-spacing: 4px;
   }
 
-  /* glowing borderline under laptop  */
+  /* Ripple rings under the laptop.
+     ────────────────────────────────────────────────────────────────────────
+     These were a hard `1px solid #ff6d05` stroke. Over the old empty-murk
+     plate that read as a clean sci-fi base; over the photographic causeway it
+     read as a VECTOR ELLIPSE DRAWN ON A PHOTOGRAPH, for two measurable
+     reasons.
+
+     (1) Hue. Sampled off the composited frame, the stroke sat at h25.5°/s72%
+     while the scene's own lantern flames sit at h31.9°/s38% and the far run at
+     h29.6°/s33% — the UI ember ran at roughly DOUBLE the saturation of every
+     real light in the shot and 5–7° redder. Neon signage next to fire.
+
+     (2) Edge. Real light has no edge. A 1px border always will.
+
+     So the ring is now a feathered band painted with a radial-gradient rather
+     than a border: a bright core falling through a warm ramp to nothing, with
+     no stop at full opacity anywhere. The three rings keep their existing
+     intensity hierarchy (inner brightest, outer faintest) and their animation
+     timing is untouched — only the material changed.
+
+     ── THE HUE IS NOW THE HEADLINE'S, BY REQUEST ───────────────────────────
+     The band above was painted in the scene's own firelight (white-gold
+     rgba(255,219,163) through ember rgba(224,163,92)) to settle the hue clash
+     that (1) describes. The owner asked for it to match the name instead, so
+     every stop is now `#ff6d05` — the exact fill/stroke of the MUHAMMAD
+     ABDULLAH h1 — falling through its own halo colour rgba(255,106,0), the
+     value that h1's drop-shadows use. That is a deliberate trade of scene
+     realism for brand identity, made with the earlier finding on the record:
+     this orange IS more saturated than the causeway's real flames.
+
+     Alphas are ~15% higher than the gold version carried, because #ff6d05 is
+     a much darker colour (relative luminance ~0.31 against ~0.72) and at the
+     old alphas the rings read visibly fainter than before. The FEATHER is
+     what still keeps this from looking like a decal: no hard edge, no stop at
+     full opacity — the property (2) is about, which the colour change does
+     not touch.
+
+     The geometry was already right and is deliberately left alone: the
+     `perspective(600px) rotateX(80deg)` plane genuinely matches the
+     causeway's, which is why the ellipse sits believably on the stone. */
+  /* ── Two dials, so the ends of the range can be tuned without a rewrite ────
+     Reported as "too sparse and too faint on a phone and on a laptop screen —
+     the effect reads as empty space", and measured on composited pixels (each
+     ring shot ALONE against a rings-hidden frame, so nested ring boxes cannot
+     be credited to each other and the laptop's occlusion counts as the zero it
+     is). Peak delta out of 255, at the rings' resting pose:
+
+                       375×812        768×1024       1440×900
+       .borderline      3  (49px)     114 (5.3k)       7  (484px)
+       .borderline2    75 (1.1k)       86 (14.7k)     85 (12.2k)
+       .borderline3    55 (6.7k)       56 (43.3k)     56 (41.5k)
+
+     Two separate findings live in that table, and only one of them is alpha.
+
+     (1) The INNER ring is not faint, it is HIDDEN — by the laptop. `perspective
+     (600px) rotateX(80deg)` magnifies the near edge, so the 340px ring projects
+     to 472px on screen while the laptop above it is 480px wide; at 375 it is
+     171px against a 263px laptop. At 768 the same ring projects WIDER than the
+     laptop (364 vs 352) and duly measures peak 114 — which is exactly why the
+     two widths reported as broken are the two where the laptop swallows it. No
+     alpha fixes an occlusion; only geometry would, and the laptop's size and
+     position are deliberately not being touched here.
+
+     (2) Rings 2 and 3 hold the same PEAK at every width (85/86, 55/56) but not
+     the same presence, because presence is coverage and the frame grows around
+     them: the outer ring lights 5.5% of a 768×1024 frame, 3.2% of 1440×900 and
+     2.2% of 375×812. The two ends of the range are the thin ones, and the
+     middle — the one nobody complained about — is fine.
+
+     So the lift is scoped to the two ends, via two tokens whose defaults are
+     the values this rule shipped with, meaning every viewport between 640 and
+     1279px computes byte-for-byte what it did before:
+
+       --ring-gain  multiplies every alpha, preserving the inner→outer
+                    hierarchy the three rings are built on.
+       --ring-band  moves the band's INNER edge inward, i.e. widens the stroke.
+                    Only the inner edge: the outward ramp (95/96/97% → nothing
+                    at 100%) is what keeps this from reading as a decal, so the
+                    fade toward the outer edge is left exactly as it was.
+
+     Stepping at breakpoints rather than clamp()ing is deliberate — the ring
+     DIAMETERS already step at these same breakpoints, so an alpha step lands on
+     a frame where the whole ring is resizing anyway and cannot be seen as a
+     separate jump.
+
+     ── A THIRD DIAL, FOR THE OUTER EDGE ONLY (phones) ──────────────────────
+     `--ring-gain` lifts the core and the outward ramp together, so on a phone
+     it brightens the band without making it any easier to FIND: the eye reads
+     a ring by its outer boundary against the scene, and that boundary is the
+     95/96/97% stop, the faintest part of the gradient. Measured on composited
+     pixels at the ripple's 50% phase (each ring shot against a rings-hidden
+     frame, so the causeway behind cannot be credited to the ring), mean delta
+     out of 255 across the outer decile of the radius:
+
+                     375    390    430    440  │   768   1024   1440
+       outer 0.90–1.00   25.8   16.7    7.9    8.1  │  28.1   25.4   36.1
+
+     Every phone width sits at or below the smallest desktop reading, and the
+     two widest phones sit 3–4× under it. So:
+
+       --ring-outer-gain  multiplies ONLY the outward ramp's alpha and the
+                          box-shadow that continues it past the element edge.
+                          The core stop (88/89/90%) is untouched, so the band
+                          still falls from a bright core to a faint rim and
+                          reads as a ring, not a disc.
+
+     The box-shadow is scaled with it on purpose rather than as an extra: the
+     gradient terminates hard at 100%, and the shadow is the only light that
+     continues outward from there. Lifting the 95% stop alone would steepen
+     that final drop into the visible band the feather exists to avoid; lifting
+     both keeps the ramp monotonic all the way out. Defaults are 1 — the value
+     every viewport ≥ 640px already computed — so nothing above the phone
+     breakpoint moves. */
+  .borderline,
+  .borderline2,
+  .borderline3 {
+    border: none;
+    --ring-gain: 1;
+    --ring-band: 0%;
+    --ring-outer-gain: 1;
+  }
+
   .borderline {
-    border: 1px solid #ff6d05;
-    box-shadow:
-      0 0 3px #ff6d05e0,
-      0 0 5px #ff6d05e0,
-      0 0 8px #ff6d05,
-      0 0 4px #ff6d05e0;
+    background: radial-gradient(
+      closest-side,
+      transparent 0%,
+      transparent calc(73% - var(--ring-band)),
+      rgba(255, 109, 5, calc(0.5 * var(--ring-gain))) 88%,
+      rgba(255, 106, 0, calc(0.26 * var(--ring-gain) * var(--ring-outer-gain)))
+        95%,
+      transparent 100%
+    );
+    box-shadow: 0 0 28px
+      rgba(255, 106, 0, calc(0.2 * var(--ring-gain) * var(--ring-outer-gain)));
   }
 
   .borderline2 {
-    border: 0.3px solid #ff6d05;
-    /* solid border */
-    box-shadow:
-      0 0 2px #ff6d05e0,
-      0 0 2px #ffbd0345,
-      0 0 2px #ff6d05e0,
-      0 0 1px #ff6d05e0;
+    background: radial-gradient(
+      closest-side,
+      transparent 0%,
+      transparent calc(76% - var(--ring-band)),
+      rgba(255, 109, 5, calc(0.34 * var(--ring-gain))) 89%,
+      rgba(255, 106, 0, calc(0.18 * var(--ring-gain) * var(--ring-outer-gain)))
+        96%,
+      transparent 100%
+    );
+    box-shadow: 0 0 22px
+      rgba(255, 106, 0, calc(0.12 * var(--ring-gain) * var(--ring-outer-gain)));
   }
 
   .borderline3 {
-    border: 0.1px solid #ff6d05;
-    /* solid border */
-    box-shadow:
-      0 0 1px #ff6d05,
-      0 0 4px #ffbd0300,
-      0 0 2px #ff6d05,
-      0 0 2px #fde59ce0;
+    background: radial-gradient(
+      closest-side,
+      transparent 0%,
+      transparent calc(79% - var(--ring-band)),
+      rgba(255, 109, 5, calc(0.22 * var(--ring-gain))) 90%,
+      rgba(255, 106, 0, calc(0.11 * var(--ring-gain) * var(--ring-outer-gain)))
+        97%,
+      transparent 100%
+    );
+    box-shadow: 0 0 18px
+      rgba(255, 106, 0, calc(0.09 * var(--ring-gain) * var(--ring-outer-gain)));
+  }
+
+  /* Phones. The smallest rings in the smallest frame, and the widest band of
+     the three settings because a 220px ring has only ~30px of radius to spend
+     on a stroke before the feather is all there is. 639.98px, not 640px: the
+     exact complement of Tailwind's `sm`, so no viewport matches both this and
+     an `sm:` ring size. */
+  @media (max-width: 639.98px) {
+    .borderline,
+    .borderline2,
+    .borderline3 {
+      --ring-gain: 1.55;
+      --ring-band: 8%;
+      /* Outer edge only. Deliberately moderate: at 1.55 gain the outward stop
+         is already 0.40/0.28/0.17, and taking it much past the core stop would
+         flatten the band into a plateau with a cliff at 100% — the decal look
+         the feather exists to prevent. 1.35 keeps the outer stop at ~0.70 of
+         its own core on all three rings, so the falloff stays monotonic. */
+      --ring-outer-gain: 1.35;
+    }
+  }
+
+  /* Laptops and up. The rings stop growing at `lg` (340/460/600) while the
+     viewport does not, so this is the range where coverage keeps falling —
+     which is why the boost starts at 1280 rather than at `lg`/1024, where the
+     same rings still fill enough of a smaller frame. */
+  @media (min-width: 1280px) {
+    .borderline,
+    .borderline2,
+    .borderline3 {
+      --ring-gain: 1.5;
+      --ring-band: 7%;
+    }
+  }
+
+  /* Contact shadow — the laptop's grounding.
+     Over flat murk the eye never asked where the laptop met the ground. Over
+     photographic wet stone it does, and its absence read as "pasted on". This
+     is a soft elliptical occlusion beneath it, breathing in ANTIPHASE with the
+     float: as the laptop rises it spreads and lightens, as it settles it
+     tightens and darkens — which is what actually sells the height change.
+     Purely additive; the laptop image and its float animation are untouched. */
+  /* Strengthened for the cohesion pass. At 0.62 centre over wet stone that is
+     lit warm by two lanterns, the shadow was being read as a smudge rather than
+     as contact — the laptop still hovered. A real contact shadow on a hard wet
+     surface has a much darker, TIGHTER core than this had (the penumbra is wide
+     but the occlusion directly under the object is nearly total), so the centre
+     goes to 0.86 and the falloff is pulled in, with a wider soft skirt behind
+     it to keep the edge from becoming a hard ellipse. */
+  .laptop-contact {
+    background: radial-gradient(
+      closest-side,
+      rgba(0, 0, 0, 0.86) 0%,
+      rgba(0, 0, 0, 0.7) 34%,
+      rgba(0, 0, 0, 0.38) 60%,
+      rgba(0, 0, 0, 0.14) 82%,
+      transparent 100%
+    );
+    filter: blur(9px);
+    animation: laptop-contact 3s ease-in-out infinite;
   }
 
   .laptop {
@@ -927,14 +1141,33 @@
     /* adjust time as needed */
   }
 
-  .laptop.active {
-    transform: scale(1.05);
-    animation: glow 2s ease-in-out infinite;
-  }
+  /* Hover.
+     The previous response was `drop-shadow(0 0 2px)` / `drop-shadow(0 0 3px)`
+     on an element ~490px wide — measured in the browser, and effectively
+     invisible even on the old dark plate; on the brighter causeway it was lost
+     entirely, leaving hover reading as "it got 5% bigger" and nothing else.
+     The radii are now scaled to the element rather than to a thumbnail.
+     Restrained on purpose — a bloom that reads at a glance, not a flare.
 
+     The COLOUR is the headline's, by request: `#ff6d05` core falling through
+     rgba(255,106,0), exactly the fill and halo of the MUHAMMAD ABDULLAH h1,
+     so the hover shadow and the ripple rings below the laptop now read as the
+     same light source as the name. (It was previously pulled onto the
+     causeway's own ember — see the ring block above for why, and for the
+     trade being made.) Radii and alphas are unchanged: only the hue moved. */
+  .laptop.active,
   .laptop:hover {
     transform: scale(1.05);
-    animation: glow 2s ease-in-out infinite;
+    animation: laptop-hover-glow 2.4s ease-in-out infinite;
+  }
+
+  /* The ground answers the hover too: a lifted laptop throws a wider, softer,
+     weaker shadow. Sibling selector, so this needs `.laptop-contact` to come
+     AFTER the laptop in the DOM (it does — and it carries a lower z-index, so
+     paint order is unaffected). */
+  .laptop.active ~ .laptop-contact,
+  .laptop:hover ~ .laptop-contact {
+    animation-name: laptop-contact-lifted;
   }
 
   /* "Most Active Repository" badge — diagonal highlight sweep, infinite loop.
@@ -1007,6 +1240,7 @@
   .animate-float-laptop,
   .laptop:hover,
   .laptop.active,
+  .laptop-contact,
   .animate-ripple-neon {
     animation: none !important;
     transition: none !important;
@@ -1017,6 +1251,15 @@
   .laptop:hover,
   .laptop.active {
     transform: none !important;
+  }
+
+  /* The contact shadow stops BREATHING but must still be DRAWN: it is the
+     laptop's grounding, not decoration, and removing it under reduced motion
+     would leave the laptop floating over the stone with nothing beneath it —
+     a worse result than the motion it is avoiding. It holds its resting pose. */
+  .laptop-contact {
+    opacity: 0.55;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1278,6 +1521,61 @@
 
   50% {
     filter: drop-shadow(0 0 2px #ff6d05e0) drop-shadow(0 0 3px #ff6d05e1);
+  }
+}
+
+/* Laptop hover bloom. Replaces `glow` on the hero laptop only (`glow` itself is
+   left intact for anything else that references it).
+
+   The radii are the whole point: `glow` peaks at a 3px drop-shadow, which on a
+   ~490px-wide element is a hairline — measured in-browser as
+   `drop-shadow(rgba(255,109,5,.89) 0 0 1.81px)`, i.e. invisible. These are
+   scaled to the element. The colour also moves off neon `#ff6d05` onto the
+   scene's own fire (a warm core through the ember ramp), so the laptop reads as
+   being lit BY the causeway rather than by a UI accent. Two stops only, slow
+   and shallow — a bloom, not a flare. */
+@keyframes laptop-hover-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 10px rgba(255, 109, 5, 0.38))
+      drop-shadow(0 0 26px rgba(255, 106, 0, 0.2));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 18px rgba(255, 109, 5, 0.55))
+      drop-shadow(0 0 46px rgba(255, 106, 0, 0.3));
+  }
+}
+
+/* Contact shadow, in ANTIPHASE with `float-laptop` (which lifts the laptop to
+   translateY(-6px) at 50%). As it rises the shadow spreads and weakens; as it
+   settles it tightens and darkens. Same 3s period, so they stay locked. */
+@keyframes laptop-contact {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.075);
+    opacity: 0.4;
+  }
+}
+
+/* The hovered pose: the laptop is held 5% larger and lifted, so its shadow sits
+   permanently wider and weaker — the grounding cue for "this is off the ground
+   and responding to you". */
+@keyframes laptop-contact-lifted {
+  0%,
+  100% {
+    transform: scale(1.1);
+    opacity: 0.36;
+  }
+
+  50% {
+    transform: scale(1.16);
+    opacity: 0.26;
   }
 }
 
@@ -3777,9 +4075,10 @@ html.custom-cursor-active * {
    replaced by the ambient scene video — see
    src/components/qualifications/SceneVideo.jsx. */
 
-/* Full-bleed backdrop layers on /qualifications — the still image, the
-   ambient scene video (SceneVideo.jsx) and the black dimmer all share this
-   one rule so they can never drift out of alignment. It replaces Tailwind's
+/* Full-bleed backdrop layers on /qualifications and /projects — on each
+   page the still image, the ambient scene video (that page's SceneVideo.jsx)
+   and the black dimmer all share this one rule so they can never drift out
+   of alignment. It replaces Tailwind's
    `fixed top-0 left-0 w-full h-full` because the HEIGHT needs a fallback
    chain that two competing utilities (`h-screen h-lvh`) can't express —
    which of those wins is stylesheet order, not class order.
@@ -3797,13 +4096,298 @@ html.custom-cursor-active * {
 
    Width stays 100%: the layout viewport's width doesn't change with
    browser chrome, and 100vw would only add desktop scrollbar width. */
-.qualifications-backdrop {
+.qualifications-backdrop,
+.projects-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100vh;
   height: 100lvh;
+}
+
+/* Camera drift for the /projects scene (SceneParallax.jsx writes the two
+   custom properties on <html>; nothing else touches them).
+
+   The 1.045 overscan is what makes the drift safe: a fixed, object-cover'd
+   layer translated by up to ~36px would otherwise expose the viewport edge.
+   4.5% of the smallest common viewport dimension is comfortably more than
+   AMP_X + SCROLL_AMP, so no translate this component can produce reaches an
+   edge. The scale is unconditional — applying it only while drifting would
+   pop the crop the moment the pointer moved.
+
+   Scoped to .projects-backdrop alone, NOT the shared backdrop rule above:
+   /qualifications has no parallax and must keep its exact crop. */
+.projects-backdrop {
+  transform: translate3d(var(--scene-dx, 0px), var(--scene-dy, 0px), 0) scale(1.045);
+  will-change: transform;
+}
+
+/* The drift is decorative motion like any other — under reduced motion the
+   scene must sit exactly where the un-drifted crop puts it. The component
+   also removes the variables, so this is belt and braces for the frame
+   between a media-query change and the effect re-running. */
+@media (prefers-reduced-motion: reduce) {
+  .projects-backdrop {
+    transform: scale(1.045);
+    will-change: auto;
+  }
+}
+
+/* Art-directed scrim for the /projects workshop scene.
+
+   A FLAT dimmer has to be dark enough for the worst case — text over the
+   brightest part of the art — and then that same darkness is spent
+   everywhere, including the wide empty margins where nothing but the
+   scene lives. Stacked under a 70%-opacity backdrop it left ~21% of the
+   artwork's light: legible, but murky, and the lantern detail the scene
+   was generated for never reached the eye.
+
+   So spend the darkness where the words are. This ellipse is opaque
+   behind the centre column and falls away toward the edges, and because
+   its radii are percentages it re-aims itself per viewport: on a phone it
+   covers essentially the whole screen (the reading column IS the screen),
+   while on a wide desktop the outer lanterns and tree canopy stay vivid.
+   Paired with the backdrop opacity lifted 0.70 → 0.88, the centre still
+   reads at roughly the old ~23% — the AA contrast the copy was checked
+   at — while the periphery more than doubles to ~50%. */
+.projects-scrim {
+  background: radial-gradient(
+    ellipse 78% 92% at 50% 45%,
+    rgb(0 0 0 / 0.79) 0%,
+    rgb(0 0 0 / 0.74) 42%,
+    rgb(0 0 0 / 0.56) 78%,
+    rgb(0 0 0 / 0.42) 100%
+  );
+}
+
+/* ── Homepage causeway scene ──────────────────────────────────────────────
+   The shared box for the four homepage backdrop layers: the still plate, the
+   ambient glow canvas, the arrival-ignite canvas and the scrim.
+
+   ABSOLUTE, not fixed like the two sub-page backdrops. The homepage shell is
+   `relative h-screen w-screen overflow-hidden` — a non-scrolling viewport-sized
+   box — so its layers are positioned against that shell and inherit its
+   height directly. Fixing them would pin them to the visual viewport instead,
+   which on mobile re-zooms the cover crop every time the URL bar collapses:
+   the exact bug the sub-pages' 100lvh pinning exists to avoid, reintroduced by
+   a different route. Out of flow either way, so no layer can shift layout.
+
+   THE SCENE DOES NOT MOVE WITH THE POINTER. There used to be a HomeSceneDrift
+   component writing --home-dx/--home-dy here every frame, so the backdrop slid
+   a few px against the cursor. That was removed at the owner's request: the
+   hero is meant to read as a photograph you are standing in front of, not a
+   plane that answers the mouse. The component, its rAF loop and its custom
+   properties are all gone — there is no writer left, so nothing to disable.
+
+   The 1.045 overscan existed to make that drift safe (a translated
+   object-cover'd layer would otherwise expose the viewport edge). It is kept,
+   deliberately, even though nothing translates any more: it IS the crop the
+   whole composition — scrim ellipse, lantern rig, laptop placement — was tuned
+   against, and dropping it would silently re-frame the hero by 4.5%. Static, so
+   no `will-change`: a permanently promoted layer for a transform that never
+   changes is pure memory cost. */
+/* Four values are tokenised here PURELY so the portrait-phone block far below
+   can override them. Every default is exactly the value this rule shipped with
+   — `100%`, `0`, `none`, `none` — so at every width above the phone breakpoint
+   the computed style is byte-for-byte what it was, and `filter: none` /
+   `mask-image: none` are the CSS initial values, so declaring them creates no
+   stacking context and no compositing layer. */
+.home-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: var(--home-band-h, 100%);
+  /* After `inset`, deliberately: `inset` sets all four, and this re-declares
+     only `top`. With top + height both set, `bottom` is over-constrained and
+     ignored — the same geometry `inset: 0` + `height: 100%` produced before. */
+  top: var(--home-band-top, 0);
+  transform: scale(1.045);
+  filter: var(--home-tone, none);
+  -webkit-mask-image: var(--home-band-mask, none);
+  mask-image: var(--home-band-mask, none);
+}
+
+/* Art-directed scrim for the homepage, replacing the flat bottom-up black
+   gradient the old murk-plate used.
+
+   That gradient was built backwards for this hero: it put black at the BOTTOM
+   and transparent at the TOP — but the headline sits at the top, and the old
+   plate got away with it only by having nothing in it. The new plate is a real
+   photograph with a bright vanishing point, so the darkness has to be spent
+   where the words are, the /projects lesson applied to a centred hero instead
+   of a scrolling reading column.
+
+   Three bands, and the middle one is the point: it is the LIGHTEST. The
+   causeway's vanishing-point mist sits right behind the floating laptop, and
+   leaving it open is what rim-lights the laptop against the depth instead of
+   flattening it into a dark rectangle. Darkening the centre uniformly — the
+   obvious move — is precisely what would waste the composition.
+
+   The headline ellipse is the reading protection: dark over the name block,
+   gone by the frame edges, so the outer trees and the two foreground lanterns
+   keep their contrast. Note the plate was generated with a deliberately empty
+   upper third (0.00% warm pixels measured across the name band), so this
+   ellipse is guaranteeing separation, not rescuing a clash. */
+/* ── Cohesion pass ─────────────────────────────────────────────────────────
+   The production hero worked because the background was near-black and empty,
+   so the neon-orange UI owned the frame outright. This plate is a CO-STAR: it
+   is bright teal, its perspective lines converge directly behind the laptop,
+   and its two foreground lanterns sit at exactly the nav ring's height. Nothing
+   was wrong with either half; they were simply competing for the same job.
+
+   The fix is to push the scene back into being an ENVIRONMENT. Three of the
+   four layers below are new, and each one takes a specific competitor out:
+
+     STAGE WELL   a soft dark pool under the laptop/nav cluster. The centre of
+                  the old scrim was deliberately the LIGHTEST band, so the
+                  vanishing-point mist could rim-light the laptop — which is a
+                  genuinely good idea and is why the well is an ellipse rather
+                  than a raised floor: it darkens the ground the cluster sits
+                  on while leaving the mist band above it open to backlight the
+                  screen. Killing the mist to calm the centre would trade the
+                  composition's best feature for its noisiest one.
+
+     VIGNETTE     a corner-weighted darkening. This is what dims the two
+                  foreground lanterns, which is the specific pair fighting the
+                  nav buttons — and it dims them by their POSITION in the frame
+                  rather than by touching the lantern rig, so the causeway's own
+                  receding lights keep their full run to the vanishing point.
+
+   Order matters: the well sits under the vignette so the corners still close
+   over it, and the headline ellipse stays first because it is reading
+   protection, not art direction. */
+.home-scrim {
+  background:
+    /* Headline reading protection — unchanged. */
+    radial-gradient(
+      ellipse 64% 30% at 50% 16%,
+      rgb(0 0 0 / 0.6) 0%,
+      rgb(0 0 0 / 0.34) 55%,
+      rgb(0 0 0 / 0) 100%
+    ),
+    /* Stage well: the ground under the laptop and the nav ring. Centred at 62%
+       rather than 50% because the cluster sits below the frame's middle, and
+       kept wide (74%) so its edge never becomes a visible rim. */
+      radial-gradient(
+        ellipse 74% 42% at 50% 62%,
+        rgb(0 0 0 / 0.46) 0%,
+        rgb(0 0 0 / 0.3) 48%,
+        rgb(0 0 0 / 0.1) 78%,
+        rgb(0 0 0 / 0) 100%
+      ),
+    /* Edge vignette. Transparent across the middle 55% so it costs the mist
+       nothing, closing hard into the corners where the competing lanterns and
+       the brightest bank foliage sit. */
+      radial-gradient(
+        ellipse 82% 78% at 50% 50%,
+        rgb(0 0 0 / 0) 55%,
+        rgb(0 0 0 / 0.28) 80%,
+        rgb(0 0 0 / 0.55) 100%
+      ),
+    linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.52) 0%,
+      rgb(0 0 0 / 0.4) 22%,
+      rgb(0 0 0 / 0.26) 46%,
+      rgb(0 0 0 / 0.34) 72%,
+      rgb(0 0 0 / 0.6) 100%
+    );
+}
+
+/* ── Portrait phones: re-frame, don't re-tune ─────────────────────────────────
+   Reported as "the background is brighter and flatter on my phone, and the
+   laptop and buttons look pasted onto it". Measured, it is neither a mobile
+   rendering path nor a scrim that stopped working — it is the ASPECT RATIO, and
+   one number proves it: the same iPhone in LANDSCAPE composites to mean
+   luminance 16.6 against the desktop's 17.0, a 2.8% difference. Same device,
+   same Safari, same assets. Rotate to portrait and it is 25.8, +51%.
+       The plate is 16:9 and `object-fit: cover`. A 1440x900 desktop shows 86% of
+   the photograph's width; a 440x956 phone shows 25%. The discarded 75% is
+   precisely the dark framing — the tree canopy, the shadowed banks, the unlit
+   water and the two foreground lanterns the vignette was written to dim — and
+   what survives is the brightest column in the picture, the vanishing-point
+   mist and the wet stone. Hence "flatter" as well as "brighter": the shadows
+   lift far more than the highlights (p10 3.0 -> 7.9, p90 42.3 -> 52.7), so the
+   dynamic range more than halves, 14.1x -> 6.6x. Measured by band, the laptop
+   is silhouetted against a strip 52% brighter than intended (34.5 -> 52.5) and
+   stands on foreground stone 2.4x too bright (10.5 -> 24.8).
+       Things that were suspected and are NOT the cause, checked rather than
+   assumed: `background-attachment: fixed` is not used anywhere; `.custom-bg`'s
+   backdrop blur survives (autoprefixer emits `-webkit-backdrop-filter`, and the
+   live computed value on a nav button is `blur(6px) saturate(0.75)`); the
+   resolution ladder picks the 1080p clip, not the 720p one; the low-power tier
+   needs <= 4 cores and the device reports 6; and the plate is untagged sRGB,
+   which WebKit colour-manages as sRGB, so there is no P3 over-saturation.
+       The scrim is not at fault either and is therefore NOT touched below. Its
+   radii are percentages, so it re-aims itself: mean alpha 0.646 on desktop
+   against 0.630 here. It was doing the same work on 51% brighter material.
+       So the fix is to correct the CROP, which is one dial: every layer here
+   shares this box, and the two canvases derive their transform from
+   `coverProjection(clientW, clientH)` at paint time — so shrinking the box
+   re-frames the plate, the ambient video, the glow rig and the arrival ignite
+   coherently, with no new assets and nothing for the canvases to de-sync from.
+   At 440px wide the visible share of the photograph is 247.5/boxHeight: the
+   full-height box gives 26%, and a 65% band gives 42%, which brings both
+   foreground lanterns and both banks back into frame. That alone takes mean
+   luminance to 17.6 against the desktop's 17.0 — brightness parity, before a
+   single gradient is retuned.
+       What the band cannot recover is dynamic range: at 42% width the content
+   simply holds less of it (7.7x). Darkening further does not help — the scrim
+   is a MULTIPLY, and p90/p10 is invariant under one, so a heavier scrim yields
+   a dimmer picture that is just as flat (tried: pulling the vignette onto the
+   band took the mean to 11.3, 34% below desktop, and bought 0.7x of range). A
+   tone curve is the right tool, and one filter on the two photographic layers
+   lands it: contrast 1.25 with brightness 1.16 back-paying what the 0.5 pivot
+   subtracts from so dark a scene gives mean 16.5, p10 3.4, p90 41.0 and 11.9x,
+   against the desktop's 17.0 / 3.0 / 42.3 / 14.1x.
+       PORTRAIT-ONLY, not width-only: landscape phones already match desktop, so
+   a width-only query would darken a viewport that was never broken. */
+/* 639.98px, not 640px: the exact complement of Tailwind's `sm` (min-width:
+   640px), so no viewport can ever match both this block and an `sm:` utility. */
+@media (max-width: 639.98px) and (orientation: portrait) {
+  /* Everything EXCEPT the scrim: the four media layers become a band centred on
+     the laptop/nav cluster (which spans 51-74% of the viewport, comfortably
+     inside 29.5-94.5%). The scrim keeps the full viewport deliberately — its
+     headline ellipse is reading protection and has to stay over the headline,
+     which at `64% 30% at 50% 16%` still covers 0-31% of an 866px viewport. */
+  .home-backdrop:not(.home-scrim) {
+    --home-band-h: 65%;
+    --home-band-top: 29.5%; /* 62% centre - 65%/2 */
+    /* Feathered into the page background at both ends, so the band has no
+       visible top or bottom edge. It has to be a mask rather than an overlaid
+       gradient: the cut runs through sky and tree line, which are not black, so
+       darkening alone would leave a seam. Both spellings — iOS Safari needs the
+       prefixed one, and the gradient is an ALPHA mask under either (`mask-mode`
+       resolves to alpha for a gradient), so they agree. */
+    --home-band-mask: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 16%,
+      #000 84%,
+      transparent 100%
+    );
+  }
+
+  /* The tone curve goes on the two PHOTOGRAPHIC layers only. The glow and
+     ignite canvases are additive light sources, not tone — running a contrast
+     curve over them would pull their low end toward black, which is the one
+     thing a light is not allowed to do. They still take the band above, so the
+     lantern rig stays registered to the plate it is lighting. */
+  img.home-backdrop,
+  video.home-backdrop {
+    --home-tone: contrast(1.25) brightness(1.16);
+  }
+
+  /* The hero shell is `h-screen`, and on iOS `100vh` is the LARGE viewport —
+     the toolbar-hidden one. This page never scrolls, so the toolbar never
+     collapses, and the bottom ~9% of the composition (including the darkest end
+     of the scrim's base gradient, 0.6 at 100%) sat permanently below the fold.
+     `100svh` is the SMALL viewport: what is actually on screen while the
+     toolbar is up. Worth 1.2 luminance on its own. */
+  .home-shell {
+    height: 100svh;
+  }
 }
 
 /* ── Fluid page scale (issue #50) ─────────────────────────────────────────
@@ -3831,24 +4415,55 @@ html.custom-cursor-active * {
    `--fluid-scale` is DECLARED, so overrides must live on the same element
    that carries the class (inheritance alone won't re-derive the factor).
 
-   `tan(atan2(100vw, base))` is how a UNITLESS viewport ratio is obtained in
+   `tan(atan2(vw, base))` is how a UNITLESS viewport ratio is obtained in
    pure CSS: atan2 of two lengths cancels the units, tan returns the plain
-   number 100vw/base. Pure CSS (not the resize-listener alternative from the
+   number vw/base. Pure CSS (not the resize-listener alternative from the
    issue) means no hydration risk, no first-paint jump, and live response to
    resize/zoom for free. The @supports guard pins pre-2023 engines (no CSS
    trig) at the scale-1 reference sizes instead of letting an unresolvable
-   var() invalidate every declaration that consumes it. */
+   var() invalidate every declaration that consumes it.
+
+   `--fluid-vw` is REGISTERED, and that registration is the whole reason this
+   works on iOS. WebKit resolves a viewport unit passed STRAIGHT into atan2()
+   wrongly: measured on iOS 26.2 Safari at a 440px viewport,
+   `tan(atan2(100vw, 1440px))` returns 3.376 where it must return 0.306 —
+   while the very same expression written against absolute lengths,
+   `tan(atan2(440px, 1440px))`, returns 0.3055 correctly. Because the bogus
+   ratio overshoots --fluid-max, clamp() pinned the factor to its MAXIMUM
+   1.3 — the widest-desktop scale — on a phone, so every size on the four
+   opted-in pages rendered 1.3/0.6 = 2.17x too large, and the page overflowed
+   far enough sideways that iOS shrink-to-fit widened the visual viewport
+   (which is what window.innerWidth reports, and what the homepage nav reads
+   to choose its mobile layout — hence the orbital ring appearing on a phone).
+   Desktop never showed it: Blink and Gecko compute the vw form correctly, and
+   at the 1440px anchor the answer is 1 either way.
+
+   Registering the intermediate as a <length> forces `100vw` to be computed to
+   an absolute px length BEFORE the trig ever sees it, which is the form
+   WebKit already handles — verified on the device, not inferred. It must
+   `inherit`: --fluid-scale itself is unregistered, so it inherits as an
+   unresolved token list and each descendant re-substitutes var(--fluid-vw)
+   against its OWN computed value. On an engine without @property (Safari
+   16.0-16.3 is the only build with trig but no registration) the declaration
+   is simply an unregistered custom property again, i.e. exactly today's
+   behaviour — degraded, never worse. */
+@property --fluid-vw {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
 .fluid-scale {
   --fluid-min: 0.6;
   --fluid-max: 1.3;
   --fluid-base: 1440px;
+  --fluid-vw: 100vw;
   --fluid-scale: 1;
 }
 @supports (width: calc(1px * tan(atan2(1px, 1px)))) {
   .fluid-scale {
     --fluid-scale: clamp(
       var(--fluid-min),
-      tan(atan2(100vw, var(--fluid-base))),
+      tan(atan2(var(--fluid-vw), var(--fluid-base))),
       var(--fluid-max)
     );
   }
