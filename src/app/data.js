@@ -29,6 +29,14 @@ export const projectsData = [
     date: '2025-07-20',
     demoLink: 'https://ma.codes',
     category: 'Web',
+    // `repo` (issue #48): the GitHub `owner/name` whose issue board drives
+    // this project's live completion percentage in the about page's
+    // Project Progress popup (/api/project-progress derives
+    // closed-vs-total counts from it, batched across every project in one
+    // GraphQL call). Casing must match GitHub exactly. A project with no
+    // usable board would set `repo: null` and render as "Not tracked" —
+    // every current project has one, so none do today.
+    repo: 'MA1002643/theabdullahfolio',
   },
   {
     id: 2,
@@ -45,6 +53,7 @@ export const projectsData = [
     date: '2025-02-13',
     demoLink: 'https://github.com/MA1002643/AfaaqX',
     category: 'System',
+    repo: 'MA1002643/AfaaqX',
   },
   {
     id: 3,
@@ -64,6 +73,7 @@ export const projectsData = [
     date: '2025-10-09',
     demoLink: 'https://github.com/MA1002643/culina',
     category: 'AI',
+    repo: 'MA1002643/culina',
   },
   {
     id: 4,
@@ -82,6 +92,7 @@ export const projectsData = [
     date: '2024-07-08',
     demoLink: 'https://muhammadabdullah227.co.uk/',
     category: 'Web',
+    repo: 'MA1002643/muhammadabdullah-portfolio',
   },
   {
     id: 5,
@@ -103,6 +114,7 @@ export const projectsData = [
     date: '2023-03-04',
     demoLink: 'https://github.com/MA1002643/colophon',
     category: 'AI',
+    repo: 'MA1002643/colophon',
   },
   {
     id: 6,
@@ -122,6 +134,7 @@ export const projectsData = [
     date: '2023-03-04',
     demoLink: 'https://github.com/MA1002643/dhun',
     category: 'System',
+    repo: 'MA1002643/dhun',
   },
   {
     id: 7,
@@ -144,6 +157,7 @@ export const projectsData = [
     date: '2023-03-04',
     demoLink: 'https://github.com/MA1002643/plenary',
     category: 'System',
+    repo: 'MA1002643/plenary',
   },
   {
     id: 8,
@@ -164,6 +178,7 @@ export const projectsData = [
     demoLink: null,
     private: true,
     category: 'Mobile',
+    repo: 'MA1002643/auxo',
   },
   {
     id: 9,
@@ -181,6 +196,61 @@ export const projectsData = [
     demoLink: null,
     private: true,
     category: 'Mobile',
+    repo: 'MA1002643/clearway',
+  },
+  {
+    id: 10,
+    // github.com/MA1002643/vigil — "Vigil — automated hourly check-in
+    // calls, verified. Server-mediated telephony + React Native." Added
+    // with tailorhawk (2026-08) to close the 11-boards-vs-9-cards gap:
+    // both repos already fed the maintenance header (workTrackedRepos,
+    // boards 4/5) but had no card here. Category Mobile on the
+    // auxo/clearway precedent — the product form is a mobile app: React
+    // Native is the ONLY delivery target on its 67-issue board ("vigil",
+    // users/MA1002643/projects/4 — TestFlight/Play distribution, store
+    // listings + submission, mobile crash reporting, WCAG 2.2 AA), with
+    // the server-mediated call engine (outbound PSTN placement, DTMF PIN
+    // entry, IVR/voicemail detection, outcome state machine) and the
+    // PIN-custody security cluster as supporting layers, like auxo's AI
+    // coaching. Not System on the dhun/plenary precedent because that
+    // rule needed multi-target delivery with web as one of many — vigil
+    // ships to exactly one form factor. The 4-word description is the
+    // repo's own phrasing. Date = repo creation. PRIVATE repo, no
+    // homepage — same no-dead-links rule as auxo: `demoLink: null` +
+    // `private` until a public URL exists.
+    name: 'vigil',
+    description: 'Automated hourly check-in calls',
+    date: '2026-07-25',
+    demoLink: null,
+    private: true,
+    category: 'Mobile',
+    repo: 'MA1002643/vigil',
+  },
+  {
+    id: 11,
+    // github.com/MA1002643/tailorhawk — "AI-powered job discovery & CV
+    // optimisation — daily digest of top job matches with ATS-optimised,
+    // per-role CV and LinkedIn PDFs. Cross-platform, security-first,
+    // cost-aware." Added with vigil (2026-08), see above. Category AI on
+    // the culina/colophon precedent: the description and the repo topics
+    // (ai, ats, cv, job-search) lead with AI, and the defining engines on
+    // its 52-issue board ("Tailorhawk", users/MA1002643/projects/5) are
+    // AI end to end — repository-analysis engine, matching/scoring engine
+    // with a documented ranking rubric, ATS-optimised CV rewrite,
+    // LinkedIn rewrite, per-run token-spend tracking and daily cost
+    // ceilings — while cross-platform delivery (five platforms, as on
+    // colophon) is the shell, not the lead. The 4-word description keeps
+    // the repo's own leading phrase, "& tailoring" covering the CV /
+    // LinkedIn rewrite half (and the product's namesake). Date = repo
+    // creation. PRIVATE repo, no homepage — same no-dead-links rule as
+    // auxo: `demoLink: null` + `private` until a public URL exists.
+    name: 'tailorhawk',
+    description: 'AI-powered job discovery & tailoring',
+    date: '2026-07-25',
+    demoLink: null,
+    private: true,
+    category: 'AI',
+    repo: 'MA1002643/tailorhawk',
   },
 ];
 
