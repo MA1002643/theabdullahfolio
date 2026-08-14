@@ -17,10 +17,12 @@ import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 import { cardVariants, childVariants } from "./revealVariants";
 import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
+import ProjectProgressPopup from "./ProjectProgressPopup";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
 import { wordFill } from "@/lib/fireRamp";
 import { fluid, fluidText } from "@/lib/fluidScale";
+import { PROJECT_CATEGORY_COLORS } from "@/lib/categories";
 
 const githubStatsStorageKey = (username) =>
   `github-stats:lastGood:${username}`;
@@ -311,12 +313,9 @@ function ExperienceSplitBar({
   );
 }
 
-// Warm palette for the completed-projects category split, drawn from the same
-// 5-tone scheme the years card uses (vivid orange → golds). Index 0/1 are the
-// exact two colours of the years card's Personal/Employment segments, so a
-// two-category split (Web / System today) reads as the same visual system;
-// extra categories fall back to the cooler golds further down the palette.
-const PROJECT_CATEGORY_COLORS = ["#ff6d05", "#ffd27d", "#ffaa2a", "#d4af7a", "#b8946a"];
+// The warm category palette moved to @/lib/categories (issue #48) so the
+// Project Progress popup colour-codes the same categories from the same
+// constant — see the export's own comment for the palette rationale.
 
 // Completed-projects category breakdown — computed once at module load from the
 // static `projectsData` import. The count only ever changes across a deploy
@@ -336,6 +335,17 @@ const PROJECT_CATEGORY_BREAKDOWN = (() => {
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
 })();
+
+// Spoken category summary for the completed-projects card's accessible name.
+// Making that card a `role="button"` (issue #48) turns it into a leaf for
+// name computation — its descendant text, including ProjectsSplitBar's
+// sr-only breakdown, is never announced — so the split has to be folded into
+// the button's own label, exactly as the years card folds in its
+// Personal/Employment split. Same phrasing as the split bar's sr-only text
+// so the two surfaces can't drift.
+const PROJECT_CATEGORY_SUMMARY = PROJECT_CATEGORY_BREAKDOWN.map(
+  (c) => `${c.label}: ${c.count} ${c.count === 1 ? "project" : "projects"}`,
+).join(", ");
 
 // Completed-projects category split bar — the "elite & complex" counterpart to
 // the years card's ExperienceSplitBar. Apportions the total project count
@@ -564,20 +574,17 @@ const AboutDetails = () => {
       // down the viewport (just entering the active area). Clamps to 0 when
       // the paragraph already sits above that line at load.
       const start = Math.max(docTop - vh * 0.8, 0);
-      // progress=1 anchor: complete the reveal as the paragraph scrolls UP
-      // through the viewport — its bottom passing ~20% down the screen keeps
-      // the last words on screen as they light. Floored at HALF A VIEWPORT of
-      // scroll so the per-word wave is always a perceptible scrub.
-      //
-      // The old anchor was the paragraph's CENTER reaching viewport center,
-      // floored at a fixed +200px. For this above-the-fold paragraph that
-      // center point lands at ~60px, so the whole 185-word reveal collapsed
-      // into the first ~200px of scroll — a single trackpad flick blew past it
-      // and the copy snapped fully visible instantly, reading as "no reveal".
-      // Anchoring to the paragraph's full scroll-through (and a viewport-
-      // relative floor) spreads the wave across a distance you can actually
-      // watch, and scales naturally for below-the-fold placements too.
-      const end = Math.max(docTop + rect.height - vh * 0.2, start + vh * 0.5);
+      // progress=1 anchor: the WHOLE paragraph must be lit before its first
+      // line can leave the screen, so completion anchors to the paragraph's
+      // TOP approaching the viewport top — done while line 1 still sits 15%
+      // down the screen. (The previous anchor — the paragraph's BOTTOM
+      // passing 20% — completed a tall paragraph's wave only after its first
+      // line had already scrolled off the top.) Floored at a THIRD of a
+      // viewport of scroll so the per-word wave stays a perceptible scrub;
+      // the floor can only bind for placements starting less than half a
+      // viewport down, where it still resolves comfortably before the first
+      // line exits.
+      const end = Math.max(docTop - vh * 0.15, start + vh * 0.35);
       // Bail-when-unchanged keeps the ResizeObserver below from scheduling
       // render loops when a reflow reports the same geometry.
       setRevealRange((prev) =>
@@ -1155,6 +1162,26 @@ const AboutDetails = () => {
   // languages card). Shown via the shared UpdateBanner once the card is in
   // view, then auto-hidden after ~4.5s.
   const completedProjectsRef = useRef(null);
+  // Completed-projects-card-as-button (issue #48): click / Enter / Space
+  // opens the Project Progress popup — live per-project completion from
+  // GitHub Issues. Same trigger contract as the years card's breakdown
+  // modal: `progressTriggerRef` (on the outer ItemLayout, the focusable
+  // button) lets the dialog restore focus on close, and the state lives here
+  // because the popup is a fixed overlay rendered at the section root.
+  // Unlike the years card there's no loading gate — the trigger's data
+  // (count + category split) is static, so button semantics attach
+  // unconditionally.
+  const [isProgressPopupOpen, setIsProgressPopupOpen] = useState(false);
+  const progressTriggerRef = useRef(null);
+  const openProgressPopup = () => setIsProgressPopupOpen(true);
+  const handleProgressTriggerKeyDown = (e) => {
+    // Standard button keyboard semantics — Enter or Space activates.
+    // Prevent Space from scrolling the page.
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openProgressPopup();
+    }
+  };
   // `useReliableInView` (not framer `useInView`): the ItemLayout's scale 0 → 1
   // entrance hides the card from an IntersectionObserver, so the count-up never
   // fired and the digit sat at 0 on /about. See the hook's docs.
@@ -1381,6 +1408,7 @@ const AboutDetails = () => {
         </ItemLayout>
 
         <ItemLayout
+          ref={progressTriggerRef}
           // On screen at scroll 0 — behind the intro loader — so its entrance
           // reveal is gated on the loader lifting (`revealed`) instead of a
           // `whileInView` that would fire and finish unseen behind the overlay.
@@ -1389,12 +1417,26 @@ const AboutDetails = () => {
           revealWhen={revealed}
           revealOrder={1}
           tilt
+          // Card-as-button (issue #48) — opens the Project Progress popup.
+          // Attached unconditionally (unlike the years card's data-gated
+          // contract) because the trigger's own facts are static imports; the
+          // popup handles its own loading/fallback states. The category
+          // split is folded into the label because a labelled button never
+          // announces its descendants (see PROJECT_CATEGORY_SUMMARY).
+          role="button"
+          tabIndex={0}
+          aria-haspopup="dialog"
+          aria-expanded={isProgressPopupOpen}
+          aria-label={`${projectsData.length} completed projects. ${PROJECT_CATEGORY_SUMMARY}. Activate to open live project progress.`}
+          onClick={openProgressPopup}
+          onKeyDown={handleProgressTriggerKeyDown}
           // Mirrors the "Years in the craft" card exactly: `!p-0` hands all
           // padding to the inner `repo-card-breathe` wrapper, and `group
           // relative` matches the sibling so the two feature cards share one
           // structure (outer owns the `custom-bg-abt` amber border + gradient;
           // inner owns the breathing glow on its rounded-lg perimeter).
-          className={" group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent !p-0"}
+          // Cursor + focus ring match the years card's trigger treatment.
+          className={" group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent !p-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50"}
         >
           {/* Inner wrapper is the 1:1 twin of the years card's: the
               `repo-card-breathe` pulsing glow border on a `rounded-lg`
@@ -1497,6 +1539,19 @@ const AboutDetails = () => {
                 pulseCategories={pulseProjectCats}
               />
             </motion.div>
+
+            {/* Hover affordance — fades in on group-hover/focus, the exact
+                treatment (and copy pattern) of the years card's "View
+                breakdown →" hint, so the two feature-card triggers announce
+                themselves identically. `aria-hidden` because the card itself
+                advertises `role="button"` + aria-haspopup. */}
+            <p
+              aria-hidden="true"
+              className="text-[11px] tracking-wide mt-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
+              style={{ color: "#ffd27d", textShadow: "none", fontSize: fluidText(0.6875, 0.6875) }}
+            >
+              View progress →
+            </p>
           </motion.div>
         </ItemLayout>
 
@@ -1757,6 +1812,16 @@ const AboutDetails = () => {
         triggerRef={experienceTriggerRef}
         pulseRepoNames={experiencePulseRepoNames}
         pulseRoleKeys={experiencePulseRoleKeys}
+      />
+
+      {/* Project Progress popup (issue #48) — same section-root mounting
+          rationale as the modal above. Always mounted (not gated on open) so
+          its useProjectProgress hook fetches at page load and the dialog
+          opens already populated. */}
+      <ProjectProgressPopup
+        open={isProgressPopupOpen}
+        onClose={() => setIsProgressPopupOpen(false)}
+        triggerRef={progressTriggerRef}
       />
     </section>
   );
