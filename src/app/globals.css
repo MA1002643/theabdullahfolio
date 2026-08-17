@@ -4295,6 +4295,232 @@ html.custom-cursor-active * {
     );
 }
 
+/* ── Hero role line: latent security engraving (issue #11) ───────────────────
+   "SOFTWARE ENGINEER" was `.text-glow-stroke-purple` — a #fc83ff magenta neon
+   tube. It is now printed the way a value document prints: solid intaglio type
+   struck over an engraved ground, with the words carried a second time as a
+   LATENT image that exists only as the moiré between two hairline gratings.
+   `HomeRoleLatent.jsx` draws that ground on a canvas behind this text.
+
+   These rules are the printed type, and they are the whole of the line whenever
+   the ground is not there: no JavaScript, no 2D context, a lost context, or a
+   browser that never reaches the layer at all. Nothing hands over and nothing
+   is hidden — the canvas is a sibling BEHIND the heading and never draws a
+   pixel of the words the reader is meant to read. That is the feature's risk
+   control, and it is structural rather than tuned: the latent layer can only
+   ever add a second reading to a line that was already finished.
+
+   SIZE IS UNTOUCHED, and that is the constraint the whole feature is built
+   around rather than a detail left alone. The four breakpoints — 1rem / 1.2 /
+   1.4 / 1.6 — the 300 weight and the 4px tracking are exactly what this line
+   has always shipped, and `page.js` still passes the same Tailwind classes that
+   set them. At a 300 weight that makes a stem about 1.4 device-independent
+   pixels wide at the small end, which rules out every SURFACE treatment there
+   is: a bevel, a reflection, an emboss and a brushed anisotropy all need
+   interior area to shade, and a 1.4px stroke is two antialiased edges with
+   nothing in between. The engraving needs none of that — its signal is carried
+   by interference between one-device-pixel lines, so it SHARPENS as the type
+   gets smaller instead of dying with it.
+
+   ── CONTRAST ────────────────────────────────────────────────────────────────
+   Measured against the backdrop AS SHIPPED — the engraved ground switched on,
+   only this heading hidden. That distinction is the whole measurement: the
+   ground prints light on a dark frame, so it LIFTS what sits under the type,
+   and grading the ramp against a bare frame would flatter it. The brightest
+   pixel under the line comes out at 0.0733 relative luminance at 1440x900 and
+   0.0751 at 390x844, against roughly 0.016 / 0.018 with no plate.
+
+   Every stop, desktop / phone: aqua #8fe8dc 5.98 / 5.89, periwinkle #bcd2ff
+   5.60 / 5.52, orchid #ddccff 5.74 / 5.66, rose #ffc3dd 5.72 / 5.64, and the
+   no-`background-clip` fallback #dfe6ff 6.85 / 6.75. All clear of 4.5:1 with
+   the floor at 5.52:1. (#87's portrait-phone pass had to rescue this same line
+   from 2.98:1 once, which is why these are measured rather than assumed.)
+
+   The middle two stops were LIGHTENED from #a9c4ff / #d4c0ff to land here, and
+   the reason is worth recording because it is the same trap twice: the latent
+   word's own weight is light added UNDER this type, so making the word readable
+   moved this ramp. Struck hard enough to read at a glance (a gain of 0.85) it
+   took every stop to ~3.2:1. The fix was to buy the word's legibility mostly in
+   HUE — which adds no light — and only a little in weight, then lighten these
+   two stops and drop the ground's density to 0.086 for the rest. Any future
+   change to the latent's gain has to come back through this note.
+
+   Worth knowing WHY a saturated ramp measures better here than the ivory one it
+   replaced, since the instinct is the opposite: the plate's own peak went
+   chromatic at the same time, and a chromatic peak carries less LUMINANCE than
+   a neutral one at the same alpha. The colour that made the type look riskier
+   is what lowered the backdrop it is read against. The ground's density is
+   still the lever, and it is specified as a mean alpha in `HomeRoleLatent.jsx`
+   precisely so this measurement holds when the grating changes between a phone
+   and a desktop. Periwinkle is the floor of the ramp and the stop to re-check
+   first if these are ever retuned. */
+.hero-role-plate {
+  position: relative;
+  /* Its own stacking context, so the ground composites against this heading
+     and nothing else on the page. */
+  isolation: isolate;
+}
+
+.hero-role {
+  /* Above the ground. The canvas is an earlier sibling, but it is positioned
+     and this heading is not, so without a layer of its own the ground would
+     paint over the type — the one thing this layer must never do. */
+  position: relative;
+  z-index: 1;
+  /* ── HEADROOM FOR THE PLATE, IN THIS LINE'S OWN EM ────────────────────────
+     The plate is BIGGER THAN THIS HEADING and reaches 1.225em above the ink
+     box it is centred on (`PAD_TOP_EM` in HomeRoleLatent.jsx), because the
+     latent word is set larger than the printed one and stacked in two lines
+     with this line in the gap between them. The canvas is absolutely
+     positioned, so none of that reach is reserved in layout — it simply
+     overhangs, and whatever is above has to be far enough away.
+
+     This was `mt-1` on the heading: a flat 4px, which is what the line
+     carried when it was type and nothing else. It no longer is. The name
+     above sets `leading-none`, so its box leaves only its own descender
+     slack under the baseline — measured at 0.149 of the name's font size in
+     Varela Round, and "Abdullah" has no descenders to spend it on. Four
+     pixels plus that slack is less than the plate's reach at every
+     breakpoint, so the hairlines ran up under the letterforms: at 390px wide
+     the plate's top edge crossed the name's ink by 8px and the ground was
+     visibly printed over the bottom of ABDULLAH.
+
+     Note WHY it reads worst on a phone, since the classes are the same
+     everywhere. The plate scales with THIS line; the slack scales with the
+     NAME; and the two are not in a fixed ratio — the name is 2.6x this line
+     at the base breakpoint and 3.125x at `lg`. The smaller the screen, the
+     less name there is to give slack, and the smaller the absolute gap that
+     is left over. Stating the margin in em of this line is what makes the
+     answer scale-free: the term that has to clear the plate is now in the
+     plate's own units, and the name's slack is pure surplus on top.
+
+     1.3em clears 1.225em with the difference to spare, and lands 0.54em
+     (8.9px at 390) to 0.63em (16.2px at 1440) of clear air between the name's
+     ink and the first row of the plate. Anything below ~1.14em starts to put
+     hairlines back under the name at the `sm` breakpoint, which is the
+     tightest of the four. Trimming the plate instead is not the lever: its
+     pads are equal by design, so shortening the top alone slides the printed
+     line off the centre of the ghost block it is meant to sit inside — see
+     the note on `PAD_TOP_EM`.
+
+     Margin, not padding on `.hero-role-plate`: the wrapper is not a block
+     formatting context, so this collapses through it and behaves exactly as
+     the old `mt-1` did — space between the name and this block, with nothing
+     reserved below, where the plate's matching bottom overhang costs nothing
+     because the next thing down is the laptop's own empty half of the hero. */
+  margin-top: 1.3em;
+  /* The tracking this line has always carried, copied out of
+     `.text-glow-stroke-purple` rather than shared with it — the point is to
+     take the 4px and leave the magenta and the neon tube behind.
+       That utility now has NO consumers: this line was its last one, and it is
+     left in place rather than deleted here because removing a public-ish
+     utility (it is named in the README's utilities list) is its own decision
+     and not this feature's to make. Worth knowing it is dead.
+       Note what is NOT corrected here: CSS adds letter-spacing after the last
+     character too, so a centred line sits half a step left of true centre. It
+     always has. Fixing it would move the words, and moving the words is a
+     layout change this is not allowed to make. */
+  letter-spacing: 4px;
+  /* The only colour an engine without `background-clip: text` ever sees. */
+  color: #dfe6ff;
+  /* Grounding, not decoration. Over a photograph a bright object with no
+     shadow reads as pasted on; this is the same note the laptop's contact
+     shadow answers a few hundred pixels below. It sits on the TYPE and not on
+     the wrapper, because the wrapper also holds the engraved ground and a
+     shadow under hairlines would silt them up. */
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.55));
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero-role {
+    /* An iris print, running ACROSS the line rather than down it — the same
+       split-fountain sweep the ground under it is printed with, so the type
+       and the plate are demonstrably off one press. Held to a quarter of the
+       hue wheel (aqua → periwinkle → orchid → rose) rather than a full
+       rainbow: a continuous blend is what a note actually prints, and a
+       spectrum is what a novelty prints.
+         Every stop is chosen for LUMINANCE first — see the contrast note
+       above. The orchid stop is the floor of the ramp and the one to check
+       first if these are ever retuned. */
+    background-image: linear-gradient(
+      90deg,
+      #8fe8dc 0%,
+      #bcd2ff 34%,
+      #ddccff 67%,
+      #ffc3dd 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+/* ── The strike ───────────────────────────────────────────────────────────────
+   The printed line is the LAST thing to arrive, because it cannot be struck
+   until the ground it sits on exists. `HomeRoleLatent.jsx` adds `is-printing`
+   on the frame the plate first paints, and everything after that is CSS.
+
+   Why CSS owns the type rather than the loop that owns the plate: this
+   animation is the only thing standing between the reader and an invisible
+   heading, so it must not depend on the canvas surviving. It runs on the
+   compositor, it runs to completion whether or not a single further frame is
+   painted, and `both` leaves the line at full opacity forever after. If the
+   loop throws on its second frame the type still arrives on time.
+
+   And it arrives the way the plate did: OUT OF REGISTER. Two colour ghosts sit
+   either side of the letterforms and converge into them, which is the same
+   event happening at a different scale — the press pulling its separations
+   together. The list keeps three drop-shadows at every keyframe because CSS
+   interpolates filter lists only when the functions match in count and order;
+   the third is the resting contact shadow, faded in as the ghosts fade out. */
+@keyframes hero-role-strike {
+  0%,
+  76% {
+    opacity: 0;
+    filter: drop-shadow(-15px 0 0 rgb(60 210 200 / 0.85))
+      drop-shadow(15px 0 0 rgb(232 105 170 / 0.85)) drop-shadow(0 0 0 rgb(0 0 0 / 0));
+  }
+  /* The strike itself: ~110ms, not a fade. A press hits. */
+  80% {
+    opacity: 1;
+    filter: drop-shadow(-11px 0 0 rgb(60 210 200 / 0.8))
+      drop-shadow(11px 0 0 rgb(232 105 170 / 0.8)) drop-shadow(0 0 0 rgb(0 0 0 / 0));
+  }
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 0 rgb(60 210 200 / 0)) drop-shadow(0 0 0 rgb(232 105 170 / 0))
+      drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.55));
+  }
+}
+
+.hero-role.is-printing {
+  animation: hero-role-strike 2960ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Reduced motion never reaches the class — the layer paints one still frame and
+   never starts a loop — but a stylesheet should not rely on that to be safe. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-role.is-printing {
+    animation: none;
+  }
+}
+
+/* The engraved ground. Geometry is written by the component from the measured
+   ink box — the plate is wider and much taller than the type, because the
+   latent word is set larger than the printed one and stacked in two lines.
+   It is CENTRED on the type rather than hung below it: the printed line sits in
+   the gap between those two ghost lines, so any vertical bias in the plate puts
+   the printed line closer to one of them. The zero size here only stops a
+   canvas element's default 300x150 from ever being laid out. */
+.hero-role-ground {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
 /* ── Portrait phones: re-frame, don't re-tune ─────────────────────────────────
    Reported as "the background is brighter and flatter on my phone, and the
    laptop and buttons look pasted onto it". Measured, it is neither a mobile
