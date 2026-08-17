@@ -6,7 +6,7 @@ import Navigation from '@/components/navigation';
 import LiveMaintenanceHeader from '@/components/home/LiveMaintenanceHeader';
 import HomeSceneWater from '@/components/home/HomeSceneWater';
 import HomeSceneGlow from '@/components/home/HomeSceneGlow';
-import HomePathIgnite from '@/components/home/HomePathIgnite';
+import HomeRoleLatent from '@/components/home/HomeRoleLatent';
 import { useState } from 'react';
 
 export default function Home() {
@@ -91,13 +91,6 @@ export default function Home() {
           "the picture is alive", never as an overlay. */}
       <HomeSceneGlow />
 
-      {/* The causeway lighting itself, once, on arrival: a wavefront sweeps the
-          stone away from the viewer, each lantern catching as it passes, then
-          blooms into the mist and hands back to the baked plate. Self-
-          unmounting; costs nothing after ~2.5s. Under the scrim, so the flare
-          is dimmed by the same wash as the lanterns it lights. */}
-      <HomePathIgnite />
-
       {/* Art-directed scrim, not a flat wash: dark over the headline block,
           LIGHTEST across the middle so the vanishing-point mist can rim-light
           the laptop, closing again at the bottom (.home-scrim, globals.css). */}
@@ -135,9 +128,42 @@ export default function Home() {
             <br /> Abdullah
           </h1>
 
-          <h2 className="text-glow-stroke-purple mt-1 text-[1rem] font-light uppercase leading-snug text-amethyst-neon sm:text-[1.2rem] md:text-[1.4rem] lg:text-[1.6rem]">
+          {/* The role line, printed on a security plate (issue #11). Still an
+              ordinary <h2> holding an ordinary text node — HomeRoleLatent wraps
+              it and puts an engraved ground BEHIND it: a field of
+              one-device-pixel guilloche with a second, near-identical engraving
+              over it at a slightly finer pitch and a fifth of a degree of
+              rotation. The words are cut into that overlay as a half-pitch
+              displacement, so they exist a second time as the moiré between the
+              two — surfacing out of the fringe field as its phase drifts and as
+              the pointer tilts the plate, exactly like tilting a banknote.
+
+              The canvas never draws a pixel of THIS text. It is a sibling
+              behind the heading, so the printed line stays solid and legible on
+              its own and the latent reading is only ever a bonus.
+
+              THE SIZE CLASSES BELOW ARE UNCHANGED, deliberately and by
+              constraint: same four breakpoints, same 300 weight, same
+              `leading-snug`. At that size a stem is ~1.4px, which rules out
+              every surface treatment there is — and is exactly why the effect
+              is line art: hairline moiré is scale-free, so it gets SHARPER as
+              the type gets smaller. See the note on `.hero-role` in
+              globals.css. Only the two magenta utilities are gone:
+              `text-amethyst-neon` (the #fc83ff fill) and
+              `text-glow-stroke-purple`, whose 4px tracking moved to
+              `.hero-role` unchanged so the line still measures the same.
+
+              What DID change is the space above: `mt-1` is gone from here and
+              the line's top margin now lives in `.hero-role` as 1.3em, in the
+              line's own em rather than in pixels. The plate overhangs 1.225em
+              above this heading and a flat 4px never cleared it, so the
+              engraving printed over the bottom of ABDULLAH — worst on a phone,
+              where the name is at its smallest relative to this line. The
+              reasoning and the measurements are with the rule in globals.css;
+              size it there, not here, so it stays tied to the plate. */}
+          <HomeRoleLatent className="text-[1rem] font-light uppercase leading-snug sm:text-[1.2rem] md:text-[1.4rem] lg:text-[1.6rem]">
             Software Engineer
-          </h2>
+          </HomeRoleLatent>
         </div>
 
         <div className="relative z-10 flex w-full flex-1 items-center justify-center">
