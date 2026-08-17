@@ -286,6 +286,19 @@ const HomeRoleLatent = ({ children, className = '' }) => {
 
   const pointerRef = useRef({ x: 0, y: 0, present: false });
 
+  // The strike is a property of THIS HEADING, not of the effect that happens to
+  // be running the plate, so it is tracked per mounted instance rather than per
+  // effect run. `useSceneGate` deliberately pauses without unmounting — the
+  // element has to survive for the IntersectionObserver to see it come back —
+  // so the effect below re-runs on every pause/resume, on a `lite` or
+  // pointer-capability change, and on the reduced-motion handover. A flag local
+  // to the effect would re-arm the animation on each of those, and the animation
+  // opens at `opacity: 0` for 2.25s: the reader would watch an already-printed
+  // line vanish and re-print every time they scrolled the hero back into view.
+  // Only a real unmount clears this, which is also the only case that gets a
+  // fresh <h2> to strike.
+  const struckRef = useRef(false);
+
   useEffect(() => {
     if (!running || !canHover) return undefined;
     const onMove = (e) => {
@@ -524,9 +537,12 @@ const HomeRoleLatent = ({ children, className = '' }) => {
       fillBreath(R.breath, R.W, 0);
       // Fully registered, fully inked, and phase-aligned so the one frame a
       // reduced-motion reader gets is the frame where the word is showing.
+      // One lock per ink — they are cut at different tilts and pitches, so they
+      // do not arrive at the plate's centre together and cannot be brought
+      // there by a shared offset.
       const seps = restSeparations();
-      const lock = R.engraving.alignAtCentre(seps);
-      for (let i = 1; i < seps.length; i += 1) seps[i].phase += lock;
+      const locks = R.engraving.alignAtCentre(seps);
+      for (let i = 1; i < seps.length; i += 1) seps[i].phase += locks[i];
       R.engraving.paint(R.image.data, {
         seps,
         ink: R.ink,
@@ -536,7 +552,19 @@ const HomeRoleLatent = ({ children, className = '' }) => {
       });
       ctx.putImageData(R.image, 0, 0);
     };
+    // Every listener this effect adds is removed in `teardown` and every timer
+    // it starts is cleared there, so none of them can reach a dead run. One
+    // thing can: `document.fonts.ready` is a promise, and a promise has no
+    // unsubscribe — a `.then` registered by a run that has since been torn down
+    // still fires. It would land on the LIVE canvas, because this layer pauses
+    // without unmounting and the element is therefore shared between runs:
+    // `rebuild` reassigns `canvas.width`, which CLEARS the bitmap, and rewrites
+    // the inline geometry from measurements taken for a run that no longer
+    // owns the plate. The flag is read in `refresh` rather than at each call
+    // site because that is the single door every rebuild comes through.
+    let disposed = false;
     const refresh = () => {
+      if (disposed) return;
       rebuild();
       if (still) paintStill();
     };
@@ -593,17 +621,21 @@ const HomeRoleLatent = ({ children, className = '' }) => {
     canvas.addEventListener('contextrestored', onRestored);
 
     const teardown = () => {
+      disposed = true;
       window.clearTimeout(pending);
       ro?.disconnect();
       if (!ro) window.removeEventListener('resize', schedule);
       stopDpr();
       canvas.removeEventListener('contextlost', onLost);
       canvas.removeEventListener('contextrestored', onRestored);
-      // Dropped so a remount prints again rather than finding the type already
-      // struck. The class is what arms the CSS animation, so leaving it behind
-      // would mean a client-side navigation back to this page re-prints the
-      // plate under a heading that never re-arrives.
-      el.classList.remove('is-printing');
+      // The class is NOT dropped here. It once was, to keep a remount from
+      // finding the type already struck — but a remount destroys this <h2> and
+      // takes the class with it, so that was never the case this ran in. What
+      // it ran in was every pause: teardown fires whenever `running` drops, and
+      // re-arming `hero-role-strike` on resume hides a heading that had already
+      // arrived. The animation is `both`, so left alone it holds the line at
+      // full opacity for as long as the element lives, which is the point of
+      // handing the type to CSS in the first place. See `struckRef`.
       R = null;
     };
 
@@ -618,7 +650,6 @@ const HomeRoleLatent = ({ children, className = '' }) => {
     let first = true;
     let tiltPhase = 0;
     let tiltFan = 0;
-    let struck = false;
 
     // The plates' resting registration, and the live copy the loop mutates.
     // Allocated once so a frame never touches the allocator.
@@ -716,9 +747,11 @@ const HomeRoleLatent = ({ children, className = '' }) => {
       // so the two arrivals share a start. From here the type's whole
       // appearance is a compositor animation that runs to completion on its
       // own — this loop can die on the very next frame and the heading still
-      // arrives. See `hero-role-strike` in globals.css.
-      if (!struck) {
-        struck = true;
+      // arrives. See `hero-role-strike` in globals.css. Once per heading, not
+      // once per loop: a resumed plate re-prints under type that is already
+      // struck, which is the correct order for a second arrival.
+      if (!struckRef.current) {
+        struckRef.current = true;
         el.classList.add('is-printing');
       }
     };

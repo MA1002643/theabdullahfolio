@@ -4440,8 +4440,11 @@ html.custom-cursor-active * {
        rainbow: a continuous blend is what a note actually prints, and a
        spectrum is what a novelty prints.
          Every stop is chosen for LUMINANCE first — see the contrast note
-       above. The orchid stop is the floor of the ramp and the one to check
-       first if these are ever retuned. */
+       above, which measures all four and is the one place they are ranked.
+       PERIWINKLE #bcd2ff is the floor at 5.60 desktop / 5.52 phone, so it is
+       the stop to re-check first if these are ever retuned — and the one with
+       the least room to be darkened. Orchid, which this note once named
+       instead, is third from the bottom at 5.74 / 5.66. */
     background-image: linear-gradient(
       90deg,
       #8fe8dc 0%,
