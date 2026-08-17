@@ -608,14 +608,31 @@ const HomeRoleLatent = ({ children, className = '' }) => {
     };
     watchDpr();
 
+    // A lost context used to leave the loop turning: `draw` re-armed itself at
+    // the top of every frame and only then bailed on `lost`, so a context that
+    // never came back — rare, but the reason `contextrestored` is listened for
+    // at all — left a no-op callback waking the main thread every frame for as
+    // long as the layer was on screen. The frame is cancelled here instead, and
+    // started again by hand on restore.
+    //
+    // `raf` is declared up here, and the restart goes through `start`, because
+    // these two handlers are attached BEFORE the animated path is built and the
+    // still path returns without ever building it. A no-op `start` is what
+    // keeps a restore under reduced motion from reaching for a `draw` that does
+    // not exist — that path repaints through `refresh` and wants no loop.
+    let raf = 0;
+    let start = () => {};
     let lost = false;
     const onLost = (e) => {
       e.preventDefault();
       lost = true;
+      cancelAnimationFrame(raf);
+      raf = 0;
     };
     const onRestored = () => {
       lost = false;
       refresh();
+      start();
     };
     canvas.addEventListener('contextlost', onLost);
     canvas.addEventListener('contextrestored', onRestored);
@@ -645,7 +662,6 @@ const HomeRoleLatent = ({ children, className = '' }) => {
     if (still) return teardown;
 
     const t0 = performance.now();
-    let raf = 0;
     let last = 0;
     let first = true;
     let tiltPhase = 0;
@@ -657,8 +673,17 @@ const HomeRoleLatent = ({ children, className = '' }) => {
     const seps = restSeparations();
 
     const draw = (now) => {
+      // A frame already in flight when the context went finishes here rather
+      // than re-arming, so the loop stops even if the cancel in `onLost` raced
+      // it. `!R` is the other bail and it deliberately KEEPS scheduling: R is
+      // null only between a rebuild starting and finishing, and the loop has to
+      // be there to pick the plate up when it lands.
+      if (lost) {
+        raf = 0;
+        return;
+      }
       raf = requestAnimationFrame(draw);
-      if (lost || !R) return;
+      if (!R) return;
 
       const active = Math.abs(tiltPhase) > 0.002 || Math.abs(tiltFan) > 0.002;
       const frameMs = lite ? FRAME_MS_LITE : active ? FRAME_MS : FRAME_MS_IDLE;
@@ -755,7 +780,17 @@ const HomeRoleLatent = ({ children, className = '' }) => {
         el.classList.add('is-printing');
       }
     };
-    raf = requestAnimationFrame(draw);
+
+    // Now there is a loop to start, so `onRestored` gets a real one. `first`
+    // resets with it: a restore can come long after the context went, and the
+    // resumed frame should measure its `dt` from itself rather than from
+    // whenever the last frame before the loss happened to land.
+    start = () => {
+      if (raf) return;
+      first = true;
+      raf = requestAnimationFrame(draw);
+    };
+    start();
 
     return () => {
       cancelAnimationFrame(raf);
