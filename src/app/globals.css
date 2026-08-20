@@ -4608,14 +4608,917 @@ html.custom-cursor-active * {
     --home-tone: contrast(1.25) brightness(1.16);
   }
 
-  /* The hero shell is `h-screen`, and on iOS `100vh` is the LARGE viewport —
-     the toolbar-hidden one. This page never scrolls, so the toolbar never
-     collapses, and the bottom ~9% of the composition (including the darkest end
-     of the scrim's base gradient, 0.6 at 100%) sat permanently below the fold.
-     `100svh` is the SMALL viewport: what is actually on screen while the
-     toolbar is up. Worth 1.2 luminance on its own. */
-  .home-shell {
-    height: 100svh;
+  /* The shell's height moved to `--hero-h` (the hero-fit block further down),
+     which carries this same portrait `svh` override alongside its own `vh`
+     base — so the rule that used to sit here is now one line in that block, and
+     the height budget has exactly one source instead of two.
+       The reasoning it carried is unchanged and still applies there: on iOS
+     `100vh` is the LARGE viewport, the toolbar-hidden one. A page that fits
+     never collapses the toolbar, so the bottom ~9% of the composition
+     (including the darkest end of the scrim's base gradient, 0.6 at 100%) sat
+     permanently below the fold — worth 1.2 luminance on its own. `100svh` is
+     what is actually on screen while the toolbar is up, and it also removes the
+     PHANTOM SCROLL a `100vh` shell leaves on a portrait phone: a toolbar's worth
+     of document with nothing in it. Same split `.not-found-bg` further up
+     makes, pinning svh in portrait and staying scrollable in landscape. */
+}
+
+/* ── The 640-767px dead band: hero sizes RAMP instead of sitting still ─────
+   Tailwind's `sm` is a 128px-wide plateau on this page — every hero size is
+   frozen at its 640px value all the way to 767, then steps 33-67% at `md`.
+   Measured live at 900px tall, before this block:
+
+     width      639     700     767   |   768 (`md`)
+     button      56      64      64   |    72
+     ICON        24      24      24   |    40      <- frozen since 0px
+     title     41.6      48      48   |    64
+     subtitle    16    19.2    19.2   |  22.4
+     laptop     450     539     584   |   358      <- grows, then collapses
+
+   Two separate faults, and the second is what makes the first visible.
+
+   The ICON never left the phone. `w-6` has no `sm:` step, so a 24px glyph is
+   dropped into a circle that DID grow to 64 — 37% of the button against 55%
+   at `md` and 43% below 640. The button is the only part of the control that
+   scales, so the ring reads as eight empty discs with something small in the
+   middle of them.
+
+   The LAPTOP is a percentage (`sm:w-[75%]`) where every other hero size is a
+   step, so it is the one element that keeps growing through the band: 76% of
+   the viewport at 767, wide enough to swallow the orbit ring, and then it
+   SNAPS to a fixed 22rem at 768 and loses 226px in one pixel of width. Type
+   and buttons frozen underneath something still inflating is most of why the
+   whole band reads as shrunken — the reference against which the eye judges
+   them is the thing that moved.
+
+   So: interpolate the band. `calc(A + (B - A) * (100vw - 640px) / 128)` is a
+   straight line across the 128px the band spans (number x length / number is
+   a length, so no unitless-ratio trick is needed here — contrast the
+   `tan(atan2())` in the fluid-scale block below, which needs a factor it can
+   multiply many properties by). Every A below is the value the band already
+   had at 640, and every B is the REAL `md` value, so each line arrives at the
+   exact number Tailwind's `md:` utility takes over with at 768 and the cliff
+   does not shrink — it stops existing. Verified per property in the table at
+   the foot of this block.
+
+   Why here and not inline: these are eleven `calc()`s across four files'
+   worth of markup, and Tailwind arbitrary values would carry them as
+   `text-[calc(48px_+_16_*_(100vw_-_640px)_/_128)]`. They also have to be
+   READ together — the ramps are mutually constrained (the icon has to stay
+   inside a button that is itself ramping, the shadow has to track a laptop
+   that is ramping the other way), and a class list cannot say that.
+
+   Every selector below is ELEMENT-QUALIFIED (`img.laptop`, not `.laptop`) to
+   reach 0,1,1 against the utilities' 0,1,0. Do not simplify them back to bare
+   classes. Source order is not the lever it looks like here: these rules sit
+   thousands of lines below `@tailwind utilities`, but Tailwind emits JIT
+   ARBITRARY-value utilities at the end of the sheet — measured in the built
+   layout.css, `md:w-[22rem]` lands at byte 279830 against this block's 238859
+   — so a bare `.laptop` loses to `md:w-[22rem]` on order while `.home-shell`
+   a few lines up beats `h-screen` on order, because `h-screen` is a core
+   utility emitted up at line 3. Specificity is the only thing that holds for
+   both. Written bare first, this block silently no-op'd on seven of its nine
+   rules; only the two carrying a combinator took effect.
+   `767.98px` is the exact complement of `md`, so no viewport matches both.
+
+   One caveat on `100vw`: it includes the scrollbar gutter where a media
+   query does not. This route is `h-screen overflow-hidden` and never
+   scrolls, so there is no gutter and the two agree; on a viewport that
+   somehow had one the ramp would start a few px early, which is a
+   sub-pixel error in a 128px interpolation, not a layout fault. */
+@media (min-width: 640px) and (max-width: 767.98px) {
+  /* The headline's two ramps for this band are NOT here. They are the 640 rung
+     of the `--title-w` / `--role-w` ladder in the vertical-fit block below —
+     moved there, unchanged in value, because a font-size cannot be clamped by
+     a `max-*` property the way a box can, so capping it by viewport HEIGHT
+     needs `min()`, and `min()` needs the width-derived value as an operand.
+     One ladder is the only way to avoid writing these two ramps twice. */
+
+  /* Laptop: 450 -> 432px, the one ramp that runs DOWNWARD. 450 is what 70% of
+     a 639px viewport already measures, so the band now starts where the phone
+     layout ends instead of stepping up to 480 and climbing from there. Stated
+     in px, not %, on purpose: a percentage is what let this element track the
+     viewport while everything around it was pinned.
+       432 is where the `md` band now STARTS (its own 432 -> 480 ramp, in the
+     ladder below), not the 352 it used to sit at. The old landing was itself
+     the defect the owner reported as "the laptop is small on some widths": a
+     767px viewport handed a 450px-class laptop over to a 352px one, and every
+     tablet from 768 to 1023 then held that 352 however much room it had. With
+     both ends nearly level the band is almost flat — an 18px descent across
+     128px of width — and the artwork never again loses a fifth of itself at
+     one pixel of resize. */
+  img.laptop {
+    --laptop-w: calc(450px - 18 * (100vw - 640px) / 128);
+    /* Its `mb-6` -> `md:mb-24` step (24 -> 96px) ramps too, but that rung now
+       lives in the `--laptop-mb` ladder in the vertical-fit block below, for
+       the same reason the headline's two ramps moved there: a margin has no
+       `max-*` property, so capping it by height needs `min()` and an operand.
+       The reason it has to ramp at all belongs here. The margin is the
+       laptop's VERTICAL placement — the hero row centres the laptop-plus-rings
+       cluster, so half of any bottom margin reads as the laptop sitting that
+       much higher, and the ripple rings, absolutely positioned against the
+       same wrapper, follow it. Measured, the untouched step moved the laptop
+       32px up in one pixel of width. That was invisible while the same
+       boundary was also taking 226px off its width; with the width continuous
+       it became the only thing left moving at 768. */
+  }
+
+  /* No contact-shadow ramp here any more. From 640 up the shadow is a fixed
+     0.875 ratio of the laptop's MEASURED width (`--lap-w` — the
+     `.laptop-contact` rule with the ground effects further down), which is
+     this ramp's intent solved in general: the ramp tracked the width LADDER,
+     but the rendered laptop is `min(ladder, height cap)` and the shadow
+     diverged from it again wherever the cap won. */
+
+  /* Ripple rings: 200/300/460 -> 340/460/600. Not cosmetic bookkeeping — the
+     rings are the floor the laptop stands on and the plane the orbit is
+     drawn in (ORBIT_TILT, navigation/index.jsx), so leaving them stepped
+     would put the one remaining 768px pop directly under the art.
+       The inner two land on 340/460 — the values the whole 768+ range shares
+     now that the laptop no longer steps down at `md` (see the `--ring-size`
+     ladder): rings sized for a 352px laptop under one that starts at 432
+     would leave the inner pair swallowed whole. They set `--ring-size` rather
+     than `width`/`height` directly, so the fit factor further down can
+     multiply them. */
+  div.borderline {
+    --ring-size: calc(200px + 140 * (100vw - 640px) / 128);
+  }
+
+  div.borderline2 {
+    --ring-size: calc(300px + 160 * (100vw - 640px) / 128);
+  }
+
+  div.borderline3 {
+    --ring-size: calc(460px + 140 * (100vw - 640px) / 128);
+  }
+
+  /* Nav button box: 64 -> 72px, and its padding 16 -> 12px with it. The
+     padding has to come along: at a flat `p-4` the 72px button would leave a
+     40px content box for a 40px glyph, and the icon would sit hard against
+     the circle exactly where it is largest. Ramping it to `md`'s 12px keeps
+     8px of air at both ends of the band.
+       `.nav-button > span` is 0,1,1 against the utilities' 0,1,0, so this
+     wins on specificity rather than on order alone. The direct-child
+     combinator picks out the box and not the three spans inside it (icon
+     wrapper, hover target, label). The xs-mobile column button has the same
+     shape but only renders below 480px, which this query cannot reach. */
+  .nav-button > span {
+    width: calc(64px + 8 * (100vw - 640px) / 128);
+    height: calc(64px + 8 * (100vw - 640px) / 128);
+    padding: calc(16px - 4 * (100vw - 640px) / 128);
+  }
+
+  /* Icon: 28 -> 40px, the fix the band actually needed. It starts at 28 and
+     not at the 24 it inherits, because what the eye reads is the glyph's
+     share of the disc, not its absolute size — and 24px in the 64px button
+     that `sm` already draws is 0.375, a visible DROP from the 0.43 the phone
+     layout holds at 24-in-56. 28/64 is 0.4375: the phone's proportion,
+     continued. The 4px step at 640 buys a ratio that no longer goes backwards
+     there, and the ramp carries it to `md`'s 0.556 from the inside.
+       Height stays `auto` from the `h-auto` utility — these glyphs are
+     square, and pinning both axes would fight lucide's own viewBox. */
+  .nav-button svg {
+    width: calc(28px + 12 * (100vw - 640px) / 128);
+  }
+}
+
+/* Where the ramps above land, against the value each one hands over to at
+   768px — a `md:` utility, or the 768 rung of the ladder below where the
+   value moved there. Every row is exact, so the handover is invisible:
+
+     property                 at 640      at 768      768 takes over with
+     --title-w (ladder below) 48px        64px        ladder: 4rem
+     --role-w  (ladder below) 19.2px      22.4px      ladder: 1.4rem
+     .laptop                  450px       432px       ladder: 432->480 ramp
+     .laptop margin-bottom    24px        96px        ladder: 96px
+     .borderline              200px       340px       ladder: 340px
+     .borderline2             300px       460px       ladder: 460px
+     .borderline3             460px       600px       ladder: 600px
+     .nav-button > span       64px        72px        h-/w-[4.5rem]
+     .nav-button > span pad   16px        12px        p-[0.75rem]
+     .nav-button svg          28px        40px        w-[2.5rem]
+
+   If any of those `md:` utilities or 768 rungs is retuned, the matching B
+   here has to move with it or the cliff comes back. The orbit reads the
+   button ramp too — `halfButtonWidth` in navigation/index.jsx interpolates
+   33 -> 37 over the same band and carries the same warning. */
+
+/* ── Hero vertical fit: the page cannot scroll, so height is a constraint ──
+   Every size in this hero is derived from WIDTH — the four Tailwind bands, the
+   dead-band ramps above, all of it. The shell is `h-screen overflow-hidden`,
+   so nothing here can be scrolled to: whatever does not fit is simply gone.
+   Measured before this block, worst element's bottom edge against the fold:
+
+     viewport          header  headline  laptop h   overflow
+     667 x 375   land.    81      184       300      +189px
+     736 x 414   land.    83      206       268      +135px
+     1024 x 600           96      284       334      +123px
+     1440 x 700           97      284       342       +19px
+     1440 x 760           97      284       342       -36px  (fits)
+
+   So this is not a phone bug. It is every short viewport — landscape phones,
+   1366x768 laptops (whose viewport is ~640 tall after browser chrome), and any
+   desktop window dragged under ~730px. On a 375-tall phone the header and
+   headline alone take **71% of the screen** and the laptop is then asked for
+   another 300px, which is why the ring and half the laptop were below the fold.
+
+   The row cannot absorb it either: `flex-1` carries `min-height: auto`, so the
+   hero row refuses to shrink below its content and overflows instead.
+
+   THE CONTENT HAS TO GET SHORTER, and it does so continuously — no compact
+   "mode" that snaps on, for the same reason the band above is a ramp and not a
+   new breakpoint. Two mechanisms, chosen per element by what CSS allows:
+
+   BOXES take `max-width` / `max-height`. That is the whole trick for the
+   laptop cluster: a cap needs no knowledge of the value it is capping, so the
+   four width bands and the dead-band ramp all keep their existing rules and
+   simply stop at a ceiling. The laptop is `height: auto` (Tailwind preflight),
+   so capping its width shrinks it on the aspect ratio with no distortion, and
+   because it is the only NON-absolute child of the stage wrapper it is also
+   the only one contributing to the row's height — cap it and the row shrinks.
+
+   TYPE cannot: there is no `max-font-size`, and `1em` inside a `font-size`
+   resolves against the PARENT, not the element, so there is no way to say
+   "whatever you already are, but no larger". `min()` is the only tool, and it
+   needs the width-derived value as an operand — hence the `--title-w` /
+   `--role-w` ladder below, which is where the headline's four breakpoint
+   values and the 640-767 ramp now live. They are the SAME numbers the
+   utilities held (2.6/3→4/4/5rem and 1/1.2→1.4/1.4/1.6rem); the size classes
+   were dropped from the markup in the same change so there is exactly one
+   source. The plate behind the role line re-prints on its own ResizeObserver,
+   which a height-driven font change trips like any other.
+
+   One tuned ramp, five ratios. `--hero-cap` is the laptop's ceiling, and the
+   rest of the stage is expressed as its fraction of the laptop AT `lg`
+   (340/480, 460/480, 600/480, 420/480, 64/480). Two consequences worth
+   knowing: at the non-binding end every cap reaches its own `lg` value at the
+   same moment, and wherever two caps both bind the composition holds the `lg`
+   proportion exactly, because both sides came off the same number.
+
+   Endpoints are 740px (caps equal their `lg` values, so nothing binds at or
+   above it — measured to fit at 760) and 375px (the shortest landscape phone
+   in common use), where the stage lands at half size. Everything between is
+   the straight line through those two points; `svh` rather than `vh` so an
+   iOS toolbar cannot make the page taller than the screen. */
+
+/* The headline ladder. Values identical to the utilities they replaced; the
+   `min()` is what the vertical-fit block below reaches. `--title-h` /
+   `--role-h` are unset by default, and the 9999px fallback is what makes the
+   cap inert until a short viewport declares one. */
+h1.home-title {
+  --title-w: 2.6rem;
+  font-size: min(var(--title-w), var(--title-h, 9999px));
+}
+
+h2.hero-role {
+  --role-w: 1rem;
+  font-size: min(var(--role-w), var(--role-h, 9999px));
+}
+
+/* ── The laptop may never touch the role line, at ANY viewport ─────────────
+   Reported on a 13" MacBook Pro: the laptop was sitting ON the banknote plate
+   and over the word ENGINEER. Swept, it was not one viewport — the plate was
+   overlapped at 12 of 18 sizes tested, and the printed TEXT at four of them:
+
+     1440 x 900   plate +33      1280 x 800   plate  -6
+     1440 x 860   plate +10      1024 x 768   plate  -8
+     1440 x 820   plate -11      1024 x 600   plate -36, text -12
+     1440 x 790   plate -15      736 x 414    plate -19, text  -3
+     1440 x 760   plate -14      926 x 428    plate -18, text  -1
+     1440 x 741   plate -11      667 x 375    plate -14, text  +1
+     1440 x 700   plate -40, text -13
+
+   A 13" MacBook Pro is 1440x900 scaled, which lands at 790-820 of viewport
+   once browser chrome is taken — the deepest part of the hole.
+
+   TWO causes, and neither is a number that wanted tuning.
+
+   (1) THE PLATE IS NOT IN THE LAYOUT. `.hero-role-ground` is an absolutely
+   positioned canvas, and it is deliberately BIGGER than the heading it sits
+   behind — measured at 1440x900 it spans 293-386 where the type spans 323-358,
+   so it overhangs ~30px above the ink and ~28px below. The note on
+   `.hero-role`'s top margin reserves the upper overhang in the heading's own
+   em. The lower one was reserved by an assumption, written down at the time:
+   "the plate's matching bottom overhang costs nothing because the next thing
+   down is the laptop's own empty half of the hero". That is exactly the
+   assumption that fails when the hero is short — the laptop's empty half is
+   the first thing the layout spends. So the bottom overhang is now reserved
+   the same way the top one is, symmetrically, in the same em.
+
+   (2) THE CLUSTER OVERFLOWED **UPWARD**. The hero row is `flex-1` with
+   `align-items: center`, and `flex-1` carries `min-height: auto` — so when the
+   laptop plus its lift was taller than the row, the row refused to shrink and
+   the centred cluster spilled EQUALLY IN BOTH DIRECTIONS. Every earlier pass
+   on this hero, including the two before this one, checked only the bottom
+   fold; the upward half of that same spill is what was landing on the type.
+
+   The fix for (2) is a real bound, not another `svh` ramp: the laptop is now
+   sized by `max-width` + `max-height` with `width: auto`, which is the one
+   configuration where CSS scales a replaced element to fit BOTH limits and
+   preserves its aspect ratio while doing it (CSS 2.1 s10.4). `max-height` is a
+   percentage of the stage, the stage is `height: 100%` of the row, and the row
+   reserves `--hero-gap` as padding at both ends. So the laptop physically
+   cannot be taller than the space between the headline and the fold, whatever
+   the viewport does — the guarantee is structural, and the `--hero-cap` ramp
+   below is left to keep the RINGS in proportion rather than to prevent a
+   collision it can no longer cause.
+
+   This is also why the width ladder moved to `--laptop-w`: `width` had to
+   become `auto` for the aspect-preserving path, so the four breakpoint values
+   are applied as `max-width` instead. Same numbers, same rendered size
+   wherever height is not the binding constraint. */
+
+/* ── THE HEIGHT THE HERO IS LAID OUT FOR ──────────────────────────────────
+   Every height-derived size on this page — the laptop's ceiling, the two type
+   ladders' caps, the laptop's lift, the gap below — is a fraction of ONE
+   quantity, and this is it. It used to be `100svh` written out at each site.
+   Naming it changes nothing on a viewport that fits, and buys the one thing
+   `svh` cannot express: A FLOOR.
+     Why a floor is needed at all. The caps exist because the page could not
+   scroll, so a viewport too short for the hero had to have the hero shrunk into
+   it. The page CAN scroll now (see `.home-shell` below), which makes unbounded
+   shrinking pointless and then harmful: at 844x390 the ramp had the laptop at
+   129px and the orbit pinned to its `MIN_SEMI_AXIS` floor with eight buttons
+   piled on a 264px ellipse. Nothing was off-screen — it was simply crushed, and
+   crushing is no longer the only option available.
+     So below `--hero-min` the hero stops shrinking and the page scrolls to the
+   remainder instead. Because EVERY cap reads this one variable, the whole
+   composition holds its proportions across that boundary rather than some parts
+   freezing while others keep collapsing.
+     The value is measured, not chosen, against two numbers pulling opposite
+   ways. Crowding first: the ring's tightest pair of buttons is the one
+   straddling the left/right turnaround, separated by `2b*sin(22.5deg)` =
+   `0.765b`, and against the button's own width the desktop ring (1440x900,
+   a=425) sits at **81%** — that is the look being matched, and it is what a
+   short viewport was getting ~30% of. Scroll second: a floor makes every
+   viewport under it scroll, including desktop windows that fit perfectly well
+   today, so the floor wants to be as low as the first number allows.
+     Swept at 480 / 540 / 580 / 620 / 660 / 700, measuring both:
+
+       hero-min   844x390          1440x580   1280x600
+       480        43%,  +90px      none       none
+       580        74%, +190px      none       none      <- chosen
+       620        78%, +230px      +40px      +20px
+       700        78%, +310px     +120px     +100px
+
+   580 is the LARGEST floor that costs nothing at any height that fits today —
+   1440x580, 1280x600 and 1024x600 all still render without a scrollbar, because
+   `max(100vh, 580px)` is just their own height — while taking the landscape
+   phones from a pile to near the desktop proportion. It is also where the two
+   narrowest of them stop improving at all: at 667 and 736 wide the ring reaches
+   its WIDTH cap there (a=284 and 316, saturated), so height past 580 buys them
+   nothing. 620 and up buy only the wider phones a few more percent, and charge
+   every short desktop window for it. */
+:root {
+  --hero-min: 580px;
+  --hero-h: max(100vh, var(--hero-min));
+}
+
+/* `svh` here for the same reason `.home-shell` takes it: on iOS `100vh` is the
+   toolbar-HIDDEN height, so on a portrait phone every cap would be derived from
+   a screen ~10% taller than the one in front of the user. Scoped exactly as the
+   shell rule is, and declared AFTER the base so it wins on order. */
+@media (max-width: 639.98px) and (orientation: portrait) {
+  :root {
+    --hero-h: max(100svh, var(--hero-min));
+  }
+}
+
+/* The page's own height, and the single source of it — there is no
+   `min-h-screen` on the markup any more, for the same reason the type ladders
+   moved here: one number, one place. `min-height`, so in-flow content that does
+   not fit lengthens the shell instead of being clipped by it. */
+.home-shell {
+  min-height: var(--hero-h);
+}
+
+/* Clear air between the role line's plate and the top of the laptop, and the
+   same again at the foot of the hero. Scales a little so it does not read as a
+   fixed gutter on a large display, floored so it never disappears on a phone.
+   `0.032 * --hero-h` is the old `3.2svh` with the floor above folded in. */
+:root {
+  --hero-gap: clamp(14px, calc(0.032 * var(--hero-h)), 34px);
+}
+
+/* ── The room the navigation is guaranteed, and the ONE number that keeps the
+   ring on screen ───────────────────────────────────────────────────────────
+   The orbit sizes itself to fit: `verticalSemiAxisLimit` (navigation/index.jsx)
+   solves the ring's semi-axis out of the room below its centre, so it CANNOT
+   overflow — with one exception, and the exception is the whole defect. `a` is
+   floored at `MIN_SEMI_AXIS` (132), and it has to be: without a floor a short
+   enough viewport drives the ring to zero and stacks eight buttons on one point,
+   which is worse than clipping and unrecoverable rather than merely ugly. Once
+   that floor binds the ring has stopped shrinking, so anything still missing is
+   paid out of the bottom of the screen. Measured, before this rule: the lowest
+   button's bottom edge sat 28px past the fold at 1440x340 and 1024x340, 16 at
+   1024x380, 11 at 768x340, 3-4 at 1440x420 and 1024x420 — i.e. EVERY landscape
+   phone (a 390-tall device is ~340 after browser chrome) plus any window dragged
+   under ~490px. Nothing above that ever clipped, which is why the fold-clearance
+   sweep that closed the vertical-fit pass — 375px tall and up, portrait — did
+   not see it.
+   So the floor is right and the row was simply too short to honour it. This is
+   the row saying how short it may get, and the number is not a taste value: it
+   is the SAME arithmetic the component solves, read backwards.
+     The orbit's wrapper is `h-1/2` of this row and its static position is the
+   row's centre, so the distance from the ring's centre to the foot of the row is
+   exactly half the row's height. The lowest button's outer edge sits
+   `b + halfButton` below that centre, `b` is `MIN_SEMI_AXIS * ORBIT_TILT` =
+   26.93px once floored, and `EDGE_GUTTER` (16px) is the breathing room the
+   component keeps at every other edge. Hence
+     min-height = 2 x (26.93 + halfButton + 16)
+   with `halfButton` the same 29 / 33->37 / 37 / 41 ladder `halfButtonWidth`
+   carries in navigation/index.jsx — half the button's OUTER size, box plus its
+   1px border a side. IF THAT LADDER MOVES, THIS MOVES WITH IT.
+   Below the floor's binding point this reserves nothing at all: the row is only
+   ever clamped when it would otherwise be shorter than 168px (at `lg`), and the
+   floor binds on exactly the same condition, so the two switch on together. At
+   1440x500 the row already measures 178px and nothing here applies.
+     Below 480px there is no orbit — the nav is two fixed columns of four
+   (navigation/index.jsx) — and that layout needs MORE, not less: 4 buttons at
+   40px with `space-y-4` between them is 208px, centred 2vh above the row's
+   middle, so the row has to hold twice the lower half. */
+:root {
+  --nav-min-h: calc(208px + 4vh);
+}
+
+@media (min-width: 480px) {
+  :root {
+    --nav-min-h: 144px; /* 2 x (26.93 + 29 + 16) */
+  }
+}
+
+@media (min-width: 640px) {
+  :root {
+    /* Ramped, not stepped, because the button it is derived from ramps across
+       this band too (the dead-band block above) — 152px at 640 arriving exactly
+       on `md`'s 160 at 768. */
+    --nav-min-h: calc(152px + 8 * (100vw - 640px) / 128);
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --nav-min-h: 160px; /* 2 x (26.93 + 37 + 16) */
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --nav-min-h: 168px; /* 2 x (26.93 + 41 + 16) */
+  }
+}
+
+div.hero-row {
+  /* `flex-1`'s `min-height: auto` is what let the row grow past its share and
+     spill the cluster both ways, so this has to be an explicit value at EVERY
+     height, not just short ones — the collision that produced it starts at
+     ~870px of viewport, nowhere near the short end it was scoped to.
+       It is no longer ZERO, which was the other half of the same problem: a row
+     allowed to shrink to nothing takes the orbit's room with it, and the ring
+     answers by hitting its floor and hanging off the bottom of the screen. See
+     `--nav-min-h` above for the arithmetic. Any explicit value defeats
+     `min-height: auto` just as `0` did, so the spill fix is untouched.
+       The row is the LAST thing in the document, so its bottom edge is the
+     document's: room reserved here is room the page can always be scrolled to,
+     which is what makes the guarantee hold rather than merely move the clipping
+     one box outwards. `min-height` is border-box under Tailwind's preflight, so
+     the padding below sits inside it and does not eat the reservation. */
+  min-height: var(--nav-min-h);
+  /* Tailwind's `flex-1` is `flex: 1 1 0%`, and the PERCENTAGE is the problem the
+     moment anything asks this row how short it could be. A percentage basis
+     resolved against an indefinite height is not 0 — it falls back to `content`,
+     and this row's content is a laptop whose `max-height: 100%` is equally
+     indefinite in that pass, so the row answered with the laptop's UNCAPPED
+     intrinsic height (~507px with its lift). That answer propagated up as
+     <main>'s automatic minimum size and made the document ~25px taller than the
+     viewport at EVERY height — a scrollbar on 1440x1100, where nothing is short
+     of room. `0px` is definite, so the row's reported minimum is the
+     `min-height` above and nothing else. Identical in real layout, where the
+     row's height is definite and both bases resolve to 0. */
+  flex-basis: 0px;
+  padding-block: var(--hero-gap);
+}
+
+div.hero-stage {
+  /* Fills the row's content box, which is what gives the laptop's percentage
+     `max-height` something definite to resolve against. Nothing moves at a
+     tall viewport: the stage's centre is the row's centre either way, the
+     laptop centres inside it, and the ripple rings — absolutely positioned,
+     so centred on the same box by the flex alignment — centre with it. */
+  height: 100%;
+  min-height: 0;
+  /* The laptop's base, in px inside this box — written here by app/page.js
+     once it has measured the laptop, and defaulted here so the first paint has
+     something sane. The defaults reproduce EXACTLY what the rings did before
+     they were anchored (centred on this box, then `mt-16` down), so the
+     pre-measurement frame is never worse than the old steady state. */
+  --lap-base-x: 50%;
+  --lap-base-y: calc(50% + 64px);
+  /* THE WHOLE COLLISION, IN ONE KEYWORD. The laptop's OUTER height includes
+     its lift (`margin-bottom`, up to 96px), so plain `center` centres
+     laptop+lift and pushes the LAPTOP ITSELF above the box's centre by half
+     the lift — which is how it reached the role line's plate even once its own
+     height was bounded. `safe` keeps the centring while the outer box fits and
+     falls back to START alignment the moment it does not, so the overflow can
+     only ever leave at the BOTTOM, where it is empty margin. The laptop's top
+     edge therefore cannot rise above this box, and this box starts one
+     `--hero-gap` below the headline.
+       Chosen over `flex-start`, which would guarantee the same gap but would
+     also pin the laptop to the top of the row at TALL viewports, moving it
+     ~48px off the ring's centre on a desktop that was never broken. */
+  align-items: safe center;
+}
+
+img.laptop {
+  --laptop-mb: 24px;
+  /* Named once because it is needed twice: as the lift itself, and as the
+     amount the height cap must hold back for it. A margin sits outside the
+     box `max-height` limits, so without subtracting it the cluster would clear
+     the row by exactly one lift too little. */
+  --laptop-lift: min(var(--laptop-mb), var(--laptop-mb-h, 9999px));
+
+  margin-bottom: var(--laptop-lift);
+  width: auto;
+  /* The 70% fallback is only ever read in a query gap (fractional-zoom widths
+     between two rungs) — every real width gets a rung from the ladder. */
+  max-width: min(var(--laptop-w, 70%), var(--hero-cap, 9999px));
+  /* `100%`, NOT `100% - lift`. Subtracting the lift was correct arithmetic for
+     the wrong quantity: the lift is EMPTY MARGIN below the laptop, so holding
+     height back for it shrank the visible artwork to reserve room for nothing.
+     Measured on a 13" MacBook Pro at 1440x790 that cost 148px of laptop — 332
+     against a full 480 — which is the reduction that was reported. The lift is
+     now simply allowed to overflow the bottom of the stage, where it is
+     invisible, and `safe center` above is what stops that overflow being taken
+     out of the top instead. Same viewport now renders the laptop at 467px.
+       The bound itself stays: this is what guarantees the laptop can never be
+     taller than the space between the headline and the fold. It binds only
+     where the room genuinely is not there, and then only by exactly the amount
+     missing.
+       THE SECOND OPERAND RESERVES THE GROUND RINGS' ROOM, and it is the fix
+     for the owner's 1440px report ("I can only see the last and a portion of
+     the second-to-last ring"). At 100% alone the laptop was allowed to fill
+     the row to the fold on every height-crunched desktop — 466px of laptop
+     with its bottom 25px above the page's foot at 1440x790 — so the ring fit
+     (app/page.js) had 58px of room below the base and shrank the ripples to
+     0.60: an outer ring narrower than the laptop standing on it, the inner
+     two swallowed whole. The laptop barely gave (97% of its full size) while
+     the rings paid everything (60%).
+       `75% + 35px` (of the stage, which is the hero row's content box) is a
+     chosen balance, not a fit through solved points. Solving the composition
+     fully proportionally — laptop and rings shrinking together in the exact
+     lg ratio, using the same perspective arithmetic the ring fit runs
+     (`rippleBoxForExtent`: the ring's reach below the base relaxes faster
+     than its size, so the trade is nowhere near linear) — gives roughly
+     0.66x + 52: correct rings, but it takes more laptop than the defect
+     demands. 0.75x + 35 sits deliberately between that line and the old 100%,
+     conceding a little ring proportion (outer ring ~1.2x the laptop's width
+     against the full composition's 1.25) to keep the laptop larger. It stops
+     binding at x = (334 - 35) / 0.75 = 398.7px of stage — safely under the
+     ~427px at which the full-size cluster fits on its own — so every height
+     that already rendered the full composition still does, untouched.
+     Measured across the 18-viewport sweep: outer-ring-to-laptop 1.19-1.25
+     everywhere the cap binds; the reported 1440x790 renders a 400px laptop on
+     a 488px outer ring (fit 0.81, was 0.60), all three ripples closing around
+     the art instead of underneath it.
+       Percentages of the stage rather than of `--hero-h`, so one line serves
+     every width: the stage already subtracts the header, the headline and the
+     row's padding at whatever size THIS viewport gives them, which is exactly
+     the subtraction a `--hero-h`-derived cap would have to hard-code. Phones
+     are untouched by construction — at their stage heights the laptop's own
+     ladder height is far below the line, so the `min()` never picks it. */
+  max-height: min(100%, calc(75% + 35px));
+}
+
+/* The 70% width rung, scoped to the phone band it describes. It used to sit
+   in the base rule above, and that was a live cascade fault: the 640-767 ramp
+   sets the same custom property EARLIER in this file at the same 0,1,1, so an
+   unscoped rung here won on order and silently killed the ramp — the laptop
+   tracked the viewport at 70% right across the band (490px at 700, 537 at
+   767) and then fell off a 185px cliff at `md`. The exact failure mode the
+   ring-size ladder's bounding comment warns about, on the one property that
+   was not bounded. `639.98px` is the exact complement of the ramp's own
+   `min-width: 640px`, so no width can match both. */
+@media (max-width: 639.98px) {
+  img.laptop {
+    --laptop-w: 70%;
+  }
+}
+
+/* ── The ground effects sit on the laptop's BASE, not on the stage's centre ──
+   The three ripple rings and the contact shadow are what tell the eye where
+   the laptop meets the causeway, so their centre has to BE the centre of the
+   laptop's base. It was not. They were absolutely positioned with no offsets,
+   which centres them on the stage, plus a flat `mt-16` — so they tracked the
+   BOX, and the box is not the laptop: `--laptop-w` is a four-rung ladder, the
+   `max-height` bound trims it further on short viewports, and `safe center`
+   moves the artwork between centred and top-aligned inside that box. Every one
+   of those moves the laptop without moving the rings.
+   Two consequences, both visible: the rings drifted off the base vertically as
+   the viewport shortened, and they were never on it horizontally in the first
+   place, because the laptop is drawn TURNED — its base centres at 0.52 of its
+   own width, not 0.5 (see LAPTOP_BASE_X in app/page.js for the alpha-channel
+   measurement).
+   `translate`, not a `transform: translate(...)`: these rings are mid-animation
+   almost all the time (`animate-ripple-neon` drives `transform` through
+   `perspective(600px) rotateX(80deg) scale(...)`), and an animation beats an
+   inline transform on the property it animates — the centring would simply be
+   dropped for the whole ripple. `translate` is an INDEPENDENT transform
+   property, applied before `transform` in the composition order, so the ring is
+   first centred on the anchor point and then tilted about its own centre. The
+   two never contend. */
+div.borderline,
+div.borderline2,
+div.borderline3,
+div.laptop-contact {
+  left: var(--lap-base-x);
+  top: var(--lap-base-y);
+  translate: -50% -50%;
+}
+
+/* The contact shadow is a fixed RATIO of the laptop, not a px ladder. 0.875
+   and 0.1333 are `lg`'s own 420/480 and 64/480 — the proportion every other
+   size was trying to approximate with steps, and drifting from wherever the
+   laptop's rendered size came off its height cap instead of its width ladder
+   (a 420px shadow under a 400px laptop at 1440x790). `--lap-w` is the
+   laptop's MEASURED width, published by app/page.js off the same read as the
+   base coordinates, so the shadow tracks what actually rendered. The 480px
+   fallback only paints the one frame before that measurement lands, as the
+   full-size desktop shadow this replaces.
+     From 640 up only: below that the utility pair on the element and its
+   portrait `vw` overrides (page.js) already hold the phone ratio, and this
+   file should not reach into a band it has no ramp for. Element-qualified for
+   0,1,1 over the JIT utilities, like everything else here. */
+@media (min-width: 640px) {
+  div.laptop-contact {
+    width: calc(var(--lap-w, 480px) * 0.875);
+    height: calc(var(--lap-w, 480px) * 0.1333);
+  }
+}
+
+/* ── The rings never leave the visible hero ────────────────────────────────
+   On a 13" MacBook Pro at 1440x790 the outermost ring's lower arc ran 80px
+   under the bottom edge — a circle cut by the fold, with the causeway carrying
+   on past it. It is not allowed to do that: a ripple with its bottom missing
+   reads as broken, and lengthening the PAGE does not fix it (that was tried —
+   it makes the missing arc scrollable-to while the first view, the one anybody
+   actually looks at, stays cut). So the rings shrink until they close.
+     THE SIZE IS ONE LADDER NOW, and the indirection is what makes the shrink
+   correct rather than crude. `--ring-fit` (app/page.js) multiplies the ring's
+   BOX, not its painted result, and those are very different things here: the
+   ring is projected through `perspective(600px) rotateX(80deg)`, so its reach
+   below the base grows FASTER than its size — the 600px ring reaches 152.8px
+   down, but half that ring reaches only 43. Shrink the box and the perspective
+   divisor relaxes; scale the finished image and it does not. Measured at
+   1440x790: fitting by box needs the ring at 60% to close, fitting by painted
+   size needs 38% for exactly the same clearance. Same fix, a ring half again
+   as wide.
+     One factor for all three, so they keep their spacing. Capping each against
+   the same room instead would pull the outer two onto the same circle, and they
+   ripple in phase, so three rings would read as two.
+     `.laptop-contact` is deliberately NOT in here. It is the laptop's grounding
+   rather than a ripple, it is sized to the laptop, and it clears the foot of
+   the hero by 116-135px at every viewport in the sweep — shrinking it along
+   with the ripples would un-ground the artwork to fix something it never did. */
+/* Bounded ABOVE, not left bare, and that is a cascade requirement rather than
+   tidiness: the 640-767 dead-band ramp sets these same properties EARLIER in
+   this file, so an unconditional base rung here would win on order and silently
+   kill the ramp across that band. `639.98px` is the exact complement of `sm`,
+   so no width can match both. (The ramp needs no upper bound of its own for the
+   same reason in reverse — the `md` rung below is later still.) */
+@media (max-width: 639.98px) {
+  div.borderline {
+    --ring-size: 150px;
+  }
+
+  div.borderline2 {
+    --ring-size: 220px;
+  }
+
+  div.borderline3 {
+    --ring-size: 320px;
+  }
+}
+
+/* One rung for the whole 768+ range — the old separate `md` rung (280/400)
+   sized the inner pair for the 352px laptop that band no longer has; under
+   the 432 -> 480 ramp it left them swallowed whole. `lg`'s 340/460 is right
+   for both bands now because the laptop is `lg`-class in both. */
+@media (min-width: 768px) {
+  div.borderline {
+    --ring-size: 340px;
+  }
+
+  div.borderline2 {
+    --ring-size: 460px;
+  }
+
+  div.borderline3 {
+    --ring-size: 600px;
+  }
+}
+
+/* The xl rung: the laptop ramps 480 -> 512px over 1536-1728 (its ladder
+   below), and the rings scale with it — 640/491/363 is 340/460/600 x 512/480,
+   so the floor the laptop stands on keeps its proportion instead of shrinking
+   relative to a growing centrepiece. `clamp()` self-caps at 1728, so no upper
+   media bound is needed; the orbit's `maxSemiAxis` (navigation/index.jsx)
+   runs the same ramp over the same 192px and carries the same warning. */
+@media (min-width: 1536px) {
+  div.borderline {
+    --ring-size: clamp(340px, calc(340px + 23 * (100vw - 1536px) / 192), 363px);
+  }
+
+  div.borderline2 {
+    --ring-size: clamp(460px, calc(460px + 31 * (100vw - 1536px) / 192), 491px);
+  }
+
+  div.borderline3 {
+    --ring-size: clamp(600px, calc(600px + 40 * (100vw - 1536px) / 192), 640px);
+  }
+}
+
+/* REGISTERED, and the fit factor does not work without it. app/page.js reads
+   this property back with `getComputedStyle` to learn the ring's unfitted
+   ladder value — but an UNREGISTERED custom property computes to its raw
+   token stream, so on any rung written as `calc()`/`clamp()` (the 640-767
+   ramp, the 1536 ramp) the read came back as the un-evaluated expression,
+   `parseFloat` made NaN of it, and the measurement bailed holding the LAST
+   fit it computed: a cold load in the ramp band never shrank the rings at
+   all, and a live resize into it kept the previous viewport's factor.
+   `syntax: '<length>'` makes the computed value a resolved px length at
+   every width, which is the number the read was always assuming it got.
+   Engines without `@property` keep the old bail-out (rings simply stay
+   unfitted on ramp widths) — degraded, never broken. */
+@property --ring-size {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* Element-qualified for 0,1,1, like every other rule in this file that has to
+   beat a JIT arbitrary-value utility emitted at the end of the sheet. */
+div.borderline,
+div.borderline2,
+div.borderline3 {
+  width: calc(var(--ring-size) * var(--ring-fit, 1));
+  height: calc(var(--ring-size) * var(--ring-fit, 1));
+}
+
+/* Reserve the plate's LOWER overhang, mirroring the upper one that
+   `.hero-role`'s `margin-top` already reserves. Same 1.3em, in the role line's
+   own em so it tracks the plate at every size exactly as the top margin does —
+   see the long note on that margin for why em and not px. */
+h2.hero-role {
+  margin-bottom: 1.3em;
+}
+
+@media (min-width: 640px) {
+  h1.home-title {
+    --title-w: calc(48px + 16 * (100vw - 640px) / 128);
+  }
+
+  h2.hero-role {
+    --role-w: calc(19.2px + 3.2 * (100vw - 640px) / 128);
+  }
+
+  img.laptop {
+    --laptop-mb: calc(24px + 72 * (100vw - 640px) / 128);
+    /* No `--laptop-w` rung here on purpose. The old `sm:w-[75%]` was only ever
+       reachable between 640 and 767 (md overrode it from 768), and the
+       dead-band block already owns that range with its 450->432px ramp. A 75%
+       rung would sit LATER in the file than that block and silently kill it. */
+  }
+}
+
+@media (min-width: 768px) {
+  h1.home-title {
+    --title-w: 4rem;
+  }
+
+  h2.hero-role {
+    --role-w: 1.4rem;
+  }
+
+  img.laptop {
+    --laptop-mb: 96px;
+    /* 432 -> 480px across the band, arriving exactly on `lg`'s 480 at 1024 —
+       a ramp where a flat 22rem used to sit. The flat rung was the owner's
+       "laptop is small on some widths": 352px however much room a tablet had,
+       and a 185px cliff against the band below (through the unscoped-70%
+       cascade fault fixed at the base rule). 432 is where the dead-band ramp
+       now lands (its comment carries the handover table); if either endpoint
+       is retuned the other has to move with it. */
+    --laptop-w: calc(432px + 48 * (100vw - 768px) / 256);
+  }
+}
+
+@media (min-width: 1024px) {
+  h1.home-title {
+    --title-w: 5rem;
+  }
+
+  h2.hero-role {
+    --role-w: 1.6rem;
+  }
+
+  img.laptop {
+    /* = 480px: the value the `md` ramp above arrives at, held flat. */
+    --laptop-w: 30rem;
+  }
+}
+
+/* The xl rung: 480 -> 512px over 1536-1728, then flat — on a 1728+ display
+   the 480px laptop sat in acreage and read as undersized. A ramp, not a step,
+   like every other size in this hero; `clamp()` self-caps it so no upper
+   media bound is needed. The rings (their own 1536 rung above) and the
+   orbit's `maxSemiAxis` (navigation/index.jsx) run the same 512/480
+   proportion over the same 192px — the three move together or not at all. */
+@media (min-width: 1536px) {
+  img.laptop {
+    --laptop-w: clamp(480px, calc(480px + 32 * (100vw - 1536px) / 192), 512px);
+  }
+}
+
+/* `max-height: 740px` is the measured fit boundary, and at exactly 740 every
+   cap below evaluates to its own `lg` value, so the block switches on with
+   nothing to do and grows teeth continuously as the viewport shortens.
+     There is deliberately NO `min-width` guard. It carried one at first, on the
+   reasoning that the sub-480 two-column layout has no orbit and a different
+   vertical budget — but the type caps are what free the row's height, and
+   excluding narrow viewports from them starved the row instead of protecting
+   it: measured at 360x375, the uncapped headline plus header took 267 of 375px
+   and the laptop's `max-height` collapsed it to **13px wide**. The caps only
+   ever shrink; there is nothing for a narrow viewport to be protected from. */
+@media (max-height: 740px) {
+  :root {
+    /* 480px at 740 tall, 211px at 375 tall. The lower endpoint is not a taste
+       call, it is the vertical budget solved: at 375 the header takes 81 and
+       the capped headline 131, leaving 163 for the whole hero row, and the
+       laptop plus its bottom margin have to fit inside that (147 + 16). Every
+       other cap in this block is a fraction of this one.
+         `0.737 * --hero-h` is exactly the `73.7svh` this was, with the floor
+       folded in — same value at every height above `--hero-min`, and held there
+       below it. All four ramps in this block take that substitution, so they
+       stop shrinking together and the composition keeps its proportions instead
+       of some parts freezing while others collapse. The 375 endpoint quoted
+       above is therefore now the arithmetic's endpoint rather than a reachable
+       one: the shortest hero any viewport gets is the one at `--hero-min`. */
+    --hero-cap: calc(0.737 * var(--hero-h) - 65.4px);
+  }
+
+  /* 80px at 740, 33px at 375. Two lines at `leading-none`, so the headline
+     block's height is very nearly twice whatever this resolves to — which is
+     why it is the single biggest lever on a short viewport. */
+  h1.home-title {
+    --title-h: calc(0.1288 * var(--hero-h) - 15.3px);
+  }
+
+  /* 25.6px at 740, 14px at 375 — a shallower ramp than the title's on purpose:
+     this line is already the smallest type in the hero, and its plate needs it
+     to stay legible rather than stay proportional. */
+  h2.hero-role {
+    --role-h: calc(0.0318 * var(--hero-h) + 2.1px);
+  }
+
+  img.laptop {
+    /* 96px at 740, 16px at 375. This margin is what lifts the laptop clear of
+       the ripple rings, and it is dead weight on a short viewport: at 667x375
+       it was claiming 39 of the 163px the whole hero row had left. Capped, not
+       removed — the lift is still what stops the laptop sitting in the rings.
+       `min()` rather than a `max-*` property because a margin has none.
+         The laptop's own `max-width` is not here: `--hero-cap` reaches it
+       through the `min()` in the base rule, alongside the width ladder. */
+    --laptop-mb-h: calc(0.2192 * var(--hero-h) - 66.2px);
+  }
+
+  div.laptop-contact {
+    max-width: calc(0.875 * var(--hero-cap));
+    max-height: calc(0.1333 * var(--hero-cap));
+  }
+
+  /* Square, so both axes take the same cap and the ring cannot go oval.
+     0.7083 and 0.9583 are 340/480 and 460/480 — the CURRENT 768+ rungs over
+     the lg laptop, retuned when the ring ladder unified on 340/460 (they were
+     0.5833/0.8333, the retired 280/400 md rungs). Left at the old fractions
+     they clamped the inner two rings ~4-21px below the shared `--ring-fit`
+     factor while the outer ring's 1.25 still matched its rung exactly — the
+     three ripples shrinking NON-uniformly, which is the one thing the
+     single-factor design forbids — and snapped the inner ring at the 740px
+     height boundary the block's own header promises is seamless.
+     IF THE 768+ RING RUNGS MOVE, THESE FRACTIONS MOVE WITH THEM. */
+  div.borderline {
+    max-width: calc(0.7083 * var(--hero-cap));
+    max-height: calc(0.7083 * var(--hero-cap));
+  }
+
+  div.borderline2 {
+    max-width: calc(0.9583 * var(--hero-cap));
+    max-height: calc(0.9583 * var(--hero-cap));
+  }
+
+  div.borderline3 {
+    max-width: calc(1.25 * var(--hero-cap));
+    max-height: calc(1.25 * var(--hero-cap));
   }
 }
 

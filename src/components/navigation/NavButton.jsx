@@ -35,8 +35,13 @@ const warmQualCerts = () => {
   certPreloadPromise.then((m) => m?.preloadQualificationCerts?.());
 };
 
+// `w-6` rather than the `w-full` this used to carry. `w-full` resolved to 24px
+// only by accident: it is a percentage against a shrink-to-fit parent, which is
+// circular, so the browser fell back to the glyph's own 24px intrinsic width.
+// The moment that parent gets a definite width the icon silently changes size.
+// 24px is what it has always measured, said outright.
 const getIcon = (icon, small = false) => {
-  const cls = small ? 'h-auto w-[1.4rem]' : 'h-auto w-full md:w-[2.5rem] lg:w-[3rem]';
+  const cls = small ? 'h-auto w-[1.4rem]' : 'h-auto w-6 md:w-[2.5rem] lg:w-[3rem]';
   switch (icon) {
     case 'about':
       return <User className={cls} strokeWidth={1.5} />;
@@ -89,7 +94,7 @@ const NavLinkShell = ({ link, label, newTab, children, ...shared }) =>
     </a>
   );
 
-const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index, visible = true }) => {
+const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index, visible = true, labelAbove = false }) => {
   // Declared before the `isMobileColumn` early return below — hooks must run
   // unconditionally on every render path.
   const reduceMotion = useReducedMotion();
@@ -178,9 +183,17 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
   // Orbital layout button (480px and above)
   return (
     <div
-      className="absolute z-50 cursor-pointer mx-auto"
+      // The depth comes in as a NUMBER, not a `z-50` class, because it changes
+      // every frame: the ring passes behind the laptop on the far half of each
+      // lap (10) and in front of it on the near half (40), straddling the
+      // laptop's own z-20. A fixed class could only ever pick one of the two.
+      // The parent wrapper deliberately has no z-index of its own so these
+      // values reach the laptop instead of being flattened against it — see
+      // the note in navigation/index.jsx.
+      className="absolute cursor-pointer mx-auto"
       style={{
         transform: `translate(${x}px, ${y}px)`,
+        zIndex,
       }}
     >
       <NavLinkShell
@@ -195,16 +208,62 @@ const NavButton = ({ x, y, label, link, icon, newTab, setHovered, hovered, isMob
         onPointerDown={warmQual}
         className="group nav-button custom-bg flex items-center justify-center rounded-full transition-all duration-300"
       >
-        <span className="relative flex flex-col items-center h-14 sm:h-16 md:h-[4.5rem] lg:h-[5rem] w-14 sm:w-16 md:w-[4.5rem] lg:w-[5rem] sm:p-4 md:p-[0.75rem] lg:p-4 p-3">
-          {/* Icon */}
-          <span className="text-lg text-white group-hover:text-[#ff6d05] transition-colors duration-300">
+        {/* `flex items-center justify-center`, NOT `flex flex-col items-center`.
+            The column laid the icon and the hover label out as two in-flow
+            siblings starting at the content-box top, so the glyph was
+            TOP-ANCHORED: its centre sat at border + padding + halfIcon, which
+            equals halfButton only at `lg` (1 + 16 + 24 = 41 = 82/2). Every
+            other breakpoint put it 4px high — 480-639, 640-767 and 768-1023 all
+            measured exactly -4px. Centring on both axes makes it correct by
+            construction instead of by coincidence, at any button or icon size.
+            The padding stays: it is symmetric, so the content box shares the
+            border box's centre and cannot reintroduce an offset. */}
+        <span className="relative flex items-center justify-center h-14 sm:h-16 md:h-[4.5rem] lg:h-[5rem] w-14 sm:w-16 md:w-[4.5rem] lg:w-[5rem] sm:p-4 md:p-[0.75rem] lg:p-4 p-3">
+          {/* Icon. Also a flex centring box, so no inline/baseline gap can creep
+              in between the span and the glyph it wraps. */}
+          <span className="flex items-center justify-center text-lg text-white group-hover:text-[#ff6d05] transition-colors duration-300">
             {getIcon(icon)}
           </span>
 
           <span className="peer absolute left-0 top-0 h-full w-full bg-transparent" />
 
-          {/* Label (hidden until hover) */}
-          <span className="sm:mt-4 mt-2 whitespace-nowrap rounded-md px-2 py-1 text-sm md:text-md text-[#ff6d05] shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300">
+          {/* Label (hidden until hover) — now positioned UNDER the button
+              instead of stacked beneath the icon in flow, which is what frees
+              the icon to centre. It already overhung the button by 24px, so it
+              was never contained by the circle; out of flow it simply sits
+              where it always looked like it sat. `pointer-events-none` keeps a
+              wide label ("Qualifications") from enlarging the anchor's hover
+              target and re-triggering the ring's hover pause off-button. */}
+          {/* `-mt-1` puts the label's own 4px `py-1` back over the button's 1px
+              border, so the TEXT starts level with the bottom of the circle.
+              The old `mt-2 sm:mt-4` was a margin between two in-flow siblings,
+              so where the label actually LANDED was
+              padding + iconHeight + margin - spanHeight, which drifted the
+              tooltip's bottom edge to button + 15 / 19 / 23 / 27px across the
+              four breakpoints — the same accident that de-centred the glyph.
+              One number replaces those four, and it is the tight one on
+              purpose: the bottom-most button in the ring is already near the
+              foot of a short viewport, and anything looser pushed its tooltip
+              off-screen at 768x700 and 1440x900 where the old values had just
+              fit. Measured, no viewport is worse off than before. */}
+          {/* `labelAbove` mirrors the tooltip to the other side of the circle
+              for the handful of buttons whose label would otherwise fall off the
+              foot of the page — the ring keeps a 16px gutter under the lowest
+              button and this label wants 23 (see LABEL_DROP in
+              navigation/index.jsx). `bottom-full -mb-1` is the exact reflection
+              of `top-full -mt-1` — NEGATIVE on both sides, because with
+              `bottom: 100%` a positive margin-bottom pushes the label 4px
+              FURTHER up where `-mt-1` pulls it back in: the label's near edge
+              lands 1px inside the button's border either way, so the text sits
+              level with the circle's edge whichever way it points, and the
+              tooltip's distance from the glyph it names never changes.
+              Which buttons flip is decided from the box, not from taste — see
+              `labelFlipY`. On a viewport with room, nothing flips at all. */}
+          <span
+            className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-sm md:text-md text-[#ff6d05] shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 ${
+              labelAbove ? 'bottom-full -mb-1' : 'top-full -mt-1'
+            }`}
+          >
             {label}
           </span>
         </span>
