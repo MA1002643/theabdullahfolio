@@ -12,13 +12,20 @@
 const USERNAME = process.env.NEXT_PUBLIC_GITHUB_USERNAME || 'MA1002643';
 
 function baseUrl() {
-  // In any Vercel deployment, read the production APIs — their data is
-  // global (KV + GitHub), and preview lambdas may lack the secrets the
-  // production env carries. Locally, talk to the dev server.
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  }
-  return `http://localhost:${process.env.PORT || 3000}`;
+  // Same server-only base-URL resolution as /api/repo-refresh and
+  // /api/daily-warmup: `BASE_URL` (deliberately not NEXT_PUBLIC_) lets an
+  // operator pin the target — e.g. point preview-deploy cards at the
+  // production APIs — and otherwise the deployment's own auto-injected
+  // VERCEL_URL serves; the explicit existence check matters because
+  // `https://${VERCEL_URL}` is truthy even when the var is absent.
+  // Trailing-slash normalization prevents `//api/...` paths that some
+  // CDNs reject.
+  return (
+    process.env.BASE_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : `http://localhost:${process.env.PORT || 3000}`)
+  ).replace(/\/+$/, '');
 }
 
 async function getJson(pathname) {

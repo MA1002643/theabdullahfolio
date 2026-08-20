@@ -20,6 +20,12 @@ export function sectionMetadata({ title, description, path }) {
       title: fullTitle,
       description,
     },
+    // No `images` here on purpose: this object REPLACES the root twitter
+    // object (shallow merge), which is what stops sub-pages inheriting
+    // the homepage's /og/home card — and the build-hashed URL of a
+    // route's own card isn't knowable in config. Each route's
+    // twitter-image.js (a re-export of its opengraph-image.js) supplies
+    // the explicit twitter:image instead.
     twitter: {
       card: 'summary_large_image',
       title: fullTitle,
