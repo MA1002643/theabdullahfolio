@@ -52,8 +52,7 @@ const EDGE_GUTTER = 16;
 // line-height plus 4px of padding a side = 28px, it starts at the bottom of the
 // inner span — 1px inside the anchor's border — and `-mt-1` pulls it back 4px.
 // 28 - 4 - 1 = 23px below the button's outer edge. There is no `sm:`/`md:` step
-// on any of those (`md:text-md` is not a Tailwind class and has never emitted
-// anything), so one constant is correct at every width.
+// on any of those, so one constant is correct at every width.
 //
 // It exists because the label is the LOWEST thing the ring puts on the page and
 // the ring was never sized around it: `EDGE_GUTTER` reserved 16px under the

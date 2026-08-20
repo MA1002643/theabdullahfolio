@@ -5355,6 +5355,32 @@ div.laptop-contact {
   initial-value: 0px;
 }
 
+/* The ladder's base rung, and DELIBERATELY one specificity step below the
+   rungs: bare classes (0,1,0) against their `div.`-qualified (0,1,1), so this
+   loses wherever ANY rung matches — independent of source order, which is the
+   lever the phone rung's bounding comment warns cannot be trusted here — and
+   surfaces only where none does: the fractional widths inside the rungs'
+   0.02px complements (639.98–640 and 767.98–768, reachable under fractional
+   zoom). Registration is what makes this necessary. Unregistered, a gap left
+   `var(--ring-size)` unset and the `width` below invalid at computed-value
+   time — `auto`, ugly but sized; registered, the gap substitutes the
+   `initial-value` above, and 0px COLLAPSED all three rings. Phone values,
+   because the lower gap adjoins the phone rung, and 0.02px of half-size
+   rings at 767.99px beats 0.02px of none. The initial stays 0px: it can no
+   longer render on these elements, and a made-up non-zero length would only
+   disguise a future regression as a wrong size instead of an obvious one. */
+.borderline {
+  --ring-size: 150px;
+}
+
+.borderline2 {
+  --ring-size: 220px;
+}
+
+.borderline3 {
+  --ring-size: 320px;
+}
+
 /* Element-qualified for 0,1,1, like every other rule in this file that has to
    beat a JIT arbitrary-value utility emitted at the end of the sheet. */
 div.borderline,

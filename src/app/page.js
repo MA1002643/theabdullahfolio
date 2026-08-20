@@ -475,12 +475,15 @@ export default function Home() {
           </HomeRoleLatent>
         </div>
 
-        {/* `hero-row` is only a hook for the vertical-fit block in globals.css,
-            which sets `min-height: 0` here on short viewports. `flex-1` alone
-            carries `min-height: auto`, so this row refuses to shrink below the
-            laptop's height and grows off the bottom of the screen instead —
-            taking the orbit's centre with it, since the ring is measured from
-            this row. */}
+        {/* `hero-row` is only a hook for the `div.hero-row` block in
+            globals.css, which replaces `flex-1`'s `min-height: auto` with an
+            explicit `min-height: var(--nav-min-h)` at every height. Under
+            `auto` the row refuses to shrink below the laptop's height and
+            grows off the bottom of the screen — taking the orbit's centre
+            with it, since the ring is measured from this row; shrunk to
+            nothing it takes the orbit's guaranteed room with it instead, so
+            the floor is the navigation's reservation rather than zero (see
+            `--nav-min-h` in globals.css for the arithmetic). */}
         <div className="hero-row relative z-10 flex w-full flex-1 items-center justify-center">
           {/* Wrapper for laptop + rings. `hero-stage` makes it `height: 100%`
               of the hero row, which is what gives the laptop's percentage

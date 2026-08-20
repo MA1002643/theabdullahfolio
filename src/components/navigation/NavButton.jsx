@@ -204,7 +204,15 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
         name={label}
         onMouseEnter={() => { setHovered(true); warmQual?.(); }}
         onMouseLeave={() => setHovered(false)}
-        onFocus={warmQual}
+        // Focus pauses the lap exactly as hover does, and for the same reason:
+        // the label below reveals on `group-focus-visible`, and a visible
+        // label is only flip-stable (`labelAbove`) because its button's `y` is
+        // frozen for as long as it shows. `hovered` is one shared boolean, so
+        // a pointer brushing another button mid-focus can briefly resume the
+        // ring under a keyboard-focused label — accepted: the label tracks its
+        // own button and refreezes the moment the pointer leaves.
+        onFocus={() => { setHovered(true); warmQual?.(); }}
+        onBlur={() => setHovered(false)}
         onPointerDown={warmQual}
         className="group nav-button custom-bg flex items-center justify-center rounded-full transition-all duration-300"
       >
@@ -227,7 +235,10 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
 
           <span className="peer absolute left-0 top-0 h-full w-full bg-transparent" />
 
-          {/* Label (hidden until hover) — now positioned UNDER the button
+          {/* Label (hidden until hover or keyboard focus — `group-focus-visible`
+              gives sighted keyboard users the same label hover gives pointer
+              users; `aria-label` on the link covers AT either way) — positioned
+              UNDER the button
               instead of stacked beneath the icon in flow, which is what frees
               the icon to centre. It already overhung the button by 24px, so it
               was never contained by the circle; out of flow it simply sits
@@ -260,7 +271,7 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
               Which buttons flip is decided from the box, not from taste — see
               `labelFlipY`. On a viewport with room, nothing flips at all. */}
           <span
-            className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-sm md:text-md text-[#ff6d05] shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 ${
+            className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-sm text-[#ff6d05] shadow-lg opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-all duration-300 ${
               labelAbove ? 'bottom-full -mb-1' : 'top-full -mt-1'
             }`}
           >
