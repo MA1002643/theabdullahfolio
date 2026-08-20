@@ -207,7 +207,18 @@ export default function Home() {
     const el = laptopRef.current;
     if (!el) return undefined;
 
-    measureBase();
+    // The `document.fonts.ready` subscription below outlives this effect: the
+    // observer and the resize listener are torn down in the cleanup, but a
+    // promise cannot be unsubscribed, and on a client-side navigation it can
+    // resolve after this route has unmounted and write base state into a dead
+    // tree. Same flag, same reason as the orbit's (navigation/index.jsx); all
+    // three signals route through it so they age the same way.
+    let cancelled = false;
+    const onMeasure = () => {
+      if (!cancelled) measureBase();
+    };
+
+    onMeasure();
 
     // A ResizeObserver on the laptop catches every way its own box can change —
     // viewport resize, the `max-height` bound tightening — without this
@@ -229,20 +240,21 @@ export default function Home() {
     // cannot change the box being observed.
     const ro =
       typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(measureBase)
+        ? new ResizeObserver(onMeasure)
         : null;
     ro?.observe(el);
     if (stageRef.current) ro?.observe(stageRef.current);
-    window.addEventListener('resize', measureBase);
+    window.addEventListener('resize', onMeasure);
     // Belt and braces for the webfont, matching what the orbit does for the
     // same reason (navigation/index.jsx): a fallback face has different metrics,
     // so the headline — and with it the base — moves once, after this effect has
     // already measured.
-    document.fonts?.ready?.then(measureBase).catch(() => {});
+    document.fonts?.ready?.then(onMeasure).catch(() => {});
 
     return () => {
+      cancelled = true;
       ro?.disconnect();
-      window.removeEventListener('resize', measureBase);
+      window.removeEventListener('resize', onMeasure);
     };
   }, [measureBase]);
 

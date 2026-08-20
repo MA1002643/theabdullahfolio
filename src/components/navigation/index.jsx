@@ -210,11 +210,17 @@ const Navigation = ({ setHovered, hovered, orbitBaseY, orbitLapH }) => {
   // 640-767 ramps instead of stepping — the identity is a subtraction, not a
   // property of the breakpoints.
   //
-  // Height no longer enters into it. It only had to before because the ring
-  // stood nearly upright on tablets (b up to 233), which is the tilt this pass
-  // removes; at ORBIT_TILT the whole ring is 0.2 x its own width tall, and the
-  // lowest button clears the foot of the viewport by 76-176px everywhere
-  // measured — including 1024x800, where the old ellipse ran 37px off-screen.
+  // The VIEWPORT's height no longer enters into it. It only had to before
+  // because the ring stood nearly upright on tablets (b up to 233), which is
+  // the tilt this pass removes; at ORBIT_TILT the whole ring is 0.2 x its own
+  // width tall, and the lowest button clears the foot of the viewport by
+  // 76-176px everywhere measured — including 1024x800, where the old ellipse
+  // ran 37px off-screen. The ROW's own box is a different matter: once the
+  // page could scroll, `a` gained a third limit measured off the wrapper's
+  // height (`verticalSemiAxisLimit`, applied below) — the tilt is owner-fixed,
+  // so a ring that must be shorter can only get there by being narrower. That
+  // cap is height-derived ON PURPOSE; do not remove it on the strength of this
+  // paragraph's first sentence.
   const updateSize = useCallback(() => {
     const width = window.innerWidth;
     const halfButton = halfButtonWidth(width);
