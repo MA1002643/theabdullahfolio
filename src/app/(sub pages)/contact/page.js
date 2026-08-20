@@ -5,10 +5,14 @@ import ContactIntro from '@/components/contact/ContactIntro';
 import AuroraDustMount from '@/components/AuroraDustMount';
 import PageTitle from '@/components/PageTitle';
 import { fluid, fluidText } from '@/lib/fluidScale';
+import { sectionMetadata } from '@/lib/og/meta';
 
-export const metadata = {
+export const metadata = sectionMetadata({
   title: 'Contact',
-};
+  description:
+    'Start a conversation — a form that refines your message and never loses a draft.',
+  path: '/contact',
+});
 
 export default function Contact() {
   return (

@@ -1,6 +1,7 @@
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import { projectsData } from "@/app/data"
+import { sectionMetadata } from "@/lib/og/meta"
 import bg from "../../../../../public/background/home-bg.webp"
 import AuroraParallaxBackground from "@/components/project-detail/aurora-bg"
 import LanternSweep from "@/components/project-detail/lantern-sweep"
@@ -31,6 +32,22 @@ export function generateStaticParams() {
 // short-circuits before any streaming starts. The in-component validation
 // below stays as defense-in-depth (and documents the canonical-URL rules).
 export const dynamicParams = false
+
+// Per-project share metadata (issue #88 v2): the title flows through the
+// root layout's `%s · Muhammad Abdullah` template, and the OG/Twitter
+// fields pair with the build-time poster in opengraph-image.js beside
+// this file. Same shallow-merge rule as the section pages: openGraph is
+// restated wholesale via the shared helper so siteName/type/locale
+// survive the page-level override.
+export function generateMetadata({ params }) {
+    const project = projectsData.find((p) => String(p.id) === String(params.id))
+    if (!project) return {}
+    return sectionMetadata({
+        title: project.name,
+        description: project.description,
+        path: `/projects/${project.id}`,
+    })
+}
 
 export default async function ProjectDetailPage({ params }) {
     // Next 14 passes params as a plain object; awaiting it is a no-op here

@@ -32,22 +32,80 @@ const montserrat = Montserrat({
 });
 
 export const metadata = {
-  title: 'Muhammad Abdullah',
+  // metadataBase resolves every relative URL below to an absolute one —
+  // without it Next emits relative og:image URLs, which many unfurlers
+  // (iMessage especially) refuse to follow.
+  metadataBase: new URL('https://ma.codes'),
+
+  title: {
+    default: 'Muhammad Abdullah',
+    template: '%s · Muhammad Abdullah',
+  },
   description: "Muhammad Abdullah's Personal Portfolio",
+
+  applicationName: 'Muhammad Abdullah',
+  authors: [{ name: 'Muhammad Abdullah', url: 'https://ma.codes' }],
+  creator: 'Muhammad Abdullah',
+
+  // The icons are file-convention assets in this folder (icon.png,
+  // apple-icon.png) — Next wires their <link> tags automatically. The
+  // homepage share card is deliberately NOT file-convention: it is a
+  // LIVE render (/og/home — issue #88 v2) declared here in config,
+  // because a file-convention image would override this images array and
+  // the array is what carries the square WhatsApp companion. Sub-pages
+  // and project pages override these via their own opengraph-image.js
+  // (file-based wins per segment), so this pair applies to `/` only.
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: 'https://ma.codes',
+    siteName: 'Muhammad Abdullah',
+    title: 'Muhammad Abdullah',
+    description: "Muhammad Abdullah's Personal Portfolio",
+    images: [
+      {
+        url: '/og/home',
+        width: 1200,
+        height: 630,
+        alt: 'Muhammad Abdullah — Software Engineer. Dark ember card with the MA monogram and live portfolio status.',
+      },
+      {
+        url: '/og/home-square',
+        width: 1200,
+        height: 1200,
+        alt: 'Muhammad Abdullah — Software Engineer. Square dark ember card with the MA monogram and live portfolio status.',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Muhammad Abdullah',
+    description: "Muhammad Abdullah's Personal Portfolio",
+    images: [
+      {
+        url: '/og/home',
+        alt: 'Muhammad Abdullah — Software Engineer. Dark ember card with the MA monogram and live portfolio status.',
+      },
+    ],
+  },
+};
+
+// Paints the mobile browser chrome with the same dark base the share images
+// bake in, so the live page and the preview card agree. (On Next 14
+// themeColor lives in the viewport export, not metadata.)
+export const viewport = {
+  themeColor: '#0a0a0a',
 };
 
 /**
  * Root application layout that provides the HTML structure, global font/theme classes, and site-wide UI/providers.
  *
- * Renders a favicon link in the document head and a body that applies the Inter font variable and theme classes; the body contains the LoaderWrapper (wrapping the page children), GlobalToaster, CustomCursor, SpeedInsights, and Analytics.
+ * Renders a body that applies the Inter font variable and theme classes; the body contains the LoaderWrapper (wrapping the page children), GlobalToaster, CustomCursor, SpeedInsights, and Analytics. Head content (icons, OG/Twitter cards, theme colour) is owned by the metadata/viewport exports and the file-convention images beside this file.
  * @returns {JSX.Element} The root HTML and body structure for the application.
  */
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" type="image/png" href="/background/logo.png" />
-      </head>
       <body
         className={clsx(
           inter.variable,
