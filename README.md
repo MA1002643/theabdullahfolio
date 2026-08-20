@@ -278,6 +278,7 @@ theabdullahfolio/
 | `/api/spotify/auth` | **Dev-only**, loopback-gated one-time helper that mints the Spotify refresh token — hard-`404`s in production/preview |
 | `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
 | `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
+| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections and `/projects/[id]` ship build-time cards via `opengraph-image.js` file conventions instead |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
 | `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
 | `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway |

@@ -5,6 +5,14 @@ import SceneVideo from "@/components/projects/SceneVideo";
 import SceneParallax from "@/components/projects/SceneParallax";
 import SceneSealIgnite from "@/components/projects/SceneSealIgnite";
 import { projectsData } from "../../data";
+import { sectionMetadata } from "@/lib/og/meta";
+
+export const metadata = sectionMetadata({
+  title: "Projects",
+  description:
+    "Eleven builds tracked live from their own GitHub boards — web, systems, and apps.",
+  path: "/projects",
+});
 
 export default function Project() {
   return (
