@@ -661,7 +661,13 @@ const Navigation = ({
     if (!rowEl) return undefined;
     const lapEl = laptopRef?.current ?? null;
 
-    const insideBand = (x, y, g) => {
+    // Deliberately the FULL ellipse through the buttons' outer edges (plus
+    // ORBIT_HIT_PAD) — not an annulus around the button band. The ellipse is
+    // flat (b ≈ 0.2·a), so its interior is a thin strip the laptop mostly
+    // covers, and wheel events re-hit-test on every tick (no capture, unlike
+    // drags): an inner boundary would make a gesture that drifts off the
+    // band flip between spinning the ring and scrolling the page mid-turn.
+    const insideOrbit = (x, y, g) => {
       const nx = (x - g.cx) / g.aEff;
       const ny = (y - g.cy) / g.bEff;
       return nx * nx + ny * ny <= 1;
@@ -691,10 +697,10 @@ const Navigation = ({
       if (e.ctrlKey) return;
       const g = orbitGeometry();
       if (!g) return;
-      // Only inside the ring band or over the laptop — outside, the page
-      // scrolls exactly as before (the acceptance criterion is scoped
-      // preventDefault, not a scroll-dead hero).
-      if (!insideBand(e.clientX, e.clientY, g) && !overLaptop(e.clientX, e.clientY))
+      // Only inside the orbit's hit ellipse or over the laptop — outside,
+      // the page scrolls exactly as before (the acceptance criterion is
+      // scoped preventDefault, not a scroll-dead hero).
+      if (!insideOrbit(e.clientX, e.clientY, g) && !overLaptop(e.clientX, e.clientY))
         return;
       e.preventDefault();
       // Dominant axis: a trackpad's two-finger HORIZONTAL swipe is the most
@@ -714,7 +720,7 @@ const Navigation = ({
       const g = orbitGeometry();
       if (!g) return;
       const onLap = overLaptop(e.clientX, e.clientY);
-      if (!onLap && !insideBand(e.clientX, e.clientY, g)) return;
+      if (!onLap && !insideOrbit(e.clientX, e.clientY, g)) return;
       // Two drag dialects, chosen by where the grab lands: the ring band is
       // angular (the grabbed point follows the finger around the ellipse);
       // the laptop is a vertical scrubber — the same mapping its hover-scrub
