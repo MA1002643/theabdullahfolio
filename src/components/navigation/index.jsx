@@ -667,10 +667,15 @@ const Navigation = ({
       return nx * nx + ny * ny <= 1;
     };
     const overLaptop = (x, y) => (lapEl ? withinRect(lapEl, x, y) : false);
+    // A press on any interactive control in the row — a nav link, or the
+    // OrbitTip's dismiss button, which sits on the ring's near arc and so
+    // inside the hit ellipse — owns its own gesture: starting a drag there
+    // would capture the pointer and retarget the control's click to the row.
     // `closest` lives on Element; a dispatched synthetic event can carry any
     // EventTarget (real pointer events never do), so anything else simply
-    // reads as "not on a nav button".
-    const onNavButton = (t) => t instanceof Element && t.closest('a') != null;
+    // reads as "not on a control".
+    const onControl = (t) =>
+      t instanceof Element && t.closest('a, button') != null;
     // The pointer's PARAMETRIC angle on the ellipse — atan2 of the
     // normalized coordinates, so it matches the `t` in (a·cos t, b·sin t)
     // that places every button. Rotation and this angle share an origin and
@@ -701,9 +706,10 @@ const Navigation = ({
     };
 
     const onPointerDown = (e) => {
-      // A press on a nav button is a CLICK-in-progress, never a drag start —
-      // the button's own link (and the Ember Passage behind it) owns it.
-      if (onNavButton(e.target)) return;
+      // A press on a nav button (or the tip's ×) is a CLICK-in-progress,
+      // never a drag start — the control (and, for a nav link, the Ember
+      // Passage behind it) owns the gesture.
+      if (onControl(e.target)) return;
       if (e.button != null && e.button !== 0) return;
       const g = orbitGeometry();
       if (!g) return;
@@ -810,7 +816,7 @@ const Navigation = ({
       // exist, and attaching a trackpad flips it on live via the media query.
       if (!canHover || !lapEl || e.pointerType === 'touch' || e.buttons !== 0)
         return;
-      if (onNavButton(e.target)) {
+      if (onControl(e.target)) {
         // Aiming at a button that overlaps the art: freeze the scrub (the
         // user is clicking, not steering) but keep its anchor current so
         // leaving the button cannot replay the skipped travel as a jump.
