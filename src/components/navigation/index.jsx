@@ -342,6 +342,23 @@ const Navigation = ({
     onUserInteract?.();
   }, [onUserInteract]);
 
+  // Keep the angle pair near zero so a long session cannot walk the angle
+  // into float territory where degrees lose precision. Both refs move
+  // together, so the on-screen pose is untouched (cos/sin are 360-periodic)
+  // and the remaining chase distance is preserved. A live drag's detent
+  // index shifts with them — the wrap is a whole number of slots, since
+  // `angleIncrement` divides 360 — so the haptic tick cannot fire on a wrap
+  // it never earned. Called from the render loop AND the direct-write paths
+  // below: under reduced motion there is no loop, and accumulated wheel/drag
+  // input still has to stay bounded.
+  const renormalizeAngles = useCallback(() => {
+    if (Math.abs(rotationRef.current) <= 720) return;
+    const wrap = Math.trunc(rotationRef.current / 360) * 360;
+    rotationRef.current -= wrap;
+    targetRotationRef.current -= wrap;
+    if (dragRef.current) dragRef.current.slot -= wrap / angleIncrement;
+  }, [angleIncrement]);
+
   // Wheel + keyboard: move the TARGET and let the render loop glide there.
   // Under reduced motion there is no render loop — by design, no rAF is ever
   // scheduled (issue #87) — so the same input applies instantly instead: the
@@ -352,12 +369,13 @@ const Navigation = ({
       if (reduceMotion) {
         rotationRef.current += deltaDeg;
         targetRotationRef.current = rotationRef.current;
+        renormalizeAngles();
         setRotation(rotationRef.current);
       } else {
         targetRotationRef.current += deltaDeg;
       }
     },
-    [markInput, reduceMotion],
+    [markInput, reduceMotion, renormalizeAngles],
   );
 
   // Drag + scrub: 1:1 with the pointer, target dragged along so the loop has
@@ -367,9 +385,10 @@ const Navigation = ({
       markInput();
       rotationRef.current += deltaDeg;
       targetRotationRef.current = rotationRef.current;
+      renormalizeAngles();
       setRotation(rotationRef.current);
     },
-    [markInput],
+    [markInput, renormalizeAngles],
   );
 
   // The ring band's live geometry, in viewport px: centre (the wrapper's
@@ -618,15 +637,7 @@ const Navigation = ({
       if (diff !== 0) {
         rotationRef.current +=
           Math.abs(diff) < 0.01 ? diff : diff * (1 - Math.exp(-dt * EASE_RATE));
-        // Keep the pair near zero so a session left running for hours cannot
-        // walk the angle into float territory where degrees lose precision.
-        // Both move together, so the on-screen pose is untouched (cos/sin are
-        // 360-periodic) and the remaining chase distance is preserved.
-        if (Math.abs(rotationRef.current) > 720) {
-          const wrap = Math.trunc(rotationRef.current / 360) * 360;
-          rotationRef.current -= wrap;
-          targetRotationRef.current -= wrap;
-        }
+        renormalizeAngles();
         setRotation(rotationRef.current);
       }
 
@@ -635,7 +646,7 @@ const Navigation = ({
 
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [reduceMotion]);
+  }, [reduceMotion, renormalizeAngles]);
 
   // ── User input → rotation (issue #105) ────────────────────────────────────
   // One native listener set on `.hero-row` — the common ancestor of the ring
