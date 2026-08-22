@@ -656,6 +656,10 @@ const Navigation = ({
       return nx * nx + ny * ny <= 1;
     };
     const overLaptop = (x, y) => (lapEl ? withinRect(lapEl, x, y) : false);
+    // `closest` lives on Element; a dispatched synthetic event can carry any
+    // EventTarget (real pointer events never do), so anything else simply
+    // reads as "not on a nav button".
+    const onNavButton = (t) => t instanceof Element && t.closest('a') != null;
     // The pointer's PARAMETRIC angle on the ellipse — atan2 of the
     // normalized coordinates, so it matches the `t` in (a·cos t, b·sin t)
     // that places every button. Rotation and this angle share an origin and
@@ -688,7 +692,7 @@ const Navigation = ({
     const onPointerDown = (e) => {
       // A press on a nav button is a CLICK-in-progress, never a drag start —
       // the button's own link (and the Ember Passage behind it) owns it.
-      if (e.target.closest('a')) return;
+      if (onNavButton(e.target)) return;
       if (e.button != null && e.button !== 0) return;
       const g = orbitGeometry();
       if (!g) return;
@@ -795,7 +799,7 @@ const Navigation = ({
       // exist, and attaching a trackpad flips it on live via the media query.
       if (!canHover || !lapEl || e.pointerType === 'touch' || e.buttons !== 0)
         return;
-      if (e.target.closest('a')) {
+      if (onNavButton(e.target)) {
         // Aiming at a button that overlaps the art: freeze the scrub (the
         // user is clicking, not steering) but keep its anchor current so
         // leaving the button cannot replay the skipped travel as a jump.
@@ -861,9 +865,12 @@ const Navigation = ({
     // Touch scrolling and a touch drag race for the same gesture: without
     // this, the browser can commit to scrolling mid-drag and cancel the
     // pointer stream. Prevented ONLY while a drag is live — a swipe that
-    // starts outside the ring band still pans the page untouched.
+    // starts outside the ring band still pans the page untouched. Once the
+    // browser HAS committed to scrolling, its touchmoves arrive
+    // cancelable=false and preventDefault is a no-op that logs a console
+    // warning — nothing left to win at that point, so don't call it.
     const onTouchMove = (e) => {
-      if (dragRef.current) e.preventDefault();
+      if (dragRef.current && e.cancelable) e.preventDefault();
     };
 
     rowEl.addEventListener('wheel', onWheel, { passive: false });
