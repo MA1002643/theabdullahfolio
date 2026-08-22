@@ -21,6 +21,15 @@ import { onMediaChange } from '@/lib/mediaQuery';
 const INTERACTIVE =
   'a, button, input, textarea, select, label, summary, [role="button"], [data-cursor="grow"]';
 
+// Elements that are vertical SCRUB surfaces (the homepage laptop, which
+// drives the orbital nav when the pointer glides up/down over it — issue
+// #105). Over one, the ring grows a pair of breathing ↑ ↓ chevrons: the
+// cursor itself teaches the gesture, which matters because this component
+// hides the OS cursor — a CSS `cursor: ns-resize` on the element would never
+// be seen. Interactive targets win: a nav button passing over the laptop
+// shows the ordinary grow, not the scrub hint.
+const SCRUB = '[data-cursor="scrub"]';
+
 const DOT = 7; // px
 const RING = 34; // px
 const MAGNET = 0.28; // how strongly the ring leans toward a target's centre
@@ -31,6 +40,7 @@ const clamp = (v, m) => (v < -m ? -m : v > m ? m : v);
 export default function CustomCursor() {
   const [enabled, setEnabled] = useState(false);
   const [hovering, setHovering] = useState(false);
+  const [scrubbing, setScrubbing] = useState(false);
   const [pressed, setPressed] = useState(false);
   // True once a real pointer position has arrived. The dot/ring start parked
   // off-screen (-100), so hiding the OS cursor the instant we activate would
@@ -94,6 +104,7 @@ export default function CustomCursor() {
           current = el;
           setHovering(true);
         }
+        setScrubbing(false);
         const r = el.getBoundingClientRect();
         const cx = r.left + r.width / 2;
         const cy = r.top + r.height / 2;
@@ -104,6 +115,11 @@ export default function CustomCursor() {
           current = null;
           setHovering(false);
         }
+        // Not interactive — maybe a scrub surface. Cheap to set every move:
+        // React bails when the boolean is unchanged.
+        setScrubbing(
+          e.target instanceof Element ? !!e.target.closest(SCRUB) : false,
+        );
         ringTX.set(x);
         ringTY.set(y);
       }
@@ -145,11 +161,57 @@ export default function CustomCursor() {
           marginTop: -RING / 2,
         }}
         animate={{
-          scale: pressed ? 0.82 : hovering ? 1.25 : 1,
-          opacity: hovering ? 0.95 : 0.55,
+          scale: pressed ? 0.82 : hovering ? 1.25 : scrubbing ? 1.12 : 1,
+          opacity: hovering ? 0.95 : scrubbing ? 0.9 : 0.55,
         }}
         transition={{ type: 'spring', stiffness: 350, damping: 26, mass: 0.5 }}
       />
+      {/* Scrub hint — a pair of chevrons breathing apart above and below the
+          ring while the pointer rests on a vertical scrub surface (the
+          homepage laptop): "this surface reads up-and-down movement". Rides
+          the ring's own sprung position so it feels like part of the cursor,
+          not an overlay chasing it. Rendered permanently and faded, rather
+          than mounted on demand, so the first hover never pays a mount. No
+          reduced-motion branch is needed: this whole component disables
+          itself under `prefers-reduced-motion` (see `enabled`). */}
+      <motion.div
+        className="custom-cursor-scrub"
+        style={{ x: ringX, y: ringY }}
+        animate={{ opacity: scrubbing && !pressed ? 1 : 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+      >
+        <motion.svg
+          width="22"
+          height="56"
+          viewBox="0 0 22 56"
+          style={{ position: 'absolute', left: -11, top: -28 }}
+          animate={
+            scrubbing ? { y: [0, -2.5, 0, 2.5, 0] } : { y: 0 }
+          }
+          transition={
+            scrubbing
+              ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
+              : { duration: 0.2 }
+          }
+        >
+          <path
+            d="M 4 10 L 11 3 L 18 10"
+            fill="none"
+            stroke="#ffbb55"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M 4 46 L 11 53 L 18 46"
+            fill="none"
+            stroke="#ffbb55"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </motion.svg>
+      </motion.div>
       <motion.div
         className="custom-cursor-dot"
         style={{

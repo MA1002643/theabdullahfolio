@@ -271,11 +271,11 @@ export const BtnList = [
     newTab: false,
   },
   {
-    // Intentionally routes to an unmatched path so Next.js renders the
-    // custom 404 (src/app/not-found.js) — the previous portfolio link
-    // is retired and the void aesthetic now stands in for it. If/when
-    // a real "My Past" page is added, create src/app/(sub pages)/my-past/
-    // and this entry will start resolving to it without any other change.
+    // Resolves to src/app/(sub pages)/my-past — the archive page created
+    // (issue #88 rework) so the route can answer 200 and carry its own
+    // dedicated OG/share card (crawlers refuse to unfurl a 404, which is
+    // what this path deliberately was before). The restored university-era
+    // portfolio lands on that page later.
     label: 'My Past',
     link: '/my-past',
     icon: 'past',

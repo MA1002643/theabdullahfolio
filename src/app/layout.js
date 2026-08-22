@@ -67,13 +67,13 @@ export const metadata = {
         url: '/og/home',
         width: 1200,
         height: 630,
-        alt: 'Muhammad Abdullah — Software Engineer. Dark ember card with the MA monogram and live portfolio status.',
+        alt: 'Muhammad Abdullah — Software Engineer. Dark ember card with the Muhammad Abdullah seal and live portfolio status.',
       },
       {
         url: '/og/home-square',
         width: 1200,
         height: 1200,
-        alt: 'Muhammad Abdullah — Software Engineer. Square dark ember card with the MA monogram and live portfolio status.',
+        alt: 'Muhammad Abdullah — Software Engineer. Square dark ember card with the Muhammad Abdullah seal and live portfolio status.',
       },
     ],
   },
@@ -84,7 +84,7 @@ export const metadata = {
     images: [
       {
         url: '/og/home',
-        alt: 'Muhammad Abdullah — Software Engineer. Dark ember card with the MA monogram and live portfolio status.',
+        alt: 'Muhammad Abdullah — Software Engineer. Dark ember card with the Muhammad Abdullah seal and live portfolio status.',
       },
     ],
   },

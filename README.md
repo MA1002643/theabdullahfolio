@@ -50,7 +50,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 
 | Feature | Detail |
 |---------|--------|
-| **Orbital Navigation** | Trigonometric button ring on one viewport-derived ellipse — a fixed `0.204` tilt at every width, sized so the outermost button always clears the screen edge, anchored to the laptop's **measured base** and raised 15% of the laptop's own height above it (`ORBIT_RAISE`) so it circles the artwork's lower body at the same pose on every viewport, and depth-sorted per frame so the ring passes *behind* the laptop on the far half of each lap and in front of it on the near half; staggered reveal, infinite rotation loop, two-column fallback below 480px |
+| **Orbital Navigation** | Trigonometric button ring on one viewport-derived ellipse — a fixed `0.204` tilt at every width, sized so the outermost button always clears the screen edge, anchored to the laptop's **measured base** and raised 15% of the laptop's own height above it (`ORBIT_RAISE`) so it circles the artwork's lower body at the same pose on every viewport, and depth-sorted per frame so the ring passes *behind* the laptop on the far half of each lap and in front of it on the near half; staggered reveal, two-column fallback below 480px. **The ring is an instrument, not just an ornament** (issue #105): wheel/touchpad over the ring or the laptop spins it, the ring band takes an angular touch-drag, the laptop doubles as a vertical scrubber — hover-driven on any hover-capable pointer (a desktop mouse, or an iPad the moment a trackpad/Magic Keyboard attaches, via a live `(hover: hover) and (pointer: fine)` query), drag-driven on touch — and `←` / `→` from any focused button turns it exactly one button slot. **The ring has real physics**: release a drag while still moving and it coasts on momentum with exponential friction (launch speed = an EMA of the hand's own deg/s at release; a held release never flicks), stopping dead the moment a button is hovered; touch drags tick a haptic detent at every 45° slot crossing where the hardware supports it. The ambient spin pauses while the visitor is engaged and eases back in after a 1.5s quiet period. The gesture is signposted twice over: the site cursor grows breathing ↑ ↓ chevrons over the laptop (`data-cursor="scrub"`, with a native `ns-resize` fallback for reduced-motion users), and a one-time dismissible tip (`localStorage`-remembered, auto-dismissed on first interaction, `role="status"`) leads with the laptop gesture in plain words beside an animated cursor-over-laptop pictogram — worded per capability, so a touch-only tablet is told to slide and drag, never to hover |
 | **3D Project Viewer** | Interactive Three.js scene — procedural laptop model with canvas-generated keyboard texture, 40+ mesh objects, auto-rotate orbit controls |
 | **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
@@ -233,12 +233,12 @@ theabdullahfolio/
 ├── public/                     # Static assets — logo, backgrounds, résumé PDF
 ├── src/
 │   ├── app/                    # App Router — pages, layouts, API routes
-│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact
+│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact · /my-past
 │   │   ├── api/                # 14 route handlers (see API surface below)
 │   │   ├── data.js             # Central project + navigation data store
 │   │   └── globals.css         # Theme tokens · keyframes · glow utilities
 │   ├── components/
-│   │   ├── navigation/         # Orbital nav ring — trig positioning, one fitted ellipse, per-frame depth
+│   │   ├── navigation/         # Orbital nav ring — trig positioning, one fitted ellipse, per-frame depth, wheel/drag/scrub/keyboard control + first-visit tip
 │   │   ├── home/               # Live maintenance header · engraved role line · causeway scene layers
 │   │   ├── about/              # Live GitHub stat / streak / language / skills cards + diff banners
 │   │   ├── projects/           # Category-filtered project grid (AnimatePresence)
@@ -278,7 +278,7 @@ theabdullahfolio/
 | `/api/spotify/auth` | **Dev-only**, loopback-gated one-time helper that mints the Spotify refresh token — hard-`404`s in production/preview |
 | `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
 | `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
-| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections and `/projects/[id]` ship build-time cards via `opengraph-image.js` file conventions instead |
+| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
 | `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
 | `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway |
@@ -551,7 +551,7 @@ upgrade-insecure-requests
 
 | Animation | Technique | Location |
 |-----------|-----------|----------|
-| Orbital rotation | `requestAnimationFrame` + trigonometry; the rAF loop is skipped entirely under `prefers-reduced-motion` (the ring holds its resting angle) | `navigation/index.jsx` |
+| Orbital rotation | `requestAnimationFrame` + trigonometry, frame-time based (9°/s on every display, where the old per-frame constant doubled on 120Hz panels); user input (wheel / drag / laptop scrub / arrow keys) writes a target the loop chases exponentially, so discrete inputs glide and the ambient spin stops and resumes eased; a moving drag release launches real momentum (`v · e^(−dt·friction)`, capped 540°/s) that any newer input silently takes authority over; the rAF loop is skipped entirely under `prefers-reduced-motion` (the ring holds its resting angle — user input still rotates it, applied instantly; flicks never fire) | `navigation/index.jsx` |
 | Hero laptop float | `float-laptop` keyframe — a **vection-calibrated** bob (`translateY` 6px / `scale` 1.02) with an ember `drop-shadow` pulsed in sync, tuned low so the static title doesn't appear to drift; stilled under reduced motion | `tailwind.config.js` + `app/page.js` |
 | Floating laptop (3D) | `useFrame` sin-wave (Three.js render loop) | `project-detail/laptop-model.jsx` |
 | Aurora parallax | `useScroll` + `useTransform` + mouse tilt | `project-detail/aurora-bg.jsx` |
