@@ -4,7 +4,7 @@ import { ogFonts } from '@/lib/og/assets';
 
 // Static section card, rendered once at build time (issue #88 v2).
 export const alt =
-  'Qualifications · Muhammad Abdullah — dark ember card with the MA monogram.';
+  'Qualifications · Muhammad Abdullah — dark ember card with the Muhammad Abdullah seal.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 

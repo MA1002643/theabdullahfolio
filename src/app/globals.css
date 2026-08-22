@@ -2313,6 +2313,28 @@ html.custom-cursor-active * {
   border: 1.5px solid rgba(255, 109, 5, 0.85);
 }
 
+/* Scrub-hint chevrons (CustomCursor.jsx) — same fixed-origin + transform
+   contract as the ring/dot above; the SVG inside carries its own offsets. */
+.custom-cursor-scrub {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 0 4px rgba(255, 170, 42, 0.45));
+}
+
+/* The same affordance for whoever still SEES the native cursor: the custom
+   cursor disables itself under `prefers-reduced-motion` (and hides every
+   cursor while active — `html.custom-cursor-active *` above wins there), so
+   a fine-pointer reduced-motion visitor gets the OS's own up-down glyph over
+   the orbital nav's laptop scrubber instead of the chevron hint. */
+@media (hover: hover) and (pointer: fine) {
+  .laptop {
+    cursor: ns-resize;
+  }
+}
+
 .custom-cursor-dot {
   background-color: #ff6d05;
 }

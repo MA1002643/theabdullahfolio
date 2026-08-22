@@ -4,6 +4,7 @@ import { BtnList } from '@/app/data';
 import NavButton from './NavButton';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
+import { usePointerCapability } from '@/hooks/usePointerCapability';
 
 // ─── Orbit geometry ────────────────────────────────────────────────────────
 // The ring is ONE ellipse at every width now. Two constants describe it: how
@@ -170,7 +171,103 @@ const verticalSemiAxisLimit = (halfRow, drop, halfButton) => {
   return Math.max(MIN_SEMI_AXIS, (halfSpace - halfButton) / ORBIT_TILT);
 };
 
-const Navigation = ({ setHovered, hovered, orbitBaseY, orbitLapH }) => {
+// ─── Orbit interaction (issue #105) ────────────────────────────────────────
+// The ring is user-drivable: wheel/touchpad over the orbit (or the laptop),
+// angular touch-drag on the ring band, a vertical drag or hover-scrub on the
+// laptop, and ← / → from any focused button. All of it feeds the SAME
+// `rotation` state the ambient auto-orbit writes — there is one angle, and
+// every input is just another author of it.
+
+// The ambient spin, restated per SECOND rather than per frame. 0.15°/frame
+// was tuned on a 60Hz display, where it is exactly 9°/s — but a rAF callback
+// runs at the display's own rate, so the same constant spun the ring twice as
+// fast on a 120Hz ProMotion panel. Multiplying by measured frame time keeps
+// the tuned speed on every display.
+const AUTO_DEG_PER_SEC = 9;
+
+// How long after the LAST user input the ambient spin stays paused. Long
+// enough that the ring does not snatch itself back while the user is merely
+// between wheel ticks; short enough that the hero never reads as broken-still.
+const INPUT_COOLDOWN_MS = 1500;
+
+// Wheel: normalized pixels → degrees, clamped per event. 0.12°/px lets a slow
+// two-finger trackpad glide feel precise while a hard flick still crosses
+// button slots; the clamp stops one high-velocity tick (or Firefox's
+// line-mode deltas × 16) teleporting the ring.
+const WHEEL_DEG_PER_PX = 0.12;
+const WHEEL_MAX_STEP_DEG = 8;
+
+// Laptop scrub: vertical pointer travel → degrees, used by BOTH the
+// hover-scrub (hover-capable pointers) and a touch-drag that starts on the
+// laptop. The laptop stands ~330px tall at desktop, so a full top-to-bottom
+// sweep is ~115° — two and a half button slots, enough to feel like driving
+// the ring rather than nudging it.
+const SCRUB_DEG_PER_PX = 0.35;
+
+// Per-move ceiling for pointer-driven deltas. An angular drag crossing near
+// the ellipse's centre can produce a wild atan2 swing in one move event; the
+// clamp turns that spike into a bounded step instead of a snap.
+const DRAG_MAX_STEP_DEG = 12;
+
+// Angular drags ignore samples closer to the centre than this (normalized
+// radius): in there a pixel of pointer travel is tens of degrees of angle and
+// the mapping stops being a grab. The laptop covers most of that zone anyway.
+const DRAG_DEAD_RADIUS = 0.2;
+
+// How fast the rendered angle chases its target, as an exponential rate per
+// second (~15% of the remaining gap per 60Hz frame). Wheel ticks and keyboard
+// notches move the TARGET and this chase is what the eye sees, so discrete
+// inputs glide instead of stepping — and the ambient spin, which also
+// advances the target, eases back up to speed after a pause instead of
+// resuming with a jerk. Drags bypass it entirely: a grab must track the
+// pointer 1:1 or it reads as lag.
+const EASE_RATE = 10;
+
+// Forgiveness around the ring band's outer edge for hit-testing, px. The
+// band's hit area is the ellipse through the buttons' OUTER edges plus this.
+const ORBIT_HIT_PAD = 12;
+
+// ── Flick physics ──────────────────────────────────────────────────────────
+// Release a drag while still moving and the ring keeps spinning on real
+// momentum — an exponential friction decay, `v · e^(−dt·FRICTION)`, applied
+// in the same render loop that runs everything else. The launch velocity is
+// an EMA of the drag's own per-move deg/s, so it is the speed the hand was
+// actually turning the ring at the moment it let go.
+//
+// FRICTION 2 gives a half-life of ~0.35s: a hard flick coasts for a couple
+// of seconds and travels `v / FRICTION` degrees in total (a capped 540°/s
+// flick = 270°, three-quarters of a lap). The cap keeps a wild gesture
+// lively without turning the ring into a blur; the floor hands off a little
+// above the ambient speed so the settle reads as the ring coming to rest,
+// not as it blending imperceptibly into the drift. A release more than
+// FLICK_STALE_MS after the last move is a hold, not a flick — the hand
+// stopped, so the ring stays where it was put.
+const FLICK_FRICTION = 2;
+const FLICK_MAX_DEG_PER_SEC = 540;
+const FLICK_MIN_DEG_PER_SEC = 12;
+const FLICK_STALE_MS = 100;
+
+// Haptic detent for touch drags: a barely-there tick each time the ring
+// carries a button across a slot boundary, so the drag has texture on
+// hardware that supports it (Android). `navigator.vibrate` simply does not
+// exist on iOS Safari — the optional call makes that a silent no-op.
+const HAPTIC_TICK_MS = 5;
+
+const clampStep = (v, max) => Math.min(max, Math.max(-max, v));
+
+const withinRect = (el, x, y) => {
+  const r = el.getBoundingClientRect();
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+};
+
+const Navigation = ({
+  setHovered,
+  hovered,
+  orbitBaseY,
+  orbitLapH,
+  laptopRef,
+  onUserInteract,
+}) => {
   const angleIncrement = 360 / BtnList.length;
 
   const [rotation, setRotation] = useState(0);
@@ -193,6 +290,105 @@ const Navigation = ({ setHovered, hovered, orbitBaseY, orbitLapH }) => {
   // to find where the ring's centre actually sits in the viewport.
   const ringRef = useRef(null);
   const reduceMotion = useReducedMotion();
+  // Hover-capable fine pointer (desktop mouse, iPad WITH a trackpad) vs a
+  // touch-only surface (phone, iPad WITHOUT one). A live media query, so
+  // attaching a Magic Keyboard mid-session enables the laptop hover-scrub on
+  // the fly and detaching it disables it — no reload, no UA sniffing.
+  const canHover = usePointerCapability();
+
+  // ── Interaction plumbing ──────────────────────────────────────────────────
+  // Everything the event handlers touch lives in refs: the wheel and pointer
+  // listeners are NATIVE (wheel must be non-passive to preventDefault, which
+  // React's synthetic root listeners are not), so they would otherwise close
+  // over stale state. `rotationRef` mirrors the state the render reads;
+  // `targetRotationRef` is what wheel/keyboard/auto-spin write and the rAF
+  // loop chases (see EASE_RATE).
+  const rotationRef = useRef(0);
+  const targetRotationRef = useRef(0);
+  // When the user last drove the ring — the ambient spin waits out
+  // INPUT_COOLDOWN_MS from here. -Infinity: never, so the spin starts live.
+  const lastInputAtRef = useRef(-Infinity);
+  // Hard pause while the pointer rests over the laptop (the hover-scrub is
+  // engaged even between movements) — a timestamp alone can't express "still
+  // here, just not moving".
+  const engagedRef = useRef(false);
+  // Active drag: { id, mode: 'angular' | 'linear', ... } or null.
+  const dragRef = useRef(null);
+  // Hover-scrub state: the last pointer Y seen over the laptop, or null.
+  const scrubYRef = useRef(null);
+  // In-flight flick, deg/s (0 = none). Set by a moving release, integrated
+  // and decayed by the render loop, killed by any newer input via markInput.
+  const momentumRef = useRef(0);
+  // Mirrors for the native handlers.
+  const axesRef = useRef(axes);
+  const hoveredRef = useRef(hovered);
+  useEffect(() => {
+    axesRef.current = axes;
+  }, [axes]);
+  useEffect(() => {
+    hoveredRef.current = hovered;
+  }, [hovered]);
+
+  // Every input funnels through here: stamps the cooldown, tells the page a
+  // discovery happened (the first-visit tip auto-dismisses on it, issue #105
+  // — "they've discovered the affordance on their own"), and takes authority
+  // from any flick still in flight — a new grab, wheel tick, scrub move or
+  // keystroke always wins over leftover momentum, with no state machine:
+  // every input path already runs through here. (A flick's own LAUNCH never
+  // does — endDrag sets the momentum after the drag's last markInput.)
+  const markInput = useCallback(() => {
+    lastInputAtRef.current = performance.now();
+    momentumRef.current = 0;
+    onUserInteract?.();
+  }, [onUserInteract]);
+
+  // Wheel + keyboard: move the TARGET and let the render loop glide there.
+  // Under reduced motion there is no render loop — by design, no rAF is ever
+  // scheduled (issue #87) — so the same input applies instantly instead: the
+  // affordance survives, only the easing (which is motion) is dropped.
+  const glideBy = useCallback(
+    (deltaDeg) => {
+      markInput();
+      if (reduceMotion) {
+        rotationRef.current += deltaDeg;
+        targetRotationRef.current = rotationRef.current;
+        setRotation(rotationRef.current);
+      } else {
+        targetRotationRef.current += deltaDeg;
+      }
+    },
+    [markInput, reduceMotion],
+  );
+
+  // Drag + scrub: 1:1 with the pointer, target dragged along so the loop has
+  // nothing left to chase (and no stale wheel glide can fight the grab).
+  const snapBy = useCallback(
+    (deltaDeg) => {
+      markInput();
+      rotationRef.current += deltaDeg;
+      targetRotationRef.current = rotationRef.current;
+      setRotation(rotationRef.current);
+    },
+    [markInput],
+  );
+
+  // The ring band's live geometry, in viewport px: centre (the wrapper's
+  // centre plus the anchored drop — the same origin every button's translate
+  // is measured from) and the ellipse through the buttons' OUTER edges. Used
+  // for hit-testing wheel/drag starts and for the angular drag's atan2.
+  const orbitGeometry = useCallback(() => {
+    const el = ringRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const { a, b, drop } = axesRef.current;
+    const halfButton = halfButtonWidth(window.innerWidth);
+    return {
+      cx: rect.left + rect.width / 2,
+      cy: rect.top + rect.height / 2 + drop,
+      aEff: a + halfButton + ORBIT_HIT_PAD,
+      bEff: b + halfButton + ORBIT_HIT_PAD,
+    };
+  }, []);
 
   // Size the orbit to the viewport.
   //
@@ -354,29 +550,370 @@ const Navigation = ({ setHovered, hovered, orbitBaseY, orbitLapH }) => {
     // nothing — both setters bail on an equal value, so there is no loop.
   }, [updateSize, isColumnLayout]);
 
-  // Infinite rotation loop — the orbital ring's perpetual spin.
+  // The render loop — ambient spin AND the chase toward user input's target.
   //
   // Skipped ENTIRELY under prefers-reduced-motion (issue #87): the ring holds
   // its resting angle and no rAF frame is ever scheduled, so there is no
-  // movement and no per-frame work. This gate has to live in JS — the rotation
-  // is React state written to an inline transform, so the CSS
-  // `prefers-reduced-motion` block that stills the laptop and the ripple rings
-  // (globals.css) cannot reach it.
+  // movement and no per-frame work — user input still rotates the ring, but
+  // instantly, through `glideBy`/`snapBy`'s reduced branch rather than
+  // through a frame loop. This gate has to live in JS — the rotation is React
+  // state written to an inline transform, so the CSS `prefers-reduced-motion`
+  // block that stills the laptop and the ripple rings (globals.css) cannot
+  // reach it.
+  //
+  // Reconciliation is "pause-while-interacting" (issue #105's recommended
+  // strategy): the ambient advance is gated on nothing being engaged — no
+  // button hovered/focused, no pointer resting on the laptop, no active drag
+  // — AND the last input being longer than INPUT_COOLDOWN_MS ago. Because the
+  // ambient spin advances the TARGET and the rendered angle chases it at
+  // EASE_RATE, both the stop and the resume are eased for free: engaging
+  // mid-spin lets the ring coast its last ~1° to a halt, and the resume ramps
+  // from stillness back up to speed instead of snapping.
   useEffect(() => {
     if (reduceMotion) return undefined;
 
     let frame;
+    let last = performance.now();
 
-    const animate = () => {
-      if (!hovered) {
-        setRotation((prev) => (prev + 0.15) % 360);
+    const animate = (now) => {
+      // Clamped so a background tab's suspended rAF cannot bank hours of
+      // "elapsed" spin into one giant step on resume.
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+      last = now;
+
+      const engaged =
+        hoveredRef.current || engagedRef.current || dragRef.current != null;
+
+      // A flick in flight owns the ring: integrate it, decay it on friction,
+      // and hand back when it has all but stopped — stamping the cooldown so
+      // the ambient drift eases in after a beat of stillness, which is what
+      // makes the settle read as the ring coming to REST rather than the
+      // spin morphing into the drift. Engaging (hovering a button, resting
+      // on the laptop, grabbing) stops the wheel dead: the visitor is
+      // aiming, and a target that keeps moving under a poised cursor is
+      // physics winning over usability.
+      if (momentumRef.current !== 0) {
+        if (engaged) {
+          momentumRef.current = 0;
+          lastInputAtRef.current = now;
+        } else {
+          rotationRef.current += momentumRef.current * dt;
+          targetRotationRef.current = rotationRef.current;
+          momentumRef.current *= Math.exp(-dt * FLICK_FRICTION);
+          if (Math.abs(momentumRef.current) < FLICK_MIN_DEG_PER_SEC) {
+            momentumRef.current = 0;
+            lastInputAtRef.current = now;
+          }
+          setRotation(rotationRef.current);
+        }
       }
+
+      const settled =
+        !engaged &&
+        momentumRef.current === 0 &&
+        now - lastInputAtRef.current > INPUT_COOLDOWN_MS;
+      if (settled) targetRotationRef.current += AUTO_DEG_PER_SEC * dt;
+
+      const diff = targetRotationRef.current - rotationRef.current;
+      if (diff !== 0) {
+        rotationRef.current +=
+          Math.abs(diff) < 0.01 ? diff : diff * (1 - Math.exp(-dt * EASE_RATE));
+        // Keep the pair near zero so a session left running for hours cannot
+        // walk the angle into float territory where degrees lose precision.
+        // Both move together, so the on-screen pose is untouched (cos/sin are
+        // 360-periodic) and the remaining chase distance is preserved.
+        if (Math.abs(rotationRef.current) > 720) {
+          const wrap = Math.trunc(rotationRef.current / 360) * 360;
+          rotationRef.current -= wrap;
+          targetRotationRef.current -= wrap;
+        }
+        setRotation(rotationRef.current);
+      }
+
       frame = requestAnimationFrame(animate);
     };
 
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [hovered, reduceMotion]);
+  }, [reduceMotion]);
+
+  // ── User input → rotation (issue #105) ────────────────────────────────────
+  // One native listener set on `.hero-row` — the common ancestor of the ring
+  // wrapper AND the laptop (they are siblings, so a listener on the wrapper
+  // alone would never hear a wheel spun over the art). Native, not JSX:
+  // `wheel`/`touchmove` must be registered non-passive to preventDefault, and
+  // React's root-delegated listeners are passive for both.
+  useEffect(() => {
+    if (isColumnLayout) return undefined;
+    const ringEl = ringRef.current;
+    const rowEl = ringEl?.closest('.hero-row');
+    if (!rowEl) return undefined;
+    const lapEl = laptopRef?.current ?? null;
+
+    const insideBand = (x, y, g) => {
+      const nx = (x - g.cx) / g.aEff;
+      const ny = (y - g.cy) / g.bEff;
+      return nx * nx + ny * ny <= 1;
+    };
+    const overLaptop = (x, y) => (lapEl ? withinRect(lapEl, x, y) : false);
+    // The pointer's PARAMETRIC angle on the ellipse — atan2 of the
+    // normalized coordinates, so it matches the `t` in (a·cos t, b·sin t)
+    // that places every button. Rotation and this angle share an origin and
+    // orientation, so a grab at angle θ dragged to θ' owes the ring exactly
+    // (θ' − θ): the grabbed point stays under the finger.
+    const paramAngleDeg = (x, y, g) =>
+      (Math.atan2((y - g.cy) / g.bEff, (x - g.cx) / g.aEff) * 180) / Math.PI;
+
+    const onWheel = (e) => {
+      const g = orbitGeometry();
+      if (!g) return;
+      // Only inside the ring band or over the laptop — outside, the page
+      // scrolls exactly as before (the acceptance criterion is scoped
+      // preventDefault, not a scroll-dead hero).
+      if (!insideBand(e.clientX, e.clientY, g) && !overLaptop(e.clientX, e.clientY))
+        return;
+      e.preventDefault();
+      // Dominant axis: a trackpad's two-finger HORIZONTAL swipe is the most
+      // literal "spin the ring" gesture there is, and it arrives as deltaX.
+      let d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (e.deltaMode === 1) d *= 16; // lines → px (Firefox mouse wheel)
+      else if (e.deltaMode === 2) d *= window.innerHeight; // pages → px
+      glideBy(clampStep(d * WHEEL_DEG_PER_PX, WHEEL_MAX_STEP_DEG));
+    };
+
+    const onPointerDown = (e) => {
+      // A press on a nav button is a CLICK-in-progress, never a drag start —
+      // the button's own link (and the Ember Passage behind it) owns it.
+      if (e.target.closest('a')) return;
+      if (e.button != null && e.button !== 0) return;
+      const g = orbitGeometry();
+      if (!g) return;
+      const onLap = overLaptop(e.clientX, e.clientY);
+      if (!onLap && !insideBand(e.clientX, e.clientY, g)) return;
+      // Two drag dialects, chosen by where the grab lands: the ring band is
+      // angular (the grabbed point follows the finger around the ellipse);
+      // the laptop is a vertical scrubber — the same mapping its hover-scrub
+      // uses, so a touch-only iPad gets the identical instrument by dragging
+      // that a trackpad iPad gets by hovering. Angular math near the centre
+      // is untouchable anyway (see DRAG_DEAD_RADIUS).
+      // Beyond the geometry, every drag carries its own flick state: `vel`
+      // is an EMA of the applied deg/s (what launches the momentum on a
+      // moving release), `lastMoveT` dates the newest sample (a stale one
+      // means the hand stopped — no flick), and `slot` is the 45° detent the
+      // ring last occupied, for the touch haptic tick.
+      const common = {
+        id: e.pointerId,
+        touch: e.pointerType === 'touch',
+        vel: 0,
+        lastMoveT: e.timeStamp,
+        slot: Math.round(rotationRef.current / angleIncrement),
+      };
+      dragRef.current = onLap
+        ? { ...common, mode: 'linear', lastY: e.clientY }
+        : {
+            ...common,
+            mode: 'angular',
+            lastAngle: paramAngleDeg(e.clientX, e.clientY, g),
+            g,
+          };
+      markInput();
+      // Capture so a drag that wanders off the row keeps steering the ring
+      // until release. preventDefault kills the two mouse-drag defaults that
+      // fight a grab: text selection and native image drag.
+      try {
+        rowEl.setPointerCapture(e.pointerId);
+      } catch {
+        /* capture is best-effort — the drag still works without it */
+      }
+      e.preventDefault();
+    };
+
+    // One applied drag delta: rotate, sample the flick velocity, and tick
+    // the touch detent. Kept out of the per-mode branches because all three
+    // concerns are identical whichever dialect produced the delta.
+    const applyDragDelta = (drag, deltaDeg, timeStamp) => {
+      if (deltaDeg !== 0) snapBy(deltaDeg);
+      // EMA at 0.7 toward the newest sample: enough memory to smooth event
+      // jitter, recent enough that the launch speed is the hand's speed at
+      // RELEASE, not an average of the whole gesture.
+      const dtMs = timeStamp - drag.lastMoveT;
+      if (dtMs > 1) {
+        drag.vel = 0.7 * ((deltaDeg * 1000) / dtMs) + 0.3 * drag.vel;
+        drag.lastMoveT = timeStamp;
+      }
+      // Haptic detent — touch only (a mouse hand feels the wheel through
+      // the motion itself), one tick per 45° slot boundary crossed.
+      if (drag.touch) {
+        const slot = Math.round(rotationRef.current / angleIncrement);
+        if (slot !== drag.slot) {
+          drag.slot = slot;
+          try {
+            navigator.vibrate?.(HAPTIC_TICK_MS);
+          } catch {
+            /* vibration is a bonus, never a requirement */
+          }
+        }
+      }
+    };
+
+    const onPointerMove = (e) => {
+      const drag = dragRef.current;
+      if (drag && drag.id === e.pointerId) {
+        if (drag.mode === 'linear') {
+          const dy = e.clientY - drag.lastY;
+          drag.lastY = e.clientY;
+          applyDragDelta(
+            drag,
+            clampStep(dy * SCRUB_DEG_PER_PX, DRAG_MAX_STEP_DEG),
+            e.timeStamp,
+          );
+        } else {
+          // Geometry cached from the grab: the wrapper cannot move mid-drag
+          // (page scroll is prevented for the gesture's duration below).
+          const g = drag.g;
+          const nx = (e.clientX - g.cx) / g.aEff;
+          const ny = (e.clientY - g.cy) / g.bEff;
+          if (nx * nx + ny * ny < DRAG_DEAD_RADIUS * DRAG_DEAD_RADIUS) return;
+          const angle = (Math.atan2(ny, nx) * 180) / Math.PI;
+          let d = angle - drag.lastAngle;
+          if (d > 180) d -= 360;
+          else if (d < -180) d += 360;
+          drag.lastAngle = angle;
+          applyDragDelta(drag, clampStep(d, DRAG_MAX_STEP_DEG), e.timeStamp);
+        }
+        return;
+      }
+
+      // The laptop hover-scrub: with no button held, vertical pointer travel
+      // over the art drives the ring — down spins it the way the wheel does,
+      // up spins it back. Hover-capable pointers only (`canHover`): a phone
+      // or bare iPad never hovers, so there the gesture simply does not
+      // exist, and attaching a trackpad flips it on live via the media query.
+      if (!canHover || !lapEl || e.pointerType === 'touch' || e.buttons !== 0)
+        return;
+      if (e.target.closest('a')) {
+        // Aiming at a button that overlaps the art: freeze the scrub (the
+        // user is clicking, not steering) but keep its anchor current so
+        // leaving the button cannot replay the skipped travel as a jump.
+        if (scrubYRef.current != null) scrubYRef.current = e.clientY;
+        return;
+      }
+      if (overLaptop(e.clientX, e.clientY)) {
+        if (scrubYRef.current == null) {
+          // Engage: anchor the scrub and hard-pause the ambient spin for as
+          // long as the pointer rests here — a resting hover is engagement,
+          // which a last-input timestamp alone cannot say.
+          scrubYRef.current = e.clientY;
+          engagedRef.current = true;
+          markInput();
+        } else {
+          const dy = e.clientY - scrubYRef.current;
+          scrubYRef.current = e.clientY;
+          if (dy !== 0)
+            snapBy(clampStep(dy * SCRUB_DEG_PER_PX, DRAG_MAX_STEP_DEG));
+        }
+      } else if (scrubYRef.current != null) {
+        scrubYRef.current = null;
+        engagedRef.current = false;
+        lastInputAtRef.current = performance.now(); // cooldown, then resume
+      }
+    };
+
+    const endDrag = (e) => {
+      const drag = dragRef.current;
+      if (!drag || drag.id !== e.pointerId) return;
+      dragRef.current = null;
+      lastInputAtRef.current = performance.now();
+      // A MOVING release becomes a flick: the ring keeps the hand's speed
+      // and coasts on friction (see FLICK_* above). Only on a real release —
+      // a pointercancel is the browser taking the pointer away, not a throw
+      // — only while the hand was still moving at the moment of release, and
+      // never under reduced motion, where a free-spinning ring is exactly
+      // the kind of self-propelled movement the preference asks to not have.
+      if (
+        e.type === 'pointerup' &&
+        !reduceMotion &&
+        e.timeStamp - drag.lastMoveT < FLICK_STALE_MS
+      ) {
+        momentumRef.current = clampStep(drag.vel, FLICK_MAX_DEG_PER_SEC);
+      }
+      try {
+        rowEl.releasePointerCapture(e.pointerId);
+      } catch {
+        /* already released */
+      }
+    };
+
+    const onRowLeave = () => {
+      // The pointer left the hero entirely — no further moves will fire, so
+      // retire the scrub here or `engagedRef` would pause the spin forever.
+      if (scrubYRef.current != null) {
+        scrubYRef.current = null;
+        engagedRef.current = false;
+        lastInputAtRef.current = performance.now();
+      }
+    };
+
+    // Touch scrolling and a touch drag race for the same gesture: without
+    // this, the browser can commit to scrolling mid-drag and cancel the
+    // pointer stream. Prevented ONLY while a drag is live — a swipe that
+    // starts outside the ring band still pans the page untouched.
+    const onTouchMove = (e) => {
+      if (dragRef.current) e.preventDefault();
+    };
+
+    rowEl.addEventListener('wheel', onWheel, { passive: false });
+    rowEl.addEventListener('touchmove', onTouchMove, { passive: false });
+    rowEl.addEventListener('pointerdown', onPointerDown);
+    rowEl.addEventListener('pointermove', onPointerMove);
+    rowEl.addEventListener('pointerup', endDrag);
+    rowEl.addEventListener('pointercancel', endDrag);
+    rowEl.addEventListener('pointerleave', onRowLeave);
+    return () => {
+      rowEl.removeEventListener('wheel', onWheel);
+      rowEl.removeEventListener('touchmove', onTouchMove);
+      rowEl.removeEventListener('pointerdown', onPointerDown);
+      rowEl.removeEventListener('pointermove', onPointerMove);
+      rowEl.removeEventListener('pointerup', endDrag);
+      rowEl.removeEventListener('pointercancel', endDrag);
+      rowEl.removeEventListener('pointerleave', onRowLeave);
+      // Interaction state must not outlive its listeners (layout crossing,
+      // unmount): a drag cut mid-gesture would otherwise pin the spin gate,
+      // and a flick launched by a dying handler set would coast ownerless.
+      dragRef.current = null;
+      scrubYRef.current = null;
+      engagedRef.current = false;
+      momentumRef.current = 0;
+    };
+  }, [
+    isColumnLayout,
+    canHover,
+    reduceMotion,
+    angleIncrement,
+    laptopRef,
+    orbitGeometry,
+    glideBy,
+    snapBy,
+    markInput,
+  ]);
+
+  // Keyboard: ← / → from any focused button turns the ring one whole button
+  // slot — `angleIncrement`, so each press is exactly "next button arrives
+  // where this one was". Focus rides the moved button (it is the same DOM
+  // element; only its translate changes), the focused label stays up via the
+  // existing focus→hovered pause, and Enter still activates the link.
+  // Attached to the wrapper, so it hears every button's keydown by bubbling
+  // and exists only in the orbital layout. preventDefault stops the arrows
+  // ALSO panning a scrollable page under the ring.
+  const onRingKeyDown = (e) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      glideBy(angleIncrement);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      glideBy(-angleIncrement);
+    }
+  };
 
   // Stagger button reveal
   useEffect(() => {
@@ -412,7 +949,14 @@ const Navigation = ({ setHovered, hovered, orbitBaseY, orbitLapH }) => {
             the laptop's parent flex line rather than on the viewport —
             keeps the icons aligned with the laptop regardless of where
             the header/headline push the laptop on different screens. */}
-        <div className="absolute left-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4">
+        <div
+          className="absolute left-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4"
+          // A tap on any column button is the discovery the first-visit tip
+          // describes at this width ("tap a side button"), so it counts as
+          // the interaction that dismisses it — capture phase, so the signal
+          // fires even though the tap then navigates away.
+          onPointerDownCapture={onUserInteract}
+        >
           {/* Always render all 4 buttons so the column reserves its full
               height from t=0. The reveal is done via the `visible` prop,
               which only animates opacity/scale (transforms don't affect
@@ -435,7 +979,11 @@ const Navigation = ({ setHovered, hovered, orbitBaseY, orbitLapH }) => {
         {/* Right column: GitHub, My Past, LinkedIn, Resume.
             Mirrors the left column (also `absolute` so it tracks the
             laptop's vertical center, not the viewport's). */}
-        <div className="absolute right-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4">
+        <div
+          className="absolute right-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4"
+          // Same discovery signal as the left column.
+          onPointerDownCapture={onUserInteract}
+        >
           {/* Same always-render pattern as the left column. */}
           {rightBtns.map((btn, idx) => (
             <NavButton
@@ -476,6 +1024,7 @@ const Navigation = ({ setHovered, hovered, orbitBaseY, orbitLapH }) => {
     // header still paints over the ring whatever the buttons ask for.
     <div
       ref={ringRef}
+      onKeyDown={onRingKeyDown}
       className="absolute flex h-1/2 w-full items-center justify-center mx-auto"
     >
       <div className="relative flex w-max items-center justify-center mx-auto">

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import bg from '../../public/background/home-hero.webp';
 import laptop from '../../public/background/laptop.png';
 import Navigation from '@/components/navigation';
+import OrbitTip from '@/components/navigation/OrbitTip';
 import LiveMaintenanceHeader from '@/components/home/LiveMaintenanceHeader';
 import HomeSceneWater from '@/components/home/HomeSceneWater';
 import HomeSceneGlow from '@/components/home/HomeSceneGlow';
@@ -72,6 +73,14 @@ const rippleBoxForExtent = (extent) => {
 
 export default function Home() {
   const [hovered, setHovered] = useState(false);
+
+  // Raised (once) by Navigation the first time the visitor drives the ring —
+  // wheel, drag, laptop scrub, or arrow keys — and by a column-button tap
+  // below 480px. Its only consumer is the first-visit tip, which reads it as
+  // "the affordance is discovered" and dismisses itself silently (issue
+  // #105). Latched, never cleared: re-interacting cannot re-show the tip.
+  const [orbitInteracted, setOrbitInteracted] = useState(false);
+  const handleOrbitInteract = useCallback(() => setOrbitInteracted(true), []);
 
   // The laptop's base, in px inside the stage — published as two custom
   // properties that the ripple rings and the contact shadow position from.
@@ -533,6 +542,16 @@ export default function Home() {
               priority
               src={laptop}
               alt="laptop"
+              // The laptop doubles as the orbit's scrubber (hover or touch
+              // drag, navigation/index.jsx) — a mouse drag on a bare <img>
+              // starts a NATIVE image drag whose ghost would ride the pointer
+              // and eat the gesture.
+              draggable={false}
+              // The site cursor grows ↑ ↓ chevrons over this surface
+              // (CustomCursor.jsx), signposting the vertical scrub before the
+              // first-visit tip is even read; the `.laptop` CSS carries an
+              // `ns-resize` fallback for native-cursor users.
+              data-cursor="scrub"
               // laptop
               // No size or margin utilities left here. The old `mb-6 md:mb-24`
               // and `w-[70%] sm:w-[75%] md:w-[22rem] lg:w-[30rem]` became the
@@ -619,7 +638,18 @@ export default function Home() {
             hovered={hovered}
             orbitBaseY={base ? base.y : null}
             orbitLapH={base ? base.h : null}
+            // The ring's interaction layer needs the laptop's box: the art is
+            // the wheel/drag hit-area's second half, and the hover-scrub's
+            // whole instrument (issue #105 + owner direction).
+            laptopRef={laptopRef}
+            onUserInteract={handleOrbitInteract}
           />
+          {/* First-visit affordance tip (issue #105) — a PEER of Navigation,
+              per the issue's own layout note: it shares the hero row's
+              coordinate space (anchored over the ring's near arc) without
+              entangling the ring's geometry. Landing page only, deliberately:
+              this is the discovery moment. */}
+          <OrbitTip interacted={orbitInteracted} />
         </div>
       </main>
     </div>

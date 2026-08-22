@@ -31,7 +31,7 @@ export default async function Image({ params }) {
         name: project.name,
         category: project.category,
         description: project.description,
-        id: project.id,
+        date: project.date,
       })
     : await sectionCard({
         label: 'Projects',
