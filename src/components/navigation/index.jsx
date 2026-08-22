@@ -665,6 +665,10 @@ const Navigation = ({
       (Math.atan2((y - g.cy) / g.bEff, (x - g.cx) / g.aEff) * 180) / Math.PI;
 
     const onWheel = (e) => {
+      // Trackpad pinch-to-zoom arrives as a wheel event with ctrlKey=true
+      // (and ctrl+wheel is the keyboard zoom shortcut) — that gesture belongs
+      // to the browser's page zoom, never to the ring.
+      if (e.ctrlKey) return;
       const g = orbitGeometry();
       if (!g) return;
       // Only inside the ring band or over the laptop — outside, the page
