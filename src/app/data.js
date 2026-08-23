@@ -265,9 +265,17 @@ export const BtnList = [
   },
   { label: 'Contact', link: '/contact', icon: 'contact', newTab: false },
   {
-    label: 'Github',
-    link: 'https://www.github.com/MA1002643',
-    icon: 'github',
+    // Replaced the Github ring button (issue #38, owner-directed): the ring's
+    // eight slots are prime navigation real estate, and an external hop to a
+    // repo profile earned one less than the in-app /journey timeline does.
+    // GitHub is not gone — it keeps its slot in the footer's ELSEWHERE
+    // terminal (footer-data.js socialLinks), which is where external
+    // destinations live. Swapping IN PLACE (not appending) matters: the
+    // sub-480px two-column layout slices BtnList 0-3 / 4-7, so a ninth entry
+    // would silently vanish on phones.
+    label: 'Journey',
+    link: '/journey',
+    icon: 'journey',
     newTab: false,
   },
   {
@@ -292,5 +300,194 @@ export const BtnList = [
     link: '/Muhammad_Abdullah_CV.pdf',
     icon: 'resume',
     newTab: false,
+  },
+];
+
+// /journey timeline (issue #38). Newest first — the page scrolls BACK through
+// time, so the array order is the render order (and MUST stay grouped by
+// `year`, monotonically descending: the era separators render on every year
+// CHANGE, so an interleaved year would mint a duplicate separator). Two date
+// fields on purpose: `year` is the machine value (era grouping, the year
+// separators, the ghost year readout), `dateLabel` is what the card prints —
+// which lets a range-spanning entry sit in its END year, where the story
+// resolves, while still showing its true span. `type` keys into the accent map
+// in components/journey (career/education/milestone in service — each gets its
+// own icon + accent colour; `milestone` carries the community/volunteering
+// roles). The map's `project` and `origin` types are deliberately UNTENANTED
+// here: the owner keeps /journey to the documented education/employment
+// record — the portfolio already lives on /projects, and the poetic
+// "first line" origin card was cut on the same review; the EST. end-cap in
+// components/journey carries the where-it-began note instead. Don't re-add
+// either. Content
+// is the COMPLETE employment/education/volunteering record from the LinkedIn
+// profile, owner-supplied 2026-08-22, cross-checked against the CV at
+// public/Muhammad_Abdullah_CV.pdf — where the two disagreed, LinkedIn won
+// (BTEC is 2019–2021 with the OCNLR cert before it, not the CV's 2017 start;
+// Unisys is MAY 2023 — SEP 2024, not APR—JUL). Keep all three in step.
+export const journeyData = [
+  {
+    id: 'j-indie',
+    year: 2026,
+    dateLabel: 'APR 2026 →',
+    title: 'Software Engineer · Independent Projects',
+    description:
+      'Designing, building and shipping full-stack work end-to-end: a Swagger-documented REST API with Mocha/Chai tests, Colophon (AI publishing — Vue 3, Express, PostgreSQL + pgvector), AfaaqX, and a GitHub profile regenerated daily by scheduled Actions pipelines.',
+    type: 'career',
+    tags: ['TypeScript', 'PostgreSQL', 'GitHub Actions'],
+    link: 'https://github.com/MA1002643',
+  },
+  {
+    id: 'j-constant',
+    year: 2026,
+    dateLabel: 'MAY 2026 →',
+    title: 'Security Officer · Constant Security Services',
+    description:
+      'SIA-licensed across critical science and university sites, including Jodrell Bank Observatory — patrols, CCTV, incident response and control-room reporting while landing the next engineering role.',
+    type: 'career',
+    tags: ['SIA-licensed', 'Jodrell Bank'],
+    link: null,
+  },
+  {
+    id: 'j-c365',
+    year: 2026,
+    dateLabel: 'FEB — MAY 2026',
+    title: 'DevOps Engineer · C365Cloud',
+    description:
+      'Kept a compliance platform shipping: CI/CD pipelines, Microsoft SQL Server and MySQL administration, and .NET (Blazor) platform features for internal teams in Wakefield.',
+    type: 'career',
+    tags: ['CI/CD', 'T-SQL', '.NET Blazor'],
+    link: null,
+  },
+  {
+    id: 'j-adullam',
+    year: 2026,
+    dateLabel: 'APR 2025 — MAY 2026',
+    title: 'Concierge · Adullam Homes',
+    description:
+      'Out-of-hours point of contact in supported accommodation — safeguarding escalations, incident management and accurate electronic record-keeping for vulnerable residents.',
+    type: 'career',
+    tags: ['Safeguarding'],
+    link: null,
+  },
+  {
+    id: 'j-showsec',
+    year: 2025,
+    dateLabel: 'DEC 2024 — AUG 2025',
+    title: 'Security Officer / CCTV Operator · Showsec',
+    description:
+      'CCTV monitoring, crowd management and incident response at high-profile events, coordinating in real time with security teams and law enforcement.',
+    type: 'career',
+    tags: ['CCTV', 'Incident response'],
+    link: null,
+  },
+  {
+    id: 'j-lidl',
+    year: 2025,
+    dateLabel: 'SEP 2021 — APR 2025',
+    title: 'Customer Assistant · Lidl GB',
+    description:
+      'High-volume store through the whole degree — till, deliveries, stock; part of the team that lifted the store’s sales ranking from 14th to 10th and customer satisfaction 18% in four months.',
+    type: 'career',
+    tags: ['3 yrs 8 mo alongside study'],
+    link: null,
+  },
+  {
+    id: 'j-unisys',
+    year: 2024,
+    dateLabel: 'MAY 2023 — SEP 2024',
+    title: 'Software Engineer · Unisys',
+    description:
+      '17-month industrial placement in Manchester: shipped full-stack C# / .NET (Blazor) features that lifted system efficiency ~20%, cut production issues 30% owning support triage, and stepped up to lead a project team to an on-time delivery that won follow-on client contracts.',
+    type: 'career',
+    tags: ['C#', '.NET Blazor', 'SQL'],
+    link: null,
+  },
+  {
+    id: 'j-ambassador',
+    year: 2023,
+    dateLabel: 'MAY 2022 — OCT 2023',
+    title: 'Student Ambassador · MMU',
+    description:
+      'Represented the university at open days, tours and recruitment events across Greater Manchester.',
+    type: 'milestone',
+    tags: ['Community'],
+    link: null,
+  },
+  {
+    id: 'j-mmu-helpdesk',
+    year: 2023,
+    dateLabel: 'JUL 2022 — JAN 2023',
+    title: 'IT Help Desk Technician · MMU',
+    description:
+      'First-line support for staff and students — hardware, software and access issues, bridging IT and partner departments; praised by multiple departments in the first week.',
+    type: 'career',
+    tags: ['First-line support'],
+    link: null,
+  },
+  {
+    id: 'j-mmu-dev',
+    year: 2023,
+    dateLabel: 'APR 2022 — JAN 2023',
+    title: 'Software Developer · MMU',
+    description:
+      'Front-end and back-end functionality in a multidisciplinary university team — resolved 50+ bugs, improved load speed 25% and cut development time 15% translating stakeholder requirements into working features.',
+    type: 'career',
+    tags: ['Full-stack', '50+ bugs resolved'],
+    link: null,
+  },
+  {
+    id: 'j-course-rep',
+    year: 2022,
+    dateLabel: 'SEP 2021 — SEP 2022',
+    title: 'Course Representative · MMU',
+    description:
+      'Elected voice for the cohort — negotiated assessment scheduling around religious observances and expanded departmental guest-speaker sessions.',
+    type: 'milestone',
+    tags: ['Learner Voice Award', 'Volunteering Award'],
+    link: null,
+  },
+  {
+    id: 'j-bsc',
+    year: 2021,
+    dateLabel: 'SEP 2021 →',
+    title: 'BSc (Hons) Software Engineering · MMU',
+    description:
+      'Manchester Metropolitan University — BCS-accredited, predicted First-Class Honours. The formal deep end.',
+    type: 'education',
+    tags: ['BCS Accredited', 'First-Class (predicted)'],
+    link: null,
+  },
+  {
+    id: 'j-kfc',
+    year: 2021,
+    dateLabel: 'MAR 2019 — SEP 2021',
+    title: 'Team Member · KFC',
+    description:
+      'Every station, front to back — named Best Employee six consecutive months, in the crew that lifted the store’s regional ranking from 5th to 2nd.',
+    type: 'career',
+    tags: ['Best Employee ×6'],
+    link: null,
+  },
+  {
+    id: 'j-btec',
+    year: 2021,
+    dateLabel: '2019 — 2021',
+    title: 'BTEC Level 3 Extended Diploma in IT',
+    description:
+      'Bolton College — Triple Distinction (DDD). Two years that turned curiosity into a discipline.',
+    type: 'education',
+    tags: ['Triple Distinction'],
+    link: null,
+  },
+  {
+    id: 'j-ocnlr',
+    year: 2019,
+    dateLabel: '2018 — 2019',
+    title: 'OCNLR Certificate in Digital Skills',
+    description:
+      'Bolton College — the first formal step into computing, and the doorway to everything above it.',
+    type: 'education',
+    tags: ['Digital Skills'],
+    link: null,
   },
 ];

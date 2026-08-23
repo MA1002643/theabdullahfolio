@@ -1010,7 +1010,7 @@ const Navigation = ({
             />
           ))}
         </div>
-        {/* Right column: GitHub, My Past, LinkedIn, Resume.
+        {/* Right column: Journey, My Past, LinkedIn, Resume.
             Mirrors the left column (also `absolute` so it tracks the
             laptop's vertical center, not the viewport's). */}
         <div

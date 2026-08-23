@@ -14,9 +14,11 @@ import { usePointerCapability } from '@/hooks/usePointerCapability';
 // sessionStorage — surviving tab close is the point) remembers any dismissal,
 // and every way out persists it, because every way out means the message
 // landed: the × button, Esc, or — the quiet one — the visitor driving the
-// ring (or, below 480px, tapping a column button) before reading it. That
-// last signal arrives as the `interacted` prop, raised by the page when
-// Navigation reports any wheel/drag/scrub/arrow-key input.
+// ring before reading it. That last signal arrives as the `interacted`
+// prop, raised by the page when Navigation reports any
+// wheel/drag/scrub/arrow-key input. Below 480px (the columns layout) the
+// tip neither renders nor lets a tap burn the persisted showing — see
+// COLUMNS_QUERY.
 //
 // THE COPY LEADS WITH THE LAPTOP. Owner-reported: a generic "scroll, drag,
 // or press ← →" line told a first-time visitor nothing about the site's
@@ -36,9 +38,11 @@ const STORAGE_KEY = 'nav-orbit-tip:dismissed';
 const SHOW_DELAY_MS = 2600;
 
 // Below 480px the orbit collapses to the two fixed columns
-// (navigation/index.jsx), so the spin wording would describe an affordance
-// that does not exist — the tip switches to the columns' own. Live query:
-// crossing the boundary re-words the tip rather than stranding stale copy.
+// (navigation/index.jsx), so there is no ring — and no gesture — to teach.
+// Owner-reported (post-#105): a tip there reads as a message about a nav
+// bar the phone never shows, so below this boundary the tip does not render
+// at all. Live query: a phone rotating into a ≥480px landscape (where the
+// ring IS the nav) gains the tip, and rotating back loses it.
 const COLUMNS_QUERY = '(max-width: 479.98px)';
 
 const readDismissed = () => {
@@ -182,12 +186,14 @@ const OrbitTip = ({ interacted }) => {
     return () => window.clearTimeout(t);
   }, [revealed]);
 
-  // Silent auto-dismissal: the visitor drove the ring (or tapped a column
-  // button) — the affordance is discovered, whether or not the tip had even
-  // appeared yet. Persisted like any other dismissal.
+  // Silent auto-dismissal: the visitor drove the ring — the affordance is
+  // discovered, whether or not the tip had even appeared yet. Persisted like
+  // any other dismissal. NOT in columns mode: tapping a column button proves
+  // nothing about the ring (the tip never shows there), and persisting would
+  // silently burn the one showing a later desktop visit is owed.
   useEffect(() => {
-    if (interacted) dismiss();
-  }, [interacted, dismiss]);
+    if (interacted && !isColumns) dismiss();
+  }, [interacted, isColumns, dismiss]);
 
   // Esc dismisses from anywhere, without demanding focus first. Window-level
   // and only while visible, so it cannot swallow an Esc meant for anything
@@ -201,12 +207,15 @@ const OrbitTip = ({ interacted }) => {
     return () => window.removeEventListener('keydown', onKey);
   }, [status, dismiss]);
 
-  const visible = status === 'visible';
-  // Which of the three tellings this visitor gets. The hover telling leads
-  // with the cursor-on-the-laptop gesture and plays the pictogram; the
-  // touch-orbit telling promises only touch gestures; the columns telling
-  // describes the columns.
-  const mode = isColumns ? 'columns' : canHover ? 'hover' : 'touch';
+  // Render-gated on !isColumns (not baked into `status`): the machine still
+  // arms behind the scenes, so a rotation into a ≥480px landscape — where
+  // the ring exists and is un-discovered — shows the tip, and rotating back
+  // hides it again, all without re-running timers.
+  const visible = status === 'visible' && !isColumns;
+  // Which telling this visitor gets. The hover telling leads with the
+  // cursor-on-the-laptop gesture and plays the pictogram; the touch telling
+  // promises only touch gestures.
+  const mode = canHover ? 'hover' : 'touch';
 
   const kbd = (label) => (
     <kbd className="rounded border border-[#ffaa2a]/30 bg-white/5 px-1.5 py-0.5 font-sans text-[0.7rem] leading-none text-[#ffbb55]">
@@ -259,17 +268,7 @@ const OrbitTip = ({ interacted }) => {
             {/* The visual copy is presentation (a screen reader would spell
                 out "leftwards arrow"); the sr-only sentence is the
                 announcement. */}
-            {mode === 'columns' ? (
-              <>
-                <span aria-hidden className="text-fire-amber text-xs font-light tracking-wide">
-                  Tip: tap a button on either side to explore
-                </span>
-                <span className="sr-only">
-                  Tip: use the buttons on either side of the screen to explore
-                  the site.
-                </span>
-              </>
-            ) : mode === 'hover' ? (
+            {mode === 'hover' ? (
               <>
                 <span aria-hidden className="flex min-w-0 flex-col gap-0.5 text-left">
                   <span className="text-fire-amber text-xs font-normal leading-snug sm:text-[0.8rem]">

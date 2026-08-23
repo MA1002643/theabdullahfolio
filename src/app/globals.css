@@ -5991,3 +5991,115 @@ h2.hero-role {
     transform: translateY(-50%);
   }
 }
+
+/* ── Journey timeline under a fluid scope (issue #38) ──────────────────────
+
+   Semantic type roles for the /journey milestone cards plus the two effects
+   that need real CSS: the hover lift and the ghost-year figure. Same contract
+   as the fluid blocks above: the BASE rules are the page's legacy/desktop
+   values exactly (so the markup renders identically outside a `.fluid-scale`
+   scope and on engines without CSS trig), and the `.fluid-scale` overrides
+   re-derive each size from the one shared factor with a `max()` legibility
+   floor. /journey is in FLUID_SCALE_PAGES from birth, so the scoped rules are
+   the ones that actually paint — the bases are the fallback story. */
+
+/* Card type roles — sizes only; colour and weight stay in the JSX where the
+   per-type accent system lives. */
+.journey-title {
+  font-size: 1.125rem; /* text-lg */
+  line-height: 1.35;
+}
+.journey-desc {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.55;
+}
+.journey-date {
+  font-size: 0.75rem; /* text-xs */
+  letter-spacing: 0.15em;
+}
+.journey-tag {
+  font-size: 0.6875rem; /* 11px */
+  letter-spacing: 0.06em;
+}
+
+.fluid-scale .journey-title {
+  font-size: max(1rem, calc(1.125rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .journey-desc {
+  font-size: max(0.8125rem, calc(0.875rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .journey-date {
+  font-size: max(0.6875rem, calc(0.75rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .journey-tag {
+  font-size: max(0.625rem, calc(0.6875rem * var(--fluid-scale, 1)));
+}
+
+/* Hover lift. On an INNER wrapper, never the framer-motion card wrapper — the
+   entrance/parallax MotionValues own that element's `transform`, and a CSS
+   transition on the same property would smear every scroll-linked write (the
+   issue #47 `transition` lesson). `.custom-bg-abt` on the card inside already
+   carries the glow-intensify hover, so the lift is the only job here. */
+.journey-lift {
+  transition: transform 0.3s ease;
+}
+.journey-lift:hover {
+  transform: translateY(-4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .journey-lift {
+    transition: none;
+  }
+  .journey-lift:hover {
+    transform: none;
+  }
+}
+
+/* Card hover energises its station on the spine: the marker swells a touch
+   and the connector brightens, so pointing at a card visibly lights the piece
+   of the machine it hangs off. Pure CSS via :has() — a progressive
+   enhancement (engines without :has simply skip it). Safe against the issue
+   #47 transform-smear rule on both counts: the marker wrapper's transform is
+   a static class translate framer never writes (repeat the translateX when
+   overriding — a bare `transform` would drop it), and the connector is
+   touched only through `filter`, never its framer-owned transform. */
+[data-spine-marker] {
+  transition: transform 0.35s ease;
+}
+li:has(.journey-lift:hover) [data-spine-marker] {
+  transform: translateX(-50%) scale(1.12);
+}
+.journey-connector {
+  transition: filter 0.35s ease;
+}
+li:has(.journey-lift:hover) .journey-connector {
+  filter: brightness(1.6) saturate(1.15);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-spine-marker],
+  .journey-connector {
+    transition: none;
+  }
+  li:has(.journey-lift:hover) [data-spine-marker] {
+    transform: translateX(-50%);
+  }
+  li:has(.journey-lift:hover) .journey-connector {
+    filter: none;
+  }
+}
+
+/* Ghost-year figure — the fixed odometer behind the cards. Outline-only
+   glyphs (transparent fill + a faint gold stroke) so it reads as an etching,
+   not a watermark; the vw clamp makes it inherently fluid, so it needs no
+   `.fluid-scale` override. Tabular numerals keep the four digit columns from
+   shifting as they roll. */
+.journey-ghost-year {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: clamp(8rem, 21vw, 17rem);
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(249, 209, 116, 0.14);
+}

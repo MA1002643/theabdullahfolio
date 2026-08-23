@@ -55,6 +55,7 @@ export const brand = {
 // reach out).
 export const quickLinks = [
   { label: 'About', href: '/about', desc: 'Who I am' },
+  { label: 'Journey', href: '/journey', desc: 'The road so far' },
   { label: 'Qualifications', href: '/qualifications', desc: 'Credentials' },
   { label: 'Projects', href: '/projects', desc: 'Selected work' },
   { label: 'Contact', href: '/contact', desc: 'Say hello' },
