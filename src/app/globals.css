@@ -6046,6 +6046,16 @@ h2.hero-role {
 .journey-lift:hover {
   transform: translateY(-4px);
 }
+/* Keyboard mirror of the lift: tabbing to anything inside the card (the VIEW
+   link) earns the same affordance. :has(:focus-visible), not :focus-within —
+   VIEW opens a NEW tab, so a mouse click leaves focus behind on this page
+   and :focus-within would pin the lift after the pointer left. Kept as its
+   own rule, never a selector list shared with :hover: one invalid selector
+   drops a whole plain list, and an engine without :has() must lose only
+   this enhancement, not the hover lift. */
+.journey-lift:has(:focus-visible) {
+  transform: translateY(-4px);
+}
 @media (prefers-reduced-motion: reduce) {
   .journey-lift {
     transition: none;
@@ -6053,26 +6063,35 @@ h2.hero-role {
   .journey-lift:hover {
     transform: none;
   }
+  /* Separate block for the same :has() fallback reason as above. */
+  .journey-lift:has(:focus-visible) {
+    transform: none;
+  }
 }
 
-/* Card hover energises its station on the spine: the marker swells a touch
-   and the connector brightens, so pointing at a card visibly lights the piece
-   of the machine it hangs off. Pure CSS via :has() — a progressive
-   enhancement (engines without :has simply skip it). Safe against the issue
-   #47 transform-smear rule on both counts: the marker wrapper's transform is
-   a static class translate framer never writes (repeat the translateX when
-   overriding — a bare `transform` would drop it), and the connector is
-   touched only through `filter`, never its framer-owned transform. */
+/* Card hover — or keyboard focus inside the card — energises its station on
+   the spine: the marker swells a touch and the connector brightens, so
+   pointing at (or tabbing to) a card visibly lights the piece of the machine
+   it hangs off. Pure CSS via :has() — a progressive enhancement (engines
+   without :has simply skip it), which is also why the focus-visible variant
+   can share these selector lists: every :has() engine has :focus-visible.
+   Safe against the issue #47 transform-smear rule on both counts: the marker
+   wrapper's transform is a static class translate framer never writes
+   (repeat the translateX when overriding — a bare `transform` would drop
+   it), and the connector is touched only through `filter`, never its
+   framer-owned transform. */
 [data-spine-marker] {
   transition: transform 0.35s ease;
 }
-li:has(.journey-lift:hover) [data-spine-marker] {
+li:has(.journey-lift:hover) [data-spine-marker],
+li:has(.journey-lift :focus-visible) [data-spine-marker] {
   transform: translateX(-50%) scale(1.12);
 }
 .journey-connector {
   transition: filter 0.35s ease;
 }
-li:has(.journey-lift:hover) .journey-connector {
+li:has(.journey-lift:hover) .journey-connector,
+li:has(.journey-lift :focus-visible) .journey-connector {
   filter: brightness(1.6) saturate(1.15);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -6080,10 +6099,12 @@ li:has(.journey-lift:hover) .journey-connector {
   .journey-connector {
     transition: none;
   }
-  li:has(.journey-lift:hover) [data-spine-marker] {
+  li:has(.journey-lift:hover) [data-spine-marker],
+  li:has(.journey-lift :focus-visible) [data-spine-marker] {
     transform: translateX(-50%);
   }
-  li:has(.journey-lift:hover) .journey-connector {
+  li:has(.journey-lift:hover) .journey-connector,
+  li:has(.journey-lift :focus-visible) .journey-connector {
     filter: none;
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useId, useMemo } from 'react';
 import { motion, useTransform } from 'framer-motion';
 import { buildSpineGeometry } from './spineGeometry';
 
@@ -46,6 +46,16 @@ const TimelineSpine = ({
   revealed,
   reduceMotion,
 }) => {
+  // useId keeps the gradient ids unique per instance — a duplicate id would
+  // let one mounted copy capture the other's url(#…) references. Colons
+  // stripped so the ids stay valid inside url(#…) (the contact form's
+  // SendingLabel idiom).
+  const uid = useId().replace(/:/g, '');
+  const id = {
+    track: `jn-spine-track-${uid}`,
+    fill: `jn-spine-fill-${uid}`,
+  };
+
   const width = 2 * (amplitude + SPINE_PAD);
   const cx = width / 2;
 
@@ -86,7 +96,7 @@ const TimelineSpine = ({
           >
             <defs>
               <linearGradient
-                id="jn-spine-track"
+                id={id.track}
                 gradientUnits="userSpaceOnUse"
                 x1="0"
                 y1="0"
@@ -108,7 +118,7 @@ const TimelineSpine = ({
             <motion.path
               d={geometry.d}
               fill="none"
-              stroke="url(#jn-spine-track)"
+              stroke={`url(#${id.track})`}
               strokeWidth="2"
               strokeLinecap="round"
               strokeDasharray={geometry.total}
@@ -140,7 +150,7 @@ const TimelineSpine = ({
             >
               <defs>
                 <linearGradient
-                  id="jn-spine-fill"
+                  id={id.fill}
                   gradientUnits="userSpaceOnUse"
                   x1="0"
                   y1="0"
@@ -158,7 +168,7 @@ const TimelineSpine = ({
               <path
                 d={geometry.d}
                 fill="none"
-                stroke="url(#jn-spine-fill)"
+                stroke={`url(#${id.fill})`}
                 strokeWidth="7"
                 strokeLinecap="round"
                 opacity="0.22"
@@ -166,7 +176,7 @@ const TimelineSpine = ({
               <path
                 d={geometry.d}
                 fill="none"
-                stroke="url(#jn-spine-fill)"
+                stroke={`url(#${id.fill})`}
                 strokeWidth="2.5"
                 strokeLinecap="round"
               />
