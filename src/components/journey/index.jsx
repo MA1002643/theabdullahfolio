@@ -131,11 +131,26 @@ const JourneyTimeline = () => {
     if (!el) return undefined;
     const io = new IntersectionObserver(
       (entries) => {
+        // One delivery can carry several newly-intersecting nodes — a dial
+        // jump landing on a card boundary, a fast scroll batching
+        // transitions (the band is 10% of the viewport, so two adjacent
+        // nodes can share it). Elect ONCE, from the node occupying the most
+        // of the band: intersectionRect height, not intersectionRatio,
+        // which divides by the node's OWN height and would hand the
+        // election to a short card covering less of the band. Entry order
+        // is spec-defined (observe() insertion order), but the election
+        // shouldn't hang off that subtlety.
+        let best = null;
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveYear(Number(entry.target.dataset.eraYear));
+          if (!entry.isIntersecting) return;
+          if (
+            !best ||
+            entry.intersectionRect.height > best.intersectionRect.height
+          ) {
+            best = entry;
           }
         });
+        if (best) setActiveYear(Number(best.target.dataset.eraYear));
       },
       { rootMargin: '-45% 0px -45% 0px' },
     );
