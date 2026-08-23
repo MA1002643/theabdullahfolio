@@ -19,5 +19,6 @@ export const ROUTES = [
   { segment: 'projects', href: '/projects', label: 'Projects' },
   { segment: 'qualifications', href: '/qualifications', label: 'Qualifications' },
   { segment: 'contact', href: '/contact', label: 'Contact' },
+  { segment: 'journey', href: '/journey', label: 'Journey' },
   { segment: 'my-past', href: '/my-past', label: 'My Past' },
 ];

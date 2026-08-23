@@ -89,4 +89,5 @@ export const ROUTE_LABELS = {
   '/qualifications': 'Qualifications',
   '/contact': 'Contact',
   '/my-past': 'My Past',
+  '/journey': 'Journey',
 };

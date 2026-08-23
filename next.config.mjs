@@ -102,7 +102,14 @@ const nextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
-              "upgrade-insecure-requests"
+              // Real WebKit (iOS Safari / Simulator) honours this even for
+              // http://localhost, upgrading every asset request to https and
+              // rendering the dev site unstyled — so ship it in production
+              // only. Chrome exempts localhost, which is why dev testing in
+              // Chrome never trips over it.
+              ...(process.env.NODE_ENV === 'production'
+                ? ['upgrade-insecure-requests']
+                : [])
             ].join('; ')
           }
         ]

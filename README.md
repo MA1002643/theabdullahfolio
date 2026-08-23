@@ -50,7 +50,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 
 | Feature | Detail |
 |---------|--------|
-| **Orbital Navigation** | Trigonometric button ring on one viewport-derived ellipse — a fixed `0.204` tilt at every width, sized so the outermost button always clears the screen edge, anchored to the laptop's **measured base** and raised 15% of the laptop's own height above it (`ORBIT_RAISE`) so it circles the artwork's lower body at the same pose on every viewport, and depth-sorted per frame so the ring passes *behind* the laptop on the far half of each lap and in front of it on the near half; staggered reveal, two-column fallback below 480px. **The ring is an instrument, not just an ornament** (issue #105): wheel/touchpad over the ring or the laptop spins it, the ring band takes an angular touch-drag, the laptop doubles as a vertical scrubber — hover-driven on any hover-capable pointer (a desktop mouse, or an iPad the moment a trackpad/Magic Keyboard attaches, via a live `(hover: hover) and (pointer: fine)` query), drag-driven on touch — and `←` / `→` from any focused button turns it exactly one button slot. **The ring has real physics**: release a drag while still moving and it coasts on momentum with exponential friction (launch speed = an EMA of the hand's own deg/s at release; a held release never flicks), stopping dead the moment a button is hovered; touch drags tick a haptic detent at every 45° slot crossing where the hardware supports it. The ambient spin pauses while the visitor is engaged and eases back in after a 1.5s quiet period. The gesture is signposted twice over: the site cursor grows breathing ↑ ↓ chevrons over the laptop (`data-cursor="scrub"`, with a native `ns-resize` fallback for reduced-motion users), and a one-time dismissible tip (`localStorage`-remembered, auto-dismissed on first interaction, `role="status"`) leads with the laptop gesture in plain words beside an animated cursor-over-laptop pictogram — worded per capability, so a touch-only tablet is told to slide and drag, never to hover |
+| **Orbital Navigation** | Trigonometric button ring on one viewport-derived ellipse — a fixed `0.204` tilt at every width, sized so the outermost button always clears the screen edge, anchored to the laptop's **measured base** and raised 15% of the laptop's own height above it (`ORBIT_RAISE`) so it circles the artwork's lower body at the same pose on every viewport, and depth-sorted per frame so the ring passes *behind* the laptop on the far half of each lap and in front of it on the near half; staggered reveal, two-column fallback below 480px. **The ring is an instrument, not just an ornament** (issue #105): wheel/touchpad over the ring or the laptop spins it, the ring band takes an angular touch-drag, the laptop doubles as a vertical scrubber — hover-driven on any hover-capable pointer (a desktop mouse, or an iPad the moment a trackpad/Magic Keyboard attaches, via a live `(hover: hover) and (pointer: fine)` query), drag-driven on touch — and `←` / `→` from any focused button turns it exactly one button slot. **The ring has real physics**: release a drag while still moving and it coasts on momentum with exponential friction (launch speed = an EMA of the hand's own deg/s at release; a held release never flicks), stopping dead the moment a button is hovered; touch drags tick a haptic detent at every 45° slot crossing where the hardware supports it. The ambient spin pauses while the visitor is engaged and eases back in after a 1.5s quiet period. The gesture is signposted twice over: the site cursor grows breathing ↑ ↓ chevrons over the laptop (`data-cursor="scrub"`, with a native `ns-resize` fallback for reduced-motion users), and a one-time dismissible tip (`localStorage`-remembered, auto-dismissed on first interaction, `role="status"`) leads with the laptop gesture in plain words beside an animated cursor-over-laptop pictogram — worded per capability, so a touch-only tablet is told to slide and drag, never to hover — and not rendered at all below 480px, where the two-column layout has no orbit to teach (nor does a column tap burn the remembered dismissal) |
 | **3D Project Viewer** | Interactive Three.js scene — procedural laptop model with canvas-generated keyboard texture, 40+ mesh objects, auto-rotate orbit controls |
 | **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
@@ -68,7 +68,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Custom Cursor** | Site-wide ember dot + spring-lagged ring that swells and leans toward interactive elements; disabled on touch / reduced-motion |
 | **Cinematic Emblem Loader** | A self-forging SVG crest — stroking rings, an engraved MUHAMMAD / ABDULLAH name arc, and an MA flame monogram that ignites and radial-wipes into the page (first-visit gated, pointer-reactive) |
 | **Smart 404 Recovery** | Levenshtein "Did you mean …?" suggestion that maps a near-miss URL to the closest real route |
-| **Security Headers** | Full CSP policy, `frame-ancestors 'none'`, `upgrade-insecure-requests` via `next.config.mjs` |
+| **Security Headers** | Full CSP policy, `frame-ancestors 'none'`, `upgrade-insecure-requests` (production builds only) via `next.config.mjs` |
 
 ---
 
@@ -157,6 +157,7 @@ graph TD
             Pages --> Projects["/projects · /projects/[id]<br/>Three.js scene · Aurora · Boot sequence"]
             Pages --> Quals["/qualifications<br/>3D CSS carousel"]
             Pages --> Contact["/contact<br/>GLSL aurora · Elite contact form"]
+            Pages --> Journey["/journey<br/>Scroll-charged timeline · Era instruments"]
             Pages --> Footer["Footer · all sub-pages<br/>Live location · Project CTA · Wordmark"]
 
             Root --> API{{"API Routes"}}
@@ -204,7 +205,7 @@ graph TD
 
     class Browser client;
     class Root root;
-    class Home,Pages,About,Projects,Quals,Contact,Footer page;
+    class Home,Pages,About,Projects,Quals,Contact,Journey,Footer page;
     class Stats,Exp,Work,Mail,Foot,Music api;
     class API gateway;
     class GitHub,PDF,Inbox,Redis,Gateway,Tracker,Spotify ext;
@@ -220,7 +221,7 @@ graph TD
 | **Rendering** | Three.js WebGL canvas · Framer Motion DOM orchestration · Tailwind utility system |
 | **Data** | GitHub GraphQL (live, multi-layer cached) · Spotify Web API (now-playing, server-side token exchange) · Nodemailer SMTP · Upstash Redis (send idempotency + live-location fix) · AI Gateway (message refine) · `tz-lookup` (offline timezone) · `localStorage` (draft · queue · loader gate) |
 | **Performance** | Route-based code splitting · `next/dynamic` for Three.js · Sharp image pipeline · `unstable_cache` + CDN `s-maxage` / `stale-while-revalidate` |
-| **Security** | Full CSP · `frame-ancestors 'none'` · `upgrade-insecure-requests` · server-only tokens · username allowlist · HMAC-verified webhooks |
+| **Security** | Full CSP · `frame-ancestors 'none'` · `upgrade-insecure-requests` (prod only) · server-only tokens · username allowlist · HMAC-verified webhooks |
 
 ---
 
@@ -233,7 +234,7 @@ theabdullahfolio/
 ├── public/                     # Static assets — logo, backgrounds, résumé PDF
 ├── src/
 │   ├── app/                    # App Router — pages, layouts, API routes
-│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact · /my-past
+│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact · /journey · /my-past
 │   │   ├── api/                # 14 route handlers (see API surface below)
 │   │   ├── data.js             # Central project + navigation data store
 │   │   └── globals.css         # Theme tokens · keyframes · glow utilities
@@ -241,6 +242,7 @@ theabdullahfolio/
 │   │   ├── navigation/         # Orbital nav ring — trig positioning, one fitted ellipse, per-frame depth, wheel/drag/scrub/keyboard control + first-visit tip
 │   │   ├── home/               # Live maintenance header · engraved role line · causeway scene layers
 │   │   ├── about/              # Live GitHub stat / streak / language / skills cards + diff banners
+│   │   ├── journey/            # Scroll-charged career timeline — self-drawing serpentine spine + tangent-riding comet, ghost-year odometer, scroll-wound time-true clock dial
 │   │   ├── projects/           # Category-filtered project grid (AnimatePresence)
 │   │   ├── project-detail/     # Three.js laptop scene · aurora parallax · boot sequence
 │   │   ├── contact/            # Elite contact form · GLSL aurora · AI refine · fire fields
@@ -278,7 +280,7 @@ theabdullahfolio/
 | `/api/spotify/auth` | **Dev-only**, loopback-gated one-time helper that mints the Spotify refresh token — hard-`404`s in production/preview |
 | `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
 | `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
-| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead |
+| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]`, `/journey` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
 | `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
 | `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway |
@@ -501,7 +503,9 @@ object-src          'none'
 base-uri            'self'
 form-action         'self'
 frame-ancestors     'none'
-upgrade-insecure-requests
+upgrade-insecure-requests   # production only — real WebKit honours it even on
+                            # http://localhost, which rendered the dev server
+                            # unstyled on any real phone / iOS Simulator
 ```
 
 </details>
@@ -721,7 +725,7 @@ Counters (PRs / Issues / Pushes 24h) animate 0 → target with a piecewise curve
 
 ## 🧭 Route-wide Footer (Colophon)
 
-Every sub-page — `/about`, `/qualifications`, `/projects`, `/contact` — shares one editorial footer, rendered **once** in the `(sub pages)` layout as a `contentinfo` sibling of `<main>` (issue [#30](https://github.com/MA1002643/theabdullahfolio/issues/30)). It is composed as an asymmetric **5 / 4 / 3 masthead** from the site's existing neon-orange glass design system, so it reads as part of the same universe as the hero rather than bolted on. All motion is transform / opacity / colour only (no layout, no CLS) and every entrance honours `prefers-reduced-motion`.
+Every sub-page — `/about`, `/journey`, `/qualifications`, `/projects`, `/contact`, `/my-past` — shares one editorial footer, rendered **once** in the `(sub pages)` layout as a `contentinfo` sibling of `<main>` (issue [#30](https://github.com/MA1002643/theabdullahfolio/issues/30)). It is composed as an asymmetric **5 / 4 / 3 masthead** from the site's existing neon-orange glass design system, so it reads as part of the same universe as the hero rather than bolted on. All motion is transform / opacity / colour only (no layout, no CLS) and every entrance honours `prefers-reduced-motion`.
 
 | Region | What it is |
 | --- | --- |

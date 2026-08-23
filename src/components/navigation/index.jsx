@@ -984,12 +984,12 @@ const Navigation = ({
             keeps the icons aligned with the laptop regardless of where
             the header/headline push the laptop on different screens. */}
         <div
+          // No discovery signal from column taps: the first-visit tip never
+          // renders at this width, and the page latches `interacted` for
+          // good — a tap that raised it would burn the tip's one persisted
+          // showing the moment a rotation into ≥480px re-ran the tip's
+          // dismissal effect against the stale latch.
           className="absolute left-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4"
-          // A tap on any column button is the discovery the first-visit tip
-          // describes at this width ("tap a side button"), so it counts as
-          // the interaction that dismisses it — capture phase, so the signal
-          // fires even though the tap then navigates away.
-          onPointerDownCapture={onUserInteract}
         >
           {/* Always render all 4 buttons so the column reserves its full
               height from t=0. The reveal is done via the `visible` prop,
@@ -1010,13 +1010,12 @@ const Navigation = ({
             />
           ))}
         </div>
-        {/* Right column: GitHub, My Past, LinkedIn, Resume.
+        {/* Right column: Journey, My Past, LinkedIn, Resume.
             Mirrors the left column (also `absolute` so it tracks the
             laptop's vertical center, not the viewport's). */}
         <div
+          // Same no-signal rule as the left column.
           className="absolute right-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4"
-          // Same discovery signal as the left column.
-          onPointerDownCapture={onUserInteract}
         >
           {/* Same always-render pattern as the left column. */}
           {rightBtns.map((btn, idx) => (

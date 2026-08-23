@@ -3,12 +3,12 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
-  Github,
   Home,
   Linkedin,
   Notebook,
   Palette,
   Phone,
+  Route,
   User,
   Briefcase,
   Clock,
@@ -51,8 +51,8 @@ const getIcon = (icon, small = false) => {
       return <Briefcase className={cls} strokeWidth={1.5} />;
     case 'contact':
       return <Phone className={cls} strokeWidth={1.5} />;
-    case 'github':
-      return <Github className={cls} strokeWidth={1.5} />;
+    case 'journey':
+      return <Route className={cls} strokeWidth={1.5} />;
     case 'linkedin':
       return <Linkedin className={cls} strokeWidth={1.5} />;
     case 'resume':
