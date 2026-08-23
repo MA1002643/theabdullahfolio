@@ -32,6 +32,12 @@ import { buildSpineGeometry } from './spineGeometry';
 // and pulse are ornament and go).
 const SPINE_PAD = 12; // stroke + halo clearance inside the wrapper
 
+// The container's spring overshoots [0,1] at both ends of the scroll — raw
+// v would clip negative insets and park the comet past the spine's ends.
+// Clamped inline in each transform, not via a chained clamped MotionValue,
+// which would add a frame of lag to every derived write.
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
+
 const TimelineSpine = ({
   progress,
   height,
@@ -50,13 +56,16 @@ const TimelineSpine = ({
 
   // Percentage clip so the reveal survives resizes without a re-measure; the
   // comet needs pixels anyway, and both read the same progress value.
-  const clip = useTransform(progress, (v) => `inset(0 0 ${(1 - v) * 100}% 0)`);
-  const cometY = useTransform(progress, (v) => v * height);
+  const clip = useTransform(
+    progress,
+    (v) => `inset(0 0 ${(1 - clamp01(v)) * 100}% 0)`,
+  );
+  const cometY = useTransform(progress, (v) => clamp01(v) * height);
   const cometX = useTransform(progress, (v) =>
-    geometry ? geometry.xAtY(v * height) : cx,
+    geometry ? geometry.xAtY(clamp01(v) * height) : cx,
   );
   const cometRotate = useTransform(progress, (v) =>
-    geometry ? geometry.tangentAtY(v * height) : 0,
+    geometry ? geometry.tangentAtY(clamp01(v) * height) : 0,
   );
 
   return (

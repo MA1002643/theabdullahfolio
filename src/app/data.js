@@ -265,7 +265,7 @@ export const BtnList = [
   },
   { label: 'Contact', link: '/contact', icon: 'contact', newTab: false },
   {
-    // Replaced the Github ring button (issue #38, owner-directed): the ring's
+    // Replaced the GitHub ring button (issue #38, owner-directed): the ring's
     // eight slots are prime navigation real estate, and an external hop to a
     // repo profile earned one less than the in-app /journey timeline does.
     // GitHub is not gone — it keeps its slot in the footer's ELSEWHERE

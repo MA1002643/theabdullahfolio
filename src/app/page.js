@@ -75,9 +75,11 @@ export default function Home() {
   const [hovered, setHovered] = useState(false);
 
   // Raised (once) by Navigation the first time the visitor drives the ring —
-  // wheel, drag, laptop scrub, or arrow keys — and by a column-button tap
-  // below 480px. Its only consumer is the first-visit tip, which reads it as
-  // "the affordance is discovered" and dismisses itself silently (issue
+  // wheel, drag, laptop scrub, or arrow keys. Ring inputs ONLY: the latch is
+  // never cleared, so a columns-mode producer (the old column-tap signal)
+  // would survive a rotation into ≥480px and burn the tip's persisted
+  // showing there. Its only consumer is the first-visit tip, which reads it
+  // as "the affordance is discovered" and dismisses itself silently (issue
   // #105). Latched, never cleared: re-interacting cannot re-show the tip.
   const [orbitInteracted, setOrbitInteracted] = useState(false);
   const handleOrbitInteract = useCallback(() => setOrbitInteracted(true), []);

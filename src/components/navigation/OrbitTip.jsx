@@ -188,30 +188,34 @@ const OrbitTip = ({ interacted }) => {
 
   // Silent auto-dismissal: the visitor drove the ring — the affordance is
   // discovered, whether or not the tip had even appeared yet. Persisted like
-  // any other dismissal. NOT in columns mode: tapping a column button proves
-  // nothing about the ring (the tip never shows there), and persisting would
-  // silently burn the one showing a later desktop visit is owed.
+  // any other dismissal. The signal is ring-only at the SOURCE (Navigation's
+  // column taps never raise it — the page's latch outlives the layout, so a
+  // columns-mode producer would burn this showing on the next rotation into
+  // ≥480px); `!isColumns` stays as the guard that keeps that contract even
+  // if a columns-mode producer ever comes back.
   useEffect(() => {
     if (interacted && !isColumns) dismiss();
   }, [interacted, isColumns, dismiss]);
-
-  // Esc dismisses from anywhere, without demanding focus first. Window-level
-  // and only while visible, so it cannot swallow an Esc meant for anything
-  // else once the tip is gone.
-  useEffect(() => {
-    if (status !== 'visible') return undefined;
-    const onKey = (e) => {
-      if (e.key === 'Escape') dismiss();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [status, dismiss]);
 
   // Render-gated on !isColumns (not baked into `status`): the machine still
   // arms behind the scenes, so a rotation into a ≥480px landscape — where
   // the ring exists and is un-discovered — shows the tip, and rotating back
   // hides it again, all without re-running timers.
   const visible = status === 'visible' && !isColumns;
+
+  // Esc dismisses from anywhere, without demanding focus first. Window-level
+  // and only while the tip is actually RENDERED — `status` alone leaks:
+  // switching to columns hides the tip but leaves status 'visible', and an
+  // Esc meant for something else must not burn the persisted showing of a
+  // tip nobody can see.
+  useEffect(() => {
+    if (!visible) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') dismiss();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visible, dismiss]);
   // Which telling this visitor gets. The hover telling leads with the
   // cursor-on-the-laptop gesture and plays the pictogram; the touch telling
   // promises only touch gestures.
