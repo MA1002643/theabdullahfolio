@@ -1,11 +1,32 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import MilestoneMarker from './MilestoneMarker';
+import FireText from '@/components/shared/FireText';
 import { accentFor } from './accents';
+
+// Tenure readout beside the date pill — the duration a recruiter would
+// otherwise compute in their head. Months are INCLUSIVE of both endpoints,
+// the LinkedIn/CV convention (Unisys MAY 2023 — SEP 2024 must read
+// "1 yr 5 mo", the 17 months its own description claims). Closed entries
+// compute statically from `start`/`end` (SSR-deterministic); open entries
+// need the live clock, so their count renders only after mount — the same
+// hydration contract as the atlas's NOW machinery.
+const toMonths = (ym) => {
+  const [y, m] = ym.split('-').map(Number);
+  return y * 12 + (m - 1);
+};
+
+const tenureLabel = (months) => {
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  if (!y) return `${m} mo`;
+  const yrs = `${y} yr${y > 1 ? 's' : ''}`;
+  return m ? `${yrs} ${m} mo` : yrs;
+};
 
 // One milestone: marker on the spine, a connector that draws outward, and the
 // card. Alternating left/right from md up; below md the spine is a left rail
@@ -47,9 +68,27 @@ const childVariants = {
   },
 };
 
-const TimelineNode = ({ milestone, isLeft, isEraStart, revealed, reduceMotion }) => {
+const TimelineNode = ({
+  milestone,
+  isLeft,
+  isEraStart,
+  revealed,
+  reduceMotion,
+  dimmed,
+}) => {
   const { color: accent, Icon } = accentFor(milestone.type);
   const liRef = useRef(null);
+
+  // Live month for open entries' "so far" tenure — null until mount (see the
+  // tenure header note).
+  const [nowM, setNowM] = useState(null);
+  useEffect(() => {
+    const now = new Date();
+    setNowM(now.getFullYear() * 12 + now.getMonth());
+  }, []);
+  const endM = milestone.end ? toMonths(milestone.end) : nowM;
+  const tenure =
+    endM === null ? null : tenureLabel(endM - toMonths(milestone.start) + 1);
 
   // Live viewport tracking for the entrance; margin pulls the trigger line in
   // so a card is decently on screen before it commits to animating.
@@ -71,7 +110,13 @@ const TimelineNode = ({ milestone, isLeft, isEraStart, revealed, reduceMotion })
       ref={liRef}
       id={isEraStart ? `era-${milestone.year}` : undefined}
       data-era-year={milestone.year}
-      className="relative"
+      // `dimmed` is the atlas's track filter reaching down: a highlight, not a
+      // filter — the card fades but stays in the list, the layout and the
+      // spine geometry, so chip-toggling can never re-shuffle marker centres.
+      className={clsx(
+        'relative transition-opacity duration-500',
+        dimmed && 'opacity-20',
+      )}
       style={{ '--jn-accent': accent }}
     >
       {/* Year separator — rendered inside the first node of each era (not as
@@ -80,15 +125,25 @@ const TimelineNode = ({ milestone, isLeft, isEraStart, revealed, reduceMotion })
       {isEraStart && (
         <div aria-hidden className="relative mb-2 h-10">
           {/* Positioning translates live on this PLAIN wrapper (responsive
-              classes work here: hanging off the rail on mobile, centred on
+              classes work here: straddling the rail on mobile, centred on
               the axis from md up), while framer animates only the inner
               element — the scale animation makes framer own that element's
               whole `transform`, and class-based translates on the SAME node
               get overwritten (the pill used to sit half its width off-axis
-              because of exactly that). */}
-          <div className="absolute left-[1.375rem] top-1/2 -translate-y-1/2 md:left-1/2 md:-translate-x-1/2">
+              because of exactly that).
+
+              0.5rem, not the axis's 1.375rem (owner correction): the
+              serpentine sways ±12px around the 22px axis, so a pill whose
+              left edge sat ON the axis had the line behind it only when the
+              sway went right — 2021/2023 floated beside the line instead.
+              Anchoring at 8px (axis − amplitude − 2px) puts the line behind
+              EVERY pill whatever the sway, on every width — the same
+              on-the-timeline read as md+'s centred straddle. */}
+          <div className="absolute left-[0.5rem] top-1/2 -translate-y-1/2 md:left-1/2 md:-translate-x-1/2">
             <motion.span
-              className="block whitespace-nowrap rounded-full border border-[#ff6d05]/40 bg-black/80 px-4 py-1 font-mono text-sm tracking-[0.2em] text-[#f9d174] shadow-[0_0_12px_rgba(255,109,5,0.25)]"
+              // Year in the page-title ember (owner correction — the era
+              // labels belong to the same voice as MY JOURNEY itself).
+              className="block whitespace-nowrap rounded-full border border-[#ff6d05]/40 bg-black/80 px-4 py-1 font-mono text-sm tracking-[0.2em] text-[#ff6d05] shadow-[0_0_12px_rgba(255,109,5,0.25)]"
               initial={false}
               animate={
                 show ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.85 }
@@ -105,7 +160,15 @@ const TimelineNode = ({ milestone, isLeft, isEraStart, revealed, reduceMotion })
         </div>
       )}
 
-      <div className="relative py-5 md:py-7">
+      {/* jn-<id> is the atlas's jump target (the era-<year> li id above is the
+          clock's) — focused programmatically after the scroll so keyboard
+          selection lands where the bar pointed, hence the tabIndex and the
+          suppressed ring (focus is handed TO it, never tabbed onto it). */}
+      <div
+        id={`jn-${milestone.id}`}
+        tabIndex={-1}
+        className="relative py-5 outline-none md:py-7"
+      >
         {/* Marker, centred on the spine axis. data-spine-marker is the
             container's survey hook — the serpentine path is built through
             these measured centres, which is what keeps the curve passing
@@ -167,17 +230,16 @@ const TimelineNode = ({ milestone, isLeft, isEraStart, revealed, reduceMotion })
           style={reduceMotion ? undefined : { y: parallax }}
         >
           <div className="journey-lift">
+            {/* No accent edge strip here (owner correction): the per-type
+                colour on the card's left edge made every card's border read
+                a different hue — the frame stays custom-bg-abt's uniform
+                gold, exactly like the /about cards, and the type system
+                speaks through the marker, connector and date pill instead. */}
             <article className="custom-bg-abt relative overflow-hidden rounded-xl px-5 py-4">
-              {/* Accent edge — the card's side of the type system. */}
-              <span
-                aria-hidden
-                className="absolute inset-y-0 left-0 w-[3px]"
-                style={{
-                  background: `linear-gradient(to bottom, ${accent}, transparent 90%)`,
-                }}
-              />
-
-              <motion.div variants={childVariants} className="flex items-center gap-3">
+              {/* flex-wrap: the tenure span drops to its own line on narrow
+                  phones instead of squeezing the pill (Lidl's is the widest
+                  pairing). */}
+              <motion.div variants={childVariants} className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span
                   className="journey-date rounded-full border px-2.5 py-0.5 font-mono"
                   style={{
@@ -188,6 +250,15 @@ const TimelineNode = ({ milestone, isLeft, isEraStart, revealed, reduceMotion })
                 >
                   {milestone.dateLabel}
                 </span>
+                {tenure && (
+                  <span
+                    className="journey-tag whitespace-nowrap font-mono"
+                    style={{ color: accent, opacity: 0.7 }}
+                  >
+                    {tenure}
+                    {milestone.end ? '' : ' so far'}
+                  </span>
+                )}
                 {milestone.link && (
                   <a
                     href={milestone.link}
@@ -202,12 +273,15 @@ const TimelineNode = ({ milestone, isLeft, isEraStart, revealed, reduceMotion })
                 )}
               </motion.div>
 
-              <motion.h3 variants={childVariants} className="journey-title mt-2.5 font-bold text-[#f9d174]">
+              {/* Title = the page-title ember, body = the contact intro's
+                  per-word gold→ember fire ink (owner corrections, second
+                  round — the flat #ffaa2a/#ffbb55 pairing was superseded). */}
+              <motion.h3 variants={childVariants} className="journey-title mt-2.5 font-bold text-[#ff6d05]">
                 {milestone.title}
               </motion.h3>
 
-              <motion.p variants={childVariants} className="journey-desc mt-1.5 font-light text-foreground/75">
-                {milestone.description}
+              <motion.p variants={childVariants} className="journey-desc mt-1.5 font-light">
+                <FireText text={milestone.description} />
               </motion.p>
 
               {milestone.tags.length > 0 && (
@@ -216,9 +290,11 @@ const TimelineNode = ({ milestone, isLeft, isEraStart, revealed, reduceMotion })
                   className="mt-3 flex list-none flex-wrap gap-1.5"
                 >
                   {milestone.tags.map((tag) => (
+                    // Hover recolours text WITH the border (owner correction
+                    // — border-only left the label looking half-lit).
                     <li
                       key={tag}
-                      className="journey-tag rounded-full border border-white/15 bg-black/40 px-2 py-0.5 font-mono text-white/65 transition-colors duration-300 hover:border-[color:var(--jn-accent)]"
+                      className="journey-tag rounded-full border border-white/15 bg-black/40 px-2 py-0.5 font-mono text-white/65 transition-colors duration-300 hover:border-[color:var(--jn-accent)] hover:text-[color:var(--jn-accent)]"
                     >
                       {tag}
                     </li>

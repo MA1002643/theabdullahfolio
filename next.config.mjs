@@ -1,3 +1,12 @@
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+// ANALYZE=true npm run build → per-chunk treemaps in .next*/analyze/ (issue
+// #40 Phase 6 budget evidence). Inert in every normal build and on Vercel.
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: false,
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // This repo lives under ~/Desktop, which iCloud Drive syncs. iCloud's
@@ -118,4 +127,4 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

@@ -10,17 +10,29 @@ import { useMessageRefine } from '@/hooks/useMessageRefine';
 // discard. It owns none of the form's state — the parent passes the current
 // `message`, an `onAccept(text)` applier, and a `disabled` flag (true while the
 // form is sending) so refine can never fire mid-send.
+//
+// Shared by the contact form (its home) and the guestbook composer, the same
+// way FireInput is: `mode` picks the server's editorial contract (omitted →
+// contact) and `minLength` scales the show-the-affordance floor to the
+// surface's own field (a 150-char guestbook mark earns polish sooner than a
+// 500-char contact note).
 
-// Match the API's MIN_LEN: below this there's nothing meaningful to polish, so
-// the affordance stays hidden rather than offering a no-op.
+// Match the API's contact-mode minLen: below this there's nothing meaningful to
+// polish, so the affordance stays hidden rather than offering a no-op.
 const MIN_REFINE_LEN = 24;
 
-export default function MessageRefine({ message, onAccept, disabled }) {
+export default function MessageRefine({
+  message,
+  onAccept,
+  disabled,
+  mode,
+  minLength = MIN_REFINE_LEN,
+}) {
   const reduced = useReducedMotion();
-  const { status, suggestion, error, refine, reset } = useMessageRefine();
+  const { status, suggestion, error, refine, reset } = useMessageRefine({ mode });
 
   const trimmed = (message || '').trim();
-  const longEnough = trimmed.length >= MIN_REFINE_LEN;
+  const longEnough = trimmed.length >= minLength;
   const busy = status === 'loading' || status === 'streaming';
   // Gate the whole panel on `!disabled`, not just its buttons: once the form is
   // sending it has already captured the message, so the panel goes fully inert.

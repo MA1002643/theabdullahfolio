@@ -4,7 +4,7 @@ import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   Home,
-  Linkedin,
+  MessageSquare,
   Notebook,
   Palette,
   Phone,
@@ -53,8 +53,8 @@ const getIcon = (icon, small = false) => {
       return <Phone className={cls} strokeWidth={1.5} />;
     case 'journey':
       return <Route className={cls} strokeWidth={1.5} />;
-    case 'linkedin':
-      return <Linkedin className={cls} strokeWidth={1.5} />;
+    case 'guestbook':
+      return <MessageSquare className={cls} strokeWidth={1.5} />;
     case 'resume':
       return <Notebook className={cls} strokeWidth={1.5} />;
     case 'past':

@@ -23,9 +23,9 @@ import { buildSpineGeometry } from './spineGeometry';
 //      repaints the whole stroke every scroll frame — and the horizontal clip
 //      edge is exactly the 62%-viewport line the markers elect eras on, which
 //      arc-length reveals drift away from,
-//   3. the comet — riding the curve via the geometry's x(y) lookup and
-//      ROTATED to the local tangent, so its tail trails along the path
-//      through every bend instead of hanging vertically.
+//   3. the comet — a bare glowing head riding the curve via the geometry's
+//      x(y) lookup (owner correction: no fire tail — the streak that used to
+//      trail it read as the NOW beacon catching fire at scroll 0).
 //
 // `progress` is the spring-smoothed scroll value from the container (raw
 // under reduced motion — the fill is a user-driven scrub and stays; the comet
@@ -73,9 +73,6 @@ const TimelineSpine = ({
   const cometY = useTransform(progress, (v) => clamp01(v) * height);
   const cometX = useTransform(progress, (v) =>
     geometry ? geometry.xAtY(clamp01(v) * height) : cx,
-  );
-  const cometRotate = useTransform(progress, (v) =>
-    geometry ? geometry.tangentAtY(clamp01(v) * height) : 0,
   );
 
   return (
@@ -215,22 +212,15 @@ const TimelineSpine = ({
         />
       </div>
 
-      {/* Comet on the reveal edge — x follows the curve, rotate follows the
-          tangent so the tail trails through every bend. Animated path only,
-          and only once the geometry exists (height 0 would park it on the
-          beacon). */}
+      {/* Comet on the reveal edge — a bare glowing head, x follows the curve.
+          No tail (owner correction: at scroll 0 the streak hung above the NOW
+          beacon and read as a fire tail). Animated path only, and only once
+          the geometry exists (height 0 would park it on the beacon). */}
       {!reduceMotion && geometry && (
         <motion.div
           className="absolute left-0 top-0"
-          style={{ x: cometX, y: cometY, rotate: cometRotate }}
+          style={{ x: cometX, y: cometY }}
         >
-          <span
-            className="absolute -top-14 left-0 h-14 w-[2px] -translate-x-1/2"
-            style={{
-              background:
-                'linear-gradient(to bottom, transparent, rgba(255,109,5,0.7))',
-            }}
-          />
           <span
             className="absolute left-0 top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffb066]"
             style={{

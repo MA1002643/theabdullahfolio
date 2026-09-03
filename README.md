@@ -242,7 +242,7 @@ theabdullahfolio/
 │   │   ├── navigation/         # Orbital nav ring — trig positioning, one fitted ellipse, per-frame depth, wheel/drag/scrub/keyboard control + first-visit tip
 │   │   ├── home/               # Live maintenance header · engraved role line · causeway scene layers
 │   │   ├── about/              # Live GitHub stat / streak / language / skills cards + diff banners
-│   │   ├── journey/            # Scroll-charged career timeline — self-drawing serpentine spine + tangent-riding comet, ghost-year odometer, scroll-wound time-true clock dial
+│   │   ├── journey/            # Scroll-charged career timeline — self-drawing serpentine spine + curve-riding comet, ghost-year odometer, scroll-wound time-true clock dial, overlap atlas (lane-packed Gantt of concurrent roles, sticky lane labels, NOW-clamped bars), per-card tenure readouts, end-cap tally + CV hand-off, and its own ⌘K palette action set
 │   │   ├── projects/           # Category-filtered project grid (AnimatePresence)
 │   │   ├── project-detail/     # Three.js laptop scene · aurora parallax · boot sequence
 │   │   ├── contact/            # Elite contact form · GLSL aurora · AI refine · fire fields
@@ -283,7 +283,7 @@ theabdullahfolio/
 | `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]`, `/journey` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
 | `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
-| `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway |
+| `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway (contact + guestbook editorial modes) |
 | `/api/daily-warmup` · `/api/repo-refresh` | Cron orchestrator + cache warmer (bearer-authenticated) |
 
 ---
@@ -368,7 +368,40 @@ RECEIVER_EMAIL=recipient@example.com
 # SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
 # SPOTIFY_REFRESH_TOKEN=your-refresh-token-from-the-auth-flow
 # SPOTIFY_DEMO=true            # force the demo track on in a prod/preview deploy
+
+# Guestbook — GitHub sign-in + message store (issue #40). READING the wall
+# works with none of these set; POSTING needs the three AUTH_* vars (Auth.js
+# v5 reads the AUTH_* names directly). A GitHub OAuth App takes ONE callback
+# URL, so create two apps: dev → http://localhost:3000/api/auth/callback/github,
+# prod → https://ma.codes/api/auth/callback/github.
+# AUTH_GITHUB_ID=your-github-oauth-app-client-id
+# AUTH_GITHUB_SECRET=your-github-oauth-app-client-secret
+# Google sign-in (second provider). ONE Google OAuth client covers dev AND
+# prod — Google accepts multiple redirect URIs on a single client; add both
+# http://localhost:3000/api/auth/callback/google and
+# https://ma.codes/api/auth/callback/google.
+# AUTH_GOOGLE_ID=your-google-oauth-client-id
+# AUTH_GOOGLE_SECRET=your-google-oauth-client-secret
+# AUTH_SECRET=generate-with-openssl-rand-base64-32
+# Storage picks the KV_* Upstash store above automatically when present
+# (guestbook:* keys); GUESTBOOK_DRIVER=json pins the dev-only file store
+# (data/guestbook.json — never on Vercel, where the filesystem is ephemeral).
+# GUESTBOOK_ADMIN names the one GitHub username allowed to DELETE messages.
+# GUESTBOOK_DRIVER=redis
+# GUESTBOOK_ADMIN=MA1002643
 ```
+
+### Guestbook (`/guestbook`)
+
+An interactive neon message wall (issue #40): visitors sign in with **GitHub or Google**, leave a 2–150-character message — optionally with a hand-drawn **ink signature** captured on a canvas and stored as a strictly-validated SVG path — and react (🔥 🚀 ❤️, one per person per message, server-enforced). Reading is public; writing is session-gated with author identity taken from the OAuth session only, a server-side rate limit (1 message / user / 5 min), and a profanity/URL filter. A flag-gated "elite layer" (`src/lib/flags.js`) adds card tilt, live presence, the shared **⌘K command palette** (`src/components/commandPalette/` — built to be mounted sitewide later), optional UI sounds (off by default), and a grain finish — each killable with a one-line flip. (One variant ships with its flag off so the page matches the sitewide patterns exactly: the scramble-decode headline — the title and subtitle play the shared `PageTitle` ignite instead. The backdrop is the same static still + cursor-reactive aurora as `/about`.)
+
+**Setup**
+
+1. Create two GitHub OAuth Apps at [github.com/settings/developers](https://github.com/settings/developers) (one callback URL each — dev `http://localhost:3000/api/auth/callback/github`, prod `https://ma.codes/api/auth/callback/github`) and set `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` / `AUTH_SECRET` per environment. For Google, one OAuth client in [console.cloud.google.com](https://console.cloud.google.com) suffices (Google allows multiple redirect URIs — add the `…/api/auth/callback/google` form of both URLs) → `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`. Reading the wall needs no auth at all; identity only gates posting and reacting. Google authors are keyed internally by a `google:<sub>` id — cards display their name and never link or show the id.
+2. Storage self-selects: with the `KV_*` Upstash vars present it uses Redis (`guestbook:*` keys); locally `GUESTBOOK_DRIVER=json` keeps messages in the gitignored-by-content `data/guestbook.json`. The API route never touches `fs` directly — both drivers implement one contract (`src/lib/guestbook/store.js`), unit-tested in `tests/unit/store.test.js`.
+3. Signed-in visitors can always delete **their own** message (the bin button on their card); set `GUESTBOOK_ADMIN` to your GitHub username and the site recognises you as the wall's moderator — your session carries `isAdmin`, the bin button appears on **every** card, and `DELETE /api/guestbook?id=…` accepts delete-any. Both ownership and admin are re-derived from the session server-side (`src/lib/guestbook/admin.js`) — the client flag is display-only.
+
+**Tests** — `npm test` (vitest: timeAgo, the signature-path grammar, the rate limiter, the driver contract) and `npm run test:e2e` (Playwright smoke: read-only view renders, sign-in CTA visible, unauthenticated POST → 401; builds first — the config boots a production server on port 3100).
 
 ### GitHub Stats Integration
 
@@ -446,7 +479,7 @@ The `/contact` page pairs a cinematic front-end with a resilient, idempotent del
 <summary><strong>AI "Refine my message"</strong> — streaming rewrite via the Vercel AI Gateway</summary>
 <br />
 
-A quiet ember affordance under the message field streams an AI rewrite of the visitor's note **token by token** into a ghosted panel they can accept or discard.
+A quiet ember affordance under the message field streams an AI rewrite of the visitor's note **token by token** into a ghosted panel they can accept or discard. The guestbook composer shares the same endpoint and panel via an optional `mode` in the body — `guestbook` swaps in a casual one-line editorial contract (≤150 chars, single line, never add links) with its own length gates and token cap, while modeless requests keep the contact contract untouched.
 
 - **Server** (`refine-message/route.js`) — AI SDK (`ai@7`) `streamText` through the **Vercel AI Gateway** with a plain `"provider/model"` string (no provider SDK, no per-provider key). Defaults to `anthropic/claude-haiku-4.5`, overridable via `REFINE_MODEL`.
 - **Auth is server-only** — resolves `AI_GATEWAY_API_KEY` or the auto-injected `VERCEL_OIDC_TOKEN`; when neither is present the route returns `503` and the client **hides the feature**, so keyless local dev is unaffected.
@@ -730,7 +763,7 @@ Every sub-page — `/about`, `/journey`, `/qualifications`, `/projects`, `/conta
 | Region | What it is |
 | --- | --- |
 | **Identity** | Name, role, and positioning line revealed with a "Wet Ink" signature cascade; the one mandatory **View this project on GitHub** CTA (a self-drawing git graph with an honest `❯ main · N commits · pushed <rel>` caption from `/api/project-repo`); and one honest availability signal ("open to new roles"). |
-| **Index** | A route-aware split-flap **departures board** — each of the four routes scrambles and settles, and the current route reads **NOW BOARDING**. Rows stay real `<TransitionLink>`s (SPA transition, keyboard-focusable, `aria-current`). |
+| **Index** | A route-aware split-flap **departures board**, laid out as two column-major columns so six routes never run long — each route's ordinal scrambles and settles, and the current route reads **NOW BOARDING** under its destination. Rows stay real `<TransitionLink>`s (SPA transition, keyboard-focusable, `aria-current`). |
 | **Elsewhere** | GitHub / LinkedIn / Résumé staged as a live **terminal** that types itself out, plus the contact micro-block (the email resolves out of a cipher on reveal). |
 | **Live location** | The **Ember Meridian** plate — the owner's real current town + local time from `/api/location`, with a **LIVE** pulse only when the GPS fix is fresh; falls back to the home city when the tracker is off. |
 | **Wordmark** | A giant half-sunk **guitar-string** wordmark: hover plucks a string (pinned-end standing wave) and sounds the next note of an original melody, so sweeping the cursor strums a phrase. |
