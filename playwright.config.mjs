@@ -31,6 +31,19 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: {
       GUESTBOOK_DRIVER: 'json',
+      // Hermetic means NOTHING reaches the live store. Playwright merges this
+      // block over the parent process.env, and `next start` loads .env.local
+      // besides — either can carry the real Upstash credentials — while the
+      // presence path keys on `redisAvailable` alone by design (it ignores
+      // GUESTBOOK_DRIVER), so the smoke spec's un-stubbed heartbeat would land
+      // in production's "here now" set. An EMPTY value is still a defined
+      // variable: it overrides the shell AND blocks .env.local (Next never
+      // overwrites a variable that is already set), and redisDriver reads
+      // empty as unconfigured → in-memory presence, in-memory limiter.
+      KV_REST_API_URL: '',
+      KV_REST_API_TOKEN: '',
+      UPSTASH_REDIS_REST_URL: '',
+      UPSTASH_REDIS_REST_TOKEN: '',
       AUTH_SECRET: 'insecure-playwright-smoke-test-secret',
       // `next start` runs in production mode, where Auth.js refuses untrusted
       // hosts — trust the test server's own localhost:3100.

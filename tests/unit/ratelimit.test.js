@@ -99,12 +99,15 @@ describe('checkRateLimit (json driver path)', () => {
   });
 
   it('a reservation ages out with the window', async () => {
+    // Self-contained: its own user, admitted here, with no stored post — so
+    // the only thing holding the slot is the reservation itself.
+    await writeFile(dataPath, JSON.stringify([]));
     const { checkRateLimit, RATE_LIMIT_WINDOW_MS } = await import(
       '@/lib/guestbook/ratelimit'
     );
-    // dave was admitted at NOW above and never wrote a message.
-    expect((await checkRateLimit('dave', NOW + RATE_LIMIT_WINDOW_MS - 1000)).ok).toBe(false);
-    expect((await checkRateLimit('dave', NOW + RATE_LIMIT_WINDOW_MS)).ok).toBe(true);
+    expect((await checkRateLimit('fred', NOW)).ok).toBe(true);
+    expect((await checkRateLimit('fred', NOW + RATE_LIMIT_WINDOW_MS - 1000)).ok).toBe(false);
+    expect((await checkRateLimit('fred', NOW + RATE_LIMIT_WINDOW_MS)).ok).toBe(true);
   });
 
   it('a reservation never hides a NEWER stored post', async () => {
@@ -120,42 +123,53 @@ describe('checkRateLimit (json driver path)', () => {
 });
 
 // The in-memory path is what these exercise; the redis path is the same
-// @upstash/ratelimit sliding window the posting limit already uses. Tests
-// within this block share the module's window state and run in order.
+// @upstash/ratelimit sliding window the posting limit already uses. The window
+// state is module-scoped, so every case uses its own address and builds the
+// state it needs — each runs correctly when selected alone.
 describe('checkPresenceRateLimit (in-memory path)', () => {
-  const IP = '203.0.113.10';
+  // Spend the whole budget for `ip`, one beat per second from NOW.
+  const fillBudget = async (checkPresenceRateLimit, budget, ip) => {
+    for (let i = 0; i < budget; i++) {
+      expect((await checkPresenceRateLimit(ip, NOW + i * 1000)).ok).toBe(true);
+    }
+  };
 
   it('allows the per-minute budget, then refuses with an honest retry time', async () => {
     const { checkPresenceRateLimit, PRESENCE_BEATS_PER_MINUTE } =
       await import('@/lib/guestbook/ratelimit');
-    for (let i = 0; i < PRESENCE_BEATS_PER_MINUTE; i++) {
-      expect((await checkPresenceRateLimit(IP, NOW + i * 1000)).ok).toBe(true);
-    }
+    const ip = '203.0.113.10';
+    await fillBudget(checkPresenceRateLimit, PRESENCE_BEATS_PER_MINUTE, ip);
     // One over budget, 30s after the first beat: the oldest frees at +60s.
-    const denied = await checkPresenceRateLimit(IP, NOW + 30 * 1000);
+    const denied = await checkPresenceRateLimit(ip, NOW + 30 * 1000);
     expect(denied.ok).toBe(false);
     expect(denied.retryAfterSeconds).toBe(30);
   });
 
-  it('keys per client — another address is unaffected', async () => {
-    const { checkPresenceRateLimit } = await import('@/lib/guestbook/ratelimit');
-    const r = await checkPresenceRateLimit('203.0.113.11', NOW + 30 * 1000);
-    expect(r.ok).toBe(true);
+  it('keys per client — another address is unaffected by a spent one', async () => {
+    const { checkPresenceRateLimit, PRESENCE_BEATS_PER_MINUTE } =
+      await import('@/lib/guestbook/ratelimit');
+    await fillBudget(checkPresenceRateLimit, PRESENCE_BEATS_PER_MINUTE, '203.0.113.11');
+    expect((await checkPresenceRateLimit('203.0.113.11', NOW + 30 * 1000)).ok).toBe(false);
+    expect((await checkPresenceRateLimit('203.0.113.12', NOW + 30 * 1000)).ok).toBe(true);
   });
 
   it('slides: once the oldest beat ages out, exactly one more is allowed', async () => {
-    const { checkPresenceRateLimit } = await import('@/lib/guestbook/ratelimit');
+    const { checkPresenceRateLimit, PRESENCE_BEATS_PER_MINUTE } =
+      await import('@/lib/guestbook/ratelimit');
+    const ip = '203.0.113.13';
+    await fillBudget(checkPresenceRateLimit, PRESENCE_BEATS_PER_MINUTE, ip);
     // The first beat (at NOW) is outside the window at NOW+60s — one slot.
-    expect((await checkPresenceRateLimit(IP, NOW + 60 * 1000)).ok).toBe(true);
-    expect((await checkPresenceRateLimit(IP, NOW + 60 * 1000)).ok).toBe(false);
+    expect((await checkPresenceRateLimit(ip, NOW + 60 * 1000)).ok).toBe(true);
+    expect((await checkPresenceRateLimit(ip, NOW + 60 * 1000)).ok).toBe(false);
   });
 
   it('never stores the raw address — the key is a stable, distinct hash', async () => {
     const { presenceLimitKey } = await import('@/lib/guestbook/ratelimit');
-    const key = presenceLimitKey(IP);
-    expect(key).not.toContain(IP);
+    const ip = '203.0.113.10';
+    const key = presenceLimitKey(ip);
+    expect(key).not.toContain(ip);
     expect(key).toHaveLength(22);
-    expect(presenceLimitKey(IP)).toBe(key);
+    expect(presenceLimitKey(ip)).toBe(key);
     expect(presenceLimitKey('203.0.113.11')).not.toBe(key);
   });
 });

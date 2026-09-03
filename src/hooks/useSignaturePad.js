@@ -6,6 +6,7 @@ import {
   SIGNATURE_VIEWBOX,
   rescalePoint,
   rescaleStrokes,
+  strokeSegments,
   strokesToPath,
 } from '@/lib/guestbook/signature';
 
@@ -17,13 +18,24 @@ import {
 // velocity — fast flicks thin out, slow curls thicken — eased with a lerp so
 // the width breathes instead of stuttering.
 //
+// ONE GEOMETRY. The segments a stroke is made of come from signature.js's
+// strokeSegments — the same function strokesToPath serialises — and every
+// painter here consumes them: the live painter paints the one segment each
+// new sample completes (plus the straight tail on pointer-up, because
+// midpoint smoothing leaves the ink half a sample short of the pen until the
+// stroke ends), and the resize repaint replays the whole list. The pad used
+// to carry its own copies of the construction, and both had drifted from the
+// serialiser by exactly that tail: the signature on screen while drawing was
+// shorter than the one that got posted, and a repaint after a resize dropped
+// it too.
+//
 // Serialisation is the part with rules: toPathString() emits the stroke
-// CENTRELINES as `M x y Q cx cy x y …` in the shared 100×40 signature space —
-// via signature.js's strokesToPath, the SAME module that validates the
-// grammar, so what the pad ships and what the server accepts can never drift.
-// A single SVG path has ONE stroke width, so the velocity-width ink is a
-// property of the drawing feel and the live canvas — the stored glyph renders
-// the centreline with round caps, the ember glow and the draw-on animation
+// CENTRELINES as `M x y Q cx cy x y … L x y` in the shared 100×40 signature
+// space — via strokesToPath, the SAME module that validates the grammar, so
+// what the pad ships and what the server accepts can never drift. A single
+// SVG path has ONE stroke width, so the velocity-width ink is a property of
+// the drawing feel and the live canvas — the stored glyph renders the
+// centreline with round caps, the ember glow and the draw-on animation
 // carrying the life.
 //
 // Data budget: points closer than MIN_DIST px are never recorded, and a
@@ -148,13 +160,23 @@ export function useSignaturePad({ onChange } = {}) {
       live.width += (target - live.width) * WIDTH_EASE;
 
       const stroke = strokesRef.current[strokesRef.current.length - 1];
-      // Midpoint smoothing needs the sample BEFORE the last one too: the new
-      // segment runs mid(a,b) → mid(b,p), curving through b.
-      const b = stroke[stroke.length - 1];
-      const a = stroke.length >= 2 ? stroke[stroke.length - 2] : b;
       stroke.push(p);
       countRef.current += 1;
-      drawSegment(canvas, a, b, p, live.width);
+      // Paint what this sample completes, in the serialiser's own geometry.
+      // The second sample only gives a straight provisional lead (the
+      // serialiser's whole answer for a two-sample stroke); from the third on,
+      // each sample closes the curve THROUGH the previous sample to their
+      // midpoint — the second-to-last segment, the last being the provisional
+      // tail that pointer-up paints once the stroke is really over. The third
+      // sample's curve starts at the first sample, back over the lead, which
+      // it hugs for its first half: the stub left past the bend is under a
+      // sample apart, inside the round cap.
+      const segments = strokeSegments(stroke);
+      drawSegment(
+        canvas,
+        stroke.length === 2 ? segments[0] : segments[segments.length - 2],
+        live.width,
+      );
 
       live.last = p;
       live.time = e.timeStamp;
@@ -169,8 +191,21 @@ export function useSignaturePad({ onChange } = {}) {
       if (canvas?.hasPointerCapture?.(e.pointerId)) {
         canvas.releasePointerCapture(e.pointerId);
       }
-      // A down-up with no movement is a deliberate dot — keep it; the
-      // serialiser turns it into a zero-length round-cap segment.
+      const live = liveRef.current;
+      if (live && canvas) {
+        // Complete the stroke: the ink ends at the last MIDPOINT, half a
+        // sample short of where the pen lifted, and the serialiser's tail
+        // covers exactly that gap. Only once a curve exists — a two-sample
+        // stroke's straight lead already IS its tail, and a down-up with no
+        // movement is a deliberate dot, kept as a single sample that the
+        // serialiser turns into a zero-length round-cap segment.
+        const stroke = strokesRef.current[strokesRef.current.length - 1];
+        if (stroke && stroke.length >= 3) {
+          const segments = strokeSegments(stroke);
+          const tail = segments[segments.length - 1];
+          if (tail.type === 'L') drawSegment(canvas, tail, live.width);
+        }
+      }
       liveRef.current = null;
       notify();
     },
@@ -235,45 +270,46 @@ function strokeStyle(ctx, width) {
   ctx.shadowBlur = 4;
 }
 
-// Paint one smoothed segment live: mid(a,b) → mid(b,p), curving through b —
-// b is the last recorded sample, a the one before it (a === b on the first
-// move of a stroke, which degrades gracefully to a short straight lead-in).
-function drawSegment(canvas, a, b, p, width) {
+// Trace one strokeSegments segment onto an open path.
+function traceSegment(ctx, seg) {
+  if (seg.type === 'Q') {
+    ctx.quadraticCurveTo(seg.ctrl.x, seg.ctrl.y, seg.to.x, seg.to.y);
+  } else {
+    ctx.lineTo(seg.to.x, seg.to.y);
+  }
+}
+
+// Paint one segment live, in isolation, at the current velocity width.
+function drawSegment(canvas, seg, width) {
   const ctx = canvas.getContext('2d');
   strokeStyle(ctx, width);
-  const from = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-  const to = { x: (b.x + p.x) / 2, y: (b.y + p.y) / 2 };
   ctx.beginPath();
-  ctx.moveTo(from.x, from.y);
-  ctx.quadraticCurveTo(b.x, b.y, to.x, to.y);
+  ctx.moveTo(seg.from.x, seg.from.y);
+  traceSegment(ctx, seg);
   ctx.stroke();
 }
 
-// Full repaint (after resize): replay every stroke with a constant mid width —
-// the per-segment velocity widths aren't retained, and a rare resize repaint
-// reading slightly evener than the live ink is an honest trade.
+// Full repaint (after resize): replay every stroke — the serialiser's exact
+// segments, tail included — with a constant mid width; the per-segment
+// velocity widths aren't retained, and a rare resize repaint reading slightly
+// evener than the live ink is an honest trade. A single-sample dot is drawn
+// as a disc outright rather than trusting every engine to cap a zero-length
+// line.
 function redraw(canvas, strokes) {
   const ctx = canvas.getContext('2d');
   strokeStyle(ctx, (WIDTH_MAX + WIDTH_MIN) / 2);
   for (const stroke of strokes) {
-    if (stroke.length < 2) {
-      if (stroke.length === 1) {
-        ctx.beginPath();
-        ctx.arc(stroke[0].x, stroke[0].y, ctx.lineWidth / 2, 0, Math.PI * 2);
-        ctx.fillStyle = INK;
-        ctx.fill();
-      }
+    if (!stroke.length) continue;
+    if (stroke.length === 1) {
+      ctx.beginPath();
+      ctx.arc(stroke[0].x, stroke[0].y, ctx.lineWidth / 2, 0, Math.PI * 2);
+      ctx.fillStyle = INK;
+      ctx.fill();
       continue;
     }
     ctx.beginPath();
     ctx.moveTo(stroke[0].x, stroke[0].y);
-    for (let i = 1; i < stroke.length - 1; i += 1) {
-      const mid = {
-        x: (stroke[i].x + stroke[i + 1].x) / 2,
-        y: (stroke[i].y + stroke[i + 1].y) / 2,
-      };
-      ctx.quadraticCurveTo(stroke[i].x, stroke[i].y, mid.x, mid.y);
-    }
+    for (const seg of strokeSegments(stroke)) traceSegment(ctx, seg);
     ctx.stroke();
   }
 }

@@ -51,6 +51,13 @@ jobs:
         id: lint
         run: npm run lint
 
+      # Unit suite (vitest): the grammar, the drivers, the rate limiters, the
+      # presence route, the pad geometry, the palette hook. Before the build
+      # because it is fast and most regressions land here first.
+      - name: Unit tests
+        id: unit
+        run: npm test
+
       - name: Build
         id: build
         run: npm run build
@@ -65,11 +72,50 @@ jobs:
           SMTP_PASS: placeholder
           RECEIVER_EMAIL: ci@example.com
 
+      # E2E gate (Playwright). The `test:e2e` script chains `npm run build` so
+      # a clean local checkout works; here the Build step above has already
+      # produced the output the production server boots from, so Playwright
+      # runs directly rather than building twice. playwright.config.mjs boots
+      # `next start` on port 3100 with the Redis credential names emptied and
+      # a knowingly fake AUTH_SECRET — nothing in this job touches a live
+      # service, and `reuseExistingServer` is off unless opted into.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        id: e2e
+        run: npx playwright test --reporter=list,html
+        env:
+          # Same non-secret stubs the Build step got (the server evaluates the
+          # same modules), plus placeholder OAuth client ids so Auth.js boots —
+          # the specs only ever read the UNAUTHENTICATED session, or stub it
+          # at the network layer. None of these is a credential.
+          NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+          SMTP_HOST: smtp.example.com
+          SMTP_PORT: '587'
+          SMTP_USER: ci@example.com
+          SMTP_PASS: placeholder
+          RECEIVER_EMAIL: ci@example.com
+          AUTH_GITHUB_ID: ci-placeholder
+          AUTH_GITHUB_SECRET: ci-placeholder
+          AUTH_GOOGLE_ID: ci-placeholder
+          AUTH_GOOGLE_SECRET: ci-placeholder
+
+      - name: Upload Playwright report
+        if: ${{ failure() && steps.e2e.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-node-${{ matrix.node-version }}
+          path: playwright-report/
+          retention-days: 7
+
       - name: Write job summary
         if: always()
         env:
           LINT_OUTCOME: ${{ steps.lint.outcome }}
+          UNIT_OUTCOME: ${{ steps.unit.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
+          E2E_OUTCOME: ${{ steps.e2e.outcome }}
         run: |
           status_icon() {
             case "$1" in
@@ -86,5 +132,7 @@ jobs:
             echo "| Step   | Status |"
             echo "|--------|--------|"
             echo "| Lint   | $(status_icon "$LINT_OUTCOME") |"
+            echo "| Unit   | $(status_icon "$UNIT_OUTCOME") |"
             echo "| Build  | $(status_icon "$BUILD_OUTCOME") |"
+            echo "| E2E    | $(status_icon "$E2E_OUTCOME") |"
           } >> "$GITHUB_STEP_SUMMARY"

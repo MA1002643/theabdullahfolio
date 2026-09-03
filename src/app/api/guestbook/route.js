@@ -1,5 +1,13 @@
 // Guestbook API (issue #40).
-//   GET    → { messages, count }, newest first. Public.
+//   GET    → { messages, count, nextCursor }. Public. ONE PAGE, newest first:
+//            ?limit=N (default PAGE_SIZE, hard-capped at MAX_PAGE_LIMIT) and
+//            ?cursor=… (the previous page's `nextCursor`) — never the whole
+//            wall. `count` is the wall's total, read separately (ZCARD on
+//            redis), so a client knows the size without loading it;
+//            `nextCursor` is null on the last page; a cursor the server did
+//            not mint is a 400. Reactions are fetched for the page's ids
+//            only, so a GET costs O(limit) commands however long the wall
+//            grows — the poll reads just the newest page (paging.js).
 //   POST   → create a message. Requires a signed-in session (GitHub or
 //            Google); author identity is taken ONLY from that session, never
 //            from the body; body text runs the full validate.js gauntlet;
@@ -18,9 +26,11 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import {
   addMessage,
+  countMessages,
   deleteMessage,
-  getMessages,
+  getMessage,
   getReactions,
+  listMessages,
 } from '@/lib/guestbook/store';
 import { isAdminUsername } from '@/lib/guestbook/admin';
 import { checkRateLimit } from '@/lib/guestbook/ratelimit';
@@ -30,19 +40,30 @@ import {
   emptyReactionCounts,
   toReactionCounts,
 } from '@/lib/guestbook/reactions';
+import { parseLimit } from '@/lib/guestbook/paging';
+import { decodeCursor, encodeCursor } from '@/lib/guestbook/cursor';
 
 // Live data behind auth — never prerendered, never cached by the framework.
 export const dynamic = 'force-dynamic';
 
-const byNewest = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
+export async function GET(request) {
+  const query = new URL(request.url).searchParams;
+  const limit = parseLimit(query.get('limit'));
+  const rawCursor = query.get('cursor');
+  const after = rawCursor ? decodeCursor(rawCursor) : null;
+  if (rawCursor && !after) {
+    return NextResponse.json({ error: 'Invalid cursor' }, { status: 400 });
+  }
 
-export async function GET() {
   // The viewer may be anonymous — the session only personalises
   // `viewerReaction`, it never gates reading.
   const session = await auth();
   const viewer = session?.user?.username || null;
 
-  const stored = (await getMessages()).sort(byNewest);
+  const [{ messages: stored, next }, count] = await Promise.all([
+    listMessages({ limit, after }),
+    countMessages(),
+  ]);
   const maps = await getReactions(stored.map((m) => m.id));
 
   // Strip the private { username: reactionKey } map (the json driver stores
@@ -57,7 +78,11 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ messages, count: messages.length });
+  return NextResponse.json({
+    messages,
+    count,
+    nextCursor: next ? encodeCursor(next) : null,
+  });
 }
 
 export async function POST(request) {
@@ -149,7 +174,7 @@ export async function DELETE(request) {
   // the STORED author (both server-derived; the client never nominates an
   // author here any more than it does on POST). Case-insensitive because
   // GitHub logins are; Google's google:<sub> ids are digits, unaffected.
-  const target = (await getMessages()).find((m) => m.id === id);
+  const target = await getMessage(id);
   if (!target) {
     return NextResponse.json({ error: 'Message not found' }, { status: 404 });
   }

@@ -11,7 +11,16 @@
 //
 // Both drivers implement the same contract, which is what the driver unit
 // tests assert:
-//   getMessages() → Message[]
+//   listMessages({ limit, after }) → { messages: Message[], next }
+//                       newest first (paging.js order), at most `limit`, from
+//                       strictly after position `after` (null = the top);
+//                       `next` = position to continue from, or null at the end.
+//                       THE read path: bounded by `limit` on every backend.
+//   countMessages() → number (an O(1) ZCARD on redis; the file length on json)
+//   getMessage(id) → Message | null
+//   getMessages() → Message[]   FULL SCAN — dev/test only (the json rate
+//                       limiter's last-post walk, the contract suite). Routes
+//                       must never call it: it is unbounded in the wall's size.
 //   addMessage(msg) → msg
 //   deleteMessage(id) → boolean (whether anything was removed)
 //   getReactions(ids) → { [id]: { username: reactionKey } }
@@ -24,9 +33,16 @@ import { redisDriver, redisAvailable } from './redisDriver';
 // instance would not see the first's. Nothing stops a self-hoster from putting
 // a public `next start` on it, so say so once, loudly, in the log. A warning
 // rather than a throw: the e2e suite legitimately boots a production server on
-// the json driver.
+// the json driver. Only while SERVING: `next build` also evaluates route
+// modules under NODE_ENV=production (once per worker — the message printed
+// three times in a credential-free build), but nothing is served at build
+// time, so the driver chosen there is irrelevant and the warning would be
+// noise. Next marks that phase in NEXT_PHASE.
 function warnIfProduction(driver) {
-  if (process.env.NODE_ENV === 'production') {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.NEXT_PHASE !== 'phase-production-build'
+  ) {
     console.warn(
       '[guestbook] json storage driver active under NODE_ENV=production — it is ' +
         'single-process and non-durable (dev/e2e only). For a public deployment ' +
@@ -61,6 +77,9 @@ function resolveDriver() {
 
 const driver = resolveDriver();
 
+export const listMessages = (opts) => driver.listMessages(opts);
+export const countMessages = () => driver.countMessages();
+export const getMessage = (id) => driver.getMessage(id);
 export const getMessages = () => driver.getMessages();
 export const addMessage = (message) => driver.addMessage(message);
 export const deleteMessage = (id) => driver.deleteMessage(id);

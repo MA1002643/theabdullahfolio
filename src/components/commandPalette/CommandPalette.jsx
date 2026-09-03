@@ -21,10 +21,41 @@ export default function CommandPalette({ actions }) {
   const reduceMotion = useReducedMotion();
   const pal = useCommandPalette(actions);
   const inputRef = useRef(null);
+  const listRef = useRef(null);
+  // Set by the pointer path (onMouseMove) so the scroll-follow below can tell
+  // a hover from an arrow key: the cursor is already ON a hovered option, and
+  // nudging the list under a moving cursor would re-select whatever slid
+  // beneath it — a feedback loop. Consumed (reset) by the effect.
+  const pointerSelectRef = useRef(false);
 
   useEffect(() => {
     if (pal.open) inputRef.current?.focus();
   }, [pal.open]);
+
+  // Keep the active option visible. Focus never leaves the input — the
+  // listbox is driven by aria-activedescendant — and changing that attribute
+  // scrolls nothing, so with enough actions to overflow the list's 19rem cap
+  // a keyboard user could arrow onto an option below the fold and Enter
+  // would still run it, unseen. Scroll its <li> wrapper (option plus any
+  // section header above it) to the nearest edge whenever the selection
+  // changes: a no-op while it is already in view, a one-row nudge at either
+  // edge, a jump to the top on wrap-around. Keyed on the active option's id
+  // AND the filtered list, so a filter change that moves the selection to a
+  // different row follows it too. Instant, not smooth: native listboxes do
+  // not animate selection, and a smooth scroll would lag rapid arrowing.
+  const activeId = pal.filtered[pal.activeIndex]?.id;
+  useEffect(() => {
+    if (pointerSelectRef.current) {
+      pointerSelectRef.current = false;
+      return;
+    }
+    if (!listRef.current || activeId === undefined) return;
+    const option = document.getElementById(`palette-opt-${activeId}`);
+    const row = option?.closest('li') ?? option;
+    if (typeof row?.scrollIntoView === 'function') {
+      row.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activeId, pal.filtered]);
 
   if (!pal.open) return null;
 
@@ -72,6 +103,7 @@ export default function CommandPalette({ actions }) {
         </div>
 
         <ul
+          ref={listRef}
           id="command-palette-list"
           role="listbox"
           aria-label="Commands"
@@ -103,7 +135,11 @@ export default function CommandPalette({ actions }) {
                     role="option"
                     aria-selected={i === pal.activeIndex}
                     onClick={() => pal.run(action)}
-                    onMouseMove={() => pal.setActiveIndex(i)}
+                    onMouseMove={() => {
+                      if (i === pal.activeIndex) return;
+                      pointerSelectRef.current = true;
+                      pal.setActiveIndex(i);
+                    }}
                     className={`mx-2 flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150 ${
                       i === pal.activeIndex
                         ? 'bg-[#ff6d05]/15 text-[#f9d174]'

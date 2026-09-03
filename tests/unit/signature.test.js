@@ -8,6 +8,7 @@ import {
   SIGNATURE_VIEWBOX,
   rescalePoint,
   rescaleStrokes,
+  strokeSegments,
   strokesToPath,
 } from '@/lib/guestbook/signature';
 
@@ -143,6 +144,60 @@ describe('strokesToPath + MAX_SIGNATURE_POINTS', () => {
   it('returns null with nothing to draw', () => {
     expect(strokesToPath([])).toBe(null);
     expect(strokesToPath([[]])).toBe(null);
+  });
+});
+
+// The one stroke geometry every renderer consumes — the serialiser here, the
+// pad's live painter and its resize repaint in useSignaturePad. The painters
+// used to carry their own copies and had lost the tail; now there is nothing
+// to keep in step, and this block pins what the shared list guarantees.
+describe('strokeSegments', () => {
+  const stroke = [
+    { x: 30, y: 60 },
+    { x: 90, y: 30 },
+    { x: 150, y: 90 },
+    { x: 210, y: 60 },
+  ];
+
+  it('curves through each sample to the next midpoint, then a straight tail to the last sample', () => {
+    expect(strokeSegments(stroke)).toEqual([
+      { type: 'Q', from: { x: 30, y: 60 }, ctrl: { x: 90, y: 30 }, to: { x: 120, y: 60 } },
+      { type: 'Q', from: { x: 120, y: 60 }, ctrl: { x: 150, y: 90 }, to: { x: 180, y: 75 } },
+      { type: 'L', from: { x: 180, y: 75 }, to: { x: 210, y: 60 } },
+    ]);
+  });
+
+  it('is continuous: every segment starts where the previous one ended', () => {
+    const segments = strokeSegments(stroke);
+    expect(segments[0].from).toEqual(stroke[0]);
+    for (let i = 1; i < segments.length; i += 1) {
+      expect(segments[i].from).toEqual(segments[i - 1].to);
+    }
+    expect(segments[segments.length - 1].to).toEqual(stroke[stroke.length - 1]);
+  });
+
+  it('two samples are one straight segment; one sample is a dot', () => {
+    expect(strokeSegments(stroke.slice(0, 2))).toEqual([
+      { type: 'L', from: { x: 30, y: 60 }, to: { x: 90, y: 30 } },
+    ]);
+    expect(strokeSegments([{ x: 5, y: 5 }])).toEqual([
+      { type: 'L', from: { x: 5, y: 5 }, to: { x: 5, y: 5 } },
+    ]);
+  });
+
+  it('strokesToPath is exactly these segments, formatted', () => {
+    const sx = SIGNATURE_VIEWBOX.width / 300;
+    const sy = SIGNATURE_VIEWBOX.height / 120;
+    const f = (v, s) => (v * s).toFixed(1);
+    const expected = [
+      `M ${f(stroke[0].x, sx)} ${f(stroke[0].y, sy)}`,
+      ...strokeSegments(stroke).map((s) =>
+        s.type === 'Q'
+          ? `Q ${f(s.ctrl.x, sx)} ${f(s.ctrl.y, sy)} ${f(s.to.x, sx)} ${f(s.to.y, sy)}`
+          : `L ${f(s.to.x, sx)} ${f(s.to.y, sy)}`,
+      ),
+    ].join(' ');
+    expect(strokesToPath([stroke], sx, sy)).toBe(expected);
   });
 });
 

@@ -11,7 +11,11 @@ import { usePresence } from '@/hooks/usePresence';
 import { useUiSound } from '@/hooks/useUiSound';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
 import { messageIdFromHash } from '@/lib/guestbook/deepLink';
-import { NEW_MESSAGE_EVENT } from '@/lib/guestbook/events';
+import {
+  NEW_MESSAGE_EVENT,
+  arrivalAnnouncement,
+} from '@/lib/guestbook/events';
+import { PAGE_SIZE } from '@/lib/guestbook/paging';
 import MessageCard from './MessageCard';
 import MessageInput from './MessageInput';
 import PresencePill from './PresencePill';
@@ -29,28 +33,82 @@ import WallPagination from './WallPagination';
 // "just now" honest for the cost of one state tick.
 const TIME_TICK_MS = 60 * 1000;
 
-// Render pagination (owner-directed): the wall mounts at most this many
-// cards at a time. The bottleneck at guestbook scale is never the payload —
-// 150 messages is ~45KB of JSON, and growth is rate-limited to one message
-// per user per five minutes — it is the DOM: every card is a framer li with
-// entrance choreography, a scroll-linked depth filter, tilt handlers and
-// sometimes a self-drawing signature SVG. Eight cards keeps that constant
-// regardless of how long the wall grows, while the data layer (fetch-all,
-// poll-merge, optimistic submit) stays exactly as it was.
-const PAGE_SIZE = 8;
+// Render pagination (owner-directed): the wall mounts at most PAGE_SIZE cards
+// at a time (paging.js — the same constant the API's poll page uses). Two
+// costs stay constant however long the wall grows. The DOM: every card is a
+// framer li with entrance choreography, a scroll-linked depth filter, tilt
+// handlers and sometimes a self-drawing signature SVG. And, since the data
+// layer went cursor-paged, the payload: the hook holds a newest-first PREFIX
+// of the wall and extends it a leaf at a time as the visitor flips
+// (useGuestbookMessages), while the wall's total comes from the server's own
+// count — so the rail always shows every page, loaded or not.
+
+const RETRY_BTN_CLASS =
+  'rounded-full border border-[#ff6d05]/50 px-4 py-2 font-mono text-xs text-[#f9d174] transition-colors duration-300 hover:border-[#ff6d05] hover:bg-[#ff6d05]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]';
+
+// Skeleton wall: three ghost cards in the wall's own card language, wearing
+// the optimistic post's `.gb-pending` shimmer, so neither the first fetch nor
+// a leaf still on its way (a rail jump past the loaded prefix) leaves a blank
+// void between headline and footer. The whole block fades in after a short
+// delay — a fast (local/cached) load resolves before it ever paints, so there
+// is no flash of skeleton on the common path. aria-hidden with a separate
+// sr-only status line: AT hears one clean sentence, not three empty cards.
+function WallSkeleton({ label }) {
+  return (
+    <>
+      <motion.ul
+        aria-hidden="true"
+        data-testid="gb-skeleton"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.35, ease: 'easeOut' }}
+        className="space-y-4 sm:space-y-5"
+      >
+        {[0, 1, 2].map((i) => (
+          <li
+            key={i}
+            className="gb-pending rounded-xl custom-bg-abt p-4 sm:p-5"
+          >
+            <div className="flex items-center gap-3">
+              <span className="h-8 w-8 shrink-0 rounded-full border border-[#ff6d05]/20 bg-black/40" />
+              <span className="h-3 w-28 rounded bg-[#f9d174]/10" />
+              <span className="ml-auto h-2.5 w-14 rounded bg-[#f9d174]/10" />
+            </div>
+            <div className="mt-4 space-y-2 pl-1">
+              <span className="block h-3 w-11/12 rounded bg-[#ff6d05]/10" />
+              {/* Middle card runs a line longer — identical ghosts read
+                  as a pattern, staggered ones read as content. */}
+              {i === 1 ? (
+                <span className="block h-3 w-3/5 rounded bg-[#ff6d05]/10" />
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </motion.ul>
+      <p role="status" className="sr-only">
+        {label}
+      </p>
+    </>
+  );
+}
 
 export default function GuestbookWall() {
   const { data: session, status } = useSession();
   const reduceMotion = useReducedMotion();
   const {
     messages,
+    count,
+    hasMore,
     loading,
+    loadingMore,
     loadError,
     submit,
     submitting,
     react,
     remove,
     reload,
+    ensureLoaded,
+    loadUntil,
     newIds,
     clearNewIds,
     // Live refresh rides the presence flag — "presence + polling" is one
@@ -68,27 +126,36 @@ export default function GuestbookWall() {
     return () => clearInterval(id);
   }, []);
 
-  // aria-live announcement for confirmed new messages. Announce once per id —
-  // the effect walks newIds against a seen-set so re-renders don't re-announce.
+  // aria-live announcement for confirmed new messages. Announce each id once
+  // (the seen-set, so re-renders don't re-announce) and each BATCH as one
+  // string: a poll can bring several marks together, and one live-region
+  // update per message would be batched by React into a single DOM change —
+  // assistive technology would hear only the last arrival. So the effect
+  // collects every unseen arrival first (walking the newest-first list, then
+  // reading oldest first so the newest is heard last), and writes the region
+  // exactly once (arrivalAnnouncement, events.js).
   const [announcement, setAnnouncement] = useState('');
   const announcedRef = useRef(new Set());
   useEffect(() => {
     if (!messages) return;
-    for (const id of newIds) {
-      if (announcedRef.current.has(id)) continue;
-      announcedRef.current.add(id);
-      const msg = messages.find((m) => m.id === id);
-      if (msg) {
-        setAnnouncement(`New message from ${msg.author.name}: ${msg.message}`);
-        // Same moment, different audience: the headline listens for this and
-        // replays its scramble-decode (GuestbookTitle).
-        window.dispatchEvent(new CustomEvent(NEW_MESSAGE_EVENT));
-      }
+    const arrivals = [];
+    for (const msg of messages) {
+      if (!newIds.has(msg.id) || announcedRef.current.has(msg.id)) continue;
+      announcedRef.current.add(msg.id);
+      arrivals.unshift(msg);
     }
+    if (!arrivals.length) return;
+    setAnnouncement(arrivalAnnouncement(arrivals));
+    // Same moment, different audience: the headline listens for this and
+    // replays its scramble-decode (GuestbookTitle) — once per batch; a
+    // dispatch per arrival would only restart the same replay N times.
+    window.dispatchEvent(new CustomEvent(NEW_MESSAGE_EVENT));
   }, [newIds, messages]);
 
   const listTopRef = useRef(null);
-  const count = messages?.length ?? 0;
+  // How much of the wall is in hand (pending cards included — they occupy
+  // slots in the same slicing); `count` is the whole wall's size.
+  const loadedCount = messages?.length ?? 0;
 
   // In-view state for the meta strip, driving the pills' count-up replay
   // (owner-directed: the numbers climb again on every scroll back into
@@ -120,44 +187,77 @@ export default function GuestbookWall() {
   // Pagination state. `pageDir` remembers the travel direction of the last
   // flip so the leaf slide and the odometer roll both read the right way;
   // the clamp effect walks the page back in range if the wall shrinks under
-  // it (an admin delete emptying the last page).
+  // it (an admin delete emptying the last page). The page COUNT reads the
+  // server's total while older leaves are still unloaded — the rail must
+  // show the whole wall, not just the part in hand — and the loaded list
+  // once the prefix has reached the oldest mark (then it IS the truth, and a
+  // stale total can neither hide a loaded card nor promise an empty leaf).
   const [page, setPage] = useState(0);
   const [pageDir, setPageDir] = useState(1);
-  const pageCount = Math.max(1, Math.ceil(count / PAGE_SIZE));
+  const pageCount = Math.max(
+    1,
+    Math.ceil(
+      (hasMore ? Math.max(count, loadedCount) : loadedCount) / PAGE_SIZE,
+    ),
+  );
 
   useEffect(() => {
     if (page > pageCount - 1) setPage(pageCount - 1);
   }, [page, pageCount]);
 
+  // Keep the leaf under the reader loaded, plus the one after it so "next"
+  // is always instant (the hook fetches bounded pages from its cursor until
+  // that index is in hand — a rail jump far down the wall is a few requests,
+  // never the whole wall). Keyed on the loaded LENGTH, not the list identity:
+  // a reaction toggle doesn't queue a (no-op) check, while a delete that
+  // shortens the current leaf does re-run it and tops the leaf back up.
+  useEffect(() => {
+    if (loading) return;
+    ensureLoaded((page + 2) * PAGE_SIZE - 1);
+  }, [page, loadedCount, loading, ensureLoaded]);
+
   // Deep-linkable marks: /guestbook#msg_… flips the wall to the target's page,
   // brings the card to reading height, and replays the ignite glow on it —
   // the URL addresses one message the way the copy-link button on each card
-  // promises. Runs once against the FIRST loaded list (the ref guard): later
-  // polls must not re-trigger the jump, and a hash that matches nothing (a
-  // deleted mark, a mangled link — including one that will not even
-  // percent-decode, see deepLink.js) is simply a no-op. The scroll waits out
-  // the page-flip choreography (~0.45s exit+enter) so it targets a mounted
-  // card.
+  // promises. The hash is read once, when the first page lands; if the mark
+  // is not in the loaded prefix the hook walks older pages for it (loadUntil,
+  // bounded) and this effect picks it up when it arrives. Resolved exactly
+  // once (the ref): later polls must not re-trigger the jump, and a hash that
+  // matches nothing — a deleted mark, a mangled link (including one that will
+  // not even percent-decode, see deepLink.js), or a mark beyond the walk's
+  // cap — is simply a no-op. The scroll waits out the page-flip choreography
+  // (~0.45s exit+enter) so it targets a mounted card.
   const [linkedId, setLinkedId] = useState(null);
-  const hashHandledRef = useRef(false);
+  const linkRef = useRef({ id: undefined, walking: false });
   useEffect(() => {
-    if (hashHandledRef.current || !messages || messages.length === 0) return undefined;
-    hashHandledRef.current = true;
-    const id = messageIdFromHash(window.location.hash);
-    if (!id) return undefined;
-    const idx = messages.findIndex((m) => m.id === id);
-    if (idx === -1) return undefined;
+    if (!messages) return;
+    const link = linkRef.current;
+    if (link.id === undefined) {
+      link.id = messageIdFromHash(window.location.hash) || null;
+    }
+    if (!link.id) return;
+    const idx = messages.findIndex((m) => m.id === link.id);
+    if (idx === -1) {
+      if (!link.walking) {
+        link.walking = true;
+        loadUntil(link.id).then((found) => {
+          if (!found) link.id = null;
+        });
+      }
+      return;
+    }
+    const id = link.id;
+    link.id = null;
     setPage(Math.floor(idx / PAGE_SIZE));
     setPageDir(1);
     setLinkedId(id);
-    const timer = setTimeout(() => {
+    setTimeout(() => {
       document.getElementById(id)?.scrollIntoView({
         behavior: reduceMotion ? 'auto' : 'smooth',
         block: 'center',
       });
     }, 650);
-    return () => clearTimeout(timer);
-  }, [messages, reduceMotion]);
+  }, [messages, reduceMotion, loadUntil]);
 
   const goToPage = (next) => {
     const clamped = Math.max(0, Math.min(next, pageCount - 1));
@@ -311,57 +411,13 @@ export default function GuestbookWall() {
       <div ref={listTopRef} aria-hidden="true" />
 
       {loading ? (
-        // Skeleton wall: three ghost cards in the wall's own card language,
-        // wearing the optimistic post's `.gb-pending` shimmer, so the first
-        // fetch never leaves a blank void between headline and footer. The
-        // whole block fades in after a short delay — a fast (local/cached)
-        // load resolves before it ever paints, so there is no flash of
-        // skeleton on the common path. aria-hidden with a separate sr-only
-        // status line: AT hears one clean sentence, not three empty cards.
-        <>
-          <motion.ul
-            aria-hidden="true"
-            data-testid="gb-skeleton"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.35, ease: 'easeOut' }}
-            className="space-y-4 sm:space-y-5"
-          >
-            {[0, 1, 2].map((i) => (
-              <li
-                key={i}
-                className="gb-pending rounded-xl custom-bg-abt p-4 sm:p-5"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="h-8 w-8 shrink-0 rounded-full border border-[#ff6d05]/20 bg-black/40" />
-                  <span className="h-3 w-28 rounded bg-[#f9d174]/10" />
-                  <span className="ml-auto h-2.5 w-14 rounded bg-[#f9d174]/10" />
-                </div>
-                <div className="mt-4 space-y-2 pl-1">
-                  <span className="block h-3 w-11/12 rounded bg-[#ff6d05]/10" />
-                  {/* Middle card runs a line longer — identical ghosts read
-                      as a pattern, staggered ones read as content. */}
-                  {i === 1 ? (
-                    <span className="block h-3 w-3/5 rounded bg-[#ff6d05]/10" />
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </motion.ul>
-          <p role="status" className="sr-only">
-            Loading the guestbook…
-          </p>
-        </>
+        <WallSkeleton label="Loading the guestbook…" />
       ) : count === 0 && loadError ? (
         <div className="space-y-3 py-16 text-center">
           <p className="font-mono text-sm text-foreground/60">
             Couldn&rsquo;t load the guestbook
           </p>
-          <button
-            type="button"
-            onClick={reload}
-            className="rounded-full border border-[#ff6d05]/50 px-4 py-2 font-mono text-xs text-[#f9d174] transition-colors duration-300 hover:border-[#ff6d05] hover:bg-[#ff6d05]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
-          >
+          <button type="button" onClick={reload} className={RETRY_BTN_CLASS}>
             Try again
           </button>
         </div>
@@ -424,6 +480,25 @@ export default function GuestbookWall() {
               </AnimatePresence>
             </motion.ul>
           </AnimatePresence>
+          {/* A leaf whose cards are still on their way (a rail jump past the
+              loaded prefix) holds its space with the ghosts; one whose fetch
+              failed offers the retry inline — everything above it stays. */}
+          {visibleMessages.length === 0 && loadingMore ? (
+            <WallSkeleton label="Loading more of the guestbook…" />
+          ) : visibleMessages.length === 0 && loadError ? (
+            <div className="space-y-3 py-16 text-center">
+              <p className="font-mono text-sm text-foreground/60">
+                Couldn&rsquo;t load this page
+              </p>
+              <button
+                type="button"
+                onClick={() => ensureLoaded((page + 1) * PAGE_SIZE - 1)}
+                className={RETRY_BTN_CLASS}
+              >
+                Try again
+              </button>
+            </div>
+          ) : null}
           <WallPagination
             page={page}
             pageCount={pageCount}

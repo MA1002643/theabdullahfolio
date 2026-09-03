@@ -49,6 +49,30 @@ async function stubSession(page) {
   );
 }
 
+// A stub of the PAGED list route: honours ?limit and ?cursor the way the real
+// one does — one bounded page, the wall's total, a cursor for the next page —
+// so the client's paging is exercised for real. The cursor is opaque to the
+// client, so the stub's own (a plain offset) serves as well as the server's.
+// Returns the log of requests, so a test can assert how much was fetched.
+async function serveWall(page, all) {
+  const calls = [];
+  await page.route(LIST_ROUTE, (route) => {
+    const url = new URL(route.request().url());
+    const limit = Number(url.searchParams.get('limit'));
+    const offset = Number(url.searchParams.get('cursor') || 0);
+    calls.push({ limit, offset });
+    const end = offset + limit;
+    return route.fulfill({
+      json: {
+        messages: all.slice(offset, end),
+        count: all.length,
+        nextCursor: end < all.length ? String(end) : null,
+      },
+    });
+  });
+  return calls;
+}
+
 test('signed-in composer: counter, AI refine affordance, draft autosave + restore', async ({
   page,
 }) => {
@@ -119,19 +143,53 @@ test('skeleton wall holds the space while the first fetch is slow', async ({
   await expect(skeleton).toHaveCount(0);
 });
 
-test('a /guestbook#msg_… deep link flips to the right page and reveals the card', async ({
+// Twenty marks, newest first: msg_20 … msg_1. With PAGE_SIZE 8 that is three
+// leaves, and the first fetch (two leaves) leaves msg_4 … msg_1 unloaded.
+const TWENTY = Array.from({ length: 20 }, (_, i) => mark(20 - i));
+
+test('the wall is fetched a page at a time: two leaves first, the next one ahead of a flip', async ({
   page,
 }) => {
   await stubSession(page);
-  // Nine marks with PAGE_SIZE 8 → msg_9 (oldest, last in the list) lives on
-  // page 2. The link must flip there and bring the card to reading height.
-  const messages = [9, 8, 7, 6, 5, 4, 3, 2, 1].map(mark).reverse();
-  await page.route(LIST_ROUTE, (route) =>
-    route.fulfill({ json: { messages, count: messages.length } }),
-  );
+  const calls = await serveWall(page, TWENTY);
 
-  await page.goto('/guestbook#msg_9');
+  await page.goto('/guestbook');
+  await expect(page.locator('#msg_20')).toBeVisible({ timeout: 20_000 });
+  // The rail already knows the whole wall from the server's count…
+  await expect(page.getByText('Page 1 of 3')).toBeAttached();
+  // …while only the first two leaves were fetched.
+  expect(calls).toEqual([{ limit: 16, offset: 0 }]);
 
-  await expect(page.locator('#msg_9')).toBeInViewport({ timeout: 20_000 });
-  await expect(page.getByText('Page 2 of 2')).toBeAttached();
+  const next = page.getByRole('button', { name: 'Next page' });
+  await next.click();
+  await expect(page.locator('#msg_12')).toBeVisible();
+  await expect(page.getByText('Page 2 of 3')).toBeAttached();
+  // Landing on leaf 2 prefetched leaf 3 — exactly the rest of the wall, from
+  // the cursor the first page handed back.
+  await expect.poll(() => calls.length).toBe(2);
+  expect(calls[1]).toEqual({ limit: 8, offset: 16 });
+
+  await next.click();
+  await expect(page.locator('#msg_1')).toBeVisible();
+  await expect(page.getByText('Page 3 of 3')).toBeAttached();
+  expect(calls).toHaveLength(2);
+});
+
+test('a /guestbook#msg_… deep link walks to the right page and reveals the card', async ({
+  page,
+}) => {
+  await stubSession(page);
+  const calls = await serveWall(page, TWENTY);
+
+  // msg_1 is the oldest mark — beyond the first fetch, on the last leaf. The
+  // link must fetch its way there, flip to that page and bring the card to
+  // reading height.
+  await page.goto('/guestbook#msg_1');
+
+  await expect(page.locator('#msg_1')).toBeInViewport({ timeout: 20_000 });
+  await expect(page.getByText('Page 3 of 3')).toBeAttached();
+  expect(calls).toEqual([
+    { limit: 16, offset: 0 },
+    { limit: 50, offset: 16 },
+  ]);
 });

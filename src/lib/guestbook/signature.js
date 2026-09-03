@@ -76,14 +76,56 @@ export function isValidSignaturePath(d) {
   return drawCommands >= 1;
 }
 
+// THE stroke geometry — one description of a stroke's centreline, consumed
+// by every renderer of it: strokesToPath below (what ships), and in
+// useSignaturePad both the live painter (the segment each new sample
+// completes) and the resize repaint (the whole stroke). They used to carry
+// their own copies of this construction and had drifted: the live canvas and
+// the repaint both stopped at the last midpoint, while the serialiser added
+// the tail to the final sample, so the signature on screen while drawing was
+// shorter than the one that got posted. There is now nothing to keep in
+// step.
+//
+// Quadratic midpoint smoothing, the classic ink trick: from the first sample,
+// each segment curves THROUGH a sample (the control point) to the midpoint
+// between it and the next, so jittery input reads as one flowing line — and
+// the ink therefore always trails the pen by half a sample, which is why the
+// last segment is a straight tail from the final midpoint to the final sample
+// itself. A single sample is a dot: a zero-length line, a disc under round
+// caps. Every segment carries its own `from` so a renderer can paint one in
+// isolation; a path serialiser simply ignores it (the current point is
+// implicit).
+//   → [{ type: 'Q', from, ctrl, to } | { type: 'L', from, to }]
+export function strokeSegments(stroke) {
+  const [first, ...rest] = stroke;
+  const segments = [];
+  let prev = first;
+  for (let i = 0; i < rest.length - 1; i += 1) {
+    const p = rest[i];
+    const mid = {
+      x: (p.x + rest[i + 1].x) / 2,
+      y: (p.y + rest[i + 1].y) / 2,
+    };
+    segments.push({ type: 'Q', from: prev, ctrl: p, to: mid });
+    prev = mid;
+  }
+  const tail = rest[rest.length - 1];
+  if (tail && (tail.x !== prev.x || tail.y !== prev.y)) {
+    segments.push({ type: 'L', from: prev, to: tail });
+  }
+  // A lone sample — or samples that never left the first point — is a dot.
+  if (!segments.length) segments.push({ type: 'L', from: first, to: first });
+  return segments;
+}
+
 // Serialise the pad's strokes (arrays of {x, y} in css px) into the grammar
 // above, scaled into the 100×40 signature space by sx/sy. Stroke CENTRELINES
-// only — `M x y Q cx cy x y …` with quadratic midpoint smoothing, the same
-// construction the live canvas paints — one decimal, and each axis clamped to
-// ITS OWN viewbox bound (pointer capture lets a stroke run off the pad, and a
-// y of 100 in a 40-tall space is both outside the glyph and a byte wider).
-// Pure, so the byte/command budget can be asserted against exactly what
-// ships. Returns null when there is nothing to draw.
+// only — `M x y Q cx cy x y … L x y`, the segments strokeSegments describes —
+// one decimal, and each axis clamped to ITS OWN viewbox bound (pointer
+// capture lets a stroke run off the pad, and a y of 100 in a 40-tall space is
+// both outside the glyph and a byte wider). Pure, so the byte/command budget
+// can be asserted against exactly what ships. Returns null when there is
+// nothing to draw.
 export function strokesToPath(strokes, sx = 1, sy = 1) {
   const fx = (v) => clamp(v * sx, 0, SIGNATURE_VIEWBOX.width).toFixed(1);
   const fy = (v) => clamp(v * sy, 0, SIGNATURE_VIEWBOX.height).toFixed(1);
@@ -91,28 +133,13 @@ export function strokesToPath(strokes, sx = 1, sy = 1) {
   const parts = [];
   for (const stroke of strokes) {
     if (!stroke?.length) continue;
-    const [first, ...rest] = stroke;
-    parts.push(`M ${fx(first.x)} ${fy(first.y)}`);
-    if (rest.length === 0) {
-      // Dot: zero-length line, rendered as a disc by round line caps.
-      parts.push(`L ${fx(first.x)} ${fy(first.y)}`);
-      continue;
-    }
-    // Midpoint smoothing: curve toward each midpoint using the sample as the
-    // control point.
-    let prev = first;
-    for (let i = 0; i < rest.length - 1; i += 1) {
-      const p = rest[i];
-      const mid = {
-        x: (p.x + rest[i + 1].x) / 2,
-        y: (p.y + rest[i + 1].y) / 2,
-      };
-      parts.push(`Q ${fx(p.x)} ${fy(p.y)} ${fx(mid.x)} ${fy(mid.y)}`);
-      prev = mid;
-    }
-    const tail = rest[rest.length - 1];
-    if (tail.x !== prev.x || tail.y !== prev.y) {
-      parts.push(`L ${fx(tail.x)} ${fy(tail.y)}`);
+    parts.push(`M ${fx(stroke[0].x)} ${fy(stroke[0].y)}`);
+    for (const seg of strokeSegments(stroke)) {
+      parts.push(
+        seg.type === 'Q'
+          ? `Q ${fx(seg.ctrl.x)} ${fy(seg.ctrl.y)} ${fx(seg.to.x)} ${fy(seg.to.y)}`
+          : `L ${fx(seg.to.x)} ${fy(seg.to.y)}`,
+      );
     }
   }
   return parts.length ? parts.join(' ') : null;
