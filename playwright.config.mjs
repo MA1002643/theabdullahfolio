@@ -18,7 +18,16 @@ export default defineConfig({
   webServer: {
     command: 'node scripts/next-cmd.mjs start -p 3100',
     port: 3100,
-    reuseExistingServer: !process.env.CI,
+    // Never silently adopt whatever is on 3100. Playwright's usual
+    // `!process.env.CI` idiom reuses ANY process on the port WITHOUT applying
+    // the env block below — so a stale `next start` (old build, real Redis,
+    // no AUTH_SECRET) could be what the specs actually hit; and since
+    // `test:e2e` now builds first, "reuse" would mean testing the build
+    // BEFORE the one just produced. Reuse is an explicit opt-in for iterating
+    // on specs against a server you started yourself with the same env:
+    //   E2E_REUSE_SERVER=1 npx playwright test
+    // Otherwise an occupied port is a loud error, not a silent substitution.
+    reuseExistingServer: process.env.E2E_REUSE_SERVER === '1',
     timeout: 120 * 1000,
     env: {
       GUESTBOOK_DRIVER: 'json',

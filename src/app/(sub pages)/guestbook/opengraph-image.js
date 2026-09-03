@@ -13,7 +13,7 @@ export default async function Image() {
   return new ImageResponse(
     await sectionCard({
       label: 'Guestbook',
-      tagline: 'Leave your mark — a neon wall of messages signed via GitHub.',
+      tagline: 'Leave your mark — a neon wall of messages signed via GitHub or Google.',
     }),
     { ...size, fonts: await ogFonts() },
   );

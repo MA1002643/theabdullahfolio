@@ -10,6 +10,7 @@ import { useHardwareKeyboard } from '@/hooks/useHardwareKeyboard';
 import { usePresence } from '@/hooks/usePresence';
 import { useUiSound } from '@/hooks/useUiSound';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
+import { messageIdFromHash } from '@/lib/guestbook/deepLink';
 import { NEW_MESSAGE_EVENT } from '@/lib/guestbook/events';
 import MessageCard from './MessageCard';
 import MessageInput from './MessageInput';
@@ -133,14 +134,16 @@ export default function GuestbookWall() {
   // the URL addresses one message the way the copy-link button on each card
   // promises. Runs once against the FIRST loaded list (the ref guard): later
   // polls must not re-trigger the jump, and a hash that matches nothing (a
-  // deleted mark, a mangled link) is simply a no-op. The scroll waits out the
-  // page-flip choreography (~0.45s exit+enter) so it targets a mounted card.
+  // deleted mark, a mangled link — including one that will not even
+  // percent-decode, see deepLink.js) is simply a no-op. The scroll waits out
+  // the page-flip choreography (~0.45s exit+enter) so it targets a mounted
+  // card.
   const [linkedId, setLinkedId] = useState(null);
   const hashHandledRef = useRef(false);
   useEffect(() => {
     if (hashHandledRef.current || !messages || messages.length === 0) return undefined;
     hashHandledRef.current = true;
-    const id = decodeURIComponent(window.location.hash.slice(1));
+    const id = messageIdFromHash(window.location.hash);
     if (!id) return undefined;
     const idx = messages.findIndex((m) => m.id === id);
     if (idx === -1) return undefined;

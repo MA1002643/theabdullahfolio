@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   isValidSignaturePath,
   MAX_SIGNATURE_BYTES,
+  MAX_SIGNATURE_COMMANDS,
+  MAX_SIGNATURE_POINTS,
   PRESET_MARKS,
+  SIGNATURE_VIEWBOX,
+  rescalePoint,
+  rescaleStrokes,
+  strokesToPath,
 } from '@/lib/guestbook/signature';
 
 // The signature grammar is a security boundary: these strings are untrusted
@@ -71,5 +77,106 @@ describe('isValidSignaturePath', () => {
     const big = `M 1 1 ${'L 50 20 '.repeat(600)}`.trim();
     expect(big.length).toBeGreaterThan(MAX_SIGNATURE_BYTES);
     expect(isValidSignaturePath(big)).toBe(false);
+  });
+});
+
+// The pad's serialiser and its point budget, pinned against the SAME validator
+// the route runs: the client must never be able to draw something the server
+// rejects. "Far corner" = a pointer captured and dragged off the pad's
+// bottom-right, which clamps to the widest numerals the grammar can emit.
+describe('strokesToPath + MAX_SIGNATURE_POINTS', () => {
+  const bytes = (s) => new TextEncoder().encode(s).length;
+  const FAR = { x: 1e6, y: 1e6 }; // off the pad → clamps to 100.0 / 40.0
+  const WORST_BYTES_PER_POINT = 26; // `M 100.0 40.0 L 100.0 40.0` + separator
+
+  it('derives the point cap from the byte and command caps', () => {
+    expect(MAX_SIGNATURE_POINTS * WORST_BYTES_PER_POINT).toBeLessThanOrEqual(
+      MAX_SIGNATURE_BYTES,
+    );
+    expect(MAX_SIGNATURE_POINTS * 2).toBeLessThanOrEqual(MAX_SIGNATURE_COMMANDS);
+  });
+
+  it('the worst case at the cap — every point a far-corner dot — validates', () => {
+    const dots = Array.from({ length: MAX_SIGNATURE_POINTS }, () => [FAR]);
+    const d = strokesToPath(dots);
+    expect(bytes(d)).toBeLessThanOrEqual(MAX_SIGNATURE_BYTES);
+    expect(isValidSignaturePath(d)).toBe(true);
+  });
+
+  it('a continuous far-corner stroke at the cap validates too', () => {
+    const stroke = Array.from({ length: MAX_SIGNATURE_POINTS }, () => FAR);
+    const d = strokesToPath([stroke]);
+    expect(bytes(d)).toBeLessThanOrEqual(MAX_SIGNATURE_BYTES);
+    expect(isValidSignaturePath(d)).toBe(true);
+  });
+
+  it('the previous 160-point cap did NOT fit — the regression this pins', () => {
+    const dots = Array.from({ length: 160 }, () => [FAR]);
+    expect(bytes(strokesToPath(dots))).toBeGreaterThan(MAX_SIGNATURE_BYTES);
+    expect(isValidSignaturePath(strokesToPath(dots))).toBe(false);
+  });
+
+  it('clamps each axis to its OWN viewbox bound', () => {
+    // Below the pad: y must clamp to the 40-tall space, not to 100.
+    const d = strokesToPath([[{ x: 10, y: 1e6 }, { x: 20, y: 1e6 }]]);
+    expect(d).toBe(`M 10.0 ${SIGNATURE_VIEWBOX.height}.0 L 20.0 ${SIGNATURE_VIEWBOX.height}.0`);
+    expect(isValidSignaturePath(d)).toBe(true);
+    // Left/above the pad clamps to 0.
+    expect(strokesToPath([[{ x: -5, y: -5 }]])).toBe('M 0.0 0.0 L 0.0 0.0');
+  });
+
+  it('scales a real pad box into the signature space and smooths through midpoints', () => {
+    // A 300×120 css px pad → sx = sy = 1/3.
+    const sx = SIGNATURE_VIEWBOX.width / 300;
+    const sy = SIGNATURE_VIEWBOX.height / 120;
+    const stroke = [
+      { x: 30, y: 60 },
+      { x: 90, y: 30 },
+      { x: 150, y: 90 },
+      { x: 210, y: 60 },
+    ];
+    const d = strokesToPath([stroke], sx, sy);
+    expect(d).toBe('M 10.0 20.0 Q 30.0 10.0 40.0 20.0 Q 50.0 30.0 60.0 25.0 L 70.0 20.0');
+    expect(isValidSignaturePath(d)).toBe(true);
+  });
+
+  it('returns null with nothing to draw', () => {
+    expect(strokesToPath([])).toBe(null);
+    expect(strokesToPath([[]])).toBe(null);
+  });
+});
+
+// Resize handling: ink recorded in one css box must mean the same signature
+// in another. The pad's fit() rescales strokes through these before redrawing.
+describe('rescaleStrokes', () => {
+  const PAD = { w: 300, h: 120 };
+  const stroke = [
+    { x: 30, y: 60 },
+    { x: 90, y: 30 },
+    { x: 150, y: 90 },
+    { x: 210, y: 60 },
+  ];
+  const pathIn = (strokes, box) =>
+    strokesToPath(strokes, SIGNATURE_VIEWBOX.width / box.w, SIGNATURE_VIEWBOX.height / box.h);
+
+  it('scales each axis by its own ratio', () => {
+    expect(rescalePoint({ x: 30, y: 60 }, PAD, { w: 600, h: 60 })).toEqual({ x: 60, y: 30 });
+    expect(rescaleStrokes([[{ x: 30, y: 60 }]], PAD, { w: 600, h: 60 })).toEqual([[{ x: 60, y: 30 }]]);
+  });
+
+  it('keeps the serialised signature invariant across a non-uniform resize', () => {
+    const before = pathIn([stroke], PAD);
+    for (const box of [{ w: 450, h: 90 }, { w: 150, h: 240 }, { w: 1000, h: 40 }]) {
+      const after = pathIn(rescaleStrokes([stroke], PAD, box), box);
+      expect(after, `${box.w}×${box.h}`).toBe(before);
+    }
+  });
+
+  it('is a no-op for the same box and for a hidden (0×0) pad', () => {
+    const same = rescaleStrokes([stroke], PAD, { w: 300, h: 120 });
+    expect(same[0]).toBe(stroke);
+    expect(rescaleStrokes([stroke], PAD, { w: 0, h: 0 })[0]).toBe(stroke);
+    expect(rescaleStrokes([stroke], { w: 0, h: 0 }, PAD)[0]).toBe(stroke);
+    expect(rescaleStrokes([stroke], null, PAD)[0]).toBe(stroke);
   });
 });

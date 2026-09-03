@@ -16,23 +16,10 @@ export function useCommandPalette(actions) {
   const [activeIndex, setActiveIndex] = useState(0);
   const restoreFocusRef = useRef(null);
 
-  // Global hotkey. ⌘K on mac, Ctrl+K elsewhere — matching both
-  // unconditionally is what every palette does; nobody has a legitimate
-  // Ctrl+K binding on a portfolio site.
-  useEffect(() => {
-    const onKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setOpen((prev) => {
-          if (!prev) restoreFocusRef.current = document.activeElement;
-          return !prev;
-        });
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
+  // The ONE close path. Every way out of the palette — Esc, running an
+  // action, and the hotkey pressed while open — must come through here so
+  // the next open starts clean (empty query, selection at the top) and focus
+  // goes back to whatever had it before the palette took it.
   const close = useCallback(() => {
     setOpen(false);
     setQuery('');
@@ -40,6 +27,30 @@ export function useCommandPalette(actions) {
     const el = restoreFocusRef.current;
     if (el && typeof el.focus === 'function') el.focus();
   }, []);
+
+  // Global hotkey. ⌘K on mac, Ctrl+K elsewhere — matching both
+  // unconditionally is what every palette does; nobody has a legitimate
+  // Ctrl+K binding on a portfolio site. Opening and closing are separate
+  // branches on purpose: the first cut toggled `open` in a functional
+  // updater, which left the query, the selection and the focus hand-back
+  // untouched on the way OUT — only Esc reset them. Reading `open` from the
+  // closure (re-subscribing on toggle is trivially cheap) lets the closing
+  // branch reuse close() instead of duplicating it.
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (open) {
+          close();
+          return;
+        }
+        restoreFocusRef.current = document.activeElement;
+        setOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, close]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

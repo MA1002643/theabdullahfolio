@@ -6,6 +6,10 @@
 //           outright if the page goes quiet.
 //   dev   → a module-scoped Map — correct for the single local process, and
 //           never used in production (store.js's env logic picks redis there).
+//
+// The abuse ceiling lives at the route: heartbeats are rate-limited per client
+// IP BEFORE heartbeat() is called (ratelimit.js → checkPresenceRateLimit), so
+// this module can stay a plain register-and-count.
 import { redis, redisAvailable } from './redisDriver';
 
 export const PRESENCE_WINDOW_MS = 60 * 1000;

@@ -1,7 +1,7 @@
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Same env discipline as ratelimit.test.js — pin the json driver before any
 // module under test loads.
@@ -90,5 +90,25 @@ describe('store facade', () => {
     await store.addMessage(m);
     expect(await store.getMessages()).toEqual([m]);
     expect(await store.deleteMessage('facade-1')).toBe(true);
+  });
+});
+
+// Runs LAST: it flips the driver env and resets the module registry, which
+// the suites above must not observe.
+describe('store facade — GUESTBOOK_DRIVER=redis without credentials', () => {
+  afterEach(() => {
+    process.env.GUESTBOOK_DRIVER = 'json';
+    vi.resetModules();
+  });
+
+  it('refuses to load with an error naming the variables, not a null client', async () => {
+    // The KV_*/UPSTASH_* names are deleted at the top of this file, so the
+    // redis client is null; forcing the driver anyway used to hand that null
+    // to the routes, to explode on the first zrange.
+    vi.resetModules();
+    process.env.GUESTBOOK_DRIVER = 'redis';
+    await expect(import('@/lib/guestbook/store')).rejects.toThrow(
+      /GUESTBOOK_DRIVER=redis .*KV_REST_API_URL.*UPSTASH_REDIS_REST_URL/,
+    );
   });
 });

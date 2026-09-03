@@ -1,7 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SIGNATURE_VIEWBOX } from '@/lib/guestbook/signature';
+import {
+  MAX_SIGNATURE_POINTS,
+  SIGNATURE_VIEWBOX,
+  rescalePoint,
+  rescaleStrokes,
+  strokesToPath,
+} from '@/lib/guestbook/signature';
 
 // Canvas ink engine for the guestbook signature (issue #40 Phase 3). Pointer
 // events (mouse / touch / pen — one code path) are captured into strokes and
@@ -12,19 +18,22 @@ import { SIGNATURE_VIEWBOX } from '@/lib/guestbook/signature';
 // the width breathes instead of stuttering.
 //
 // Serialisation is the part with rules: toPathString() emits the stroke
-// CENTRELINES as `M x y Q cx cy x y …` in the shared 100×40 signature space,
-// which is exactly the grammar signature.js validates. A single SVG path has
-// ONE stroke width, so the velocity-width ink is a property of the drawing
-// feel and the live canvas — the stored glyph renders the centreline with
-// round caps, the ember glow and the draw-on animation carrying the life.
+// CENTRELINES as `M x y Q cx cy x y …` in the shared 100×40 signature space —
+// via signature.js's strokesToPath, the SAME module that validates the
+// grammar, so what the pad ships and what the server accepts can never drift.
+// A single SVG path has ONE stroke width, so the velocity-width ink is a
+// property of the drawing feel and the live canvas — the stored glyph renders
+// the centreline with round caps, the ember glow and the draw-on animation
+// carrying the life.
 //
 // Data budget: points closer than MIN_DIST px are never recorded, and a
-// drawing stops accepting points at MAX_POINTS — with ~24 bytes per smoothed
-// point that keeps every possible serialisation comfortably under the 4KB
-// server cap, so the client cannot draw something the server would reject.
+// drawing stops accepting points at MAX_POINTS — which is signature.js's
+// MAX_SIGNATURE_POINTS, derived from the server's byte and command caps at the
+// worst case a point can cost (a dot at the far corner, 26 bytes), so the
+// client cannot draw something the server would reject.
 
 const MIN_DIST = 3; // css px between recorded samples
-const MAX_POINTS = 160; // total across strokes — see budget note above
+const MAX_POINTS = MAX_SIGNATURE_POINTS; // total across strokes — see budget note
 const WIDTH_MAX = 3.2; // css px, slow ink
 const WIDTH_MIN = 1.1; // css px, fast ink
 const VELOCITY_K = 0.9; // px/ms → width falloff
@@ -37,11 +46,19 @@ export function useSignaturePad({ onChange } = {}) {
   const strokesRef = useRef([]); // Array<Array<{x, y}>> in css px
   const liveRef = useRef(null); // { last, width, time } while a stroke is down
   const countRef = useRef(0);
+  const sizeRef = useRef(null); // { w, h } css px of the last REAL fit
   const [hasInk, setHasInk] = useState(false);
 
   // Size the bitmap to the element's CSS box × DPR (capped — this is a small
   // pad, 2× is already crisp) so ink is sharp on retina without megapixel
-  // canvases. Redraws existing strokes after a resize re-rasterises the pad.
+  // canvases. A resize re-rasterises the pad, so existing strokes — recorded
+  // in css px of the box they were drawn in — are first RESCALED into the new
+  // box (see rescaleStrokes: same fraction of the pad, hence the same
+  // serialised signature) and then replayed; without that step a shrink
+  // clipped ink and a grow left it huddled top-left, and toPathString shipped
+  // a different glyph from the one the visitor saw. sizeRef survives the
+  // canvas detaching (panel closed) and re-attaching at a new size, so the
+  // scale is always from the last box the ink was actually laid out in.
   //
   // CALLBACK ref, not a mount effect (the "ink lands away from the cursor"
   // bug): the pad's canvas mounts LATE — SignatureField renders it only when
@@ -61,6 +78,19 @@ export function useSignaturePad({ onChange } = {}) {
     const fit = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const { clientWidth, clientHeight } = node;
+      // A hidden pad reports 0×0 — not a size to scale from or to; keep the
+      // last real one so the next real fit scales from where the ink truly is.
+      if (clientWidth > 0 && clientHeight > 0) {
+        const to = { w: clientWidth, h: clientHeight };
+        const from = sizeRef.current;
+        if (from && (from.w !== to.w || from.h !== to.h)) {
+          strokesRef.current = rescaleStrokes(strokesRef.current, from, to);
+          if (liveRef.current) {
+            liveRef.current.last = rescalePoint(liveRef.current.last, from, to);
+          }
+        }
+        sizeRef.current = to;
+      }
       node.width = Math.max(1, Math.round(clientWidth * dpr));
       node.height = Math.max(1, Math.round(clientHeight * dpr));
       const ctx = node.getContext('2d');
@@ -163,41 +193,16 @@ export function useSignaturePad({ onChange } = {}) {
     notify();
   }, [notify]);
 
-  // Serialise to the shared signature grammar. Returns null when empty.
+  // Serialise to the shared signature grammar (see strokesToPath — the scale
+  // maps this pad's css box onto the 100×40 space). Returns null when empty.
   const toPathString = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || strokesRef.current.length === 0) return null;
-    const sx = SIGNATURE_VIEWBOX.width / canvas.clientWidth;
-    const sy = SIGNATURE_VIEWBOX.height / canvas.clientHeight;
-    const fmt = (v, s) => clamp(v * s, 0, 100).toFixed(1);
-
-    const parts = [];
-    for (const stroke of strokesRef.current) {
-      if (!stroke.length) continue;
-      const [first, ...rest] = stroke;
-      parts.push(`M ${fmt(first.x, sx)} ${fmt(first.y, sy)}`);
-      if (rest.length === 0) {
-        // Dot: zero-length line, rendered as a disc by round line caps.
-        parts.push(`L ${fmt(first.x, sx)} ${fmt(first.y, sy)}`);
-        continue;
-      }
-      // Midpoint smoothing, same construction the live canvas paints: curve
-      // toward each midpoint using the sample as the control point.
-      let prev = first;
-      for (let i = 0; i < rest.length - 1; i += 1) {
-        const p = rest[i];
-        const mid = { x: (p.x + rest[i + 1].x) / 2, y: (p.y + rest[i + 1].y) / 2 };
-        parts.push(
-          `Q ${fmt(p.x, sx)} ${fmt(p.y, sy)} ${fmt(mid.x, sx)} ${fmt(mid.y, sy)}`,
-        );
-        prev = mid;
-      }
-      const tail = rest[rest.length - 1];
-      if (tail.x !== prev.x || tail.y !== prev.y) {
-        parts.push(`L ${fmt(tail.x, sx)} ${fmt(tail.y, sy)}`);
-      }
-    }
-    return parts.join(' ');
+    if (!canvas) return null;
+    return strokesToPath(
+      strokesRef.current,
+      SIGNATURE_VIEWBOX.width / canvas.clientWidth,
+      SIGNATURE_VIEWBOX.height / canvas.clientHeight,
+    );
   }, []);
 
   return {
@@ -219,10 +224,6 @@ export function useSignaturePad({ onChange } = {}) {
 function localPoint(canvas, e) {
   const rect = canvas.getBoundingClientRect();
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-}
-
-function clamp(v, min, max) {
-  return Math.min(max, Math.max(min, v));
 }
 
 function strokeStyle(ctx, width) {

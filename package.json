@@ -11,7 +11,7 @@
     "start": "node scripts/next-cmd.mjs start",
     "lint": "node scripts/next-cmd.mjs lint",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

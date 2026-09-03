@@ -18,6 +18,18 @@ export const SIGNATURE_VIEWBOX = { width: 100, height: 40 };
 export const MAX_SIGNATURE_BYTES = 4096;
 export const MAX_SIGNATURE_COMMANDS = 400;
 
+// The pad's point budget, DERIVED from the caps above rather than chosen by
+// feel: the most expensive thing one point can serialise to is a dot at the
+// far corner — `M 100.0 40.0 L 100.0 40.0` plus its separator, 26 bytes and
+// two commands — so 150 points is at most 3,900 bytes / 300 commands, under
+// both caps with room to spare (a continuous stroke is cheaper: 24 bytes and
+// one command per point). The first cut allowed 160, and its serialiser also
+// clamped y to 100 instead of the viewbox's 40, so a stroke dragged off the
+// bottom-right corner reached 4,135 bytes and the route refused a signature
+// the pad had let the visitor draw. The unit tests pin this arithmetic
+// against the real serialiser below.
+export const MAX_SIGNATURE_POINTS = 150;
+
 // How many coordinate numbers each command consumes.
 const ARITY = { M: 2, L: 2, Q: 4, C: 6, Z: 0 };
 
@@ -62,6 +74,77 @@ export function isValidSignaturePath(d) {
   }
 
   return drawCommands >= 1;
+}
+
+// Serialise the pad's strokes (arrays of {x, y} in css px) into the grammar
+// above, scaled into the 100×40 signature space by sx/sy. Stroke CENTRELINES
+// only — `M x y Q cx cy x y …` with quadratic midpoint smoothing, the same
+// construction the live canvas paints — one decimal, and each axis clamped to
+// ITS OWN viewbox bound (pointer capture lets a stroke run off the pad, and a
+// y of 100 in a 40-tall space is both outside the glyph and a byte wider).
+// Pure, so the byte/command budget can be asserted against exactly what
+// ships. Returns null when there is nothing to draw.
+export function strokesToPath(strokes, sx = 1, sy = 1) {
+  const fx = (v) => clamp(v * sx, 0, SIGNATURE_VIEWBOX.width).toFixed(1);
+  const fy = (v) => clamp(v * sy, 0, SIGNATURE_VIEWBOX.height).toFixed(1);
+
+  const parts = [];
+  for (const stroke of strokes) {
+    if (!stroke?.length) continue;
+    const [first, ...rest] = stroke;
+    parts.push(`M ${fx(first.x)} ${fy(first.y)}`);
+    if (rest.length === 0) {
+      // Dot: zero-length line, rendered as a disc by round line caps.
+      parts.push(`L ${fx(first.x)} ${fy(first.y)}`);
+      continue;
+    }
+    // Midpoint smoothing: curve toward each midpoint using the sample as the
+    // control point.
+    let prev = first;
+    for (let i = 0; i < rest.length - 1; i += 1) {
+      const p = rest[i];
+      const mid = {
+        x: (p.x + rest[i + 1].x) / 2,
+        y: (p.y + rest[i + 1].y) / 2,
+      };
+      parts.push(`Q ${fx(p.x)} ${fy(p.y)} ${fx(mid.x)} ${fy(mid.y)}`);
+      prev = mid;
+    }
+    const tail = rest[rest.length - 1];
+    if (tail.x !== prev.x || tail.y !== prev.y) {
+      parts.push(`L ${fx(tail.x)} ${fy(tail.y)}`);
+    }
+  }
+  return parts.length ? parts.join(' ') : null;
+}
+
+// Re-express pad geometry when the pad's css box changes size (a viewport
+// resize, a phone rotating, the on-screen keyboard reflowing the composer):
+// strokes are recorded in css px of the box they were drawn in, so replaying
+// them unchanged into a different box clips ink that the pad shrank away
+// from, or leaves it huddled top-left when the pad grew — and strokesToPath,
+// which normalises against the CURRENT box, would then ship a different
+// signature from the one the visitor saw. Scaling each axis by its own ratio
+// keeps every point at the same fraction of the pad, which is exactly what the
+// normalised path encodes — so the serialisation is invariant across a resize
+// (the unit tests pin that). A non-positive dimension (a hidden pad reports
+// 0×0) is not a size: the input is returned untouched.
+export function rescalePoint(p, from, to) {
+  return { x: (p.x * to.w) / from.w, y: (p.y * to.h) / from.h };
+}
+
+export function rescaleStrokes(strokes, from, to) {
+  if (
+    !(from?.w > 0 && from?.h > 0 && to?.w > 0 && to?.h > 0) ||
+    (from.w === to.w && from.h === to.h)
+  ) {
+    return strokes;
+  }
+  return strokes.map((stroke) => stroke.map((p) => rescalePoint(p, from, to)));
+}
+
+function clamp(v, min, max) {
+  return Math.min(max, Math.max(min, v));
 }
 
 // Preset "marks" — the no-pointer / reduced-motion alternative to drawing

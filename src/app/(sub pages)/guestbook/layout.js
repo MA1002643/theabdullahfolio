@@ -7,7 +7,7 @@ import { sectionMetadata } from '@/lib/og/meta';
 export const metadata = sectionMetadata({
   title: 'Guestbook',
   description:
-    'Leave your mark — a neon message wall signed by visitors through GitHub.',
+    'Leave your mark — a neon message wall signed by visitors through GitHub or Google.',
   path: '/guestbook',
 });
 

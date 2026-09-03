@@ -16,9 +16,12 @@ const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const token =
   process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
-// Null when unconfigured (e.g. a preview without KV linked) — store.js only
-// selects this driver when the env is present, and `redisAvailable` lets the
-// rate limiter make the same call without re-deriving the env.
+// Null when unconfigured (e.g. a preview without KV linked). Every method
+// below dereferences it unguarded, so the invariant lives in store.js: it
+// auto-selects this driver only when the env is present, and REFUSES TO LOAD
+// (a named-variable error, not a fallback) when GUESTBOOK_DRIVER=redis forces
+// it without credentials. `redisAvailable` lets the rate limiter and presence
+// make the same call without re-deriving the env.
 export const redis = url && token ? new Redis({ url, token }) : null;
 export const redisAvailable = Boolean(redis);
 

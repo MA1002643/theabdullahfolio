@@ -162,12 +162,17 @@ const TimelineNode = ({
 
       {/* jn-<id> is the atlas's jump target (the era-<year> li id above is the
           clock's) — focused programmatically after the scroll so keyboard
-          selection lands where the bar pointed, hence the tabIndex and the
-          suppressed ring (focus is handed TO it, never tabbed onto it). */}
+          selection lands where the bar pointed. tabIndex -1 keeps it out of
+          the tab order (focus is handed TO it, never tabbed onto it); the
+          browser's own outline is dropped here and re-expressed as a
+          focus-visible outline on the CARD below (group/jn), so a jump made
+          from the keyboard or the ⌘K palette shows exactly where focus
+          landed, while a mouse-driven jump — which never matches
+          :focus-visible — stays quiet. */}
       <div
         id={`jn-${milestone.id}`}
         tabIndex={-1}
-        className="relative py-5 outline-none md:py-7"
+        className="group/jn relative py-5 outline-none md:py-7"
       >
         {/* Marker, centred on the spine axis. data-spine-marker is the
             container's survey hook — the serpentine path is built through
@@ -235,7 +240,7 @@ const TimelineNode = ({
                 a different hue — the frame stays custom-bg-abt's uniform
                 gold, exactly like the /about cards, and the type system
                 speaks through the marker, connector and date pill instead. */}
-            <article className="custom-bg-abt relative overflow-hidden rounded-xl px-5 py-4">
+            <article className="custom-bg-abt relative overflow-hidden rounded-xl px-5 py-4 group-focus-visible/jn:outline group-focus-visible/jn:outline-2 group-focus-visible/jn:outline-offset-2 group-focus-visible/jn:outline-[#ff6d05]">
               {/* flex-wrap: the tenure span drops to its own line on narrow
                   phones instead of squeezing the pill (Lidl's is the widest
                   pairing). */}

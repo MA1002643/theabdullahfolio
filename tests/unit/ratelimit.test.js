@@ -40,6 +40,10 @@ describe('latestPostTime', () => {
   });
 });
 
+// An ADMITTED check reserves the slot in module memory (mirroring the Redis
+// limiter, which consumes a token at check time), so each case below uses its
+// own username — a user admitted in one case is, correctly, inside the window
+// for the next.
 describe('checkRateLimit (json driver path)', () => {
   let dataPath;
 
@@ -56,9 +60,9 @@ describe('checkRateLimit (json driver path)', () => {
   });
 
   it('blocks inside the 5-minute window, with an honest retry time', async () => {
-    await writeFile(dataPath, JSON.stringify([msg('alice', 2 * 60 * 1000)]));
+    await writeFile(dataPath, JSON.stringify([msg('bella', 2 * 60 * 1000)]));
     const { checkRateLimit } = await import('@/lib/guestbook/ratelimit');
-    const r = await checkRateLimit('alice', NOW);
+    const r = await checkRateLimit('bella', NOW);
     expect(r.ok).toBe(false);
     expect(r.retryAfterSeconds).toBe(3 * 60);
   });
@@ -66,9 +70,92 @@ describe('checkRateLimit (json driver path)', () => {
   it('allows again once the window has passed', async () => {
     await writeFile(
       dataPath,
-      JSON.stringify([msg('alice', 5 * 60 * 1000 + 1000)]),
+      JSON.stringify([msg('carla', 5 * 60 * 1000 + 1000)]),
     );
     const { checkRateLimit } = await import('@/lib/guestbook/ratelimit');
-    expect((await checkRateLimit('alice', NOW)).ok).toBe(true);
+    expect((await checkRateLimit('carla', NOW)).ok).toBe(true);
+  });
+
+  it('admits exactly ONE of two concurrent posts by the same user', async () => {
+    // The race: both requests read the file before either writes a message.
+    // The reservation made in the same synchronous section as the check is
+    // what the second request must see.
+    await writeFile(dataPath, JSON.stringify([]));
+    const { checkRateLimit, RATE_LIMIT_WINDOW_MS } = await import(
+      '@/lib/guestbook/ratelimit'
+    );
+    const results = await Promise.all([
+      checkRateLimit('dave', NOW),
+      checkRateLimit('dave', NOW),
+      checkRateLimit('dave', NOW),
+    ]);
+    const admitted = results.filter((r) => r.ok);
+    const refused = results.filter((r) => !r.ok);
+    expect(admitted).toHaveLength(1);
+    expect(refused).toHaveLength(2);
+    for (const r of refused) {
+      expect(r.retryAfterSeconds).toBe(RATE_LIMIT_WINDOW_MS / 1000);
+    }
+  });
+
+  it('a reservation ages out with the window', async () => {
+    const { checkRateLimit, RATE_LIMIT_WINDOW_MS } = await import(
+      '@/lib/guestbook/ratelimit'
+    );
+    // dave was admitted at NOW above and never wrote a message.
+    expect((await checkRateLimit('dave', NOW + RATE_LIMIT_WINDOW_MS - 1000)).ok).toBe(false);
+    expect((await checkRateLimit('dave', NOW + RATE_LIMIT_WINDOW_MS)).ok).toBe(true);
+  });
+
+  it('a reservation never hides a NEWER stored post', async () => {
+    const { checkRateLimit } = await import('@/lib/guestbook/ratelimit');
+    // Admitted long ago…
+    expect((await checkRateLimit('erin', NOW - 400 * 1000)).ok).toBe(true);
+    // …then a message of hers lands 60s before NOW: the stored post governs.
+    await writeFile(dataPath, JSON.stringify([msg('erin', 60 * 1000)]));
+    const r = await checkRateLimit('erin', NOW);
+    expect(r.ok).toBe(false);
+    expect(r.retryAfterSeconds).toBe(4 * 60);
+  });
+});
+
+// The in-memory path is what these exercise; the redis path is the same
+// @upstash/ratelimit sliding window the posting limit already uses. Tests
+// within this block share the module's window state and run in order.
+describe('checkPresenceRateLimit (in-memory path)', () => {
+  const IP = '203.0.113.10';
+
+  it('allows the per-minute budget, then refuses with an honest retry time', async () => {
+    const { checkPresenceRateLimit, PRESENCE_BEATS_PER_MINUTE } =
+      await import('@/lib/guestbook/ratelimit');
+    for (let i = 0; i < PRESENCE_BEATS_PER_MINUTE; i++) {
+      expect((await checkPresenceRateLimit(IP, NOW + i * 1000)).ok).toBe(true);
+    }
+    // One over budget, 30s after the first beat: the oldest frees at +60s.
+    const denied = await checkPresenceRateLimit(IP, NOW + 30 * 1000);
+    expect(denied.ok).toBe(false);
+    expect(denied.retryAfterSeconds).toBe(30);
+  });
+
+  it('keys per client — another address is unaffected', async () => {
+    const { checkPresenceRateLimit } = await import('@/lib/guestbook/ratelimit');
+    const r = await checkPresenceRateLimit('203.0.113.11', NOW + 30 * 1000);
+    expect(r.ok).toBe(true);
+  });
+
+  it('slides: once the oldest beat ages out, exactly one more is allowed', async () => {
+    const { checkPresenceRateLimit } = await import('@/lib/guestbook/ratelimit');
+    // The first beat (at NOW) is outside the window at NOW+60s — one slot.
+    expect((await checkPresenceRateLimit(IP, NOW + 60 * 1000)).ok).toBe(true);
+    expect((await checkPresenceRateLimit(IP, NOW + 60 * 1000)).ok).toBe(false);
+  });
+
+  it('never stores the raw address — the key is a stable, distinct hash', async () => {
+    const { presenceLimitKey } = await import('@/lib/guestbook/ratelimit');
+    const key = presenceLimitKey(IP);
+    expect(key).not.toContain(IP);
+    expect(key).toHaveLength(22);
+    expect(presenceLimitKey(IP)).toBe(key);
+    expect(presenceLimitKey('203.0.113.11')).not.toBe(key);
   });
 });

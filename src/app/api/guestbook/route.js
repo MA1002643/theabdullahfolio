@@ -1,11 +1,15 @@
 // Guestbook API (issue #40).
 //   GET    → { messages, count }, newest first. Public.
-//   POST   → create a message. Requires a GitHub session; author identity is
-//            taken ONLY from that session, never from the body; body text runs
-//            the full validate.js gauntlet; 1 post / user / 5 min server-side.
-//   DELETE → ?id=… admin moderation. Session username must equal
-//            GUESTBOOK_ADMIN (env) — the owner's fast path for removing
-//            anything unpleasant from a recruiter-facing wall.
+//   POST   → create a message. Requires a signed-in session (GitHub or
+//            Google); author identity is taken ONLY from that session, never
+//            from the body; body text runs the full validate.js gauntlet;
+//            1 post / user / 5 min server-side.
+//   DELETE → ?id=… own-or-admin. The session username must match the STORED
+//            author (case-insensitive — an author may always remove their own
+//            message) or be GUESTBOOK_ADMIN (env, via admin.js) — the owner's
+//            fast path for removing anything unpleasant from a
+//            recruiter-facing wall. Both checks are re-derived server-side
+//            from the session; the client never nominates an author.
 //
 // Messages are plain text end-to-end: stored as JSON strings, rendered as React
 // text nodes (never dangerouslySetInnerHTML), so nothing here needs to

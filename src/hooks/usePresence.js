@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { randomAnonId } from '@/lib/guestbook/anonId';
 
 // "N here now" presence for the guestbook (issue #40 Phase 4). Each tab
 // heartbeats an anonymous per-tab id every 15s — the POST both registers the
@@ -11,17 +12,22 @@ import { useEffect, useState } from 'react';
 const HEARTBEAT_MS = 15 * 1000;
 const ID_KEY = 'guestbook:presence-id';
 
+// Never throws: randomAnonId() has its own non-crypto fallback, because the
+// first cut called crypto.randomUUID in BOTH branches below — a secure-context
+// API that is simply undefined over plain http on a LAN address (the dev
+// server viewed from a real phone), so the catch re-threw and the effect took
+// the whole wall down for the sake of a decorative counter.
 function tabId() {
   try {
     let id = sessionStorage.getItem(ID_KEY);
     if (!id) {
-      id = crypto.randomUUID();
+      id = randomAnonId();
       sessionStorage.setItem(ID_KEY, id);
     }
     return id;
   } catch {
     // Storage blocked — a per-mount id still dedupes within this visit.
-    return crypto.randomUUID();
+    return randomAnonId();
   }
 }
 
