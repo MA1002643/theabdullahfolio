@@ -11,6 +11,9 @@ import { expect, test } from '@playwright/test';
 const FAKE_SESSION = {
   user: {
     name: 'Play Wright',
+    // The session shape auth.js stamps: the identity key (what the server
+    // compares) beside the GitHub login (what the card shows).
+    key: 'github:424242',
     username: 'playwright-smoke',
     image: null,
     provider: 'github',

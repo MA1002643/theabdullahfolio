@@ -5,8 +5,12 @@
 //
 // Grammar (deliberately far narrower than SVG's):
 //   • commands: uppercase M, L, Q, C, Z only
-//   • numbers: 0–100, at most 2 decimals, optional leading minus rejected by
-//     the range check (nothing legitimate is ever negative)
+//   • numbers: each coordinate bounded by ITS OWN axis of the viewbox — x in
+//     0–100, y in 0–40 (control points included) — at most 2 decimals, a
+//     leading minus rejected by the range check (nothing legitimate is ever
+//     negative). One cap for both axes let y run to 100 in a 40-tall space:
+//     a hand-built path passed both gates and, through the glyph's
+//     overflow-visible SVG, painted ink outside the signature's box.
 //   • separators: spaces and/or commas
 //   • must start with M, contain at least one drawing command (L/Q/C), and
 //     stay under MAX_SIGNATURE_BYTES / MAX_SIGNATURE_COMMANDS
@@ -30,16 +34,21 @@ export const MAX_SIGNATURE_COMMANDS = 400;
 // against the real serialiser below.
 export const MAX_SIGNATURE_POINTS = 150;
 
-// How many coordinate numbers each command consumes.
+// How many coordinate numbers each command consumes. Every command's
+// arguments are (x, y) pairs in order — M/L one pair, Q control + end, C two
+// controls + end — so within a command the even-indexed arguments are x and
+// the odd-indexed ones y, which is how each is bounded by its own axis below.
 const ARITY = { M: 2, L: 2, Q: 4, C: 6, Z: 0 };
 
 const NUMBER_RE = /^\d{1,3}(?:\.\d{1,2})?$/;
 
-function isValidNumber(token) {
+function isValidNumber(token, max) {
   if (!NUMBER_RE.test(token)) return false;
   const n = Number(token);
-  return n >= 0 && n <= 100;
+  return n >= 0 && n <= max;
 }
+
+const AXIS_MAX = [SIGNATURE_VIEWBOX.width, SIGNATURE_VIEWBOX.height];
 
 // Boolean validator — shared verbatim by server (store gate) and client
 // (render gate), so a payload that slips past one can never pass the other.
@@ -66,7 +75,9 @@ export function isValidSignaturePath(d) {
     if (arity === undefined) return false;
     i += 1;
     for (let n = 0; n < arity; n += 1, i += 1) {
-      if (i >= tokens.length || !isValidNumber(tokens[i])) return false;
+      if (i >= tokens.length || !isValidNumber(tokens[i], AXIS_MAX[n % 2])) {
+        return false;
+      }
     }
     commands += 1;
     if (cmd === 'L' || cmd === 'Q' || cmd === 'C') drawCommands += 1;

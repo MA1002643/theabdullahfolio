@@ -59,6 +59,35 @@ describe('isValidSignaturePath', () => {
     expect(isValidSignaturePath('M .5 1 L 5 5')).toBe(false); // bare decimal
   });
 
+  // The escape this pins: one 0–100 cap for both axes let y run to 100 in a
+  // 40-tall viewbox, and the glyph's overflow-visible SVG painted the ink
+  // outside the signature's box. Each coordinate is bounded by its own axis —
+  // end points and control points alike, since a control point can pull a
+  // curve as far out as an end point can.
+  it('bounds each axis by its OWN viewbox extent — y stops at 40, not 100', () => {
+    const { width, height } = SIGNATURE_VIEWBOX;
+    expect(height).toBe(40);
+    // The far corner is in; one unit past it on either axis is out.
+    expect(isValidSignaturePath(`M 0 0 L ${width} ${height}`)).toBe(true);
+    expect(isValidSignaturePath(`M 0 0 L ${width} ${height + 1}`)).toBe(false);
+    expect(isValidSignaturePath(`M 0 0 L ${width + 1} ${height}`)).toBe(false);
+    expect(isValidSignaturePath('M 0 0 L 50 40.01')).toBe(false);
+    // Every place a y can appear: M, L, Q's control and end, C's two controls
+    // and end.
+    expect(isValidSignaturePath('M 10 41 L 90 10')).toBe(false);
+    expect(isValidSignaturePath('M 10 10 L 90 41')).toBe(false);
+    expect(isValidSignaturePath('M 10 10 L 90 100')).toBe(false);
+    expect(isValidSignaturePath('M 10 10 Q 50 41 90 10')).toBe(false);
+    expect(isValidSignaturePath('M 10 10 Q 50 10 90 41')).toBe(false);
+    expect(isValidSignaturePath('M 10 10 C 10 41 50 10 90 10')).toBe(false);
+    expect(isValidSignaturePath('M 10 10 C 10 10 50 100 90 10')).toBe(false);
+    expect(isValidSignaturePath('M 10 10 C 10 10 50 10 90 41')).toBe(false);
+    // …while an x of 41–100 in those same slots is still legitimate ink.
+    expect(isValidSignaturePath('M 41 10 L 100 10')).toBe(true);
+    expect(isValidSignaturePath('M 10 10 Q 100 40 41 10')).toBe(true);
+    expect(isValidSignaturePath('M 10 10 C 41 40 100 0 90 10')).toBe(true);
+  });
+
   it('rejects malformed command structure', () => {
     expect(isValidSignaturePath('L 5 5')).toBe(false); // must start with M
     expect(isValidSignaturePath('M 1 1')).toBe(false); // no draw command

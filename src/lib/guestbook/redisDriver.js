@@ -31,9 +31,11 @@ export const redisAvailable = Boolean(redis);
 // A second client over the same credentials with the auto-deserialiser OFF,
 // for the reaction script only. The script answers with HGETALL's flat
 // field/value array, and the default client JSON-parses every array element
-// it can — so a numeric-looking login ("123", "1e5") would come back as a
+// it can — so a numeric-looking field ("123", "1e5") would come back as a
 // number, and be a different key by the time it became an object property.
-// Raw strings in, raw strings out; the driver builds the map itself.
+// Fields are identity keys now (`github:<id>`, never numeric-looking), but
+// hashes written before keys existed carry bare logins, which can be. Raw
+// strings in, raw strings out; the driver builds the map itself.
 const rawRedis =
   url && token ? new Redis({ url, token, automaticDeserialization: false }) : null;
 
@@ -46,9 +48,9 @@ const reactionsKey = (id) => `guestbook:reactions:${id}`;
 // between them and the HSET would recreate an orphan reactions hash — the
 // very invariant the check claimed to enforce. Redis runs a script atomically:
 // nothing interleaves between the existence check, the write and the
-// read-back. KEYS = [message key, reactions hash]; ARGV = [username, reaction
-// key — or '' to clear]. Replies nil when the message is gone, else the hash
-// as HGETALL's flat array.
+// read-back. KEYS = [message key, reactions hash]; ARGV = [the viewer's
+// identity key, reaction key — or '' to clear]. Replies nil when the message
+// is gone, else the hash as HGETALL's flat array.
 const SET_REACTION_LUA = `
 if redis.call('EXISTS', KEYS[1]) == 0 then
   return nil
@@ -167,9 +169,10 @@ export const redisDriver = {
     return removed > 0;
   },
 
-  // Reactions: one HASH per message, field = username, value = reaction key —
-  // HSET/HDEL make "one reaction per user per message" a property of the data
-  // structure, not bookkeeping.
+  // Reactions: one HASH per message, field = the reactor's identity key
+  // (identity.js), value = reaction key — HSET/HDEL make "one reaction per
+  // user per message" a property of the data structure, not bookkeeping, and
+  // the field survives a GitHub rename because it is the account id.
   async getReactions(ids) {
     if (!ids.length) return {};
     const p = redis.pipeline();
@@ -185,10 +188,10 @@ export const redisDriver = {
   // Guard against reacting to a deleted/never-existent message — the
   // reactions hash must not outlive (or precede) its message. The guard and
   // the write are one atomic script (SET_REACTION_LUA), one round trip.
-  async setReaction(id, username, key) {
+  async setReaction(id, userKey, key) {
     const reply = await setReactionScript.exec(
       [msgKey(id), reactionsKey(id)],
-      [username, key ?? ''],
+      [userKey, key ?? ''],
     );
     if (reply === null || reply === undefined) return null;
     return hashFromFlat(Array.isArray(reply) ? reply : []);

@@ -52,6 +52,14 @@ const VELOCITY_K = 0.9; // px/ms → width falloff
 const WIDTH_EASE = 0.35; // lerp factor toward target width
 const INK = '#eab53e'; // ember-neon — matches the rendered glyph
 
+// getContext('2d') is NULLABLE — canvas disabled by policy, a headless or
+// resource-starved renderer, a lost context — and the pad's canvas mounts when
+// the optional signature panel opens, so a throw from a painter would take
+// the panel down with it, preset marks included. Every painter asks through
+// this and no-ops on null, the way the reaction burst does; the stroke
+// bookkeeping (recording, hasInk, clear, serialisation) never depends on it.
+const contextOf = (canvas) => canvas?.getContext('2d') ?? null;
+
 export function useSignaturePad({ onChange } = {}) {
   const canvasRef = useRef(null);
   const observerRef = useRef(null);
@@ -105,9 +113,12 @@ export function useSignaturePad({ onChange } = {}) {
       }
       node.width = Math.max(1, Math.round(clientWidth * dpr));
       node.height = Math.max(1, Math.round(clientHeight * dpr));
-      const ctx = node.getContext('2d');
+      // No context: the bitmap is sized and the ink kept; there is simply
+      // nothing to paint on (see contextOf).
+      const ctx = contextOf(node);
+      if (!ctx) return;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      redraw(node, strokesRef.current);
+      redraw(ctx, strokesRef.current);
     };
     fit();
     observerRef.current = new ResizeObserver(fit);
@@ -172,11 +183,14 @@ export function useSignaturePad({ onChange } = {}) {
       // it hugs for its first half: the stub left past the bend is under a
       // sample apart, inside the round cap.
       const segments = strokeSegments(stroke);
-      drawSegment(
-        canvas,
-        stroke.length === 2 ? segments[0] : segments[segments.length - 2],
-        live.width,
-      );
+      const ctx = contextOf(canvas);
+      if (ctx) {
+        drawSegment(
+          ctx,
+          stroke.length === 2 ? segments[0] : segments[segments.length - 2],
+          live.width,
+        );
+      }
 
       live.last = p;
       live.time = e.timeStamp;
@@ -203,7 +217,8 @@ export function useSignaturePad({ onChange } = {}) {
         if (stroke && stroke.length >= 3) {
           const segments = strokeSegments(stroke);
           const tail = segments[segments.length - 1];
-          if (tail.type === 'L') drawSegment(canvas, tail, live.width);
+          const ctx = contextOf(canvas);
+          if (ctx && tail.type === 'L') drawSegment(ctx, tail, live.width);
         }
       }
       liveRef.current = null;
@@ -216,9 +231,11 @@ export function useSignaturePad({ onChange } = {}) {
     strokesRef.current = [];
     countRef.current = 0;
     liveRef.current = null;
+    // The state reset above never waits on the canvas: with no context there
+    // is no ink on screen to wipe, and the pad still reads as cleared.
     const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
+    const ctx = contextOf(canvas);
+    if (ctx) {
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -279,9 +296,10 @@ function traceSegment(ctx, seg) {
   }
 }
 
-// Paint one segment live, in isolation, at the current velocity width.
-function drawSegment(canvas, seg, width) {
-  const ctx = canvas.getContext('2d');
+// Paint one segment live, in isolation, at the current velocity width. Takes
+// the context, not the canvas: callers acquire it through contextOf and skip
+// the call when there is none.
+function drawSegment(ctx, seg, width) {
   strokeStyle(ctx, width);
   ctx.beginPath();
   ctx.moveTo(seg.from.x, seg.from.y);
@@ -294,9 +312,8 @@ function drawSegment(canvas, seg, width) {
 // velocity widths aren't retained, and a rare resize repaint reading slightly
 // evener than the live ink is an honest trade. A single-sample dot is drawn
 // as a disc outright rather than trusting every engine to cap a zero-length
-// line.
-function redraw(canvas, strokes) {
-  const ctx = canvas.getContext('2d');
+// line. Takes the context (see drawSegment).
+function redraw(ctx, strokes) {
   strokeStyle(ctx, (WIDTH_MAX + WIDTH_MIN) / 2);
   for (const stroke of strokes) {
     if (!stroke.length) continue;

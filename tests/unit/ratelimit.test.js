@@ -14,12 +14,17 @@ delete process.env.UPSTASH_REDIS_REST_TOKEN;
 process.env.GUESTBOOK_DRIVER = 'json';
 
 const NOW = new Date('2026-08-23T12:00:00.000Z').getTime();
-const msg = (username, msAgo, id = `${username}-${msAgo}`) => ({
+// Rows carry the identity KEY the limiter compares (identity.js). The limiter
+// treats keys as opaque strings — real ones read github:<id> / google:<sub> —
+// so the cases below use short names as keys; the login beside each is a
+// decoy that must never match anything.
+const msg = (userKey, msAgo, id = `${userKey}-${msAgo}`) => ({
   id,
-  author: { name: username, username, avatar: null },
+  author: { name: userKey, username: 'a-login-not-the-key', avatar: null, key: userKey },
   message: 'hello there',
   createdAt: new Date(NOW - msAgo).toISOString(),
 });
+const at = (msAgo) => new Date(NOW - msAgo).toISOString();
 
 describe('latestPostTime', () => {
   it('finds the newest post for the user, ignoring others', async () => {
@@ -33,6 +38,21 @@ describe('latestPostTime', () => {
     expect(latestPostTime(messages, 'carol')).toBe(null);
   });
 
+  it('compares the identity key, never the login — and reads a legacy Google row by its username', async () => {
+    const { latestPostTime } = await import('@/lib/guestbook/ratelimit');
+    const messages = [
+      { id: 'r1', author: { name: 'A', username: 'alice', key: 'github:1', avatar: null }, createdAt: at(1000) },
+      // Before keys existed a Google author's sub was stored AS the username.
+      { id: 'r2', author: { name: 'G', username: 'google:42', avatar: null }, createdAt: at(2000) },
+      // …and a GitHub author's login was. That row keys nothing now.
+      { id: 'r3', author: { name: 'L', username: 'legacy-login', avatar: null }, createdAt: at(3000) },
+    ];
+    expect(latestPostTime(messages, 'github:1')).toBe(NOW - 1000);
+    expect(latestPostTime(messages, 'alice')).toBe(null);
+    expect(latestPostTime(messages, 'google:42')).toBe(NOW - 2000);
+    expect(latestPostTime(messages, 'legacy-login')).toBe(null);
+  });
+
   it('survives malformed rows', async () => {
     const { latestPostTime } = await import('@/lib/guestbook/ratelimit');
     const messages = [{}, { author: {} }, msg('alice', 5000)];
@@ -42,8 +62,8 @@ describe('latestPostTime', () => {
 
 // An ADMITTED check reserves the slot in module memory (mirroring the Redis
 // limiter, which consumes a token at check time), so each case below uses its
-// own username — a user admitted in one case is, correctly, inside the window
-// for the next.
+// own key — a user admitted in one case is, correctly, inside the window for
+// the next.
 describe('checkRateLimit (json driver path)', () => {
   let dataPath;
 
@@ -175,8 +195,8 @@ describe('checkPresenceRateLimit (in-memory path)', () => {
 });
 
 // The reaction budget's in-memory path — the same helper as presence, keyed
-// by the session username rather than an address hash. As above, the window
-// state is module-scoped, so every case uses its own user.
+// by the session's identity key rather than an address hash. As above, the
+// window state is module-scoped, so every case uses its own user.
 describe('checkReactionRateLimit (in-memory path)', () => {
   const fillBudget = async (check, budget, user) => {
     for (let i = 0; i < budget; i++) {

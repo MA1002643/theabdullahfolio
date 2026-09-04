@@ -157,8 +157,9 @@ export const jsonDriver = {
     });
   },
 
-  // Reactions ride inside each stored message as a private `{ username: key }`
-  // map (the route collapses it to counts before anything leaves the server).
+  // Reactions ride inside each stored message as a private `{ userKey: key }`
+  // map — the reactor's identity key (identity.js) to their reaction — which
+  // the route collapses to counts before anything leaves the server.
   async getReactions(ids) {
     const messages = await readAll();
     const byId = {};
@@ -170,14 +171,14 @@ export const jsonDriver = {
 
   // key = a reaction key to set, null to clear. Returns the updated map, or
   // null when the message doesn't exist.
-  setReaction(id, username, key) {
+  setReaction(id, userKey, key) {
     return serialize(async () => {
       const messages = await readAll();
       const msg = messages.find((m) => m.id === id);
       if (!msg) return null;
       const map = { ...(msg.reactions || {}) };
-      if (key === null) delete map[username];
-      else map[username] = key;
+      if (key === null) delete map[userKey];
+      else map[userKey] = key;
       msg.reactions = map;
       await writeAll(messages);
       return map;

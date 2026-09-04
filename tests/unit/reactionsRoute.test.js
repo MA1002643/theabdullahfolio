@@ -40,7 +40,7 @@ describe('POST /api/guestbook/reactions — per-user budget', () => {
     const store = await import('@/lib/guestbook/store');
     await store.addMessage({
       id: 'm1',
-      author: { name: 'Owner', username: 'owner', avatar: null },
+      author: { name: 'Owner', username: 'owner', avatar: null, key: 'github:1' },
       message: 'react to me',
       createdAt: new Date().toISOString(),
     });
@@ -50,7 +50,7 @@ describe('POST /api/guestbook/reactions — per-user budget', () => {
     const { POST } = await import('@/app/api/guestbook/reactions/route');
     const { REACTIONS_PER_MINUTE } = await import('@/lib/guestbook/ratelimit');
     const { getReactions } = await import('@/lib/guestbook/store');
-    sessionUser = { username: 'alice', name: 'Alice' };
+    sessionUser = { key: 'github:2', username: 'alice', name: 'Alice' };
 
     let last;
     for (let i = 0; i < REACTIONS_PER_MINUTE; i++) {
@@ -67,13 +67,14 @@ describe('POST /api/guestbook/reactions — per-user budget', () => {
     expect((await denied.json()).error).toMatch(/too many reactions/i);
 
     // The refused toggle never reached the store: alice's reaction is still
-    // the last one that was accepted.
-    expect((await getReactions(['m1'])).m1).toEqual({ alice: last });
+    // the last one that was accepted — filed under her identity KEY, not her
+    // login (identity.js).
+    expect((await getReactions(['m1'])).m1).toEqual({ 'github:2': last });
   });
 
   it('another user is still served', async () => {
     const { POST } = await import('@/app/api/guestbook/reactions/route');
-    sessionUser = { username: 'bob', name: 'Bob' };
+    sessionUser = { key: 'github:3', username: 'bob', name: 'Bob' };
     const res = await POST(post({ id: 'm1', key: 'heart' }));
     expect(res.status).toBe(200);
   });
@@ -81,7 +82,7 @@ describe('POST /api/guestbook/reactions — per-user budget', () => {
   it('malformed bodies are rejected before they touch the budget', async () => {
     const { POST } = await import('@/app/api/guestbook/reactions/route');
     const { REACTIONS_PER_MINUTE } = await import('@/lib/guestbook/ratelimit');
-    sessionUser = { username: 'carol', name: 'Carol' };
+    sessionUser = { key: 'github:4', username: 'carol', name: 'Carol' };
 
     // A whole budget's worth of bad keys — every one a 400, none a spend…
     for (let i = 0; i < REACTIONS_PER_MINUTE; i++) {
@@ -95,5 +96,10 @@ describe('POST /api/guestbook/reactions — per-user budget', () => {
     const { POST } = await import('@/app/api/guestbook/reactions/route');
     sessionUser = null;
     expect((await POST(post({ id: 'm1', key: 'fire' }))).status).toBe(401);
+    // So is a session from before identity keys existed: a login is not an
+    // identity the hash could be keyed by.
+    sessionUser = { username: 'dave', name: 'Dave' };
+    expect((await POST(post({ id: 'm1', key: 'fire' }))).status).toBe(401);
+    sessionUser = null;
   });
 });

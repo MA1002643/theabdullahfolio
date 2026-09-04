@@ -182,3 +182,45 @@ describe('useSignaturePad — the canvas paints the serialiser\'s geometry', () 
     expect(result.current.toPathString()).toMatch(/ L 25\.0 15\.5$/);
   });
 });
+
+// getContext('2d') is nullable — canvas disabled by policy, a headless or
+// resource-starved renderer, a lost context. The pad's canvas mounts when the
+// optional signature panel opens, so a throw on attach would take the panel
+// (and the preset marks beside the pad) down with it. Every canvas path must
+// no-op instead, the way the reaction burst already does; the pad's state
+// machine keeps working so a clear still clears.
+describe('useSignaturePad — no 2D context', () => {
+  function contextlessCanvas() {
+    const node = document.createElement('canvas');
+    Object.defineProperty(node, 'clientWidth', { value: 200, configurable: true });
+    Object.defineProperty(node, 'clientHeight', { value: 80, configurable: true });
+    node.getContext = () => null;
+    node.setPointerCapture = () => {};
+    node.hasPointerCapture = () => true;
+    node.releasePointerCapture = () => {};
+    return node;
+  }
+
+  it('attaching, drawing, resizing and clearing all no-op instead of throwing', () => {
+    const { result } = renderHook(() => useSignaturePad());
+    const node = contextlessCanvas();
+    expect(() => act(() => result.current.canvasRef(node))).not.toThrow();
+
+    expect(() => {
+      draw(result.current, STROKE);
+      act(() => result.current.handlers.onPointerUp(ev(50, 31, 80)));
+    }).not.toThrow();
+    expect(result.current.hasInk).toBe(true);
+
+    // The observer fires on a box change: the repaint must no-op too.
+    Object.defineProperty(node, 'clientWidth', { value: 400, configurable: true });
+    expect(() => act(() => resizeCallbacks.forEach((cb) => cb()))).not.toThrow();
+
+    expect(() => act(() => result.current.clear())).not.toThrow();
+    expect(result.current.hasInk).toBe(false);
+    expect(result.current.toPathString()).toBe(null);
+
+    // Detach is clean as well.
+    expect(() => act(() => result.current.canvasRef(null))).not.toThrow();
+  });
+});

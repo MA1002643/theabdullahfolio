@@ -2,7 +2,9 @@
 // with two implementations behind one call, chosen the same way the store
 // picks its driver:
 //
-//   POSTING — 1 message per user per 5 minutes, keyed by username.
+//   POSTING — 1 message per user per 5 minutes, keyed by the session's
+//     identity key (identity.js: the provider account id — never the login,
+//     which a rename would turn into a fresh, empty budget).
 //     redis available → @upstash/ratelimit sliding window under guestbook:rl:
 //                       — survives serverless cold starts and concurrent
 //                       instances, which an in-memory map can't.
@@ -26,7 +28,7 @@
 //     otherwise        → a module-scoped sliding window (mirrors presence.js's
 //                       own dev fallback).
 //
-//   REACTIONS — REACTIONS_PER_MINUTE per user (the session username), because
+//   REACTIONS — REACTIONS_PER_MINUTE per user (the session's identity key), because
 //     /api/guestbook/reactions is an authenticated mutation that costs a Redis
 //     script per call and, unlike posting and presence, was unmetered: one
 //     valid session toggling a reaction in a loop could generate unbounded
@@ -47,6 +49,7 @@ import { createHash } from 'node:crypto';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, redisAvailable } from './redisDriver';
 import { getMessages } from './store';
+import { authorKey } from './identity';
 
 export const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 export const PRESENCE_BEATS_PER_MINUTE = 30;
@@ -63,18 +66,20 @@ const limiter = redisAvailable
   : null;
 
 // Pure helper (exported for unit tests): given the stored messages, when did
-// `username` last post, in ms since epoch — or null if they never have.
-export function latestPostTime(messages, username) {
+// the author keyed `userKey` last post, in ms since epoch — or null if they
+// never have. Compared on the stored author's KEY (authorKey — the legacy
+// Google form included), never on the login beside it.
+export function latestPostTime(messages, userKey) {
   let latest = null;
   for (const m of messages) {
-    if (m?.author?.username !== username) continue;
+    if (authorKey(m?.author) !== userKey) continue;
     const t = new Date(m.createdAt).getTime();
     if (Number.isFinite(t) && (latest === null || t > latest)) latest = t;
   }
   return latest;
 }
 
-// JSON path reservations: username → the `now` at which a check ADMITTED them.
+// JSON path reservations: user key → the `now` at which a check ADMITTED them.
 // The stored messages are the source of truth, but two requests can both read
 // them before either writes — a classic check-then-act race that would let one
 // user land two messages inside the window. So an admitted check also reserves
@@ -87,9 +92,9 @@ export function latestPostTime(messages, username) {
 // still holds the slot (fail closed). Reservations age out with the window.
 const jsonReservations = new Map();
 
-export async function checkRateLimit(username, now = Date.now()) {
+export async function checkRateLimit(userKey, now = Date.now()) {
   if (limiter && process.env.GUESTBOOK_DRIVER !== 'json') {
-    const { success, reset } = await limiter.limit(username);
+    const { success, reset } = await limiter.limit(userKey);
     if (success) return { ok: true };
     return {
       ok: false,
@@ -97,16 +102,16 @@ export async function checkRateLimit(username, now = Date.now()) {
     };
   }
 
-  const stored = latestPostTime(await getMessages(), username);
+  const stored = latestPostTime(await getMessages(), userKey);
   // ── synchronous from here to the return: check + reserve, no await ──
   for (const [user, at] of jsonReservations) {
     if (now - at >= RATE_LIMIT_WINDOW_MS) jsonReservations.delete(user);
   }
-  const reserved = jsonReservations.get(username) ?? null;
+  const reserved = jsonReservations.get(userKey) ?? null;
   const latest =
     stored === null ? reserved : reserved === null ? stored : Math.max(stored, reserved);
   if (latest === null || now - latest >= RATE_LIMIT_WINDOW_MS) {
-    jsonReservations.set(username, now);
+    jsonReservations.set(userKey, now);
     return { ok: true };
   }
   return {
@@ -190,8 +195,9 @@ export async function checkPresenceRateLimit(ip, now = Date.now()) {
   });
 }
 
-// Reactions: keyed by the session username — the identity the write itself
-// is bound to — so a budget follows the person, not the address.
+// Reactions: keyed by the session's identity key — the identity the write
+// itself is bound to — so a budget follows the person, not the address (and
+// not the login, which a rename would reset).
 const reactionLimiter = redisAvailable
   ? new Ratelimit({
       redis,
@@ -203,12 +209,12 @@ const reactionLimiter = redisAvailable
 
 const reactionMemory = new Map();
 
-export async function checkReactionRateLimit(username, now = Date.now()) {
+export async function checkReactionRateLimit(userKey, now = Date.now()) {
   // The posting rule, not the presence one: the limiter lives where the
   // reactions do, so an explicit json driver (the e2e's hermetic server)
   // keeps it in memory even when Redis credentials happen to be present.
   if (reactionLimiter && process.env.GUESTBOOK_DRIVER !== 'json') {
-    const { success, reset } = await reactionLimiter.limit(username);
+    const { success, reset } = await reactionLimiter.limit(userKey);
     if (success) return { ok: true };
     return {
       ok: false,
@@ -216,7 +222,7 @@ export async function checkReactionRateLimit(username, now = Date.now()) {
     };
   }
 
-  return memoryWindow(reactionMemory, username, {
+  return memoryWindow(reactionMemory, userKey, {
     limit: REACTIONS_PER_MINUTE,
     windowMs: REACTION_LIMIT_WINDOW_MS,
     now,

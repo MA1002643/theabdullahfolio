@@ -83,21 +83,23 @@ beforeEach(() => {
 });
 
 describe('redisDriver — atomic reaction write', () => {
-  it('sends one script with both keys, the username and the reaction key', async () => {
+  it("sends one script with both keys, the reactor's identity key and the reaction key", async () => {
     const d = await driver();
-    state.scriptReply = ['bob', 'fire', '123', 'heart'];
-    const map = await d.setReaction('m1', 'bob', 'fire');
+    // A reply mixing a current field (identity key) with a legacy one (a bare
+    // login that happens to look numeric).
+    state.scriptReply = ['github:7', 'fire', '123', 'heart'];
+    const map = await d.setReaction('m1', 'github:7', 'fire');
 
     expect(state.scripts).toHaveLength(1);
     const script = state.scripts[0];
     expect(script.exec).toHaveBeenCalledTimes(1);
     expect(script.exec).toHaveBeenCalledWith(
       ['guestbook:msg:m1', 'guestbook:reactions:m1'],
-      ['bob', 'fire'],
+      ['github:7', 'fire'],
     );
     // The flat reply becomes a map with STRING keys, "123" included.
-    expect(map).toEqual({ bob: 'fire', 123: 'heart' });
-    expect(Object.keys(map)).toEqual(['123', 'bob']);
+    expect(map).toEqual({ 'github:7': 'fire', 123: 'heart' });
+    expect(Object.keys(map)).toEqual(['123', 'github:7']);
 
     // Nothing check-then-act about it: no client-side EXISTS / HSET / HGETALL.
     for (const c of state.clients) {

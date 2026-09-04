@@ -353,9 +353,9 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
       const optimistic = {
         id: `temp_${Date.now()}`,
         // Mirror the server's PUBLIC author shape on the pending card: a
-        // GitHub login is public (the card links it); a Google author's
-        // username is an internal id the server never sends, so the pending
-        // card carries none either — it shows the person's name.
+        // GitHub login is public (the card links it); a Google author has no
+        // handle — their identity key is internal and the server never sends
+        // it — so the pending card carries none either and shows the name.
         author: {
           name: user?.name || user?.username || 'You',
           ...(provider === 'github' && user?.username

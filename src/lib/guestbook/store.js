@@ -27,8 +27,8 @@
 //                       must never call it: it is unbounded in the wall's size.
 //   addMessage(msg) → msg
 //   deleteMessage(id) → boolean (whether anything was removed)
-//   getReactions(ids) → { [id]: { username: reactionKey } }
-//   setReaction(id, username, key | null) → updated map, or null if no message
+//   getReactions(ids) → { [id]: { userKey: reactionKey } }   (identity.js keys)
+//   setReaction(id, userKey, key | null) → updated map, or null if no message
 import { jsonDriver } from './jsonDriver';
 import { redisDriver, redisAvailable } from './redisDriver';
 
@@ -112,5 +112,5 @@ export const getMessages = () => driver.getMessages();
 export const addMessage = (message) => driver.addMessage(message);
 export const deleteMessage = (id) => driver.deleteMessage(id);
 export const getReactions = (ids) => driver.getReactions(ids);
-export const setReaction = (id, username, key) =>
-  driver.setReaction(id, username, key);
+export const setReaction = (id, userKey, key) =>
+  driver.setReaction(id, userKey, key);
