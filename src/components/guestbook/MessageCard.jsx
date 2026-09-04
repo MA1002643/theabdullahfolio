@@ -5,10 +5,10 @@ import {
   motion,
   useInView,
   useMotionTemplate,
-  useReducedMotion,
   useScroll,
   useTransform,
 } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Link2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCardTilt } from '@/hooks/useCardTilt';

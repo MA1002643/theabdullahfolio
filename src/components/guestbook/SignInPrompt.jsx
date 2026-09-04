@@ -1,6 +1,7 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { signIn } from 'next-auth/react';
 import { PenLine, Send } from 'lucide-react';
 import { FaGithub, FaGoogle } from 'react-icons/fa';

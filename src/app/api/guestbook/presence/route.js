@@ -6,7 +6,14 @@
 //                 the endpoint is deliberately unauthenticated. Over budget →
 //                 429 + Retry-After and the id is NOT registered, so the count
 //                 cannot be inflated past the budget per IP per minute.
-//   GET        → { count } read-only (nothing to register).
+//
+// POST is the only method. There used to be a read-only GET → { count } as
+// well, which nothing called (the client's heartbeat IS its read — the poll
+// and the register are one round-trip) yet cost a Redis prune + count on
+// every hit with no limiter in front of it: an unmetered path around the
+// budget above (code review). It is gone rather than metered — a read
+// nobody needs is not worth a second limiter key — and Next answers a
+// method this file does not export with 405.
 //
 // The id is a client-generated random UUID that exists only to dedupe tabs —
 // it is never linked to a session or an author, so presence stays anonymous
@@ -14,7 +21,7 @@
 // No auth: watching who's around is part of the read-only experience.
 import { NextResponse } from 'next/server';
 import { PRESENCE_ID_RE } from '@/lib/guestbook/anonId';
-import { heartbeat, presenceCount } from '@/lib/guestbook/presence';
+import { heartbeat } from '@/lib/guestbook/presence';
 import { checkPresenceRateLimit } from '@/lib/guestbook/ratelimit';
 
 export const dynamic = 'force-dynamic';
@@ -28,10 +35,6 @@ function clientIp(request) {
   const forwarded = request.headers.get('x-forwarded-for');
   const first = forwarded?.split(',')[0]?.trim();
   return first || 'unknown';
-}
-
-export async function GET() {
-  return NextResponse.json(await presenceCount());
 }
 
 export async function POST(request) {

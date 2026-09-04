@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useCountUp } from '@/hooks/useCountUp';
 
 // The "N here now" pill (issue #40 Phase 4) — the live-presence slot of the

@@ -6,6 +6,7 @@ import {
   compareNewest,
   isOlderThan,
   mergeNewestPage,
+  pageReachesPrefix,
   parseLimit,
   positionOf,
 } from '@/lib/guestbook/paging';
@@ -106,6 +107,49 @@ describe('cursor codec', () => {
       undefined,
     ];
     for (const value of bad) expect(decodeCursor(value)).toBe(null);
+  });
+});
+
+// Whether the poll's page can be joined to the prefix without a hole — the
+// question the poll asks before it merges, and keeps asking, page by page,
+// while the answer is no.
+describe('pageReachesPrefix (does the poll need to keep reading?)', () => {
+  const LIMIT = 3;
+  const m = (n, extra = {}) => at(`m${n}`, n * 60_000, extra);
+
+  it('a short page reaches: the server holds nothing older to miss', () => {
+    expect(pageReachesPrefix([m(9), m(8)], [m(4), m(3)], LIMIT)).toBe(true);
+    expect(pageReachesPrefix([], [m(4)], LIMIT)).toBe(true);
+  });
+
+  it('an empty or all-pending prefix reaches: there is nothing to join', () => {
+    expect(pageReachesPrefix([m(9), m(8), m(7)], [], LIMIT)).toBe(true);
+    expect(
+      pageReachesPrefix([m(9), m(8), m(7)], [m(20, { pending: true })], LIMIT),
+    ).toBe(true);
+  });
+
+  it('a shared id reaches, as does a page whose oldest is at or below the prefix top', () => {
+    expect(pageReachesPrefix([m(9), m(8), m(4)], [m(4), m(3)], LIMIT)).toBe(true);
+    // m4 deleted since — its position is still inside the page's range.
+    expect(pageReachesPrefix([m(9), m(5), m(3)], [m(4), m(2)], LIMIT)).toBe(true);
+    expect(pageReachesPrefix([m(9), m(8), m(4)], [m(5), m(4)], LIMIT)).toBe(true);
+  });
+
+  it('a FULL page entirely newer than the prefix top does NOT reach — that is the hole', () => {
+    expect(pageReachesPrefix([m(9), m(8), m(7)], [m(4), m(3)], LIMIT)).toBe(false);
+    // Adjacent by number is still a hole: nothing says m5 and m6 did not land.
+    expect(pageReachesPrefix([m(9), m(8), m(7)], [m(6)], LIMIT)).toBe(false);
+  });
+
+  it('a local card ABOVE the page (our own post, confirmed after the request was cut) is no join point', () => {
+    // m12 is newer than the page's top; the join the page must make is with
+    // m4 below it — and it does not.
+    expect(pageReachesPrefix([m(9), m(8), m(7)], [m(12), m(4), m(3)], LIMIT)).toBe(false);
+    // …until the page runs down to m4's range.
+    expect(
+      pageReachesPrefix([m(9), m(8), m(7), m(6), m(5), m(4)], [m(12), m(4), m(3)], 6),
+    ).toBe(true);
   });
 });
 

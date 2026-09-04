@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 
@@ -37,6 +37,11 @@ const mountFocusables = () => {
 };
 
 afterEach(() => {
+  // Unmount explicitly: without vitest globals RTL registers no auto-cleanup,
+  // so every renderHook above would otherwise stay mounted — each one a live
+  // window keydown listener that the next test's ⌘K also toggles, and whose
+  // close() re-targets focus. Unmount first, then clear the focusables.
+  cleanup();
   document.body.innerHTML = '';
 });
 

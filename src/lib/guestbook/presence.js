@@ -9,7 +9,11 @@
 //
 // The abuse ceiling lives at the route: heartbeats are rate-limited per client
 // IP BEFORE heartbeat() is called (ratelimit.js → checkPresenceRateLimit), so
-// this module can stay a plain register-and-count.
+// this module can stay a plain register-and-count. That is its whole surface:
+// the heartbeat's reply IS the read. A separate count-only read used to live
+// here for the route's GET; both went together (code review — an unmetered
+// Redis prune + count per call), so every Redis touch this module makes now
+// sits behind the limiter.
 import { redis, redisAvailable } from './redisDriver';
 
 export const PRESENCE_WINDOW_MS = 60 * 1000;
@@ -29,21 +33,6 @@ export async function heartbeat(anonId, now = Date.now()) {
   }
 
   memory.set(anonId, now);
-  for (const [id, seen] of memory) {
-    if (now - seen > PRESENCE_WINDOW_MS) memory.delete(id);
-  }
-  return { count: memory.size };
-}
-
-export async function presenceCount(now = Date.now()) {
-  if (redisAvailable) {
-    const p = redis.pipeline();
-    p.zremrangebyscore(PRESENCE_KEY, 0, now - PRESENCE_WINDOW_MS);
-    p.zcard(PRESENCE_KEY);
-    const results = await p.exec();
-    return { count: Number(results[1]) || 0 };
-  }
-
   for (const [id, seen] of memory) {
     if (now - seen > PRESENCE_WINDOW_MS) memory.delete(id);
   }

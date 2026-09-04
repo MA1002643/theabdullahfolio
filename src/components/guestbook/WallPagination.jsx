@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Pagination for the guestbook wall, built as an INSTRUMENT in the site's

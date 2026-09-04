@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Search } from 'lucide-react';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 
@@ -80,10 +81,15 @@ export default function CommandPalette({ actions }) {
       >
         <div className="flex items-center gap-3 border-b border-[#ff6d05]/20 px-4 py-3">
           <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-[#f9d174]" />
+          {/* The combobox needs a name of its own (code review): the dialog's
+              label names the dialog, not this nested input, and a
+              placeholder is a hint that vanishes on the first keystroke —
+              never a persistent label. */}
           <input
             ref={inputRef}
             type="text"
             role="combobox"
+            aria-label="Search commands"
             aria-expanded="true"
             aria-controls="command-palette-list"
             aria-activedescendant={

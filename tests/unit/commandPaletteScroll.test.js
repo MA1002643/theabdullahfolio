@@ -53,7 +53,9 @@ const rowOf = (id) => document.getElementById(`palette-opt-${id}`).closest('li')
 function openPalette() {
   const utils = render(createElement(CommandPalette, { actions: ACTIONS }));
   act(() => hotkey());
-  const input = utils.getByRole('combobox');
+  // By accessible name, so every case here also holds the input to its
+  // label (the dialog's name does not reach a nested input).
+  const input = utils.getByRole('combobox', { name: 'Search commands' });
   return { ...utils, input };
 }
 

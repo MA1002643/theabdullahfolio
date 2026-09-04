@@ -6301,6 +6301,17 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   }
 }
 
+/* The guestbook's manual motion toggle (⌘K → Toggle motion) sets
+   data-motion="off" on the page's wrapper: the same verdict MotionConfig
+   hands framer, exposed for CSS, because a media query cannot see a
+   preference the visitor set in the palette (code review). Every guestbook
+   keyframe is gated here as well as under the OS query above — add both
+   gates to any new one. */
+[data-motion='off'] .gb-pending::after {
+  animation: none;
+  opacity: 0;
+}
+
 /* Guestbook message-body ink: the contact form's fire-amber gradient
    (same four stops as the FireTextarea overlay, 180deg — message bodies
    span a few lines, so the vertical axis reads as a real amber→ember

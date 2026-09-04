@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { useScramble } from '@/hooks/useScramble';
 import { NEW_MESSAGE_EVENT } from '@/lib/guestbook/events';

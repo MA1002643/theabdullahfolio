@@ -6,7 +6,10 @@ import {
   MAX_PAGE_LIMIT,
   PAGE_SIZE,
   appendOlder,
+  isOlderThan,
   mergeNewestPage,
+  pageReachesPrefix,
+  positionOf,
 } from '@/lib/guestbook/paging';
 
 // Data layer for the guestbook wall (issue #40): a cursor-paged read model
@@ -24,7 +27,10 @@ import {
 //                   leaf — plus one ahead, so "next" is always instant — is in
 //                   hand; a rail jump far down the wall takes a few bounded
 //                   requests, not one unbounded one
-//   · the poll    → ONLY the newest page, merged, never stomped (see poll)
+//   · the poll    → the newest page, merged, never stomped — following it
+//                   down, page by page, when more than a page has landed
+//                   since the last poll, until it reaches the prefix (see
+//                   poll: bounded at POLL_MAX_FETCHES, then a restart)
 //   · a deep link → loadUntil(id) walks older pages until the mark appears,
 //                   capped at DEEP_LINK_MAX_FETCHES requests
 // `count` is the server's total plus any optimistic card still pending, so
@@ -48,6 +54,10 @@ const DEEP_LINK_MAX_FETCHES = 10;
 // ensureLoaded's own loop guard: a rail jump can need several requests, but
 // never an unbounded number.
 const ENSURE_MAX_FETCHES = 10;
+// How far a poll follows the newest page down before it must reach the local
+// prefix (see poll): five pages is forty arrivals in one poll interval, which
+// the one-post-per-user-per-five-minutes limit makes a forty-author burst.
+const POLL_MAX_FETCHES = 5;
 
 async function fetchPage(limit, cursor) {
   const qs = new URLSearchParams({ limit: String(limit) });
@@ -149,19 +159,47 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
     [enqueue, setCursor, setMessages, setTotal],
   );
 
-  // Live refresh: the NEWEST page only, merged into the prefix (paging.js
+  // Live refresh: the NEWEST page, merged into the prefix (paging.js
   // mergeNewestPage): arrivals are flagged new, the window the page covers is
   // replaced by the server's copy (a card deleted elsewhere leaves, reaction
   // counts refresh), and the older local tail is kept as it was.
+  //
+  // THE HOLE (code review). When more than a page lands between two polls,
+  // one page shows only the newest PAGE_SIZE of them. Merged above the old
+  // tail, the rest would sit in a hole between the two — and because the
+  // prefix's continuation cursor still points below that tail, no later
+  // fetch could ever recover them: a silent loss. So a full page that does
+  // not reach the prefix (paging.js pageReachesPrefix) is followed down,
+  // page by page from its own cursor, until one does — at most
+  // POLL_MAX_FETCHES requests. Past that bound the prefix restarts from the
+  // top with what was fetched, contiguous by construction, and the older
+  // leaves refill from that cursor as the visitor pages to them: cards
+  // re-fetched, never cards missing.
   const poll = useCallback(
     () =>
       enqueue(async () => {
         try {
-          const { list, count, nextCursor } = await fetchPage(PAGE_SIZE);
-          const prev = messagesRef.current;
-          if (prev) {
-            const known = new Set(prev.map((m) => m.id));
-            const fresh = list.filter((m) => !known.has(m.id)).map((m) => m.id);
+          const loaded = messagesRef.current;
+          const prev = loaded ?? [];
+          let { list: pages, count, nextCursor } = await fetchPage(PAGE_SIZE);
+          let requested = PAGE_SIZE;
+          for (
+            let fetches = 1;
+            nextCursor &&
+            fetches < POLL_MAX_FETCHES &&
+            !pageReachesPrefix(pages, prev, requested);
+            fetches += 1
+          ) {
+            const more = await fetchPage(PAGE_SIZE, nextCursor);
+            pages = dedupeById([...pages, ...more.list]);
+            requested += PAGE_SIZE;
+            ({ count, nextCursor } = more);
+          }
+
+          // Arrivals glow — but only once there IS a wall to arrive on.
+          if (loaded) {
+            const known = new Set(loaded.map((m) => m.id));
+            const fresh = pages.filter((m) => !known.has(m.id)).map((m) => m.id);
             if (fresh.length) {
               setNewIds((s) => {
                 const next = new Set(s);
@@ -170,13 +208,32 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
               });
             }
           }
-          setMessages((cur) => mergeNewestPage(cur ?? [], list, PAGE_SIZE));
-          // The page's cursor only continues from the page itself: when the
-          // prefix already reaches further down the wall, its own cursor is
-          // the one to keep — unless the server says there is nothing older
-          // at all, which is true regardless of what we hold.
-          const reachesFurther = (prev?.length ?? 0) > list.length;
-          if (!nextCursor || !reachesFurther) setCursor(nextCursor);
+
+          if (pageReachesPrefix(pages, prev, requested)) {
+            setMessages((cur) => mergeNewestPage(cur ?? [], pages, requested));
+            // The fetched cursor only continues from the fetched pages: while
+            // the merge keeps the prefix's older tail, the prefix's own cursor
+            // is the one to keep — unless the server says there is nothing
+            // older at all, which is true regardless of what we hold.
+            const tailKept =
+              pages.length >= requested &&
+              prev.some(
+                (m) =>
+                  !m.pending &&
+                  isOlderThan(positionOf(m), positionOf(pages[pages.length - 1])),
+              );
+            if (!nextCursor || !tailKept) setCursor(nextCursor);
+          } else {
+            // The walk hit its bound without reaching the prefix. A prefix
+            // with a hole in it is the one thing never to keep: restart it
+            // from the top with the contiguous run just fetched, pending
+            // cards riding on top, and continue from that run's own cursor.
+            setMessages((cur) => [
+              ...(cur ?? []).filter((m) => m.pending),
+              ...pages,
+            ]);
+            setCursor(nextCursor);
+          }
           setTotal(count);
           setLoadError(null);
         } catch (err) {

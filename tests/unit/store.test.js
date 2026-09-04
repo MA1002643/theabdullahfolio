@@ -224,8 +224,10 @@ describe('jsonDriver — serialised mutations, atomic writes', () => {
     process.env.GUESTBOOK_JSON_PATH = dataPath;
     await jsonDriver.addMessage(sample('after'));
     expect((await jsonDriver.getMessages()).map((m) => m.id)).toEqual(['after']);
-    // The failed attempt left nothing behind either.
-    expect(await readdir(dir)).toEqual(['blocker', 'guestbook.json']);
+    // The failed attempt left nothing behind either. Sorted: readdir order is
+    // whatever the filesystem hands back (APFS and ext4 both walk a hashed
+    // B-tree), so two entries can arrive in either order.
+    expect((await readdir(dir)).sort()).toEqual(['blocker', 'guestbook.json']);
   });
 });
 

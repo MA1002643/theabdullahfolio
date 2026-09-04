@@ -20,7 +20,13 @@ const AuroraDust = dynamic(() => import('./AuroraDust'), {
 // first paint / LCP). The layer is fixed, pointer-inert, and composited
 // `mix-blend: screen` so it only adds warm light over the dark backdrop —
 // sitting above the black overlay (-z-40) but below the content.
-export default function AuroraDustMount() {
+//
+// `enabled` (default true) is a page's OWN say on top of the OS query — the
+// guestbook hands it its manual motion toggle, which reaches framer through
+// MotionConfig but could not reach this mount's media query (code review).
+// Off, the canvas unmounts and the static image shows, exactly as under the
+// OS preference; the query still rules whenever the page says nothing.
+export default function AuroraDustMount({ enabled = true }) {
   const revealed = useLoaderRevealed();
   const [motionOk, setMotionOk] = useState(false);
 
@@ -32,7 +38,7 @@ export default function AuroraDustMount() {
     return onMediaChange(mq, apply);
   }, []);
 
-  if (!motionOk || !revealed) return null;
+  if (!enabled || !motionOk || !revealed) return null;
 
   return (
     <div

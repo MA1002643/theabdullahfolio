@@ -1,7 +1,8 @@
 'use client';
 
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Eraser, PenLine } from 'lucide-react';
 import { useSignaturePad } from '@/hooks/useSignaturePad';
 import { wordFill } from '@/lib/fireRamp';

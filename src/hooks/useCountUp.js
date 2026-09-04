@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { animateToTarget } from '@/utils/animationCurves';
 
 // Elite count-up as a hook (issue #40 follow-up): the same sprint-then-settle

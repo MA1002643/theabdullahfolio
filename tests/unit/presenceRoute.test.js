@@ -24,7 +24,8 @@ const post = (id, headers) =>
 // share its module state (presence set + limiter window).
 describe('POST /api/guestbook/presence — unique-id flood from one client', () => {
   it('registers beats up to the budget, then refuses without counting them', async () => {
-    const { POST, GET } = await import('@/app/api/guestbook/presence/route');
+    const route = await import('@/app/api/guestbook/presence/route');
+    const { POST } = route;
     const { PRESENCE_BEATS_PER_MINUTE } = await import(
       '@/lib/guestbook/ratelimit'
     );
@@ -40,16 +41,17 @@ describe('POST /api/guestbook/presence — unique-id flood from one client', () 
     expect(denied.status).toBe(429);
     expect(Number(denied.headers.get('retry-after'))).toBeGreaterThan(0);
 
-    // The refused id was never registered: the count is pinned at the budget.
-    expect((await (await GET()).json()).count).toBe(PRESENCE_BEATS_PER_MINUTE);
-  });
+    // Another client is still served — and its reply is the read: the
+    // refused id was never registered, so the count is the budget plus this
+    // one beat, not plus two.
+    const other = await POST(post('someone-else-0001', { 'x-real-ip': '198.51.100.8' }));
+    expect(other.status).toBe(200);
+    expect((await other.json()).count).toBe(PRESENCE_BEATS_PER_MINUTE + 1);
 
-  it('another client is still served', async () => {
-    const { POST } = await import('@/app/api/guestbook/presence/route');
-    const res = await POST(
-      post('someone-else-0001', { 'x-real-ip': '198.51.100.8' }),
-    );
-    expect(res.status).toBe(200);
+    // POST is the route's only method. The read-only GET was an unmetered
+    // Redis prune + count per call, around the budget above (code review);
+    // a method the file does not export is a 405 from Next, never a handler.
+    expect(route.GET).toBeUndefined();
   });
 
   it('malformed ids are rejected before they touch the budget', async () => {

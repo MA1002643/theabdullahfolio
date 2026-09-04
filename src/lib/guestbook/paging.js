@@ -69,6 +69,31 @@ export function isNewerThan(pos, than) {
 // top down to wherever the visitor has read. These two helpers are the only
 // ways that prefix changes shape from a fetch.
 
+// Does a newest page (or a run of them, `page`, `limit` requested in all)
+// REACH the local prefix `prev`, so mergeNewestPage can join the two without
+// a hole? It does when the page is short (the server holds nothing older, so
+// there is nothing to miss); when nothing confirmed lies at or below the
+// page's top (nothing to join); when the two share an id; or when the page's
+// oldest is no newer than the prefix's top-at-or-below-the-page — that card's
+// position is inside the page's range, present or deleted since. It does NOT
+// when a FULL page lies entirely above that card: more may have landed
+// between two polls than one page shows, the rest would sit in the hole
+// between the page and the old tail, and the prefix's continuation cursor —
+// still pointing below that tail — could never recover them. Cards newer
+// than the page's top (our own post, confirmed after the poll's request was
+// cut) are not a join point: they sit above the page, not below it.
+export function pageReachesPrefix(page, prev, limit) {
+  if (page.length < limit) return true;
+  const top = positionOf(page[0]);
+  const below = prev.filter(
+    (m) => !m.pending && !isNewerThan(positionOf(m), top),
+  );
+  if (!below.length) return true;
+  const inPage = new Set(page.map((m) => m.id));
+  if (below.some((m) => inPage.has(m.id))) return true;
+  return !isNewerThan(positionOf(page[page.length - 1]), positionOf(below[0]));
+}
+
 // Merge the poll's newest page into the local prefix. The page is the
 // server's truth for the window it covers, so within that window the local
 // copy is REPLACED (a card deleted elsewhere leaves; reaction counts refresh;

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMessageRefine } from '@/hooks/useMessageRefine';
 
 // MessageRefine — the "polish my missive" affordance that sits beneath the
