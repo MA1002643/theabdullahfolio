@@ -12,8 +12,9 @@ import {
 import { decodeCursor, encodeCursor } from '@/lib/guestbook/cursor';
 
 // The guestbook's paging vocabulary: the shared order both drivers walk in,
-// the cursor codec the route mints and validates, and the two pieces of list
-// algebra the client hook uses to grow its prefix of the wall.
+// the cursor codec (shape-validated, deliberately unauthenticated — see the
+// header of cursor.js), and the two pieces of list algebra the client hook
+// uses to grow its prefix of the wall.
 
 const at = (id, ms, extra = {}) => ({
   id,
@@ -72,7 +73,21 @@ describe('cursor codec', () => {
     expect(decodeCursor(token)).toEqual(pos);
   });
 
-  it('rejects anything the server did not mint', () => {
+  it('accepts a hand-built, well-formed cursor: a position is public, not a capability', () => {
+    // No secret goes into a cursor, so anyone can build one — and that is
+    // the contract, not a gap: the wall is public and a position reaches
+    // nothing that following nextCursor would not. Minting the same
+    // position yields the very same bytes.
+    const pos = { t: 1767225600000, id: 'msg_1767225600000_ab12cd34' };
+    const handBuilt = Buffer.from(`${pos.t}:${pos.id}`, 'utf8').toString('base64url');
+    expect(decodeCursor(handBuilt)).toEqual(pos);
+    expect(encodeCursor(pos)).toBe(handBuilt);
+    // A position no message occupies is still a position.
+    const between = Buffer.from('1767225600500:nothing-here', 'utf8').toString('base64url');
+    expect(decodeCursor(between)).toEqual({ t: 1767225600500, id: 'nothing-here' });
+  });
+
+  it('rejects anything that is not cursor-shaped', () => {
     const b64 = (s) => Buffer.from(s, 'utf8').toString('base64url');
     const bad = [
       '',

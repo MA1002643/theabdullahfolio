@@ -1,10 +1,11 @@
 'use client';
 
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Eraser, PenLine } from 'lucide-react';
 import { useSignaturePad } from '@/hooks/useSignaturePad';
 import { wordFill } from '@/lib/fireRamp';
+import { PRESET_MARKS, SIGNATURE_VIEWBOX } from '@/lib/guestbook/signature';
 import { onMediaChange } from '@/lib/mediaQuery';
 
 // The signature slot under the compose input (issue #40 Phase 3), laid out
@@ -16,11 +17,18 @@ import { onMediaChange } from '@/lib/mediaQuery';
 // signature" toggle (kept on owner direction) and hands its parent either a
 // path string or null.
 //
-// Drawing is the ONLY input path (owner call, second pass — the preset-mark
-// radios are gone): the canvas is hand-driven ink, not ambient animation, so
-// it stays available under prefers-reduced-motion; on devices with no
-// pointer at all ((any-pointer: none)) there is nothing usable inside, so
-// the entire section renders nothing rather than an empty shell. `touch-none`
+// Drawing is the PRIMARY input path: the canvas is hand-driven ink, not
+// ambient animation, so it stays available under prefers-reduced-motion.
+// But a canvas is not focusable and has no keyboard model, so on its own it
+// shut out every keyboard-only visitor whose device still reports a pointer
+// (code review) — an aria-label names a control, it does not make one
+// operable. The four preset marks from signature.js are therefore offered
+// beneath the pad as real buttons (Tab-reachable, Space/Enter-operable, no
+// custom key handling to get wrong): the one signature path a keyboard can
+// take, and on devices with no pointer at all ((any-pointer: none)) the ONLY
+// thing the panel renders, in place of a pad nobody could draw on. The two
+// inputs are exclusive — choosing a mark clears the ink, a stroke drops the
+// mark — so what the parent holds is always exactly one of them. `touch-none`
 // is what makes finger-drawing work at all — without it the browser claims
 // the gesture for scrolling.
 //
@@ -48,12 +56,69 @@ function FireWords({ text }) {
   ));
 }
 
+// The preset marks as a row of toggle buttons — the reaction bar's
+// aria-pressed pattern, so a screen reader hears "Flourish, toggle button,
+// pressed" and the group needs no roving focus. Each renders its own path
+// in the signature's 100×40 space, so what the visitor picks is exactly the
+// glyph their card will carry.
+function PresetMarks({ selected, onSelect, labelId, label }) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+      <span
+        id={labelId}
+        className="font-mono text-[10px] uppercase tracking-[0.16em]"
+      >
+        <FireWords text={label} />
+      </span>
+      <div role="group" aria-labelledby={labelId} className="flex items-center gap-1.5">
+        {PRESET_MARKS.map(({ id, label: name, d }) => {
+          const pressed = selected === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onSelect(id)}
+              aria-pressed={pressed}
+              aria-label={name}
+              title={name}
+              className={`inline-flex h-8 w-14 items-center justify-center rounded-md border transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05] ${
+                pressed
+                  ? 'border-[#ff6d05]/60 bg-[#ff6d05]/15 text-[#f9d174]'
+                  : 'border-[#ff6d05]/25 text-[#ffd27d]/70 hover:border-[#ff6d05]/60 hover:text-[#ff6d05]'
+              }`}
+            >
+              <svg
+                viewBox={`0 0 ${SIGNATURE_VIEWBOX.width} ${SIGNATURE_VIEWBOX.height}`}
+                aria-hidden="true"
+                className="h-5 w-12 overflow-visible"
+              >
+                <path
+                  d={d}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function SignatureField({ onSignatureChange, resetSignal }) {
   const reduceMotion = useReducedMotion();
+  const marksLabelId = useId();
   const [open, setOpen] = useState(false);
   // Canvas holds ink (comp: the pad's dashed border turns solid ember the
   // moment a stroke lands, so "something is drawn here" reads at a glance).
   const [inked, setInked] = useState(false);
+  // The chosen preset's id, or null. Never set while `inked` is true — the
+  // handlers below keep the two exclusive.
+  const [mark, setMark] = useState(null);
   const [noPointer, setNoPointer] = useState(false);
   const pad = useSignaturePad();
   const emitRef = useRef(onSignatureChange);
@@ -74,34 +139,47 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
       lastReset.current = resetSignal;
       pad.clear();
       setInked(false);
+      setMark(null);
       setOpen(false);
     }
   }, [resetSignal, pad]);
 
+  // Drop whatever the visitor has — ink or mark — and tell the parent.
+  const clearAll = () => {
+    pad.clear();
+    setInked(false);
+    setMark(null);
+    emitRef.current?.(null);
+  };
+
   const toggle = () => {
-    if (open) {
-      pad.clear();
-      setInked(false);
-      emitRef.current?.(null);
-    }
+    if (open) clearAll();
     setOpen(!open);
   };
 
   const handlePointerUp = (e) => {
     pad.handlers.onPointerUp(e);
     const d = pad.toPathString();
-    setInked(Boolean(d));
+    // Nothing landed (a gesture that never became a stroke): leave whatever
+    // is chosen alone rather than wiping a selected mark with a null.
+    if (!d) return;
+    setMark(null);
+    setInked(true);
     emitRef.current?.(d);
   };
-  const clearAll = () => {
+
+  const selectMark = (id) => {
+    if (mark === id) {
+      clearAll();
+      return;
+    }
+    const preset = PRESET_MARKS.find((m) => m.id === id);
+    if (!preset) return;
     pad.clear();
     setInked(false);
-    emitRef.current?.(null);
+    setMark(id);
+    emitRef.current?.(preset.d);
   };
-
-  // No pointer of any kind → no way to draw → no section. All hooks above
-  // have already run, so the early return is order-safe.
-  if (noPointer) return null;
 
   return (
     <div className="border-t border-dashed border-[#f9d174]/15 pt-3">
@@ -148,29 +226,41 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
           transition={{ duration: 0.25, ease: 'easeOut' }}
           className="mt-3 space-y-3"
         >
-          {/* Dashed while waiting for ink, solid ember once a stroke lands
-              (comp's #pad / #pad.inked pair). The faint ember→dark wash
-              keeps the drawing area readable as a surface without fighting
-              the strokes. */}
-          <canvas
-            ref={pad.canvasRef}
-            onPointerDown={pad.handlers.onPointerDown}
-            onPointerMove={pad.handlers.onPointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            aria-label="Signature drawing area — draw with your mouse, finger, or pen."
-            className={`aspect-[5/2] w-full cursor-crosshair touch-none rounded-lg border bg-[linear-gradient(180deg,rgba(255,109,5,0.045),rgba(0,0,0,0.25))] transition-colors duration-300 ${
-              inked
-                ? 'border-solid border-[#ff6d05]/40'
-                : 'border-dashed border-[#f9d174]/20'
-            }`}
+          {/* No pointer of any kind → no way to draw → no pad; the marks
+              below are the whole panel. */}
+          {noPointer ? null : (
+            <>
+              {/* Dashed while waiting for ink, solid ember once a stroke
+                  lands (comp's #pad / #pad.inked pair). The faint ember→dark
+                  wash keeps the drawing area readable as a surface without
+                  fighting the strokes. */}
+              <canvas
+                ref={pad.canvasRef}
+                onPointerDown={pad.handlers.onPointerDown}
+                onPointerMove={pad.handlers.onPointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                aria-label="Signature drawing area — draw with your mouse, finger, or pen, or pick a preset mark below."
+                className={`aspect-[5/2] w-full cursor-crosshair touch-none rounded-lg border bg-[linear-gradient(180deg,rgba(255,109,5,0.045),rgba(0,0,0,0.25))] transition-colors duration-300 ${
+                  inked
+                    ? 'border-solid border-[#ff6d05]/40'
+                    : 'border-dashed border-[#f9d174]/20'
+                }`}
+              />
+              <p
+                aria-hidden="true"
+                className="text-center font-mono text-[10px] tracking-wide"
+              >
+                <FireWords text="Draw with your finger, trackpad or mouse — stroke weight follows your speed" />
+              </p>
+            </>
+          )}
+          <PresetMarks
+            selected={mark}
+            onSelect={selectMark}
+            labelId={marksLabelId}
+            label={noPointer ? 'Pick a mark' : 'Or pick a mark'}
           />
-          <p
-            aria-hidden="true"
-            className="text-center font-mono text-[10px] tracking-wide"
-          >
-            <FireWords text="Draw with your finger, trackpad or mouse — stroke weight follows your speed" />
-          </p>
         </motion.div>
       ) : null}
     </div>

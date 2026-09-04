@@ -173,3 +173,43 @@ describe('checkPresenceRateLimit (in-memory path)', () => {
     expect(presenceLimitKey('203.0.113.11')).not.toBe(key);
   });
 });
+
+// The reaction budget's in-memory path — the same helper as presence, keyed
+// by the session username rather than an address hash. As above, the window
+// state is module-scoped, so every case uses its own user.
+describe('checkReactionRateLimit (in-memory path)', () => {
+  const fillBudget = async (check, budget, user) => {
+    for (let i = 0; i < budget; i++) {
+      expect((await check(user, NOW + i * 1000)).ok).toBe(true);
+    }
+  };
+
+  it('allows the per-minute budget, then refuses with an honest retry time', async () => {
+    const { checkReactionRateLimit, REACTIONS_PER_MINUTE } = await import(
+      '@/lib/guestbook/ratelimit'
+    );
+    await fillBudget(checkReactionRateLimit, REACTIONS_PER_MINUTE, 'toggler');
+    // One over budget, 30s after the first reaction: the oldest frees at +60s.
+    const denied = await checkReactionRateLimit('toggler', NOW + 30 * 1000);
+    expect(denied.ok).toBe(false);
+    expect(denied.retryAfterSeconds).toBe(30);
+  });
+
+  it('keys per user — another session is unaffected by a spent one', async () => {
+    const { checkReactionRateLimit, REACTIONS_PER_MINUTE } = await import(
+      '@/lib/guestbook/ratelimit'
+    );
+    await fillBudget(checkReactionRateLimit, REACTIONS_PER_MINUTE, 'spent');
+    expect((await checkReactionRateLimit('spent', NOW + 30 * 1000)).ok).toBe(false);
+    expect((await checkReactionRateLimit('fresh', NOW + 30 * 1000)).ok).toBe(true);
+  });
+
+  it('slides: once the oldest reaction ages out, exactly one more is allowed', async () => {
+    const { checkReactionRateLimit, REACTIONS_PER_MINUTE } = await import(
+      '@/lib/guestbook/ratelimit'
+    );
+    await fillBudget(checkReactionRateLimit, REACTIONS_PER_MINUTE, 'slider');
+    expect((await checkReactionRateLimit('slider', NOW + 60 * 1000)).ok).toBe(true);
+    expect((await checkReactionRateLimit('slider', NOW + 60 * 1000)).ok).toBe(false);
+  });
+});

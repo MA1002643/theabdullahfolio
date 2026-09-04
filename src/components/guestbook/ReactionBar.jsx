@@ -18,12 +18,21 @@ const COUNT_SPRING = { type: 'spring', stiffness: 300, damping: 20 };
 // Hand-rolled burst: ~14 ember particles from the click point, 600ms, gravity
 // + fade, on a throwaway canvas over the button. Not canvas-confetti — that
 // library ships shapes/workers this 40-line effect doesn't need.
+//
+// Always returns a cancel function. The burst is decoration: when the browser
+// hands back no 2D context (canvas disabled by policy, a headless or
+// resource-starved renderer, the context lost) it must no-op — this runs
+// synchronously ahead of the reaction request, so a throw here would cost
+// the click its real job.
+const noop = () => {};
+
 function burst(canvas) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return noop;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const size = 96;
   canvas.width = size * dpr;
   canvas.height = size * dpr;
-  const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   const colors = ['#eab53e', '#ff6d05', '#fcf699', '#b16612'];
   const parts = Array.from({ length: 14 }, () => {

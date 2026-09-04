@@ -7,7 +7,11 @@
 //   GUESTBOOK_DRIVER=redis   → Upstash Redis (KV_REST_API_* / UPSTASH_*) —
 //                              REFUSES TO LOAD if those credentials are absent
 //                              (see resolveDriver) rather than falling back
-//   unset                    → redis whenever its env is present, else json
+//   unset                    → redis whenever its env is present; otherwise
+//                              json in development, and a REFUSAL TO LOAD in
+//                              a served production (see resolveDriver — the
+//                              file store is ephemeral on Vercel, so a silent
+//                              fallback would accept posts and lose them)
 //
 // Both drivers implement the same contract, which is what the driver unit
 // tests assert:
@@ -28,21 +32,24 @@
 import { jsonDriver } from './jsonDriver';
 import { redisDriver, redisAvailable } from './redisDriver';
 
+// SERVING under NODE_ENV=production — as opposed to `next build`, which also
+// evaluates route modules under that NODE_ENV (once per worker) but serves
+// nothing, so the driver chosen there is irrelevant: a warning would be noise
+// and a throw would break a credential-free CI build. Next marks that phase
+// in NEXT_PHASE. Both production guards below key on this.
+const servingProduction = () =>
+  process.env.NODE_ENV === 'production' &&
+  process.env.NEXT_PHASE !== 'phase-production-build';
+
 // The json driver is dev-only by contract: one process, one file, ephemeral on
 // Vercel — and its rate limit reserves slots in process memory, so a second
-// instance would not see the first's. Nothing stops a self-hoster from putting
-// a public `next start` on it, so say so once, loudly, in the log. A warning
-// rather than a throw: the e2e suite legitimately boots a production server on
-// the json driver. Only while SERVING: `next build` also evaluates route
-// modules under NODE_ENV=production (once per worker — the message printed
-// three times in a credential-free build), but nothing is served at build
-// time, so the driver chosen there is irrelevant and the warning would be
-// noise. Next marks that phase in NEXT_PHASE.
+// instance would not see the first's. When it is asked for EXPLICITLY under
+// production, say so once, loudly, in the log — a warning rather than a
+// throw, because the e2e suite legitimately boots a production server on the
+// json driver (GUESTBOOK_DRIVER=json, the Redis variables emptied on purpose).
+// The unrequested case is not a warning; see resolveDriver.
 function warnIfProduction(driver) {
-  if (
-    process.env.NODE_ENV === 'production' &&
-    process.env.NEXT_PHASE !== 'phase-production-build'
-  ) {
+  if (servingProduction()) {
     console.warn(
       '[guestbook] json storage driver active under NODE_ENV=production — it is ' +
         'single-process and non-durable (dev/e2e only). For a public deployment ' +
@@ -72,7 +79,28 @@ function resolveDriver() {
     }
     return redisDriver;
   }
-  return redisAvailable ? redisDriver : warnIfProduction(jsonDriver);
+  if (redisAvailable) return redisDriver;
+  // AUTO-SELECTION WITH NO REDIS. Right for `npm run dev` with zero services.
+  // In a SERVED production it is fatal, not a warning: the file store is
+  // ephemeral on Vercel, so a deployment that lost its KV integration (or a
+  // preview that never had one) would accept every post and drop it on the
+  // next cold start — and a console line nobody is watching does not make
+  // that safe. Refuse at load, naming the fix, exactly as the forced-redis
+  // branch does. The ONLY production route onto the json driver is asking
+  // for it by name (GUESTBOOK_DRIVER=json), which is what the e2e suite does
+  // and what its warning above is for.
+  if (servingProduction()) {
+    throw new Error(
+      'Guestbook storage: production is running without Redis credentials and ' +
+        'without an explicit GUESTBOOK_DRIVER — refusing to serve the json file ' +
+        'store, which is ephemeral on Vercel (posts would be accepted and lost ' +
+        'on the next cold start). Set KV_REST_API_URL + KV_REST_API_TOKEN (or ' +
+        'UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN), or set ' +
+        'GUESTBOOK_DRIVER=json only where a single-process, non-durable store ' +
+        'is intended (the e2e suite does).',
+    );
+  }
+  return jsonDriver;
 }
 
 const driver = resolveDriver();

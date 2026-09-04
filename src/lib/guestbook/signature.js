@@ -174,8 +174,10 @@ function clamp(v, min, max) {
   return Math.min(max, Math.max(min, v));
 }
 
-// Preset "marks" — the no-pointer / reduced-motion alternative to drawing
-// (issue #40 Phase 3), and the keyboard-reachable option for everyone else.
+// Preset "marks" — the keyboard-operable alternative to drawing, and the only
+// signature input on a device with no pointer at all (issue #40 Phase 3;
+// SignatureField offers them as real buttons beneath the pad, restored on
+// code review after a pass that had left the canvas as the sole path).
 // Hand-authored in the 100×40 signature space; every path here must pass
 // isValidSignaturePath, which the unit tests assert so a preset can never
 // drift out of the grammar it is the fallback for.

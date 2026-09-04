@@ -292,20 +292,28 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
       if (submitting) return false;
       setSubmitting(true);
 
+      const provider = user?.provider || 'github';
       const optimistic = {
         id: `temp_${Date.now()}`,
+        // Mirror the server's PUBLIC author shape on the pending card: a
+        // GitHub login is public (the card links it); a Google author's
+        // username is an internal id the server never sends, so the pending
+        // card carries none either — it shows the person's name.
         author: {
           name: user?.name || user?.username || 'You',
-          username: user?.username || '',
+          ...(provider === 'github' && user?.username
+            ? { username: user.username }
+            : {}),
           avatar: user?.image || null,
-          // Mirror the server's presentation rules on the pending card — a
-          // Google author must never flash their internal id.
-          provider: user?.provider || 'github',
+          provider,
         },
         message: text,
         ...(signature ? { signature } : {}),
         createdAt: new Date().toISOString(),
         pending: true,
+        // Ownership is the server's call per viewer (`isOwn`); for the card
+        // the viewer is posting right now, it is true by construction.
+        isOwn: true,
       };
       setMessages((prev) => [optimistic, ...(prev ?? [])]);
 
@@ -321,24 +329,36 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
         if (!res.ok) {
           throw new Error(data.error || 'Failed to post message');
         }
-        // The server stores the message before it answers, so a poll (or a
-        // reload) that ran while the POST was in flight can already have
-        // brought the real id in beside the pending card. Settle that INSIDE
+        // The server stores the message before it answers, so a read that ran
+        // while the POST was in flight can already reflect it. Settle INSIDE
         // the updater, against the list as it actually is — the ref mirror
-        // can be a render behind: drop the polled copy first, then let the
-        // pending card become the server's copy in its slot (otherwise the
-        // swap would mint a second card with the same id). The same verdict
-        // decides the total: a polled copy was counted by that poll already.
+        // can be a render behind. THE CARD: a poll or reload re-reads the
+        // newest page, so it may have brought the real id in beside the
+        // pending card — drop that copy first, then let the pending card
+        // become the server's copy in its slot (otherwise the swap would mint
+        // a second card with the same id). THE TOTAL: settled from the 201's
+        // own `count`, the size the server read just after the store — never
+        // by incrementing. Whether the list holds the id says nothing about
+        // the total: an older-page fetch in flight (a rail jump, a deep link)
+        // cannot list a message newer than its cursor, yet the count it
+        // carried already included it, and adding one to that was a double
+        // count. The list heuristic survives only as the fallback for a 201
+        // without a count (an older server mid-deploy).
+        const { count, ...confirmed } = data;
         setWall((w) => {
           const list = w.list ?? [];
-          const polled = list.some((m) => m.id === data.id);
-          const base = polled ? list.filter((m) => m.id !== data.id) : list;
+          const polled = list.some((m) => m.id === confirmed.id);
+          const base = polled ? list.filter((m) => m.id !== confirmed.id) : list;
           return {
-            list: base.map((m) => (m.id === optimistic.id ? data : m)),
-            total: polled ? w.total : w.total + 1,
+            list: base.map((m) => (m.id === optimistic.id ? confirmed : m)),
+            total: Number.isFinite(count)
+              ? count
+              : polled
+                ? w.total
+                : w.total + 1,
           };
         });
-        setNewIds((prev) => new Set(prev).add(data.id));
+        setNewIds((prev) => new Set(prev).add(confirmed.id));
         toast.success('Message posted!');
         return true;
       } catch (err) {
@@ -433,15 +453,24 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Failed to delete message');
       // The mirror of the submit race: a poll that ran while the DELETE was
-      // in flight still saw the message on the server and revived the card
-      // (and restored it to the total). Now that the server has confirmed,
-      // take both back — a no-op when no poll intervened.
+      // in flight still saw the message on the server and revived the card;
+      // any read in flight — an older page included — may have carried a
+      // count that still had it. Now that the server has confirmed, the
+      // revived card goes, and the total is the 200's own `count`, the size
+      // after the removal — whether or not the fetched page held the card.
+      // Without a count (an older server) the revival decides, as before.
       setWall((w) => {
         const list = w.list ?? [];
-        if (!list.some((m) => m.id === id)) return w;
+        const revived = list.some((m) => m.id === id);
+        const settled = Number.isFinite(data.count);
+        if (!revived && !settled) return w;
         return {
-          list: list.filter((m) => m.id !== id),
-          total: Math.max(0, w.total - 1),
+          list: revived ? list.filter((m) => m.id !== id) : list,
+          total: settled
+            ? data.count
+            : revived
+              ? Math.max(0, w.total - 1)
+              : w.total,
         };
       });
       toast.success(

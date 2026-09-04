@@ -18,9 +18,15 @@ export function timeAgo(dateString, now = Date.now()) {
   if (seconds < HOUR) return `${Math.floor(seconds / MINUTE)}m ago`;
   if (seconds < DAY) return `${Math.floor(seconds / HOUR)}h ago`;
   if (seconds < MONTH) return `${Math.floor(seconds / DAY)}d ago`;
+  // The absolute date is fixed to UTC (code review): the card is a Client
+  // Component that also server-renders, and a timestamp near midnight would
+  // otherwise format to one date on the UTC server and another in the
+  // visitor's zone — a hydration mismatch, and a posting date that changed
+  // with where it was read. One zone, one date, for every render.
   return new Date(then).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }

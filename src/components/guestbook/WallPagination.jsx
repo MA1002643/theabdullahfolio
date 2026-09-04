@@ -28,6 +28,43 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 // centring classes on those spans are never overwritten; each is a single
 // tiny absolutely-positioned node, so the layout cost is nil. No Tailwind
 // `transition` utilities anywhere near the animated spans.
+//
+// The graduations are CSS, not DOM (code review): one span per page grew
+// the control linearly with the wall — hundreds of decorative nodes on a
+// long-lived wall, all re-rendered on every flip and count change, while
+// the wall itself mounts eight cards. Now a 1px tick is a linear-gradient
+// tile repeated across the rail by background-size, so the rail is the same
+// five nodes at two pages or two thousand. The tile is (100% − 1px) / tiles
+// wide so the last tick lands inside the box at the far end rather than a
+// pixel past it. Past MAX_TICK_INTERVALS the scale thins to every k-th page:
+// on the 280px rail that is a 10px minimum pitch, below which graduations
+// read as a smear rather than a scale — and the rail's job is the comet's
+// position on the whole, which the filament and the odometer carry exactly.
+
+export const MAX_TICK_INTERVALS = 28;
+
+// How many tiles (tick pitches) the rail is divided into: one per page gap
+// while that fits, else the coarsest even thinning that keeps the pitch
+// readable. Fractional is fine — the tiles are a background, and a partial
+// last tile just means the final page has no tick of its own.
+export function tickTiles(pageCount) {
+  const intervals = Math.max(1, pageCount - 1);
+  const step = Math.ceil(intervals / MAX_TICK_INTERVALS);
+  return intervals / step;
+}
+
+const TICK_IMAGE =
+  'linear-gradient(to right, currentColor 0 1px, transparent 1px)';
+
+// Exported for the unit test: jsdom's CSS engine drops calc() values for
+// background-size, so the exact tile string is pinned here, not off the DOM.
+export function tickStyle(pageCount) {
+  return {
+    backgroundImage: TICK_IMAGE,
+    backgroundSize: `calc((100% - 1px) / ${tickTiles(pageCount)}) 100%`,
+    backgroundRepeat: 'repeat-x',
+  };
+}
 
 const BTN_CLASS =
   'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ff6d05]/40 bg-black/40 text-[#f9d174] transition-all duration-300 hover:border-[#ff6d05] hover:bg-[#ff6d05]/10 hover:shadow-[0_0_16px_rgba(255,109,5,0.25)] disabled:pointer-events-none disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]';
@@ -48,6 +85,7 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
   const slide = reduceMotion
     ? { duration: 0 }
     : { type: 'spring', stiffness: 190, damping: 26 };
+  const ticks = tickStyle(pageCount);
 
   const jump = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -83,15 +121,22 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
           animate={{ width: `${pct}%` }}
           transition={slide}
         />
-        {Array.from({ length: pageCount }, (_, i) => (
-          <span
-            key={i}
-            className={`absolute top-1/2 h-[7px] w-px -translate-y-1/2 ${
-              i <= page ? 'bg-[#f9d174]/70' : 'bg-[#f9d174]/25'
-            }`}
-            style={{ left: `${(i / (pageCount - 1)) * 100}%` }}
-          />
-        ))}
+        {/* Graduations: the dim full scale, then the lit ticks at and
+            before the current page — the same tiles, clipped to the
+            filament's reach plus the tick's own pixel, so page one's tick
+            is lit at 0%. The tick colour rides `color`, so each layer is
+            one class away from its shade. */}
+        <span
+          className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 text-[#f9d174]/25"
+          style={ticks}
+        />
+        <span
+          className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 text-[#f9d174]/70"
+          style={{
+            ...ticks,
+            clipPath: `inset(0 max(0px, calc(${100 - pct}% - 1px)) 0 0)`,
+          }}
+        />
         <motion.span
           className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ff6d05] shadow-[0_0_10px_2px_rgba(255,109,5,0.55)]"
           animate={{ left: `${pct}%` }}

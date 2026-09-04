@@ -4,15 +4,24 @@
 //            ?cursor=… (the previous page's `nextCursor`) — never the whole
 //            wall. `count` is the wall's total, read separately (ZCARD on
 //            redis), so a client knows the size without loading it;
-//            `nextCursor` is null on the last page; a cursor the server did
-//            not mint is a 400. Reactions are fetched for the page's ids
+//            `nextCursor` is null on the last page; a MALFORMED cursor is a
+//            400 — cursors are shape-validated, not authenticated: a cursor
+//            is an unsigned position into public data, so a hand-built one
+//            is served exactly as a minted one (cursor.js says why that is
+//            the right contract). Reactions are fetched for the page's ids
 //            only, so a GET costs O(limit) commands however long the wall
-//            grows — the poll reads just the newest page (paging.js).
+//            grows — the poll reads just the newest page (paging.js). Each
+//            message is the PUBLIC shape (toPublicMessage): the author's
+//            username ships only for GitHub authors, and `isOwn` says
+//            whether the VIEWER wrote it.
 //   POST   → create a message. Requires a signed-in session (GitHub or
 //            Google); author identity is taken ONLY from that session, never
 //            from the body; body text runs the full validate.js gauntlet;
-//            1 post / user / 5 min server-side.
-//   DELETE → ?id=… own-or-admin. The session username must match the STORED
+//            1 post / user / 5 min server-side. Answers 201 with the public
+//            message plus `count` — the wall's size read just after the
+//            store — so the client settles its total from the write itself.
+//   DELETE → ?id=… own-or-admin, answering { ok, count } the same way. The
+//            session username must match the STORED
 //            author (case-insensitive — an author may always remove their own
 //            message) or be GUESTBOOK_ADMIN (env, via admin.js) — the owner's
 //            fast path for removing anything unpleasant from a
@@ -46,6 +55,48 @@ import { decodeCursor, encodeCursor } from '@/lib/guestbook/cursor';
 // Live data behind auth — never prerendered, never cached by the framework.
 export const dynamic = 'force-dynamic';
 
+// The public shape of a stored author. A GitHub login is public by nature —
+// the card links to the profile. A Google author's username is
+// `google:<sub>`, a STABLE Google account identifier that is internal by
+// design (auth.js) and must never leave the server: the card was told to hide
+// it, but hiding in the UI is not hiding on the wire, and this GET is public.
+// So `username` ships only for GitHub authors — messages stored before the
+// provider field existed are all GitHub, and ':' is illegal in a GitHub
+// login, so a username carrying one is internal whatever the provider says —
+// and the one thing the client used the username for, "is this mine?" (the
+// bin button), travels as the viewer-specific boolean `isOwn` instead.
+function publicAuthor(author) {
+  const { username, ...rest } = author || {};
+  const isGitHub = (rest.provider ?? 'github') === 'github';
+  const isPublicLogin = typeof username === 'string' && !username.includes(':');
+  return isGitHub && isPublicLogin ? { ...rest, username } : rest;
+}
+
+// Ownership, decided server-side from the session against the STORED author
+// — the same comparison DELETE makes (case-insensitive: GitHub logins are).
+function ownedBy(author, viewer) {
+  return (
+    Boolean(viewer) &&
+    (author?.username || '').toLowerCase() === viewer.toLowerCase()
+  );
+}
+
+// One enrichment for GET and POST alike, so a freshly posted card and a
+// fetched one have the same wire shape. Strips the private
+// { username: reactionKey } map (the json driver stores it inline on the
+// message) — only aggregate counts and the caller's own choice leave the
+// server — and the internal author fields above.
+function toPublicMessage(stored, { viewer, reactions, viewerReaction }) {
+  const { reactions: _private, author, ...msg } = stored;
+  return {
+    ...msg,
+    author: publicAuthor(author),
+    reactions,
+    viewerReaction,
+    isOwn: ownedBy(author, viewer),
+  };
+}
+
 export async function GET(request) {
   const query = new URL(request.url).searchParams;
   const limit = parseLimit(query.get('limit'));
@@ -66,16 +117,13 @@ export async function GET(request) {
   ]);
   const maps = await getReactions(stored.map((m) => m.id));
 
-  // Strip the private { username: reactionKey } map (the json driver stores
-  // it inline on the message) — only aggregate counts and the caller's own
-  // choice leave the server.
-  const messages = stored.map(({ reactions: _private, ...msg }) => {
-    const map = maps[msg.id] || {};
-    return {
-      ...msg,
+  const messages = stored.map((m) => {
+    const map = maps[m.id] || {};
+    return toPublicMessage(m, {
+      viewer,
       reactions: toReactionCounts(map),
       viewerReaction: viewer ? (map[viewer] ?? null) : null,
-    };
+    });
   });
 
   return NextResponse.json({
@@ -148,10 +196,23 @@ export async function POST(request) {
   };
 
   await addMessage(message);
-  // Same enriched shape GET serves, so the client can swap its optimistic
-  // card for this object without special-casing a fresh message.
+  // Same public shape GET serves, so the client can swap its optimistic card
+  // for this object without special-casing a fresh message — the author is
+  // the viewer, so `isOwn` is true. Plus `count`, the wall's size read just
+  // after the store: a GET served while this POST was in flight may already
+  // have counted the message without listing it (an older page cannot), so
+  // the client settles its total from the write's own answer rather than
+  // from whether a fetched page happened to contain the card.
+  const count = await countMessages();
   return NextResponse.json(
-    { ...message, reactions: emptyReactionCounts(), viewerReaction: null },
+    {
+      ...toPublicMessage(message, {
+        viewer: username,
+        reactions: emptyReactionCounts(),
+        viewerReaction: null,
+      }),
+      count,
+    },
     { status: 201 },
   );
 }
@@ -189,5 +250,6 @@ export async function DELETE(request) {
   if (!removed) {
     return NextResponse.json({ error: 'Message not found' }, { status: 404 });
   }
-  return NextResponse.json({ ok: true });
+  // The mirror of POST's `count`: the wall's size just after the removal.
+  return NextResponse.json({ ok: true, count: await countMessages() });
 }

@@ -272,8 +272,11 @@ export default function MessageInput({ user, onSubmit, submitting }) {
 
       {/* AI "polish my mark": streams a cleaner one-line rewrite the visitor
           can accept into the field — the contact form's MessageRefine, in
-          guestbook mode. Hidden until there's real content; inert while a
-          post is in flight (the submit has already captured the text). */}
+          guestbook mode. Hidden until there's real content; while a post is
+          in flight the panel aborts any stream and resets (the submit has
+          already captured the text) — this composer stays mounted after a
+          send, so a merely-hidden refine would otherwise finish and resurface
+          under the cleared field. */}
       <div className="mt-2">
         <MessageRefine
           message={text}

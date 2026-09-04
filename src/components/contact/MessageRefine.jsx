@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useMessageRefine } from '@/hooks/useMessageRefine';
 
@@ -34,12 +35,24 @@ export default function MessageRefine({
   const trimmed = (message || '').trim();
   const longEnough = trimmed.length >= minLength;
   const busy = status === 'loading' || status === 'streaming';
+
+  // The moment the form starts sending (`disabled` flips on), any refine in
+  // flight or on offer is moot: the submit has captured the message. Hiding
+  // the panel alone was not enough — the stream kept running inside the hook,
+  // and a composer that stays MOUNTED after a successful post (the guestbook
+  // one does; the contact form remounts) saw it finish and the stale
+  // suggestion surface beneath the cleared field the moment `disabled`
+  // cleared. So the transition ABORTS and resets the hook, never merely hides
+  // the view. Idempotent on an idle hook, so mounting already-disabled is a
+  // no-op; after a failed send the field is restored and a fresh refine is
+  // one tap away.
+  useEffect(() => {
+    if (disabled) reset();
+  }, [disabled, reset]);
+
   // Gate the whole panel on `!disabled`, not just its buttons: once the form is
-  // sending it has already captured the message, so the panel goes fully inert.
-  // This also unmounts an in-flight refine's streaming view rather than leaving a
-  // rewrite materialising for a message that's already on its way out. On a
-  // server error `disabled` clears and the panel returns for a retry; on success
-  // the form remounts, so it was leaving regardless.
+  // sending it has already captured the message, so the panel goes fully inert
+  // — and, per the effect above, empty by the time it could return.
   const showPanel = !disabled && (busy || status === 'done' || status === 'error');
 
   // sr-only status so non-streaming AT users hear the state transitions without

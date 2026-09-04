@@ -107,7 +107,13 @@ describe('redisDriver — atomic reaction write', () => {
     }
   });
 
-  it('the script checks existence, writes, and reads back — on the server', () => {
+  it('the script checks existence, writes, and reads back — on the server', async () => {
+    // Import the driver here too: the script is created at module load, and
+    // vitest's module cache means the load happens once whichever test asks
+    // first — so this case reads the script under a name filter as well as
+    // after its siblings (it used to lean on the previous test's import).
+    await driver();
+    expect(state.scripts).toHaveLength(1);
     const { source } = state.scripts[0];
     expect(source).toMatch(/EXISTS.*KEYS\[1\]/s);
     expect(source).toMatch(/return nil/);

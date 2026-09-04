@@ -36,6 +36,30 @@ describe('timeAgo', () => {
     expect(timeAgo(at(40 * DAY), NOW)).toBe('14 Jul 2026');
   });
 
+  it('renders the absolute date in UTC, whatever timezone the runtime is in', () => {
+    // 23:30 UTC on 14 Jul: still the 14th in UTC, already the 15th at
+    // UTC+14 (Kiritimati), the 14th at UTC−11 (Pago Pago). The server
+    // renders in UTC and the visitor wherever they are, so a zone-dependent
+    // date would hydrate to a different string than it served.
+    const late = '2026-07-14T23:30:00.000Z';
+    const saved = process.env.TZ;
+    try {
+      for (const tz of ['Pacific/Kiritimati', 'Pacific/Pago_Pago', 'UTC']) {
+        process.env.TZ = tz;
+        expect(timeAgo(late, NOW), tz).toBe('14 Jul 2026');
+      }
+      // Control: the flip really moved the runtime's clock — a local-zone
+      // rendering would have disagreed between these two.
+      process.env.TZ = 'Pacific/Kiritimati';
+      expect(new Date(late).getDate()).toBe(15);
+      process.env.TZ = 'Pacific/Pago_Pago';
+      expect(new Date(late).getDate()).toBe(14);
+    } finally {
+      if (saved === undefined) delete process.env.TZ;
+      else process.env.TZ = saved;
+    }
+  });
+
   it('clamps clock skew (a future timestamp) to "just now"', () => {
     expect(timeAgo(new Date(NOW + 30 * SEC).toISOString(), NOW)).toBe(
       'just now',

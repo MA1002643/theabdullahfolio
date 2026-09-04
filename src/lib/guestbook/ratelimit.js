@@ -1,4 +1,4 @@
-// Server-side rate limits for the guestbook (issue #40 §4). Two limits, each
+// Server-side rate limits for the guestbook (issue #40 §4). Three limits, each
 // with two implementations behind one call, chosen the same way the store
 // picks its driver:
 //
@@ -26,9 +26,23 @@
 //     otherwise        → a module-scoped sliding window (mirrors presence.js's
 //                       own dev fallback).
 //
-// Both return { ok: true } or { ok: false, retryAfterSeconds } — the routes
-// turn the latter into a 429 the client can phrase honestly ("try again in
-// 3m") or, for presence, simply skip until the next beat.
+//   REACTIONS — REACTIONS_PER_MINUTE per user (the session username), because
+//     /api/guestbook/reactions is an authenticated mutation that costs a Redis
+//     script per call and, unlike posting and presence, was unmetered: one
+//     valid session toggling a reaction in a loop could generate unbounded
+//     Redis and server traffic. A person clicking through the wall reacts a
+//     few times a minute; the budget is generous for that and a hard ceiling
+//     for a script. Checked AFTER validation (a malformed body spends nothing)
+//     and BEFORE the write (a denied call costs the store nothing).
+//     redis available → the same sliding window under guestbook:rl:reactions:,
+//                       with the in-process denied-key cache — unless the data
+//                       is pinned to the json driver, in which case the
+//                       limiter stays in memory beside it (the posting rule).
+//     otherwise        → a module-scoped sliding window, like presence.
+//
+// All three return { ok: true } or { ok: false, retryAfterSeconds } — the
+// routes turn the latter into a 429 the client can phrase honestly ("try
+// again in 3m") or, for presence, simply skip until the next beat.
 import { createHash } from 'node:crypto';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, redisAvailable } from './redisDriver';
@@ -37,6 +51,8 @@ import { getMessages } from './store';
 export const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 export const PRESENCE_BEATS_PER_MINUTE = 30;
 export const PRESENCE_LIMIT_WINDOW_MS = 60 * 1000;
+export const REACTIONS_PER_MINUTE = 30;
+export const REACTION_LIMIT_WINDOW_MS = 60 * 1000;
 
 const limiter = redisAvailable
   ? new Ratelimit({
@@ -113,9 +129,37 @@ const presenceLimiter = redisAvailable
     })
   : null;
 
-// Dev fallback: key → ascending beat timestamps still inside the window.
+// Dev fallback for the per-minute windows: key → ascending hit timestamps
+// still inside the window. ONE helper behind both in-memory limiters
+// (presence, reactions) so their semantics cannot drift: over budget is a
+// refusal with the seconds until the OLDEST hit ages out; an admitted hit is
+// recorded; a store that has grown past the sweep mark drops keys whose last
+// hit is already outside the window.
+const MEMORY_SWEEP_AT = 500;
+
+function memoryWindow(store, key, { limit, windowMs, now }) {
+  if (store.size > MEMORY_SWEEP_AT) {
+    for (const [k, hits] of store) {
+      if (now - hits[hits.length - 1] >= windowMs) store.delete(k);
+    }
+  }
+  const hits = (store.get(key) || []).filter((t) => now - t < windowMs);
+  if (hits.length >= limit) {
+    store.set(key, hits);
+    return {
+      ok: false,
+      retryAfterSeconds: Math.max(
+        1,
+        Math.ceil((hits[0] + windowMs - now) / 1000),
+      ),
+    };
+  }
+  hits.push(now);
+  store.set(key, hits);
+  return { ok: true };
+}
+
 const presenceMemory = new Map();
-const PRESENCE_MEMORY_SWEEP_AT = 500;
 
 // Presence is anonymous by construction (see the route), so the limiter never
 // stores a raw address either: the key is a truncated SHA-256 of the IP —
@@ -139,28 +183,42 @@ export async function checkPresenceRateLimit(ip, now = Date.now()) {
     };
   }
 
-  if (presenceMemory.size > PRESENCE_MEMORY_SWEEP_AT) {
-    for (const [k, beats] of presenceMemory) {
-      if (now - beats[beats.length - 1] >= PRESENCE_LIMIT_WINDOW_MS) {
-        presenceMemory.delete(k);
-      }
-    }
-  }
+  return memoryWindow(presenceMemory, key, {
+    limit: PRESENCE_BEATS_PER_MINUTE,
+    windowMs: PRESENCE_LIMIT_WINDOW_MS,
+    now,
+  });
+}
 
-  const beats = (presenceMemory.get(key) || []).filter(
-    (t) => now - t < PRESENCE_LIMIT_WINDOW_MS,
-  );
-  if (beats.length >= PRESENCE_BEATS_PER_MINUTE) {
-    presenceMemory.set(key, beats);
+// Reactions: keyed by the session username — the identity the write itself
+// is bound to — so a budget follows the person, not the address.
+const reactionLimiter = redisAvailable
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(REACTIONS_PER_MINUTE, '1 m'),
+      prefix: 'guestbook:rl:reactions',
+      ephemeralCache: new Map(),
+    })
+  : null;
+
+const reactionMemory = new Map();
+
+export async function checkReactionRateLimit(username, now = Date.now()) {
+  // The posting rule, not the presence one: the limiter lives where the
+  // reactions do, so an explicit json driver (the e2e's hermetic server)
+  // keeps it in memory even when Redis credentials happen to be present.
+  if (reactionLimiter && process.env.GUESTBOOK_DRIVER !== 'json') {
+    const { success, reset } = await reactionLimiter.limit(username);
+    if (success) return { ok: true };
     return {
       ok: false,
-      retryAfterSeconds: Math.max(
-        1,
-        Math.ceil((beats[0] + PRESENCE_LIMIT_WINDOW_MS - now) / 1000),
-      ),
+      retryAfterSeconds: Math.max(1, Math.ceil((reset - now) / 1000)),
     };
   }
-  beats.push(now);
-  presenceMemory.set(key, beats);
-  return { ok: true };
+
+  return memoryWindow(reactionMemory, username, {
+    limit: REACTIONS_PER_MINUTE,
+    windowMs: REACTION_LIMIT_WINDOW_MS,
+    now,
+  });
 }

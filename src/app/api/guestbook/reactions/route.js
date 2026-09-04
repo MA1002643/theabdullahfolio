@@ -6,11 +6,16 @@
 // enforced by the storage shape itself — a hash field per username can only
 // hold one value — not by client behaviour. Auth required: reactions are as
 // identity-bound as messages, and the username comes from the session only.
-// Returns { reactions: counts, viewerReaction } for the message; who reacted
-// never leaves the server, only totals do.
+// Metered per user (REACTIONS_PER_MINUTE, ratelimit.js): every accepted call
+// is a Redis script, so a session toggling in a loop meets a 429 with
+// Retry-After rather than the store — checked after validation, so a
+// malformed body never spends budget, and before the write, so a refused
+// call costs nothing. Returns { reactions: counts, viewerReaction } for the
+// message; who reacted never leaves the server, only totals do.
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { setReaction } from '@/lib/guestbook/store';
+import { checkReactionRateLimit } from '@/lib/guestbook/ratelimit';
 import { REACTION_KEYS, toReactionCounts } from '@/lib/guestbook/reactions';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +37,19 @@ export async function POST(request) {
   const { id, key, clear } = body ?? {};
   if (typeof id !== 'string' || !id || !REACTION_KEYS.includes(key)) {
     return NextResponse.json({ error: 'Invalid reaction' }, { status: 400 });
+  }
+
+  const limit = await checkReactionRateLimit(username);
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        error: `Too many reactions — try again in ${limit.retryAfterSeconds}s`,
+      },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+      },
+    );
   }
 
   const nextValue = clear === true ? null : key;

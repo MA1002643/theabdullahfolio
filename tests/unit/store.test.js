@@ -229,22 +229,168 @@ describe('jsonDriver — serialised mutations, atomic writes', () => {
   });
 });
 
-// Runs LAST: it flips the driver env and resets the module registry, which
-// the suites above must not observe.
-describe('store facade — GUESTBOOK_DRIVER=redis without credentials', () => {
+// The read guard: only a MISSING file is an empty wall. Every mutation is
+// read-modify-write, so a read that swallowed an I/O error or a parse error
+// into `[]` used to hand the next write a wall of one record — the existing
+// file overwritten, silently. Each failing case below also checks the file on
+// disk afterwards: exactly as it was, no temp debris.
+describe('jsonDriver — an unreadable or malformed data file is never an empty wall', () => {
+  let dir;
+  let dataPath;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'guestbook-json-guard-'));
+    dataPath = join(dir, 'guestbook.json');
+    process.env.GUESTBOOK_JSON_PATH = dataPath;
+  });
+
+  it('a missing file is an empty wall — the first run, before any write', async () => {
+    const { jsonDriver } = await import('@/lib/guestbook/jsonDriver');
+    expect(await jsonDriver.getMessages()).toEqual([]);
+    expect(await jsonDriver.countMessages()).toBe(0);
+    expect(await jsonDriver.listMessages({ limit: 8 })).toEqual({
+      messages: [],
+      next: null,
+    });
+  });
+
+  it('an empty file is an empty wall too — it holds nothing a write could lose', async () => {
+    const { jsonDriver } = await import('@/lib/guestbook/jsonDriver');
+    await writeFile(dataPath, '\n');
+    expect(await jsonDriver.getMessages()).toEqual([]);
+    await jsonDriver.addMessage(sample('first'));
+    expect(JSON.parse(await readFile(dataPath, 'utf8'))).toHaveLength(1);
+  });
+
+  it('malformed JSON fails every read, and a mutation refuses to overwrite it', async () => {
+    const { jsonDriver } = await import('@/lib/guestbook/jsonDriver');
+    const corrupt = '[{"id":"m1","message":"half-written';
+    await writeFile(dataPath, corrupt);
+    await expect(jsonDriver.getMessages()).rejects.toThrow(/not valid JSON/);
+    await expect(jsonDriver.listMessages({ limit: 8 })).rejects.toThrow(
+      /not valid JSON/,
+    );
+    await expect(jsonDriver.getMessage('m1')).rejects.toThrow(/not valid JSON/);
+    await expect(jsonDriver.addMessage(sample('m2'))).rejects.toThrow(
+      /not valid JSON/,
+    );
+    await expect(jsonDriver.setReaction('m1', 'bob', 'fire')).rejects.toThrow(
+      /not valid JSON/,
+    );
+    await expect(jsonDriver.deleteMessage('m1')).rejects.toThrow(
+      /not valid JSON/,
+    );
+    // Nothing was written back, and no temp file was even started.
+    expect(await readFile(dataPath, 'utf8')).toBe(corrupt);
+    expect(await readdir(dir)).toEqual(['guestbook.json']);
+  });
+
+  it('valid JSON that is not an array of messages is refused the same way', async () => {
+    const { jsonDriver } = await import('@/lib/guestbook/jsonDriver');
+    const foreign = '{"messages":[{"id":"m1"}]}\n';
+    await writeFile(dataPath, foreign);
+    await expect(jsonDriver.getMessages()).rejects.toThrow(
+      /JSON array of messages/,
+    );
+    await expect(jsonDriver.addMessage(sample('m2'))).rejects.toThrow(
+      /JSON array of messages/,
+    );
+    expect(await readFile(dataPath, 'utf8')).toBe(foreign);
+    expect(await readdir(dir)).toEqual(['guestbook.json']);
+  });
+
+  it('an I/O error other than "missing" propagates with its own code', async () => {
+    const { jsonDriver } = await import('@/lib/guestbook/jsonDriver');
+    // The data path IS a directory — it exists, and cannot be read as a file.
+    process.env.GUESTBOOK_JSON_PATH = dir;
+    await expect(jsonDriver.getMessages()).rejects.toMatchObject({
+      code: 'EISDIR',
+    });
+    await expect(jsonDriver.addMessage(sample('m1'))).rejects.toMatchObject({
+      code: 'EISDIR',
+    });
+    // …and the queue is not wedged: the next mutation on a good path lands.
+    process.env.GUESTBOOK_JSON_PATH = dataPath;
+    await jsonDriver.addMessage(sample('after'));
+    expect((await jsonDriver.getMessages()).map((m) => m.id)).toEqual(['after']);
+  });
+});
+
+// Runs LAST: these flip the driver env, NODE_ENV and NEXT_PHASE and reset the
+// module registry, which the suites above must not observe. The KV_*/UPSTASH_*
+// names are deleted at the top of this file, so the redis client is null
+// throughout.
+describe('store facade — refusals to load, and the served-production guard', () => {
+  const env = { NODE_ENV: process.env.NODE_ENV, NEXT_PHASE: process.env.NEXT_PHASE };
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
   afterEach(() => {
     process.env.GUESTBOOK_DRIVER = 'json';
+    process.env.NODE_ENV = env.NODE_ENV;
+    if (env.NEXT_PHASE === undefined) delete process.env.NEXT_PHASE;
+    else process.env.NEXT_PHASE = env.NEXT_PHASE;
+    vi.restoreAllMocks();
     vi.resetModules();
   });
 
-  it('refuses to load with an error naming the variables, not a null client', async () => {
-    // The KV_*/UPSTASH_* names are deleted at the top of this file, so the
-    // redis client is null; forcing the driver anyway used to hand that null
-    // to the routes, to explode on the first zrange.
-    vi.resetModules();
+  it('GUESTBOOK_DRIVER=redis without credentials: an error naming the variables, not a null client', async () => {
+    // Forcing the driver anyway used to hand that null client to the routes,
+    // to explode on the first zrange.
     process.env.GUESTBOOK_DRIVER = 'redis';
     await expect(import('@/lib/guestbook/store')).rejects.toThrow(
       /GUESTBOOK_DRIVER=redis .*KV_REST_API_URL.*UPSTASH_REDIS_REST_URL/,
     );
+  });
+
+  it('a served production with no Redis and no explicit driver refuses to load', async () => {
+    // This used to fall through to the json driver with a console warning —
+    // on Vercel, a store that accepts posts and loses them on the next cold
+    // start. The error names the credentials and the one deliberate way onto
+    // the file store.
+    delete process.env.GUESTBOOK_DRIVER;
+    delete process.env.NEXT_PHASE;
+    process.env.NODE_ENV = 'production';
+    await expect(import('@/lib/guestbook/store')).rejects.toThrow(
+      /without Redis credentials.*KV_REST_API_URL.*UPSTASH_REDIS_REST_URL.*GUESTBOOK_DRIVER=json/s,
+    );
+  });
+
+  it('an EXPLICIT GUESTBOOK_DRIVER=json still serves in production — the e2e path — with the warning', async () => {
+    process.env.GUESTBOOK_DRIVER = 'json';
+    delete process.env.NEXT_PHASE;
+    process.env.NODE_ENV = 'production';
+    const dir = await mkdtemp(join(tmpdir(), 'guestbook-prod-json-'));
+    process.env.GUESTBOOK_JSON_PATH = join(dir, 'guestbook.json');
+    const store = await import('@/lib/guestbook/store');
+    expect(await store.countMessages()).toBe(0);
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringMatching(/json storage driver active under NODE_ENV=production/),
+    );
+  });
+
+  it('the build phase evaluates the module without serving: no throw, no warning', async () => {
+    // `next build` loads route modules under NODE_ENV=production too, in a
+    // credential-free CI job — nothing is served there, so the guard must
+    // stand down (Next marks the phase in NEXT_PHASE).
+    delete process.env.GUESTBOOK_DRIVER;
+    process.env.NODE_ENV = 'production';
+    process.env.NEXT_PHASE = 'phase-production-build';
+    await expect(import('@/lib/guestbook/store')).resolves.toBeDefined();
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('development with no Redis and no explicit driver is the json driver, quietly', async () => {
+    delete process.env.GUESTBOOK_DRIVER;
+    delete process.env.NEXT_PHASE;
+    process.env.NODE_ENV = 'development';
+    const dir = await mkdtemp(join(tmpdir(), 'guestbook-dev-auto-'));
+    process.env.GUESTBOOK_JSON_PATH = join(dir, 'guestbook.json');
+    const store = await import('@/lib/guestbook/store');
+    expect(await store.countMessages()).toBe(0);
+    expect(console.warn).not.toHaveBeenCalled();
   });
 });

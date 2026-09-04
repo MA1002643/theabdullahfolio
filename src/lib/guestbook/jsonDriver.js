@@ -15,6 +15,10 @@
 //     replaces on Windows too), so a reader — the wall's GET, the rate
 //     limiter's scan — sees either the old file or the new one, never a torn
 //     half-written JSON. That is also why reads need no lock.
+//   • A FILE THAT CANNOT BE READ IS NEVER AN EMPTY WALL. Only a missing file
+//     means "no messages yet"; an I/O error or unparseable content makes the
+//     read — and so any mutation behind it — fail, rather than being written
+//     over with a one-record wall (see readAll).
 import { promises as fs } from 'fs';
 import { dirname, join } from 'path';
 import { compareNewest, isOlderThan, positionOf } from './paging';
@@ -40,16 +44,45 @@ function serialize(task) {
   return run;
 }
 
+// The read side of every operation. ONLY a missing file is an empty wall —
+// the first run, before anything was ever written (the first write creates
+// it). Every other failure propagates. An I/O error (permissions, a path
+// that is a directory, a disk fault) or a file that does not parse as a JSON
+// array used to be swallowed into `[]` too — and since every mutation below
+// is read-modify-write, the next post or reaction would then have written
+// back ONLY its own record: a transient error or a corrupted file turned
+// into silent loss of the whole wall. Now the read throws, the mutation
+// rejects before its temp-file write ever starts, the route answers 500, and
+// the file on disk stays exactly as it was, for someone to inspect or
+// restore. An empty or whitespace-only file is the one lenient case: it
+// holds nothing a write could lose.
 async function readAll() {
+  const path = dataPath();
+  let raw;
   try {
-    const raw = await fs.readFile(dataPath(), 'utf8');
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    // Missing file / bad JSON both mean "no messages yet" — the file is
-    // re-created on the next write.
-    return [];
+    raw = await fs.readFile(path, 'utf8');
+  } catch (err) {
+    if (err?.code === 'ENOENT') return [];
+    throw err;
   }
+  if (!raw.trim()) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(
+      `[guestbook] ${path} is not valid JSON — refusing to read it (and so ` +
+        'to overwrite it); repair or remove the file',
+      { cause: err },
+    );
+  }
+  if (!Array.isArray(parsed)) {
+    throw new Error(
+      `[guestbook] ${path} does not hold a JSON array of messages — refusing ` +
+        'to read it (and so to overwrite it); repair or remove the file',
+    );
+  }
+  return parsed;
 }
 
 async function writeAll(messages) {
