@@ -59,6 +59,7 @@ import {
 } from '@/lib/guestbook/reactions';
 import { parseLimit } from '@/lib/guestbook/paging';
 import { decodeCursor, encodeCursor } from '@/lib/guestbook/cursor';
+import { mintMessageId } from '@/lib/guestbook/messageId';
 
 // Live data behind auth — never prerendered, never cached by the framework.
 export const dynamic = 'force-dynamic';
@@ -185,7 +186,9 @@ export async function POST(request) {
   }
 
   const message = {
-    id: `msg_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
+    // messageId.js owns the shape: the deep link recognises exactly what is
+    // minted here, so an unrelated page anchor can never start a wall crawl.
+    id: mintMessageId(),
     author: {
       // Session-only identity — a forged author in the body is simply ignored.
       // `key` is the stable account id every later comparison uses;

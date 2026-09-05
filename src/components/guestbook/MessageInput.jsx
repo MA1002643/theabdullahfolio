@@ -11,8 +11,9 @@ import { useCardTilt } from '@/hooks/useCardTilt';
 import { useFieldDraft } from '@/hooks/useFieldDraft';
 import { useMagneticPull } from '@/hooks/useMagneticPull';
 import { useUiSound } from '@/hooks/useUiSound';
-import { setNativeValue } from '@/lib/contact';
+import { remove, setNativeValue } from '@/lib/contact';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
+import { draftKeyFor, LEGACY_DRAFT_KEY } from '@/lib/guestbook/draftKey';
 import { MESSAGE_MAX } from '@/lib/guestbook/limits';
 import SignatureField from './SignatureField';
 
@@ -38,7 +39,10 @@ import SignatureField from './SignatureField';
 //     in 'guestbook' mode (casual voice, ≤MESSAGE_MAX chars, no links).
 //   - Draft autosave/restore — useFieldDraft mirrors the field into
 //     localStorage and repopulates it on a later visit, with the contact
-//     form's own "Restored your unsent message" banner.
+//     form's own "Restored your unsent message" banner. The slot is PER
+//     ACCOUNT (draftKey.js: keyed by the session's identity key), so two
+//     people signing into the same browser never restore each other's
+//     unsent text; a session without a key saves nothing.
 //   - Offline hold — sending while offline keeps the text in the field (and
 //     therefore the draft) with an explanatory toast, instead of burning the
 //     optimistic post against a dead connection. Deliberately NOT the contact
@@ -48,10 +52,6 @@ import SignatureField from './SignatureField';
 
 // Counter turns ember when the message is close to the cap.
 const COUNTER_WARN_AT = MESSAGE_MAX - 20;
-
-// Where the composer's autosaved draft lives (versioned like the contact
-// form's contact:draft:v1, so a future shape change can bump it cleanly).
-const DRAFT_KEY = 'guestbook:draft:v1';
 
 // Show the ✦ refine affordance from this many typed characters. Mirrors the
 // server's guestbook-mode floor the way the contact form's 24 mirrors its 20:
@@ -102,12 +102,23 @@ export default function MessageInput({ user, onSubmit, submitting }) {
   // Autosave + restore the message, so a half-written mark survives a refresh
   // or an accidental navigation. Storage mirrors the field, so the optimistic
   // clear below also clears the draft and a failed post's restore re-saves it.
+  // The slot is this ACCOUNT's (draftKey.js) — null, and so no persistence,
+  // for a session without an identity key. GuestbookWall keys this component
+  // by that identity, so the slot never changes under a mounted composer.
   const reduced = useReducedMotion();
   const draftLayer = useFieldDraft({
-    storageKey: DRAFT_KEY,
+    storageKey: draftKeyFor(user),
     value: text,
     writeField,
   });
+
+  // The pre-scoping slot was shared by every account on the browser. It is
+  // never read again — whatever it holds is some earlier account's private
+  // text, and restoring it here would attribute it to whoever is signed in
+  // now — so the first composer to mount removes it.
+  useEffect(() => {
+    remove(LEGACY_DRAFT_KEY);
+  }, []);
 
   // Apply an accepted AI rewrite into the field. The rewrite contract says
   // single-line and ≤MESSAGE_MAX, but the field's own rules are enforced here

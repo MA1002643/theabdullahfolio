@@ -21,12 +21,20 @@ const FAKE_SESSION = {
   expires: '2099-01-01T00:00:00.000Z',
 };
 
-const DRAFT_KEY = 'guestbook:draft:v1';
+// The composer's draft slot is PER ACCOUNT (src/lib/guestbook/draftKey.js):
+// `guestbook:draft:v2:<identity key>`, never the browser-wide slot it once was.
+const DRAFT_KEY = `guestbook:draft:v2:${FAKE_SESSION.user.key}`;
+
+// Fixture ids in the MINTED shape (src/lib/guestbook/messageId.js —
+// `msg_<epoch ms>_<8 hex>`): the deep link only recognises that shape, so a
+// bare `msg_<n>` would never start the walk the last test exercises. The
+// counter rides in both groups so ids stay readable in a failure message.
+const mid = (n) => `msg_${1700000000000 + n}_${String(n).padStart(8, '0')}`;
 
 // Minimal message in the exact shape GET /api/guestbook serves (enriched with
 // aggregate reactions + the viewer's own choice).
 const mark = (n) => ({
-  id: `msg_${n}`,
+  id: mid(n),
   author: {
     name: `Visitor ${n}`,
     username: `visitor${n}`,
@@ -142,7 +150,7 @@ test('skeleton wall holds the space while the first fetch is slow', async ({
   await expect(skeleton).toBeVisible({ timeout: 10_000 });
 
   // Once the data lands the ghosts leave and the real card takes over.
-  await expect(page.locator('#msg_1')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator(`#${mid(1)}`)).toBeVisible({ timeout: 20_000 });
   await expect(skeleton).toHaveCount(0);
 });
 
@@ -157,7 +165,7 @@ test('the wall is fetched a page at a time: two leaves first, the next one ahead
   const calls = await serveWall(page, TWENTY);
 
   await page.goto('/guestbook');
-  await expect(page.locator('#msg_20')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator(`#${mid(20)}`)).toBeVisible({ timeout: 20_000 });
   // The rail already knows the whole wall from the server's count…
   await expect(page.getByText('Page 1 of 3')).toBeAttached();
   // …while only the first two leaves were fetched.
@@ -165,7 +173,7 @@ test('the wall is fetched a page at a time: two leaves first, the next one ahead
 
   const next = page.getByRole('button', { name: 'Next page' });
   await next.click();
-  await expect(page.locator('#msg_12')).toBeVisible();
+  await expect(page.locator(`#${mid(12)}`)).toBeVisible();
   await expect(page.getByText('Page 2 of 3')).toBeAttached();
   // Landing on leaf 2 prefetched leaf 3 — exactly the rest of the wall, from
   // the cursor the first page handed back.
@@ -173,7 +181,7 @@ test('the wall is fetched a page at a time: two leaves first, the next one ahead
   expect(calls[1]).toEqual({ limit: 8, offset: 16 });
 
   await next.click();
-  await expect(page.locator('#msg_1')).toBeVisible();
+  await expect(page.locator(`#${mid(1)}`)).toBeVisible();
   await expect(page.getByText('Page 3 of 3')).toBeAttached();
   expect(calls).toHaveLength(2);
 });
@@ -187,9 +195,9 @@ test('a /guestbook#msg_… deep link walks to the right page and reveals the car
   // msg_1 is the oldest mark — beyond the first fetch, on the last leaf. The
   // link must fetch its way there, flip to that page and bring the card to
   // reading height.
-  await page.goto('/guestbook#msg_1');
+  await page.goto(`/guestbook#${mid(1)}`);
 
-  await expect(page.locator('#msg_1')).toBeInViewport({ timeout: 20_000 });
+  await expect(page.locator(`#${mid(1)}`)).toBeInViewport({ timeout: 20_000 });
   await expect(page.getByText('Page 3 of 3')).toBeAttached();
   expect(calls).toEqual([
     { limit: 16, offset: 0 },

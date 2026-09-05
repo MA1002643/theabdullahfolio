@@ -33,7 +33,9 @@
 // hands the signed-in browser, so a person's own key does reach their own
 // client, as their name and avatar do. No guestbook response carries any key
 // (route.js strips it, the viewer's own included), and the wall's client code
-// never reads it (sessionCallbacks.js).
+// reads it for local purposes only — the write gate (viewerFromSession, the
+// routes' own rule) and the composer's per-account draft slot
+// (src/lib/guestbook/draftKey.js) — never to send it (sessionCallbacks.js).
 //
 // The callbacks that do this live in src/lib/guestbook/sessionCallbacks.js as
 // pure functions, so what a sign-in writes to the JWT and what a session read
@@ -41,7 +43,9 @@
 //
 // Sessions minted before `key` existed carry a username and no key. They are
 // not upgraded (an id is not recoverable from a login without a GitHub API
-// call), so their writes answer 401 until the person signs in again.
+// call), so their writes answer 401 until the person signs in again — and the
+// wall shows them the sign-in prompt in its re-auth voice instead of a
+// composer (GuestbookWall gates on viewerFromSession, the routes' own rule).
 import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';

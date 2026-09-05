@@ -9,18 +9,25 @@ import { useMagneticPull } from '@/hooks/useMagneticPull';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
 import { MESSAGE_MAX } from '@/lib/guestbook/limits';
 
-// CTA card for unauthenticated visitors. The wall itself stays readable —
+// CTA card for visitors who cannot write. The wall itself stays readable —
 // signing in only gates writing. OAuth is the whole identity story (issue
 // #40): it kills anonymous spam and supplies name + avatar for free. Two
 // providers by owner request — GitHub for the developer crowd, Google for
 // everyone else. FaGoogle comes from react-icons (already a dependency;
 // lucide dropped brand glyphs), rendered in the same mono-gold as the
 // GitHub mark so neither button breaks the ember palette.
+//
+// `reauth` is the second voice of the same card: for a visitor who IS signed
+// in but whose session predates identity keys (identity.js — no `key`, so
+// every write answers 401). GuestbookWall shows them this instead of a
+// composer that could never submit, and the copy says why one more sign-in
+// is the fix. The buttons are the same: signing in again runs the provider
+// flow afresh, and the jwt callback mints the key.
 
 const BUTTON_CLASS =
   'inline-flex items-center gap-2 rounded-full border border-[#ff6d05]/50 bg-black/60 px-6 py-3 font-mono text-sm tracking-wider text-[#f9d174] transition-all duration-300 hover:border-[#ff6d05] hover:bg-[#ff6d05]/10 hover:shadow-[0_0_20px_rgba(255,109,5,0.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]';
 
-export default function SignInPrompt() {
+export default function SignInPrompt({ reauth = false }) {
   const reduceMotion = useReducedMotion();
   // Magnetic lean on the CTAs (issue #40 Phase 4) — inert on touch and under
   // reduced motion by the hook's own gate; the flag decides the wiring. One
@@ -85,7 +92,15 @@ export default function SignInPrompt() {
           instead of presenting a black wall. Pink invites (the site's
           invitational voice — the LEAVE YOUR MARK subtitle), gold acts. */}
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/30 p-6 text-center backdrop-blur-[3px]">
-        <p className="text-sm text-[#fc83ff]/90">Sign in to leave a message</p>
+        <p className="text-sm text-[#fc83ff]/90">
+          {reauth ? 'Sign in again to leave a message' : 'Sign in to leave a message'}
+        </p>
+        {reauth ? (
+          <p className="-mt-2 max-w-xs font-mono text-[11px] leading-relaxed text-[#f9d174]/60">
+            Your current sign-in predates the wall&rsquo;s account keys, so it
+            can read but not write &mdash; one fresh sign-in fixes it.
+          </p>
+        ) : null}
         <div className="flex flex-wrap items-center justify-center gap-3">
         <motion.button
           type="button"

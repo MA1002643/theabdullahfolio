@@ -20,6 +20,16 @@ import { DRAFT_TTL_MS, readJSON, remove, writeJSON } from '@/lib/contact';
 //     under the hood) so the FireInput gradient overlay repaints in the same
 //     dispatch — the one mechanism that keeps model and painted glyphs in sync.
 //
+// `storageKey` may be null: then the hook persists NOTHING — no read, no
+// write, no remove — and only clearDraft's field write still works. The
+// guestbook composer passes null for a session that has no identity key
+// (draftKey.js), because the slot is per account and an unkeyed session
+// names none. The key is read at mount for the restore and is assumed stable
+// for the life of the mount: callers that can switch accounts in place key
+// the component by identity (GuestbookWall does), so a change of person is a
+// remount with an empty field, never one account's text autosaved under
+// another's slot.
+//
 // Returns:
 //   restored        — true once a fresh, non-empty draft was repopulated
 //   dismissRestored — hide the banner but keep the content and keep autosaving
@@ -43,6 +53,7 @@ export function useFieldDraft({ storageKey, value, writeField, ttlMs = DRAFT_TTL
   // effects run in declaration order, so the restore's field write lands (and
   // re-renders with the restored value) before autosave ever considers acting.
   useEffect(() => {
+    if (!storageKey) return;
     const draft = readJSON(storageKey);
     if (!draft || typeof draft.value !== 'string') return;
     if (draft.savedAt && Date.now() - draft.savedAt > ttlMs) {
@@ -63,6 +74,7 @@ export function useFieldDraft({ storageKey, value, writeField, ttlMs = DRAFT_TTL
       skipNextSaveRef.current = false;
       return undefined;
     }
+    if (!storageKey) return undefined;
     if (!value.trim()) {
       remove(storageKey);
       return undefined;
@@ -81,7 +93,7 @@ export function useFieldDraft({ storageKey, value, writeField, ttlMs = DRAFT_TTL
     // removes the stored draft; the direct remove() just closes the window
     // where a tab could die between this call and that effect.
     writeFieldRef.current('');
-    remove(storageKey);
+    if (storageKey) remove(storageKey);
     setRestored(false);
   }, [storageKey]);
 

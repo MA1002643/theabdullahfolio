@@ -24,8 +24,14 @@
 // Google sub is the account's app-scoped id, the person's own). What never
 // happens is anyone learning anyone ELSE's key: no guestbook response carries
 // a key — route.js strips it from every author, the viewer's own included —
-// and the wall's client code never reads `session.user.key`. The routes read
-// it through viewerFromSession() below; that is its only consumer.
+// and the wall's client code reads `session.user.key` for LOCAL purposes
+// only: deciding whether the session can write at all (GuestbookWall applies
+// viewerFromSession() below — the routes' own rule — so a keyless legacy
+// session sees the sign-in prompt rather than a composer whose every post
+// would 401) and namespacing the composer's autosaved draft to the account
+// (draftKey.js) so two people sharing a browser never restore each other's
+// unsent text. It never puts the key on the wire. The routes read it through
+// viewerFromSession() too.
 //
 // The provider prefix keeps the namespaces apart by construction — a Google
 // sub can never spell a GitHub id. It is also why the Google key is
@@ -62,7 +68,9 @@ export function identityFromSignIn({ account, profile } = {}) {
 // Request time: the viewer behind a session, or null — for an anonymous
 // request, or for a session minted before keys existed (a username and no
 // key; signing in again mints one). Routes treat null as "no identity":
-// reads stay public, writes answer 401.
+// reads stay public, writes answer 401. The wall applies the same function
+// client-side (GuestbookWall): null means the sign-in prompt, in its re-auth
+// voice for a signed-in keyless session, never a composer that cannot post.
 export function viewerFromSession(session) {
   const user = session?.user;
   if (!nonEmptyString(user?.key)) return null;

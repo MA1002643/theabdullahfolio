@@ -25,7 +25,9 @@ export function jwtCallback({ token, account, profile }) {
 
 // A token without a key (minted before keys existed) stamps nothing: the
 // session stays a plain signed-in shell whose writes answer 401 until the
-// person signs in again (identity.js).
+// person signs in again (identity.js) — and which the wall shows the sign-in
+// prompt in its re-auth voice, not a composer (GuestbookWall gates on
+// viewerFromSession, the routes' own rule).
 //
 // The session object built here is served in two directions: `auth()` hands
 // it to the routes, which derive identity from `user.key` through
@@ -34,8 +36,11 @@ export function jwtCallback({ token, account, profile }) {
 // two apart, so the key goes to both — and that is acceptable because it is
 // the person's OWN account id (a GitHub id is public on the GitHub API; a
 // Google sub is their own app-scoped id), no other visitor's key is ever
-// served (route.js strips every author's), and the wall's client code never
-// reads `session.user.key`. Keeping the key out of the browser entirely would
+// served (route.js strips every author's), and the wall's client code reads
+// `session.user.key` for LOCAL purposes only — the write gate
+// (viewerFromSession, the routes' own rule) and the composer's per-account
+// draft slot (draftKey.js) — and never sends it anywhere. Keeping the key
+// out of the browser entirely would
 // mean the routes decoding the JWT cookie themselves (getToken + cookie
 // naming + secret handling): a second identity path with nothing to protect.
 export function sessionCallback({ session, token }) {

@@ -16,6 +16,7 @@ import {
   NEW_MESSAGE_EVENT,
   arrivalAnnouncement,
 } from '@/lib/guestbook/events';
+import { viewerFromSession } from '@/lib/guestbook/identity';
 import { PAGE_SIZE } from '@/lib/guestbook/paging';
 import MessageCard from './MessageCard';
 import MessageInput from './MessageInput';
@@ -95,6 +96,16 @@ function WallSkeleton({ label }) {
 
 export default function GuestbookWall() {
   const { data: session, status } = useSession();
+  // The write gate, decided by the SAME rule the routes apply
+  // (viewerFromSession, identity.js): a session can write only when it
+  // carries an identity key. An Auth.js session minted before keys existed is
+  // still `authenticated` but keyless — every post and reaction it makes
+  // answers 401 — so gating on `status` alone showed it a fully enabled
+  // composer that could never submit (code review). Such a session gets the
+  // sign-in prompt in its re-auth voice instead; signing in again mints a
+  // keyed token. `viewer` is null for the anonymous and the keyless alike.
+  const viewer = status === 'authenticated' ? viewerFromSession(session) : null;
+  const canWrite = viewer !== null;
   const reduceMotion = useReducedMotion();
   const {
     messages,
@@ -328,10 +339,13 @@ export default function GuestbookWall() {
   // per-message, per-viewer `isOwn` — decided from the session against the
   // STORED author — not a client-side identity comparison: no message the
   // server serves carries an identity key (nor a username for Google
-  // authors), so the client has nothing to compare, and never needed to —
-  // it does not read `session.user.key` either. The client gate is
-  // display-only — the DELETE route re-derives both ownership and admin from
-  // the session.
+  // authors), so the client has nothing to compare, and never needed to.
+  // What this client reads `session.user.key` for is LOCAL: the write gate
+  // above (can this session post or react at all — the routes' own rule) and
+  // the composer's per-account draft slot (draftKey.js); the composer is
+  // keyed by that identity below so switching accounts remounts it with an
+  // empty field. The client gate is display-only — the DELETE route
+  // re-derives both ownership and admin from the session.
   const viewerIsAdmin = Boolean(session?.user?.isAdmin);
   const ownsMessage = (msg) => Boolean(msg.isOwn);
   const handleDelete = async (id) => {
@@ -398,18 +412,25 @@ export default function GuestbookWall() {
         </motion.div>
       ) : null}
 
-      {/* Compose slot: input when signed in, CTA when signed out, nothing
-          while the session is still resolving (avoids a CTA flash for
-          returning signed-in visitors). */}
-      {status === 'authenticated' ? (
+      {/* Compose slot: the composer for a WRITE-CAPABLE session; the sign-in
+          CTA otherwise — in its re-auth voice for a signed-in but keyless
+          legacy session, whose posts would all 401; nothing while the
+          session is still resolving (avoids a CTA flash for returning
+          signed-in visitors). */}
+      {canWrite ? (
         <MessageInput
+          // Keyed by identity: a different account is a different composer —
+          // fresh field state, and its own draft slot read once at mount —
+          // never one person's in-progress text autosaved under the next
+          // person's slot (draftKey.js).
+          key={viewer.key}
           user={session.user}
           onSubmit={handleSubmit}
           submitting={submitting}
         />
-      ) : status === 'unauthenticated' ? (
-        <SignInPrompt />
-      ) : null}
+      ) : status === 'loading' ? null : (
+        <SignInPrompt reauth={status === 'authenticated'} />
+      )}
 
       <div ref={listTopRef} aria-hidden="true" />
 
@@ -473,7 +494,7 @@ export default function GuestbookWall() {
                     staggered
                     isNew={newIds.has(msg.id) || msg.id === linkedId}
                     now={now}
-                    canReact={status === 'authenticated'}
+                    canReact={canWrite}
                     onReact={react}
                     canDelete={ownsMessage(msg) || viewerIsAdmin}
                     isOwn={ownsMessage(msg)}
