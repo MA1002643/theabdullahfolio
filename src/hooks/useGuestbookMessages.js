@@ -77,13 +77,18 @@ function dedupeById(list) {
   return list.filter((m) => (seen.has(m.id) ? false : seen.add(m.id)));
 }
 
+// The wall state with a new total, its change counter bumped (see setTotal).
+const withTotal = (w, total) => ({ ...w, total, seq: (w.seq ?? 0) + 1 });
+
 export function useGuestbookMessages({ pollMs = 0 } = {}) {
-  // The list and the server's total live in ONE state object so the two
-  // race-prone moments below — a POST's 201 or a DELETE's 200 landing after
-  // a poll has already seen the server's side of it — can settle both from a
-  // single functional updater, against the list as it actually is. Every
-  // other site goes through the two thin setters, unchanged in shape.
-  const [wall, setWall] = useState({ list: null, total: 0 });
+  // The list and the server's total live in ONE state object so the
+  // race-prone moments below — a POST's 201, a DELETE's 200 or a DELETE's
+  // FAILURE landing after a poll has already seen the server's side of it —
+  // can settle both from a single functional updater, against the list as it
+  // actually is. `seq` counts writes to the total (withTotal), so a rollback
+  // can tell whether a read moved it in the meantime. Every other site goes
+  // through the two thin setters, unchanged in shape.
+  const [wall, setWall] = useState({ list: null, total: 0, seq: 0 });
   const messages = wall.list; // null = first load in flight
   const total = wall.total; // the server's count of confirmed marks
   const setMessages = useCallback((next) => {
@@ -92,11 +97,14 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
       list: typeof next === 'function' ? next(w.list) : next,
     }));
   }, []);
+  // Every write to the total also bumps `seq` — a change counter the failed-
+  // delete rollback compares against, to tell "the total is still my
+  // optimistic decrement" from "a read settled it since" without guessing
+  // from the value (two totals can coincide; a counter cannot).
   const setTotal = useCallback((next) => {
-    setWall((w) => ({
-      ...w,
-      total: typeof next === 'function' ? next(w.total) : next,
-    }));
+    setWall((w) =>
+      withTotal(w, typeof next === 'function' ? next(w.total) : next),
+    );
   }, []);
   const [hasMore, setHasMore] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -407,14 +415,15 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
           const list = w.list ?? [];
           const polled = list.some((m) => m.id === confirmed.id);
           const base = polled ? list.filter((m) => m.id !== confirmed.id) : list;
-          return {
+          const next = {
+            ...w,
             list: base.map((m) => (m.id === optimistic.id ? confirmed : m)),
-            total: Number.isFinite(count)
-              ? count
-              : polled
-                ? w.total
-                : w.total + 1,
           };
+          return Number.isFinite(count)
+            ? withTotal(next, count)
+            : polled
+              ? next
+              : withTotal(next, w.total + 1);
         });
         setNewIds((prev) => new Set(prev).add(confirmed.id));
         toast.success('Message posted!');
@@ -501,8 +510,19 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
     const idx = prevList.findIndex((m) => m.id === id);
     if (idx === -1) return false;
     const target = prevList[idx];
-    setMessages((list) => (list ?? []).filter((m) => m.id !== id));
-    setTotal((t) => Math.max(0, t - 1));
+    // One updater for the optimistic step, which also notes the change
+    // counter its decrement lands under — the rollback below restores the
+    // total only if that counter is still current, i.e. no read has settled
+    // the total in the meantime.
+    let decrementSeq = null;
+    setWall((w) => {
+      const next = withTotal(
+        { ...w, list: (w.list ?? []).filter((m) => m.id !== id) },
+        Math.max(0, w.total - 1),
+      );
+      decrementSeq = next.seq;
+      return next;
+    });
 
     try {
       const res = await fetch(`/api/guestbook?id=${encodeURIComponent(id)}`, {
@@ -522,14 +542,12 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
         const revived = list.some((m) => m.id === id);
         const settled = Number.isFinite(data.count);
         if (!revived && !settled) return w;
-        return {
-          list: revived ? list.filter((m) => m.id !== id) : list,
-          total: settled
-            ? data.count
-            : revived
-              ? Math.max(0, w.total - 1)
-              : w.total,
-        };
+        const next = { ...w, list: revived ? list.filter((m) => m.id !== id) : list };
+        return settled
+          ? withTotal(next, data.count)
+          : revived
+            ? withTotal(next, Math.max(0, w.total - 1))
+            : next;
       });
       toast.success(
         own
@@ -538,16 +556,32 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
       );
       return true;
     } catch (err) {
-      setMessages((list) => {
-        const next = [...(list ?? [])];
-        next.splice(Math.min(idx, next.length), 0, target);
-        return next;
+      // The rollback, reconciled in ONE updater against the wall as it
+      // actually is (code review). The server still has the message, and a
+      // poll or reload that ran while the DELETE was pending saw it there —
+      // so it may already have revived the card and settled the total. The
+      // old two-step rollback spliced the saved copy back regardless and
+      // added one on top, leaving a duplicate card and a count one too high.
+      // Now the card returns only if it is not already back, and the total
+      // goes back up only if nothing has written it since the optimistic
+      // decrement (the change counter is still the decrement's); a total a
+      // read has settled is the server's, and stays.
+      setWall((w) => {
+        const list = w.list ?? [];
+        const present = list.some((m) => m.id === id);
+        let nextList = list;
+        if (!present) {
+          nextList = [...list];
+          nextList.splice(Math.min(idx, nextList.length), 0, target);
+        }
+        const untouched = w.seq === decrementSeq;
+        const next = { ...w, list: nextList };
+        return untouched ? withTotal(next, w.total + 1) : next;
       });
-      setTotal((t) => t + 1);
       toast.error(err.message || 'Failed to delete message');
       return false;
     }
-  }, [setMessages, setTotal]);
+  }, []);
 
   // Retire the "new arrival" markers (glow + solo entrance). The wall calls
   // this on a page flip: the ignite is an arrival moment, and remounting a

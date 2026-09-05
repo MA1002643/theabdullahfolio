@@ -226,6 +226,96 @@ describe('useGuestbookMessages — a POST confirmed after a read already saw it'
   });
 });
 
+// The rollback race (code review). A DELETE that FAILS leaves the message on
+// the server — and a read that ran while it was pending saw it there, so it
+// may already have revived the card and settled the total. The old rollback
+// spliced the saved copy back regardless and added one to the total: a
+// duplicate card and a count one too high. Now the card returns only if it is
+// not already back, and the total goes back up only if nothing wrote it since
+// the optimistic decrement.
+describe('useGuestbookMessages — a DELETE that fails after a read already revived the card', () => {
+  const failed = () => json({ error: 'Forbidden' }, 403);
+
+  it('a reload revived the card AND its count: the rollback adds neither a second card nor a second count', async () => {
+    const wall = { messages: [REAL] };
+    const { write } = stubFetch(wall);
+    const { result } = renderHook(() => useGuestbookMessages());
+    await flush();
+
+    let removed;
+    act(() => {
+      removed = result.current.remove('msg_real');
+    });
+    await flush();
+    expect(ids(result)).toEqual([]);
+    expect(result.current.count).toBe(0);
+
+    // The reload lists it and counts it — both already restored.
+    await act(() => result.current.reload());
+    expect(ids(result)).toEqual(['msg_real']);
+    expect(result.current.count).toBe(1);
+
+    write.resolve(failed());
+    await act(async () => {
+      expect(await removed).toBe(false);
+    });
+    expect(ids(result)).toEqual(['msg_real']); // one copy, not two
+    expect(result.current.count).toBe(1); // not 2
+  });
+
+  it('an OLDER page fetched in flight restored the count but could not list the card: the card comes back once, the count is not bumped again', async () => {
+    const wall = { messages: NEWEST, older: OLDER };
+    const { write } = stubFetch(wall);
+    const { result } = renderHook(() => useGuestbookMessages());
+    await flush();
+    expect(result.current.count).toBe(PAGE_SIZE + 2);
+
+    let removed;
+    act(() => {
+      removed = result.current.remove('msg_1');
+    });
+    await flush();
+    expect(ids(result)).not.toContain('msg_1');
+    expect(result.current.count).toBe(PAGE_SIZE + 1);
+
+    // The older page never held msg_1, but the count it carried still does.
+    await act(() => result.current.ensureLoaded(PAGE_SIZE + 1));
+    expect(ids(result)).not.toContain('msg_1');
+    expect(result.current.count).toBe(PAGE_SIZE + 2);
+
+    write.resolve(failed());
+    await act(async () => {
+      expect(await removed).toBe(false);
+    });
+    // Back at its place, exactly once; the read's count stands.
+    expect(ids(result)).toEqual([...idsOf(NEWEST), ...idsOf(OLDER)]);
+    expect(ids(result).filter((id) => id === 'msg_1')).toHaveLength(1);
+    expect(result.current.count).toBe(PAGE_SIZE + 2);
+  });
+
+  it('with no read in between, the rollback restores both the card and the count (the original contract)', async () => {
+    const wall = { messages: [REAL] };
+    const { write } = stubFetch(wall);
+    const { result } = renderHook(() => useGuestbookMessages());
+    await flush();
+
+    let removed;
+    act(() => {
+      removed = result.current.remove('msg_real');
+    });
+    await flush();
+    expect(ids(result)).toEqual([]);
+    expect(result.current.count).toBe(0);
+
+    write.resolve(failed());
+    await act(async () => {
+      expect(await removed).toBe(false);
+    });
+    expect(ids(result)).toEqual(['msg_real']);
+    expect(result.current.count).toBe(1);
+  });
+});
+
 describe('useGuestbookMessages — a DELETE confirmed after a read already saw it', () => {
   it('a reload revived the card: it is taken back on the 200, the total settled from the 200', async () => {
     const wall = { messages: [REAL] };

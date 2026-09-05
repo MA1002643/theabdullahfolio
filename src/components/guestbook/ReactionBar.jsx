@@ -72,21 +72,31 @@ function burst(canvas) {
   return () => cancelAnimationFrame(raf);
 }
 
+// The count reads the SHARED reduced-motion verdict (useReducedMotion: the OS
+// preference or the page's manual switch) and, when motion is off, renders
+// the new number in place — no slide, no fade, no exiting twin. It used to
+// roll on the spring whatever the verdict said (code review): the one layer on
+// the page the motion switch did not reach.
 function RollingCount({ value }) {
+  const reduceMotion = useReducedMotion();
   return (
     <span className="relative inline-flex h-4 min-w-[1ch] overflow-hidden font-mono text-xs tabular-nums">
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.span
-          key={value}
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -10, opacity: 0 }}
-          transition={COUNT_SPRING}
-          className="inline-block"
-        >
-          {value}
-        </motion.span>
-      </AnimatePresence>
+      {reduceMotion ? (
+        <span className="inline-block">{value}</span>
+      ) : (
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={value}
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -10, opacity: 0 }}
+            transition={COUNT_SPRING}
+            className="inline-block"
+          >
+            {value}
+          </motion.span>
+        </AnimatePresence>
+      )}
     </span>
   );
 }

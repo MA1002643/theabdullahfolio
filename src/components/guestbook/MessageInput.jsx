@@ -24,7 +24,12 @@ import SignatureField from './SignatureField';
 // composer comp). The submit itself is the parent's optimistic flow — this
 // component clears the field the moment the message is handed off and
 // restores the draft if the server rejects it, so a failed post never eats
-// what was typed.
+// what was typed. The composer stays EDITABLE while the request is in flight
+// (that is the point of the optimistic clear), so the settle step only
+// touches what the visitor has not touched since (code review): a failed
+// send restores its text only into a still-empty field — otherwise the new
+// draft stays and a toast offers the earlier text back — and a successful
+// send folds the signature away only if it is still the one that was sent.
 //
 // The input is the contact form's FireInput, so the composer types in the
 // site's one input voice: fire-amber gradient glyphs, flat #ff6d05
@@ -67,6 +72,13 @@ export default function MessageInput({ user, onSubmit, submitting }) {
   const inputRef = useRef(null);
   const trimmed = text.trim();
   const canSend = trimmed.length >= 2 && !submitting;
+  // What the field and the pad hold RIGHT NOW, readable after an await: the
+  // submit flow below compares against these to tell "still as I left it"
+  // from "the visitor has moved on" before it restores or resets anything.
+  const textRef = useRef(text);
+  textRef.current = text;
+  const signatureRef = useRef(signature);
+  signatureRef.current = signature;
 
   // Specular glare ONLY on the compose card — deliberately NOT the tilt the
   // wall cards carry. The signature pad maps pointer coords through
@@ -139,15 +151,35 @@ export default function MessageInput({ user, onSubmit, submitting }) {
       });
       return;
     }
-    const draft = text;
+    const sent = { text, signature };
     writeField('');
     const ok = await onSubmit(trimmed, signature);
+    // The field and the pad stayed live while that awaited, so settle ONLY
+    // what is still as the send left it (code review — a failed request used
+    // to overwrite a new draft with the old message, and a success used to
+    // wipe a signature drawn in the meantime).
     if (ok) {
-      setSignature(null);
-      setResetSignal((n) => n + 1);
-    } else {
-      writeField(draft);
+      // Fold the pad away only if the signature is still the one that went
+      // out; a newly drawn one is the next message's, and stays.
+      if (signatureRef.current === sent.signature) {
+        setSignature(null);
+        setResetSignal((n) => n + 1);
+      }
+      return;
     }
+    if (textRef.current === '') {
+      // Nothing typed since the clear: the failed message comes straight back.
+      writeField(sent.text);
+      return;
+    }
+    // A new draft is in the field. It must not be overwritten — but the failed
+    // words must not vanish either, so offer them back; taking the offer is
+    // the visitor's explicit choice to replace what they have typed since.
+    toast('Your earlier message wasn’t sent', {
+      icon: '✦',
+      description: sent.text,
+      action: { label: 'Restore it', onClick: () => writeField(sent.text) },
+    });
   };
 
   return (
