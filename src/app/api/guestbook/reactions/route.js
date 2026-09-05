@@ -12,12 +12,15 @@
 // is a Redis script, so a session toggling in a loop meets a 429 with
 // Retry-After rather than the store — checked after validation, so a
 // malformed body never spends budget, and before the write, so a refused
-// call costs nothing. Returns { reactions: counts, viewerReaction } for the
+// call costs nothing. Validation covers the id's SHAPE too (isMessageId): an
+// id the API could not have minted is a 400 before the limiter or the store
+// is touched. Returns { reactions: counts, viewerReaction } for the
 // message; who reacted never leaves the server, only totals do.
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { setReaction } from '@/lib/guestbook/store';
 import { viewerFromSession } from '@/lib/guestbook/identity';
+import { isMessageId } from '@/lib/guestbook/messageId';
 import { checkReactionRateLimit } from '@/lib/guestbook/ratelimit';
 import { REACTION_KEYS, toReactionCounts } from '@/lib/guestbook/reactions';
 
@@ -36,8 +39,13 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
+  // The id must be SHAPED like a message id (messageId.js — the same check
+  // the deep link makes) before anything downstream sees it: a malformed or
+  // very large string used to reach the limiter (spending the caller's
+  // budget) and then Redis as a key and a script argument, only to answer
+  // 404. Now it is a 400 with no storage work at all (code review).
   const { id, key, clear } = body ?? {};
-  if (typeof id !== 'string' || !id || !REACTION_KEYS.includes(key)) {
+  if (!isMessageId(id) || !REACTION_KEYS.includes(key)) {
     return NextResponse.json({ error: 'Invalid reaction' }, { status: 400 });
   }
 

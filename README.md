@@ -284,7 +284,7 @@ theabdullahfolio/
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
 | `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
 | `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway (contact + guestbook editorial modes) |
-| `/api/guestbook` | Guestbook wall — `GET` serves one cursor-paged, newest-first page (`?limit=` ≤ 50, `?cursor=`) plus the wall's separately-counted total; `POST` / `DELETE` are session-gated, identity from the OAuth session only (`/reactions`, `/presence` alongside) |
+| `/api/guestbook` | Guestbook wall — `GET` serves one cursor-paged, newest-first page (`?limit=` ≤ 50, `?cursor=`) plus the wall's separately-counted total; `POST` / `DELETE` are session-gated, identity from the OAuth session only (`/reactions`, `/presence` alongside); a message `id` not shaped like a minted one (`src/lib/guestbook/messageId.js`) is a `400` on `DELETE` and `/reactions` before any rate-limit or storage work |
 | `/api/daily-warmup` · `/api/repo-refresh` | Cron orchestrator + cache warmer (bearer-authenticated) |
 
 ---

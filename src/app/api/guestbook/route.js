@@ -21,7 +21,9 @@
 //            1 post / user / 5 min server-side. Answers 201 with the public
 //            message plus `count` — the wall's size read just after the
 //            store — so the client settles its total from the write itself.
-//   DELETE → ?id=… own-or-admin, answering { ok, count } the same way. The
+//   DELETE → ?id=… own-or-admin, answering { ok, count } the same way. An id
+//            not shaped like a minted message id (messageId.js) is a 400
+//            before any storage work. The
 //            session's identity KEY must equal the STORED author's
 //            (identity.js — the provider account id, so an author may always
 //            remove their own message however their login has changed) or
@@ -59,7 +61,7 @@ import {
 } from '@/lib/guestbook/reactions';
 import { parseLimit } from '@/lib/guestbook/paging';
 import { decodeCursor, encodeCursor } from '@/lib/guestbook/cursor';
-import { mintMessageId } from '@/lib/guestbook/messageId';
+import { isMessageId, mintMessageId } from '@/lib/guestbook/messageId';
 
 // Live data behind auth — never prerendered, never cached by the framework.
 export const dynamic = 'force-dynamic';
@@ -239,6 +241,12 @@ export async function DELETE(request) {
   const id = new URL(request.url).searchParams.get('id');
   if (!id) {
     return NextResponse.json({ error: 'Message id is required' }, { status: 400 });
+  }
+  // Shape before storage (messageId.js, the same check the deep link and the
+  // reactions route make): an id the API could not have minted is a 400
+  // here, not a Redis GET that answers 404 (code review).
+  if (!isMessageId(id)) {
+    return NextResponse.json({ error: 'Invalid message id' }, { status: 400 });
   }
 
   // Own-or-admin (owner-directed): an author may always remove their own

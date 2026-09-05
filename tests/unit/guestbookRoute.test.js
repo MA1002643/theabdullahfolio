@@ -297,6 +297,31 @@ describe('POST / GET / DELETE /api/guestbook — identity is the account id, nev
     expect((await DELETE(del('msg_1'))).status).toBe(401);
     sessionUser = null;
   });
+
+  // The id's SHAPE is checked before storage (isMessageId, messageId.js): an
+  // id the API could not have minted used to go to the store as a GET and
+  // come back 404; it is a 400 now, with no storage work. Order is kept —
+  // the anonymous 401 still comes first, and a well-formed id that names
+  // nothing is still storage's 404.
+  it('a malformed id is a 400 before storage for a signed-in viewer; anonymous is still 401 first', async () => {
+    const { DELETE } = await import('@/app/api/guestbook/route');
+    sessionUser = { key: 'github:7777', username: 'mallory', name: 'Mallory', provider: 'github' };
+    for (const bad of [
+      'm1',
+      'guestbook',
+      'msg_1725000000000',
+      'msg_1725000000000_XYZ12345',
+      'msg_1725000000000_0000c0de/../x',
+      'a'.repeat(10_000),
+    ]) {
+      const res = await DELETE(del(bad));
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toBe('Invalid message id');
+    }
+    expect((await DELETE(del('msg_1725000000000_deadbeef'))).status).toBe(404);
+    sessionUser = null;
+    expect((await DELETE(del('guestbook'))).status).toBe(401);
+  });
 });
 
 // Every write answers with `count`, the wall's size just after it — the
