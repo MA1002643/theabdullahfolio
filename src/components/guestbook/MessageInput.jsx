@@ -13,7 +13,7 @@ import { useMagneticPull } from '@/hooks/useMagneticPull';
 import { useUiSound } from '@/hooks/useUiSound';
 import { setNativeValue } from '@/lib/contact';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
-import { MESSAGE_MAX } from '@/lib/guestbook/validate';
+import { MESSAGE_MAX } from '@/lib/guestbook/limits';
 import SignatureField from './SignatureField';
 
 // Compose card for a signed-in visitor, laid out after the guestbook concept

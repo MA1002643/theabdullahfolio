@@ -3,21 +3,63 @@
 // message must clear length, control-character, URL-spam and profanity checks
 // before it is stored. Pure functions — no I/O — so the whole module is
 // unit-testable without a server.
+//
+// SERVER ONLY. The no-links check below consults the Public Suffix List
+// (tldts), which is far too much to ship to a browser for a character count:
+// client code imports MESSAGE_MIN / MESSAGE_MAX from limits.js instead, and
+// the re-export here exists for the server-side callers that always read
+// them from this module.
+import { parse } from 'tldts';
+import { MESSAGE_MAX, MESSAGE_MIN } from './limits';
 
-export const MESSAGE_MIN = 2;
-export const MESSAGE_MAX = 150;
+export { MESSAGE_MAX, MESSAGE_MIN };
 
 // The compose field is a single-line input, so any control character (including
 // newlines) in the payload means the client was bypassed.
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
 
-// Guestbook messages have no legitimate need for links; every URL shape —
-// scheme, www., or a bare domain.tld — is treated as spam outright. The TLD
-// list is deliberately the short "spam classics" set: matching every TLD would
-// flag ordinary prose ("node.js", "ma.codes" is fine to mention though —
-// accepted casualty, the error message says why).
-const URL_PATTERN =
-  /(?:https?:\/\/|www\.)|\b[a-z0-9][a-z0-9-]*\.(?:com|net|org|io|dev|app|xyz|co|uk|me|info|biz|ru|cn|ly|gg)\b/i;
+// NO LINKS. Guestbook messages have no legitimate need for a URL, so every
+// shape is refused: a scheme, a www. prefix, a raw IP address, or a BARE
+// domain — any dotted token whose suffix is a real public suffix, checked
+// against the maintained Public Suffix List rather than a hand-kept list. The
+// first cut matched fifteen "spam classic" TLDs, which left every other TLD
+// (`spam.ai`, `spam.tech`, `spam.zip`, `spam.co.uk`, an IDN like `спам.рф`)
+// as a straightforward bypass of the policy on a public wall. Ordinary prose
+// survives because it is not a registrable domain: "node.js" and "next.js"
+// (no such TLD), "e.g.", "Ph.D.", "U.S.", "9.30", "1.2.3", "Mr.Smith".
+//
+// Two deliberate exemptions, each pinned by tests (see validate.test.js):
+//   • dev file names whose extension is ALSO a ccTLD — README.md, main.py,
+//     run.sh, lib.rs — but only as a bare two-label name: `www.spam.md`,
+//     `https://spam.py` and `docs.spam.sh` still fall to the other checks;
+//   • the site's own domain — "love ma.codes!" is what a guestbook is for.
+const EXPLICIT_URL = /https?:\/\/|www\./i;
+// A dotted run of hostname-ish labels (Unicode letters and digits, hyphens).
+// Surrounding punctuation is not part of a label, so "(spam.ai)," and
+// "spam.ai/free" both yield the token "spam.ai".
+const HOST_TOKEN = /[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+/gu;
+const FILE_EXTENSION_TLDS = new Set(['md', 'py', 'sh', 'rs', 'pl', 'cc', 'so']);
+const OWN_HOSTS = new Set(['ma.codes']);
+
+function isBareDomainOrIp(token) {
+  const lower = token.toLowerCase();
+  if (OWN_HOSTS.has(lower)) return false;
+  const info = parse(lower);
+  if (info.isIp) return true;
+  // A registrable domain under a suffix ICANN actually delegates. Anything
+  // else — an unknown "TLD", a bare suffix, a number — is prose.
+  if (!info.domain || !info.isIcann) return false;
+  return !(FILE_EXTENSION_TLDS.has(info.publicSuffix) && !info.subdomain);
+}
+
+// Exported for the unit suite; validateMessage is the only production caller.
+export function containsUrl(text) {
+  if (EXPLICIT_URL.test(text)) return true;
+  for (const token of text.match(HOST_TOKEN) ?? []) {
+    if (isBareDomainOrIp(token)) return true;
+  }
+  return false;
+}
 
 // Small profanity list, matched as whole words on a leet-normalised copy so
 // "sh1t" is caught but Scunthorpe-style substrings are not. Kept to strong
@@ -57,7 +99,7 @@ export function validateMessage(raw) {
   if (CONTROL_CHARS.test(raw)) {
     return { ok: false, error: 'Message contains invalid characters' };
   }
-  if (URL_PATTERN.test(value)) {
+  if (containsUrl(value)) {
     return { ok: false, error: 'Links are not allowed in guestbook messages' };
   }
   if (PROFANITY_RE.test(normaliseForProfanity(value))) {

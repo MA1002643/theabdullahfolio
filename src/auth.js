@@ -14,19 +14,30 @@
 // .env.example); never inline a value.
 //
 // Identity model (src/lib/guestbook/identity.js has the full account): the
-// guestbook's per-user key is `key`, minted here at sign-in from the OAuth
+// guestbook's per-user key is `key`, minted at sign-in from the OAuth
 // account — `${account.provider}:${account.providerAccountId}` — and copied
 // onto every session. It is the author identity, the rate-limit key, the
-// reactions hash field and (in its key form) the admin check, and it never
-// changes for the life of the account.
+// reactions hash field and the admin check (GUESTBOOK_ADMIN holds the owner's
+// key, never a login), and it never changes for the life of the account.
 //   github → "github:<numeric user id>", with the login (`profile.login`)
 //            carried BESIDE it as `username` — display data for the card's
 //            @handle and profile link, never a key: logins are renameable,
 //            and a released login can be claimed by someone else.
-//   google → "google:<sub>", INTERNAL ONLY (cards display the person's name
+//   google → "google:<sub>", never displayed (cards show the person's name
 //            instead); no username at all.
 // The prefix keeps the two namespaces apart by construction — a Google sub
 // can never spell a GitHub id, and ':' is illegal in a GitHub login.
+//
+// Where the key travels: the encrypted JWT cookie, every stored author, and
+// the session object — which `auth()` hands the routes AND /api/auth/session
+// hands the signed-in browser, so a person's own key does reach their own
+// client, as their name and avatar do. No guestbook response carries any key
+// (route.js strips it, the viewer's own included), and the wall's client code
+// never reads it (sessionCallbacks.js).
+//
+// The callbacks that do this live in src/lib/guestbook/sessionCallbacks.js as
+// pure functions, so what a sign-in writes to the JWT and what a session read
+// copies from it are unit-tested without booting next-auth.
 //
 // Sessions minted before `key` existed carry a username and no key. They are
 // not upgraded (an id is not recoverable from a login without a GitHub API
@@ -34,46 +45,15 @@
 import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
-import { isAdminIdentity } from '@/lib/guestbook/admin';
-import { identityFromSignIn } from '@/lib/guestbook/identity';
+import {
+  jwtCallback,
+  sessionCallback,
+} from '@/lib/guestbook/sessionCallbacks';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [GitHub, Google],
   callbacks: {
-    // `account` and the raw OAuth `profile` exist only on the initial
-    // sign-in callback — persist identity into the JWT then, and copy it
-    // onto every session after. It must come from this flow and never from
-    // a request body.
-    jwt({ token, account, profile }) {
-      if (account) {
-        const identity = identityFromSignIn({ account, profile });
-        if (identity) {
-          token.key = identity.key;
-          token.provider = identity.provider;
-          // The display handle: present for GitHub, absent for Google —
-          // cleared rather than left over, so a token never carries a stale
-          // one.
-          if (identity.username) token.username = identity.username;
-          else delete token.username;
-        }
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user && token.key) {
-        session.user.key = token.key;
-        session.user.provider = token.provider;
-        if (token.username) session.user.username = token.username;
-        // Derived HERE (server-side, from the JWT identity + env) rather than
-        // stored in the token: rotating GUESTBOOK_ADMIN takes effect on the
-        // next session read instead of surviving inside old JWTs. The flag is
-        // presentation-only — the DELETE route re-derives authority itself.
-        session.user.isAdmin = isAdminIdentity({
-          key: token.key,
-          username: token.username,
-        });
-      }
-      return session;
-    },
+    jwt: jwtCallback,
+    session: sessionCallback,
   },
 });

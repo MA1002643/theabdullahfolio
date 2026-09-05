@@ -8,7 +8,7 @@
 // mirror the surface's own field, the output-token cap, and the gateway cost
 // tag that keeps the two features separable on the billing dashboard.
 
-import { MESSAGE_MAX } from '@/lib/guestbook/validate';
+import { MESSAGE_MAX } from '@/lib/guestbook/limits';
 
 // The rewrite contracts. Kept deliberately tight so the output drops straight
 // into the field: no preamble, no quotes, no markdown — just the message.

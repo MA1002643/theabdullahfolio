@@ -34,8 +34,10 @@ export const redisAvailable = Boolean(redis);
 // it can — so a numeric-looking field ("123", "1e5") would come back as a
 // number, and be a different key by the time it became an object property.
 // Fields are identity keys now (`github:<id>`, never numeric-looking), but
-// hashes written before keys existed carry bare logins, which can be. Raw
-// strings in, raw strings out; the driver builds the map itself.
+// hashes written before keys existed carry bare logins, which can be — until
+// the identity migration (legacyIdentity.js, run by
+// scripts/guestbook-migrate-identity.mjs) folds them under the account's key.
+// Raw strings in, raw strings out; the driver builds the map itself.
 const rawRedis =
   url && token ? new Redis({ url, token, automaticDeserialization: false }) : null;
 
@@ -78,11 +80,62 @@ function hashFromFlat(flat) {
 }
 
 // Fetch the JSON rows for a list of ids, in that order. A row can be null if
-// a delete raced the index read; drop those rather than surfacing holes.
+// a delete raced the index read; drop those rather than surfacing holes (the
+// paged read below then scans on — see listMessages).
 async function rowsFor(ids) {
   if (!ids.length) return [];
   const rows = await redis.mget(...ids.map(msgKey));
   return rows.filter(Boolean);
+}
+
+// WITHSCORES answers flat — [member, score, member, score, …] — and the data
+// client's auto-deserialiser turns the numeric score strings into numbers;
+// Number() covers both. Each entry is a paging.js position: the ZSET score IS
+// a message's `t` (addMessage scores by createdAt), so a position can be
+// minted from the index alone, for an id whose row is already gone.
+function positions(flat) {
+  const out = [];
+  for (let i = 0; i + 1 < (flat?.length ?? 0); i += 2) {
+    out.push({ id: String(flat[i]), t: Number(flat[i + 1]) });
+  }
+  return out;
+}
+
+// Walk the index: up to `want` positions strictly after `after` (null = the
+// top), newest first. The two-query shape under a cursor is deliberate: REV
+// order is score desc, then member desc, so "strictly after the cursor" is
+// (a) the members that SHARE its score and sort below its id, then (b) every
+// member with a lower score — two index reads in one pipeline. (a) is
+// non-empty only when two people posted in the same millisecond — rare, but
+// an exclusive score bound alone would skip those messages on every page
+// boundary, forever. Under REV the client forwards the bounds positionally,
+// so they go (max, min). Score-bounded, never rank-offset: a rank shifts the
+// moment a member ahead of it is deleted, and a continuation by rank would
+// skip the live member that slid into the vacated rank.
+async function indexAfter(after, want) {
+  if (!after) {
+    return positions(
+      await redis.zrange(IDS_KEY, 0, want - 1, { rev: true, withScores: true }),
+    );
+  }
+  const p = redis.pipeline();
+  p.zrange(IDS_KEY, after.t, after.t, {
+    byScore: true,
+    rev: true,
+    withScores: true,
+  });
+  p.zrange(IDS_KEY, `(${after.t}`, '-inf', {
+    byScore: true,
+    rev: true,
+    offset: 0,
+    count: want,
+    withScores: true,
+  });
+  const [ties, older] = await p.exec();
+  return [
+    ...positions(ties).filter((e) => e.id < after.id),
+    ...positions(older),
+  ].slice(0, want);
 }
 
 export const redisDriver = {
@@ -97,43 +150,44 @@ export const redisDriver = {
 
   // Cursor-paged read (the wall's GET): newest first, at most `limit`, from
   // strictly after position `after` (paging.js; null = from the top). Costs
-  // two or three bounded commands whatever the wall's size: the index walk,
-  // one MGET of `limit` rows — never the whole set.
+  // a handful of bounded commands whatever the wall's size: an index walk of
+  // limit + 1 positions and one MGET of `limit` rows per round — never the
+  // whole set.
+  //
+  // The index and the rows are read in two steps, and a delete (ZREM + DEL
+  // in one MULTI) can land between them: MGET then hands back null for an id
+  // the walk returned. Dropping the null is right — but a page built ONLY
+  // from what MGET kept could come back short, or empty, while the walk's
+  // extra position proved older messages exist; answering `next: null` there
+  // told the client the wall was exhausted, and it could never page past the
+  // gap. So the read is a loop over the INDEX: while the page is short and
+  // the walk says more exists, scan on from the last indexed position — the
+  // deleted id's own (score, id), which is all a position is, so no live row
+  // is needed to continue — until the page is full or the index itself is
+  // exhausted. Each round advances strictly, so it ends, and the extra rounds
+  // cost only what the race deleted. Two invariants fall out, and the client
+  // leans on both: a SHORT page means the index is exhausted (`next` is
+  // null), and a FULL page's `next` is its last row's position — every id the
+  // walk saw after it was deleted, so the next page re-covers nothing live.
   async listMessages({ limit, after = null }) {
-    // Ask the index for one id beyond the page: its presence is the "more
-    // exists" signal, so `next` needs no extra command.
-    const want = limit + 1;
-    let ids;
-    if (!after) {
-      ids = await redis.zrange(IDS_KEY, 0, want - 1, { rev: true });
-    } else {
-      // REV order is score desc, then member desc, so "strictly after the
-      // cursor" is (a) the members that SHARE its score and sort below its
-      // id, then (b) every member with a lower score. Two index reads in one
-      // pipeline. (a) is non-empty only when two people posted in the same
-      // millisecond — rare, but an exclusive score bound alone would skip
-      // those messages on every page boundary, forever. Under REV the client
-      // forwards the bounds positionally, so they go (max, min).
-      const p = redis.pipeline();
-      p.zrange(IDS_KEY, after.t, after.t, { byScore: true, rev: true });
-      p.zrange(IDS_KEY, `(${after.t}`, '-inf', {
-        byScore: true,
-        rev: true,
-        offset: 0,
-        count: want,
-      });
-      const [ties, older] = await p.exec();
-      ids = [...ties.filter((id) => id < after.id), ...older].slice(0, want);
+    const messages = [];
+    let from = after;
+    for (;;) {
+      const need = limit - messages.length;
+      // One position beyond what the page still needs: its presence is the
+      // "more exists" signal, so `next` needs no extra command.
+      const scanned = await indexAfter(from, need + 1);
+      const more = scanned.length > need;
+      const slice = scanned.slice(0, need);
+      if (slice.length) {
+        messages.push(...(await rowsFor(slice.map((e) => e.id))));
+      }
+      if (!more) return { messages, next: null };
+      if (messages.length === limit) {
+        return { messages, next: positionOf(messages[messages.length - 1]) };
+      }
+      from = slice[slice.length - 1];
     }
-    const messages = await rowsFor(ids.slice(0, limit));
-    // Continue from the last row actually served: if the index's last id lost
-    // a race with a delete, the next page simply re-covers a gap of deleted
-    // ids, which MGET drops again — never a skipped live message.
-    const next =
-      ids.length > limit && messages.length
-        ? positionOf(messages[messages.length - 1])
-        : null;
-    return { messages, next };
   },
 
   async countMessages() {

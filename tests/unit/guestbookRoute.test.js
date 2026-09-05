@@ -153,8 +153,9 @@ describe('GET /api/guestbook — cursor pagination', () => {
 // The public author shape. A Google author's stored username is
 // `google:<sub>` — a stable Google account identifier, internal by design —
 // and it used to ride out of this public GET on every such message, with only
-// the card told to hide it. Now it never leaves the server, and ownership
-// (what the client used the username for) is a per-viewer boolean.
+// the card told to hide it. Now no guestbook response carries it — nor any
+// identity key, the viewer's own included — and ownership (what the client
+// used the username for) is a per-viewer boolean.
 describe('GET / POST /api/guestbook — Google identities stay internal', () => {
   const wholeWall = async () => {
     const { GET } = await import('@/app/api/guestbook/route');
@@ -194,9 +195,12 @@ describe('GET / POST /api/guestbook — Google identities stay internal', () => 
       name: 'Visitor 3',
       provider: 'github',
     };
-    ({ body } = await wholeWall());
+    ({ text, body } = await wholeWall());
     expect(body.messages.find((m) => m.id === 'msg_3').isOwn).toBe(true);
     expect(body.messages.filter((m) => m.isOwn)).toHaveLength(1);
+    // No key in a guestbook response — the viewer's own included. The only
+    // place a key reaches a browser is its owner's session payload.
+    expect(text).not.toContain('github:');
   });
 
   it('POST answers in the same public shape: isOwn true, no internal id', async () => {

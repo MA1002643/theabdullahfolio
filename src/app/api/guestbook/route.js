@@ -65,12 +65,16 @@ export const dynamic = 'force-dynamic';
 
 // The public shape of a stored author. The identity `key` (identity.js) is
 // internal: it is what ownership and the limiters compare, and for a Google
-// author it is the account's sub — so it never leaves the server, on any
-// message. A GitHub login is public by nature — the card links to the
-// profile — so `username` ships for GitHub authors. Rows from before `key`
+// author it is the account's sub — so it is stripped from every message this
+// route serves, the viewer's own included; nobody learns another account's
+// id from the wall. (The one place a key does reach a browser is its owner's
+// own session payload — sessionCallbacks.js says why that is fine.) A GitHub
+// login is public by nature — the card links to the profile — so `username`
+// ships for GitHub authors. Rows from before `key`
 // existed stored a Google author's sub AS the username (`google:<sub>`); ':'
 // is illegal in a GitHub login, so a username carrying one is internal
-// whatever the provider says and is stripped too. Hiding in the UI is not
+// whatever the provider says and is stripped too (the identity migration,
+// legacyIdentity.js, moves it into `key` and drops it). Hiding in the UI is not
 // hiding on the wire, and this GET is public. The one thing the client used
 // identity for, "is this mine?" (the bin button), travels as the
 // viewer-specific boolean `isOwn` instead.
@@ -240,8 +244,8 @@ export async function DELETE(request) {
   // to the STORED author's (ownsMessage; both server-derived — the client
   // never nominates an author here any more than it does on POST). The login
   // is not consulted: it is display data, and a renamed author must still be
-  // able to remove their own message. Admin is admin.js's call, in whichever
-  // form GUESTBOOK_ADMIN is set.
+  // able to remove their own message. Admin is admin.js's call: the viewer's
+  // key equal to GUESTBOOK_ADMIN — a key, never a login, for the same reason.
   const target = await getMessage(id);
   if (!target) {
     return NextResponse.json({ error: 'Message not found' }, { status: 404 });

@@ -39,7 +39,16 @@ export function useUiSound() {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return;
       sharedCtx = sharedCtx || new Ctx();
-      if (sharedCtx.state === 'suspended') sharedCtx.resume();
+      // resume() fails ASYNCHRONOUSLY — a NotAllowedError under autoplay
+      // policy arrives as a promise rejection, which the try/catch around
+      // this block never sees. Swallow it on the promise itself (wrapped, so
+      // an engine handing back a non-promise cannot throw here either). No
+      // await: Web Audio starts queued nodes the moment the context runs, so
+      // the cue is scheduled now and simply plays when — or never, if —
+      // resume goes through. Same handling as the footer's pluckSynth.
+      if (sharedCtx.state === 'suspended') {
+        Promise.resolve(sharedCtx.resume()).catch(() => {});
+      }
 
       const now = sharedCtx.currentTime;
       for (const p of partials) {

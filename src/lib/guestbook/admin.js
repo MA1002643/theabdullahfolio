@@ -5,36 +5,32 @@
 //     the wall can SHOW the bin on every card for the owner. That flag is
 //     display-only — a forged client value changes nothing server-side.
 //
-// GUESTBOOK_ADMIN (see .env.example) holds ONE of two forms, told apart by the
-// ':' that is present in every identity key and illegal in a GitHub login:
-//   • the owner's GitHub login — compared case-insensitively with the viewer's
-//     `username`, because GitHub logins are; or
-//   • the owner's identity key, `github:<account id>` (identity.js) — compared
-//     exactly with the viewer's `key`. The rename-proof form: a login can be
-//     renamed and the old name claimed by someone else, who would then pass
-//     the login comparison until the variable was updated; an account id
-//     cannot be. With this form set, the login is never consulted.
-// Google identities ("google:<sub>") never match a login-form admin — the
-// digits of a sub never case-fold into one.
+// GUESTBOOK_ADMIN (see .env.example) must hold the owner's IDENTITY KEY —
+// `github:<providerAccountId>`, the numeric GitHub user id under its provider
+// prefix (identity.js) — and is compared exactly with the viewer's `key`. It
+// is never a login: a GitHub login can be renamed and the released name
+// claimed by another account, which would then hold delete-any authority
+// until the variable was updated. The account id cannot be taken over, which
+// is the whole point of keying the wall by it. A value without the key's ':'
+// is a misconfiguration (the pre-key login form): nobody becomes the
+// moderator, and the process logs once, naming the fix — failing closed and
+// visibly while the wall itself keeps serving.
 
-export function isAdminUsername(username) {
-  const admin = process.env.GUESTBOOK_ADMIN;
-  return Boolean(
-    admin && username && username.toLowerCase() === admin.toLowerCase(),
-  );
-}
+let warnedLoginForm = false;
 
-export function isAdminKey(key) {
-  const admin = process.env.GUESTBOOK_ADMIN;
-  return Boolean(admin && key && admin === key);
-}
-
-// `identity` is the viewer shape identity.js builds ({ key, username }); the
-// session callback passes the JWT's fields in the same shape.
 export function isAdminIdentity(identity) {
-  const admin = process.env.GUESTBOOK_ADMIN;
+  const admin = (process.env.GUESTBOOK_ADMIN ?? '').trim();
   if (!admin) return false;
-  return admin.includes(':')
-    ? isAdminKey(identity?.key)
-    : isAdminUsername(identity?.username);
+  if (!admin.includes(':')) {
+    if (!warnedLoginForm) {
+      warnedLoginForm = true;
+      console.warn(
+        '[guestbook] GUESTBOOK_ADMIN holds a login, not an identity key — ' +
+          'moderation is OFF. Set it to github:<your numeric GitHub user id> ' +
+          '(https://api.github.com/users/<login> shows the id).',
+      );
+    }
+    return false;
+  }
+  return typeof identity?.key === 'string' && identity.key === admin;
 }

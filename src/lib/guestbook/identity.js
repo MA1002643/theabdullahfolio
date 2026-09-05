@@ -16,14 +16,30 @@
 // link, present beside the key for GitHub authors and absent for Google ones
 // (a sub is internal, and the card shows the person's name).
 //
+// Where a key travels, exactly: the encrypted JWT cookie; the stored author
+// (server side, on every message); and the session object — the one
+// `auth()` hands the routes, which is the same one /api/auth/session serves
+// to the signed-in browser. So a person's OWN key reaches their own client,
+// as their name and avatar do (a GitHub id is public on the GitHub API; a
+// Google sub is the account's app-scoped id, the person's own). What never
+// happens is anyone learning anyone ELSE's key: no guestbook response carries
+// a key — route.js strips it from every author, the viewer's own included —
+// and the wall's client code never reads `session.user.key`. The routes read
+// it through viewerFromSession() below; that is its only consumer.
+//
 // The provider prefix keeps the namespaces apart by construction — a Google
 // sub can never spell a GitHub id. It is also why the Google key is
 // byte-identical to the `google:<sub>` username the wall stored before `key`
 // existed: authorKey() reads that legacy form back as the key, so those rows
 // stay owned. GitHub rows from before `key` were keyed by login and are owned
-// by nobody now (the moderator can still remove them) — a deliberate cut, not
-// a login fallback, which would re-open the hole for exactly the rows it
-// covered.
+// by nobody until MIGRATED (the moderator can still remove them) — a
+// deliberate cut, not a login fallback, which would re-open the hole for
+// exactly the rows it covered. The repair is an operator-run migration
+// (legacyIdentity.js, scripts/guestbook-migrate-identity.mjs) that backfills
+// `key` from an authoritative login → account-id mapping — the operator's,
+// or what the row itself recorded at write time — and folds the bare-login
+// reaction fields of the same era under the key. A login on its own never
+// becomes a key, there or here.
 
 const nonEmptyString = (v) => typeof v === 'string' && v.length > 0;
 

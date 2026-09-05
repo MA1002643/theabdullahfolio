@@ -25,7 +25,9 @@ import { ACCENTS } from './accents';
 //     is scroll-driven — no second code path,
 //   · the track filter is owned by the container: the chips dim non-matching
 //     bars here AND the matching timeline cards below (TimelineNode's `dimmed`
-//     prop), so the two views can never disagree about what is highlighted,
+//     prop), so the two views can never disagree about what is highlighted —
+//     and dimmed means de-emphasised, not disabled: a dimmed bar is still a
+//     jump target for mouse, touch and keyboard alike,
 //   · the NOW line is the live clock made spatial — open-ended bars close
 //     EXACTLY on it (never a pixel past — owner correction) and wear a dashed
 //     edge, and the line itself echoes the EraRail needle's ember.
@@ -466,7 +468,18 @@ const TimelineAtlas = ({
                               // the packing reservation.
                               'ja-bar absolute flex items-center rounded-md border px-2.5 text-left font-mono',
                               d.open ? 'border-dashed' : 'border-solid',
-                              isDim && 'pointer-events-none opacity-[0.13]',
+                              // Dimmed = de-emphasised, not disabled (the
+                              // chips highlight a track, TimelineNode's
+                              // `dimmed` says the same): the bar stays a
+                              // live jump target for EVERY input. It used to
+                              // carry pointer-events-none, which cut mouse
+                              // and touch off from a control the keyboard
+                              // could still activate. Hover and focus lift it
+                              // back to legible, so what a pointer is about
+                              // to jump to — and where keyboard focus sits —
+                              // can actually be seen.
+                              isDim &&
+                                'opacity-[0.13] hover:opacity-70 focus-visible:opacity-100',
                             )}
                             style={{
                               '--ja-accent': accent,

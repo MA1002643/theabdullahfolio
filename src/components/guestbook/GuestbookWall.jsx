@@ -326,11 +326,12 @@ export default function GuestbookWall() {
   // from GUESTBOOK_ADMIN — the owner's moderation path for anything
   // unpleasant on a recruiter-facing wall). Ownership is the server's
   // per-message, per-viewer `isOwn` — decided from the session against the
-  // STORED author — not a client-side username comparison: the public
-  // payload carries no username for Google authors (their `google:<sub>` id
-  // is internal and never leaves the server), so the client has nothing to
-  // compare, and never needed to. The client gate is display-only — the
-  // DELETE route re-derives both ownership and admin from the session.
+  // STORED author — not a client-side identity comparison: no message the
+  // server serves carries an identity key (nor a username for Google
+  // authors), so the client has nothing to compare, and never needed to —
+  // it does not read `session.user.key` either. The client gate is
+  // display-only — the DELETE route re-derives both ownership and admin from
+  // the session.
   const viewerIsAdmin = Boolean(session?.user?.isAdmin);
   const ownsMessage = (msg) => Boolean(msg.isOwn);
   const handleDelete = async (id) => {

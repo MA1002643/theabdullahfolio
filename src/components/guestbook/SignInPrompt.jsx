@@ -7,7 +7,7 @@ import { PenLine, Send } from 'lucide-react';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import { useMagneticPull } from '@/hooks/useMagneticPull';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
-import { MESSAGE_MAX } from '@/lib/guestbook/validate';
+import { MESSAGE_MAX } from '@/lib/guestbook/limits';
 
 // CTA card for unauthenticated visitors. The wall itself stays readable —
 // signing in only gates writing. OAuth is the whole identity story (issue
