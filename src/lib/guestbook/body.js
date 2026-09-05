@@ -24,6 +24,10 @@
 // ceiling a malformed request costs what any HTTP request to a function
 // costs, and nothing more.
 //
+// `/api/refine-message` reads its body through this too: its 8 KB ceiling
+// used to be a Content-Length check alone, which an absent or understated
+// header walks straight past.
+//
 // Answers { ok: true, body } or { ok: false, status, error } with the status
 // the route should return (413 over the ceiling, 400 for anything that is
 // not JSON). Pure over the Request; no I/O beyond the body itself.

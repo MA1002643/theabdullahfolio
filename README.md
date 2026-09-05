@@ -488,7 +488,7 @@ A quiet ember affordance under the message field streams an AI rewrite of the vi
 
 - **Server** (`refine-message/route.js`) — AI SDK (`ai@7`) `streamText` through the **Vercel AI Gateway** with a plain `"provider/model"` string (no provider SDK, no per-provider key). Defaults to `anthropic/claude-haiku-4.5`, overridable via `REFINE_MODEL`.
 - **Auth is server-only** — resolves `AI_GATEWAY_API_KEY` or the auto-injected `VERCEL_OIDC_TOKEN`; when neither is present the route returns `503` and the client **hides the feature**, so keyless local dev is unaffected.
-- **Guards** — the untrusted message is wrapped in `<message>` delimiters (prompt-injection guard); a per-IP rate limit, a body-size cap, and length checks gate abuse; error logs record only `name` + `statusCode`, never the SDK's free-text body.
+- **Guards** — the untrusted message is wrapped in `<message>` delimiters (prompt-injection guard); a per-IP rate limit, an 8 KB body byte ceiling enforced on the stream before parsing (the guestbook routes' `readJsonBody` — over it is a 413 with the stream cancelled at the limit, so an absent or understated `Content-Length` cannot get an oversized body buffered), and per-mode length checks gate abuse; error logs record only `name` + `statusCode`, never the SDK's free-text body.
 - **Client** (`useMessageRefine`) reads the plain UTF-8 stream with a `ReadableStream` reader — no client-side AI dependencies.
 
 </details>

@@ -1,5 +1,6 @@
 import { streamText, createTextStreamResponse } from 'ai';
 import { resolveRefineMode } from '@/lib/refineModes';
+import { PAYLOAD_TOO_LARGE, readJsonBody } from '@/lib/guestbook/body';
 
 // Pin the Node.js runtime, matching the repo's other API routes. The AI SDK +
 // gateway stack targets Node >=22; pinning also prevents accidental Edge
@@ -30,12 +31,18 @@ export const runtime = 'nodejs';
 // is more than capable of rewriting a sub-500-character note.
 const MODEL = process.env.REFINE_MODEL || 'anthropic/claude-haiku-4.5';
 
-// Byte ceiling for the raw request body, checked before we buffer/parse it. A
+// Byte ceiling for the raw request body, enforced BEFORE it is buffered or
+// parsed (readJsonBody, shared with the guestbook routes): a declared
+// Content-Length over the ceiling is refused without reading a byte, and a
+// body that arrives with no Content-Length (chunked transfer, HTTP/2) or an
+// understated one is counted as it streams and cancelled the moment it
+// crosses the ceiling — the cap holds whether or not the header is honest. A
 // 2000-char message is at most ~6 KB of UTF-8 (plus the tiny JSON wrapper), so
 // 8 KB leaves headroom for multi-byte content while still rejecting payloads no
-// legitimate contact note would produce. Distinct from MAX_LEN — that's a
-// character count on the parsed message; this is a fast-fail gate on wire bytes.
-const MAX_BODY_BYTES = 8 * 1024;
+// legitimate contact note would produce. Distinct from each mode's maxLen —
+// that's a character count on the parsed message; this is a gate on wire
+// bytes. Exported for the route test.
+export const MAX_BODY_BYTES = 8 * 1024;
 
 function json(body, status) {
   return new Response(JSON.stringify(body), {
@@ -104,29 +111,29 @@ export async function POST(req) {
     );
   }
 
-  // Reject obviously-oversized bodies before req.json() buffers and parses them.
-  // A caller within the rate limit could still POST a huge payload that the parse
-  // below would fully read before the MAX_LEN check ever runs; this gate fails
-  // such requests fast. Best-effort (content-length can be absent or wrong) — the
-  // MAX_LEN check on the parsed message stays the authoritative cap.
-  const declaredBytes = Number(req.headers.get('content-length'));
-  if (Number.isFinite(declaredBytes) && declaredBytes > MAX_BODY_BYTES) {
-    return json({ error: 'too_large', message: 'Request is too large.' }, 413);
+  // Read the body under MAX_BODY_BYTES before anything parses it. A caller
+  // within the rate limit could otherwise POST a huge payload that req.json()
+  // would buffer in full before the length check below ever ran — and a
+  // Content-Length header alone cannot prevent that, since it can be absent or
+  // understated. The reader counts the bytes as they arrive and cancels the
+  // stream at the ceiling; over it is 413 and not-JSON is 400, in this route's
+  // own error shapes.
+  const read = await readJsonBody(req, { maxBytes: MAX_BODY_BYTES });
+  if (!read.ok) {
+    return read.status === PAYLOAD_TOO_LARGE
+      ? json({ error: 'too_large', message: 'Request is too large.' }, 413)
+      : json({ error: 'bad_request', message: 'Invalid request.' }, 400);
   }
-
-  let message;
-  let mode;
-  try {
-    ({ message, mode } = await req.json());
-  } catch {
-    return json({ error: 'bad_request', message: 'Invalid request.' }, 400);
-  }
+  // `read.body` is whatever JSON arrived — normally an object, but JSON.parse
+  // can also yield null or a scalar — so the fields are read with guards
+  // rather than destructured.
+  const { body } = read;
 
   // Unknown/absent mode falls back to the contact contract (see refineModes.js
   // — the lookup also refuses "__proto__"-style inherited keys).
-  const cfg = resolveRefineMode(mode);
+  const cfg = resolveRefineMode(body?.mode);
 
-  message = typeof message === 'string' ? message.trim() : '';
+  const message = typeof body?.message === 'string' ? body.message.trim() : '';
   if (message.length < cfg.minLen) {
     return json(
       { error: 'too_short', message: 'Write a little more first, then I can polish it.' },
