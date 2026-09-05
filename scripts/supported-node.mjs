@@ -5,7 +5,7 @@
  *
  * Why this exists at all: Homebrew's `node` is v25 (odd-numbered, non-LTS,
  * auto-bumped by brew) and crashes Next 14 with silent exits via a V8 bug in
- * webpack's cache serialization. The repo declares `engines: ^22.3.0 ||
+ * webpack's cache serialization. The repo declares `engines: ^22.13.0 ||
  * ^24.0.0` and `.npmrc` sets engine-strict, but that pair only guards INSTALL
  * time — nothing stops an already-installed repo from being LAUNCHED on v25.
  * dev.mjs closed that for `next dev`; this module lets `next build` / `start`
@@ -17,9 +17,13 @@ import { homedir } from "node:os";
 import path from "node:path";
 
 // A runtime is supported when it's one of the LTS majors that don't crash Next
-// on this machine (22, 24) AND clears the 22.3.0 floor — the same range
-// package.json declares. Keep ENGINE_FLOOR in sync with `engines.node`.
-const ENGINE_FLOOR = [22, 3, 0];
+// on this machine (22, 24) AND clears the 22.13.0 floor — the same range
+// package.json declares. The floor is the lockfile's, not a preference: the
+// unit-test stack (vitest → Vite 8, jsdom 29) declares `^22.13.0` within the
+// 22 line, and `.npmrc`'s engine-strict makes `npm ci` refuse anything below
+// it — so advertising a lower floor here would only promise an install that
+// fails. Keep ENGINE_FLOOR in sync with `engines.node`.
+const ENGINE_FLOOR = [22, 13, 0];
 
 export const isSupportedNode = (version) => {
   const [major, minor = 0, patch = 0] = version.split(".").map(Number);
@@ -68,7 +72,7 @@ export function resolveSupportedNodeBin({ tag, what, required }) {
   if (!best) {
     const detail =
       `node ${current} is outside the supported range for this repo's ${what}` +
-      ` (LTS 22.x >= 22.3.0, or 24.x), and no usable build was found in ${nvmDir}.`;
+      ` (LTS 22.x >= 22.13.0, or 24.x), and no usable build was found in ${nvmDir}.`;
     if (required) {
       console.error(`[${tag}] ${detail}`);
       console.error(`[${tag}] install one with: nvm install 22`);

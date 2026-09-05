@@ -290,9 +290,17 @@ export const BtnList = [
     newTab: false,
   },
   {
-    label: 'LinkedIn',
-    link: 'https://www.linkedin.com/in/muhammad-abdullah227/',
-    icon: 'linkedin',
+    // Replaced the LinkedIn ring button (issue #40, owner-directed), on the
+    // same reasoning as the GitHub → Journey swap above: the ring's eight
+    // slots are prime navigation real estate, and an external hop earns one
+    // less than the in-app /guestbook wall does. LinkedIn is not gone — it
+    // keeps its slot in the footer's ELSEWHERE terminal (footer-data.js
+    // socialLinks), where external destinations live. Swapping IN PLACE (not
+    // appending) matters: the sub-480px two-column layout slices BtnList
+    // 0-3 / 4-7, so a ninth entry would silently vanish on phones.
+    label: 'Guestbook',
+    link: '/guestbook',
+    icon: 'guestbook',
     newTab: false,
   },
   {
@@ -324,11 +332,25 @@ export const BtnList = [
 // public/Muhammad_Abdullah_CV.pdf — where the two disagreed, LinkedIn won
 // (BTEC is 2019–2021 with the OCNLR cert before it, not the CV's 2017 start;
 // Unisys is MAY 2023 — SEP 2024, not APR—JUL). Keep all three in step.
+//
+// `start`/`end` are the machine form of `dateLabel` for the overlap atlas
+// (components/journey/TimelineAtlas): 'YYYY-MM', `end: null` = still running
+// (the atlas closes those bars on the live clock). The two year-only college
+// labels resolve to the academic year (SEP → JUN) — the label stays the
+// honest display, the span is the best month-true reading of it. `org` is the
+// employer/institution: the atlas prints every bar caption as `org · role`
+// (role = the title's first ' · ' segment) IN FULL — a short bar's caption
+// spills past its edge, with the lane packing reserving the room — so keep it
+// the proper name, never an abbreviation. Keep all three date fields telling
+// one story.
 export const journeyData = [
   {
     id: 'j-indie',
     year: 2026,
     dateLabel: 'APR 2026 →',
+    start: '2026-04',
+    end: null,
+    org: 'Independent Projects',
     title: 'Software Engineer · Independent Projects',
     description:
       'Designing, building and shipping full-stack work end-to-end: a Swagger-documented REST API with Mocha/Chai tests, Colophon (AI publishing — Vue 3, Express, PostgreSQL + pgvector), AfaaqX, and a GitHub profile regenerated daily by scheduled Actions pipelines.',
@@ -340,6 +362,9 @@ export const journeyData = [
     id: 'j-constant',
     year: 2026,
     dateLabel: 'MAY 2026 →',
+    start: '2026-05',
+    end: null,
+    org: 'Constant Security Services',
     title: 'Security Officer · Constant Security Services',
     description:
       'SIA-licensed across critical science and university sites, including Jodrell Bank Observatory — patrols, CCTV, incident response and control-room reporting while landing the next engineering role.',
@@ -351,6 +376,9 @@ export const journeyData = [
     id: 'j-c365',
     year: 2026,
     dateLabel: 'FEB — MAY 2026',
+    start: '2026-02',
+    end: '2026-05',
+    org: 'C365Cloud',
     title: 'DevOps Engineer · C365Cloud',
     description:
       'Kept a compliance platform shipping: CI/CD pipelines, Microsoft SQL Server and MySQL administration, and .NET (Blazor) platform features for internal teams in Wakefield.',
@@ -362,6 +390,9 @@ export const journeyData = [
     id: 'j-adullam',
     year: 2026,
     dateLabel: 'APR 2025 — MAY 2026',
+    start: '2025-04',
+    end: '2026-05',
+    org: 'Adullam Homes',
     title: 'Concierge · Adullam Homes',
     description:
       'Out-of-hours point of contact in supported accommodation — safeguarding escalations, incident management and accurate electronic record-keeping for vulnerable residents.',
@@ -373,6 +404,9 @@ export const journeyData = [
     id: 'j-showsec',
     year: 2025,
     dateLabel: 'DEC 2024 — AUG 2025',
+    start: '2024-12',
+    end: '2025-08',
+    org: 'Showsec',
     title: 'Security Officer / CCTV Operator · Showsec',
     description:
       'CCTV monitoring, crowd management and incident response at high-profile events, coordinating in real time with security teams and law enforcement.',
@@ -384,6 +418,9 @@ export const journeyData = [
     id: 'j-lidl',
     year: 2025,
     dateLabel: 'SEP 2021 — APR 2025',
+    start: '2021-09',
+    end: '2025-04',
+    org: 'Lidl GB',
     title: 'Customer Assistant · Lidl GB',
     description:
       'High-volume store through the whole degree — till, deliveries, stock; part of the team that lifted the store’s sales ranking from 14th to 10th and customer satisfaction 18% in four months.',
@@ -395,6 +432,9 @@ export const journeyData = [
     id: 'j-unisys',
     year: 2024,
     dateLabel: 'MAY 2023 — SEP 2024',
+    start: '2023-05',
+    end: '2024-09',
+    org: 'Unisys',
     title: 'Software Engineer · Unisys',
     description:
       '17-month industrial placement in Manchester: shipped full-stack C# / .NET (Blazor) features that lifted system efficiency ~20%, cut production issues 30% owning support triage, and stepped up to lead a project team to an on-time delivery that won follow-on client contracts.',
@@ -406,6 +446,9 @@ export const journeyData = [
     id: 'j-ambassador',
     year: 2023,
     dateLabel: 'MAY 2022 — OCT 2023',
+    start: '2022-05',
+    end: '2023-10',
+    org: 'MMU',
     title: 'Student Ambassador · MMU',
     description:
       'Represented the university at open days, tours and recruitment events across Greater Manchester.',
@@ -417,6 +460,9 @@ export const journeyData = [
     id: 'j-mmu-helpdesk',
     year: 2023,
     dateLabel: 'JUL 2022 — JAN 2023',
+    start: '2022-07',
+    end: '2023-01',
+    org: 'MMU',
     title: 'IT Help Desk Technician · MMU',
     description:
       'First-line support for staff and students — hardware, software and access issues, bridging IT and partner departments; praised by multiple departments in the first week.',
@@ -428,6 +474,9 @@ export const journeyData = [
     id: 'j-mmu-dev',
     year: 2023,
     dateLabel: 'APR 2022 — JAN 2023',
+    start: '2022-04',
+    end: '2023-01',
+    org: 'MMU',
     title: 'Software Developer · MMU',
     description:
       'Front-end and back-end functionality in a multidisciplinary university team — resolved 50+ bugs, improved load speed 25% and cut development time 15% translating stakeholder requirements into working features.',
@@ -439,6 +488,9 @@ export const journeyData = [
     id: 'j-course-rep',
     year: 2022,
     dateLabel: 'SEP 2021 — SEP 2022',
+    start: '2021-09',
+    end: '2022-09',
+    org: 'MMU',
     title: 'Course Representative · MMU',
     description:
       'Elected voice for the cohort — negotiated assessment scheduling around religious observances and expanded departmental guest-speaker sessions.',
@@ -450,6 +502,9 @@ export const journeyData = [
     id: 'j-bsc',
     year: 2021,
     dateLabel: 'SEP 2021 →',
+    start: '2021-09',
+    end: null,
+    org: 'MMU',
     title: 'BSc (Hons) Software Engineering · MMU',
     description:
       'Manchester Metropolitan University — BCS-accredited, predicted First-Class Honours. The formal deep end.',
@@ -461,6 +516,9 @@ export const journeyData = [
     id: 'j-kfc',
     year: 2021,
     dateLabel: 'MAR 2019 — SEP 2021',
+    start: '2019-03',
+    end: '2021-09',
+    org: 'KFC',
     title: 'Team Member · KFC',
     description:
       'Every station, front to back — named Best Employee six consecutive months, in the crew that lifted the store’s regional ranking from 5th to 2nd.',
@@ -472,6 +530,9 @@ export const journeyData = [
     id: 'j-btec',
     year: 2021,
     dateLabel: '2019 — 2021',
+    start: '2019-09',
+    end: '2021-06',
+    org: 'Bolton College',
     title: 'BTEC Level 3 Extended Diploma in IT',
     description:
       'Bolton College — Triple Distinction (DDD). Two years that turned curiosity into a discipline.',
@@ -483,6 +544,9 @@ export const journeyData = [
     id: 'j-ocnlr',
     year: 2019,
     dateLabel: '2018 — 2019',
+    start: '2018-09',
+    end: '2019-06',
+    org: 'Bolton College',
     title: 'OCNLR Certificate in Digital Skills',
     description:
       'Bolton College — the first formal step into computing, and the doorway to everything above it.',

@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import {
   useMotionTemplate,
   useMotionValue,
-  useReducedMotion,
   useSpring,
 } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { onMediaChange } from "@/lib/mediaQuery";
 
 // Pointer-reactive 3D tilt + ember glare for the about-page hero cards.

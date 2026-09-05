@@ -1,3 +1,20 @@
+// ANALYZE=true npm run build → per-chunk treemaps in .next*/analyze/ (issue
+// #40 Phase 6 budget evidence). Inert in every normal build and on Vercel.
+//
+// Loaded on demand, never statically: `@next/bundle-analyzer` is a
+// devDependency, and `next start` evaluates this file too, so a production
+// install without devDependencies (`npm ci --omit=dev`, a Docker runtime
+// stage) would crash at startup on a missing module — before ANALYZE was ever
+// consulted. Top-level await is fine here: Next loads the config with a
+// dynamic import(), which awaits module evaluation.
+const withBundleAnalyzer =
+  process.env.ANALYZE === 'true'
+    ? (await import('@next/bundle-analyzer')).default({
+        enabled: true,
+        openAnalyzer: false,
+      })
+    : (config) => config;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // This repo lives under ~/Desktop, which iCloud Drive syncs. iCloud's
@@ -118,4 +135,4 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

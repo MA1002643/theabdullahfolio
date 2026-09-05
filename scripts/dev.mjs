@@ -14,7 +14,7 @@
  *
  *   2. WRONG NODE. Homebrew's `node` is v25 (odd-numbered, non-LTS,
  *      auto-bumped by brew) and crashes the Next 14 dev server with silent
- *      exits. `engines` now pins the LTS majors (`^22.3.0 || ^24.0.0`),
+ *      exits. `engines` now pins the LTS majors (`^22.13.0 || ^24.0.0`),
  *      and engine-strict makes a mismatched `npm ci` fail loudly — but
  *      that only guards INSTALL time; nothing stops an already-installed
  *      repo from being launched with v25. When the invoking Node is not a

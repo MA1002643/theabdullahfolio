@@ -59,6 +59,10 @@ export const quickLinks = [
   { label: 'Qualifications', href: '/qualifications', desc: 'Credentials' },
   { label: 'Projects', href: '/projects', desc: 'Selected work' },
   { label: 'Contact', href: '/contact', desc: 'Say hello' },
+  // Last on purpose — the IA arc ends "reach out, then sign the wall". Also
+  // feeds the Manifest departures board, which maps this list with no
+  // hardcoded row count, so the sixth row flips in like the rest (issue #40).
+  { label: 'Guestbook', href: '/guestbook', desc: 'Leave your mark' },
 ];
 
 // Live availability state, surfaced in the identity block as an honest,

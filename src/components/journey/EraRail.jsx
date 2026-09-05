@@ -118,24 +118,32 @@ const DialYear = ({
               : { type: 'spring', stiffness: 260, damping: 22 }
           }
         >
+          {/* Resting numerals wear the bezel's own Architect amber (#ffbb55),
+              not grey — the last of the owner's grey-clock correction: with
+              the rings, graduations and needle already on the site triad, a
+              white/40 numeral was the one cold element left on a warm gilt
+              instrument. Dim amber at rest, brighter amber on hover, and only
+              the elected year ignites the needle's ember. */}
           <span
             className={clsx(
               'font-mono text-[10px] tracking-[0.25em] transition-colors duration-300',
               isActive
                 ? 'text-[#ff6d05]'
-                : 'text-white/40 group-hover:text-white/75',
+                : 'text-[#ffbb55]/45 group-hover:text-[#ffbb55]/90',
             )}
           >
             {year}
           </span>
           {/* Radial tick — crosses the bezel ring at the rim, clock-mark
-              style, and stretches when its year is on the needle. */}
+              style, and stretches when its year is on the needle. Resting
+              ticks wear the subtitle pink (the "larger dashes" of the owner's
+              palette correction); the active one stays the needle ember. */}
           <span
             className={clsx(
               'h-[2px] rounded-full transition-all duration-300',
               isActive
                 ? 'w-7 bg-[#ff6d05] shadow-[0_0_8px_rgba(255,109,5,0.7)]'
-                : 'w-4 bg-white/25 group-hover:bg-white/60',
+                : 'w-4 bg-[#fc83ff]/50 group-hover:bg-[#fc83ff]/80',
             )}
           />
         </Tag>
@@ -171,15 +179,16 @@ const DialFace = ({
         height: RADIUS * 2,
       }}
     >
-      {/* Static bezel — a hairline double ring; only its left arc is ever
-          on screen. */}
+      {/* Static bezel — a hairline double ring; only its left arc is ever on
+          screen. Warm amber (the Architect-paragraph #ffbb55), not grey —
+          owner correction: the grey clock sat outside the site's palette. */}
       <div
         aria-hidden
-        className="absolute inset-0 rounded-full border border-white/10"
+        className="absolute inset-0 rounded-full border border-[#ffbb55]/25"
       />
       <div
         aria-hidden
-        className="absolute -inset-[9px] rounded-full border border-white/[0.05]"
+        className="absolute -inset-[9px] rounded-full border border-[#ffbb55]/10"
       />
 
       {/* The rotor — the one element the spring rotates. */}
@@ -193,12 +202,16 @@ const DialFace = ({
                 transform: `rotate(${angle}deg) translateX(-${RADIUS}px)`,
               }}
             >
+              {/* Graduations in the theme, not grey (owner correction):
+                  minor quarter-year marks take the eyebrow amber, the longer
+                  silent-year marks the subtitle pink — same split as the
+                  year ticks below (small = amber family, large = pink). */}
               <span
                 className={clsx(
                   'absolute left-0 top-0 -translate-y-1/2',
                   silent
-                    ? 'h-[1px] w-2.5 bg-white/30'
-                    : 'h-[1px] w-1.5 bg-white/20',
+                    ? 'h-[1px] w-2.5 bg-[#fc83ff]/60'
+                    : 'h-[1px] w-1.5 bg-[#ffaa2a]/60',
                 )}
               />
             </div>

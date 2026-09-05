@@ -2,10 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// useMessageRefine — drives the "polish my missive" feature on the contact form.
-// POSTs the visitor's rough message to /api/refine-message and reads the
-// streamed text response chunk by chunk, exposing the rewrite as it materialises
-// so the UI can show it building token by token (the part that feels premium).
+// useMessageRefine — drives the "polish my missive" feature on the contact form
+// and the guestbook composer. POSTs the visitor's rough message to
+// /api/refine-message and reads the streamed text response chunk by chunk,
+// exposing the rewrite as it materialises so the UI can show it building token
+// by token (the part that feels premium).
+//
+// `mode` picks the server's editorial contract ('guestbook' → a short casual
+// one-liner; omitted → the contact form's professional-note default). It is
+// only sent when set, so the request the deployed contact form makes is
+// byte-identical to before the field existed.
 //
 // States:
 //   idle      — nothing in flight, no suggestion shown
@@ -17,7 +23,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // The hook owns one in-flight request at a time: starting a new refine (or
 // unmounting) aborts the previous stream so we never leak a reader or race two
 // responses into the same state.
-export function useMessageRefine() {
+export function useMessageRefine({ mode } = {}) {
   const [status, setStatus] = useState('idle');
   const [suggestion, setSuggestion] = useState('');
   const [error, setError] = useState(null);
@@ -60,7 +66,7 @@ export function useMessageRefine() {
         const res = await fetch('/api/refine-message', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify(mode ? { message, mode } : { message }),
           signal: controller.signal,
         });
         if (!isCurrent()) return;
@@ -117,7 +123,7 @@ export function useMessageRefine() {
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [abort],
+    [abort, mode],
   );
 
   return { status, suggestion, error, refine, reset };

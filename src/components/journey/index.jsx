@@ -1,13 +1,37 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useInView, useReducedMotion, useScroll, useSpring } from 'framer-motion';
+import {
+  useInView,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+} from 'framer-motion';
 import { journeyData } from '@/app/data';
+import { resumeUrl } from '@/components/footer/footer-data';
+import FireText from '@/components/shared/FireText';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import TimelineSpine from './TimelineSpine';
 import TimelineNode from './TimelineNode';
+import TimelineAtlas from './TimelineAtlas';
 import GhostYear from './GhostYear';
 import EraRail from './EraRail';
+import JourneyPalette from './JourneyPalette';
+
+// The end-cap tally — the whole record in three figures. All three derive
+// from the DATA, never the clock (the span is newest era year − earliest
+// start year), so the line is SSR-deterministic: it moves when an entry is
+// added, which is exactly when the story it summarises moves.
+const TALLY = (() => {
+  const firstYear = Math.min(
+    ...journeyData.map((m) => Number(m.start.slice(0, 4))),
+  );
+  return {
+    years: journeyData[0].year - firstYear,
+    entries: journeyData.length,
+    tracks: new Set(journeyData.map((m) => m.type)).size,
+  };
+})();
 
 // /journey (issue #38) — the scroll-driven career timeline. This container
 // owns every piece of shared scroll state so the four instruments can never
@@ -23,7 +47,11 @@ import EraRail from './EraRail';
 //   · one ResizeObserver survey (height + every marker centre) shapes the
 //     serpentine spine and gives the comet its ride along the curve,
 //   · one visibility gate (timeline on screen + intro loader lifted) fades the
-//     two fixed instruments in and out so neither ever floats over the footer.
+//     two fixed instruments in and out so neither ever floats over the footer,
+//   · one era election + one track filter also feed the inline overlap atlas
+//     (TimelineAtlas, between the title and the list): the elected year lights
+//     that era's bars, and the atlas's chips dim non-matching bars AND cards
+//     through the same state — the two views can never disagree.
 //
 // `useReducedMotion` is gated behind a mounted flag — it returns null on the
 // server, so reading it raw makes SSR and the first client render disagree
@@ -74,9 +102,7 @@ const JourneyTimeline = () => {
     if (!el) return undefined;
     const measure = () => {
       setSpineHeight(el.offsetHeight);
-      setAmplitude(
-        window.matchMedia('(min-width: 768px)').matches ? 46 : 12,
-      );
+      setAmplitude(window.matchMedia('(min-width: 768px)').matches ? 46 : 12);
       const listTop = el.getBoundingClientRect().top;
       const ys = Array.from(
         el.querySelectorAll('[data-spine-marker]'),
@@ -158,9 +184,25 @@ const JourneyTimeline = () => {
     return () => io.disconnect();
   }, []);
 
-  // The fixed instruments live only while the timeline itself is on screen.
-  const timelineOnScreen = useInView(listRef, { amount: 0 });
+  // The fixed instruments live only while the reader is genuinely IN the
+  // timeline. A bare `amount: 0` lit them the moment any pixel of the list
+  // touched the viewport — i.e. while the atlas was still the content on the
+  // way down, and the moment the EST. end-cap peeked in on the way up from
+  // the footer (owner correction, both directions). The asymmetric band
+  // fixes both edges: the list must reach 45% down the viewport before the
+  // instruments ignite (the first era pill crossing mid-screen — the
+  // timeline has actually arrived), and its tail must still hang below the
+  // upper 35% for them to stay lit (so they cut out as the last card leaves,
+  // not while the end-cap and footer own the screen).
+  const timelineOnScreen = useInView(listRef, {
+    amount: 0,
+    margin: '-45% 0px -35% 0px',
+  });
   const instrumentsVisible = revealed && timelineOnScreen;
+
+  // The atlas's track filter — held here, not in the atlas, because it dims
+  // BOTH views: the atlas bars and the timeline cards below them.
+  const [trackFilter, setTrackFilter] = useState('all');
 
   const years = [...new Set(journeyData.map((m) => m.year))];
 
@@ -171,9 +213,16 @@ const JourneyTimeline = () => {
     // (the issue #47 sticky lesson). The fixed instruments (GhostYear, EraRail)
     // are untouched: position:fixed under a transform-free ancestor is laid
     // out against the viewport, outside this clip.
+    //
+    // px-2: breathing room for the card glow (owner correction, pixel-
+    // verified). A card whose edge lands ON the section edge — the outer
+    // edge of every alternating desktop card, and every card's right edge
+    // on mobile — had custom-bg-abt's 6px ember box-shadow amputated by
+    // this very clip, so one side read flatter than the other three. 8px
+    // of padding keeps every card clear of the clip line.
     <section
       aria-label="Journey timeline"
-      className="relative mx-auto mt-16 w-full max-w-5xl overflow-x-clip md:mt-20"
+      className="relative mx-auto mt-16 w-full max-w-5xl overflow-x-clip px-2 md:mt-20"
     >
       <GhostYear
         year={activeYear}
@@ -187,6 +236,16 @@ const JourneyTimeline = () => {
         progress={scrollYProgress}
         height={spineHeight}
         anchors={eraAnchors}
+        reduceMotion={reduceMotion}
+      />
+
+      {/* The overlap atlas — between the page title and the timeline: the
+          parallel view first, the sequential story under it. */}
+      <TimelineAtlas
+        activeYear={activeYear}
+        filter={trackFilter}
+        onFilter={setTrackFilter}
+        revealed={revealed}
         reduceMotion={reduceMotion}
       />
 
@@ -211,18 +270,47 @@ const JourneyTimeline = () => {
               }
               revealed={revealed}
               reduceMotion={reduceMotion}
+              dimmed={trackFilter !== 'all' && milestone.type !== trackFilter}
             />
           ))}
         </ol>
       </div>
 
-      {/* Origin end-cap — where the spine's gold finally lands. */}
-      <p
-        aria-hidden
-        className="mt-6 pb-4 text-center font-mono text-[10px] tracking-[0.35em] text-[#f9d174]/60"
-      >
-        EST. 2018 · BOLTON, UK
-      </p>
+      {/* Origin end-cap — where the spine's gold finally lands: the EST.
+          flourish, the whole record tallied in three figures, and the page's
+          one outbound hand-off. The scroll story IS the interactive CV, so
+          it ends by offering the paper one (same PDF the footer's Résumé
+          link serves — imported from footer-data, never a second path). */}
+      {/* All three lines wear the contact intro's per-word fire ink (owner
+          correction — the flat gold/amber tints were superseded). The link's
+          hover flips the whole phrase to the page-title ember: FireText
+          words carry INLINE clip fills, so the flip lives in globals.css
+          (.journey-cv-link) where !important can beat them. */}
+      <div className="mt-6 pb-4 text-center">
+        <p
+          aria-hidden
+          className="font-mono text-[10px] tracking-[0.35em]"
+        >
+          <FireText text="EST. 2018 · BOLTON, UK" />
+        </p>
+        <p className="mt-2 font-mono text-[10px] tracking-[0.3em]">
+          <FireText
+            text={`${TALLY.years} YRS · ${TALLY.entries} ENTRIES · ${TALLY.tracks} TRACKS`}
+          />
+        </p>
+        <a
+          href={resumeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open the CV PDF (new tab)"
+          className="journey-cv-link mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.2em]"
+        >
+          <FireText text="THE PAPER VERSION →" />
+        </a>
+      </div>
+
+      {/* ⌘K — /journey's action set for the shared command palette. */}
+      <JourneyPalette />
     </section>
   );
 };

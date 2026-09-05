@@ -1,7 +1,10 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMessageRefine } from '@/hooks/useMessageRefine';
+import { CONTACT_REFINE_MIN_LEN } from '@/lib/refineLimits';
 
 // MessageRefine — the "polish my missive" affordance that sits beneath the
 // message field. Once the visitor has written a real sentence, a quiet ember
@@ -10,24 +13,51 @@ import { useMessageRefine } from '@/hooks/useMessageRefine';
 // discard. It owns none of the form's state — the parent passes the current
 // `message`, an `onAccept(text)` applier, and a `disabled` flag (true while the
 // form is sending) so refine can never fire mid-send.
+//
+// Shared by the contact form (its home) and the guestbook composer, the same
+// way FireInput is: `mode` picks the server's editorial contract (omitted →
+// contact) and `minLength` scales the show-the-affordance floor to the
+// surface's own field (a 150-char guestbook mark earns polish sooner than a
+// 500-char contact note).
 
-// Match the API's MIN_LEN: below this there's nothing meaningful to polish, so
-// the affordance stays hidden rather than offering a no-op.
-const MIN_REFINE_LEN = 24;
+// The default floor IS the API's contact-mode minLen — one constant
+// (refineLimits.js) read by this component and by the server's mode table, so
+// the affordance can never offer a request the API would answer 400 too_short,
+// and the two cannot drift apart unnoticed (they had: 24 here, 20 there).
+// Below it there's nothing meaningful to polish, so the affordance stays
+// hidden rather than offering a no-op.
 
-export default function MessageRefine({ message, onAccept, disabled }) {
+export default function MessageRefine({
+  message,
+  onAccept,
+  disabled,
+  mode,
+  minLength = CONTACT_REFINE_MIN_LEN,
+}) {
   const reduced = useReducedMotion();
-  const { status, suggestion, error, refine, reset } = useMessageRefine();
+  const { status, suggestion, error, refine, reset } = useMessageRefine({ mode });
 
   const trimmed = (message || '').trim();
-  const longEnough = trimmed.length >= MIN_REFINE_LEN;
+  const longEnough = trimmed.length >= minLength;
   const busy = status === 'loading' || status === 'streaming';
+
+  // The moment the form starts sending (`disabled` flips on), any refine in
+  // flight or on offer is moot: the submit has captured the message. Hiding
+  // the panel alone was not enough — the stream kept running inside the hook,
+  // and a composer that stays MOUNTED after a successful post (the guestbook
+  // one does; the contact form remounts) saw it finish and the stale
+  // suggestion surface beneath the cleared field the moment `disabled`
+  // cleared. So the transition ABORTS and resets the hook, never merely hides
+  // the view. Idempotent on an idle hook, so mounting already-disabled is a
+  // no-op; after a failed send the field is restored and a fresh refine is
+  // one tap away.
+  useEffect(() => {
+    if (disabled) reset();
+  }, [disabled, reset]);
+
   // Gate the whole panel on `!disabled`, not just its buttons: once the form is
-  // sending it has already captured the message, so the panel goes fully inert.
-  // This also unmounts an in-flight refine's streaming view rather than leaving a
-  // rewrite materialising for a message that's already on its way out. On a
-  // server error `disabled` clears and the panel returns for a retry; on success
-  // the form remounts, so it was leaving regardless.
+  // sending it has already captured the message, so the panel goes fully inert
+  // — and, per the effect above, empty by the time it could return.
   const showPanel = !disabled && (busy || status === 'done' || status === 'error');
 
   // sr-only status so non-streaming AT users hear the state transitions without

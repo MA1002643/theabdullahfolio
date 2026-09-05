@@ -47,6 +47,14 @@ TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
 # playwright mcp browser-session artifacts (console logs, page snapshots)
 .playwright-mcp/
 
+# playwright test-runner artifacts (issue #40 e2e smoke)
+/test-results/
+/playwright-report/
+
+# guestbook local dev data (GUESTBOOK_DRIVER=json) — visitor or seeded
+# messages; must never reach the public repo
+/data/guestbook.json
+
 # editor / tool temp files (e.g. crash-leftover *.tmp.<pid>.<hash>)
 *.tmp
 *.tmp.*

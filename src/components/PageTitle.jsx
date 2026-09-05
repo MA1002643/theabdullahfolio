@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 
 // Shared page-title block. Single source of truth for sub-page

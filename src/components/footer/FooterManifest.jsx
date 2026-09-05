@@ -153,8 +153,16 @@ export default function FooterManifest() {
         <span className="footer-index__rule" />
       </div>
 
-      {/* <ol> because the numbering is meaningful order (site IA), not decoration. */}
-      <ol className="footer-index__board">
+      {/* <ol> because the numbering is meaningful order (site IA), not
+          decoration. The board lays out as TWO column-major columns (owner
+          correction — one column ran too long); the row count is derived
+          here so the CSS never hardcodes the list length. */}
+      <ol
+        className="footer-index__board"
+        style={{
+          gridTemplateRows: `repeat(${Math.ceil(quickLinks.length / 2)}, auto)`,
+        }}
+      >
         {quickLinks.map((l, i) => {
           const active = isActive(l.href);
           const ordinal = String(i + 1).padStart(2, '0');
