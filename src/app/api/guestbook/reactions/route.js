@@ -18,6 +18,7 @@
 // message; who reacted never leaves the server, only totals do.
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { readJsonBody } from '@/lib/guestbook/body';
 import { setReaction } from '@/lib/guestbook/store';
 import { viewerFromSession } from '@/lib/guestbook/identity';
 import { isMessageId } from '@/lib/guestbook/messageId';
@@ -26,18 +27,24 @@ import { REACTION_KEYS, toReactionCounts } from '@/lib/guestbook/reactions';
 
 export const dynamic = 'force-dynamic';
 
+// `{ id, key, clear }` is a few dozen bytes; a kilobyte is the ceiling (body.js
+// — the same abuse boundary the unauthenticated presence route drew, applied
+// here too because this route also parses before it meters).
+export const REACTION_BODY_MAX_BYTES = 1024;
+
 export async function POST(request) {
   const viewer = viewerFromSession(await auth());
   if (!viewer) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  // Ceiling before parsing (body.js): over it → 413, never read past the
+  // limit; not JSON → 400, as ever.
+  const read = await readJsonBody(request, { maxBytes: REACTION_BODY_MAX_BYTES });
+  if (!read.ok) {
+    return NextResponse.json({ error: read.error }, { status: read.status });
   }
+  const { body } = read;
 
   // The id must be SHAPED like a message id (messageId.js — the same check
   // the deep link makes) before anything downstream sees it: a malformed or

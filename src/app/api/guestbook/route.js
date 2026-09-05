@@ -51,6 +51,7 @@ import {
   listMessages,
 } from '@/lib/guestbook/store';
 import { isAdminIdentity } from '@/lib/guestbook/admin';
+import { readJsonBody } from '@/lib/guestbook/body';
 import { ownsMessage, viewerFromSession } from '@/lib/guestbook/identity';
 import { checkRateLimit } from '@/lib/guestbook/ratelimit';
 import { validateMessage } from '@/lib/guestbook/validate';
@@ -65,6 +66,12 @@ import { isMessageId, mintMessageId } from '@/lib/guestbook/messageId';
 
 // Live data behind auth — never prerendered, never cached by the framework.
 export const dynamic = 'force-dynamic';
+
+// The largest legitimate POST body: a ≤150-character message (≤600 bytes in
+// UTF-8) plus a ≤4 KB signature path and the JSON around them — comfortably
+// under 16 KB. Over that is a 413 before parsing (body.js): this route meters
+// AFTER validation like the others, so the unmetered path is bounded here too.
+export const MESSAGE_BODY_MAX_BYTES = 16 * 1024;
 
 // The public shape of a stored author. The identity `key` (identity.js) is
 // internal: it is what ownership and the limiters compare, and for a Google
@@ -149,12 +156,11 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  const read = await readJsonBody(request, { maxBytes: MESSAGE_BODY_MAX_BYTES });
+  if (!read.ok) {
+    return NextResponse.json({ error: read.error }, { status: read.status });
   }
+  const { body } = read;
 
   const checked = validateMessage(body?.message);
   if (!checked.ok) {

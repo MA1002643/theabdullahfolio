@@ -3,7 +3,9 @@
 // a deployment decision, not a code path:
 //
 //   GUESTBOOK_DRIVER=json    → data/guestbook.json (local dev only — Vercel's
-//                              filesystem is read-only/ephemeral in production)
+//                              filesystem is read-only/ephemeral in production;
+//                              a served production REFUSES TO LOAD it unless
+//                              the e2e-only hatch below is ALSO set)
 //   GUESTBOOK_DRIVER=redis   → Upstash Redis (KV_REST_API_* / UPSTASH_*) —
 //                              REFUSES TO LOAD if those credentials are absent
 //                              (see resolveDriver) rather than falling back
@@ -12,6 +14,12 @@
 //                              a served production (see resolveDriver — the
 //                              file store is ephemeral on Vercel, so a silent
 //                              fallback would accept posts and lose them)
+//
+// The e2e-only hatch: GUESTBOOK_ALLOW_JSON_IN_PRODUCTION=e2e-non-durable, a
+// SECOND, separately named variable whose required VALUE spells the
+// consequence, so no "1"/"true"/typo unlocks it. The Playwright config sets it
+// for its hermetic, disposable `next start`; nothing else should, and it must
+// never be set on Vercel.
 //
 // Both drivers implement the same contract, which is what the driver unit
 // tests assert:
@@ -43,25 +51,44 @@ const servingProduction = () =>
 
 // The json driver is dev-only by contract: one process, one file, ephemeral on
 // Vercel — and its rate limit reserves slots in process memory, so a second
-// instance would not see the first's. When it is asked for EXPLICITLY under
-// production, say so once, loudly, in the log — a warning rather than a
-// throw, because the e2e suite legitimately boots a production server on the
-// json driver (GUESTBOOK_DRIVER=json, the Redis variables emptied on purpose).
-// The unrequested case is not a warning; see resolveDriver.
-function warnIfProduction(driver) {
-  if (servingProduction()) {
-    console.warn(
-      '[guestbook] json storage driver active under NODE_ENV=production — it is ' +
-        'single-process and non-durable (dev/e2e only). For a public deployment ' +
-        'set GUESTBOOK_DRIVER=redis with KV_REST_API_URL + KV_REST_API_TOKEN.',
+// instance would not see the first's. Asked for EXPLICITLY under a served
+// production it used to serve with a warning, because the e2e suite boots a
+// production server on it. A warning does not protect data (code review): one
+// GUESTBOOK_DRIVER typo on Vercel and every successful write is non-durable
+// and differs per instance. So it FAILS CLOSED, like the other two production
+// refusals, and the e2e suite comes through a hatch of its own — a separately
+// named variable whose value must spell the consequence — which still logs
+// once that the store is non-durable, so the condition stays visible.
+export const JSON_IN_PRODUCTION_HATCH = 'GUESTBOOK_ALLOW_JSON_IN_PRODUCTION';
+export const JSON_IN_PRODUCTION_VALUE = 'e2e-non-durable';
+
+function jsonInProduction(driver) {
+  if (!servingProduction()) return driver;
+  if (process.env[JSON_IN_PRODUCTION_HATCH] !== JSON_IN_PRODUCTION_VALUE) {
+    throw new Error(
+      'Guestbook storage: GUESTBOOK_DRIVER=json under NODE_ENV=production — ' +
+        'refusing to serve the json file store: it is single-process and ' +
+        'ephemeral on Vercel, so successful writes would be lost on the next ' +
+        'cold start and differ between instances. Set GUESTBOOK_DRIVER=redis ' +
+        'with KV_REST_API_URL + KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL + ' +
+        'UPSTASH_REDIS_REST_TOKEN). The e2e suite alone serves the file store ' +
+        `in production, by ALSO setting ${JSON_IN_PRODUCTION_HATCH}=` +
+        `${JSON_IN_PRODUCTION_VALUE} for its disposable server — never set that ` +
+        'on Vercel.',
     );
   }
+  console.warn(
+    '[guestbook] json storage driver serving under NODE_ENV=production because ' +
+      `${JSON_IN_PRODUCTION_HATCH}=${JSON_IN_PRODUCTION_VALUE} is set — single-` +
+      'process and NON-DURABLE; e2e only. For a public deployment set ' +
+      'GUESTBOOK_DRIVER=redis with KV_REST_API_URL + KV_REST_API_TOKEN.',
+  );
   return driver;
 }
 
 function resolveDriver() {
   const requested = process.env.GUESTBOOK_DRIVER;
-  if (requested === 'json') return warnIfProduction(jsonDriver);
+  if (requested === 'json') return jsonInProduction(jsonDriver);
   if (requested === 'redis') {
     // An EXPLICIT redis request that cannot be honoured must fail loudly, at
     // load, naming the variables — not on the first request as a null
@@ -87,17 +114,17 @@ function resolveDriver() {
   // next cold start — and a console line nobody is watching does not make
   // that safe. Refuse at load, naming the fix, exactly as the forced-redis
   // branch does. The ONLY production route onto the json driver is asking
-  // for it by name (GUESTBOOK_DRIVER=json), which is what the e2e suite does
-  // and what its warning above is for.
+  // for it by name (GUESTBOOK_DRIVER=json) AND opening the e2e hatch
+  // (jsonInProduction above), which is what the e2e suite does.
   if (servingProduction()) {
     throw new Error(
       'Guestbook storage: production is running without Redis credentials and ' +
         'without an explicit GUESTBOOK_DRIVER — refusing to serve the json file ' +
         'store, which is ephemeral on Vercel (posts would be accepted and lost ' +
         'on the next cold start). Set KV_REST_API_URL + KV_REST_API_TOKEN (or ' +
-        'UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN), or set ' +
-        'GUESTBOOK_DRIVER=json only where a single-process, non-durable store ' +
-        'is intended (the e2e suite does).',
+        'UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN). GUESTBOOK_DRIVER=json ' +
+        'is for development; a served production accepts it only with the ' +
+        `e2e-only ${JSON_IN_PRODUCTION_HATCH}=${JSON_IN_PRODUCTION_VALUE}.`,
     );
   }
   return jsonDriver;

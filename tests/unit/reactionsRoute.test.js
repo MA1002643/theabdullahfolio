@@ -113,7 +113,8 @@ describe('POST /api/guestbook/reactions — per-user budget', () => {
       'msg_1725000000000',
       'msg_1725000000000_XYZ12345',
       'msg_1725000000000_0000c0d',
-      `msg_1725000000000_${'a'.repeat(10_000)}`,
+      // Long but under the 1 KB body ceiling — the shape check's 400, not a 413.
+      `msg_1725000000000_${'a'.repeat(500)}`,
       'msg_1725000000000_0000c0de/../x',
       42,
       null,
@@ -130,6 +131,24 @@ describe('POST /api/guestbook/reactions — per-user budget', () => {
     expect((await POST(post({ id: MESSAGE_ID, key: 'fire' }))).status).toBe(200);
     // A well-formed id that names nothing is still storage's 404, as before.
     expect((await POST(post({ id: 'msg_1725000000000_deadbeef', key: 'fire' }))).status).toBe(404);
+    sessionUser = null;
+  });
+
+  // The body ceiling (body.js, REACTION_BODY_MAX_BYTES): this route also
+  // parses before it meters, so an oversized body is a 413 before validation
+  // — and before the limiter, so it spends nothing either.
+  it('an oversized body is 413 before validation and spends no budget', async () => {
+    const { POST, REACTION_BODY_MAX_BYTES } = await import('@/app/api/guestbook/reactions/route');
+    const { REACTIONS_PER_MINUTE } = await import('@/lib/guestbook/ratelimit');
+    sessionUser = { key: 'github:6', username: 'frank', name: 'Frank' };
+
+    const oversized = { id: MESSAGE_ID, key: 'fire', pad: 'x'.repeat(REACTION_BODY_MAX_BYTES) };
+    for (let i = 0; i < REACTIONS_PER_MINUTE; i++) {
+      const res = await POST(post(oversized));
+      expect(res.status).toBe(413);
+      expect((await res.json()).error).toMatch(/at most 1024 bytes/);
+    }
+    expect((await POST(post({ id: MESSAGE_ID, key: 'fire' }))).status).toBe(200);
     sessionUser = null;
   });
 

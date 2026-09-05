@@ -76,11 +76,12 @@ jobs:
       # a clean local checkout works; here the Build step above has already
       # produced the output the production server boots from, so Playwright
       # runs directly rather than building twice. playwright.config.mjs boots
-      # `next start` on port 3100 with the Redis credential names emptied and
-      # an AUTH_SECRET minted fresh for the run (random bytes at config load —
-      # no committed value, the specs never sign in) — nothing in this job
-      # touches a live service, and `reuseExistingServer` is off unless opted
-      # into.
+      # `next start` on port 3100 with the Redis credential names emptied, an
+      # AUTH_SECRET minted fresh for the run (random bytes at config load —
+      # no committed value, the specs never sign in) and the json file store
+      # unlocked through its e2e-only hatch (a served production refuses it
+      # otherwise) — nothing in this job touches a live service, and
+      # `reuseExistingServer` is off unless opted into.
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 

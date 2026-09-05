@@ -64,6 +64,33 @@ describe('POST /api/guestbook/presence — unique-id flood from one client', () 
     expect((await POST(post('valid-id-0001', headers))).status).toBe(200);
   });
 
+  // The abuse boundary (code review): this route is unauthenticated and
+  // validates before it meters, so without a ceiling a caller could have a
+  // near-platform-limit body buffered and parsed on every request while never
+  // entering a limiter bucket. Over PRESENCE_BODY_MAX_BYTES is a 413 before
+  // parsing; under it, a malformed body is still the 400 that spends nothing.
+  it('an oversized body is 413 before parsing and spends no budget; a small malformed one is still 400', async () => {
+    const { POST, PRESENCE_BODY_MAX_BYTES } = await import('@/app/api/guestbook/presence/route');
+    const headers = { 'x-real-ip': '198.51.100.77', 'content-type': 'application/json' };
+    const raw = (body) => new Request(ENDPOINT, { method: 'POST', headers, body });
+
+    // A budget's worth of oversized bodies — a valid id buried in padding, and
+    // outright garbage — every one a 413, none a spend…
+    const padded = JSON.stringify({ id: 'valid-id-0002', pad: 'x'.repeat(PRESENCE_BODY_MAX_BYTES) });
+    const garbage = '{'.repeat(PRESENCE_BODY_MAX_BYTES + 1);
+    for (let i = 0; i < 30; i++) {
+      const res = await POST(raw(i % 2 ? padded : garbage));
+      expect(res.status).toBe(413);
+      expect((await res.json()).error).toMatch(/at most 1024 bytes/);
+    }
+    // …and a small malformed body is the usual 400, also free…
+    expect((await POST(raw('not json'))).status).toBe(400);
+    expect((await POST(raw(''))).status).toBe(400);
+    expect((await POST(raw('{"id":'))).status).toBe(400);
+    // …so the first well-formed beat from this client is still within budget.
+    expect((await POST(post('valid-id-0003', headers))).status).toBe(200);
+  });
+
   it('falls back to the leftmost x-forwarded-for hop when x-real-ip is absent', async () => {
     const { POST } = await import('@/app/api/guestbook/presence/route');
     const { PRESENCE_BEATS_PER_MINUTE } = await import(

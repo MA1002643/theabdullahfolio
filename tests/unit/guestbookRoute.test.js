@@ -290,6 +290,21 @@ describe('POST / GET / DELETE /api/guestbook — identity is the account id, nev
     sessionUser = null;
   });
 
+  // The body ceiling (body.js, MESSAGE_BODY_MAX_BYTES): a POST body over it is
+  // a 413 before validation ever sees the message — and a body under it that
+  // is merely too long a message is still the validator's 400.
+  it('an oversized POST body is 413 before validation; a long message under the ceiling is the usual 400', async () => {
+    const { POST, MESSAGE_BODY_MAX_BYTES } = await import('@/app/api/guestbook/route');
+    sessionUser = { key: 'github:8888', username: 'grace', name: 'Grace', provider: 'github' };
+    const big = await POST(post({ message: 'x'.repeat(MESSAGE_BODY_MAX_BYTES) }));
+    expect(big.status).toBe(413);
+    expect((await big.json()).error).toMatch(/at most 16384 bytes/);
+    const long = await POST(post({ message: 'x'.repeat(1000) }));
+    expect(long.status).toBe(400);
+    expect((await long.json()).error).toMatch(/characters/);
+    sessionUser = null;
+  });
+
   it('a session with no key (minted before keys existed) cannot write — it must sign in again', async () => {
     const { POST, DELETE } = await import('@/app/api/guestbook/route');
     sessionUser = { username: 'visitor1', name: 'Visitor 1', provider: 'github' };

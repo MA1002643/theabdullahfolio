@@ -38,6 +38,11 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: {
       GUESTBOOK_DRIVER: 'json',
+      // A served production REFUSES the json driver (store.js — one env-var
+      // mistake on Vercel would make every write non-durable) unless this
+      // second, e2e-only variable is set to exactly this value. This server
+      // is hermetic and disposable, so here it is right; nowhere else.
+      GUESTBOOK_ALLOW_JSON_IN_PRODUCTION: 'e2e-non-durable',
       // Hermetic means NOTHING reaches the live store. Playwright merges this
       // block over the parent process.env, and `next start` loads .env.local
       // besides — either can carry the real Upstash credentials — while the

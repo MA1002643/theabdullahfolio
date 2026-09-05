@@ -332,6 +332,7 @@ describe('store facade — refusals to load, and the served-production guard', (
 
   afterEach(() => {
     process.env.GUESTBOOK_DRIVER = 'json';
+    delete process.env.GUESTBOOK_ALLOW_JSON_IN_PRODUCTION;
     process.env.NODE_ENV = env.NODE_ENV;
     if (env.NEXT_PHASE === undefined) delete process.env.NEXT_PHASE;
     else process.env.NEXT_PHASE = env.NEXT_PHASE;
@@ -361,17 +362,60 @@ describe('store facade — refusals to load, and the served-production guard', (
     );
   });
 
-  it('an EXPLICIT GUESTBOOK_DRIVER=json still serves in production — the e2e path — with the warning', async () => {
+  // An EXPLICIT GUESTBOOK_DRIVER=json under a served production used to serve
+  // with a warning. A warning does not protect data (code review): it now
+  // fails closed like the other two refusals, and only the e2e hatch — a
+  // second variable whose VALUE must spell the consequence — opens it.
+  it('an EXPLICIT GUESTBOOK_DRIVER=json in production refuses to load, naming the hatch', async () => {
     process.env.GUESTBOOK_DRIVER = 'json';
+    delete process.env.NEXT_PHASE;
+    process.env.NODE_ENV = 'production';
+    await expect(import('@/lib/guestbook/store')).rejects.toThrow(
+      /GUESTBOOK_DRIVER=json under NODE_ENV=production.*KV_REST_API_URL.*GUESTBOOK_ALLOW_JSON_IN_PRODUCTION=e2e-non-durable/s,
+    );
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('the hatch demands its exact value — "1", "true" or a near miss unlock nothing', async () => {
+    process.env.GUESTBOOK_DRIVER = 'json';
+    delete process.env.NEXT_PHASE;
+    process.env.NODE_ENV = 'production';
+    for (const wrong of ['1', 'true', 'yes', 'e2e', 'E2E-NON-DURABLE', 'e2e-non-durable ']) {
+      vi.resetModules();
+      process.env.GUESTBOOK_ALLOW_JSON_IN_PRODUCTION = wrong;
+      await expect(import('@/lib/guestbook/store'), wrong).rejects.toThrow(
+        /GUESTBOOK_DRIVER=json under NODE_ENV=production/,
+      );
+    }
+  });
+
+  it('with the hatch open — the e2e path — the file store serves in production and says so once', async () => {
+    process.env.GUESTBOOK_DRIVER = 'json';
+    process.env.GUESTBOOK_ALLOW_JSON_IN_PRODUCTION = 'e2e-non-durable';
     delete process.env.NEXT_PHASE;
     process.env.NODE_ENV = 'production';
     const dir = await mkdtemp(join(tmpdir(), 'guestbook-prod-json-'));
     process.env.GUESTBOOK_JSON_PATH = join(dir, 'guestbook.json');
     const store = await import('@/lib/guestbook/store');
     expect(await store.countMessages()).toBe(0);
+    expect(console.warn).toHaveBeenCalledTimes(1);
     expect(console.warn).toHaveBeenCalledWith(
-      expect.stringMatching(/json storage driver active under NODE_ENV=production/),
+      expect.stringMatching(
+        /json storage driver serving under NODE_ENV=production because GUESTBOOK_ALLOW_JSON_IN_PRODUCTION=e2e-non-durable.*NON-DURABLE/s,
+      ),
     );
+  });
+
+  it('the hatch is inert outside a served production — development stays quiet', async () => {
+    process.env.GUESTBOOK_DRIVER = 'json';
+    process.env.GUESTBOOK_ALLOW_JSON_IN_PRODUCTION = 'e2e-non-durable';
+    delete process.env.NEXT_PHASE;
+    process.env.NODE_ENV = 'development';
+    const dir = await mkdtemp(join(tmpdir(), 'guestbook-dev-hatch-'));
+    process.env.GUESTBOOK_JSON_PATH = join(dir, 'guestbook.json');
+    const store = await import('@/lib/guestbook/store');
+    expect(await store.countMessages()).toBe(0);
+    expect(console.warn).not.toHaveBeenCalled();
   });
 
   it('the build phase evaluates the module without serving: no throw, no warning', async () => {
