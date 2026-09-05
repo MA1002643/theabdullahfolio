@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { defineConfig } from '@playwright/test';
 
 // E2E smoke config (issue #40 Phase 6). Runs against a PRODUCTION server
@@ -6,9 +7,15 @@ import { defineConfig } from '@playwright/test';
 // kills competing dev servers, so the test server must not look like one.
 // `npm run build` must have run first; the `test:e2e` script chains it.
 //
-// AUTH_SECRET here is a knowingly fake constant so the Auth.js session
-// endpoint boots (the smoke test needs `unauthenticated`, not a crash) — it
-// is not a credential and must never be a real value.
+// AUTH_SECRET exists only so the Auth.js session endpoint boots (the smoke
+// test needs `unauthenticated`, not a crash). It is minted FRESH every time
+// Playwright loads this config — 32 random bytes, never written anywhere —
+// so no signing credential, real or "fake", is ever committed (the repo's
+// secret rule is not relaxed for test values; a committed constant was the
+// finding this replaces). The specs never depend on its value: they stub
+// /api/auth/session at the network layer and never sign in, so a
+// per-run secret costs nothing. A reused server (E2E_REUSE_SERVER=1) keeps
+// whatever its starter gave it, as before.
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 60 * 1000,
@@ -44,7 +51,7 @@ export default defineConfig({
       KV_REST_API_TOKEN: '',
       UPSTASH_REDIS_REST_URL: '',
       UPSTASH_REDIS_REST_TOKEN: '',
-      AUTH_SECRET: 'insecure-playwright-smoke-test-secret',
+      AUTH_SECRET: randomBytes(32).toString('base64'),
       // `next start` runs in production mode, where Auth.js refuses untrusted
       // hosts — trust the test server's own localhost:3100.
       AUTH_TRUST_HOST: 'true',
