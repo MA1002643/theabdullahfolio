@@ -18,6 +18,7 @@ import {
 } from '@/lib/guestbook/events';
 import { viewerFromSession } from '@/lib/guestbook/identity';
 import { PAGE_SIZE } from '@/lib/guestbook/paging';
+import { paletteShortcutLabel } from '@/components/commandPalette/shortcut';
 import MessageCard from './MessageCard';
 import MessageInput from './MessageInput';
 import PresencePill from './PresencePill';
@@ -404,9 +405,15 @@ export default function GuestbookWall() {
             <span className="font-semibold tabular-nums">{shownCount}</span>{' '}
             {count === 1 ? 'mark' : 'marks'} left
           </p>
+          {/* The hotkey the reader's OWN keyboard has (shortcut.js): the
+              palette listens for ⌘K and Ctrl+K alike, and this pill used to
+              advertise the macOS chord to everyone. Client-only by the
+              keyboard gate above (false on the server and the first client
+              render), so a navigator-derived label never disagrees with
+              server HTML. */}
           {GUESTBOOK_FLAGS.commandPalette && keyboardLikely ? (
             <p className="rounded-full border border-[#ff6d05]/30 bg-black/40 px-3 py-1 font-mono text-xs text-[#ff6d05]">
-              ⌘K · commands
+              {paletteShortcutLabel()} · commands
             </p>
           ) : null}
         </motion.div>

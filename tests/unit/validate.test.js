@@ -112,13 +112,65 @@ describe('validateMessage — no links, on any real TLD', () => {
     }
   });
 
-  it('exempts dev file names whose extension is also a ccTLD — as bare names only', () => {
-    for (const s of ['edit README.md first', 'run main.py then run.sh', 'see lib.rs and app.ts']) {
+  it('exempts an EXPLICIT allowlist of dev file names whose extension is also a ccTLD — exact bare names only', () => {
+    for (const s of [
+      'edit README.md first',
+      'run main.py then run.sh',
+      'see lib.rs and app.ts',
+      'README.MD in caps',
+      'the CHANGELOG.md and build.sh',
+    ]) {
       kept(s);
     }
-    // …while a real host under one of those TLDs is still a link.
+    // …while a real host under one of those TLDs is still a link…
     for (const s of ['www.spam.md wins', 'https://spam.py', 'see docs.spam.sh']) {
       refused(s);
+    }
+    // …and so is any two-label name NOT on the list: a bare file name and a
+    // bare domain are the same string, so the suffix-wide exemption this
+    // replaces let "visit spam.sh" and "buy evil.cc" through (code review).
+    for (const s of [
+      'visit spam.sh and buy evil.cc',
+      'see notes.md',
+      'try free.py today',
+      'get it at deals.rs',
+      'README.md.evil.sh hides behind a name',
+    ]) {
+      refused(s);
+    }
+  });
+
+  // IP literals are the parser's call (Node's isIP), v6 included: the dotted
+  // scan only ever saw IPv4, so an IPv6 literal bypassed the "raw IP" check
+  // entirely (code review).
+  it('refuses a raw IP literal — IPv4, IPv6, bracketed, zoned, mapped', () => {
+    for (const s of [
+      'a raw 1.2.3.4 address',
+      'see 2001:db8::1 now',
+      'see [2001:db8::1] now',
+      'on [2001:db8::1]:8080 tonight',
+      'the box at ::1 works',
+      'link-local fe80::1%eth0 too',
+      'mapped ::ffff:1.2.3.4 as well',
+      'full 2001:0db8:85a3:0000:0000:8a2e:0370:7334 form',
+      'a sentence ending in 2001:db8::1.',
+      'CAPS 2001:DB8::1 too',
+    ]) {
+      refused(s);
+    }
+  });
+
+  it('keeps coloned prose that is not an address', () => {
+    for (const s of [
+      'meet at 12:30:45 sharp',
+      'the ratio is 1:2',
+      'note: this is great',
+      'std::vector all day',
+      'at 9:30 tomorrow',
+      'a bare :: is not a link',
+      'Re: your talk — 10/10',
+    ]) {
+      kept(s);
     }
   });
 
