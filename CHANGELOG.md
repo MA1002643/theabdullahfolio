@@ -1352,6 +1352,22 @@ _Scope: the Repository Governance & Templates Suite; the Experience Summary live
 | **Files** | **changed** `src/lib/guestbook/reactions.js`; **new** `tests/unit/reactions.test.js` |
 | **Details** | Membership is now a `Set` of `REACTION_KEYS` — `has(key)` is an exact test against the vocabulary and consults nothing on the counts object — so any other value, an inherited name or a retired key alike, is ignored and the result carries exactly the three keys. Callers (`GET /api/guestbook`, `POST /api/guestbook/reactions`) are unchanged; the reactions route already refuses unknown keys on the way in, so this closes the read path against whatever the store holds. **Tests** — `reactions.test.js`: a `{ user: key }` map collapses to per-key counts; an empty, `null` or absent map is all zeros; values spelling `toString`, `constructor`, `__proto__`, `hasOwnProperty` and `valueOf` count nothing and add no own property (the object's keys are exactly the vocabulary, its prototype untouched, and its JSON the three counts); a retired or junk value is ignored. |
 
+#### Contact "Refine" — the affordance floor and the API's contact `minLen` are one constant
+
+| | |
+|:--|:--|
+| **Ref** | Code review (previously missed, in unchanged code): `MessageRefine.jsx`'s comment said `MIN_REFINE_LEN` matches the API's contact-mode `minLen`, but the component held 24 while `REFINE_MODES.contact.minLen` is 20 — a UI floor and an API contract free to drift apart silently. Asked to align the constant or the comment. |
+| **Files** | **new** `src/lib/refineLimits.js`; **changed** `src/components/contact/MessageRefine.jsx`, `src/lib/refineModes.js`, `tests/unit/refineModes.test.js` |
+| **Details** | **One number, two readers.** `CONTACT_REFINE_MIN_LEN = 20` lives in a new client-safe module, and both the component's default `minLength` and the contract's `minLen` import it — the same doctrine as `guestbook/limits.js`, and kept apart from `refineModes.js` for the same reason: the mode table carries the system prompts, which a client component must never pull into the browser bundle. The affordance therefore appears at 20 characters rather than 24 (still well under the form's own 50-character submit floor), and the invariant that matters — the UI never offers a request the API would answer `400 too_short` — now holds by construction instead of by a comment. The guestbook composer's floor is untouched: it is deliberately above its mode's `minLen` and already pinned by test. **Tests** — the contact-contract case in `refineModes.test.js` additionally asserts the contract's `minLen` is the shared constant. |
+
+#### `/journey` palette — "Open the CV" opens with `noreferrer` as well as `noopener`
+
+| | |
+|:--|:--|
+| **Ref** | Code review (previously missed, in unchanged code): the palette's `window.open(resumeUrl, '_blank', 'noopener')` set only `noopener`, while the repo's other new-tab links carry `rel="noopener noreferrer"`. Asked to add `noreferrer` so the opened page is not sent the referrer. |
+| **Files** | **changed** `src/components/journey/JourneyPalette.jsx` |
+| **Details** | The features string is now `noopener,noreferrer`. The CV is a same-origin PDF, so nothing leaked in practice; the change brings the one programmatic open in the codebase in line with the anchors' policy, so a future off-origin target inherits it. `window.open` already returned `null` under `noopener`, so no caller behaviour changes. |
+
 #### `/guestbook` signature pad — a missing 2D context leaves the panel and its preset marks standing
 
 | | |

@@ -71,7 +71,11 @@ export default function JourneyPalette() {
         hint: 'the paper version',
         section: 'Journey',
         keywords: 'resume résumé cv paper download pdf',
-        perform: () => window.open(resumeUrl, '_blank', 'noopener'),
+        // noreferrer as well as noopener — the same policy as the repo's
+        // rel="noopener noreferrer" anchors, so the opened page is not sent
+        // the referrer either (moot for this same-origin PDF; the policy
+        // travels with the call if the target ever moves off-origin).
+        perform: () => window.open(resumeUrl, '_blank', 'noopener,noreferrer'),
       },
       ...ROUTES.map((r) => ({
         id: `go${r.href.replace('/', '-') || '-home'}`,

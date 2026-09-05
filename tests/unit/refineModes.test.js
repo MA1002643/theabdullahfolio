@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REFINE_MODES, resolveRefineMode } from '@/lib/refineModes';
+import { CONTACT_REFINE_MIN_LEN } from '@/lib/refineLimits';
 import { MESSAGE_MAX } from '@/lib/guestbook/validate';
 
 // The mode table is the /api/refine-message contract in data form — these
@@ -58,6 +59,10 @@ describe('REFINE_MODES contracts', () => {
 
   it('keeps the contact contract exactly as the deployed form expects', () => {
     expect(REFINE_MODES.contact.minLen).toBe(20);
+    // …and that floor is the ONE constant MessageRefine's default affordance
+    // floor reads too (refineLimits.js), so the UI can never offer a request
+    // this gate would 400 — they had drifted to 24 and 20 (code review).
+    expect(REFINE_MODES.contact.minLen).toBe(CONTACT_REFINE_MIN_LEN);
     expect(REFINE_MODES.contact.maxLen).toBe(2000);
     expect(REFINE_MODES.contact.maxOutputTokens).toBe(400);
     expect(REFINE_MODES.contact.tag).toBe('feature:contact-refine');

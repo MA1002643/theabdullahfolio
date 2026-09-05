@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMessageRefine } from '@/hooks/useMessageRefine';
+import { CONTACT_REFINE_MIN_LEN } from '@/lib/refineLimits';
 
 // MessageRefine — the "polish my missive" affordance that sits beneath the
 // message field. Once the visitor has written a real sentence, a quiet ember
@@ -19,16 +20,19 @@ import { useMessageRefine } from '@/hooks/useMessageRefine';
 // surface's own field (a 150-char guestbook mark earns polish sooner than a
 // 500-char contact note).
 
-// Match the API's contact-mode minLen: below this there's nothing meaningful to
-// polish, so the affordance stays hidden rather than offering a no-op.
-const MIN_REFINE_LEN = 24;
+// The default floor IS the API's contact-mode minLen — one constant
+// (refineLimits.js) read by this component and by the server's mode table, so
+// the affordance can never offer a request the API would answer 400 too_short,
+// and the two cannot drift apart unnoticed (they had: 24 here, 20 there).
+// Below it there's nothing meaningful to polish, so the affordance stays
+// hidden rather than offering a no-op.
 
 export default function MessageRefine({
   message,
   onAccept,
   disabled,
   mode,
-  minLength = MIN_REFINE_LEN,
+  minLength = CONTACT_REFINE_MIN_LEN,
 }) {
   const reduced = useReducedMotion();
   const { status, suggestion, error, refine, reset } = useMessageRefine({ mode });

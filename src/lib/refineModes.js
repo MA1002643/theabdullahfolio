@@ -9,6 +9,7 @@
 // tag that keeps the two features separable on the billing dashboard.
 
 import { MESSAGE_MAX } from '@/lib/guestbook/limits';
+import { CONTACT_REFINE_MIN_LEN } from '@/lib/refineLimits';
 
 // The rewrite contracts. Kept deliberately tight so the output drops straight
 // into the field: no preamble, no quotes, no markdown — just the message.
@@ -38,11 +39,14 @@ Output ONLY the rewritten note — no preamble, no explanation, no surrounding q
 // MESSAGE_MAX. Below `minLen` there's nothing meaningful to polish; above
 // `maxLen` we refuse rather than burn tokens refining something the surface
 // itself would reject. Token caps track output size: a ≤500-char rewrite
-// never needs more than 400, a ≤150-char one 120.
+// never needs more than 400, a ≤150-char one 120. The contact `minLen` is the
+// shared CONTACT_REFINE_MIN_LEN (refineLimits.js), which MessageRefine's
+// default affordance floor reads too — one number, so the UI can never offer
+// a request this gate would refuse.
 export const REFINE_MODES = {
   contact: {
     system: SYSTEM_CONTACT,
-    minLen: 20,
+    minLen: CONTACT_REFINE_MIN_LEN,
     maxLen: 2000,
     maxOutputTokens: 400,
     tag: 'feature:contact-refine',
