@@ -16,12 +16,20 @@ export function emptyReactionCounts() {
   return counts;
 }
 
+// Membership is decided by the vocabulary, never by a lookup on the counts
+// object: a plain object answers `counts.toString` / `counts.constructor`
+// with inherited functions, so a stored value spelling an inherited name
+// would have passed a `!== undefined` check — `+= 1` on a function writes a
+// garbage string onto the public counts, and on `__proto__` reaches the
+// setter. The map is data back from storage, so it is held to these keys.
+const KNOWN_KEYS = new Set(REACTION_KEYS);
+
 // Collapse a stored { username: key } map into public counts. Only counts
 // leave the server — WHO reacted stays private to the store.
 export function toReactionCounts(map) {
   const counts = emptyReactionCounts();
   for (const key of Object.values(map || {})) {
-    if (counts[key] !== undefined) counts[key] += 1;
+    if (KNOWN_KEYS.has(key)) counts[key] += 1;
   }
   return counts;
 }
