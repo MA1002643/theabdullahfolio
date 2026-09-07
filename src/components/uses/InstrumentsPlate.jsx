@@ -37,7 +37,8 @@ const COLUMN_S = 0.18;
 const LAND_S = 0.6;
 const ETCH_AT_S = 0.2;
 const ETCH_S = 0.75;
-const COUNT_AT_MS = 280;
+const FIGURE_AT_S = 0.16;
+const FIGURE_S = 0.45;
 
 function Meter({
   figure,
@@ -64,6 +65,16 @@ function Meter({
   // The count starts once the tile is down — watched from zero, not caught
   // mid-climb behind the deal — and replays on re-entry via the grid's live
   // observer.
+  //
+  // The wait is the LANDING's own length, so the digits never move while the
+  // tile is still travelling. It was a hand-set 280ms, which sounds close to
+  // done but isn't: under PLATE_EASE, 280ms of a 600ms tween is ~85% of the
+  // VALUE, leaving the tile ~4px and ~1.4deg out — and, worse, the figure's own
+  // entrance (FIGURE_AT_S + FIGURE_S = 0.61s, effectively LAND_S) was only a
+  // quarter played, so the digits climbed at ~60% opacity while still sliding.
+  // One deadline satisfies both readings: the tile is down AND the figure has
+  // finished arriving. Any offset shorter than the figure's reveal animates
+  // something the reader cannot fully see yet.
   const [landed, setLanded] = useState(false);
   useEffect(() => {
     if (!on || landed) return undefined;
@@ -71,7 +82,7 @@ function Meter({
       setLanded(true);
       return undefined;
     }
-    const id = setTimeout(() => setLanded(true), Math.round(delay * 1000) + COUNT_AT_MS);
+    const id = setTimeout(() => setLanded(true), Math.round((delay + LAND_S) * 1000));
     return () => clearTimeout(id);
   }, [on, landed, reduceMotion, delay]);
   const nodeRef = useRef(null);
@@ -137,7 +148,7 @@ function Meter({
           aria-hidden="true"
           initial={reduceMotion ? false : rest(0, 8)}
           animate={on ? { opacity: 1, x: 0, y: 0 } : rest(0, 8)}
-          transition={at(0.16, 0.45)}
+          transition={at(FIGURE_AT_S, FIGURE_S)}
         >
           <span ref={nodeRef}>{reduceMotion ? figure : 0}</span>
         </motion.span>

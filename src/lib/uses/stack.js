@@ -1,12 +1,7 @@
 // Pure helpers for the /uses Stack plate (issue #37). No React, no DOM — the
 // fail-open decision and the repo-count copy are unit-tested in the node
 // environment, the same doctrine as guestbook/validate.js.
-import { CATEGORY_ORDER } from '@/utils/skillsIconUrl';
-
-const hasItems = (categories) =>
-  Boolean(categories) &&
-  typeof categories === 'object' &&
-  Object.values(categories).some((items) => Array.isArray(items) && items.length > 0);
+import { CATEGORY_ORDER, hasLiveCategories } from '@/utils/skillsIconUrl';
 
 // Group a categories object in CATEGORY_ORDER, dropping empty categories.
 export function groupStack(categories) {
@@ -22,7 +17,9 @@ export function groupStack(categories) {
  * non-empty categories object AND was not the route's `_fallback` shape —
  * the About page's "never claim live on stale data" rule. Anything else
  * (null, `{ error }`, an empty crawl, a network failure) fails OPEN to the
- * curated set with the live claim dropped.
+ * curated set with the live claim dropped. `hasLiveCategories` is the SAME
+ * emptiness test the localStorage cache is written and read through, so what
+ * the plate calls live and what the cache calls verified cannot drift.
  *
  * @returns {{ groups: Array, live: boolean, fetchedAt: string|null }}
  */
@@ -32,7 +29,7 @@ export function resolveStack(payload, fallback) {
     typeof payload === 'object' &&
     !payload.error &&
     !payload._fallback &&
-    hasItems(payload.categories);
+    hasLiveCategories(payload.categories);
   if (live) {
     return {
       groups: groupStack(payload.categories),

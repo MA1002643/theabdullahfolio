@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -32,6 +32,12 @@ import { cn } from '@/lib/utils';
 // flag (the /journey pattern) — SSR and the first client render agree on the
 // "hidden" pose, and the OS-level CSS guard covers the paint in between.
 export const PLATE_EASE = [0.22, 0.61, 0.36, 1];
+
+// Next renders every client component on the server too, where a layout effect
+// can't run and React says so. The reveal stamp below is a client-only concern
+// (nothing is `revealed` during SSR), so it falls back to useEffect there
+// purely to keep the server render quiet.
+const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 // A figure inside a provenance or caption line wears the page title's ember,
 // the words around it the line's grey — numbers read as the instrument's
@@ -77,14 +83,31 @@ export default function Plate({
   const revealed = reduceMotion || (inView && loaderRevealed);
 
   // When this plate revealed, for the children's per-element gates
-  // (useStagedReveal): an element arriving in the same beat cascades with
-  // its siblings; one arriving later plays alone. Latched during render, not
-  // in an effect — React runs children's effects before the parent's, so an
-  // effect here would stamp the time AFTER the rows had already read it.
+  // (useStagedReveal): an element arriving in the same beat cascades with its
+  // siblings; one arriving later plays alone.
+  //
+  // The ORDERING is the whole difficulty, and it is why this was a render-phase
+  // latch until now. React runs passive effects child-first, so a plain
+  // `useEffect` here would stamp the time AFTER every row had already read it
+  // as null — each row would see "no beat", take the arrived-alone branch, and
+  // the plate would land as one slab with its cascade gone.
+  //
+  // A LAYOUT effect resolves it without writing during render. Layout effects
+  // are also child-first among themselves, but the parent's layout effect still
+  // runs before EVERY child's passive effect, so `useStagedReveal` finds the
+  // stamp waiting for it one paint later. The read is if anything tighter than
+  // before: the gap the children measure against SAME_BEAT_MS shrinks from
+  // "parent render → child effect" to "parent layout effect → child effect".
+  //
+  // Writing it during render made the component impure — React may abandon a
+  // render, and the stamp would then outlive a reveal that never committed
+  // (React Doctor `no-ref-current-in-render`). A commit-phase write cannot.
   const revealedAtRef = useRef(null);
-  if (revealed && revealedAtRef.current == null && typeof performance !== 'undefined') {
-    revealedAtRef.current = performance.now();
-  }
+  useIsoLayoutEffect(() => {
+    if (revealed && revealedAtRef.current == null && typeof performance !== 'undefined') {
+      revealedAtRef.current = performance.now();
+    }
+  }, [revealed]);
 
   const headingId = `uses-${slug}-title`;
   const rise = (delay) => ({

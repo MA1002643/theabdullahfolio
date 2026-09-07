@@ -41,6 +41,34 @@ export const SKILLS_LAST_FETCHED_KEY = "skillsLastFetched:v4";
 export const SKILLS_CACHE_KEY = "skillsCache:v4";
 
 /**
+ * Does a categories object carry an actual crawl result? Lives here, beside
+ * the keys it guards, because BOTH sides of the shared cache need the same
+ * answer: freshness alone never means "verified".
+ *
+ * A `_fallback` payload (GitHub unreachable) and a crawl that genuinely found
+ * nothing both arrive as `emptyCategories()` — every category present, all
+ * empty — which is truthy, parses fine, and is indistinguishable from a real
+ * payload by presence alone. Writers must not persist one, and readers must
+ * not serve one as live: a fresh-but-empty entry would otherwise announce
+ * "verified" AND suppress the live fetch for a whole TTL, so a recovered
+ * GitHub could not be noticed until the entry aged out.
+ *
+ * Defensive about shape too — a hand-edited or half-written cache entry can
+ * parse to null, an array, or a category holding a non-array.
+ *
+ * @param {unknown} categories
+ * @returns {boolean}
+ */
+export function hasLiveCategories(categories) {
+  return (
+    Boolean(categories) &&
+    typeof categories === "object" &&
+    !Array.isArray(categories) &&
+    Object.values(categories).some((items) => Array.isArray(items) && items.length > 0)
+  );
+}
+
+/**
  * Build the icon URL for a slug from the chosen CDN. skillicons.dev is the
  * preferred illustrated style; simpleicons / devicon are fallbacks for tools
  * skillicons doesn't carry. All three render through the same <img> with

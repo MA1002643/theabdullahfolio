@@ -17,6 +17,7 @@ import {
   SKILLS_CACHE_TTL_MS,
   SKILLS_LAST_FETCHED_KEY,
   emptyCategories,
+  hasLiveCategories,
 } from "@/utils/skillsIconUrl";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
@@ -981,13 +982,21 @@ export default function SkillsCard({ username }) {
           // applying it would wipe every icon the user is looking at. Keep the
           // current data; the next cycle retries. (The initial load still
           // applies whatever arrives — nothing is on screen yet.)
-          const hasAny = Object.values(data.categories).some(
-            (items) => Array.isArray(items) && items.length > 0,
-          );
+          const hasAny = hasLiveCategories(data.categories);
           if (isBackground && (data._fallback || !hasAny)) return;
           lastSyncMs = Date.now();
           applyCategories(data.categories);
-          setIsLive(!data._fallback);
+          const isVerified = !data._fallback && hasAny;
+          setIsLive(isVerified);
+          // Only a VERIFIED crawl is persisted. The initial load still applies
+          // whatever arrives (above) — an empty grid beats no grid — but the
+          // cache is shared with the /uses Stack plate (issue #37), and an
+          // entry there is read as proof of a live crawl by whichever page is
+          // visited next. Writing a `_fallback` / empty payload would stamp a
+          // FRESH timestamp on nothing, so /uses would announce "verified" and
+          // skip its own fetch for a whole TTL. Leaving the entry alone keeps
+          // the last good payload readable and lets the next reader retry.
+          if (!isVerified) return;
           try {
             window.localStorage.setItem(LAST_FETCHED_KEY, String(Date.now()));
             window.localStorage.setItem(CACHE_KEY, JSON.stringify(data.categories));
@@ -1024,12 +1033,20 @@ export default function SkillsCard({ username }) {
     let servedFromCache = false;
     if (!needsRefresh && cached) {
       try {
-        applyCategories(JSON.parse(cached));
-        if (!cancelled) setIsLive(false);
-        // Inherit the cached payload's age so the first background refresh
-        // fires a TTL after the ORIGINAL fetch, not a TTL after this mount.
-        lastSyncMs = lastFetchedMs;
-        servedFromCache = true;
+        const parsed = JSON.parse(cached);
+        // An entry that parses but holds nothing is a MISS, not a hit. Writes
+        // above can no longer create one, but a browser can still be carrying
+        // an empty `:v4` entry from a build that did — and serving it would
+        // paint an empty grid and suppress the refetch for the rest of its
+        // TTL. Treating it as absent costs one fetch and self-heals the entry.
+        if (hasLiveCategories(parsed)) {
+          applyCategories(parsed);
+          if (!cancelled) setIsLive(false);
+          // Inherit the cached payload's age so the first background refresh
+          // fires a TTL after the ORIGINAL fetch, not a TTL after this mount.
+          lastSyncMs = lastFetchedMs;
+          servedFromCache = true;
+        }
       } catch {
         // Corrupt cache — fall through to a live fetch.
       }

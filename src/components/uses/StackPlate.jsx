@@ -13,6 +13,7 @@ import {
   SKILLS_CACHE_KEY,
   SKILLS_CACHE_TTL_MS,
   SKILLS_LAST_FETCHED_KEY,
+  hasLiveCategories,
 } from '@/utils/skillsIconUrl';
 import LiveAge from './LiveAge';
 import Plate, { Figure } from './Plate';
@@ -57,19 +58,27 @@ export default function StackPlate({ fallback }) {
     let cancelled = false;
     const controller = new AbortController();
 
-    // The About card's cache — a payload younger than the TTL is a real crawl
-    // result, so it is applied as live with its own fetch time.
+    // The About card's cache — a payload younger than the TTL AND carrying
+    // actual tools is a real crawl result, so it is applied as live with its
+    // own fetch time. Freshness alone is not enough: an entry can be young and
+    // still hold `emptyCategories()` (a GitHub outage, or a crawl that found
+    // nothing). Serving one would announce "verified" over nothing and — the
+    // costlier half — take the early return below, suppressing the live fetch
+    // for the rest of the TTL, so a recovered GitHub could not be picked up.
+    // An empty entry therefore reads as a MISS and falls through to the fetch.
     let servedFromCache = false;
     try {
       const last = Number(window.localStorage.getItem(SKILLS_LAST_FETCHED_KEY));
       const cached = window.localStorage.getItem(SKILLS_CACHE_KEY);
       if (cached && Number.isFinite(last) && Date.now() - last < SKILLS_CACHE_TTL_MS) {
         const categories = JSON.parse(cached);
-        setPayload({ categories });
-        setFetchedAt(new Date(last).toISOString());
-        setLoaded(true);
-        setStatusText('Stack verified against GitHub.');
-        servedFromCache = true;
+        if (hasLiveCategories(categories)) {
+          setPayload({ categories });
+          setFetchedAt(new Date(last).toISOString());
+          setLoaded(true);
+          setStatusText('Stack verified against GitHub.');
+          servedFromCache = true;
+        }
       }
     } catch {
       // Storage blocked or corrupt — fall through to a live fetch.
@@ -87,7 +96,12 @@ export default function StackPlate({ fallback }) {
         setPayload(data);
         const at = typeof data.fetchedAt === 'string' ? data.fetchedAt : new Date().toISOString();
         setFetchedAt(at);
-        if (!data._fallback) {
+        // The same test `resolveStack` uses for the visible `● LIVE` token, so
+        // the announcement and the ember can never disagree: a payload that is
+        // `_fallback`, or that carries every category empty, is not a verified
+        // crawl and must not be written into the cache the About card shares —
+        // persisting one would make the NEXT visitor's plate serve it.
+        if (!data._fallback && hasLiveCategories(data.categories)) {
           setStatusText('Stack verified against GitHub.');
           try {
             window.localStorage.setItem(SKILLS_LAST_FETCHED_KEY, String(Date.now()));
