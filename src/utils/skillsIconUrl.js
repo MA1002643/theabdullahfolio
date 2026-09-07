@@ -41,6 +41,25 @@ export const SKILLS_LAST_FETCHED_KEY = "skillsLastFetched:v4";
 export const SKILLS_CACHE_KEY = "skillsCache:v4";
 
 /**
+ * One skill entry the grid can actually draw. `slug` is what the icon URL, the
+ * React key and the hidden-tile set are all built from, so an entry without one
+ * is not a tile — it is a hole. `flattenCategories` has always skipped these;
+ * this is that rule named once so every consumer applies the same one.
+ *
+ * @param {unknown} item
+ * @returns {boolean}
+ */
+export function isRenderableSkill(item) {
+  return (
+    Boolean(item) &&
+    typeof item === "object" &&
+    !Array.isArray(item) &&
+    typeof item.slug === "string" &&
+    item.slug.length > 0
+  );
+}
+
+/**
  * Does a categories object carry an actual crawl result? Lives here, beside
  * the keys it guards, because BOTH sides of the shared cache need the same
  * answer: freshness alone never means "verified".
@@ -56,15 +75,24 @@ export const SKILLS_CACHE_KEY = "skillsCache:v4";
  * Defensive about shape too — a hand-edited or half-written cache entry can
  * parse to null, an array, or a category holding a non-array.
  *
+ * It asks the question the way the RENDERERS ask it, and that is the whole
+ * subtlety. Every consumer walks CATEGORY_ORDER and skips entries it cannot
+ * draw (`groupStack`, the About grid, `flattenCategories`), so a bare "is any
+ * array non-empty?" test can say yes about a payload that paints nothing — one
+ * whose content sits under a key nobody reads, or whose items carry no slug.
+ * That payload would then be announced as verified, cached, and served back for
+ * a whole TTL as an empty plate claiming to be live. Counting only what
+ * CATEGORY_ORDER reaches keeps the claim and the picture in step: this returns
+ * true exactly when `groupStack` would return at least one tile.
+ *
  * @param {unknown} categories
  * @returns {boolean}
  */
 export function hasLiveCategories(categories) {
-  return (
-    Boolean(categories) &&
-    typeof categories === "object" &&
-    !Array.isArray(categories) &&
-    Object.values(categories).some((items) => Array.isArray(items) && items.length > 0)
+  if (!categories || typeof categories !== "object" || Array.isArray(categories)) return false;
+  return CATEGORY_ORDER.some(
+    (category) =>
+      Array.isArray(categories[category]) && categories[category].some(isRenderableSkill),
   );
 }
 

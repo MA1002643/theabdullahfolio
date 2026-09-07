@@ -48,8 +48,10 @@ export default function StackPlate({ fallback }) {
   // usually there by the time the tiles reveal.
   const near = useInView(gateRef, { once: true, margin: '240px 0px' });
 
+  // Only the payload is held. The age readout reads `resolveStack`'s own
+  // `fetchedAt` — a second piece of state here was how the plate came to
+  // fabricate a timestamp the helper (and its test) had already ruled out.
   const [payload, setPayload] = useState(null);
-  const [fetchedAt, setFetchedAt] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [statusText, setStatusText] = useState('');
 
@@ -73,8 +75,10 @@ export default function StackPlate({ fallback }) {
       if (cached && Number.isFinite(last) && Date.now() - last < SKILLS_CACHE_TTL_MS) {
         const categories = JSON.parse(cached);
         if (hasLiveCategories(categories)) {
-          setPayload({ categories });
-          setFetchedAt(new Date(last).toISOString());
+          // The stored write time is a real recorded moment, not a guess, so it
+          // travels in the payload and reaches the readout the same way a
+          // server-sent `fetchedAt` does.
+          setPayload({ categories, fetchedAt: new Date(last).toISOString() });
           setLoaded(true);
           setStatusText('Stack verified against GitHub.');
           servedFromCache = true;
@@ -93,9 +97,13 @@ export default function StackPlate({ fallback }) {
         if (cancelled) return;
         setLoaded(true);
         if (!data?.categories) return;
+        // Straight through, timestamp included or not: `resolveStack` decides
+        // what the age readout may claim. Stamping the client's clock over a
+        // missing `fetchedAt` would be a fabrication — the route is cached for
+        // 10 minutes behind `stale-while-revalidate=300`, so an undated payload
+        // can be a crawl up to a quarter of an hour old, and "verified 0s ago"
+        // would assert a freshness the server never claimed.
         setPayload(data);
-        const at = typeof data.fetchedAt === 'string' ? data.fetchedAt : new Date().toISOString();
-        setFetchedAt(at);
         // The same test `resolveStack` uses for the visible `● LIVE` token, so
         // the announcement and the ember can never disagree: a payload that is
         // `_fallback`, or that carries every category empty, is not a verified
@@ -131,12 +139,12 @@ export default function StackPlate({ fallback }) {
     <>
       <span aria-hidden="true" className="uses-live-dot" /> live ·{' '}
       <Figure>{total}</Figure> tools
-      {fetchedAt ? (
+      {stack.fetchedAt ? (
         <>
           {' '}
           ·{' '}
           <span aria-hidden="true">
-            <LiveAge fetchedAt={fetchedAt} />
+            <LiveAge fetchedAt={stack.fetchedAt} />
           </span>
           <span className="sr-only">verified against GitHub</span>
         </>

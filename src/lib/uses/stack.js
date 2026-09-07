@@ -1,14 +1,20 @@
 // Pure helpers for the /uses Stack plate (issue #37). No React, no DOM — the
 // fail-open decision and the repo-count copy are unit-tested in the node
 // environment, the same doctrine as guestbook/validate.js.
-import { CATEGORY_ORDER, hasLiveCategories } from '@/utils/skillsIconUrl';
+import { CATEGORY_ORDER, hasLiveCategories, isRenderableSkill } from '@/utils/skillsIconUrl';
 
-// Group a categories object in CATEGORY_ORDER, dropping empty categories.
+// Group a categories object in CATEGORY_ORDER, dropping empty categories and
+// any entry the grid could not draw — ToolGrid keys every tile on `item.slug`,
+// so a slug-less entry is a hole, and letting one through would also inflate
+// `countTiles`, which is the figure the provenance line prints. Filtering here
+// keeps "N tools" equal to the number of tiles actually on the plate.
 export function groupStack(categories) {
   if (!categories || typeof categories !== 'object') return [];
   return CATEGORY_ORDER.map((category) => ({
     category,
-    items: Array.isArray(categories[category]) ? categories[category] : [],
+    items: Array.isArray(categories[category])
+      ? categories[category].filter(isRenderableSkill)
+      : [],
   })).filter((g) => g.items.length > 0);
 }
 

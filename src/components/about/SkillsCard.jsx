@@ -18,6 +18,7 @@ import {
   SKILLS_LAST_FETCHED_KEY,
   emptyCategories,
   hasLiveCategories,
+  isRenderableSkill,
 } from "@/utils/skillsIconUrl";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
@@ -1076,12 +1077,20 @@ export default function SkillsCard({ username }) {
   // Flat, ordered skill list — the diff/fingerprint unit the signal hook needs.
   const flatSkills = useMemo(() => flattenCategories(categories), [categories]);
 
-  // Non-empty category groups in CATEGORY_ORDER.
+  // Non-empty category groups in CATEGORY_ORDER, drawable entries only — the
+  // same rule flattenCategories and the /uses groupStack apply. The initial
+  // load deliberately renders whatever arrives (an empty grid beats no grid),
+  // so this is the one place a malformed payload could reach the DOM: a
+  // category holding a string used to survive `?? []` and `.length > 0` and
+  // then throw on `.map`, and a slug-less entry would draw a broken icon.
   const groups = useMemo(
     () =>
-      CATEGORY_ORDER.map((category) => ({ category, items: categories[category] ?? [] })).filter(
-        (g) => g.items.length > 0,
-      ),
+      CATEGORY_ORDER.map((category) => ({
+        category,
+        items: Array.isArray(categories[category])
+          ? categories[category].filter(isRenderableSkill)
+          : [],
+      })).filter((g) => g.items.length > 0),
     [categories],
   );
 

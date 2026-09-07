@@ -84,14 +84,19 @@ function Row({ revealed, reduceMotion, revealedAtRef, index, seen, renders, inVi
 describe('Plate reveal stamp — commit-safe, and the cascade it drives', () => {
   beforeEach(() => {
     vi.stubGlobal('IntersectionObserver', TestIO);
-    window.matchMedia = (query) => ({
+    // Stubbed, not assigned: a bare `window.matchMedia = …` is not undone by
+    // vi.unstubAllGlobals, so it would outlive this file's afterEach and make
+    // any later test that wants a different query result order-dependent.
+    // jsdom ships no matchMedia of its own, so unstubbing restores `undefined`
+    // — which every caller here already guards for.
+    vi.stubGlobal('matchMedia', (query) => ({
       matches: false,
       media: query,
       addEventListener() {},
       removeEventListener() {},
       addListener() {},
       removeListener() {},
-    });
+    }));
     // The intro loader has already lifted, so the plate reveals as soon as it
     // is seen rather than waiting out the 6s insurance timeout.
     window.__loaderDone = true;
