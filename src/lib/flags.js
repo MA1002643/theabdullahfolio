@@ -32,3 +32,31 @@ export const GUESTBOOK_FLAGS = {
   // Grain + vignette overlay.
   grain: true,
 };
+
+// /uses (issue #37) — the setup page's elite layer, same discipline: every
+// enhancement checks its flag at its mount point, so any one dies with a
+// one-line flip and the plate beneath it still renders honest content.
+export const USES_FLAGS = {
+  // Fetch /api/github-skills for the Stack plate (off → curated set only,
+  // and the LIVE token can never appear).
+  liveStack: true,
+  // The DOM-built editor "screen" in the Bench plate.
+  editorFrame: true,
+  // The pipeline schematic draws itself (pathLength) + the single rake; off
+  // → the schematic renders fully drawn and still.
+  pipelineDraw: true,
+  // The pipeline's live flow after the draw: packets ride the edges from
+  // node to node (commit → CI lanes → build → deploy → the service bus and
+  // back, then the daily cron), nodes light as they land, ambient dashes
+  // drift along every edge. Off → the schematic holds still once drawn,
+  // lanes and progress full.
+  pipelineFlow: true,
+  // ±4° physics tilt on the two surfaces that read as objects (the machine
+  // nameplate and the editor frame).
+  tilt: true,
+  // Magnetic lean on the page's one CTA (See the repositories).
+  magnetic: true,
+  // ⌘K command palette — the page's action set (plate jumps, copy settings,
+  // route jumps, motion toggle).
+  commandPalette: true,
+};

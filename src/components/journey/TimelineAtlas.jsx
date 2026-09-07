@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import clsx from 'clsx';
 import { motion, useInView } from 'framer-motion';
 import { journeyData } from '@/app/data';
@@ -73,6 +79,22 @@ const RUNOUT_W = 80; // room past the final year for its centred label (bars
 // never overrun the axis any more — open bars clamp to the NOW line)
 const CHAR_W = 7; // estimated caption advance, px/char
 const CAPTION_PAD = 34; // px-2.5 both sides + comfortable clearance
+
+// Grid zoom (owner direction, 2026-09-05): the fixed-metric grid is a long
+// pan on a phone, so the GRID — and only the grid — can be zoomed. It is a
+// uniform CSS `zoom` on the grid's width wrapper, never a change of scale:
+// PX_PER_MONTH, the 11px type, the label column and the bar paddings all
+// shrink or grow TOGETHER, so every caption-fit and packing guarantee above
+// holds at every level (a smaller px/month with unchanged type would print
+// captions through their neighbours). `zoom` over `transform: scale()`
+// because it is layout-affecting — the scroller's scrollWidth follows it,
+// the sticky lane labels keep sticking, hit targets stay where they are
+// drawn and type re-rasterises crisply. The default is 1 on EVERY screen
+// (the phone opens at exactly the laptop's grid) and the level is never
+// persisted — a visit always starts at 100%. The head, chips and reading
+// key sit outside the zoomed wrapper and are untouched.
+export const ZOOM_STEPS = [0.5, 0.65, 0.8, 1, 1.25, 1.5];
+const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
 
 const TRACKS = [
   { type: 'career', label: 'Career' },
@@ -224,6 +246,45 @@ const TimelineAtlas = ({
     if (el) el.scrollLeft = el.scrollWidth;
   }, [nowM]);
 
+  // Grid zoom — an index into ZOOM_STEPS (see the constant's note). A zoom
+  // change re-anchors the pan on the month at the CENTRE of the viewport:
+  // CSS zoom is layout-affecting, so the scroller's scrollWidth changes with
+  // it, and the scroll offset must scale by the same ratio or the view would
+  // slide to a different year. The offset is SNAPSHOTTED in the handler,
+  // before React commits the new zoom: by the time the layout effect runs,
+  // the browser has already clamped the old offset into the new, shorter
+  // range, so reading it there — anywhere within one viewport-and-a-bit of
+  // the NOW edge — would scale an already-shrunk number and land the pan
+  // short of the edge (measured: 9549 read back as 7568, then shrunk again
+  // to 6019). Layout effect, not effect, for the write: the correction
+  // lands before paint, so the grid never flashes at the wrong offset.
+  // Parked at the NOW edge, the clamp keeps it there through a zoom-out (the
+  // scaled offset overshoots the new maximum and clamps back to the edge).
+  const [zoomIdx, setZoomIdx] = useState(ZOOM_DEFAULT);
+  const zoom = ZOOM_STEPS[zoomIdx];
+  const appliedZoom = useRef(zoom);
+  const panSnapshot = useRef(null);
+  const changeZoom = (next) => {
+    const el = scrollerRef.current;
+    if (el) {
+      const half = el.clientWidth / 2;
+      panSnapshot.current = { centre: el.scrollLeft + half, half };
+    }
+    setZoomIdx(next);
+  };
+  useLayoutEffect(() => {
+    const prev = appliedZoom.current;
+    appliedZoom.current = zoom;
+    const snap = panSnapshot.current;
+    panSnapshot.current = null;
+    const el = scrollerRef.current;
+    if (prev === zoom || !el || !snap) return;
+    el.scrollLeft = snap.centre * (zoom / prev) - snap.half;
+  }, [zoom]);
+  const zoomPct = Math.round(zoom * 100);
+  const canZoomOut = zoomIdx > 0;
+  const canZoomIn = zoomIdx < ZOOM_STEPS.length - 1;
+
   // Clock-dependent scale: the axis runs from January of the first year to
   // January AFTER whichever is later — the last dated end or today — so the
   // NOW line always has room and the axis grows a year the moment the clock
@@ -288,38 +349,95 @@ const TimelineAtlas = ({
             </p>
           )}
         </div>
-        <div
-          role="group"
-          aria-label="Highlight one track"
-          className="flex flex-wrap gap-1.5"
-        >
-          {CHIPS.map(({ key, label, accent }) => {
-            const pressed = filter === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={pressed}
-                onClick={() => onFilter(key)}
-                className={clsx(
-                  'ja-chip rounded-full border px-3 py-1 font-mono uppercase transition-colors duration-300',
-                  !pressed &&
-                    'border-white/15 text-white/45 hover:border-white/35 hover:text-white/80',
-                )}
-                style={
-                  pressed
-                    ? {
-                        borderColor: `${accent}88`,
-                        color: accent,
-                        background: `${accent}14`,
-                      }
-                    : undefined
-                }
-              >
-                {label}
-              </button>
-            );
-          })}
+        {/* View controls, stacked: the track chips, then the grid zoom
+            beneath them. Right-aligned from md up so both rows close on the
+            head's right edge; on a phone the column wraps under the title
+            and reads left-aligned like everything else there. */}
+        <div className="flex flex-col items-start gap-2.5 md:items-end">
+          <div
+            role="group"
+            aria-label="Highlight one track"
+            className="flex flex-wrap gap-1.5"
+          >
+            {CHIPS.map(({ key, label, accent }) => {
+              const pressed = filter === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={pressed}
+                  onClick={() => onFilter(key)}
+                  className={clsx(
+                    'ja-chip rounded-full border px-3 py-1 font-mono uppercase transition-colors duration-300',
+                    !pressed &&
+                      'border-white/15 text-white/45 hover:border-white/35 hover:text-white/80',
+                  )}
+                  style={
+                    pressed
+                      ? {
+                          borderColor: `${accent}88`,
+                          color: accent,
+                          background: `${accent}14`,
+                        }
+                      : undefined
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Grid zoom — a segmented pill in the chips' own voice: zoom out,
+              the readout (which is also the reset), zoom in. It zooms the
+              GRID only (see ZOOM_STEPS); the head it lives in is untouched.
+              The readout doubles as "reset to 100%" and rests disabled at
+              100% — at rest it is a readout, not a control. The sr-only
+              status line announces each level for assistive tech, because
+              the readout's own text change would otherwise pass silently. */}
+          <div
+            role="group"
+            aria-label="Grid zoom"
+            className="ja-zoom inline-flex items-stretch rounded-full border border-white/15 font-mono"
+          >
+            <button
+              type="button"
+              onClick={() => changeZoom((i) => Math.max(0, i - 1))}
+              disabled={!canZoomOut}
+              aria-label="Zoom the grid out"
+              title="Zoom out"
+              className="ja-chip rounded-l-full py-1 pl-3 pr-2.5 text-white/45 transition-colors duration-300 hover:text-white/80 disabled:cursor-default disabled:text-white/20"
+            >
+              <span aria-hidden>−</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => changeZoom(ZOOM_DEFAULT)}
+              disabled={zoomIdx === ZOOM_DEFAULT}
+              aria-label={`Grid zoom ${zoomPct}%. Reset to 100%`}
+              title={
+                zoomIdx === ZOOM_DEFAULT ? 'Grid zoom' : 'Reset zoom to 100%'
+              }
+              className="ja-chip min-w-[4.75ch] border-x border-white/10 px-1.5 py-1 text-center tabular-nums text-white/60 transition-colors duration-300 hover:text-white/90 disabled:cursor-default disabled:text-white/60"
+            >
+              {zoomPct}%
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                changeZoom((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))
+              }
+              disabled={!canZoomIn}
+              aria-label="Zoom the grid in"
+              title="Zoom in"
+              className="ja-chip rounded-r-full py-1 pl-2.5 pr-3 text-white/45 transition-colors duration-300 hover:text-white/80 disabled:cursor-default disabled:text-white/20"
+            >
+              <span aria-hidden>+</span>
+            </button>
+            <span role="status" className="sr-only">
+              Grid zoom {zoomPct}%
+            </span>
+          </div>
         </div>
       </div>
 
@@ -336,9 +454,15 @@ const TimelineAtlas = ({
         {/* Width follows the data (skeleton uses the clock-free minimum span,
             so mount can only widen it, invisibly, inside this scroller). The
             padding is the run-out: the final year's centred label plus the
-            caption-floored right-edge bars live there. */}
+            caption-floored right-edge bars live there. This wrapper is ALSO
+            the zoom root (see ZOOM_STEPS): the CSS zoom scales its width
+            and everything inside it as one — the scroller around it and the
+            head above it stay at page scale. `data-zoom` is the observable
+            level for tests and devtools. */}
         <div
+          data-zoom={zoom}
           style={{
+            zoom,
             width: scale
               ? scale.gridW
               : LABEL_W + STRUCTURE.minSpan * PX_PER_MONTH + RUNOUT_W,
@@ -408,9 +532,17 @@ const TimelineAtlas = ({
                       fills the row, and the backing span bleeds over the
                       row's py-3.5 so no bar sliver survives at any lane
                       depth, closed by a hairline right edge. pointer-
-                      events-none so a covered bar stays clickable. */}
+                      events-none so a covered bar stays clickable. The
+                      label is CENTRED ACROSS the column (owner correction,
+                      2026-09-05 — the dot-and-name line and the entry
+                      count sat flush against the panel's left edge): a
+                      flex column with items-center + text-center puts both
+                      lines on the column's centreline. Horizontal only —
+                      the top placement (pt-1.5 under an items-start row)
+                      is as it always was; a vertical centring was tried
+                      first and corrected back. */}
                   <div
-                    className="ja-lane pointer-events-none sticky left-0 z-20 shrink-0 self-stretch pt-1.5 font-mono uppercase tracking-[0.16em]"
+                    className="ja-lane pointer-events-none sticky left-0 z-20 flex shrink-0 flex-col items-center self-stretch pt-1.5 text-center font-mono uppercase tracking-[0.16em]"
                     style={{ width: LABEL_W, color: accent }}
                   >
                     <span

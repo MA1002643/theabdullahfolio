@@ -20,5 +20,6 @@ export const ROUTES = [
   { segment: 'qualifications', href: '/qualifications', label: 'Qualifications' },
   { segment: 'contact', href: '/contact', label: 'Contact' },
   { segment: 'journey', href: '/journey', label: 'Journey' },
+  { segment: 'uses', href: '/uses', label: 'Uses' },
   { segment: 'my-past', href: '/my-past', label: 'My Past' },
 ];

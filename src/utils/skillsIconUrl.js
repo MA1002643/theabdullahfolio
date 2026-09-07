@@ -27,6 +27,19 @@ export function emptyCategories() {
   return Object.fromEntries(CATEGORY_ORDER.map((c) => [c, []]));
 }
 
+// The About skills grid's client-side cache of the /api/github-skills payload
+// (10-minute TTL — matches the route's server TTL). Shared here so the /uses
+// Stack plate (issue #37) reads the SAME entry the About card writes: a
+// visitor arriving from /about sees live repo counts instantly, and the two
+// consumers can never drift onto different keys. The `:v4` suffix
+// force-invalidates any older cached payload — bumped to v4 when each skill
+// gained `privateRepoCount` (a v3 payload without it would leave private-only
+// skills non-interactive for a TTL window); v3 was the earlier bump when
+// skills gained their `repos` breakdown.
+export const SKILLS_CACHE_TTL_MS = 10 * 60 * 1000;
+export const SKILLS_LAST_FETCHED_KEY = "skillsLastFetched:v4";
+export const SKILLS_CACHE_KEY = "skillsCache:v4";
+
 /**
  * Build the icon URL for a slug from the chosen CDN. skillicons.dev is the
  * preferred illustrated style; simpleicons / devicon are fallbacks for tools

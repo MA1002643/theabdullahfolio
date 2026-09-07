@@ -11,21 +11,25 @@ import { useSkillsUpdateSignal } from "@/hooks/useSkillsUpdateSignal";
 import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { flattenCategories } from "@/utils/skillsDiff";
-import { CATEGORY_ORDER, emptyCategories } from "@/utils/skillsIconUrl";
+import {
+  CATEGORY_ORDER,
+  SKILLS_CACHE_KEY,
+  SKILLS_CACHE_TTL_MS,
+  SKILLS_LAST_FETCHED_KEY,
+  emptyCategories,
+} from "@/utils/skillsIconUrl";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
 // How long the change banner lingers once the section scrolls into view —
 // matches the Languages / Streak cards (issue #20, acceptance #15).
 const BANNER_AUTO_HIDE_MS = 4500;
 // Client-side refresh guard — 10 minutes (shortened from 24h) so live GitHub
-// changes surface quickly. The `:v4` key suffix force-invalidates any older
-// cached payload — bumped to v4 when each skill gained `privateRepoCount` (a
-// v3 payload without it would leave private-only skills non-interactive for a
-// TTL window); v3 was the earlier bump when skills gained their `repos`
-// breakdown.
-const CACHE_TTL_MS = 10 * 60 * 1000;
-const LAST_FETCHED_KEY = "skillsLastFetched:v4";
-const CACHE_KEY = "skillsCache:v4";
+// changes surface quickly. The keys and TTL live in skillsIconUrl.js (with
+// the version-suffix history) because the /uses Stack plate reads the same
+// cache entry (issue #37).
+const CACHE_TTL_MS = SKILLS_CACHE_TTL_MS;
+const LAST_FETCHED_KEY = SKILLS_LAST_FETCHED_KEY;
+const CACHE_KEY = SKILLS_CACHE_KEY;
 
 // One expression drives each cell so icons stay fluid from a 320px phone to
 // ultrawide (issue #20, Task 4). Issue #25 moved it off the old bespoke

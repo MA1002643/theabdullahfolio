@@ -6342,3 +6342,919 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   color: #ff6d05 !important;
   -webkit-text-fill-color: #ff6d05 !important;
 }
+
+/* ── /uses — the setup page (issue #37) ────────────────────────────────────
+
+   Plate chrome, the engraved nameplate, the DOM editor frame, the stack
+   tiles' usage meters, the pipeline schematic and the version
+   ledger. Same contract as every fluid block above: the BASE rules are the
+   scale-1 values and the `.fluid-scale` overrides re-derive each size from
+   the one shared factor with a max() legibility floor. /uses is in
+   FLUID_SCALE_PAGES from birth, so the scoped rules are the ones that paint.
+
+   One palette: ember #ff6d05 for titles, rules and edges; amber #ffaa2a for
+   eyebrows, labels and versions; the gold frame (#ffcd5b) for anything
+   boxed; FireText for body copy. The editor frame alone paints a second
+   palette — it depicts a real screen in the theme the owner's settings
+   name, which is the one honest place for it. */
+
+/* Plate chrome. `min-width: 0` is load-bearing: the plates are grid items,
+   and a grid item's automatic minimum is its min-content width — which the
+   pipeline plate's 720px-minimum schematic would otherwise push to 759px on
+   a 390px phone, widening EVERY plate and the document with it. Zeroed, the
+   schematic scrolls inside its own overflow container instead. */
+.uses-plate {
+  padding-block: 0.5rem;
+  min-width: 0;
+}
+.uses-ordinal {
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+  color: rgba(255, 170, 42, 0.55);
+}
+.uses-eyebrow {
+  font-size: 0.625rem;
+  letter-spacing: 0.22em;
+  color: #ffaa2a;
+}
+.uses-title {
+  font-size: 1.75rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #ff6d05;
+  text-shadow: none;
+}
+.uses-provenance {
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  line-height: 1.6;
+}
+/* The hairline that draws in — ember, fading to the right, the footer's rule. */
+.uses-rule {
+  height: 1px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 109, 5, 0.85),
+    rgba(255, 109, 5, 0.3) 55%,
+    rgba(255, 109, 5, 0)
+  );
+  box-shadow: 0 0 8px rgba(255, 109, 5, 0.25);
+}
+.uses-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+}
+.uses-value {
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+.uses-note {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.uses-caption {
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+}
+.uses-figure {
+  font-size: 2.75rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #ff6d05;
+  text-shadow: none;
+}
+.uses-chipmark {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+}
+.uses-xref {
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+}
+/* The LIVE token — a lit dot, only ever rendered on a real payload. Static:
+   no pulse loop on an always-visible control. */
+.uses-live-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.35rem;
+  border-radius: 9999px;
+  background: #ff6d05;
+  box-shadow: 0 0 6px #ff6d05;
+  vertical-align: middle;
+}
+
+.fluid-scale .uses-ordinal {
+  font-size: max(1.125rem, calc(1.5rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-eyebrow {
+  font-size: max(0.625rem, calc(0.625rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-title {
+  font-size: max(1.25rem, calc(1.75rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-provenance {
+  font-size: max(0.625rem, calc(0.625rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-label {
+  font-size: max(0.625rem, calc(0.6875rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-value {
+  font-size: max(0.9375rem, calc(1.0625rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-note {
+  font-size: max(0.75rem, calc(0.8125rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-caption {
+  font-size: max(0.625rem, calc(0.6875rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-figure {
+  font-size: max(2rem, calc(2.75rem * var(--fluid-scale, 1)));
+}
+
+/* Rows share the footer's ember hairline — drawn as an ELEMENT
+   (`.uses-row__rule`, rendered by every row after the first) rather than a
+   border, so it can draw left→right (framer scaleX, origin left) as the row
+   arrives on its own viewport gate. */
+.uses-row {
+  position: relative;
+}
+.uses-row__rule {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform-origin: left center;
+  background: rgba(255, 109, 5, 0.22);
+  pointer-events: none;
+}
+/* The bench's stations run 3-across from md (Tailwind's breakpoint; the
+   phone keeps the single ruled column). Each row draws its own rule, so the
+   first grid row's 2nd and 3rd cells would be ruled above — the first three
+   lose theirs, and the hairlines then read as one line between grid rows,
+   drawn in three segments left→right, not per cell. */
+@media (min-width: 768px) {
+  .uses-bench__stations > .uses-row:nth-child(-n + 3) > .uses-row__rule {
+    display: none;
+  }
+}
+
+/* The line mask — the "printed upward into place" text reveal (bench
+   station names, category labels, tool names). The wrapper clips to its
+   own line box with a little bleed on every side so a link's focus ring and
+   descenders survive; the inner span starts 140% below (past the bleed)
+   and rises to rest. */
+.uses-mask {
+  display: block;
+  clip-path: inset(-0.35em -0.5em -0.35em -0.5em);
+}
+.uses-mask__in {
+  display: block;
+}
+
+/* The engraving cutter — the lit edge that rides the Machine plate's
+   clip-wipe front. Framer moves its `left` 0→100% on the wipe's own clock. */
+.uses-cutter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #ff6d05;
+  box-shadow:
+    0 0 6px #ff6d05,
+    0 0 14px rgba(255, 109, 5, 0.5);
+  pointer-events: none;
+}
+
+/* Engraved nameplate + meter tiles: graduation ticks etched along the top
+   edge — a fine tick every 8px, a long one every 40, fading at the ends.
+   Pure CSS gradients on pseudo-elements; nothing to load, nothing to shift. */
+.uses-nameplate::before,
+.uses-nameplate::after,
+.uses-meter__ticks::before,
+.uses-meter__ticks::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.uses-nameplate::before,
+.uses-meter__ticks::before {
+  height: 7px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 205, 91, 0.42) 0 1px,
+    transparent 1px 8px
+  );
+}
+.uses-nameplate::after,
+.uses-meter__ticks::after {
+  height: 12px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 205, 91, 0.6) 0 1px,
+    transparent 1px 40px
+  );
+}
+.uses-meter {
+  overflow: hidden;
+}
+.uses-meter__ticks {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 12px;
+  transform-origin: left center;
+}
+/* The cutter that rides the ruler's front as it etches in (the Machine
+   plate's `.uses-cutter`, the ruler's height). Framer moves its `left`
+   0→100% on the ruler's own clock and burns it out at the end. */
+.uses-meter__etch {
+  position: absolute;
+  top: 0;
+  height: 12px;
+  width: 2px;
+  margin-left: -1px;
+  background: #ff6d05;
+  box-shadow:
+    0 0 6px #ff6d05,
+    0 0 14px rgba(255, 109, 5, 0.5);
+  pointer-events: none;
+}
+/* Meter tiles land like the ledger's cards: a soft bloom while dealing in
+   (`data-lit='false'`), settling to the About rest value over 1.2s once
+   down; hover restates the bloom. Unlayered so they win over .custom-bg-abt
+   (the ledger's usage meter shares the class but never carries data-lit). */
+.uses-meter[data-lit='false'] {
+  box-shadow:
+    0 0 2px #ff8400,
+    0 0 6px #ffaa2a,
+    0 0 18px orangered;
+}
+.uses-meter[data-lit='true'] {
+  box-shadow:
+    0 0 0px #ff8400,
+    0 0 0px #ffaa2a,
+    0 0 6px orangered;
+  transition: box-shadow 1.2s ease-out 0.35s;
+}
+.uses-meter[data-lit='true']:hover {
+  box-shadow:
+    0 0 1px #ff8400,
+    0 0 2px #ffaa2a,
+    0 0 8px orangered;
+  transition: box-shadow 0.3s ease-in-out;
+}
+/* The nameplate's frame glow settles from a soft bloom to the About card's
+   rest value once the plate has landed (`data-lit`, set by its own viewport
+   gate). Unlayered on purpose: `.custom-bg-abt` lives in a layer, so these
+   win, and the hover bloom therefore has to be restated here. */
+.uses-nameplate[data-lit='false'] {
+  box-shadow:
+    0 0 2px #ff8400,
+    0 0 6px #ffaa2a,
+    0 0 18px orangered;
+}
+.uses-nameplate[data-lit='true'] {
+  box-shadow:
+    0 0 0px #ff8400,
+    0 0 0px #ffaa2a,
+    0 0 6px orangered;
+  transition: box-shadow 1.2s ease-out 0.35s;
+}
+.uses-nameplate[data-lit='true']:hover {
+  box-shadow:
+    0 0 1px #ff8400,
+    0 0 2px #ffaa2a,
+    0 0 8px orangered;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+/* Version ledger — dotted leaders between name and version. */
+.uses-ledger__row {
+  font-size: 0.75rem;
+  line-height: 1.9;
+}
+.uses-ledger__leader {
+  position: relative;
+  top: -0.4em;
+  flex: 1;
+  min-width: 1rem;
+  border-bottom: 1px dotted rgba(255, 205, 91, 0.32);
+  /* Draws left→right as the row prints (framer scaleX on the bill). */
+  transform-origin: left center;
+}
+.fluid-scale .uses-ledger__row {
+  font-size: max(0.6875rem, calc(0.75rem * var(--fluid-scale, 1)));
+}
+
+/* Editor frame — the Dracula theme the owner's settings.json names. Every
+   colour here is that theme's own token colour; the chrome is the theme's
+   own surfaces (#282a36 editor, #21222c tab strip, #191a21 status bar). The
+   frame's border and glow are the site's gold frame so it still sits in the
+   page's material. */
+.uses-editor {
+  background: #282a36;
+  border: 1px solid rgba(255, 205, 91, 0.45);
+  box-shadow: 0 0 6px orangered;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  transition: box-shadow 0.3s ease;
+}
+.uses-editor:hover {
+  box-shadow:
+    0 0 1px #ff8400,
+    0 0 2px #ffaa2a,
+    0 0 8px orangered;
+}
+.uses-editor__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: #21222c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.uses-editor__dots {
+  display: flex;
+  gap: 0.4rem;
+}
+.uses-editor__dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #44475a;
+}
+.uses-editor__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.35rem;
+  background: #282a36;
+  font-size: 0.6875rem;
+  color: #f8f8f2;
+  opacity: 0.85;
+}
+.uses-editor__tabdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #bd93f9;
+}
+.uses-editor__code {
+  padding: 0.7rem 0 0.8rem;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: #f8f8f2;
+  overflow-x: auto;
+}
+.uses-editor__line {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  padding-right: 0.75rem;
+}
+.uses-editor__gutter {
+  text-align: right;
+  padding-right: 0.9rem;
+  color: #6272a4;
+  user-select: none;
+}
+/* The typed wrapper shrinks to the TEXT (`justify-self: start`), so the
+   line's clip wipe runs over the characters alone — one keystroke per
+   character however wide the column — and the caret's 0→100% is the same
+   span. */
+.uses-editor__typed {
+  position: relative;
+  display: block;
+  justify-self: start;
+}
+.uses-editor__line code {
+  display: block;
+  white-space: pre;
+}
+.uses-caret {
+  position: absolute;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 2px;
+  background: #f8f8f2;
+  pointer-events: none;
+}
+.tok-key {
+  color: #8be9fd;
+}
+.tok-str {
+  color: #f1fa8c;
+}
+.tok-num,
+.tok-bool {
+  color: #bd93f9;
+}
+.tok-punct,
+.tok-plain {
+  color: #f8f8f2;
+}
+.uses-editor__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.35rem 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: #191a21;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  color: #6272a4;
+}
+.fluid-scale .uses-editor__code {
+  font-size: max(0.6875rem, calc(0.75rem * var(--fluid-scale, 1)));
+}
+
+/* Stack ledger (§9A, re-laid 2026-09-05 on owner direction): categories with
+   plain-English headings and straplines, tools as ranked instrument cards —
+   icon · name · rank, a lay description, and a sixteen-segment usage METER
+   (public repositories in ember, private in amber, sized against the
+   busiest tool). Cards are not buttons and there is no chip: the repository
+   breakdown lives on /about. Hover brightens the frame and lifts the icon a
+   hair; both drop under either reduced-motion gate. Lit meter segments fade
+   in left→right once the plate is revealed (`data-revealed` on the plate
+   section), each on its own `--d` delay set inline by the card. */
+.uses-stack__head {
+  gap: 0.75rem;
+}
+.uses-stack__cat {
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+  color: #ffaa2a;
+}
+.uses-stack__rule {
+  flex: 1 1 auto;
+  height: 1px;
+  align-self: center;
+  background: linear-gradient(90deg, rgba(255, 170, 42, 0.35), rgba(255, 170, 42, 0));
+}
+.uses-stack__tally {
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  color: rgb(var(--foreground) / 0.5);
+}
+/* The tally's figures wear the page title's ember; the "of" keeps the
+   line's grey — the page's digit grammar (numbers are the readout, words
+   the label). Owner correction 2026-09-06. */
+.uses-stack__figure {
+  font-weight: 600;
+  color: #ff6d05;
+}
+.uses-stack__lay {
+  margin-top: 0.3rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: rgb(var(--foreground) / 0.62);
+}
+.uses-stack__grid {
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+}
+/* The card's frame is the About page card's (`.custom-bg-abt`): the gold
+   hairline at 80% and the orangered glow, with the same hover bloom. Only
+   the border line — the fill stays the ledger's own (owner correction
+   2026-09-06). While the card is landing (`data-lit='false'`) the glow
+   sits at a soft bloom and settles to the rest value over 1.2s once it is
+   down; hover restates the bloom instantly. */
+.uses-tool {
+  position: relative;
+  border: 1px solid #ffcd5bcc;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.015);
+  box-shadow:
+    0 0 2px #ff8400,
+    0 0 6px #ffaa2a,
+    0 0 18px orangered;
+  transition:
+    background-color 0.25s ease,
+    box-shadow 0.3s ease-in-out;
+}
+.uses-tool[data-lit='true'] {
+  box-shadow:
+    0 0 0px #ff8400,
+    0 0 0px #ffaa2a,
+    0 0 6px orangered;
+  transition:
+    background-color 0.25s ease,
+    box-shadow 1.2s ease-out 0.35s;
+}
+.uses-tool[data-lit='true']:hover {
+  background: rgba(255, 109, 5, 0.04);
+  box-shadow:
+    0 0 1px #ff8400,
+    0 0 2px #ffaa2a,
+    0 0 8px orangered;
+  transition:
+    background-color 0.25s ease,
+    box-shadow 0.3s ease-in-out;
+}
+.uses-tool__head {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: 0.65rem;
+}
+.uses-tool__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  transition: transform 0.24s cubic-bezier(0.34, 1.42, 0.5, 1);
+}
+.uses-tool__icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.uses-tool:hover .uses-tool__icon {
+  transform: translateY(-2px) scale(1.06);
+}
+.uses-tool__name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgb(var(--foreground) / 0.92);
+}
+.uses-tool__rank {
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  color: rgba(255, 170, 42, 0.55);
+}
+.uses-tool__desc {
+  margin: 0.55rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(var(--foreground) / 0.62);
+}
+/* The track owns the card's full width and the figure sits beneath it, so
+   every bar on the plate is drawn to the same length and reads against its
+   neighbours — a figure beside the bar would shorten the busiest tool's full
+   bar to less than a quiet tool's quarter. */
+.uses-meter {
+  margin-top: 0.8rem;
+}
+.uses-meter__track {
+  grid-template-columns: repeat(16, 1fr);
+  gap: 2px;
+  height: 0.5rem;
+}
+.uses-meter__seg {
+  position: relative;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.07);
+}
+/* Each lit segment rises from its foot and lights on its own beat: a short
+   transition per segment, delayed inline via `--d` (80ms apart, set by the
+   tile), so three lit segments read as three landings rather than one slab. */
+.uses-meter__seg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transform: scaleY(0.35);
+  transform-origin: 50% 100%;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  /* No delay at rest: a drain fades every segment out together, at once.
+     The per-segment `--d` applies only while filling (below). */
+  transition-delay: 0ms;
+}
+.uses-meter__seg.is-public::after {
+  background: #ff6d05;
+}
+.uses-meter__seg.is-private::after {
+  background: #ffaa2a;
+}
+/* Filled from the METER's own live gate (`data-fill`, ToolTile), not the
+   card's once-only reveal, so the sequence replays on every entry. A drain
+   (sustained exit) fades the segments out together, at once. */
+.uses-meter[data-fill='true'] .uses-meter__seg::after {
+  opacity: 1;
+  transform: none;
+  transition-delay: var(--d, 0ms);
+}
+.uses-meter[data-fill='false'] .uses-meter__seg::after {
+  transition-delay: 0ms;
+  transition-duration: 0.25s;
+}
+.uses-tool__figure {
+  margin-top: 0.45rem;
+  text-align: right;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--foreground) / 0.6);
+}
+.uses-tool__figure b {
+  font-weight: 600;
+  color: #ff6d05;
+}
+.uses-stack__key {
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  line-height: 1.8;
+}
+.uses-stack__swatch {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.4rem;
+  margin-right: 0.4rem;
+  border-radius: 1px;
+  vertical-align: middle;
+}
+.uses-stack__swatch.is-public {
+  background: #ff6d05;
+}
+.uses-stack__swatch.is-private {
+  background: #ffaa2a;
+}
+/* Both reduced-motion gates: no lift, no transitions, meters simply on,
+   frames at their rest glow from the first paint (no bloom to settle). */
+.uses-stack[data-reduce='true'] .uses-tool,
+.uses-stack[data-reduce='true'] .uses-tool__icon,
+.uses-stack[data-reduce='true'] .uses-meter__seg::after,
+[data-motion='off'] .uses-tool,
+[data-motion='off'] .uses-tool__icon,
+[data-motion='off'] .uses-nameplate,
+[data-motion='off'] .uses-meter__seg::after {
+  transition: none;
+}
+.uses-stack[data-reduce='true'] .uses-tool:hover .uses-tool__icon,
+[data-motion='off'] .uses-tool:hover .uses-tool__icon {
+  transform: none;
+}
+[data-motion='off'] .uses-meter__seg.is-public::after,
+[data-motion='off'] .uses-meter__seg.is-private::after {
+  opacity: 1;
+  transform: none;
+}
+[data-motion='off'] .uses-tool[data-lit='false'],
+[data-motion='off'] .uses-nameplate[data-lit='false'],
+[data-motion='off'] .uses-meter[data-lit='false'] {
+  box-shadow:
+    0 0 0px #ff8400,
+    0 0 0px #ffaa2a,
+    0 0 6px orangered;
+}
+@media (prefers-reduced-motion: reduce) {
+  .uses-tool,
+  .uses-tool__icon,
+  .uses-nameplate,
+  .uses-meter__seg::after {
+    transition: none;
+  }
+  .uses-tool:hover .uses-tool__icon {
+    transform: none;
+  }
+  .uses-meter__seg.is-public::after,
+  .uses-meter__seg.is-private::after {
+    opacity: 1;
+    transform: none;
+  }
+  .uses-tool[data-lit='false'],
+  .uses-nameplate[data-lit='false'],
+  .uses-meter[data-lit='false'] {
+    box-shadow:
+      0 0 0px #ff8400,
+      0 0 0px #ffaa2a,
+      0 0 6px orangered;
+  }
+}
+.fluid-scale .uses-stack__cat {
+  font-size: max(0.625rem, calc(0.6875rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-stack__tally,
+.fluid-scale .uses-stack__key,
+.fluid-scale .uses-tool__rank {
+  font-size: max(0.5625rem, calc(0.625rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-stack__lay,
+.fluid-scale .uses-tool__desc {
+  font-size: max(0.75rem, calc(0.8125rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-tool__name {
+  font-size: max(0.875rem, calc(0.9375rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-tool__figure {
+  font-size: max(0.625rem, calc(0.6875rem * var(--fluid-scale, 1)));
+}
+.fluid-scale .uses-tool__icon {
+  width: max(2rem, calc(2.25rem * var(--fluid-scale, 1)));
+  height: max(2rem, calc(2.25rem * var(--fluid-scale, 1)));
+}
+/* The card never drops below 17rem: two columns on an iPad, three from a
+   laptop, one on a phone — a narrower floor put three 240px cards across a
+   tablet with four-line descriptions. */
+.fluid-scale .uses-stack__grid {
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(max(17rem, calc(17rem * var(--fluid-scale, 1))), 1fr)
+  );
+}
+
+/* Pipeline schematic — graph paper behind the nodes (a dot grid on a
+   pseudo-element so the gold frame's own gradient stays underneath), strokes
+   that never scale (vector-effect on the paths), and a 720px minimum so the
+   type inside the SVG never shrinks below legible — below that the plate
+   scrolls sideways instead.
+
+   Node chrome: a gradient-lit hairline (gold at the top-left corner fading
+   toward the bottom-right, the way light catches a bevel) over a slate
+   fill, an amber category eyebrow, and a small LED at the top-right. The
+   gradients are SVG <defs> referenced from the element attributes (not from
+   here — Safari is unreliable resolving `url(#id)` out of a stylesheet).
+   `data-hot` on a node's group — set by the flow engine in PipelinePlate.jsx
+   when a packet lands — fades in the ember stroke and lights the LED. The
+   flow layers (drift dashes, comets and their tags, CI lanes, the build
+   hairline, ripples) are positioned per frame by that engine; CSS holds only
+   their colours, widths and the drift keyframes. */
+.uses-pipeline::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 205, 91, 0.16) 1px, transparent 1.2px);
+  background-size: 16px 16px;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 45%, transparent 100%);
+          mask-image: radial-gradient(ellipse at center, #000 45%, transparent 100%);
+}
+.uses-pipeline__svg {
+  position: relative;
+  min-width: 720px;
+}
+.uses-pipeline__edge {
+  stroke: #ff6d05;
+  stroke-opacity: 0.42;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+}
+/* Ambient current: short gold dashes drifting along every edge, one dash
+   period per 1.5s. Drawn in user units on purpose (no vector-effect) so the
+   dash rhythm scales with the drawing. */
+.uses-pipeline__drift {
+  stroke: #ffcd5b;
+  stroke-opacity: 0.3;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 1.5 11;
+  animation: uses-drift 1.5s linear infinite;
+}
+@keyframes uses-drift {
+  to {
+    stroke-dashoffset: -12.5;
+  }
+}
+.uses-pipeline__head {
+  fill: #ff6d05;
+  fill-opacity: 0.7;
+}
+.uses-pipeline__node {
+  stroke-width: 1;
+}
+.uses-pipeline__node-hot {
+  stroke-width: 1.25;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+[data-hot='1'] .uses-pipeline__node-hot {
+  opacity: 1;
+  transition-duration: 0.12s;
+}
+.uses-pipeline__led {
+  fill: #ff6d05;
+  opacity: 0.32;
+  transition: opacity 0.45s ease;
+}
+[data-hot='1'] .uses-pipeline__led {
+  opacity: 1;
+  transition-duration: 0.1s;
+}
+.uses-pipeline__led-halo {
+  fill: #ff6d05;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+[data-hot='1'] .uses-pipeline__led-halo {
+  opacity: 0.22;
+  transition-duration: 0.1s;
+}
+.uses-pipeline__kind {
+  fill: #ffaa2a;
+  fill-opacity: 0.85;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+}
+.uses-pipeline__title {
+  fill: rgb(var(--foreground));
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+.uses-pipeline__sub {
+  fill: rgb(var(--foreground) / 0.62);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+}
+/* CI lanes (one per workflow) and the build's progress hairline. */
+.uses-pipeline__lane-track {
+  fill: rgb(var(--foreground) / 0.1);
+}
+.uses-pipeline__lane {
+  fill: #ff6d05;
+  fill-opacity: 0.9;
+}
+.uses-pipeline__ripple {
+  fill: none;
+  stroke: #ff6d05;
+  stroke-width: 1.25;
+  opacity: 0;
+}
+/* Comets: a head, a soft halo and a dash-drawn tail on the edge itself,
+   toned per beat — ember for a request or a commit, gold for a response,
+   amber for the cron. */
+.uses-pipeline__comet {
+  --uses-tone: #ff6d05;
+  opacity: 0;
+  pointer-events: none;
+}
+.uses-pipeline__comet[data-tone='gold'] {
+  --uses-tone: #ffcd5b;
+}
+.uses-pipeline__comet[data-tone='amber'] {
+  --uses-tone: #ffaa2a;
+}
+.uses-pipeline__comet-tail {
+  stroke: var(--uses-tone);
+  stroke-opacity: 0.85;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.uses-pipeline__comet-head {
+  fill: var(--uses-tone);
+}
+.uses-pipeline__comet-halo {
+  fill: var(--uses-tone);
+  fill-opacity: 0.18;
+}
+.uses-pipeline__tag {
+  fill: var(--uses-tone);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+}
+/* Still under either reduced-motion verdict (OS query for the first paint,
+   the ⌘K toggle via data-motion). !important: framer writes the drift's
+   opacity inline. */
+@media (prefers-reduced-motion: reduce) {
+  .uses-pipeline__drift {
+    animation: none;
+    opacity: 0 !important;
+  }
+}
+[data-motion='off'] .uses-pipeline__drift {
+  animation: none;
+  opacity: 0 !important;
+}
+
+/* Reduced-motion FIRST-PAINT guard (see Plate.jsx). The plates hold their
+   hidden pose until React has read the media query; under the OS preference
+   that is one frame of invisible content, so the query pins every animated
+   layer at rest before any script runs. The palette's manual toggle exposes
+   the same verdict through data-motion (the guestbook pattern). !important
+   is load-bearing: framer writes these as INLINE styles. */
+@media (prefers-reduced-motion: reduce) {
+  .uses-anim {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* The engraving / typing wipes and the label stamp animate two more
+     properties; the same first-paint pin, on their own classes so the rest
+     values (a label's own tracking) survive. */
+  .uses-anim-clip {
+    clip-path: none !important;
+  }
+  .uses-anim-track {
+    letter-spacing: inherit !important;
+  }
+}
+[data-motion='off'] .uses-anim {
+  opacity: 1 !important;
+  transform: none !important;
+}
+[data-motion='off'] .uses-anim-clip {
+  clip-path: none !important;
+}
+[data-motion='off'] .uses-anim-track {
+  letter-spacing: inherit !important;
+}

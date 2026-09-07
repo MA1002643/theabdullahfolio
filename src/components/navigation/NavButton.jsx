@@ -12,6 +12,7 @@ import {
   User,
   Briefcase,
   Clock,
+  Wrench,
 } from 'lucide-react';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 
@@ -55,6 +56,8 @@ const getIcon = (icon, small = false) => {
       return <Route className={cls} strokeWidth={1.5} />;
     case 'guestbook':
       return <MessageSquare className={cls} strokeWidth={1.5} />;
+    case 'uses':
+      return <Wrench className={cls} strokeWidth={1.5} />;
     case 'resume':
       return <Notebook className={cls} strokeWidth={1.5} />;
     case 'past':

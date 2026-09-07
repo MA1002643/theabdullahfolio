@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Briefcase, GraduationCap, History, Phone, Route, User } from 'lucide-react';
+import { Briefcase, GraduationCap, History, Phone, Route, User, Wrench } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -33,6 +33,7 @@ const SUGGESTION_ICONS = {
   qualifications: GraduationCap,
   contact: Phone,
   journey: Route,
+  uses: Wrench,
   'my-past': History,
 };
 const SUGGESTIONS = ROUTES.map(({ segment, href, label }) => ({
