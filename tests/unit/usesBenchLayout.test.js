@@ -30,7 +30,7 @@ beforeEach(() => {
   );
   // A hover-capable fine pointer, no OS reduced-motion preference (the tilt
   // hook and the shared useReducedMotion both read matchMedia).
-  window.matchMedia = (query) => ({
+  vi.stubGlobal('matchMedia', (query) => ({
     matches: query.includes('hover'),
     media: query,
     onchange: null,
@@ -39,7 +39,7 @@ beforeEach(() => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
 });
 
 afterEach(() => {

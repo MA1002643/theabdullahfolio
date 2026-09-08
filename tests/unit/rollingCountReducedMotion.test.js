@@ -56,7 +56,7 @@ async function mountBar(fire, { motionOff }) {
 
 beforeEach(() => {
   // The OS says nothing about motion, so every "off" below is the switch's.
-  window.matchMedia = (query) => ({
+  vi.stubGlobal('matchMedia', (query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -65,11 +65,12 @@ beforeEach(() => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
 });
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe('RollingCount — the reaction count obeys the motion switch', () => {

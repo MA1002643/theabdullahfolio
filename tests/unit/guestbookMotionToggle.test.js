@@ -64,7 +64,7 @@ const motionOn = () => {
 
 beforeEach(() => {
   // The OS says nothing about motion: every "off" below is the toggle's.
-  window.matchMedia = (query) => ({
+  vi.stubGlobal('matchMedia', (query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -73,7 +73,7 @@ beforeEach(() => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
   window.scrollTo = () => {};
   motionOn();
 });
@@ -81,6 +81,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   motionOn();
+  vi.unstubAllGlobals();
 });
 
 describe('/guestbook — one motion switch, every layer', () => {

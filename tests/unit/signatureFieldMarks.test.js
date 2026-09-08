@@ -49,7 +49,7 @@ beforeEach(() => {
   // The field asks for `(any-pointer: none)`; framer's useReducedMotion asks
   // for the motion preference. Answer the first from the flag, everything
   // else "no".
-  window.matchMedia = (query) => ({
+  vi.stubGlobal('matchMedia', (query) => ({
     matches: query === '(any-pointer: none)' ? anyPointerNone : false,
     media: query,
     onchange: null,
@@ -58,7 +58,7 @@ beforeEach(() => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
   window.scrollTo = () => {};
   vi.stubGlobal(
     'ResizeObserver',

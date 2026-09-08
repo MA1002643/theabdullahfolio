@@ -15,7 +15,7 @@ vi.mock('@/components/pageTransition/PageTransitionProvider', () => ({
 vi.mock('sonner', () => ({ toast: vi.fn() }));
 
 const setReducedMotion = (matches) => {
-  window.matchMedia = (query) => ({
+  vi.stubGlobal('matchMedia', (query) => ({
     matches: query.includes('prefers-reduced-motion') ? matches : false,
     media: query,
     onchange: null,
@@ -24,7 +24,7 @@ const setReducedMotion = (matches) => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
 };
 
 let scrollSpy;
@@ -36,6 +36,7 @@ beforeEach(() => {
 afterEach(() => {
   delete Element.prototype.scrollIntoView;
   document.body.innerHTML = '';
+  vi.unstubAllGlobals();
 });
 
 const LINES = ['{', '  "editor.formatOnSave": true', '}'];
