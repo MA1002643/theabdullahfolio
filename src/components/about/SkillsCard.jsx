@@ -11,21 +11,27 @@ import { useSkillsUpdateSignal } from "@/hooks/useSkillsUpdateSignal";
 import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { flattenCategories } from "@/utils/skillsDiff";
-import { CATEGORY_ORDER, emptyCategories } from "@/utils/skillsIconUrl";
+import {
+  CATEGORY_ORDER,
+  SKILLS_CACHE_KEY,
+  SKILLS_CACHE_TTL_MS,
+  SKILLS_LAST_FETCHED_KEY,
+  emptyCategories,
+  hasLiveCategories,
+  isRenderableSkill,
+} from "@/utils/skillsIconUrl";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
 // How long the change banner lingers once the section scrolls into view —
 // matches the Languages / Streak cards (issue #20, acceptance #15).
 const BANNER_AUTO_HIDE_MS = 4500;
 // Client-side refresh guard — 10 minutes (shortened from 24h) so live GitHub
-// changes surface quickly. The `:v4` key suffix force-invalidates any older
-// cached payload — bumped to v4 when each skill gained `privateRepoCount` (a
-// v3 payload without it would leave private-only skills non-interactive for a
-// TTL window); v3 was the earlier bump when skills gained their `repos`
-// breakdown.
-const CACHE_TTL_MS = 10 * 60 * 1000;
-const LAST_FETCHED_KEY = "skillsLastFetched:v4";
-const CACHE_KEY = "skillsCache:v4";
+// changes surface quickly. The keys and TTL live in skillsIconUrl.js (with
+// the version-suffix history) because the /uses Stack plate reads the same
+// cache entry (issue #37).
+const CACHE_TTL_MS = SKILLS_CACHE_TTL_MS;
+const LAST_FETCHED_KEY = SKILLS_LAST_FETCHED_KEY;
+const CACHE_KEY = SKILLS_CACHE_KEY;
 
 // One expression drives each cell so icons stay fluid from a 320px phone to
 // ultrawide (issue #20, Task 4). Issue #25 moved it off the old bespoke
@@ -977,13 +983,21 @@ export default function SkillsCard({ username }) {
           // applying it would wipe every icon the user is looking at. Keep the
           // current data; the next cycle retries. (The initial load still
           // applies whatever arrives — nothing is on screen yet.)
-          const hasAny = Object.values(data.categories).some(
-            (items) => Array.isArray(items) && items.length > 0,
-          );
+          const hasAny = hasLiveCategories(data.categories);
           if (isBackground && (data._fallback || !hasAny)) return;
           lastSyncMs = Date.now();
           applyCategories(data.categories);
-          setIsLive(!data._fallback);
+          const isVerified = !data._fallback && hasAny;
+          setIsLive(isVerified);
+          // Only a VERIFIED crawl is persisted. The initial load still applies
+          // whatever arrives (above) — an empty grid beats no grid — but the
+          // cache is shared with the /uses Stack plate (issue #37), and an
+          // entry there is read as proof of a live crawl by whichever page is
+          // visited next. Writing a `_fallback` / empty payload would stamp a
+          // FRESH timestamp on nothing, so /uses would announce "verified" and
+          // skip its own fetch for a whole TTL. Leaving the entry alone keeps
+          // the last good payload readable and lets the next reader retry.
+          if (!isVerified) return;
           try {
             window.localStorage.setItem(LAST_FETCHED_KEY, String(Date.now()));
             window.localStorage.setItem(CACHE_KEY, JSON.stringify(data.categories));
@@ -1020,12 +1034,20 @@ export default function SkillsCard({ username }) {
     let servedFromCache = false;
     if (!needsRefresh && cached) {
       try {
-        applyCategories(JSON.parse(cached));
-        if (!cancelled) setIsLive(false);
-        // Inherit the cached payload's age so the first background refresh
-        // fires a TTL after the ORIGINAL fetch, not a TTL after this mount.
-        lastSyncMs = lastFetchedMs;
-        servedFromCache = true;
+        const parsed = JSON.parse(cached);
+        // An entry that parses but holds nothing is a MISS, not a hit. Writes
+        // above can no longer create one, but a browser can still be carrying
+        // an empty `:v4` entry from a build that did — and serving it would
+        // paint an empty grid and suppress the refetch for the rest of its
+        // TTL. Treating it as absent costs one fetch and self-heals the entry.
+        if (hasLiveCategories(parsed)) {
+          applyCategories(parsed);
+          if (!cancelled) setIsLive(false);
+          // Inherit the cached payload's age so the first background refresh
+          // fires a TTL after the ORIGINAL fetch, not a TTL after this mount.
+          lastSyncMs = lastFetchedMs;
+          servedFromCache = true;
+        }
       } catch {
         // Corrupt cache — fall through to a live fetch.
       }
@@ -1055,12 +1077,20 @@ export default function SkillsCard({ username }) {
   // Flat, ordered skill list — the diff/fingerprint unit the signal hook needs.
   const flatSkills = useMemo(() => flattenCategories(categories), [categories]);
 
-  // Non-empty category groups in CATEGORY_ORDER.
+  // Non-empty category groups in CATEGORY_ORDER, drawable entries only — the
+  // same rule flattenCategories and the /uses groupStack apply. The initial
+  // load deliberately renders whatever arrives (an empty grid beats no grid),
+  // so this is the one place a malformed payload could reach the DOM: a
+  // category holding a string used to survive `?? []` and `.length > 0` and
+  // then throw on `.map`, and a slug-less entry would draw a broken icon.
   const groups = useMemo(
     () =>
-      CATEGORY_ORDER.map((category) => ({ category, items: categories[category] ?? [] })).filter(
-        (g) => g.items.length > 0,
-      ),
+      CATEGORY_ORDER.map((category) => ({
+        category,
+        items: Array.isArray(categories[category])
+          ? categories[category].filter(isRenderableSkill)
+          : [],
+      })).filter((g) => g.items.length > 0),
     [categories],
   );
 

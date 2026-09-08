@@ -27,6 +27,75 @@ export function emptyCategories() {
   return Object.fromEntries(CATEGORY_ORDER.map((c) => [c, []]));
 }
 
+// The About skills grid's client-side cache of the /api/github-skills payload
+// (10-minute TTL — matches the route's server TTL). Shared here so the /uses
+// Stack plate (issue #37) reads the SAME entry the About card writes: a
+// visitor arriving from /about sees live repo counts instantly, and the two
+// consumers can never drift onto different keys. The `:v4` suffix
+// force-invalidates any older cached payload — bumped to v4 when each skill
+// gained `privateRepoCount` (a v3 payload without it would leave private-only
+// skills non-interactive for a TTL window); v3 was the earlier bump when
+// skills gained their `repos` breakdown.
+export const SKILLS_CACHE_TTL_MS = 10 * 60 * 1000;
+export const SKILLS_LAST_FETCHED_KEY = "skillsLastFetched:v4";
+export const SKILLS_CACHE_KEY = "skillsCache:v4";
+
+/**
+ * One skill entry the grid can actually draw. `slug` is what the icon URL, the
+ * React key and the hidden-tile set are all built from, so an entry without one
+ * is not a tile — it is a hole. `flattenCategories` has always skipped these;
+ * this is that rule named once so every consumer applies the same one.
+ *
+ * @param {unknown} item
+ * @returns {boolean}
+ */
+export function isRenderableSkill(item) {
+  return (
+    Boolean(item) &&
+    typeof item === "object" &&
+    !Array.isArray(item) &&
+    typeof item.slug === "string" &&
+    item.slug.length > 0
+  );
+}
+
+/**
+ * Does a categories object carry an actual crawl result? Lives here, beside
+ * the keys it guards, because BOTH sides of the shared cache need the same
+ * answer: freshness alone never means "verified".
+ *
+ * A `_fallback` payload (GitHub unreachable) and a crawl that genuinely found
+ * nothing both arrive as `emptyCategories()` — every category present, all
+ * empty — which is truthy, parses fine, and is indistinguishable from a real
+ * payload by presence alone. Writers must not persist one, and readers must
+ * not serve one as live: a fresh-but-empty entry would otherwise announce
+ * "verified" AND suppress the live fetch for a whole TTL, so a recovered
+ * GitHub could not be noticed until the entry aged out.
+ *
+ * Defensive about shape too — a hand-edited or half-written cache entry can
+ * parse to null, an array, or a category holding a non-array.
+ *
+ * It asks the question the way the RENDERERS ask it, and that is the whole
+ * subtlety. Every consumer walks CATEGORY_ORDER and skips entries it cannot
+ * draw (`groupStack`, the About grid, `flattenCategories`), so a bare "is any
+ * array non-empty?" test can say yes about a payload that paints nothing — one
+ * whose content sits under a key nobody reads, or whose items carry no slug.
+ * That payload would then be announced as verified, cached, and served back for
+ * a whole TTL as an empty plate claiming to be live. Counting only what
+ * CATEGORY_ORDER reaches keeps the claim and the picture in step: this returns
+ * true exactly when `groupStack` would return at least one tile.
+ *
+ * @param {unknown} categories
+ * @returns {boolean}
+ */
+export function hasLiveCategories(categories) {
+  if (!categories || typeof categories !== "object" || Array.isArray(categories)) return false;
+  return CATEGORY_ORDER.some(
+    (category) =>
+      Array.isArray(categories[category]) && categories[category].some(isRenderableSkill),
+  );
+}
+
 /**
  * Build the icon URL for a slug from the chosen CDN. skillicons.dev is the
  * preferred illustrated style; simpleicons / devicon are fallbacks for tools

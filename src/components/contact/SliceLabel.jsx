@@ -129,7 +129,9 @@ export default function SliceLabel({ text, hovered }) {
     if (!el) return undefined;
     const measure = () => {
       const w = el.offsetWidth || 1;
-      const btn = el.closest('button');
+      // The pill may be a <button> (the contact form) or an <a> (the /uses
+      // repositories CTA wears the same label).
+      const btn = el.closest('button, a');
       const contRight = el.getBoundingClientRect().right;
       // padPx is a relative distance, so it stays correct even while the button
       // carries a magnetic translate (both rects shift together).

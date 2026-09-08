@@ -283,7 +283,9 @@ export const BtnList = [
     // (issue #88 rework) so the route can answer 200 and carry its own
     // dedicated OG/share card (crawlers refuse to unfurl a 404, which is
     // what this path deliberately was before). The restored university-era
-    // portfolio lands on that page later.
+    // portfolio lands on that page later. Kept in the ring on owner
+    // direction (2026-09-06): the /uses button takes the Resume slot below
+    // instead, not this one.
     label: 'My Past',
     link: '/my-past',
     icon: 'past',
@@ -304,9 +306,20 @@ export const BtnList = [
     newTab: false,
   },
   {
-    label: 'Resume',
-    link: '/Muhammad_Abdullah_CV.pdf',
-    icon: 'resume',
+    // Replaced the Resume ring button (issue #37, owner-directed 2026-09-06
+    // — the spec's option A had /uses take My Past's slot; the owner kept
+    // My Past and gave /uses this one instead). Same reasoning as the
+    // GitHub → Journey and LinkedIn → Guestbook swaps above: the ring's
+    // eight slots are prime navigation real estate, and a hop out to a PDF
+    // earns one less than the in-app /uses instrument panel does. The CV is
+    // not gone — it keeps its slot in the footer's ELSEWHERE terminal
+    // (footer-data.js socialLinks `resumeUrl`), where external destinations
+    // live. Swapping IN PLACE (not appending) matters: the sub-480px
+    // two-column layout slices BtnList 0-3 / 4-7, so a ninth entry would
+    // silently vanish on phones.
+    label: 'Uses',
+    link: '/uses',
+    icon: 'uses',
     newTab: false,
   },
 ];
@@ -555,3 +568,162 @@ export const journeyData = [
     link: null,
   },
 ];
+
+// /uses (issue #37) — the HAND-SET half of the setup page. Everything that
+// can be counted or crawled is NOT here: package versions, workflow names and
+// spec counts come from src/lib/uses/buildFacts.js at build, and the stack's
+// live tiles + repo counts come from /api/github-skills. What lives here is
+// what only the owner can state — the hardware, the bench, the sanitised
+// editor excerpt — plus the CURATED stack fallback the plate shows before the
+// crawl lands (and instead of it when GitHub is unreachable, with the live
+// claim dropped).
+//
+// Provenance of the machine rows: model / chip / memory / display from the
+// build machine's own hardware report; macOS 26.6 on Darwin 25.6 from
+// `sw_vers`; the 1440 × 900 logical width is the fluid-scale unity viewport
+// (src/lib/fluidScale.js). The phone model is deliberately unstated.
+//
+// editorFrame.lines is the sanitised settings.json excerpt: only keys that
+// carry no path, token, email or machine name. The SAME array feeds the
+// EditorFrame render and the palette's "Copy my editor settings" action, so
+// what is shown is exactly what is copied (CLAUDE.md §1 applies to what is
+// rendered, not just what is committed).
+export const usesData = {
+  machine: [
+    {
+      label: 'Machine',
+      value: '13-inch MacBook Pro · Apple M1 · 16 GB unified memory',
+    },
+    {
+      label: 'Display',
+      value: '2560 × 1600 Retina · 1440 × 900 logical',
+      note: 'The fluid-scale unity viewport — every sub-page is authored at scale 1 on exactly this width, then breathes from one factor.',
+    },
+    {
+      label: 'OS',
+      value: 'macOS 26 · Darwin 25.6',
+    },
+    {
+      label: 'Phone',
+      value: 'iPhone, running OwnTracks in HTTP mode',
+      note: 'It posts a location fix to /api/location; the town and local time in the footer come from this device.',
+      href: '#footer-location',
+      hrefLabel: 'see the town it feeds',
+    },
+  ],
+  bench: [
+    {
+      role: 'Editor',
+      name: 'Visual Studio Code',
+      detail: 'Dracula theme · vscode-icons · Prettier on save',
+      link: 'https://code.visualstudio.com/',
+    },
+    {
+      role: 'Agentic pair',
+      name: 'Claude Code',
+      detail:
+        'VS Code extension + CLI — skills, subagents and MCP servers (Chrome DevTools, Playwright) drive the browser during verification',
+      link: 'https://claude.com/claude-code',
+    },
+    {
+      role: 'Terminal & shell',
+      name: 'zsh · macOS Terminal · the VS Code terminal',
+      detail: 'Node pinned by .nvmrc through nvm · Homebrew for everything else',
+    },
+    {
+      role: 'Formatting & lint',
+      name: 'Prettier + ESLint',
+      detail: 'prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)',
+    },
+    {
+      role: 'Type',
+      name: 'Inter · Montserrat · Varela Round',
+      detail: 'next/font/google — self-hosted at build, so the fonts never shift layout',
+    },
+    {
+      role: 'Browser tooling',
+      name: 'Chrome DevTools · Playwright · Lighthouse',
+      detail:
+        'Pixel probes, reduced-motion emulation and the e2e gate all run against real Chromium',
+    },
+  ],
+  extensions: [
+    'Claude Code',
+    'Tailwind CSS IntelliSense',
+    'ESLint',
+    'Prettier',
+    'GitLens',
+  ],
+  editorFrame: {
+    fileName: 'settings.json',
+    theme: 'Dracula',
+    lines: [
+      '{',
+      '  "workbench.colorTheme": "Dracula Theme",',
+      '  "workbench.iconTheme": "vscode-icons",',
+      '  "editor.defaultFormatter": "esbenp.prettier-vscode",',
+      '  "editor.formatOnSave": true,',
+      '  "[dockercompose]": {',
+      '    "editor.tabSize": 2',
+      '  }',
+      '}',
+    ],
+    status: ['Dracula Theme', 'UTF-8', 'Spaces: 2', 'Prettier'],
+  },
+  // Curated FALLBACK only — the shape /api/github-skills emits, minus the
+  // per-skill repos (a curated list cannot know them, so the tiles show no
+  // count until the live payload lands). Mirrors the crawl's detected set at
+  // the time of writing; the live payload is the source of truth.
+  stack: {
+    languages: [
+      { slug: 'javascript', displayName: 'JavaScript', source: 'skillicons' },
+      { slug: 'typescript', displayName: 'TypeScript', source: 'skillicons' },
+      { slug: 'html', displayName: 'HTML', source: 'skillicons' },
+      { slug: 'css', displayName: 'CSS', source: 'skillicons' },
+      { slug: 'bash', displayName: 'Bash', source: 'skillicons' },
+      { slug: 'cs', displayName: 'C#', source: 'skillicons' },
+      { slug: 'php', displayName: 'PHP', source: 'skillicons' },
+    ],
+    frameworks: [
+      { slug: 'nextjs', displayName: 'Next.js', source: 'skillicons' },
+      { slug: 'react', displayName: 'React', source: 'skillicons' },
+      { slug: 'tailwindcss', displayName: 'Tailwind CSS', source: 'skillicons' },
+      { slug: 'expressjs', displayName: 'Express', source: 'skillicons' },
+      { slug: 'vuejs', displayName: 'Vue.js', source: 'skillicons' },
+      { slug: 'bootstrap', displayName: 'Bootstrap', source: 'skillicons' },
+    ],
+    libraries: [
+      { slug: 'threejs', displayName: 'Three.js', source: 'skillicons' },
+      { slug: 'framer', displayName: 'Framer Motion', source: 'simpleicons' },
+      { slug: 'prisma', displayName: 'Prisma', source: 'skillicons' },
+      { slug: 'reacthookform', displayName: 'React Hook Form', source: 'simpleicons' },
+      { slug: 'axios', displayName: 'Axios', source: 'simpleicons' },
+      { slug: 'sharp', displayName: 'sharp', source: 'simpleicons' },
+      { slug: 'upstash', displayName: 'upstash', source: 'simpleicons' },
+      { slug: 'postcss', displayName: 'postcss', source: 'simpleicons' },
+      { slug: 'autoprefixer', displayName: 'autoprefixer', source: 'simpleicons' },
+      { slug: 'testinglibrary', displayName: 'testing-library', source: 'simpleicons' },
+      { slug: 'swiper', displayName: 'Swiper', source: 'simpleicons' },
+      { slug: 'dotenv', displayName: 'dotenv', source: 'simpleicons' },
+      { slug: 'nodemon', displayName: 'nodemon', source: 'simpleicons' },
+      { slug: 'tsnode', displayName: 'ts-node', source: 'simpleicons' },
+    ],
+    tools: [
+      { slug: 'nodejs', displayName: 'Node.js', source: 'skillicons' },
+      { slug: 'vercel', displayName: 'Vercel', source: 'skillicons' },
+      { slug: 'docker', displayName: 'Docker', source: 'skillicons' },
+      { slug: 'vite', displayName: 'Vite', source: 'skillicons' },
+      { slug: 'vitest', displayName: 'Vitest', source: 'skillicons' },
+      { slug: 'jest', displayName: 'Jest', source: 'skillicons' },
+      { slug: 'mocha', displayName: 'Mocha', source: 'simpleicons' },
+      { slug: 'chai', displayName: 'Chai', source: 'simpleicons' },
+      { slug: 'eslint', displayName: 'ESLint', source: 'simpleicons' },
+      { slug: 'prettier', displayName: 'Prettier', source: 'simpleicons' },
+      { slug: 'redis', displayName: 'Redis', source: 'skillicons' },
+      { slug: 'mysql', displayName: 'MySQL', source: 'skillicons' },
+      { slug: 'sqlite', displayName: 'SQLite', source: 'skillicons' },
+      { slug: 'swagger', displayName: 'Swagger', source: 'simpleicons' },
+    ],
+    software: [{ slug: 'github', displayName: 'GitHub', source: 'skillicons' }],
+  },
+};

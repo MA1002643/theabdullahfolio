@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import CommandPalette from '@/components/commandPalette/CommandPalette';
+import { routeActions, routesExcept } from '@/components/commandPalette/routes';
 import { usePageTransition } from '@/components/pageTransition/PageTransitionProvider';
 import { journeyData } from '@/app/data';
 import { resumeUrl } from '@/components/footer/footer-data';
@@ -17,16 +18,8 @@ import { resumeUrl } from '@/components/footer/footer-data';
 //
 // Route jumps go through the Stone Passage (usePageTransition().navigate) so
 // palette navigation looks identical to clicking the nav ring; a missing
-// provider degrades to a plain router.push.
-const ROUTES = [
-  { label: 'Home', href: '/' },
-  { label: 'About', href: '/about' },
-  { label: 'Projects', href: '/projects' },
-  { label: 'Qualifications', href: '/qualifications' },
-  { label: 'Contact', href: '/contact' },
-  { label: 'Guestbook', href: '/guestbook' },
-  { label: 'My Past', href: '/my-past' },
-];
+// provider degrades to a plain router.push. The route list itself is the
+// shared commandPalette/routes.js registry (issue #37) minus this page.
 
 // One jump per era, in the page's own newest-first order (journeyData is
 // grouped by year, so the Set walk preserves it).
@@ -77,14 +70,7 @@ export default function JourneyPalette() {
         // travels with the call if the target ever moves off-origin).
         perform: () => window.open(resumeUrl, '_blank', 'noopener,noreferrer'),
       },
-      ...ROUTES.map((r) => ({
-        id: `go${r.href.replace('/', '-') || '-home'}`,
-        label: r.label,
-        hint: r.href,
-        section: 'Navigate',
-        keywords: 'go jump route page',
-        perform: () => go(r.href, r.label),
-      })),
+      ...routeActions(routesExcept('/journey'), go),
     ];
   }, [navigate, router]);
 

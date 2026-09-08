@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import CommandPalette from '@/components/commandPalette/CommandPalette';
+import { routeActions, routesExcept } from '@/components/commandPalette/routes';
 import { usePageTransition } from '@/components/pageTransition/PageTransitionProvider';
 import { useGuestbookPrefs } from '@/hooks/useGuestbookPrefs';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
@@ -16,16 +17,8 @@ import { togglePref } from '@/lib/guestbook/prefs';
 //
 // Route jumps go through the Stone Passage (usePageTransition().navigate) so
 // palette navigation looks identical to clicking the nav ring; a missing
-// provider degrades to a plain router.push.
-const ROUTES = [
-  { label: 'Home', href: '/' },
-  { label: 'About', href: '/about' },
-  { label: 'Projects', href: '/projects' },
-  { label: 'Qualifications', href: '/qualifications' },
-  { label: 'Contact', href: '/contact' },
-  { label: 'Journey', href: '/journey' },
-  { label: 'My Past', href: '/my-past' },
-];
+// provider degrades to a plain router.push. The route list itself is the
+// shared commandPalette/routes.js registry (issue #37) minus this page.
 
 export default function GuestbookPalette() {
   const router = useRouter();
@@ -54,14 +47,7 @@ export default function GuestbookPalette() {
           }
         },
       },
-      ...ROUTES.map((r) => ({
-        id: `go${r.href.replace('/', '-') || '-home'}`,
-        label: r.label,
-        hint: r.href,
-        section: 'Navigate',
-        keywords: 'go jump route page',
-        perform: () => go(r.href, r.label),
-      })),
+      ...routeActions(routesExcept('/guestbook'), go),
     ];
 
     if (GUESTBOOK_FLAGS.sound) {

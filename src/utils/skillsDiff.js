@@ -10,7 +10,7 @@
 // which `flattenCategories` produces from the `{ languages, frameworks, ... }`
 // category shape the API and SkillsCard pass around.
 
-import { CATEGORY_ORDER } from "./skillsIconUrl";
+import { CATEGORY_ORDER, isRenderableSkill } from "./skillsIconUrl";
 
 /**
  * Flatten the category map into one ordered list. Categories are walked in
@@ -33,7 +33,9 @@ export function flattenCategories(categories) {
     const items = categories[category];
     if (!Array.isArray(items)) continue;
     for (const item of items) {
-      if (!item || typeof item.slug !== "string") continue;
+      // The shared rule, so the fingerprint counts exactly the tiles the grid
+      // draws and the cache's liveness test accepts.
+      if (!isRenderableSkill(item)) continue;
       flat.push({
         slug: item.slug,
         displayName: typeof item.displayName === "string" ? item.displayName : item.slug,

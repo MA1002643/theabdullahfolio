@@ -38,7 +38,7 @@ function renderRail(props) {
 const rail = () => screen.getByRole('navigation').children[1];
 
 beforeEach(() => {
-  window.matchMedia = () => ({
+  vi.stubGlobal('matchMedia', () => ({
     matches: false,
     media: '',
     onchange: null,
@@ -47,13 +47,14 @@ beforeEach(() => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
   window.scrollTo = () => {};
 });
 
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('WallPagination — the rail is constant-size in the wall', () => {

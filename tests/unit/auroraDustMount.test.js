@@ -21,7 +21,7 @@ let osReduced;
 
 beforeEach(() => {
   osReduced = false;
-  window.matchMedia = (query) => ({
+  vi.stubGlobal('matchMedia', (query) => ({
     matches: query === '(prefers-reduced-motion: reduce)' ? osReduced : false,
     media: query,
     onchange: null,
@@ -30,11 +30,12 @@ beforeEach(() => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
 });
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 const canvas = (view) => view.queryByTestId('aurora-canvas');

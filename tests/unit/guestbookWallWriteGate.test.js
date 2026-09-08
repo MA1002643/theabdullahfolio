@@ -87,7 +87,7 @@ class ObserverStub {
 }
 
 beforeEach(() => {
-  window.matchMedia = (query) => ({
+  vi.stubGlobal('matchMedia', (query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -96,7 +96,7 @@ beforeEach(() => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
   window.scrollTo = () => {};
   window.IntersectionObserver = ObserverStub;
   window.ResizeObserver = ObserverStub;
@@ -104,6 +104,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 async function renderWall(state) {

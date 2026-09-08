@@ -43,7 +43,7 @@ const flush = () => act(() => new Promise((r) => setTimeout(r, 0)));
 beforeEach(() => {
   // Force the motion branch: useReducedMotion must read "no preference", or
   // the burst is skipped before the canvas is ever touched.
-  window.matchMedia = () => ({
+  vi.stubGlobal('matchMedia', () => ({
     matches: false,
     media: '',
     onchange: null,
@@ -52,7 +52,7 @@ beforeEach(() => {
     addListener() {},
     removeListener() {},
     dispatchEvent: () => false,
-  });
+  }));
   window.scrollTo = () => {};
 });
 

@@ -58,6 +58,10 @@ export const quickLinks = [
   { label: 'Journey', href: '/journey', desc: 'The road so far' },
   { label: 'Qualifications', href: '/qualifications', desc: 'Credentials' },
   { label: 'Projects', href: '/projects', desc: 'Selected work' },
+  // After the work, the tools it was built with (issue #37). Seven links put
+  // the two-column Manifest board at 4 / 3 — the asymmetry is accepted (the
+  // masthead is asymmetric by design), verified at 1440 and 390.
+  { label: 'Uses', href: '/uses', desc: 'What I build with' },
   { label: 'Contact', href: '/contact', desc: 'Say hello' },
   // Last on purpose — the IA arc ends "reach out, then sign the wall". Also
   // feeds the Manifest departures board, which maps this list with no

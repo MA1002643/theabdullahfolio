@@ -57,6 +57,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Animated GitHub Stats** | Live GraphQL API → fast-start/slow-finish count-ups, a breathing SVG rank arc, hover-spotlight metric rows, and a per-stat change banner (e.g. "Total Stars +5 \| Total Commits +50"); a "Live GitHub Metrics" label that hides on stale/fallback data; diff-based change detection with 10-min polling |
 | **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up; responsive list: top 5 in a single column (mobile → `lg`), up to 10 in two columns at `xl`+ |
 | **Live Skills Grid** | About-page icon grid built **entirely from a live GitHub crawl** — repo languages plus dependency manifests across 7 ecosystems — resolved to skillicons.dev / Simple Icons icons, with a per-skill "used in repositories" popover (hover / keyboard / tap), a per-device skills-change banner, and an owner-only, private-name-safe crawl |
+| **Uses / Setup** | `/uses` — an instrument panel whose claims are verified, not asserted (issue [#37](https://github.com/MA1002643/theabdullahfolio/issues/37)): six editorial plates each carrying a provenance line. A **build-time bill of materials** and spec counts read from the repository by a server-only reader (`package.json` versions, `.nvmrc`, every GitHub Actions workflow's `name:`, unit / e2e suites **and cases**, API route handlers, the `vercel.json` cron — a missing file yields nothing, never a fake zero); a **live stack** crawled from the owner's repositories with per-tool repo counts (`used in 7 public repos · +2 private`), a `● live · verified 3m ago` token that only ever appears on a real payload, and a ranked **stack ledger** (plain-English category headings and straplines, a one-sentence lay description per tool, and a sixteen-segment usage meter per card — public repositories in ember, private in amber, sized against the most-used tool; the per-repository breakdown stays on the About page, once); a **live pipeline schematic** (GitHub → Actions → Vercel build → Fluid compute, then a service bus to Upstash Redis · AI Gateway · GitHub GraphQL · Spotify · SMTP, with the daily cron dropping in) laid out from its own labels so nothing clips, labelled from the repository (one CI lane per workflow file, the Node major Vercel resolves from `engines`, the cron's Hobby firing window), drawn with `pathLength`, raked once, and then run as a loop — a commit packet rides the rail, the lanes fill, the deploy lands, requests fan out and return, the cron warms GraphQL — on a single `requestAnimationFrame` clock that only runs while the plate is on screen; a **DOM-built editor frame** in the real theme whose sanitised `settings.json` lines are exactly what the ⌘K "Copy my editor settings" action copies; an engraved hardware nameplate whose Phone row links to the footer's live-location plate it feeds; and the page's own ⌘K action set over a shared route registry. Zero new dependencies |
 | **Completed Projects Breakdown** | "Projects shipped" card with an animated per-category proportional bar (derived from the project data), a `\|`-separated count legend that wraps stacked→side-by-side responsively, count-ups that replay on every viewport entry — and the whole card is a click-to-open trigger for the **Project Progress popup**: live per-project completion percentages derived from each repo's GitHub issue board (one batched GraphQL call, 12 h multi-layer cache, ≥2 syncs/day), a portfolio-wide completion donut, category bars, expandable per-project issue pipelines (closed / in-progress / backlog) with issue-board links, a live "last sync" age, and a full dialog a11y baseline (focus trap, Escape/backdrop close, focus restoration, iOS-safe scroll lock) |
 | **Years in the Craft** | Experience figure derived live from the earliest GitHub repo **and** software roles parsed from the résumé PDF, with a Personal vs Employment split bar and a click-to-open category breakdown modal |
 | **Current Streak** | Server-accurate streak from the GitHub contribution calendar (future-day-padding aware, "Present"-stable across midnight), shown in a git-commit-node progress ring with a staggered card entrance and a per-device change banner that fires only on real movement |
@@ -158,6 +159,7 @@ graph TD
             Pages --> Quals["/qualifications<br/>3D CSS carousel"]
             Pages --> Contact["/contact<br/>GLSL aurora · Elite contact form"]
             Pages --> Journey["/journey<br/>Scroll-charged timeline · Era instruments"]
+            Pages --> Uses["/uses<br/>Live stack · Build facts · Pipeline schematic"]
             Pages --> Footer["Footer · all sub-pages<br/>Live location · Project CTA · Wordmark"]
 
             Root --> API{{"API Routes"}}
@@ -179,6 +181,7 @@ graph TD
 
         Browser --> Root
         About -->|poll 10min| Stats
+        Uses -->|fetch on view| Stats
         Home -->|poll 30s / webhook| Work
         Contact -->|POST idempotent| Mail
         Contact -->|stream| Mail
@@ -205,7 +208,7 @@ graph TD
 
     class Browser client;
     class Root root;
-    class Home,Pages,About,Projects,Quals,Contact,Journey,Footer page;
+    class Home,Pages,About,Projects,Quals,Contact,Journey,Uses,Footer page;
     class Stats,Exp,Work,Mail,Foot,Music api;
     class API gateway;
     class GitHub,PDF,Inbox,Redis,Gateway,Tracker,Spotify ext;
@@ -234,15 +237,17 @@ theabdullahfolio/
 ├── public/                     # Static assets — logo, backgrounds, résumé PDF
 ├── src/
 │   ├── app/                    # App Router — pages, layouts, API routes
-│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact · /journey · /my-past
-│   │   ├── api/                # 14 route handlers (see API surface below)
+│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact · /journey · /uses · /guestbook · /my-past
+│   │   ├── api/                # 18 route handlers (see API surface below)
 │   │   ├── data.js             # Central project + navigation data store
 │   │   └── globals.css         # Theme tokens · keyframes · glow utilities
 │   ├── components/
 │   │   ├── navigation/         # Orbital nav ring — trig positioning, one fitted ellipse, per-frame depth, wheel/drag/scrub/keyboard control + first-visit tip
 │   │   ├── home/               # Live maintenance header · engraved role line · causeway scene layers
 │   │   ├── about/              # Live GitHub stat / streak / language / skills cards + diff banners
-│   │   ├── journey/            # Scroll-charged career timeline — self-drawing serpentine spine + curve-riding comet, ghost-year odometer, scroll-wound time-true clock dial, overlap atlas (lane-packed Gantt of concurrent roles, sticky lane labels, NOW-clamped bars), per-card tenure readouts, end-cap tally + CV hand-off, and its own ⌘K palette action set
+│   │   ├── journey/            # Scroll-charged career timeline — self-drawing serpentine spine + curve-riding comet, ghost-year odometer, scroll-wound time-true clock dial, overlap atlas (lane-packed Gantt of concurrent roles, sticky lane labels centred across their column, NOW-clamped bars, grid-only −/+ zoom that opens at 100% on every screen), per-card tenure readouts, end-cap tally + CV hand-off, and its own ⌘K palette action set
+│   │   ├── uses/               # /uses setup page — six provenance-stamped plates: engraved hardware nameplate, DOM editor frame, live stack ledger with two-tone usage meters, self-drawing pipeline schematic with a live packet flow, build-counted meter tiles dealt in with an etched ruler, a lockfile-resolved package ledger of the whole manifest that prints row by row, and its ⌘K action set
+│   │   ├── commandPalette/     # Shared ⌘K palette component + the site route registry every page palette reads
 │   │   ├── projects/           # Category-filtered project grid (AnimatePresence)
 │   │   ├── project-detail/     # Three.js laptop scene · aurora parallax · boot sequence
 │   │   ├── contact/            # Elite contact form · GLSL aurora · AI refine · fire fields
@@ -255,6 +260,7 @@ theabdullahfolio/
 │   │   └── loaderWrapper/      # First-visit emblem-seal intro loader
 │   ├── hooks/                  # Reusable hooks — animation, live-data signals, form + offline queue
 │   ├── lib/                    # Client helpers — contact send, cn(), media-query subscribe, fluid-scale calc()
+│   │   └── uses/               # Server-only build-facts reader (package.json + lockfile, rule-classified · workflows · spec counts · routes · crons) + the stack plate's pure fail-open model
 │   ├── utils/                  # Rank calc · diff engines · skill/icon maps · manifest parsers
 │   │   └── experience/         # Résumé-PDF parsing + pure-JS DOMMatrix polyfill
 │   └── data/                   # Bundled GitHub-stats fallback snapshot
@@ -280,11 +286,12 @@ theabdullahfolio/
 | `/api/spotify/auth` | **Dev-only**, loopback-gated one-time helper that mints the Spotify refresh token — hard-`404`s in production/preview |
 | `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
 | `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
-| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]`, `/journey` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead |
+| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]`, `/journey`, `/uses` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
 | `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
 | `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway (contact + guestbook editorial modes) |
 | `/api/guestbook` | Guestbook wall — `GET` serves one cursor-paged, newest-first page (`?limit=` ≤ 50, `?cursor=`) plus the wall's separately-counted total; `POST` / `DELETE` are session-gated, identity from the OAuth session only (`/reactions`, `/presence` alongside); a message `id` not shaped like a minted one (`src/lib/guestbook/messageId.js`) is a `400` on `DELETE` and `/reactions` before any rate-limit or storage work |
+| `/api/auth/[...nextauth]` | Auth.js OAuth route (GitHub · Google) that signs a visitor in for the guestbook — `GET` / `POST` handlers from `next-auth` |
 | `/api/daily-warmup` · `/api/repo-refresh` | Cron orchestrator + cache warmer (bearer-authenticated) |
 
 ---
@@ -448,7 +455,7 @@ rm /tmp/fallback.json
 
 **Skills crawl** — built **entirely from a live crawl** (no hardcoded list). Detects **languages** inline from GraphQL and **dependencies** from manifests at any depth (`package.json`, `requirements.txt` / `pyproject.toml` / `Pipfile`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `pubspec.yaml`, `pom.xml` / `build.gradle[.kts]` — `manifestParsers.js`). Names resolve through the server-only `skillsIconMap.js` (skillicons.dev → Simple Icons fallback against a ~3.4k-slug catalog); unmapped names are dropped, never rendered broken. Grouped into five buckets, each with a fully ARIA-exposed "used in repositories" popover.
 
-**Privacy & resilience** — the crawl uses `ownerAffiliations: [OWNER]`, so it never enumerates repos you only collaborate on. Private repos you own are crawled for *detection* but their names are withheld (the disclosure-safe id is `null` when `isPrivate`), so a private name never reaches the public payload. Results are 10-min `unstable_cache`d (key `github-skills-v3`) behind `s-maxage=600, stale-while-revalidate=300, stale-if-error=86400`, with a `localStorage` last-good and a **budget-bounded** crawl (shared `AsyncLocalStorage` deadline + per-call / cumulative / pagination caps) that retains partial results under the serverless time limit.
+**Privacy & resilience** — the crawl uses `ownerAffiliations: [OWNER]`, so it never enumerates repos you only collaborate on. Private repos you own are crawled for *detection* but their names are withheld (the disclosure-safe id is `null` when `isPrivate`), so a private name never reaches the public payload. Results are 10-min `unstable_cache`d (key `github-skills-v3`) behind `s-maxage=600, stale-while-revalidate=300, stale-if-error=86400`, with a `localStorage` last-good and a **budget-bounded** crawl (shared `AsyncLocalStorage` deadline + per-call / cumulative / pagination caps) that retains partial results under the serverless time limit. The `localStorage` entry (`skillsCache:v4`) is shared: the About grid writes it and both that grid and the `/uses` Stack plate read it, so a visitor arriving from `/about` sees live counts instantly. It is a last-**good** cache in the strict sense — a `_fallback` or empty-categories payload is never written and never served (`hasLiveCategories`, `src/utils/skillsIconUrl.js`), because a fresh entry is what both readers take as proof of a live crawl: caching an empty one would claim "verified" over nothing *and* suppress the next fetch for a whole TTL.
 
 </details>
 
@@ -593,6 +600,13 @@ upgrade-insecure-requests   # production only — real WebKit honours it even on
 
 | Animation | Technique | Location |
 |-----------|-----------|----------|
+| `/uses` plate reveal | Per plate, gated on its own `useInView(once)` **and** the intro loader: the ember hairline draws left→right (`scaleX`, 450 ms), the eyebrow + title rise 8 px and fade 60 ms later. Every body row, station and card then owns its **own** viewport gate (`useStagedReveal`) and animates when *it* arrives, not when the plate did — an element already on screen when the plate reveals cascades with its siblings (`base + index × step`), one reached by scrolling plays at once with only a left→right column offset across its grid row; a `.uses-anim` / `.uses-anim-clip` / `.uses-anim-track` CSS guard pins every layer at rest under `prefers-reduced-motion` on the very first paint, and the ⌘K motion toggle reaches the same layers through `MotionConfig` + `data-motion` | `uses/Plate.jsx` · `uses/useStagedReveal.js` · `globals.css` |
+| `/uses` engraved nameplate | The machine plate is engraved row by row: the hairline above a row draws in, the label lands as a stamp (tracking settles 0.42em → 0.18em as it fades in), the value is cut in behind a travelling ember **cutter** — a `clip-path: inset()` wipe left→right with a 2 px lit edge animated on the same clock and ease so it always sits on the wipe front — and the note / cross-reference rise once the cut has passed; the frame's glow settles from a soft bloom to the About card's rest value (`data-lit`) | `uses/MachinePlate.jsx` |
+| `/uses` bench + typewriter | Stations power on: rule draws, role label slides in from the left, the name rises through a **line mask** (`clip-path` on the wrapper with a small bleed so link focus rings survive, `translateY(140%) → 0` inside), detail fades up; extension chips spring in 50 ms apart. The editor frame unrolls top→bottom (the clip is on an inner screen wrapper, never the observed `<figure>` — Chromium's IntersectionObserver applies the target's own `clip-path`, so a self-clipped frame would never be seen to arrive) and the settings excerpt **types itself**: per-line `clip-path` wipes at 11 ms/character in sequence with a caret riding each wipe front and a resting caret that blinks three times at the end of the last line, gutter numbers lighting per line and the status bar fading in when typing ends — all real, selectable DOM throughout | `uses/BenchPlate.jsx` · `uses/EditorFrame.jsx` |
+| `/uses` ledger deal + tally count-up | Each tool card is dealt onto the ledger on its own gate — rises 22 px while its top leans back from 9° (`transformPerspective` 900, origin at the foot) — then the icon drops in on a spring, the name rises through its mask, the description fades up, the rank slides in, the meter's segments fill left→right on per-segment CSS delays relative to the card's own landing (`data-lit`), and the figure fades in last, its digit runs then **counting up from zero** — on a live observer of the figure line, so they replay every time it scrolls back in, the first climb held until the figure has landed. Each category head reveals its label through a mask and draws its rule, and its `7 of 42` tally — figures in the page-title ember, "of" in the line's grey — **counts up from zero every time the head enters view** (the shared `useViewportCountUp`: a sustained exit resets and re-arms) | `uses/ToolGrid.jsx` · `uses/ToolTile.jsx` |
+| `/uses` pipeline self-draw | Edges draw with framer `pathLength` 0→1 in sequence, arrowheads and nodes rise as each edge lands, then **one** ember rake (`mix-blend: screen` gradient rect) crosses the plate and everything holds — no riding pulse, no loop; `vector-effect: non-scaling-stroke` keeps strokes 1.25 px at any width; fully drawn and still under reduced motion | `uses/PipelinePlate.jsx` |
+| `/uses` count-up meters | Unit suites · e2e suites · API routes — each tile is dealt onto the plate on its own viewport gate (rises and lands flat, glow settling), its top ruler etches in behind a lit cutter, then the figure climbs with the shared `useViewportCountUp` (replay on re-entry, static under reduced motion) from figures counted at build | `uses/InstrumentsPlate.jsx` |
+| `/uses` bill of materials | Each package group prints on its own gate — heading through a line mask, then per row the name rises, the dotted leader draws left→right and the lockfile-resolved version stamps in ember and settles to amber; the foot line (package count · `.nvmrc` · `engines` · build date) lands last. Groups are built at build time by rule (`BOM_RULES`), so adding or removing a dependency updates the plate with no code change | `uses/BillOfMaterials.jsx` |
 | Orbital rotation | `requestAnimationFrame` + trigonometry, frame-time based (9°/s on every display, where the old per-frame constant doubled on 120Hz panels); user input (wheel / drag / laptop scrub / arrow keys) writes a target the loop chases exponentially, so discrete inputs glide and the ambient spin stops and resumes eased; a moving drag release launches real momentum (`v · e^(−dt·friction)`, capped 540°/s) that any newer input silently takes authority over; the rAF loop is skipped entirely under `prefers-reduced-motion` (the ring holds its resting angle — user input still rotates it, applied instantly; flicks never fire) | `navigation/index.jsx` |
 | Hero laptop float | `float-laptop` keyframe — a **vection-calibrated** bob (`translateY` 6px / `scale` 1.02) with an ember `drop-shadow` pulsed in sync, tuned low so the static title doesn't appear to drift; stilled under reduced motion | `tailwind.config.js` + `app/page.js` |
 | Floating laptop (3D) | `useFrame` sin-wave (Three.js render loop) | `project-detail/laptop-model.jsx` |
@@ -763,7 +777,7 @@ Counters (PRs / Issues / Pushes 24h) animate 0 → target with a piecewise curve
 
 ## 🧭 Route-wide Footer (Colophon)
 
-Every sub-page — `/about`, `/journey`, `/qualifications`, `/projects`, `/contact`, `/my-past` — shares one editorial footer, rendered **once** in the `(sub pages)` layout as a `contentinfo` sibling of `<main>` (issue [#30](https://github.com/MA1002643/theabdullahfolio/issues/30)). It is composed as an asymmetric **5 / 4 / 3 masthead** from the site's existing neon-orange glass design system, so it reads as part of the same universe as the hero rather than bolted on. All motion is transform / opacity / colour only (no layout, no CLS) and every entrance honours `prefers-reduced-motion`.
+Every sub-page — `/about`, `/journey`, `/qualifications`, `/projects`, `/uses`, `/contact`, `/guestbook`, `/my-past` — shares one editorial footer, rendered **once** in the `(sub pages)` layout as a `contentinfo` sibling of `<main>` (issue [#30](https://github.com/MA1002643/theabdullahfolio/issues/30)). It is composed as an asymmetric **5 / 4 / 3 masthead** from the site's existing neon-orange glass design system, so it reads as part of the same universe as the hero rather than bolted on. All motion is transform / opacity / colour only (no layout, no CLS) and every entrance honours `prefers-reduced-motion`.
 
 | Region | What it is |
 | --- | --- |

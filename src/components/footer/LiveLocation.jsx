@@ -139,6 +139,10 @@ export default function LiveLocation() {
 
   return (
     <div
+      // Anchor for the /uses Machine plate's Phone row ("the town in the
+      // footer comes from this device") — a real cross-reference to the
+      // instrument this device feeds.
+      id="footer-location"
       className="live-place"
       role="group"
       aria-label={
