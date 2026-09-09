@@ -51,7 +51,7 @@ describe('404 metadata', () => {
     expect(metadata.description).toBeTruthy();
   });
 
-  it('declares no openGraph or twitter block, so the root card is inherited whole', async () => {
+  it("declares no openGraph, twitter or robots key — the root card is inherited whole, and noindex stays Next's to set", async () => {
     const { metadata } = await import('@/app/not-found');
 
     // Shallow merge: any object here REPLACES the root layout's, dropping
