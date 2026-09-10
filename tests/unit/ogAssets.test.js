@@ -71,15 +71,36 @@ const MAX_CODE_POINTS = 20000;
  * a silently short set would fail the coverage tests below with a message
  * blaming missing glyphs, pointing at the copy instead of at the font that was
  * actually swapped in.
+ *
+ * What is counted is the work, not `points.size`. Those differ: cmap ranges may
+ * overlap, and a Set stops growing once they do, so a size-based ceiling never
+ * trips while the loop repeats. Five thousand identical 5,000-wide groups hold
+ * the Set at 5,001 entries and still cost 25 million iterations — bounded by
+ * nothing. Accumulating every expanded code point closes that, because each
+ * group must contribute at least one.
  */
 function codePoints(cmap) {
   const points = new Set();
   const numTables = cmap.readUInt16BE(2);
+  let expanded = 0;
 
-  const refuse = (span) => {
-    if (span > MAX_CODE_POINTS || points.size + span > MAX_CODE_POINTS) {
+  const admit = (start, end) => {
+    // Well-formed subtables are ascending; a descending pair means the table is
+    // malformed, and skipping it silently (a loop that simply never runs) would
+    // hand back a short set that reads as missing glyphs downstream.
+    if (end < start) {
       throw new Error(
-        `cmap declares more than ${MAX_CODE_POINTS} code points — refusing to expand it. ` +
+        `cmap declares a descending range U+${start.toString(16).toUpperCase()}..` +
+          `U+${end.toString(16).toUpperCase()} — malformed table.`,
+      );
+    }
+
+    // Both endpoints are mapped, so an inclusive range spans end - start + 1.
+    expanded += end - start + 1;
+
+    if (expanded > MAX_CODE_POINTS) {
+      throw new Error(
+        `cmap expands past ${MAX_CODE_POINTS} code points — refusing to continue. ` +
           'Either the font in src/lib/og/fonts is far larger than this directory ' +
           'should hold, or its cmap is malformed.',
       );
@@ -98,7 +119,7 @@ function codePoints(cmap) {
         const end = cmap.readUInt16BE(ends + s * 2);
         const start = cmap.readUInt16BE(starts + s * 2);
         if (start === 0xffff) continue;
-        refuse(end - start);
+        admit(start, end);
         for (let cp = start; cp <= end; cp++) points.add(cp);
       }
     } else if (format === 12) {
@@ -107,7 +128,7 @@ function codePoints(cmap) {
         const p = offset + 16 + g * 12;
         const start = cmap.readUInt32BE(p);
         const end = cmap.readUInt32BE(p + 4);
-        refuse(end - start);
+        admit(start, end);
         for (let cp = start; cp <= end; cp++) points.add(cp);
       }
     }
@@ -220,7 +241,7 @@ describe('cmap reader bounds', () => {
   // otherwise turn minutes of Set churn into a CI timeout.
   it('refuses a single range wider than any subset, without expanding it', () => {
     expect(() => codePoints(fakeFormat12Cmap([[0, 0x10ffff]]))).toThrow(
-      /refusing to expand/,
+      /refusing to continue/,
     );
   }, 2000);
 
@@ -233,7 +254,39 @@ describe('cmap reader bounds', () => {
           [20000, 28999],
         ]),
       ),
-    ).toThrow(/refusing to expand/);
+    ).toThrow(/refusing to continue/);
+  }, 2000);
+
+  it('counts ranges inclusively, so the ceiling is not one code point loose', () => {
+    // cmap ranges map BOTH endpoints, so [1, 20000] is exactly the ceiling and
+    // [0, 20000] is one past it. Measuring a range as `end - start` rather than
+    // `end - start + 1` admitted that second case.
+    expect(() =>
+      codePoints(fakeFormat12Cmap([[1, MAX_CODE_POINTS]])),
+    ).not.toThrow();
+    expect(() => codePoints(fakeFormat12Cmap([[0, MAX_CODE_POINTS]]))).toThrow(
+      /refusing to continue/,
+    );
+  }, 2000);
+
+  it('bounds the work rather than the set, so overlapping ranges cannot spin', () => {
+    // Identical groups add no new entries, so a ceiling read off `points.size`
+    // never trips however many arrive: these 5,000 hold the Set at 5,001 while
+    // costing 25 million iterations. Counting expanded code points is what
+    // makes the guard bound the loop instead of the result.
+    const overlapping = Array.from({ length: 5000 }, () => [0, 5000]);
+    expect(() => codePoints(fakeFormat12Cmap(overlapping))).toThrow(
+      /refusing to continue/,
+    );
+  }, 2000);
+
+  it('refuses a descending range instead of skipping it', () => {
+    // `for (cp = 500; cp <= 100; cp++)` simply never runs, so a malformed
+    // table used to pass through as a silently short set — which surfaces
+    // later as a coverage failure blaming the copy, not the font.
+    expect(() => codePoints(fakeFormat12Cmap([[500, 100]]))).toThrow(
+      /descending range U\+1F4\.\.U\+64/,
+    );
   }, 2000);
 });
 
