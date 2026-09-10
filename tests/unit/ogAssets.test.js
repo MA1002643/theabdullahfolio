@@ -6,7 +6,7 @@ import { projectsData } from '@/app/data';
 
 // The share-card asset layer (issue #90). This directory was 944 KB of full
 // Google Fonts TTFs and a 1024px seal for cards that set English on a 1200px
-// canvas; it is now 128 KB. Two things can quietly undo that, and each has a
+// canvas; it is now 157 KB. Two things can quietly undo that, and each has a
 // test here:
 //
 //   1. Someone swaps a subset back for a full font. Guarded by byte budgets.
@@ -47,10 +47,44 @@ function readWoffTable(buf, want) {
   throw new Error(`WOFF has no ${want} table`);
 }
 
-/** Every code point the font maps, from its format 4 / format 12 cmap subtables. */
+// Ceiling on what this reader will expand. Deliberately far above anything
+// legitimate — the subsets map 337 and 339 code points and the full families
+// they replaced mapped only 1,312 and 2,849, so restoring a full font is
+// caught by the byte budgets above, not by this. This exists for the cases
+// budgets cannot bound in time: a malformed format 12 table, or a genuinely
+// vast family (a CJK font maps tens of thousands), where the cost is in the
+// expansion rather than the file size.
+const MAX_CODE_POINTS = 20000;
+
+/**
+ * Every code point the font maps, from its format 4 / format 12 cmap subtables.
+ *
+ * Bounded on purpose. Format 4 is 16-bit and so caps itself at U+FFFF, but a
+ * format 12 group declares an arbitrary 32-bit range against a 32-bit group
+ * count, and expanding those naively is unbounded work — a malformed table
+ * would materialise millions of Set entries and hang the run instead of
+ * failing it. A vitest failure does not stop the rest of the file either, so
+ * this cannot lean on the assertions above to have stopped things first.
+ *
+ * Ranges are refused BEFORE expansion, so the check costs one comparison per
+ * group rather than one per code point. And it throws rather than truncating:
+ * a silently short set would fail the coverage tests below with a message
+ * blaming missing glyphs, pointing at the copy instead of at the font that was
+ * actually swapped in.
+ */
 function codePoints(cmap) {
   const points = new Set();
   const numTables = cmap.readUInt16BE(2);
+
+  const refuse = (span) => {
+    if (span > MAX_CODE_POINTS || points.size + span > MAX_CODE_POINTS) {
+      throw new Error(
+        `cmap declares more than ${MAX_CODE_POINTS} code points — refusing to expand it. ` +
+          'Either the font in src/lib/og/fonts is far larger than this directory ' +
+          'should hold, or its cmap is malformed.',
+      );
+    }
+  };
 
   for (let i = 0; i < numTables; i++) {
     const offset = cmap.readUInt32BE(4 + i * 8 + 4);
@@ -64,6 +98,7 @@ function codePoints(cmap) {
         const end = cmap.readUInt16BE(ends + s * 2);
         const start = cmap.readUInt16BE(starts + s * 2);
         if (start === 0xffff) continue;
+        refuse(end - start);
         for (let cp = start; cp <= end; cp++) points.add(cp);
       }
     } else if (format === 12) {
@@ -72,6 +107,7 @@ function codePoints(cmap) {
         const p = offset + 16 + g * 12;
         const start = cmap.readUInt32BE(p);
         const end = cmap.readUInt32BE(p + 4);
+        refuse(end - start);
         for (let cp = start; cp <= end; cp++) points.add(cp);
       }
     }
@@ -131,6 +167,74 @@ describe('og asset budgets', () => {
     expect([...png.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
     expect(png.byteLength).toBeLessThan(BUDGETS.seal);
   });
+});
+
+/**
+ * A synthetic cmap carrying one format 12 subtable, for exercising the reader's
+ * bounds without needing a pathological font on disk. Header is 12 bytes (a
+ * version, a table count and one 8-byte encoding record pointing at the
+ * subtable); the subtable is format/reserved/length/language/nGroups followed
+ * by 12-byte start/end/startGlyphID triples.
+ */
+function fakeFormat12Cmap(groups) {
+  const header = Buffer.alloc(12);
+  header.writeUInt16BE(1, 2); // numTables
+  header.writeUInt16BE(3, 4); // platformID
+  header.writeUInt16BE(10, 6); // encodingID
+  header.writeUInt32BE(12, 8); // offset of the subtable
+
+  const sub = Buffer.alloc(16 + groups.length * 12);
+  sub.writeUInt16BE(12, 0); // format
+  sub.writeUInt32BE(sub.length, 4); // length
+  sub.writeUInt32BE(groups.length, 12); // nGroups
+  groups.forEach(([start, end], i) => {
+    const p = 16 + i * 12;
+    sub.writeUInt32BE(start, p);
+    sub.writeUInt32BE(end, p + 4);
+    sub.writeUInt32BE(1, p + 8); // startGlyphID
+  });
+
+  return Buffer.concat([header, sub]);
+}
+
+describe('cmap reader bounds', () => {
+  it('reads a well-formed format 12 table', () => {
+    const points = codePoints(
+      fakeFormat12Cmap([
+        [0x41, 0x43],
+        [0x2190, 0x2192],
+      ]),
+    );
+    expect([...points].sort((a, b) => a - b)).toEqual([
+      0x41, 0x42, 0x43, 0x2190, 0x2191, 0x2192,
+    ]);
+  });
+
+  // Both assertions were checked against a neutralised guard. The aggregate
+  // case then fails in 2ms on the missing error; the single full-range case
+  // takes 2.7s and trips the timeout as well, having expanded 1.1M entries
+  // first. (Raw node expands that range in ~180ms — it is an order of
+  // magnitude dearer inside the runner, which is the environment that
+  // matters.) Refusing per group, before expansion, is what keeps this O(1):
+  // nGroups is a 32-bit count, so a table of a thousand such groups would
+  // otherwise turn minutes of Set churn into a CI timeout.
+  it('refuses a single range wider than any subset, without expanding it', () => {
+    expect(() => codePoints(fakeFormat12Cmap([[0, 0x10ffff]]))).toThrow(
+      /refusing to expand/,
+    );
+  }, 2000);
+
+  it('refuses ranges that only breach the ceiling in aggregate', () => {
+    expect(() =>
+      codePoints(
+        fakeFormat12Cmap([
+          [0, 8999],
+          [10000, 18999],
+          [20000, 28999],
+        ]),
+      ),
+    ).toThrow(/refusing to expand/);
+  }, 2000);
 });
 
 describe('og font glyph coverage', () => {

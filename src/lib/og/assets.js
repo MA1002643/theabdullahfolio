@@ -19,8 +19,15 @@ import path from 'node:path';
 // the live location feed. Regenerate with:
 //
 //   python3 -m fontTools.subset <full>.ttf --no-hinting --flavor=woff \
-//     --unicodes='U+0020-007E,U+00A0-00FF,U+0100-017F,U+2010-2015,\
-//       U+2018-201F,U+2022,U+2026,U+2030,U+2039-203A,U+20AC,U+2122,U+2192'
+//     --output-file=<out>.woff \
+//     --unicodes='U+0020-007E,U+00A0-00FF,U+0100-017F,U+2010-2015,U+2018-201F,U+2022,U+2026,U+2030,U+2039-203A,U+20AC,U+2122,U+2192'
+//
+// Keep that list on ONE line. A `\` line-continuation inside the single
+// quotes is not one — the quotes make the backslash, newline and indent
+// literal — and closing the quote per line instead splits the value into
+// a second argument that pyftsubset reads as a glyph name, failing with
+// MissingGlyphsSubsettingError. Both were tried; the one-liner above is
+// verified to reproduce the committed .woff files byte for byte.
 //
 // WOFF, not WOFF2: satori parses ttf/otf/woff only. A non-Latin town
 // name (Cyrillic, Greek, CJK) now falls outside the subset and would
