@@ -18,6 +18,12 @@ import { fetchLiveSignals } from '@/lib/og/live';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Lowercase key, deliberately (issue #90). ImageResponse builds its
+// headers as `{ 'content-type': …, 'cache-control': <1-year immutable>,
+// ...options.headers }` — a capital-C 'Cache-Control' is a DIFFERENT
+// object key, so it never replaced the default; the Headers constructor
+// appended both and clients were served the immutable year alongside
+// this. Matching Next's casing is what makes the override take.
 const CACHE = 'public, s-maxage=3600, stale-while-revalidate=86400';
 
 export async function GET() {
@@ -35,6 +41,6 @@ export async function GET() {
     width: 1200,
     height: 630,
     fonts: await ogFonts(),
-    headers: { 'Cache-Control': CACHE },
+    headers: { 'cache-control': CACHE },
   });
 }

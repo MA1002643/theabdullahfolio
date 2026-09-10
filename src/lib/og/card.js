@@ -3,7 +3,7 @@
    next/image cannot exist there, and the accessible text for these
    images lives at the metadata layer (og:image:alt), not inside the
    bitmap. */
-import { monogramDataUri, badgeDataUri } from './assets';
+import { monogramDataUri } from './assets';
 
 // Share-card compositions (issue #88 v2, reworked for the brand-seal
 // system). Every card that leaves this site is typeset here, in the
@@ -508,5 +508,3 @@ export async function myPastCard() {
     ),
   });
 }
-
-export { badgeDataUri };
