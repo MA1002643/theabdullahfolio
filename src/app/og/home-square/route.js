@@ -11,6 +11,9 @@ import { fetchLiveSignals } from '@/lib/og/live';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Lowercase key — see the note in ../home/route.js: capital-C
+// 'Cache-Control' is a different object key from the 'cache-control'
+// default ImageResponse sets, so it appended instead of overriding.
 const CACHE = 'public, s-maxage=3600, stale-while-revalidate=86400';
 
 export async function GET() {
@@ -25,6 +28,6 @@ export async function GET() {
     width: 1200,
     height: 1200,
     fonts: await ogFonts(),
-    headers: { 'Cache-Control': CACHE },
+    headers: { 'cache-control': CACHE },
   });
 }
