@@ -42,7 +42,9 @@ const warmQualCerts = () => {
 // The moment that parent gets a definite width the icon silently changes size.
 // 24px is what it has always measured, said outright.
 const getIcon = (icon, small = false) => {
-  const cls = small ? 'h-auto w-[1.4rem]' : 'h-auto w-6 md:w-[2.5rem] lg:w-[3rem]';
+  const cls = small
+    ? 'h-auto w-[1.4rem]'
+    : 'h-auto w-6 md:w-[2.5rem] lg:w-[3rem]';
   switch (icon) {
     case 'about':
       return <User className={cls} strokeWidth={1.5} />;
@@ -97,7 +99,21 @@ const NavLinkShell = ({ link, label, newTab, children, ...shared }) =>
     </a>
   );
 
-const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, hovered, isMobileColumn, index, visible = true, labelAbove = false }) => {
+const NavButton = ({
+  x,
+  y,
+  zIndex = 40,
+  label,
+  link,
+  icon,
+  newTab,
+  setHovered,
+  hovered,
+  isMobileColumn,
+  index,
+  visible = true,
+  labelAbove = false,
+}) => {
   // Declared before the `isMobileColumn` early return below — hooks must run
   // unconditionally on every render path.
   const reduceMotion = useReducedMotion();
@@ -127,7 +143,9 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
         // whatever value it last held, which matters only if `reduceMotion`
         // could flip after mount (framer's `useReducedMotion` latches it today,
         // but this keeps the reduced path correct regardless).
-        initial={reduceMotion ? { opacity: 0, scale: 1 } : { opacity: 0, scale: 0.6 }}
+        initial={
+          reduceMotion ? { opacity: 0, scale: 1 } : { opacity: 0, scale: 0.6 }
+        }
         // Drive the reveal from the parent's `visible` prop instead of
         // relying on the component being mounted/unmounted. The button
         // is always in the DOM (so its layout space is reserved from
@@ -155,7 +173,12 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
                 ease: 'easeOut',
                 scale: { duration: 0 },
               }
-            : { duration: 0.35, delay: visible ? delay : 0, type: 'tween', ease: 'easeOut' }
+            : {
+                duration: 0.35,
+                delay: visible ? delay : 0,
+                type: 'tween',
+                ease: 'easeOut',
+              }
         }
         className={`cursor-pointer ${visible ? '' : 'pointer-events-none'}`}
         aria-hidden={!visible}
@@ -167,14 +190,17 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
           aria-label={label}
           name={label}
           tabIndex={visible ? 0 : -1}
-          onMouseEnter={() => { setHovered(true); warmQual?.(); }}
+          onMouseEnter={() => {
+            setHovered(true);
+            warmQual?.();
+          }}
           onMouseLeave={() => setHovered(false)}
           onFocus={warmQual}
           onPointerDown={warmQual}
-          className="group nav-button custom-bg flex items-center justify-center rounded-full transition-all duration-300"
+          className="nav-button custom-bg group flex items-center justify-center rounded-full transition-all duration-300"
         >
-          <span className="relative flex items-center justify-center h-10 w-10 sm:h-[52px] sm:w-[52px] p-2 sm:p-[11px]">
-            <span className="text-white group-hover:text-[#ff6d05] transition-colors duration-300 flex items-center justify-center">
+          <span className="relative flex h-10 w-10 items-center justify-center p-2 sm:h-[52px] sm:w-[52px] sm:p-[11px]">
+            <span className="flex items-center justify-center text-white transition-colors duration-300 group-hover:text-[#ff6d05]">
               {getIcon(icon, true)}
             </span>
           </span>
@@ -184,6 +210,12 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
   }
 
   // Orbital layout button (480px and above)
+  //
+  // The reveal stagger, matching the two-column branch above. The orbit's own
+  // per-button delay is already supplied by the parent's `setTimeout(i * 300)`
+  // ladder (navigation/index.jsx), so there is deliberately NO second delay
+  // here — adding one would push every button later than it appeared before
+  // and change choreography this was required not to touch.
   return (
     <div
       // The depth comes in as a NUMBER, not a `z-50` class, because it changes
@@ -193,33 +225,83 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
       // The parent wrapper deliberately has no z-index of its own so these
       // values reach the laptop instead of being flattened against it — see
       // the note in navigation/index.jsx.
-      className="absolute cursor-pointer mx-auto"
+      //
+      // THE TRANSFORM STAYS ON THIS ELEMENT and the reveal goes on a child.
+      // They cannot share a node: this `transform` is rewritten every frame by
+      // the ring's rotation, and framer-motion animating `scale` on the same
+      // element would compose its own transform and fight the inline one —
+      // the button would either stop orbiting or jump. Splitting them gives
+      // each owner its own node, and since both are transforms on absolutely
+      // positioned boxes, neither can affect layout.
+      className="absolute mx-auto cursor-pointer"
       style={{
         transform: `translate(${x}px, ${y}px)`,
         zIndex,
       }}
     >
-      <NavLinkShell
-        link={link}
-        label={label}
-        newTab={newTab}
-        aria-label={label}
-        name={label}
-        onMouseEnter={() => { setHovered(true); warmQual?.(); }}
-        onMouseLeave={() => setHovered(false)}
-        // Focus pauses the lap exactly as hover does, and for the same reason:
-        // the label below reveals on `group-focus-visible`, and a visible
-        // label is only flip-stable (`labelAbove`) because its button's `y` is
-        // frozen for as long as it shows. `hovered` is one shared boolean, so
-        // a pointer brushing another button mid-focus can briefly resume the
-        // ring under a keyboard-focused label — accepted: the label tracks its
-        // own button and refreezes the moment the pointer leaves.
-        onFocus={() => { setHovered(true); warmQual?.(); }}
-        onBlur={() => setHovered(false)}
-        onPointerDown={warmQual}
-        className="group nav-button custom-bg flex items-center justify-center rounded-full transition-all duration-300"
+      <motion.div
+        // Identical reveal to the two-column branch: opacity always, scale only
+        // when motion is allowed. Pinned in BOTH targets for the same reason
+        // stated there — an omitted `scale` leaves the last value in place.
+        initial={
+          reduceMotion ? { opacity: 0, scale: 1 } : { opacity: 0, scale: 0.6 }
+        }
+        animate={
+          reduceMotion
+            ? { opacity: visible ? 1 : 0, scale: 1 }
+            : visible
+              ? { opacity: 1, scale: 1 }
+              : { opacity: 0, scale: 0.6 }
+        }
+        transition={
+          reduceMotion
+            ? { duration: 0.35, ease: 'easeOut', scale: { duration: 0 } }
+            : { duration: 0.35, type: 'tween', ease: 'easeOut' }
+        }
+        // While not yet revealed the button is truly inert — not merely
+        // transparent: pointer-events-none blocks the mouse, tabIndex={-1}
+        // (below) takes it out of the tab order, and aria-hidden removes it
+        // from the accessibility tree. Without all three, eight invisible
+        // buttons would sit over the laptop swallowing clicks and appearing in
+        // the tab order before they exist visually.
+        //
+        // aria-hidden is NOT an SEO problem and is worth being explicit about,
+        // since the whole point of this change is crawlability: it hides the
+        // node from assistive technology only. Crawlers read the HTML, the
+        // `href` and the anchor text are fully present, and nothing is
+        // `display: none`. It is also strictly an improvement on what this
+        // branch did before, which was to not render the button at all.
+        className={visible ? '' : 'pointer-events-none'}
+        aria-hidden={!visible}
       >
-        {/* `flex items-center justify-center`, NOT `flex flex-col items-center`.
+        <NavLinkShell
+          link={link}
+          label={label}
+          newTab={newTab}
+          aria-label={label}
+          name={label}
+          tabIndex={visible ? 0 : -1}
+          onMouseEnter={() => {
+            setHovered(true);
+            warmQual?.();
+          }}
+          onMouseLeave={() => setHovered(false)}
+          // Focus pauses the lap exactly as hover does, and for the same reason:
+          // the label below reveals on `group-focus-visible`, and a visible
+          // label is only flip-stable (`labelAbove`) because its button's `y` is
+          // frozen for as long as it shows. `hovered` is one shared boolean, so
+          // a pointer brushing another button mid-focus can briefly resume the
+          // ring under a keyboard-focused label — accepted: the label tracks its
+          // own button and refreezes the moment the pointer leaves.
+          onFocus={() => {
+            setHovered(true);
+            warmQual?.();
+          }}
+          onBlur={() => setHovered(false)}
+          onPointerDown={warmQual}
+          className="nav-button custom-bg group flex items-center justify-center rounded-full transition-all duration-300"
+        >
+          {/* `flex items-center justify-center`, NOT `flex flex-col items-center`.
             The column laid the icon and the hover label out as two in-flow
             siblings starting at the content-box top, so the glyph was
             TOP-ANCHORED: its centre sat at border + padding + halfIcon, which
@@ -229,16 +311,16 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
             construction instead of by coincidence, at any button or icon size.
             The padding stays: it is symmetric, so the content box shares the
             border box's centre and cannot reintroduce an offset. */}
-        <span className="relative flex items-center justify-center h-14 sm:h-16 md:h-[4.5rem] lg:h-[5rem] w-14 sm:w-16 md:w-[4.5rem] lg:w-[5rem] sm:p-4 md:p-[0.75rem] lg:p-4 p-3">
-          {/* Icon. Also a flex centring box, so no inline/baseline gap can creep
+          <span className="relative flex h-14 w-14 items-center justify-center p-3 sm:h-16 sm:w-16 sm:p-4 md:h-[4.5rem] md:w-[4.5rem] md:p-[0.75rem] lg:h-[5rem] lg:w-[5rem] lg:p-4">
+            {/* Icon. Also a flex centring box, so no inline/baseline gap can creep
               in between the span and the glyph it wraps. */}
-          <span className="flex items-center justify-center text-lg text-white group-hover:text-[#ff6d05] transition-colors duration-300">
-            {getIcon(icon)}
-          </span>
+            <span className="flex items-center justify-center text-lg text-white transition-colors duration-300 group-hover:text-[#ff6d05]">
+              {getIcon(icon)}
+            </span>
 
-          <span className="peer absolute left-0 top-0 h-full w-full bg-transparent" />
+            <span className="peer absolute left-0 top-0 h-full w-full bg-transparent" />
 
-          {/* Label (hidden until hover or keyboard focus — `group-focus-visible`
+            {/* Label (hidden until hover or keyboard focus — `group-focus-visible`
               gives sighted keyboard users the same label hover gives pointer
               users; `aria-label` on the link covers AT either way) — positioned
               UNDER the button
@@ -248,7 +330,7 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
               where it always looked like it sat. `pointer-events-none` keeps a
               wide label ("Qualifications") from enlarging the anchor's hover
               target and re-triggering the ring's hover pause off-button. */}
-          {/* `-mt-1` puts the label's own 4px `py-1` back over the button's 1px
+            {/* `-mt-1` puts the label's own 4px `py-1` back over the button's 1px
               border, so the TEXT starts level with the bottom of the circle.
               The old `mt-2 sm:mt-4` was a margin between two in-flow siblings,
               so where the label actually LANDED was
@@ -260,7 +342,7 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
               foot of a short viewport, and anything looser pushed its tooltip
               off-screen at 768x700 and 1440x900 where the old values had just
               fit. Measured, no viewport is worse off than before. */}
-          {/* `labelAbove` mirrors the tooltip to the other side of the circle
+            {/* `labelAbove` mirrors the tooltip to the other side of the circle
               for the handful of buttons whose label would otherwise fall off the
               foot of the page — the ring keeps a 16px gutter under the lowest
               button and this label wants 23 (see LABEL_DROP in
@@ -273,16 +355,16 @@ const NavButton = ({ x, y, zIndex = 40, label, link, icon, newTab, setHovered, h
               tooltip's distance from the glyph it names never changes.
               Which buttons flip is decided from the box, not from taste — see
               `labelFlipY`. On a viewport with room, nothing flips at all. */}
-          <span
-            className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-sm text-[#ff6d05] shadow-lg opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-all duration-300 ${
-              labelAbove ? 'bottom-full -mb-1' : 'top-full -mt-1'
-            }`}
-          >
-            {label}
+            <span
+              className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-sm text-[#ff6d05] opacity-0 shadow-lg transition-all duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 ${
+                labelAbove ? 'bottom-full -mb-1' : 'top-full -mt-1'
+              }`}
+            >
+              {label}
+            </span>
           </span>
-        </span>
-      </NavLinkShell>
-
+        </NavLinkShell>
+      </motion.div>
     </div>
   );
 };

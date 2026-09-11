@@ -77,7 +77,18 @@ export const BOM_RULES = [
   },
   {
     label: 'Media',
-    match: [/^sharp$/, /^ffmpeg-static$/, /^@napi-rs\/canvas$/],
+    // `pdf-lib` sits with the other asset-processing tools rather than in
+    // Tooling (issue #32, W1b): like `sharp` and `ffmpeg-static` it is an
+    // offline media utility, used by scripts/seo-pdf-metadata.mjs to set the CV
+    // PDF's /Title and /Author so Google names the search result properly
+    // instead of falling back to the filename. Nothing under src/ imports it.
+    //
+    // `pdf-parse` is deliberately NOT listed here despite being the obvious
+    // neighbour: it is already claimed by "Data & services" above, and rules
+    // are first-match, so a second pattern for it would never fire. A dead
+    // pattern in a rules table is worse than no pattern — it tells the next
+    // reader this rule owns something it does not.
+    match: [/^sharp$/, /^ffmpeg-static$/, /^@napi-rs\/canvas$/, /^pdf-lib$/],
   },
   {
     label: 'Quality',

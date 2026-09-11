@@ -293,6 +293,8 @@ theabdullahfolio/
 | `/api/guestbook` | Guestbook wall — `GET` serves one cursor-paged, newest-first page (`?limit=` ≤ 50, `?cursor=`) plus the wall's separately-counted total; `POST` / `DELETE` are session-gated, identity from the OAuth session only (`/reactions`, `/presence` alongside); a message `id` not shaped like a minted one (`src/lib/guestbook/messageId.js`) is a `400` on `DELETE` and `/reactions` before any rate-limit or storage work |
 | `/api/auth/[...nextauth]` | Auth.js OAuth route (GitHub · Google) that signs a visitor in for the guestbook — `GET` / `POST` handlers from `next-auth` |
 | `/api/daily-warmup` · `/api/repo-refresh` | Cron orchestrator + cache warmer (bearer-authenticated) |
+| `/api/seo-report` | Search Console feedback loop ([#32](https://github.com/MA1002643/theabdullahfolio/issues/32)) — pulls Search Analytics, stores a rolling 90-day snapshot in Upstash, and derives new queries, positions that dropped > 3, and pages earning impressions at CTR < 1%. Bearer-authenticated with the same `CRON_SECRET`, and invoked as a **third step in `/api/daily-warmup`'s fan-out** rather than a second `vercel.json` cron entry (Hobby caps cron count, so a standalone entry would silently never run). Signs its service-account JWT with `node:crypto` — no `googleapis` dependency. Answers `503` with a `skipped` reason when `GSC_SERVICE_ACCOUNT_KEY` is unset, which `daily-warmup` deliberately does not count as a failed run |
+| `/robots.txt` · `/sitemap.xml` · `/manifest.webmanifest` · `/llms.txt` | Generated crawl surface ([#32](https://github.com/MA1002643/theabdullahfolio/issues/32)) — all four read the route registry in `src/lib/seo/site.js`, so adding a page updates them by construction. The sitemap declares 21 URLs — 9 section routes, 11 project pages and the CV PDF — with `lastModified` from real git commit dates, never `new Date()`. `robots.txt` carries explicit AI-crawler stanzas; `llms.txt` is a curated brief for assistants |
 
 ---
 
@@ -398,7 +400,56 @@ RECEIVER_EMAIL=recipient@example.com
 # id>, never a username — allowed to DELETE any message.
 # GUESTBOOK_DRIVER=redis
 # GUESTBOOK_ADMIN=github:your-numeric-github-user-id
+
+# Discoverability (issue #32) — see docs/seo.md for the full rationale
+# Canonical origin override. Only for a fork, or a preview that should carry
+# self-referential canonicals. Deliberately NOT wired to VERCEL_URL.
+# NEXT_PUBLIC_SITE_ORIGIN=https://ma.codes
+# Search Console ownership token. Unset = the verification meta tag is omitted.
+GOOGLE_SITE_VERIFICATION=your-search-console-verification-token
+# REAL SECRET — value in Vercel only. Service-account JSON key for the Search
+# Console API, BASE64-ENCODED (`base64 -i key.json`): the raw key contains
+# newlines inside private_key that env-var UIs mangle. Unset is supported —
+# /api/seo-report answers 503 and daily-warmup does not fail the run.
+GSC_SERVICE_ACCOUNT_KEY=your-base64-encoded-service-account-json
+# Only if the GSC property is URL-prefix rather than Domain (the default).
+# GSC_SITE_URL=https://ma.codes/
+# NOT YET USED — GA4 is blocked on the consent gating in #141.
+# NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
+
+### Discoverability (`robots` · `sitemap` · schema · `llms.txt`)
+
+Issue [#32](https://github.com/MA1002643/theabdullahfolio/issues/32). Everything
+crawl-related is **generated from one registry** —
+[`src/lib/seo/site.js`](src/lib/seo/site.js) — which `sitemap.js`, `robots.js`,
+`manifest.js`, `llms.txt`, the canonical builder and the JSON-LD builders all
+read. A route can only be missing from one of them if it is missing from all,
+and `tests/unit/sitemapDrift.test.js` **fails CI** when a `page.js` exists on
+disk with no registry entry. Adding a page updates the sitemap by construction.
+
+What it covers:
+
+- **Canonicals** on all 10 routes and every project page, through
+  `sectionMetadata()` — one change, because Next merges metadata shallowly and a
+  page declaring its own `alternates` would replace the root's wholesale.
+- **`www` → apex 308** in `next.config.mjs`, not the Vercel dashboard: a config
+  redirect is reviewable in a diff, testable, and survives a fork.
+- **A connected entity graph**, not per-page blobs. Stable `@id`s
+  (`/#person`, `/#website`, `/projects/{id}#project`) cross-reference each other,
+  so "who wrote culina" and "who owns ma.codes" resolve to the *same* node —
+  verified at 22 nodes with zero dangling references. The serialiser escapes
+  `<`/`>`/`&` as `\uXXXX` (lossless, unlike HTML entities) because the guestbook
+  puts user-authored content on this origin.
+- **Answer-engine readiness.** The homepage server-rendered **10 words and zero
+  internal links** — to a crawler that does not run JavaScript the site was a
+  name, a job title and the string `0 %`. It now renders **106 words and 8
+  links**, with an explicit AI-crawler policy and a curated `/llms.txt`.
+- **`lastModified` from real git commit dates**, never `new Date()`; the field is
+  *omitted* where git cannot answer rather than fabricated.
+
+Full decision record, the measured baseline, and the runbook:
+**[`docs/seo.md`](docs/seo.md)**.
 
 ### Guestbook (`/guestbook`)
 

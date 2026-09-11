@@ -85,10 +85,33 @@ export async function GET(request) {
     console.error("daily-warmup: repo-refresh failed:", err);
     results.repoRefresh = { ok: false, error: err?.message ?? String(err) };
   }
+  // Third step: the Search Console snapshot (issue #32, W6). It belongs HERE
+  // rather than in its own `vercel.json` cron entry for exactly the reason this
+  // route exists — Hobby caps cron count, so a second standalone entry would
+  // silently never run (risk §10.7).
+  try {
+    results.seoReport = await callInternal(
+      baseUrl,
+      "/api/seo-report",
+      cronSecret,
+    );
+  } catch (err) {
+    console.error("daily-warmup: seo-report failed:", err);
+    results.seoReport = { ok: false, error: err?.message ?? String(err) };
+  }
 
   // 502 on partial failure so platform-level cron monitoring (which
   // typically alarms on non-2xx) catches a degraded run instead of seeing
   // a green 200 with a half-failed body.
+  //
+  // seo-report is EXCLUDED from that verdict, deliberately. It answers 503
+  // whenever `GSC_SERVICE_ACCOUNT_KEY` is unset — which is the correct state
+  // until Search Console verification is completed by hand — and folding that
+  // into `allOk` would alarm every night about a step that is not yet
+  // configured, training whoever reads the alerts to ignore it. Its result is
+  // still reported in the body, so a genuine failure (502) is visible; it just
+  // does not fail the RUN. Revisit once the credential is set: at that point a
+  // non-2xx from it is real news.
   const allOk = results.workStatus?.ok && results.repoRefresh?.ok;
   return noStoreJson(
     { ok: allOk, results },

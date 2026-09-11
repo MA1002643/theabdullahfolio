@@ -1510,7 +1510,22 @@ const AboutDetails = () => {
                 digit; the label now matches the years card's `text-fire-amber`
                 "of experience" tone (was the golden text-shadow-neon-light-orange)
                 so the two cards' colour systems are identical. */}
-            <motion.h1
+            {/* `motion.div`, NOT `motion.h1` (issue #32, W5). This is a card
+                FIGURE — a count with a label — and it was marked up as a
+                page-level heading. The e2e SEO suite's "exactly one h1 per
+                route" check caught /about rendering THREE: the real one from
+                PageTitle ("ABOUT ME") plus this card and the years card below.
+                Three h1s tell a screen reader the page has three top-level
+                topics, so navigating by heading announced "11 completed
+                projects" as a peer of the page title, and they flatten the
+                document outline a crawler reads.
+
+                Purely a semantics change: nothing styles these by tag (only
+                `h1.home-title` exists in globals.css, and that is the
+                homepage), every rule here is a utility class or an inline
+                style, and both `h1` and `div` are block-level so `display:
+                flex` resolves identically. Zero visual difference. */}
+            <motion.div
               variants={childVariants}
               className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
               // Fluid figure: 3rem = the sm:text-5xl anchor; the 1.5rem floor
@@ -1525,7 +1540,7 @@ const AboutDetails = () => {
               >
                 completed projects
               </span>
-            </motion.h1>
+            </motion.div>
 
             {/* Two-segment category split bar (Web / System) — the "elite &
                 complex" counterpart to the years card's Personal/Employment
@@ -1646,7 +1661,11 @@ const AboutDetails = () => {
               Years in the craft
             </motion.p>
 
-            <motion.h1
+            {/* `motion.div`, NOT `motion.h1` — see the note on the sibling
+                "completed projects" figure above. Same defect, same reason
+                (issue #32, W5: exactly one h1 per route), same zero-visual
+                change. */}
+            <motion.div
               variants={childVariants}
               // `items-center` (not `items-baseline`): the Counter renders a
               // flex <div>, which doesn't expose a reliable text baseline to
@@ -1682,7 +1701,7 @@ const AboutDetails = () => {
                   —
                 </span>
               )}
-            </motion.h1>
+            </motion.div>
 
             {/* Two-segment split bar — Personal vs Employment as a share of
                 total. Renders when there's measured experience to split OR a
