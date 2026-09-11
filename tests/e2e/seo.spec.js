@@ -315,6 +315,90 @@ test.describe('structured data', () => {
     expect(links).toContain('/projects/4');
     expect(links).toContain('/projects/6');
   });
+
+  test('the sibling nav becomes visible when a keyboard reaches it', async ({
+    page,
+  }) => {
+    // Regression test for a WCAG 2.4.7 failure the first cut shipped: the nav
+    // was `sr-only` and its three links are FOCUSABLE, so a sighted keyboard
+    // user could tab onto a control clipped to a 1px box — no visible focus, no
+    // indication of the destination. Nothing asserted it, which is exactly why
+    // it survived to review.
+    await page.goto('/projects/5');
+
+    const nav = page.locator('nav.project-sibling-nav');
+    const firstLink = nav.locator('a').first();
+
+    // Hidden to sight while nothing inside is focused — the crawl/AT benefit is
+    // the default state, and this is what stops the fix becoming a visible
+    // control the design never asked for.
+    const clipped = await nav.evaluate((el) => {
+      const { width, height } = el.getBoundingClientRect();
+      return width <= 2 && height <= 2;
+    });
+    expect(clipped, 'the nav should be clipped until focused').toBe(true);
+
+    // Focus it the way a keyboard user arrives: on the element itself, not by
+    // clicking (a click would also scroll it into view and mask the defect).
+    await firstLink.focus();
+
+    const revealed = await nav.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const computed = getComputedStyle(el);
+      return {
+        width: rect.width,
+        height: rect.height,
+        position: computed.position,
+        zIndex: Number(computed.zIndex),
+        inViewport:
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          rect.bottom <= window.innerHeight &&
+          rect.right <= window.innerWidth,
+      };
+    });
+
+    // A real panel now, not a 1px box.
+    expect(revealed.width).toBeGreaterThan(80);
+    expect(revealed.height).toBeGreaterThan(40);
+    // `fixed`, not `static`: the page's content is a fixed full-screen scene
+    // LATER in the DOM, so a static panel would paint underneath it and still
+    // be invisible — the same bug wearing a different costume.
+    expect(revealed.position).toBe('fixed');
+    // Above ProjectsBtn and NowPlaying (both fixed, z-50), which would
+    // otherwise occlude it.
+    expect(revealed.zIndex).toBeGreaterThan(50);
+    expect(revealed.inViewport, 'the revealed panel is off-screen').toBe(true);
+
+    // And the focused link is distinguishable from the other two — revealing the
+    // panel without that only moves the problem.
+    const outlineWidth = await firstLink.evaluate(
+      (el) => getComputedStyle(el).outlineWidth,
+    );
+    expect(parseFloat(outlineWidth)).toBeGreaterThan(0);
+  });
+
+  test('the revealed nav does not cover the floating page controls', async ({
+    page,
+  }) => {
+    // The panel is placed top-RIGHT because every other corner is taken on this
+    // route. If it ever moves, this catches it covering a control a user needs.
+    await page.goto('/projects/5');
+    await page.locator('nav.project-sibling-nav a').first().focus();
+
+    const navBox = await page.locator('nav.project-sibling-nav').boundingBox();
+    // ProjectsBtn — the route's primary exit, fixed top-left.
+    const exitBox = await page.locator('a[href="/projects"]').last().boundingBox();
+
+    const overlaps =
+      navBox.x < exitBox.x + exitBox.width &&
+      navBox.x + navBox.width > exitBox.x &&
+      navBox.y < exitBox.y + exitBox.height &&
+      navBox.y + navBox.height > exitBox.y;
+    expect(overlaps, 'the revealed nav overlaps the back-to-projects control').toBe(
+      false,
+    );
+  });
 });
 
 test.describe('the CV PDF as a deliberate landing page (W1b)', () => {

@@ -428,13 +428,29 @@ fan-out**, not as a second `vercel.json` cron entry. Hobby caps cron *count*, so
 a standalone entry would silently never run — which is exactly why
 `daily-warmup` exists at all.
 
-It is **excluded from `daily-warmup`'s `allOk` verdict**, deliberately: it
-answers 503 whenever `GSC_SERVICE_ACCOUNT_KEY` is unset, which is the correct
-state until verification is done by hand. Folding that into the run's status
-would alarm every night about an unconfigured step and train whoever reads the
-alerts to ignore it. Its result is still in the response body, so a genuine 502
-is visible. **Revisit once the credential is set** — at that point a non-2xx
-from it is real news.
+It **counts toward `daily-warmup`'s `allOk` verdict, but only once it is
+configured** — the revisit the previous note asked for, now done.
+
+The step answers 503 with a `skipped` reason whenever `GSC_SERVICE_ACCOUNT_KEY`
+is unset, which is the correct state until verification is done by hand, and
+alarming nightly about an unconfigured step trains whoever reads the alerts to
+ignore them. So that exact answer — **503 with a `skipped` field** — is the one
+thing `daily-warmup` forgives, and it marks the step `notConfigured: true` in
+the response so a run that is green *because a step opted out* is not mistaken
+for one where everything worked.
+
+Everything else counts. With the credential in place, an expired key, revoked
+property access, a Search Console outage and an Upstash failure all answer 502,
+and each now fails the run rather than returning a green 200 that no cron
+monitor would flag. The check **fails closed**: a 503 with no reason, a body
+that is not JSON, a `skipped` on any other status, or a thrown fetch all read as
+failures. Pinned by `tests/unit/dailyWarmupVerdict.test.js`.
+
+> One residual, stated rather than hidden: `/api/seo-report` also answers
+> 503 + `skipped` when the **Upstash** credentials are absent, so that specific
+> misconfiguration is forgiven too. A genuine Upstash *outage* is not — the
+> client throws and the route answers 502. Tighten this if the two ever need
+> telling apart.
 
 ### No `googleapis` dependency
 
@@ -444,6 +460,25 @@ GraphQL and REST APIs with bare `fetch` and no SDK, so this follows that
 precedent — the service-account JWT is signed with `node:crypto`, which
 `safeBearerEqual` already depends on. ~40 lines versus a dependency that would
 dominate the function bundle.
+
+### Every upstream call has a deadline
+
+The token exchange and the three `searchAnalytics` queries all go through one
+`fetchBounded()` helper, at `SEO_REPORT_TIMEOUT_MS` (default **10s**). Worst case
+is therefore ~2× that — one token call, then three queries in parallel.
+
+The bound matters more here than in a standalone route. This one runs *inside*
+`/api/daily-warmup`'s fan-out, and that orchestrator returns **one** response
+carrying every step's result, so an unbounded stall would hold the whole cron
+open until the platform killed the function — taking the work-status and
+repo-refresh results already collected down with it. Same reasoning as
+`/api/repo-refresh`'s `CRON_WARM_TIMEOUT_MS` and `/api/work-status`'s per-query
+bounds; this route was the one that had been missed.
+
+A timeout surfaces as a 502 naming the step and the budget
+(`token exchange timed out after 10000ms`) — never the request body, which
+carries the signed assertion, nor the bearer token. Pinned by
+`tests/unit/seoReportTimeout.test.js`.
 
 ### Setup, which must be done by hand
 
@@ -468,6 +503,33 @@ The window ends **three days ago** and spans 28 days. GSC data lags ~2 days and
 the most recent days are always incomplete, so a window ending "today" shows a
 cliff that looks like a traffic collapse and is purely an artefact.
 
+### The comparison baseline, and why a rerun stores nothing
+
+The API can only report a *window*; it cannot say what changed since you last
+looked. That is the entire reason snapshots are stored, and it makes the choice
+of baseline the part most worth getting right.
+
+Both `seo:gsc:<date>` and `seo:gsc:latest` hold the **first** snapshot captured
+on their day — the daily key is written `nx`, and `latest` is left alone once it
+already holds a capture from today. Run the route a second time on the same day
+(by hand, with the bearer token) and it reports fresh figures but **writes
+nothing**, answering `rerun: true`.
+
+Without that, the second run became tomorrow's baseline, tomorrow compared
+against an afternoon capture instead of the morning one, and every new query and
+position drop from the hours in between was reported by *no* run — silently,
+with both responses looking perfectly well-formed. `tests/unit/seoReportBaseline.test.js`
+drives three runs across a day boundary to pin it.
+
+`rerun: true` is also the thing to check before reading an empty report: near-empty
+findings mean "you have already run this today", not "the site stopped ranking".
+
+A **missed** day is handled by the same pointer degrading gracefully — `latest`
+means "the last day that actually captured", so a gap widens the comparison
+window rather than resetting it. This is why the baseline is not simply
+yesterday's dated key: one skipped run would leave that key absent, and an absent
+baseline makes every query look new.
+
 ---
 
 ## 10. Runbook
@@ -484,6 +546,65 @@ cliff that looks like a traffic collapse and is purely an artefact.
 on any `page.js` that is in neither the registry nor its own `EXCLUDED` map —
 verified by adding a throwaway route and watching it go red.
 
+### Credentials: only what has been awarded
+
+`credentialsFromJourney` emits a `type: 'education'` entry **only once it has an
+`end` date**, and dates it by that completion.
+
+The reason is the property, not the date. `Person.hasCredential` is defined as
+"a credential **awarded to** the Person", so listing study still in progress
+asserts possession of a qualification that has not been conferred. An earlier
+cut dated every record by `start` specifically to avoid naming a completion that
+had not happened — which made the date honest and left the stronger claim false.
+It also disagreed with the page it was attached to: the `/qualifications`
+carousel shows awarded certificates only, and the BSc is not among them.
+
+Nothing needs remembering when that changes. Fill in `end` on the journey entry
+the day the degree is conferred and it joins the structured data by itself,
+dated by the award.
+
+> **Known gap while the BSc is in progress.** The degree is now absent from
+> every structured-data surface, and §7's intent table still names "software
+> engineering degree" as a target for `/qualifications`. Schema.org has no
+> well-supported way to say "currently enrolled" on a `Person`
+> (`alumniOf` would be just as false), so the honest place to state it is
+> prose — the route description in `ROUTES`, or the page copy, which is what
+> answer engines read anyway. Deliberately left as an editorial decision rather
+> than papered over with a schema property that does not mean what it says.
+
+### Adding a project
+
+Add it to `projectsData` and nothing else needs editing. `sitemap.js` generates
+the URL, `/llms.txt` describes it, `/projects/[id]` gets its params, and the two
+places that state the count in prose both recount themselves:
+
+| Surface | How the count is stated |
+| --- | --- |
+| `/projects` meta description (`src/lib/seo/site.js`) | `` `${countWord(projectsData.length)} builds — …` `` |
+| Homepage `sr-only` summary (`src/app/page.js`) | `{countWord(projectsData.length).toLowerCase()} projects` |
+
+`tests/unit/projectCountDrift.test.js` fails if either goes back to a typed
+number — which is how both were originally written, and how they would have
+kept saying "eleven" after a twelfth project landed.
+
+**`countWord` lives in `src/lib/numberWords.js`, not in the registry**, and that
+placement is load-bearing: the homepage is `'use client'`, so importing it from
+`src/lib/seo/site.js` would pull every route's metadata into the browser bundle.
+The module imports nothing, which is what keeps it usable from either side of
+the server/client line.
+
+Deriving the homepage count is close to free because `Navigation` already
+imports `BtnList` from `@/app/data`, so the project array is in that route's
+bundle either way — `.length` cannot be tree-shaken away from the array it
+belongs to. Measured at the time: `/` went from 32.7 kB to 32.9 kB, with First
+Load JS unchanged at 191 kB.
+
+> **`src/lib/seo/site.js` must stay server-only.** It reads `projectsData` so
+> the registry can state counts without anyone retyping them, which is free
+> today because every importer is a server module. A `'use client'` importer
+> would pull the registry — and everything it references — into a browser
+> bundle.
+
 ### Replacing the CV
 
 ```bash
@@ -497,7 +618,8 @@ If the fixture test fails, see §4's landmine before doing anything else.
 
 - Read the latest `/api/seo-report` output (or `seo:gsc:latest` in Upstash).
   Act on `lowCtrPages` first — the page already ranks, so only the snippet is
-  failing, and the snippet is entirely within our control.
+  failing, and the snippet is entirely within our control. If the findings come
+  back near-empty, check `rerun` before concluding anything (§9).
 - Check `droppedPositions` for regressions while they are still cheap.
 
 ### Monthly
@@ -546,7 +668,7 @@ Recorded so they read as decisions rather than omissions.
 |---|---|---|
 | `Person.knowsAbout` from live `/api/github-skills` | Derived from `usesData.stack` | The claim must be in server HTML to matter, so it would have to be fetched at **build** — making `next build` depend on a secret and a network call, failing or silently emptying when the token is absent or rate-limited. And a build-time fetch is a *snapshot*, which rots exactly like a curated list while being invisible to review. `usesData.stack` is the reviewed mirror of that same crawl, already rendered on `/uses`, so schema and page cannot disagree. |
 | `programmingLanguage` on each project | Omitted | Same build-time-secret problem, with no equivalent local source. Omitted rather than guessed (P4); the builder accepts it the moment a build-safe source exists. |
-| `EducationalOccupationalCredential[]` from the qualifications carousel | Derived from `journeyData` | The carousel's `CARDS` array is inside a `'use client'` module, is not exported, and carries only title/category/image — **no issuer and no date**, which is the half that makes a credential checkable. `journeyData` has both, and is already cross-checked against the CV. |
+| `EducationalOccupationalCredential[]` from the qualifications carousel | Derived from `journeyData`, **awarded entries only** | The carousel's `CARDS` array is inside a `'use client'` module, is not exported, and carries only title/category/image — **no issuer and no date**, which is the half that makes a credential checkable. `journeyData` has both, and is already cross-checked against the CV. Entries still in progress (`end: null`) are filtered out: `hasCredential` means "awarded to", so the in-flight BSc would be a claim to hold a degree not yet conferred — see the note below. |
 | GA4 mounted | CSP + event map + tests only | Hard-blocked on #141. See §8. |
 | PDF accessibility tagging | `/Lang` only | Needs the LaTeX source. See §4. |
 | Lighthouse CI in GitHub Actions | Not built | Needs per-route budgets derived from a measured baseline that does not exist yet (the Lighthouse half of §1 was not captured). A budget nobody can pass gets disabled within a week, which is worse than no budget. |

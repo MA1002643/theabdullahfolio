@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 import { noStoreJson, safeBearerEqual } from '../_utils/cronAuth';
+import { envPositiveMs } from '../_utils/env';
 import { redis } from '@/lib/guestbook/redisDriver';
 import { ORIGIN } from '@/lib/seo/site';
 import { ASSISTANT_REFERRERS } from '@/lib/seo/analytics';
@@ -44,6 +45,56 @@ export const dynamic = 'force-dynamic';
 
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const GSC_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
+
+// ── Every upstream call is bounded ──────────────────────────────────────────
+// This route is a step inside /api/daily-warmup's fan-out, and that orchestrator
+// returns ONE response carrying every step's result. An unbounded fetch here is
+// therefore not just this route's problem: a stalled token exchange or Search
+// Console query holds daily-warmup open until the platform kills the function,
+// and the work-status and repo-refresh results — already collected by then —
+// are never reported. The cron fails with nothing useful in the log, which is
+// the failure mode /api/repo-refresh's CRON_WARM_TIMEOUT_MS exists to prevent
+// and the reason /api/work-status bounds each GraphQL query.
+//
+// Four calls run per invocation: one token exchange, then three analytics
+// queries in parallel. At this budget the worst case is ~2 × the bound, well
+// inside any platform timeout, and a failure arrives as a 502 the cron can act
+// on rather than as a dead function.
+const UPSTREAM_TIMEOUT_MS = envPositiveMs(
+  process.env.SEO_REPORT_TIMEOUT_MS,
+  10000,
+);
+
+/**
+ * `fetch` that cannot outlive its budget.
+ *
+ * `AbortSignal.timeout` rather than the AbortController + setTimeout pair the
+ * sibling cron routes hand-roll: there is no timer to leak when the request
+ * settles first, and it rejects with a DOMException named `TimeoutError`
+ * specifically — which is what lets the message below say "timed out" instead
+ * of the bare "aborted" an AbortController produces. Same choice, same reason,
+ * as /api/spotify/auth.
+ *
+ * @param {string} url Absolute URL.
+ * @param {RequestInit} options Passed through; `signal` is supplied here.
+ * @param {string} label Names the call in the error. NEVER interpolate a
+ *   credential or a response body into it — this route's errors are returned
+ *   to any caller holding CRON_SECRET.
+ * @returns {Promise<Response>}
+ */
+async function fetchBounded(url, options, label) {
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (error?.name === 'TimeoutError') {
+      throw new Error(`${label} timed out after ${UPSTREAM_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  }
+}
 
 // Upstash keys, namespaced under `seo:` so they are obvious next to the
 // guestbook's keys in the same database.
@@ -136,15 +187,21 @@ async function getAccessToken(credentials) {
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 
-  const response = await fetch(TOKEN_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: `${header}.${claims}.${signature}`,
-    }),
-    cache: 'no-store',
-  });
+  const response = await fetchBounded(
+    TOKEN_ENDPOINT,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: `${header}.${claims}.${signature}`,
+      }),
+      cache: 'no-store',
+    },
+    // Names the step only. The assertion in the body above is a signed
+    // credential and must never reach an error message.
+    'token exchange',
+  );
 
   if (!response.ok) {
     // Status only. The body of a failed token exchange echoes parts of the
@@ -173,25 +230,30 @@ async function queryAnalytics(token, siteUrl, dimensions) {
     `https://searchconsole.googleapis.com/webmasters/v3/sites/` +
     `${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const response = await fetchBounded(
+    endpoint,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        startDate: isoDate(LAG_DAYS + WINDOW_DAYS),
+        endDate: isoDate(LAG_DAYS),
+        dimensions,
+        // Plenty for a site with 21 URLs, and it spares us pagination.
+        rowLimit: 1000,
+        // WEB only. Discover and News are separate surfaces whose position and
+        // CTR are not comparable with search, so folding them in would make
+        // every derived figure below meaningless.
+        type: 'web',
+      }),
+      cache: 'no-store',
     },
-    body: JSON.stringify({
-      startDate: isoDate(LAG_DAYS + WINDOW_DAYS),
-      endDate: isoDate(LAG_DAYS),
-      dimensions,
-      // Plenty for a site with 21 URLs, and it spares us pagination.
-      rowLimit: 1000,
-      // WEB only. Discover and News are separate surfaces whose position and
-      // CTR are not comparable with search, so folding them in would make every
-      // derived figure below meaningless.
-      type: 'web',
-    }),
-    cache: 'no-store',
-  });
+    // The dimension, not the token in the header above.
+    `searchAnalytics(${dimensions.join('+')})`,
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -344,14 +406,41 @@ export async function GET(request) {
     const findings = deriveFindings(snapshot, previous);
 
     const today = isoDate(0);
+    // A SECOND run on the same UTC day must not become tomorrow's baseline.
+    // daily-warmup fires once a day, but this route is callable by hand too —
+    // that is what the bearer token is for — and an unconditional write let the
+    // second run replace the day's stored snapshot with one captured hours
+    // later. Tomorrow then compared against THAT, so everything that happened
+    // between the two runs — the new queries, the positions that slipped — was
+    // never reported by any run, silently.
+    //
+    // So both keys hold the FIRST snapshot of their day: `nx` refuses to
+    // overwrite the daily key, and `latest` is left alone once it already holds
+    // a capture from today. Comparing the dates is safe because both sides are
+    // UTC — `capturedAt` is an ISO string and `isoDate` builds from UTC parts.
+    //
+    // Deliberately NOT `SNAPSHOT_KEY(isoDate(1))` as the baseline: a single
+    // missed day (a deploy window, a cron that straddles midnight) would leave
+    // that key absent, and an absent baseline makes `deriveFindings` report
+    // every query as new. `latest` degrades to "the last day we did capture".
+    const isRerun = previous?.capturedAt?.slice(0, 10) === today;
     await Promise.all([
-      redis.set(SNAPSHOT_KEY(today), snapshot, { ex: SNAPSHOT_TTL_SECONDS }),
-      redis.set(LATEST_KEY, snapshot),
+      redis.set(SNAPSHOT_KEY(today), snapshot, {
+        ex: SNAPSHOT_TTL_SECONDS,
+        nx: true,
+      }),
+      ...(isRerun ? [] : [redis.set(LATEST_KEY, snapshot)]),
     ]);
 
     return noStoreJson({
       ok: true,
       storedAs: SNAPSHOT_KEY(today),
+      // True when that key and `latest` already held a capture from today, so
+      // this run stored nothing and compared against hours-old data. Said out
+      // loud because the findings will be near-empty and, without this, an
+      // empty report reads as "the site stopped ranking" rather than "you have
+      // run this twice today".
+      rerun: isRerun,
       window: snapshot.window,
       totals: snapshot.totals,
       comparedAgainst: previous?.capturedAt ?? null,

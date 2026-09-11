@@ -99,9 +99,10 @@ async function main() {
     ({ PDFDocument, PDFName, PDFString } = await import('pdf-lib'));
   } catch {
     console.error(
-      'pdf-lib is not installed. It is intentionally not a project dependency —\n' +
-        'this script runs by hand when the CV changes, not during a build. Run:\n' +
-        '  npx --yes --package pdf-lib node scripts/seo-pdf-metadata.mjs',
+      'pdf-lib could not be loaded. It is a devDependency of this repo, so a\n' +
+        'production-only install will not have it — which is fine, because this\n' +
+        'script runs by hand when the CV changes and never during a build. Run:\n' +
+        '  npm install',
     );
     process.exit(2);
   }
@@ -114,11 +115,30 @@ async function main() {
   // lie about what is on disk.
   const pdf = await PDFDocument.load(original, { updateMetadata: false });
 
+  // `/Lang` is read the same way it is written — off the raw catalog, because
+  // pdf-lib has no getter for it either. It MUST be part of `current` and not
+  // just of the write path: `--check` decides its exit code from this object, so
+  // a field that is written but not read makes the check pass on a file that is
+  // missing it and report "All fields set." Reproduced before fixing, on a CV
+  // whose four info fields were intact and whose /Lang had been removed.
+  //
+  // `decodeText()` rather than `String(value)`: the latter returns the PDF
+  // literal-string syntax — `(en-GB)`, parentheses included — which is not a
+  // language tag and would be printed as one. Both PDFString and PDFHexString
+  // expose `decodeText`; anything else in that slot is not a language tag, so it
+  // reads as absent rather than being coerced into a plausible-looking value.
+  const langValue = pdf.catalog.get(PDFName.of('Lang'));
+  const language =
+    langValue && typeof langValue.decodeText === 'function'
+      ? langValue.decodeText()
+      : undefined;
+
   const current = {
     title: pdf.getTitle(),
     author: pdf.getAuthor(),
     subject: pdf.getSubject(),
     keywords: pdf.getKeywords(),
+    language,
   };
 
   if (checkOnly) {

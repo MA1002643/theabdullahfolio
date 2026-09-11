@@ -12,6 +12,14 @@
 //
 // SECRETS: nothing in this file is a credential. `ORIGIN` is a public domain
 // and the only env var read is a non-secret origin override.
+//
+// The one import is deliberate and safe: every consumer of this module is
+// SERVER-side (sitemap, robots, manifest, llms.txt, route metadata, the cron
+// report), and sitemap.js already reads both files together, so pulling the
+// project data in here adds nothing to any client bundle. Keep it that way —
+// a `'use client'` importer would start shipping `projectsData` to browsers.
+import { projectsData } from '@/app/data';
+import { countWord } from '@/lib/numberWords';
 
 // ── Origin ──────────────────────────────────────────────────────────────────
 // The production apex is the canonical host. `www.ma.codes` answers too (it is
@@ -51,6 +59,17 @@ export const IDENTITY = {
     process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
     'muhammad.abdullah33176444@gmail.com',
 };
+
+// ── Counts in prose ─────────────────────────────────────────────────────────
+// A description that states a number is a description that goes stale: adding
+// a twelfth project would leave /projects telling Google there are eleven, and
+// nothing would fail. So the number is read from the array rather than typed —
+// the same reasoning that makes sitemap.js generate `/projects/[id]` from
+// `projectsData` instead of hand-listing the URLs.
+//
+// `countWord` lives in its own module rather than here because the homepage
+// states a count too and is `'use client'`: importing it from THIS file would
+// pull the whole route registry into the browser bundle.
 
 // ── Route registry ──────────────────────────────────────────────────────────
 // One entry per PUBLIC route pattern. `/projects/[id]` is deliberately absent:
@@ -100,7 +119,9 @@ export const ROUTES = [
     path: '/projects',
     title: 'Projects',
     description:
-      'Eleven builds — web, systems, mobile and AI — each tracked live from its own GitHub board, with the stack and completion state on every card.',
+      `${countWord(projectsData.length)} builds — web, systems, mobile and AI — ` +
+      'each tracked live from its own GitHub board, with the stack and ' +
+      'completion state on every card.',
     changeFrequency: 'weekly',
     priority: 0.9,
     indexable: true,
@@ -333,15 +354,28 @@ export function knowsAboutFromStack(stack) {
  * makes it verifiable.
  *
  * `journeyData` can: its `type: 'education'` entries each name the awarding
- * organisation (`org`) and when the study began (`start`). It is also already
- * cross-checked against the CV (see the note at data.js:345), so the dates are
- * not independently typed.
+ * organisation (`org`) and when the study ran. It is also already cross-checked
+ * against the CV (see the note at data.js:345), so the dates are not
+ * independently typed.
  *
- * `start` is used rather than `end` on purpose. Several entries are ongoing
- * (`end: null` — the BSc is predicted, not awarded), and dating a credential by
- * a completion that has not happened would be a false claim. `dateCreated`
- * describes when the record came into being, which the start of study
- * truthfully is.
+ * ── Only AWARDED credentials, which is why `end` gates the list ──────────────
+ * `Person.hasCredential` is defined by schema.org as "a credential AWARDED to
+ * the Person". An entry still in progress (`end: null` — the BSc is predicted,
+ * not yet conferred) therefore cannot go in it at all: the property asserts
+ * possession, and no choice of date softens that. An earlier cut of this
+ * function dated every record by `start` precisely to avoid claiming a
+ * completion that had not happened, which made the DATE truthful and left the
+ * stronger claim — that the degree is held — false. Filtering is the fix; the
+ * date question then answers itself.
+ *
+ * It is also what the page itself says. The `/qualifications` carousel shows
+ * awarded certificates only, the BSc among them nowhere, so emitting it here
+ * put a claim in the structured data that the visible page did not support —
+ * the mismatch Google's own guidance warns about.
+ *
+ * Nothing is lost permanently: the entry rejoins the list by itself on the day
+ * `end` is filled in, dated by the award rather than by this function being
+ * remembered and edited.
  *
  * @param {Array<object>} journey A `journeyData` array.
  * @returns {Array<{name: string, issuer: string, date: string, type: string}>}
@@ -350,7 +384,7 @@ export function knowsAboutFromStack(stack) {
 export function credentialsFromJourney(journey) {
   if (!Array.isArray(journey)) return [];
   return journey
-    .filter((entry) => entry?.type === 'education')
+    .filter((entry) => entry?.type === 'education' && entry.end)
     .map((entry) => ({
       // The journey's own title, which already reads as a credential name
       // ("BSc (Hons) Software Engineering · MMU"). The org suffix is stripped
@@ -359,7 +393,10 @@ export function credentialsFromJourney(journey) {
       // see as two different credentials.
       name: String(entry.title).split(' · ')[0].trim(),
       issuer: entry.org,
-      date: entry.start,
+      // The award, not the enrolment: every entry that reaches here has
+      // finished, so `dateCreated` can say when the credential actually came
+      // into being.
+      date: entry.end,
       // Schema's `credentialCategory` is a free-text hint. "degree" and
       // "diploma" are the two values Google's documentation uses as examples,
       // and every education entry here is one or the other — so it is derived

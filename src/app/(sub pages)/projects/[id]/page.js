@@ -140,8 +140,22 @@ export default async function ProjectDetailPage({ params }) {
 
                 Plain `next/link`, not TransitionLink: these are out-of-view
                 links a keyboard or crawler follows directly, and the Sigil
-                Passage transition is choreography for a visible click. */}
-            <nav aria-label="Project navigation" className="sr-only">
+                Passage transition is choreography for a visible click.
+
+                `sr-only` ALONE WAS A BUG, caught in review. These three links
+                are focusable, so a sighted keyboard user could tab onto them
+                while they were clipped to a 1px box — no visible focus, no idea
+                which link or where it led, on a route whose scene offers almost
+                no other tab stops to orient against. That is a WCAG 2.4.7
+                failure: the screen-reader case was served and the keyboard-only
+                case was not.
+                `.project-sibling-nav` reveals the panel on `:focus-within` and
+                gives each link a visible focus ring — see the rule in
+                globals.css for why it must be `fixed` rather than `static`. */}
+            <nav
+                aria-label="Project navigation"
+                className="project-sibling-nav sr-only custom-bg"
+            >
                 <Link href="/projects">All projects</Link>
                 <Link href={`/projects/${previous.id}`}>
                     Previous project: {previous.name}

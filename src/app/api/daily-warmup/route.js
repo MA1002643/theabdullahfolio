@@ -33,6 +33,27 @@ async function callInternal(baseUrl, path, cronSecret) {
   return { ok: res.ok, status: res.status, detail };
 }
 
+// Did a downstream answer "I am not configured yet" rather than "I failed"?
+//
+// `/api/seo-report` is the only step that can say this, and it says it exactly
+// one way: HTTP 503 with a `skipped` reason in the body. That is its contract
+// with this route — 503 + `skipped` means an integration has not been set up,
+// every other non-2xx means something broke.
+//
+// Fails CLOSED, deliberately. An unreadable body, a 503 with no reason, a 502,
+// a 401, a thrown fetch — all read as NOT-skipped and therefore count against
+// the run. Treating an ambiguous answer as "skipped" would rebuild the exact
+// blind spot this function exists to close.
+function isNotConfigured(result) {
+  if (result?.status !== 503) return false;
+  try {
+    return typeof JSON.parse(result.detail)?.skipped === "string";
+  } catch {
+    // Not JSON, or no body at all. That is not a configuration message.
+    return false;
+  }
+}
+
 // Consolidated daily cron — replaces the prior `/api/work-status?bust=1`
 // cron entry in vercel.json, now wrapping both the work-status bust and
 // the new repo-refresh warm-up under a single schedule. Consolidation is
@@ -104,17 +125,34 @@ export async function GET(request) {
   // typically alarms on non-2xx) catches a degraded run instead of seeing
   // a green 200 with a half-failed body.
   //
-  // seo-report is EXCLUDED from that verdict, deliberately. It answers 503
-  // whenever `GSC_SERVICE_ACCOUNT_KEY` is unset — which is the correct state
-  // until Search Console verification is completed by hand — and folding that
-  // into `allOk` would alarm every night about a step that is not yet
-  // configured, training whoever reads the alerts to ignore it. Its result is
-  // still reported in the body, so a genuine failure (502) is visible; it just
-  // does not fail the RUN. Revisit once the credential is set: at that point a
-  // non-2xx from it is real news.
-  const allOk = results.workStatus?.ok && results.repoRefresh?.ok;
-  return noStoreJson(
-    { ok: allOk, results },
-    { status: allOk ? 200 : 502 },
+  // seo-report counts toward that verdict too, but ONLY once it is configured.
+  //
+  // It was previously excluded outright, for a reason that was right at the
+  // time and stopped being right: it answers 503 while `GSC_SERVICE_ACCOUNT_KEY`
+  // is unset, which is the correct state until Search Console verification is
+  // done by hand, and alarming nightly about an unconfigured step trains
+  // whoever reads the alerts to ignore them. But an UNCONDITIONAL exclusion
+  // keeps paying that cost forever: with the credential in place, an expired
+  // key, revoked property access, a Search Console outage or an Upstash failure
+  // all answer 502 — and the run still returned a green 200 that no cron
+  // monitor would ever flag. The report is only worth having if someone finds
+  // out when it stops arriving.
+  //
+  // So the step is optional exactly while the integration is absent, and
+  // load-bearing the moment it is not. `isNotConfigured` is what draws that
+  // line, and it errs toward counting.
+  const seoNotConfigured = isNotConfigured(results.seoReport);
+  if (seoNotConfigured) {
+    // Said in the body rather than left implicit, so a run that is green
+    // BECAUSE a step opted out is distinguishable from one that is green
+    // because every step worked.
+    results.seoReport.notConfigured = true;
+  }
+
+  const allOk = Boolean(
+    results.workStatus?.ok &&
+      results.repoRefresh?.ok &&
+      (results.seoReport?.ok || seoNotConfigured),
   );
+  return noStoreJson({ ok: allOk, results }, { status: allOk ? 200 : 502 });
 }

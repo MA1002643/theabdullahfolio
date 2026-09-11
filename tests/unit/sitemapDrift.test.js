@@ -59,6 +59,17 @@ function routePathFor(relativeDir) {
 /**
  * Every route served by a `page.js` under `src/app`.
  *
+ * `not-found.js` is not a `page.js` but IS a rendered route boundary, so it is
+ * surfaced here too — to force a decision about it rather than letting it fall
+ * outside the test's view entirely.
+ *
+ * It is found BY THE WALK, like everything else, and that is the whole point.
+ * An earlier cut appended `/not-found` unconditionally after the walk, which
+ * made "keeps every EXCLUDED entry real" below vacuous for the single entry
+ * that map holds: the assertion that something on disk still serves the
+ * excluded route passed whether or not the file existed. A guard against stale
+ * exclusions that cannot observe its own subject is not a guard.
+ *
  * @returns {string[]} URL paths, `[id]` segments left in bracket form.
  */
 function discoverRoutes() {
@@ -75,15 +86,18 @@ function discoverRoutes() {
         walk(absolute, path.join(relativeDir, entry));
       } else if (entry === 'page.js' || entry === 'page.jsx') {
         found.push(routePathFor(relativeDir));
+      } else if (entry === 'not-found.js' || entry === 'not-found.jsx') {
+        // Nested boundaries are named for the segment they cover, so a future
+        // `(sub pages)/projects/[id]/not-found.js` surfaces as its own route
+        // and has to be declared or excluded on its own terms. Only the root
+        // one exists today, and it is the `/not-found` EXCLUDED names.
+        const segment = routePathFor(relativeDir);
+        found.push(segment === '/' ? '/not-found' : `${segment}/not-found`);
       }
     }
   };
 
   walk(APP_DIR, '');
-  // `not-found.js` is not a `page.js` but IS a rendered route boundary, so it is
-  // surfaced here to force a decision about it rather than letting it fall
-  // outside the test's view entirely.
-  found.push('/not-found');
   return found;
 }
 
@@ -198,23 +212,65 @@ describe('sitemap contents', () => {
     }
   });
 
-  it('never fabricates a lastModified (P4)', async () => {
+  it('takes every lastModified from git, never from the clock (P4)', async () => {
     const { default: sitemap } = await import('@/app/sitemap');
-    const now = Date.now();
+    const { lastModifiedFor } = await import('@/lib/seo/lastModified');
 
-    for (const entry of sitemap()) {
-      // Absent is allowed and expected on Vercel, where the build has no `.git`
-      // — see src/lib/seo/lastModified.js. What is NOT allowed is a date
-      // stamped at build time, which is the reflex implementation and the thing
-      // P4 forbids. A real commit date is necessarily in the past; `new Date()`
-      // lands within milliseconds of now.
+    // Absent is allowed and expected on Vercel, where the build has no `.git`
+    // — see src/lib/seo/lastModified.js. What is NOT allowed is a date stamped
+    // at build time, which is the reflex implementation P4 forbids.
+    //
+    // This is asserted by IDENTITY, not by age. An earlier cut required every
+    // date to be more than 60s old, on the reasoning that `new Date()` lands
+    // within milliseconds of now — which is true, and still made the test fail
+    // whenever someone committed a source file and ran the suite inside a
+    // minute. Comparing against `lastModifiedFor` instead is exact, has no
+    // timing in it at all, and is a stricter statement: the entry must be the
+    // value the git module produced for that route's own sources. (The module
+    // memoises, so this is the same cached instance sitemap() received — and
+    // whether the module itself invents dates is settled separately, against
+    // controlled git output, in lastModified.test.js.)
+    const entries = sitemap();
+    const byUrl = new Map(entries.map((entry) => [entry.url, entry]));
+
+    for (const route of ROUTES) {
+      if (!route.indexable) continue;
+      const entry = byUrl.get(absoluteUrl(route.path));
+      expect(entry.lastModified).toBe(lastModifiedFor(route.sources));
+    }
+    expect(byUrl.get(absoluteUrl(CV_ASSET.path)).lastModified).toBe(
+      lastModifiedFor(CV_ASSET.sources),
+    );
+
+    // All eleven project pages share ONE lookup by design (they are one
+    // template over one data file), so they must also share one value —
+    // a per-entry `new Date()` is the shape that would break this.
+    const projectStamps = new Set(
+      projectsData.map(
+        (project) =>
+          byUrl.get(absoluteUrl(`/projects/${project.id}`)).lastModified,
+      ),
+    );
+    expect(projectStamps.size).toBe(1);
+
+    // And nothing may claim to have been modified in an implausible future.
+    //
+    // The tolerance is the point. A committer date comes from the clock of the
+    // machine that made the commit, so a bare `<= Date.now()` is the same
+    // wall-clock trap the age check was: a commit authored on a machine running
+    // a little fast, checked out and tested inside that skew, would fail on
+    // data that is entirely correct. A day absorbs any realistic skew while
+    // still catching the thing actually worth catching — a date years out,
+    // which would put a nonsense `<lastmod>` in front of a crawler.
+    const SKEW_TOLERANCE_MS = 24 * 60 * 60 * 1000;
+    const ceiling = Date.now() + SKEW_TOLERANCE_MS;
+    for (const entry of entries) {
       if (entry.lastModified === undefined) continue;
-      const stamped = new Date(entry.lastModified).getTime();
       expect(
-        now - stamped,
-        `${entry.url} has a lastModified within 60s of now, which means it was ` +
-          `stamped at build time rather than read from git.`,
-      ).toBeGreaterThan(60_000);
+        new Date(entry.lastModified).getTime(),
+        `${entry.url} carries a lastModified more than a day in the future, ` +
+          `which is past any clock skew and into bad data.`,
+      ).toBeLessThanOrEqual(ceiling);
     }
   });
 });

@@ -32,8 +32,9 @@ export default function QualificationsLayout({ children }) {
           carries only a title, a category and an image path — no awarding body
           and no date, which is the half of a credential that makes it
           checkable. See `credentialsFromJourney` for the full reasoning,
-          including why the START of study dates each record rather than a
-          completion that, for the BSc, has not happened yet. */}
+          including why study still IN PROGRESS is left out entirely —
+          `hasCredential` means "awarded to", so the in-flight BSc belongs here
+          only once it is conferred, at which point it appears by itself. */}
       <JsonLd
         id="ld-qualifications"
         data={qualificationsPage(credentialsFromJourney(journeyData))}

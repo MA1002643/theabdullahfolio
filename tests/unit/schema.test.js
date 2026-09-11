@@ -241,18 +241,66 @@ describe('per-surface documents', () => {
       // The awarding body is the half that makes a credential checkable.
       expect(credential.recognizedBy.name).toBeTruthy();
       expect(credential.credentialCategory).toMatch(/^(degree|diploma)$/);
+      // Dated by the award, which every surviving entry has.
+      expect(credential.dateCreated).toMatch(/^\d{4}-\d{2}/);
     }
 
-    // The degree is classified as one, not as a diploma — the rule is derived
-    // from the title, so a change to it would go unnoticed otherwise.
-    const bsc = doc.mainEntity.hasCredential.find((c) => /BSc/.test(c.name));
-    expect(bsc.credentialCategory).toBe('degree');
-    // And the organisation suffix is not stated twice (once in the name, once
-    // in recognizedBy), which would read as two different credentials to a
-    // consumer de-duplicating on name.
-    expect(bsc.name).not.toMatch(/ · /);
-
     expectNoNullish(doc);
+  });
+
+  it('leaves study still in progress out of hasCredential', () => {
+    // `hasCredential` is defined as "a credential AWARDED to the Person", so an
+    // entry with no completion cannot appear under it at all. An earlier cut
+    // dated every record by `start` to avoid claiming a completion that had not
+    // happened — which made the DATE honest and left the possession claim
+    // false. This is the guard for that distinction.
+    const ongoing = journeyData.filter((e) => e.type === 'education' && !e.end);
+    expect(
+      ongoing.length,
+      'fixture assumes journeyData still has an in-progress education entry',
+    ).toBeGreaterThan(0);
+
+    const credentials = credentialsFromJourney(journeyData);
+    const nameOf = (entry) => String(entry.title).split(' · ')[0].trim();
+
+    for (const entry of ongoing) {
+      expect(
+        credentials.map((c) => c.name),
+        `${nameOf(entry)} has not been awarded (end: null) and must not be ` +
+          'claimed as a held credential',
+      ).not.toContain(nameOf(entry));
+    }
+
+    // Every record that IS emitted carries its own completion date.
+    for (const credential of credentials) {
+      const source = journeyData.find(
+        (e) => e.type === 'education' && nameOf(e) === credential.name,
+      );
+      expect(credential.date).toBe(source.end);
+    }
+  });
+
+  it('classifies and de-duplicates a credential name once it is awarded', () => {
+    // Synthetic on purpose: the real BSc is still in progress, so the `degree`
+    // branch of the category rule and the org-suffix strip have no live case
+    // left to cover. Both are derived from the title, so a change to either
+    // would otherwise go unnoticed until the degree is conferred.
+    const [credential] = credentialsFromJourney([
+      {
+        type: 'education',
+        title: 'BSc (Hons) Software Engineering · MMU',
+        org: 'MMU',
+        start: '2021-09',
+        end: '2026-06',
+      },
+    ]);
+
+    expect(credential.type).toBe('degree');
+    // The organisation suffix is not stated twice (once in the name, once in
+    // recognizedBy), which would read as two different credentials to a
+    // consumer de-duplicating on name.
+    expect(credential.name).toBe('BSc (Hons) Software Engineering');
+    expect(credential.date).toBe('2026-06');
   });
 
   it('section pages declare themselves part of the site and about the person', () => {

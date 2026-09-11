@@ -8,6 +8,12 @@ import LiveMaintenanceHeader from '@/components/home/LiveMaintenanceHeader';
 import HomeSceneWater from '@/components/home/HomeSceneWater';
 import HomeSceneGlow from '@/components/home/HomeSceneGlow';
 import HomeRoleLatent from '@/components/home/HomeRoleLatent';
+// Both feed the `sr-only` summary's project count. `@/app/data` is already in
+// this route's bundle (Navigation reads `BtnList` from it), and
+// `@/lib/numberWords` is a bare lookup table — see the comment above that
+// paragraph for why the count is derived rather than typed.
+import { projectsData } from '@/app/data';
+import { countWord } from '@/lib/numberWords';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Where the laptop's BASE sits inside its own image box, as a fraction of that
@@ -531,20 +537,32 @@ export default function Home() {
             It is deliberately NOT keyword-stuffed and NOT a list. Every claim
             is true and checkable elsewhere on the site, the stack names are
             the ones /uses verifies against the repositories, and the project
-            count matches `projectsData`. It reads as English because the
-            thing most likely to quote it will quote it verbatim.
+            count is READ FROM `projectsData` rather than typed — a twelfth
+            project would otherwise leave this paragraph telling every crawler
+            and screen reader there are eleven, and nothing would fail. It
+            reads as English because the thing most likely to quote it will
+            quote it verbatim.
+
+            Costing nothing is what makes that derivation the right call here
+            even though this module is `'use client'`: `Navigation` already
+            imports `BtnList` from the same `@/app/data` module, so the array
+            is in this route's bundle either way (`.length` cannot be
+            tree-shaken away from the array it belongs to). `countWord` comes
+            from `@/lib/numberWords`, NOT from `@/lib/seo/site` — importing it
+            from the registry would drag every route's metadata in with it.
 
             Out of flow (`sr-only` is `position: absolute`), so it cannot
             affect the hero's layout or the ring measurement. */}
         <p className="sr-only">
           Muhammad Abdullah is a software engineer based in Bolton, Greater
           Manchester, building fast, considered web applications with Next.js,
-          React, TypeScript and Node.js. This site collects eleven projects —
-          web, systems, mobile and AI — each tracked live from its own GitHub
-          board, alongside the degrees and roles behind them, a timeline of the
-          route from college to production, and the tools the work is actually
-          built with. Every section is reachable from the ring below, and the
-          full CV is published as a PDF.
+          React, TypeScript and Node.js. This site collects{' '}
+          {countWord(projectsData.length).toLowerCase()} projects — web,
+          systems, mobile and AI — each tracked live from its own GitHub board,
+          alongside the degrees and roles behind them, a timeline of the route
+          from college to production, and the tools the work is actually built
+          with. Every section is reachable from the ring below, and the full CV
+          is published as a PDF.
         </p>
 
         {/* `hero-row` is only a hook for the `div.hero-row` block in
