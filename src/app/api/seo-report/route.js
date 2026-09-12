@@ -135,24 +135,59 @@ const b64url = (input) =>
  * inside `private_key`, and every environment-variable UI mangles those
  * differently — base64 survives all of them intact.
  *
- * @returns {{client_email: string, private_key: string}|null} Credentials, or
- *   null when absent or undecodable.
+ * ABSENT AND INVALID ARE DIFFERENT ANSWERS, and collapsing them was a silent
+ * failure of exactly the kind `/api/daily-warmup` was taught to catch. Both used
+ * to return null, GET read every null as "not configured", and so a key that was
+ * SET but unusable — a truncated paste, a re-encoded value, a rotated key
+ * swapped for the wrong JSON — answered 503 `skipped`. daily-warmup honours that
+ * as a deliberate opt-out, marks the step `notConfigured` and stays green: the
+ * integration was broken, the cron was green, and the only symptom was a report
+ * that quietly stopped arriving. That is the same blind spot the verdict fix
+ * closed from the other side, re-entered through the credential reader.
+ *
+ * The distinction is the caller's to act on, so it is returned rather than
+ * flattened. Every `reason` names the VARIABLE and the defect's shape, never any
+ * part of the value — an error message is a place a secret leaks from, and this
+ * route's responses are readable by anyone holding CRON_SECRET.
+ *
+ * @returns {{state: 'ok', credentials: {client_email: string,
+ *   private_key: string}} | {state: 'absent'} | {state: 'invalid',
+ *   reason: string}} What the environment holds.
  */
 function readCredentials() {
   const encoded = process.env.GSC_SERVICE_ACCOUNT_KEY;
-  if (!encoded) return null;
+  // The one genuinely quiet case: the integration has not been set up yet, which
+  // is the correct state until Search Console verification is done by hand.
+  if (!encoded) return { state: 'absent' };
+
+  let parsed;
   try {
-    const parsed = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
-    if (!parsed.client_email || !parsed.private_key) return null;
-    return parsed;
+    parsed = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
   } catch {
-    // Says nothing about the VALUE — only that it did not decode. An error
-    // message is a place a secret can leak from.
-    console.error(
-      'seo-report: GSC_SERVICE_ACCOUNT_KEY is set but is not base64-encoded JSON',
-    );
-    return null;
+    return {
+      state: 'invalid',
+      reason: 'GSC_SERVICE_ACCOUNT_KEY is set but is not base64-encoded JSON',
+    };
   }
+
+  // Decoding is not enough: this previously returned null with NO log line at
+  // all, so a well-formed JSON object of the wrong shape (someone's OAuth client
+  // secret, an empty `{}`, a non-object) was the quietest failure of the three.
+  // Optional chaining because `JSON.parse` happily yields a number, a string or
+  // null, none of which have fields to read.
+  const missing = ['client_email', 'private_key'].filter(
+    (field) => !parsed?.[field],
+  );
+  if (missing.length > 0) {
+    return {
+      state: 'invalid',
+      // The schema, not the secret: which FIELD is absent is what makes this
+      // actionable, and it says nothing about what the value contains.
+      reason: `GSC_SERVICE_ACCOUNT_KEY decoded but is missing ${missing.join(' and ')}`,
+    };
+  }
+
+  return { state: 'ok', credentials: parsed };
 }
 
 /**
@@ -306,10 +341,18 @@ export function deriveFindings(current, previous) {
     .filter(Boolean)
     .sort((a, b) => b.delta - a.delta);
 
-  // Pages earning impressions that nobody clicks. The cheapest win in SEO: the
-  // page already ranks, so the only thing failing is the snippet — and the
-  // snippet is entirely within our control, and now contract-tested
-  // (tests/unit/metadataContract.test.js).
+  // Pages earning impressions that nobody clicks. Usually the cheapest win
+  // available: the page already ranks, so the position is not the problem —
+  // what the result says is.
+  //
+  // Cheap, NOT free, and the difference is worth stating where the list is
+  // built. Google composes the snippet itself and often ignores
+  // `<meta name="description">` in favour of a passage it picks from the page,
+  // per query; title links get rewritten too. The description is an input it
+  // may take, not the text we publish. So this list names pages worth LOOKING
+  // at — read the live result first, then fix whichever input it was drawn
+  // from. The contract test (tests/unit/metadataContract.test.js) pins what we
+  // send, which is the half we do control.
   const lowCtrPages = current.pages
     .filter((row) => row.impressions >= 50 && row.ctr < 0.01)
     .map((row) => ({
@@ -333,16 +376,38 @@ export async function GET(request) {
     return noStoreJson({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const credentials = readCredentials();
-  // 503, not 500: the route is fine, the credential is absent. Distinguishing
-  // them matters because daily-warmup reports this verbatim, and "not configured
-  // yet" is a different morning from "the integration broke".
-  if (!credentials) {
+  const credential = readCredentials();
+
+  // 503 + `skipped` is a CONTRACT, not a convenient status code: it is the one
+  // answer daily-warmup does not count against the run (`isNotConfigured`), so
+  // saying it means asserting "nothing is wrong, this is not set up yet". Only
+  // an absent variable may claim that.
+  if (credential.state === 'absent') {
     return noStoreJson(
       { ok: false, skipped: 'GSC_SERVICE_ACCOUNT_KEY is not configured' },
       { status: 503 },
     );
   }
+
+  // A credential that is SET but unusable is a broken configured integration,
+  // and must fail the run rather than excuse it. 500 rather than 502 because
+  // nothing upstream was reached or misbehaved — this is the server's own
+  // configuration, the same class as the missing CRON_SECRET above, and it will
+  // not fix itself by being retried tomorrow. Deliberately carries `error` and
+  // NOT `skipped`: daily-warmup fails closed on everything that is not
+  // 503 + `skipped`, so this counts the moment it is emitted.
+  if (credential.state === 'invalid') {
+    // Logged as well as returned — the response goes to whoever called the
+    // route, but the reason belongs in the platform log where the cron failure
+    // will be read from.
+    console.error(`seo-report: ${credential.reason}`);
+    return noStoreJson(
+      { ok: false, error: credential.reason },
+      { status: 500 },
+    );
+  }
+
+  const credentials = credential.credentials;
   if (!redis) {
     return noStoreJson(
       { ok: false, skipped: 'Upstash credentials are not configured' },
@@ -406,6 +471,8 @@ export async function GET(request) {
     const findings = deriveFindings(snapshot, previous);
 
     const today = isoDate(0);
+    const todayKey = SNAPSHOT_KEY(today);
+
     // A SECOND run on the same UTC day must not become tomorrow's baseline.
     // daily-warmup fires once a day, but this route is callable by hand too —
     // that is what the bearer token is for — and an unconditional write let the
@@ -414,32 +481,61 @@ export async function GET(request) {
     // between the two runs — the new queries, the positions that slipped — was
     // never reported by any run, silently.
     //
-    // So both keys hold the FIRST snapshot of their day: `nx` refuses to
-    // overwrite the daily key, and `latest` is left alone once it already holds
-    // a capture from today. Comparing the dates is safe because both sides are
-    // UTC — `capturedAt` is an ISO string and `isoDate` builds from UTC parts.
+    // So both keys hold the FIRST snapshot of their day. The ORDER below is what
+    // makes that true even when two invocations overlap:
+    //
+    //   1. Claim the daily key with `nx`. This is the only atomic step
+    //      available, so it — not a date read a moment ago — decides which run
+    //      owns the day. An earlier cut derived "is this a rerun?" from the
+    //      `latest` value read at the top of the handler, which two concurrent
+    //      runs both read BEFORE either had written: both concluded "not a
+    //      rerun", both wrote `latest`, and the day's two keys ended up
+    //      disagreeing with each other.
+    //   2. Whoever loses that claim reads the snapshot that won and republishes
+    //      THAT as `latest`. Losing the race is not an error — the key already
+    //      holding a value is precisely what a rejected `nx` proves, so the read
+    //      cannot come back empty for ordering reasons.
+    //
+    // Both runs therefore converge on the same pair, in either order, and
+    // `latest` can no longer drift away from the daily key it is supposed to
+    // mirror. It also makes the write SELF-HEALING: because `latest` is
+    // rewritten on every run rather than skipped on a rerun, a `latest` left
+    // stale by a half-completed earlier run is repaired by the next one.
     //
     // Deliberately NOT `SNAPSHOT_KEY(isoDate(1))` as the baseline: a single
     // missed day (a deploy window, a cron that straddles midnight) would leave
     // that key absent, and an absent baseline makes `deriveFindings` report
     // every query as new. `latest` degrades to "the last day we did capture".
-    const isRerun = previous?.capturedAt?.slice(0, 10) === today;
-    await Promise.all([
-      redis.set(SNAPSHOT_KEY(today), snapshot, {
-        ex: SNAPSHOT_TTL_SECONDS,
-        nx: true,
-      }),
-      ...(isRerun ? [] : [redis.set(LATEST_KEY, snapshot)]),
-    ]);
+    const claimedToday = await redis.set(todayKey, snapshot, {
+      ex: SNAPSHOT_TTL_SECONDS,
+      nx: true,
+    });
+    // `nx` answers 'OK' when it wrote and null when the key was already there.
+    const isRerun = !claimedToday;
+    const canonical = isRerun ? await redis.get(todayKey) : snapshot;
+
+    // Guarded rather than written blind: if the daily key somehow went missing
+    // between the rejected claim and this read, leaving `latest` alone keeps a
+    // real (if stale) baseline, where writing null would erase it and make the
+    // next run report every query as new.
+    if (canonical) {
+      await redis.set(LATEST_KEY, canonical);
+    } else {
+      console.error(
+        `seo-report: ${todayKey} rejected the write but read back empty; ` +
+          'leaving the baseline untouched',
+      );
+    }
 
     return noStoreJson({
       ok: true,
-      storedAs: SNAPSHOT_KEY(today),
-      // True when that key and `latest` already held a capture from today, so
-      // this run stored nothing and compared against hours-old data. Said out
-      // loud because the findings will be near-empty and, without this, an
-      // empty report reads as "the site stopped ranking" rather than "you have
-      // run this twice today".
+      storedAs: todayKey,
+      // True when today's snapshot already existed, so this run did not become
+      // the day's record — either it is a second run (the usual case, and the
+      // findings will be near-empty because the baseline is hours old) or it
+      // lost a race to an overlapping one. Said out loud because otherwise an
+      // empty report reads as "the site stopped ranking" rather than "this has
+      // already run today".
       rerun: isRerun,
       window: snapshot.window,
       totals: snapshot.totals,

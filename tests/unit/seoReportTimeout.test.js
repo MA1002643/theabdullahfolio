@@ -10,6 +10,8 @@ import {
   vi,
 } from 'vitest';
 
+import { freshCronSecret } from '../helpers/secrets.js';
+
 // ── Why a stalled upstream is this route's problem and not only its own ─────
 // /api/seo-report runs as the third step of /api/daily-warmup's fan-out, and
 // that orchestrator returns ONE response carrying every step's result. So an
@@ -25,7 +27,8 @@ import {
 // `TimeoutError`, so these cases exercise the genuine path — with the budget
 // turned down to 80ms so the suite does not wait ten seconds to find out.
 
-const CRON_SECRET = 'test-cron-secret';
+// Generated per run, never written down: see tests/helpers/secrets.js.
+const CRON_SECRET = freshCronSecret();
 const TIMEOUT_MS = 80;
 
 vi.mock('@/lib/guestbook/redisDriver', () => ({

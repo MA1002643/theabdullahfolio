@@ -432,12 +432,26 @@ It **counts toward `daily-warmup`'s `allOk` verdict, but only once it is
 configured** — the revisit the previous note asked for, now done.
 
 The step answers 503 with a `skipped` reason whenever `GSC_SERVICE_ACCOUNT_KEY`
-is unset, which is the correct state until verification is done by hand, and
+is **unset**, which is the correct state until verification is done by hand, and
 alarming nightly about an unconfigured step trains whoever reads the alerts to
 ignore them. So that exact answer — **503 with a `skipped` field** — is the one
 thing `daily-warmup` forgives, and it marks the step `notConfigured: true` in
 the response so a run that is green *because a step opted out* is not mistaken
 for one where everything worked.
+
+**Unset and unusable are different answers.** A variable that is *set* but does
+not decode — a truncated paste, a re-encoded value, the wrong JSON swapped in
+during a rotation — or that decodes to an object without `client_email` and
+`private_key`, answers **500 with an `error`** and no `skipped` field, so the
+run fails. It reads as a server-configuration fault rather than a 502 because
+nothing upstream was reached, and it will not fix itself on tomorrow's retry.
+This distinction is load-bearing: both cases used to return the same `null`
+internally, so a broken credential claimed to be an opt-out, `daily-warmup`
+honoured that claim, and the cron stayed green while the report stopped
+arriving — the blind spot the verdict fix closed, re-entered through the
+credential reader. Pinned by `tests/unit/seoReportCredentials.test.js`, whose
+cases assert the answer is one `daily-warmup` will *count*, not merely that the
+status changed.
 
 Everything else counts. With the credential in place, an expired key, revoked
 property access, a Search Console outage and an Upstash failure all answer 502,
@@ -617,9 +631,22 @@ If the fixture test fails, see §4's landmine before doing anything else.
 ### Weekly
 
 - Read the latest `/api/seo-report` output (or `seo:gsc:latest` in Upstash).
-  Act on `lowCtrPages` first — the page already ranks, so only the snippet is
-  failing, and the snippet is entirely within our control. If the findings come
-  back near-empty, check `rerun` before concluding anything (§9).
+  Act on `lowCtrPages` first: the page already ranks, so the position is not the
+  problem — what the result *says* is.
+
+  **Look at the live result before rewriting anything.** Google composes the
+  snippet itself and frequently ignores `<meta name="description">` in favour of
+  a passage from the page, chosen per query; it rewrites title links too, though
+  less often. So the description is an input Google may take, not the text we
+  publish. Search the query the page ranks for, read what is actually displayed,
+  and then fix whichever input it came from — the description if Google is using
+  it, the on-page copy if it is not. Re-check after the page is next crawled
+  rather than expecting the change to land immediately, and treat a rewritten
+  snippet as information: it usually means Google judged the description a worse
+  answer to that query than the body copy.
+
+  If the findings come back near-empty, check `rerun` before concluding anything
+  (§9).
 - Check `droppedPositions` for regressions while they are still cheap.
 
 ### Monthly

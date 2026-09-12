@@ -18,21 +18,34 @@ import { ORIGIN } from './site';
 /**
  * Absolute URL for a site-relative path.
  *
- * Idempotent on absolute inputs: an already-absolute URL is returned
- * unchanged, so a caller that has a full URL in hand cannot accidentally
+ * Idempotent on SCHEME-BEARING inputs: a URL that names its own scheme is
+ * returned unchanged, so a caller holding a full URL cannot accidentally
  * produce `https://ma.codes/https://ma.codes/x`.
  *
- * @param {string} path Site-relative path (`/about`) or an absolute URL.
+ * A protocol-relative input (`//about`) is deliberately NOT in that category,
+ * though it reads like one. It names no scheme and no origin of its own — a
+ * browser resolves it against the current page's scheme and treats the first
+ * segment as a HOST, so `//about` becomes `https://about/`. Returning it
+ * untouched emitted a canonical pointing at a host this site does not own,
+ * which is precisely the failure the normalisation below exists to prevent and
+ * the header comment above says cannot happen. It falls through.
+ *
+ * @param {string} path Site-relative path (`/about`) or a scheme-bearing URL.
  * @returns {string} Absolute URL with no trailing slash (bare origin for `/`).
  */
 export function absoluteUrl(path = '/') {
   if (typeof path !== 'string' || path === '') return ORIGIN;
-  // Already absolute (or protocol-relative) — hand it back untouched.
-  if (/^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')) return path;
+  // A declared scheme (`https:`, `mailto:`, `tel:`) means the caller already
+  // holds a complete reference. The pattern requires the scheme at position 0,
+  // so a path that merely CONTAINS a colon (`/projects/a:b`) is not mistaken
+  // for one and is still normalised.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
 
   // Collapse any run of leading slashes to exactly one, so `//about` — which a
   // browser reads as a protocol-relative URL to the host `about` — cannot
-  // survive into a canonical.
+  // survive into a canonical. Reachable for those inputs only because the guard
+  // above no longer returns them early; whatever arrives here leaves with
+  // ORIGIN in front of it, which is what pins the host.
   const withLeadingSlash = `/${path.replace(/^\/+/, '')}`;
 
   // Strip a trailing slash, but never reduce the root to the empty string.

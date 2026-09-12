@@ -8,6 +8,8 @@ import {
   vi,
 } from 'vitest';
 
+import { freshCronSecret } from '../helpers/secrets.js';
+
 // ── The verdict is the whole product of this route ──────────────────────────
 // /api/daily-warmup fans out to three steps and returns one status code, and
 // that code is the ONLY thing platform cron monitoring looks at. A wrong
@@ -25,7 +27,8 @@ import {
 // counted the moment it is not, and erring toward counted whenever the answer
 // is ambiguous.
 
-const CRON_SECRET = 'test-cron-secret';
+// Generated per run, never written down: see tests/helpers/secrets.js.
+const CRON_SECRET = freshCronSecret();
 const ENDPOINT = 'http://localhost/api/daily-warmup';
 
 /** A `callInternal`-shaped fetch response. */
