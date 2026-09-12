@@ -210,6 +210,41 @@ describe('deriveFindings — ranking regressions', () => {
 });
 
 describe('deriveFindings — low-CTR pages', () => {
+  it('does not filter on rank, and says so by carrying `position`', () => {
+    // The list is candidates to investigate, NOT "pages that rank well but are
+    // not clicked". A page at average position 40 qualifies exactly like one at
+    // position 3, because below the first page a result collects few clicks
+    // however good its snippet is — so a poor position is on its own a
+    // sufficient explanation for the low CTR.
+    //
+    // Both halves are pinned deliberately. The deep page must be INCLUDED
+    // (adding a position threshold here would silently drop pages from the
+    // report, and the runbook's triage would stop matching the data), and every
+    // row must carry `position`, because ruling rank out is the first step the
+    // runbook asks for and it can only be done from this field.
+    const { lowCtrPages } = deriveFindings(
+      snapshot({
+        pages: [
+          page('/ranks-well', { impressions: 900, ctr: 0.004, position: 3.1 }),
+          page('/buried', { impressions: 500, ctr: 0.004, position: 41.8 }),
+        ],
+      }),
+      null,
+    );
+
+    expect(lowCtrPages.map((row) => row.page)).toEqual([
+      '/ranks-well',
+      '/buried',
+    ]);
+    for (const row of lowCtrPages) {
+      expect(
+        typeof row.position,
+        'position must survive into every row — the runbook triages on it',
+      ).toBe('number');
+    }
+    expect(lowCtrPages[1].position).toBe(41.8);
+  });
+
   it('includes a page at exactly 50 impressions and excludes one at 49', () => {
     // `impressions >= 50`, inclusive. Below the floor a percentage is noise: at
     // 49 impressions a single click moves CTR by two points.

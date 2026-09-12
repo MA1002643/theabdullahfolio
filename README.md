@@ -284,7 +284,7 @@ theabdullahfolio/
 | `/api/location` | Live-location signal for the footer — `POST` ingests a GPS fix (dual-token auth), `GET` returns `{ town, tz, live }` only (never coordinates) |
 | `/api/spotify` | Now Playing data for the floating widget — server-side refresh-token exchange → display-only fields (never a token); edge-cached, fails soft to `{ isPlaying: false }`. A cached access token that Spotify rejects (`401`) is refreshed and the read replayed once, so a token revoked mid-life can't wedge the widget until its KV entry expires; upstream failures are logged with the endpoint and status behind the `502` |
 | `/api/spotify/auth` | **Dev-only**, loopback-gated one-time helper that mints the Spotify refresh token — hard-`404`s in production/preview |
-| `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
+| `/api/experience-summary` | GitHub repos + `journeyData` → years-in-the-craft + Personal/Employment split |
 | `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
 | `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]`, `/journey`, `/uses` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead. The 404 deliberately declares neither — metadata merges shallowly, so any `openGraph` block of its own would replace the root layout's and drop this pair, and inheriting it whole is what lets a dead link still unfurl as the brand card |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
@@ -731,19 +731,25 @@ Or connect the GitHub repository to [vercel.com](https://vercel.com) for automat
 
 > **Required:** Set all environment variables in the Vercel dashboard under **Settings → Environment Variables** before your first production deploy.
 
-### Function bundling notes — `/api/experience-summary`
+### `/api/experience-summary` — where employment comes from
 
-The Experience Summary route parses the résumé PDF (`public/Muhammad_Abdullah_CV.pdf`) with `pdf-parse` / `pdfjs-dist`. It runs fine locally, but three Vercel-specific bundling gotchas must stay handled — otherwise the deployed function silently returns `employment: null` and the Years-in-the-Craft / Career Snapshot panels render `0+ months`.
+Employment is derived from **`journeyData`** (`src/app/data.js`), the same array `/journey` renders, via `src/utils/experience/journeyEmployment.js`. One source feeds both pages, so they cannot state different histories for the same job.
+
+The headline is a **union of the role intervals, not a sum**: the roles overlap (Lidl GB spans SEP 2021 – APR 2025, straddling the Unisys placement), and adding durations would claim more months of employment than have actually elapsed. Per-role durations are still reported for the breakdown modal's bars, which is why those bars can total more than the headline — that is what concurrent employment looks like, not an arithmetic error. Months are exclusive of the end month (`monthsBetween`), matching the personal-projects span drawn beside it; `/journey`'s per-card tenure readout uses the **inclusive** count instead, because that is the convention a CV prints.
 
 <details>
-<summary><strong>The three bundling gotchas &amp; how they're solved</strong></summary>
+<summary><strong>It used to parse the CV PDF at runtime — why that ended, and what to restore if it returns</strong></summary>
 <br />
 
-1. **Static asset under `public/`** — Vercel ships `public/` to the static layer, *not* the function filesystem. `next.config.mjs` lists the PDF in `experimental.outputFileTracingIncludes["/api/experience-summary"]` so `@vercel/nft` copies it into the bundle; the route reads it via `process.cwd()`-relative `fs.readFile`.
-2. **`pdfjs-dist` fake worker** — `pdfjs-dist` dynamically imports its worker bundle at runtime, which `@vercel/nft` can't statically trace (→ `Cannot find module …/pdf.worker.mjs`). `pdf-parse` v2 loads the **legacy** build, so `outputFileTracingIncludes` also traces `pdfjs-dist/legacy/build/pdf.worker.mjs` + `.min.mjs`.
-3. **Pure-JS `DOMMatrix` polyfill** — `pdfjs-dist` would otherwise `require("@napi-rs/canvas")`, whose native `.node` binary can't be traced (→ "DOMMatrix is not defined"). Instead the parser installs a **pure-JS `DOMMatrix`** on `globalThis` before `pdfjs` loads (`src/utils/experience/domMatrixPolyfill.js`); the canvas require then fails as a harmless warning. `pdf-parse` is marked in `serverComponentsExternalPackages` so Next leaves it as a runtime `require` rather than mangling its ESM globals.
+The route read `public/Muhammad_Abdullah_CV.pdf` with `pdf-parse` / `pdfjs-dist` on every cache miss. It was replaced because the CV and `journeyData` are separate documents that drifted (Unisys read APR–JUL on one and MAY–SEP on the other), so `/about` and `/journey` disagreed with nothing to catch it — and because the CV lists only the software roles, making the figure mean "employment as presented on a CV" while sitting beside a broader total.
 
-**Health check** — a healthy deploy returns `employment: { months, display, roles }` with `pdfStatus: null`. `pdfStatus: { message: "DOMMatrix is not defined" }` means the polyfill isn't installing before `pdfjs`; `Cannot find module …/pdf.worker.mjs` means the traced worker path drifted with a `pdfjs-dist` bump — extend `outputFileTracingIncludes` and redeploy.
+Three Vercel-specific bundling gotchas were solved for that path. All were removed with it; restore them **together** if a runtime parse ever comes back, because each cost a production-only failure to find:
+
+1. **Static asset under `public/`** — Vercel ships `public/` to the static layer, *not* the function filesystem, so `fs.readFile` worked locally and failed on Vercel. Fixed by listing the PDF in `experimental.outputFileTracingIncludes["/api/experience-summary"]`.
+2. **`pdfjs-dist` fake worker** — `pdfjs-dist` dynamically imports its worker bundle at runtime, which `@vercel/nft` can't statically trace (→ `Cannot find module …/pdf.worker.mjs`). `pdf-parse` v2 loads the **legacy** build, so the trace list also needed `pdfjs-dist/legacy/build/pdf.worker.mjs` + `.min.mjs`.
+3. **Pure-JS `DOMMatrix` polyfill** — `pdfjs-dist` would otherwise `require("@napi-rs/canvas")`, whose native `.node` binary can't be traced (→ "DOMMatrix is not defined"). The parser installs a pure-JS `DOMMatrix` on `globalThis` before `pdfjs` loads (`src/utils/experience/domMatrixPolyfill.js`). `pdf-parse` was also marked in `serverComponentsExternalPackages` so Next left it as a runtime `require` rather than mangling its ESM globals.
+
+The parser and the polyfill still exist and are still exercised by the test suite: `tests/unit/pdfExperienceFixture.test.js` pins what the binary contains, and `tests/unit/cvJourneyConsistency.test.js` compares those contents against `journeyData` and fails on any disagreement that is not written down — which is what keeps the published CV and the site in step now that the site no longer reads it.
 
 </details>
 

@@ -1,29 +1,26 @@
 import crypto from "node:crypto";
-import { promises as fs } from "node:fs";
-import path from "node:path";
 
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { safeBearerEqual } from "../_utils/cronAuth";
 import { envPositiveMs } from "../_utils/env";
+import { journeyData } from "@/app/data";
 import { formatDuration, monthsBetween } from "@/utils/experience/dateMath";
-import { parseExperienceFromPdf } from "@/utils/experience/pdfExperienceParser";
+import { employmentFromJourney } from "@/utils/experience/journeyEmployment";
 
-// Node runtime required: `node:fs` for the PDF read, pdf-parse's CJS
-// build for parsing. Same pin convention as every other crypto/fs route
-// in this repo — explicit so a stray move to Edge can't silently break
-// bundling.
+// Node runtime required: `node:crypto` for the payload fingerprint. Same pin
+// convention as every other crypto route in this repo — explicit so a stray
+// move to Edge can't silently break bundling.
 export const runtime = "nodejs";
 
-// Cache the combined GitHub + PDF payload for 10 minutes. Originally
-// 24h because the inputs change monthly at most, but the modal now
-// renders a live list of owned repos (rename/create/delete) so the
-// TTL has to be short enough that those operations propagate to the
-// UI within minutes. 10 min matches /api/github-stats and keeps the
-// daily fetch volume per visitor in line with the other endpoint.
-// PDF parse is still cheap relative to the GraphQL fan-out, so the
-// shorter TTL doesn't meaningfully increase server cost.
+// Cache the payload for 10 minutes. Originally 24h because the inputs change
+// monthly at most, but the modal now renders a live list of owned repos
+// (rename/create/delete) so the TTL has to be short enough that those
+// operations propagate to the UI within minutes. 10 min matches
+// /api/github-stats and keeps the daily fetch volume per visitor in line with
+// the other endpoint. The GraphQL fan-out is now the only cost behind a miss —
+// the employment half is a derivation over a static import.
 const EXPERIENCE_REVALIDATE_SECONDS = 10 * 60;
 const EXPERIENCE_CACHE_TAG = "experience-summary";
 
@@ -36,7 +33,7 @@ const MAX_OWNED_REPO_PAGES = 10;
 // Edge / CDN cache window. Mirrors the github-stats route's headers so
 // the about page can request both endpoints on mount and have them
 // share TTL semantics. `stale-if-error` gives a full day of grace if
-// the upstream chain (GitHub + PDF parse) starts failing.
+// GitHub starts failing.
 const RESPONSE_CACHE_HEADERS = {
   "Cache-Control":
     "public, s-maxage=600, stale-while-revalidate=300, stale-if-error=86400",
@@ -71,109 +68,20 @@ const ALLOWED_USERNAME = (
   process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643"
 ).toLowerCase();
 
-// Resolve `public/<file>` to a path the function can read at runtime.
-// On Vercel, `public/` is bundled into the deployment under the
-// project root *when* `outputFileTracingIncludes` lists the file in
-// `next.config.mjs`. `process.cwd()` is normally the right anchor —
-// but on some deployment shapes Next stages traced files under a
-// nested directory and `process.cwd()` doesn't always point at it,
-// so we try a handful of candidate paths in order and surface the
-// one that worked (or the full failure list) in production logs.
-const RESUME_PDF_FILENAME = "Muhammad_Abdullah_CV.pdf";
-const RESUME_PDF_CANDIDATES = [
-  // 1. Standard: <function-root>/public/<file>. Works locally and on
-  //    Vercel when outputFileTracingIncludes has staged the file at
-  //    the expected location.
-  path.join(process.cwd(), "public", RESUME_PDF_FILENAME),
-  // 2. Some Next/Vercel builds end up with cwd one level up from the
-  //    traced project root; try the project subdirectory.
-  path.join(process.cwd(), "theabdullahfolio", "public", RESUME_PDF_FILENAME),
-  // 3. Bare filename in cwd — last-resort if Vercel places traced
-  //    assets flat in the function root rather than under `public/`.
-  path.join(process.cwd(), RESUME_PDF_FILENAME),
-];
-
-// Read the resume PDF by walking the candidate list in order. Logs
-// `process.cwd()` and every probed path on first call so production
-// logs make it obvious which path was used (or which were attempted)
-// when the bundle layout differs from the local one. The error thrown
-// on total failure carries the full attempt list so the caller can
-// surface it in the response payload for remote diagnosis without
-// needing Vercel CLI access.
-async function readResumePdfBuffer() {
-  const attempts = [];
-  for (const candidate of RESUME_PDF_CANDIDATES) {
-    try {
-      const buf = await fs.readFile(candidate);
-      console.log(
-        `experience-summary: resume PDF found at "${candidate}" (${buf.length} bytes, cwd=${process.cwd()})`,
-      );
-      return buf;
-    } catch (err) {
-      attempts.push(`${candidate} -> ${err?.code ?? err?.message ?? "unknown"}`);
-    }
-  }
-  // Detailed cwd + attempts go on properties, NOT in the public message
-  // string — see the diagnostic gating below for why. The server-side
-  // console.warn in buildExperienceSummary picks them up via those props.
-  const error = new Error("Resume PDF not readable");
-  error.code = "RESUME_PDF_NOT_FOUND";
-  error.attempts = attempts;
-  throw error;
-}
-
-// Wall-clock cap on the PDF read + parse path. pdfjs-dist's first
-// initialization on a cold function instance can be slow (a few
-// hundred ms easily), and parse work on top of it. Without a cap, a
-// pathological slow parse could push the function past its platform
-// timeout and fail the whole request — taking the GitHub side down
-// with it. 4 s is generous against observed local timings.
-const PDF_PARSE_TIMEOUT_MS = envPositiveMs(
-  process.env.PDF_PARSE_TIMEOUT_MS,
-  4000,
-);
-
-// Read the resume PDF and parse it, bounded by PDF_PARSE_TIMEOUT_MS.
-// The timeout side of the race rejects with code "PDF_PARSE_TIMEOUT"
-// so the caller's diagnostic code can distinguish "file missing" from
-// "parse took too long".
+// Employment used to come from a runtime parse of the CV PDF, which is why
+// this file once carried a candidate-path walk, a pdfjs parse, and a 4 s
+// timeout wrapped around them. It is now derived from `journeyData` — the same
+// array /journey renders — by `employmentFromJourney`, which documents the
+// reasoning: one source for both pages, and a UNION of overlapping roles
+// rather than a sum. All three PDF helpers went with it. They existed only to
+// feed this figure, and keeping them would have paid a pdfjs cold start on
+// every cache miss for a value nothing reads.
 //
-// The timer handle is cleared in `finally` once the race settles — same
-// discipline as the sibling `/api/github-stats` route's
-// AbortController + setTimeout pattern. Without it, on the common path
-// where the parse wins the `setTimeout` stays pending for the full
-// PDF_PARSE_TIMEOUT_MS, keeping the serverless instance's event loop
-// alive (or delaying freeze) for up to 4 s after every successful
-// request. `Promise.race` doesn't cancel the loser, so clearing the
-// timer is the only thing that stops the dangling timer.
-async function readAndParseResumeWithTimeout() {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(
-      () =>
-        reject(
-          Object.assign(
-            new Error(
-              `Resume PDF parse exceeded ${PDF_PARSE_TIMEOUT_MS}ms budget`,
-            ),
-            { code: "PDF_PARSE_TIMEOUT" },
-          ),
-        ),
-      PDF_PARSE_TIMEOUT_MS,
-    );
-  });
-  try {
-    return await Promise.race([
-      (async () => {
-        const buf = await readResumePdfBuffer();
-        return parseExperienceFromPdf(buf);
-      })(),
-      timeout,
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
+// The CV has not stopped mattering — it is a deliberately-indexed public
+// document (#32 W1b). It is just checked in the right place now:
+// tests/unit/cvJourneyConsistency.test.js parses it at test time and fails if
+// it disagrees with this array, so the document cannot drift away from the
+// site without CI saying so.
 
 // Stable JSON serializer: sorts object keys recursively so two
 // structurally equal payloads always hash to the same digest. Arrays
@@ -197,17 +105,10 @@ function stableStringify(value) {
 // (time-based, would change every call) and `changeFingerprint` itself
 // (would otherwise depend on its own output).
 function buildFingerprint(payload) {
-  // `pdfStatus` and `_pdfDiagnosticInternal` are excluded too —
-  // they're diagnostic noise, and including them would let a
-  // flapping PDF error flip the fingerprint on every poll and
-  // trigger the client's change banner spuriously.
-  const {
-    generatedAt,
-    changeFingerprint,
-    pdfStatus,
-    _pdfDiagnosticInternal,
-    ...content
-  } = payload;
+  // `pdfStatus` / `_pdfDiagnosticInternal` were excluded here too, so a
+  // flapping PDF error could not flip the fingerprint on every poll and trip
+  // the client's change banner spuriously. Neither field exists any more.
+  const { generatedAt, changeFingerprint, ...content } = payload;
   const hex = crypto
     .createHash("sha256")
     .update(stableStringify(content))
@@ -351,23 +252,14 @@ async function fetchOwnedRepos(username) {
   return repos;
 }
 
-// Per-side error tolerance: if GitHub fails we still return employment;
-// if the PDF fails we still return personal projects. Only when both
-// fail do we surface a 500 to the caller. Each side logs its own
-// failure so on-call doesn't have to correlate timestamps.
+// GitHub is now the ONLY fallible source. Employment comes from a static
+// import, so the two-sided error tolerance this function used to carry —
+// either source may fail, only a double failure is a 500 — collapsed to one
+// side. There is no longer a failure mode that empties the employment half.
 async function buildExperienceSummary(username) {
   const now = new Date();
 
-  // Run both fetches in parallel — they're independent and each has
-  // its own timeout, so the slower one bounds wall-clock. PDF side is
-  // routed through `readAndParseResumeWithTimeout` so a slow pdfjs
-  // init or a missing file produces a typed error (code
-  // RESUME_PDF_NOT_FOUND / PDF_PARSE_TIMEOUT) instead of hanging the
-  // function past its platform timeout and dropping the GitHub side.
-  const [githubResult, pdfResult] = await Promise.allSettled([
-    fetchOwnedRepos(username),
-    readAndParseResumeWithTimeout(),
-  ]);
+  const [githubResult] = await Promise.allSettled([fetchOwnedRepos(username)]);
 
   // `personalProjects` is reserved as `null` for exactly one meaning: the
   // GitHub source FAILED (rejected). A successful response with an empty
@@ -410,50 +302,21 @@ async function buildExperienceSummary(username) {
     );
   }
 
-  let employment = null;
-  // Split the PDF failure into two shapes:
-  //   - `pdfStatus`: safe to expose publicly. Just the short error
-  //     message and a coarse code like "RESUME_PDF_NOT_FOUND" /
-  //     "PDF_PARSE_TIMEOUT". Carries enough signal to know which
-  //     failure mode we hit without leaking the filesystem layout.
-  //   - `pdfDiagnosticInternal`: full detail including cwd and the
-  //     per-candidate attempt list. Logged to console.warn (visible
-  //     in Vercel logs) and only echoed back to the caller when the
-  //     request presents a bearer matching CRON_SECRET — same secret
-  //     the cron / repo-refresh use, so the deployment owner can
-  //     remotely diagnose without Vercel CLI but no public visitor
-  //     ever sees the paths.
-  let pdfStatus = null;
-  let pdfDiagnosticInternal = null;
-  if (pdfResult.status === "fulfilled") {
-    const roles = pdfResult.value?.roles ?? [];
-    const months = roles.reduce((sum, r) => sum + r.months, 0);
-    employment = {
-      months,
-      display: formatDuration(months),
-      roles,
-    };
-  } else {
-    const reason = pdfResult.reason;
-    pdfStatus = {
-      message: reason?.message ?? String(reason),
-      code: reason?.code ?? null,
-    };
-    pdfDiagnosticInternal = {
-      ...pdfStatus,
-      attempts: reason?.attempts ?? null,
-      cwd: process.cwd(),
-    };
-    console.warn(
-      "experience-summary: resume PDF parse failed:",
-      pdfDiagnosticInternal,
-    );
-  }
+  // A pure derivation over a static import, so unlike the GitHub side it
+  // cannot fail and `employment` is never null. The client's "Unavailable"
+  // branch keys off null and is now unreachable for this half — left in place
+  // deliberately rather than deleted, since it costs nothing and is the
+  // correct rendering if this ever becomes fallible again.
+  //
+  // `now` is threaded in rather than read inside, so the employment span and
+  // the personal-projects span are measured against the SAME instant and the
+  // two halves of the bar cannot straddle a month boundary and disagree.
+  const employment = employmentFromJourney(journeyData, now);
 
-  if (!personalProjects && !employment) {
-    // Both sides failed — let the caller serve an error rather than
-    // synthesise a misleading "0 months" total.
-    throw new Error("Both GitHub and PDF sources failed");
+  if (!personalProjects) {
+    // The only remaining total failure. This used to require BOTH sources to
+    // fail; with employment derived locally, GitHub is the whole risk.
+    throw new Error("GitHub source failed");
   }
 
   const totalMonths =
@@ -467,21 +330,11 @@ async function buildExperienceSummary(username) {
       months: totalMonths,
       display: formatDuration(totalMonths),
     },
-    // Public-safe PDF failure signal. Just `{ message, code }` — no
-    // filesystem paths, no cwd. Knowing which failure mode hit
-    // ("RESUME_PDF_NOT_FOUND" vs "PDF_PARSE_TIMEOUT") is enough for a
-    // visitor to interpret the empty employment side without exposing
-    // server runtime layout. Excluded from `changeFingerprint` so a
-    // flapping error can't churn the fingerprint and trip the client
-    // banner.
-    pdfStatus,
-    // Full diagnostic (cwd + per-candidate attempts). Held in the
-    // cached payload so an authenticated caller can read it
-    // consistently, BUT stripped out of the response for any caller
-    // without the CRON_SECRET bearer (see GET handler below). Leading
-    // underscore is the convention for "do not expose without
-    // gating" in this file.
-    _pdfDiagnosticInternal: pdfDiagnosticInternal,
+    // `pdfStatus` and `_pdfDiagnosticInternal` used to sit here, carrying the
+    // PDF read/parse failure: a publicly-safe `{ message, code }` and a
+    // CRON_SECRET-gated detail with cwd and the probed paths. Both went with
+    // the PDF read itself — there is no longer a filesystem access on this
+    // path to diagnose.
   };
   payload.changeFingerprint = buildFingerprint(payload);
   return payload;
@@ -519,14 +372,23 @@ export async function GET(request) {
 
   try {
     const data = await getCachedExperienceSummary(ALLOWED_USERNAME);
-    // Internal-only diagnostic field. Allow it through to the response
-    // ONLY when the caller presents a bearer matching CRON_SECRET (the
-    // same secret already used by `/api/repo-refresh`). Anyone else
-    // gets the field stripped. The response is also marked `no-store`
-    // in the authenticated branch so the CDN never caches an
-    // internal-detail payload and hands it to a later anonymous
-    // visitor.
-    const { _pdfDiagnosticInternal, ...publicData } = data;
+    // Internal-only fields reach the response ONLY when the caller presents a
+    // bearer matching CRON_SECRET (the same secret `/api/repo-refresh` uses).
+    // Anyone else gets them stripped, and the authenticated branch is
+    // `no-store` so the CDN never caches an internal-detail payload and hands
+    // it to a later anonymous visitor.
+    //
+    // There are none today — `_pdfDiagnosticInternal` went with the PDF read
+    // it described. The gate is kept: it is the seam any future internal field
+    // slots into, and removing a security control for tidiness is a bad trade.
+    // It now strips every `_`-prefixed key rather than one named field, so a
+    // field added later is gated by default instead of by remembering to.
+    const publicData = Object.fromEntries(
+      Object.entries(data).filter(([key]) => !key.startsWith("_")),
+    );
+    const internalOnly = Object.fromEntries(
+      Object.entries(data).filter(([key]) => key.startsWith("_")),
+    );
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = request.headers.get("authorization");
     const isAuthorizedDebug =
@@ -534,7 +396,7 @@ export async function GET(request) {
 
     if (isAuthorizedDebug) {
       return NextResponse.json(
-        { ...publicData, _pdfDiagnosticInternal },
+        { ...publicData, ...internalOnly },
         { headers: { "Cache-Control": "no-store" } },
       );
     }

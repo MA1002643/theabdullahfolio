@@ -175,15 +175,39 @@ function readCredentials() {
   // secret, an empty `{}`, a non-object) was the quietest failure of the three.
   // Optional chaining because `JSON.parse` happily yields a number, a string or
   // null, none of which have fields to read.
-  const missing = ['client_email', 'private_key'].filter(
-    (field) => !parsed?.[field],
+  //
+  // TYPE, not just presence. A truthiness test (`!parsed?.[field]`) passes any
+  // non-empty value, so `{"client_email": 42, "private_key": {}}` reached
+  // `getAccessToken`, where `crypto.createSign().sign()` threw on the non-string
+  // key — and that throw is caught by the handler's outer catch, which answers
+  // 502. The run still failed, so nothing was silently green, but it failed as
+  // "Search Console query failed" with a Node type error attached, pointing an
+  // operator at an upstream outage when the actual fault was the value in their
+  // own environment. A whitespace-only string did the same thing one layer
+  // deeper, surfacing as an OpenSSL `DECODER routines::unsupported`.
+  //
+  // What this deliberately does NOT check: whether a non-empty `private_key`
+  // string is actually a usable key. A garbage string still reaches the sign
+  // and still comes back 502. Telling "not a key" from "a key Google rejected"
+  // needs an attempted sign, and a cheap PEM-header sniff would only catch the
+  // blatant case while risking a false rejection of a legitimate key format.
+  // Type and emptiness are the parts that can be decided here with certainty.
+  const unusable = ['client_email', 'private_key'].filter(
+    (field) =>
+      typeof parsed?.[field] !== 'string' || parsed[field].trim() === '',
   );
-  if (missing.length > 0) {
+  if (unusable.length > 0) {
     return {
       state: 'invalid',
-      // The schema, not the secret: which FIELD is absent is what makes this
-      // actionable, and it says nothing about what the value contains.
-      reason: `GSC_SERVICE_ACCOUNT_KEY decoded but is missing ${missing.join(' and ')}`,
+      // The schema, not the secret: WHICH field is unusable is what makes this
+      // actionable, and it says nothing about what the value contains. Not
+      // worded as "missing", because an absent field and a field holding the
+      // wrong type are both caught here and only one of them is missing.
+      reason:
+        `GSC_SERVICE_ACCOUNT_KEY decoded but ${unusable.join(' and ')} ` +
+        (unusable.length === 1
+          ? 'must be a non-empty string'
+          : 'must each be non-empty strings'),
     };
   }
 
@@ -341,18 +365,27 @@ export function deriveFindings(current, previous) {
     .filter(Boolean)
     .sort((a, b) => b.delta - a.delta);
 
-  // Pages earning impressions that nobody clicks. Usually the cheapest win
-  // available: the page already ranks, so the position is not the problem —
-  // what the result says is.
+  // Pages earning impressions that nobody clicks. A list of candidates to
+  // INVESTIGATE — deliberately not a diagnosis, and the two caveats are worth
+  // stating where the list is built rather than only in the runbook.
   //
-  // Cheap, NOT free, and the difference is worth stating where the list is
-  // built. Google composes the snippet itself and often ignores
-  // `<meta name="description">` in favour of a passage it picks from the page,
-  // per query; title links get rewritten too. The description is an input it
-  // may take, not the text we publish. So this list names pages worth LOOKING
-  // at — read the live result first, then fix whichever input it was drawn
-  // from. The contract test (tests/unit/metadataContract.test.js) pins what we
-  // send, which is the half we do control.
+  // 1. This filter says NOTHING about rank. A page at average position 40
+  //    qualifies exactly like one at position 3, and below the first page a
+  //    result collects few clicks however good its snippet is — so a poor
+  //    position is on its own a sufficient explanation for low CTR. `position`
+  //    is carried on every row below precisely so the reader can rule that out
+  //    first; a low-CTR row is only a snippet story once the page ranks well.
+  //    (Deliberately NOT filtered on here: a position threshold would silently
+  //    drop pages from the report, and the honest split depends on the query,
+  //    since an average conceals a page sitting at 4 for one term and 30 for a
+  //    long tail.)
+  // 2. Even then the snippet is not ours to set. Google composes it, often
+  //    ignoring `<meta name="description">` in favour of a passage it picks
+  //    from the page, per query; title links get rewritten too. The description
+  //    is an input it may take, not the text we publish, so the move is to read
+  //    the live result and then fix whichever input it was drawn from. The
+  //    contract test (tests/unit/metadataContract.test.js) pins what we send,
+  //    which is the half we do control.
   const lowCtrPages = current.pages
     .filter((row) => row.impressions >= 50 && row.ctr < 0.01)
     .map((row) => ({

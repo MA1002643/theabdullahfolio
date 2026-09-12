@@ -4,33 +4,45 @@ import path from 'node:path';
 import { parseExperienceFromPdf } from '@/utils/experience/pdfExperienceParser';
 
 // ── The guard that had to exist BEFORE the CV PDF was touched ───────────────
-// Issue #32, W1b + risk §10.3. This is the highest-value test in the
-// discoverability work and the least obviously related to it, so the reason is
-// worth stating in full.
+// Issue #32, W1b + risk §10.3.
 //
-// /api/experience-summary parses `public/Muhammad_Abdullah_CV.pdf` AT RUNTIME
-// through `parseExperienceFromPdf` to derive the employment figure on /about.
-// W1b sets the PDF's `/Title` and `/Author` so Google names the search result
-// properly instead of falling back to the filename — which means rewriting the
-// binary.
+// HISTORY, because it explains the shape of this file: /api/experience-summary
+// used to parse `public/Muhammad_Abdullah_CV.pdf` AT RUNTIME through
+// `parseExperienceFromPdf` to derive the employment figure on /about, and W1b
+// had to rewrite that binary to set its `/Title` and `/Author` so Google names
+// the search result properly instead of falling back to the filename. A
+// rewritten PDF can reflow its text layer, the parser's regexes stop matching,
+// `roles` comes back EMPTY, and /about renders "Employment 0%" — no exception,
+// no log line, HTTP 200, because an empty parse is indistinguishable from a CV
+// with no jobs on it. The parser was guarded by NO test, so that would have
+// shipped silently.
 //
-// The failure mode that makes this dangerous: a rewritten PDF can reflow its
-// text layer, the two regexes in the parser stop matching, `roles` comes back
-// EMPTY, and /about renders "Employment 0%". No exception is thrown, no log
-// line appears, and the route answers 200 — because an empty result is
-// indistinguishable from a successful parse of a CV with no jobs on it. The
-// parser was guarded by NO test at all, so this would have shipped silently and
-// been noticed, if at all, weeks later.
+// THAT RUNTIME DEPENDENCY IS GONE. /about now derives employment from
+// `journeyData` (src/utils/experience/journeyEmployment.js), so a parser
+// regression can no longer empty a page. This file did not become pointless
+// when that changed — it changed job:
+//
+//   · The CV is a deliberately-indexed public document (W1b gave it a `/Title`
+//     and a sitemap entry), so what it CONTAINS still matters to a recruiter
+//     who opens it, and this is the only thing that reads it.
+//   · tests/unit/cvJourneyConsistency.test.js compares those contents against
+//     `journeyData` and fails when the two documents disagree. It can only do
+//     that while the parser still works, which is what this file pins.
+//
+// So the assertions below are unchanged and still meaningful: they are now a
+// statement about the DOCUMENT rather than about a live page.
 //
 // The numbers below were measured against the pre-change binary. They are
 // pinned deliberately rather than asserted loosely (`roles.length > 0`): a
 // loose assertion passes when the parser finds ONE role out of two, which is
 // exactly the partial-match failure a text reflow produces.
 //
-// IF THIS TEST FAILS after a CV update, the PDF is the thing that changed and
-// /about's Employment figure is the thing that broke. Do not relax the
-// assertions to make it pass — either restore the layout the parser reads, or
-// update the parser and re-pin these values ON PURPOSE.
+// IF THIS TEST FAILS after a CV update, the PDF is the thing that changed. Do
+// not relax the assertions to make it pass — either restore the layout the
+// parser reads, or update the parser and re-pin these values ON PURPOSE. If
+// the new CV genuinely states different dates, that is a real edit to the
+// record: re-pin here AND reconcile `journeyData`, or
+// cvJourneyConsistency.test.js will (correctly) fail next.
 
 const CV_PATH = path.join(process.cwd(), 'public', 'Muhammad_Abdullah_CV.pdf');
 
@@ -38,6 +50,16 @@ const CV_PATH = path.join(process.cwd(), 'public', 'Muhammad_Abdullah_CV.pdf');
 // `months` is derived from the date range, so pinning it also pins that the
 // range itself parsed — a reflow that merged two lines would typically still
 // yield a title and a company while producing a nonsense duration.
+//
+// These are what the BINARY says, which is not the same as what the site holds
+// to be true. The Unisys range below (APR 2023 – JUL 2024) disagrees with
+// `journeyData`, which src/app/data.js documents as the LinkedIn record and the
+// winner where the two sources conflict (MAY 2023 – SEP 2024). Pinning the CV's
+// value here is correct — this file's job is to detect the parser losing its
+// grip on the binary, so it must expect what the binary actually contains — but
+// it is NOT an endorsement of the date. The disagreement itself is enumerated,
+// with its reason, in tests/unit/cvJourneyConsistency.test.js; fix it there (by
+// correcting a source) rather than by editing the number below.
 const EXPECTED_ROLES = [
   {
     company: 'C365Cloud',

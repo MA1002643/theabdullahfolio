@@ -134,6 +134,37 @@ describe('/api/seo-report — a set but unusable credential fails the run', () =
     ['base64 of JSON null', b64('null')],
     ['base64 of a JSON number', b64('42')],
     ['base64 of a JSON array', b64('[]')],
+    // ── Present, truthy, and still unusable ──────────────────────────────
+    // A truthiness check passed all of these, so they reached
+    // `crypto.createSign().sign()`, threw a Node TypeError, and came back as
+    // the handler's generic 502 — a configuration fault reported as an
+    // upstream failure, pointing an operator at Search Console instead of at
+    // their own environment variable. The whitespace case got one layer
+    // further and surfaced as an OpenSSL `DECODER routines::unsupported`.
+    [
+      'fields of the wrong type entirely',
+      b64('{"client_email":42,"private_key":{}}'),
+    ],
+    [
+      'a private_key that is an object',
+      b64('{"client_email":"a@b.test","private_key":{"k":"v"}}'),
+    ],
+    [
+      'fields holding arrays',
+      b64('{"client_email":["a@b.test"],"private_key":["key"]}'),
+    ],
+    [
+      'fields holding booleans',
+      b64('{"client_email":true,"private_key":true}'),
+    ],
+    [
+      'whitespace-only strings, which are truthy',
+      b64('{"client_email":"  ","private_key":"\\n\\t "}'),
+    ],
+    [
+      'an empty-string private_key beside a real email',
+      b64('{"client_email":"a@b.test","private_key":""}'),
+    ],
   ];
 
   it.each(cases)('%s → 500 that daily-warmup counts', async (_label, key) => {
@@ -148,15 +179,46 @@ describe('/api/seo-report — a set but unusable credential fails the run', () =
     expect(body.error).toContain('GSC_SERVICE_ACCOUNT_KEY');
   });
 
-  it('names the missing field rather than failing anonymously', async () => {
-    // The shape is what makes this actionable — "decoded but is missing
-    // private_key" tells you the paste truncated; a bare "invalid" does not.
+  it('names the offending field rather than failing anonymously', async () => {
+    // The shape is what makes this actionable — naming `private_key` tells you
+    // the paste truncated; a bare "invalid" does not.
     const { body } = await callWithKey(b64('{"client_email":"a@b.test"}'));
     expect(body.error).toContain('private_key');
+    expect(body.error).not.toContain('client_email');
 
     const both = await callWithKey(b64('{}'));
     expect(both.body.error).toContain('client_email');
     expect(both.body.error).toContain('private_key');
+  });
+
+  it('names a wrong-typed field too, not only an absent one', async () => {
+    // The distinction the wording has to survive: `client_email` is present
+    // here, so calling it "missing" would send someone looking for a field
+    // that is right in front of them.
+    const { body } = await callWithKey(
+      b64('{"client_email":42,"private_key":"-----BEGIN PRIVATE KEY-----"}'),
+    );
+
+    expect(body.error).toContain('client_email');
+    expect(body.error).not.toMatch(/missing/i);
+    // And never the value, even a harmless-looking one.
+    expect(body.error).not.toContain('42');
+  });
+
+  it('does not leak Node or OpenSSL internals for a wrong-typed key', async () => {
+    // What the 502 path used to answer: `The "privateKey.key" property must be
+    // of type string...`, or `error:1E08010C:DECODER routines::unsupported`.
+    // Both name our own misconfiguration in the vocabulary of a crypto
+    // failure, which is what made them read as an upstream problem.
+    for (const key of [
+      b64('{"client_email":"a@b.test","private_key":{}}'),
+      b64('{"client_email":"a@b.test","private_key":"   "}'),
+    ]) {
+      const { status, body } = await callWithKey(key);
+      expect(status).toBe(500);
+      expect(body.error).not.toMatch(/privateKey|DECODER|OpenSSL|ArrayBuffer/i);
+      expect(body.error).toContain('GSC_SERVICE_ACCOUNT_KEY');
+    }
   });
 
   it('logs the reason as well as returning it', async () => {

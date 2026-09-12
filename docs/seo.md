@@ -631,8 +631,27 @@ If the fixture test fails, see §4's landmine before doing anything else.
 ### Weekly
 
 - Read the latest `/api/seo-report` output (or `seo:gsc:latest` in Upstash).
-  Act on `lowCtrPages` first: the page already ranks, so the position is not the
-  problem — what the result *says* is.
+  Act on `lowCtrPages` first — but read it as a list of pages worth
+  **investigating**, not a diagnosis.
+
+  **Check `position` before you conclude anything.** The filter is
+  `impressions >= 50 && ctr < 0.01` and says nothing about rank, so a page
+  sitting at average position 40 qualifies exactly like one at position 3. A
+  result below the first page collects few clicks almost regardless of how good
+  its snippet is, so a poor average position is itself a sufficient explanation
+  for low CTR. Each row carries `position` for this reason — use it to split the
+  list in two:
+
+  - **Ranking well and still not clicked** — the interesting case, and the one
+    the rest of this section is about.
+  - **Ranking poorly** — low CTR is the expected consequence, not a separate
+    problem. Rewriting the description here fixes nothing; the work is
+    relevance, internal links and content depth, i.e. the ranking itself.
+
+  A page can of course be both, and average position is an *average* across
+  queries and devices — a page averaging 12 may sit at 4 for the query that
+  matters and 30 for a long tail. That is another reason to look at the live
+  result rather than acting on the row alone.
 
   **Look at the live result before rewriting anything.** Google composes the
   snippet itself and frequently ignores `<meta name="description">` in favour of
