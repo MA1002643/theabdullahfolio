@@ -313,23 +313,46 @@ async function buildExperienceSummary(username) {
   // two halves of the bar cannot straddle a month boundary and disagree.
   const employment = employmentFromJourney(journeyData, now);
 
-  if (!personalProjects) {
-    // The only remaining total failure. This used to require BOTH sources to
-    // fail; with employment derived locally, GitHub is the whole risk.
-    throw new Error("GitHub source failed");
-  }
+  // GitHub is the only fallible half now, and it used to throw here — which
+  // turned a partial failure into a total one: the handler answered 500 and
+  // discarded an `employment` figure that was already computed and correct.
+  // The client renders the two halves independently and has carried an
+  // "Unavailable" branch for a null `personalProjects` all along
+  // (ExperienceBreakdownModal), so there was a good answer to give and nothing
+  // to stop us giving it.
+  //
+  // The response says it is partial rather than leaving the caller to infer it
+  // from a null field. Three things key off this flag, and each of them is a
+  // way the naive "just delete the throw" version goes wrong:
+  //   · `total` below, which must not be a number (see there);
+  //   · the response's cache headers in GET, so a transient blip is not held
+  //     at the CDN for the full ten-minute window a good answer earns;
+  //   · the client's localStorage write, which is its instant-paint source on
+  //     the NEXT visit — storing a half-answer would make a later, perfectly
+  //     healthy page load paint "Unavailable" out of storage.
+  const partial = personalProjects == null;
 
   const totalMonths =
     (personalProjects?.months ?? 0) + (employment?.months ?? 0);
 
   const payload = {
     generatedAt: now.toISOString(),
+    partial,
     personalProjects,
     employment,
-    total: {
-      months: totalMonths,
-      display: formatDuration(totalMonths),
-    },
+    // NULL when partial, deliberately, rather than the employment half alone.
+    // This exact field is what the /about years card counts up to
+    // (`experienceData?.total?.months ?? 0`), so a sum missing the personal
+    // side is not a smaller number — it is a WRONG number wearing the
+    // headline's clothes, published with no sign that anything is missing.
+    // Null lands the card on the same value it shows before the fetch
+    // resolves, which reads as "not in yet" instead of as a claim.
+    total: partial
+      ? null
+      : {
+          months: totalMonths,
+          display: formatDuration(totalMonths),
+        },
     // `pdfStatus` and `_pdfDiagnosticInternal` used to sit here, carrying the
     // PDF read/parse failure: a publicly-safe `{ message, code }` and a
     // CRON_SECRET-gated detail with cwd and the probed paths. Both went with
@@ -400,7 +423,29 @@ export async function GET(request) {
         { headers: { "Cache-Control": "no-store" } },
       );
     }
-    return NextResponse.json(publicData, { headers: RESPONSE_CACHE_HEADERS });
+    // A partial answer is not cacheable on the terms a complete one is. The
+    // normal headers would park it at the CDN for `s-maxage=600` plus five
+    // minutes of `stale-while-revalidate`, so one rate-limited GitHub call
+    // would show "Unavailable" to every visitor for a quarter of an hour after
+    // GitHub had recovered. `no-store` keeps it out of shared caches, and the
+    // next request re-attempts.
+    //
+    // It also protects the `stale-if-error=86400` below, which is doing real
+    // work today: while this route answered 500, a warm edge went on serving
+    // the last GOOD payload for up to a day. Returning 200 here makes that
+    // directive inapplicable — so a partial answer must not be storable, or it
+    // would evict a complete one that was still being served.
+    //
+    // `buildExperienceSummary` is memoised by `unstable_cache` for ten
+    // minutes, which these headers cannot reach: a partial result IS held
+    // server-side for that window, bounding GitHub retries during an outage at
+    // the cost of a slower recovery. That is the one residual, and it is the
+    // same freshness contract a good answer gets.
+    return NextResponse.json(publicData, {
+      headers: publicData.partial
+        ? { "Cache-Control": "no-store" }
+        : RESPONSE_CACHE_HEADERS,
+    });
   } catch (error) {
     console.error("experience-summary fetch failed:", error);
     return NextResponse.json(

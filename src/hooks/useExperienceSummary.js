@@ -304,6 +304,29 @@ export function useExperienceSummary(username) {
         const payload = await res.json();
         if (cancelled) return;
 
+        // A partial payload means GitHub failed and the route returned the
+        // half it could still vouch for (see the note beside `partial` in
+        // route.js). It is worth showing when there is nothing better, and it
+        // must not be allowed to displace something better.
+        //
+        // Storage is skipped because this store is the INSTANT-PAINT source
+        // above, not only the diff baseline: writing a half-answer here would
+        // make the next visit — on a perfectly healthy page load — paint
+        // "Unavailable" and a zeroed years card out of localStorage, long
+        // after GitHub recovered. Diffing is skipped for the same reason it
+        // must not be stored: the personal side vanishing and returning is not
+        // a change worth announcing, and it would report the recovery as
+        // growth.
+        //
+        // `current ?? payload` rather than a plain `setData` so an existing
+        // complete answer — from storage or an earlier poll — is kept, and the
+        // partial one is adopted only by a client that has nothing.
+        if (payload?.partial) {
+          setData((current) => current ?? payload);
+          setError(null);
+          return;
+        }
+
         // Diff against stored baseline before updating storage —
         // otherwise the comparison would always see itself and never
         // produce a message. `pickContent` strips volatile fields so

@@ -737,6 +737,8 @@ Employment is derived from **`journeyData`** (`src/app/data.js`), the same array
 
 The headline is a **union of the role intervals, not a sum**: the roles overlap (Lidl GB spans SEP 2021 – APR 2025, straddling the Unisys placement), and adding durations would claim more months of employment than have actually elapsed. Per-role durations are still reported for the breakdown modal's bars, which is why those bars can total more than the headline — that is what concurrent employment looks like, not an arithmetic error. Months are exclusive of the end month (`monthsBetween`), matching the personal-projects span drawn beside it; `/journey`'s per-card tenure readout uses the **inclusive** count instead, because that is the convention a CV prints.
 
+The union bounds the figure by elapsed time only for spans that have actually happened, so **both ends are closed on the clock**: an entry starting in the future is skipped entirely, and a finite end past today is capped to today — the same treatment an open-ended role (`end: null`) already got. The role row still shows its declared end while `months` counts only what has elapsed. Without this, adding one signed-but-not-started contract to `journeyData` took the headline from 90 months to 114 against 90 months of elapsed time, with nothing to object to: a forward-dated range is perfectly well-formed.
+
 <details>
 <summary><strong>It used to parse the CV PDF at runtime — why that ended, and what to restore if it returns</strong></summary>
 <br />

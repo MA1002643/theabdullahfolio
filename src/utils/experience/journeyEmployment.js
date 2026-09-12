@@ -31,6 +31,19 @@ import { formatDuration } from './dateMath';
 // error — someone with two concurrent roles has two durations and one span of
 // having been employed.
 //
+// ── The bound: employment cannot exceed elapsed time ────────────────────────
+// The union is what keeps the figure from growing faster than the clock, but it
+// only does so for spans that have actually happened. Both ends are therefore
+// closed on `now`: an entry starting in the future is skipped entirely, and a
+// finite end past `now` is capped to it. Without both, adding a single
+// forward-dated contract to journeyData took the headline from 90 months to 114
+// against 90 months of elapsed time — silently, since a future range is
+// perfectly well-formed and the arithmetic below had nothing to object to.
+//
+// This is a property of the DERIVATION, not of today's data, which is the point:
+// the array is edited by hand and a signed-but-not-started role is an ordinary
+// thing to record.
+//
 // Months are EXCLUSIVE of the end month, matching `monthsBetween` in
 // ./dateMath and therefore the personal-projects span this figure is drawn
 // beside in the same bar. components/journey/TimelineNode deliberately uses
@@ -96,13 +109,35 @@ export function employmentFromJourney(entries, now = new Date()) {
 
     const startIndex = toMonthIndex(entry.start);
     if (Number.isNaN(startIndex)) continue;
+
+    // A role that has not begun is not employment, and it is dropped outright
+    // rather than counted as zero — it belongs in neither the union nor the
+    // modal's list of roles held.
+    //
+    // The clamp below does NOT cover this, which is what made it worth its own
+    // branch: `Math.max(0, …)` only rules out a REVERSED range. A wholly-future
+    // entry has a perfectly well-ordered one, so every month of it was counted.
+    if (startIndex > nowIndex) continue;
+
     // `end: null` means still running — the array's own convention for an open
     // entry, which the atlas also closes on the live clock.
-    const endIndex = entry.end == null ? nowIndex : toMonthIndex(entry.end);
-    if (Number.isNaN(endIndex)) continue;
+    const declaredEnd = entry.end == null ? nowIndex : toMonthIndex(entry.end);
+    if (Number.isNaN(declaredEnd)) continue;
 
-    // A future-dated or malformed span contributes nothing rather than a
-    // negative, which would silently subtract from the union.
+    // A finite end in the future is closed on the clock for exactly the reason
+    // an open one is: this figure is employment SO FAR, and a contract signed
+    // through next year is not next year's months of history. Without this, a
+    // role running to 2027 contributed all of its remaining months the day it
+    // was added to the array.
+    //
+    // The role row keeps the DECLARED end (`entry.end`, below) while `months`
+    // counts only what has elapsed — the same split an open-ended role already
+    // had, where `end` is null and `months` still stops at today.
+    const endIndex = Math.min(declaredEnd, nowIndex);
+
+    // Still clamped: a reversed or malformed span (end before start, both in
+    // the past) contributes nothing rather than a negative, which would
+    // silently subtract from the union.
     const months = Math.max(0, endIndex - startIndex);
     spans.push([startIndex, startIndex + months]);
 

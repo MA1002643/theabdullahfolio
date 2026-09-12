@@ -28,6 +28,23 @@ const career = (org, start, end) => ({
 // Fixed clock so open-ended entries are not time-dependent.
 const NOW = new Date(Date.UTC(2026, 8, 15)); // 2026-09
 
+/**
+ * Months between the earliest role's start and `NOW` — the ceiling any honest
+ * employment figure has to sit under, since you cannot have been employed for
+ * longer than there has been time.
+ *
+ * Derived from the RETURNED roles rather than the input, so a role the
+ * derivation drops (one that has not started) does not drag the bound
+ * backwards and make the assertion easier to satisfy.
+ */
+const elapsedBound = (roles) => {
+  const starts = roles.map((role) => {
+    const [y, m] = role.start.split('-').map(Number);
+    return y * 12 + (m - 1);
+  });
+  return NOW.getUTCFullYear() * 12 + NOW.getUTCMonth() - Math.min(...starts);
+};
+
 describe('employmentFromJourney — the union', () => {
   it('adds disjoint roles', () => {
     // JAN–APR 2020 (3) + JUL–OCT 2020 (3).
@@ -111,6 +128,62 @@ describe('employmentFromJourney — the union', () => {
     expect(roles[1].months).toBe(0);
   });
 
+  it('ignores a role that has not started yet', () => {
+    // `Math.max(0, end - start)` guarded only REVERSED ranges. A wholly-future
+    // entry is perfectly well-ordered, so all six of its months were counted as
+    // employment that has not happened — and it is dropped rather than reported
+    // as zero, since a role nobody has started is not one the modal should list.
+    const { months, roles } = employmentFromJourney(
+      [career('NotYet', '2027-01', '2027-07')],
+      NOW,
+    );
+
+    expect(months).toBe(0);
+    expect(roles).toEqual([]);
+  });
+
+  it('ignores a not-yet-started role even when it is open-ended', () => {
+    // The other shape of the same thing: `end: null` closes on the clock, which
+    // for a future start yields a negative range the clamp hid as zero. Dropping
+    // it keeps "roles" meaning "roles held".
+    const { months, roles } = employmentFromJourney(
+      [career('SignedNotStarted', '2027-01', null)],
+      NOW,
+    );
+
+    expect(months).toBe(0);
+    expect(roles).toEqual([]);
+  });
+
+  it('closes a finite end in the future on the clock', () => {
+    // Started, still running, with a contracted end date. Only the elapsed part
+    // counts — 2026-01 to 2026-09 is 8 months — where the whole 17-month term
+    // used to. A role that has begun stays in the list, unlike the two above.
+    const { months, roles } = employmentFromJourney(
+      [career('Straddles', '2026-01', '2027-06')],
+      NOW,
+    );
+
+    expect(months).toBe(8);
+    expect(roles).toHaveLength(1);
+    expect(roles[0].months).toBe(8);
+    // The row keeps the DECLARED end while `months` counts only what has
+    // elapsed — the same split an open-ended role already had.
+    expect(roles[0].end).toBe('2027-06-01');
+  });
+
+  it('does not let a future role extend the union past an earlier one', () => {
+    // The union case specifically: a real past role plus a disjoint future one.
+    // Merging is by span, so the future entry used to append its whole length
+    // to the total rather than being ignored.
+    const { months } = employmentFromJourney(
+      [career('Real', '2020-01', '2020-07'), career('Later', '2030-01', '2032-01')],
+      NOW,
+    );
+
+    expect(months).toBe(6);
+  });
+
   it('returns an empty summary for junk input', () => {
     for (const input of [null, undefined, [], 'nope', 42]) {
       expect(employmentFromJourney(input, NOW)).toEqual({
@@ -182,14 +255,33 @@ describe('employmentFromJourney — against the real record', () => {
     // The sanity bound a naive sum would breach. Employment cannot exceed the
     // wall-clock time between the earliest start and now.
     const { months, roles } = employmentFromJourney(journeyData, NOW);
-    const starts = roles.map((role) => {
-      const [y, m] = role.start.split('-').map(Number);
-      return y * 12 + (m - 1);
-    });
-    const elapsed =
-      NOW.getUTCFullYear() * 12 + NOW.getUTCMonth() - Math.min(...starts);
+    const elapsed = elapsedBound(roles);
 
     expect(months).toBeLessThanOrEqual(elapsed);
+  });
+
+  it('holds that bound when a forward-dated record is added', () => {
+    // The case above passes on today's array for a reason that has nothing to
+    // do with the code: journeyData contains no future entries, so it cannot
+    // observe the defect it appears to guard. The real record sits EXACTLY on
+    // the bound (90 months against 90), which means any month wrongly counted
+    // breaches it immediately — so this feeds the one input that would.
+    //
+    // Before both ends were closed on the clock, this returned 114 against a
+    // bound of 90: the whole 24-month term of a contract nobody has started.
+    // Adding a signed-but-not-started role to the array is an ordinary edit,
+    // and the headline is rendered on /about with no review step between.
+    const future = career('FutureCo', '2028-01', '2030-01');
+    const { months, roles } = employmentFromJourney(
+      [...journeyData, future],
+      NOW,
+    );
+
+    expect(months).toBeLessThanOrEqual(elapsedBound(roles));
+
+    // And it must not merely stay under the bound — the figure should be
+    // untouched, since nothing about the past changed.
+    expect(months).toBe(employmentFromJourney(journeyData, NOW).months);
   });
 
   it('includes Unisys at the corrected span', () => {

@@ -51,15 +51,21 @@ const CV_PATH = path.join(process.cwd(), 'public', 'Muhammad_Abdullah_CV.pdf');
 // range itself parsed — a reflow that merged two lines would typically still
 // yield a title and a company while producing a nonsense duration.
 //
-// These are what the BINARY says, which is not the same as what the site holds
-// to be true. The Unisys range below (APR 2023 – JUL 2024) disagrees with
-// `journeyData`, which src/app/data.js documents as the LinkedIn record and the
-// winner where the two sources conflict (MAY 2023 – SEP 2024). Pinning the CV's
-// value here is correct — this file's job is to detect the parser losing its
-// grip on the binary, so it must expect what the binary actually contains — but
-// it is NOT an endorsement of the date. The disagreement itself is enumerated,
-// with its reason, in tests/unit/cvJourneyConsistency.test.js; fix it there (by
-// correcting a source) rather than by editing the number below.
+// These are what the BINARY says, which is a separate question from what the
+// site holds to be true — and the values must be pinned as the former even when
+// the two agree. This file's job is to detect the parser losing its grip on the
+// binary, so it has to expect what the binary actually contains; agreement with
+// `journeyData` is not the thing being asserted here, and reading it that way is
+// how the two files' jobs get merged and both get weaker.
+//
+// They do agree today. The Unisys range below (APR 2023 – JUL 2024) was once the
+// exception: `journeyData` carried MAY 2023 – SEP 2024 against it, and on
+// 2026-09-12 the owner confirmed the CV was right, so src/app/data.js was
+// corrected to match. Whether they agree is asserted in
+// tests/unit/cvJourneyConsistency.test.js, which fails on any difference that is
+// not written down — so if a future CV revision reintroduces one, fix it THERE
+// by correcting a source, rather than by editing the numbers below to make this
+// file quiet.
 const EXPECTED_ROLES = [
   {
     company: 'C365Cloud',

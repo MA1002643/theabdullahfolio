@@ -85,8 +85,31 @@ export const IDENTITY = {
 // `sources` lists the files whose last commit defines the route's
 // `lastModified` (P4). A route's own page file is never enough on its own —
 // /uses renders almost entirely out of src/lib/uses and src/components/uses,
-// so a copy change there is the real modification date.
-export const ROUTES = [
+// so a copy change there is the real modification date. Each entry below lists
+// only what is SPECIFIC to that route; `SHARED_ROUTE_SOURCES` is appended to
+// every one of them when `ROUTES` is built, immediately after the array.
+//
+// ── `src/app/data.js`, and the line drawn around it ─────────────────────────
+// The shared data module is CONTENT, not infrastructure: `projectsData`,
+// `journeyData`, `usesData` and `BtnList` are rendered into server HTML as
+// text, links and structured data. Four routes below list it because they read
+// it first-hand — `/` for the `sr-only` summary's project count and the eight
+// orbit links, `/about` for the `knowsAbout` array built from `usesData.stack`,
+// `/qualifications` for the credentials derived from `journeyData`, and `/uses`
+// because that data IS the page — alongside `/projects` and `/journey`, which
+// already did.
+//
+// `/contact`, `/my-past` and `/guestbook` deliberately DO NOT list it, though
+// their module graphs reach it. They reach it only by way of THIS file, which
+// imports `projectsData` to count builds for the `/projects` description. That
+// is the registry computing another route's copy, not these routes rendering
+// anything, and listing it would re-stamp three URLs every time a project
+// record changed — the over-stamping the note on `SHARED_ROUTE_SOURCES` below
+// is careful about.
+//
+// The rule, and it is the one the test enforces: a route lists the data module
+// when its graph reaches it by SOME PATH THAT DOES NOT PASS THROUGH THIS FILE.
+const ROUTE_DEFINITIONS = [
   {
     path: '/',
     // F5: the homepage title carried no role qualifier, so every non-branded
@@ -103,6 +126,11 @@ export const ROUTES = [
       'src/app/page.js',
       'src/app/layout.js',
       'src/components/navigation',
+      // Both server-rendered halves of the F1 fix read this file: page.js
+      // counts `projectsData` for the `sr-only` summary, and Navigation maps
+      // `BtnList` into the eight orbit links. A twelfth project or a renamed
+      // nav entry changes the homepage's HTML.
+      'src/app/data.js',
     ],
   },
   {
@@ -113,7 +141,14 @@ export const ROUTES = [
     changeFrequency: 'monthly',
     priority: 0.9,
     indexable: true,
-    sources: ['src/app/(sub pages)/about', 'src/components/about'],
+    sources: [
+      'src/app/(sub pages)/about',
+      'src/components/about',
+      // about/layout.js reads `usesData.stack` to build the `knowsAbout` array
+      // in this page's ProfilePage JSON-LD, so adding a tool to /uses changes
+      // what this page claims the person knows.
+      'src/app/data.js',
+    ],
   },
   {
     path: '/projects',
@@ -142,6 +177,10 @@ export const ROUTES = [
     sources: [
       'src/app/(sub pages)/qualifications',
       'src/components/qualifications',
+      // qualifications/layout.js derives the page's
+      // `EducationalOccupationalCredential[]` from `journeyData` — the
+      // credentials are published from this file, not from the carousel.
+      'src/app/data.js',
     ],
   },
   {
@@ -166,10 +205,47 @@ export const ROUTES = [
     changeFrequency: 'monthly',
     priority: 0.7,
     indexable: true,
+    // The longest list in the registry, and it has to be. This page's premise
+    // is that every claim on it is verified against the repository at build
+    // time, so the repository IS its content: `readBuildFacts()` opens the
+    // eight paths below and prints what it finds — the Node version off
+    // `.nvmrc`, dependency versions and counts off the manifest and lockfile,
+    // the cron schedule off `vercel.json`, the schematic's stage labels off the
+    // workflow files' own `name:` fields, and the spec/route counts off the
+    // test and API directories. Verified in the prerendered HTML, not assumed:
+    // `22.14.0`, `14.2.30`, the test-file count and all six workflow names
+    // appear verbatim in it.
+    //
+    // `src/lib/uses` covers the READER; these cover what it reads, which is the
+    // distinction the first cut of this list missed. Watching the reader alone
+    // means a dependency bump rewrites the bill of materials while `<lastmod>`
+    // insists the page is unchanged.
+    //
+    // Cost, in the same terms as the notes below: this is now the most
+    // frequently re-stamped route on the site, and some of that is coarse —
+    // editing an existing test does not change the count the page prints, but
+    // `tests/unit` is watched per directory. Taken deliberately, because a page
+    // whose subject is the state of this repository genuinely does change with
+    // the repository more often than any other, which is also why it is the one
+    // route where the reader and the read must both be listed.
     sources: [
       'src/app/(sub pages)/uses',
       'src/lib/uses',
       'src/components/uses',
+      // `usesData` is this page — the machine rows, the bench, the extensions
+      // and the stack the plates render.
+      'src/app/data.js',
+      // Everything `readBuildFacts()` opens. Pinned against the reader's own
+      // source by the `uses build facts` cases in sitemapDrift.test.js, which
+      // extract these paths from buildFacts.js rather than trusting this list.
+      'package.json',
+      'package-lock.json',
+      '.nvmrc',
+      'vercel.json',
+      '.github/workflows',
+      'tests/unit',
+      'tests/e2e',
+      'src/app/api',
     ],
   },
   {
@@ -218,6 +294,64 @@ export const ROUTES = [
     ],
   },
 ];
+
+// ── Sources every indexable URL shares ──────────────────────────────────────
+// THIS FILE is part of what every route publishes, and until 2026-09-12 no
+// `sources` list said so — which made the registry the one input that could
+// change a URL's crawl surface without moving its `<lastmod>`.
+//
+// It is not a marginal input either. Four published surfaces per route read
+// straight out of this file:
+//
+//   • `<title>` and `<meta name="description">`, via `routeFor(path)` →
+//     `sectionMetadata()` in every section route's page/layout.
+//   • The OG and Twitter card fields, restated from the same two strings.
+//   • The JSON-LD graph — `schema.js` reads `IDENTITY` and `ORIGIN` for every
+//     node's `@id`, the `Person`'s name/role/locality/email, and each page's
+//     stated description.
+//   • `/llms.txt`, which prints `route.title` and `route.description` verbatim.
+//
+// `ORIGIN` also reaches every page through `canonical.js`, so this file decides
+// the canonical URL each document declares about itself. Editing a description
+// therefore rewrites the snippet a crawler displays, the card a link unfurls to
+// and the text an assistant quotes — while the sitemap swore nothing had
+// changed. That is the same class of defect as the `/projects/[id]` source list
+// pointing at the listing directory, and it is the reason this is centralised
+// rather than pasted into nine entries: a shared list can only be forgotten
+// once, where nine copies can be forgotten nine times.
+//
+// ── The cost, stated rather than discovered later ───────────────────────────
+// `git log` resolves per FILE, not per line, so every route now shares one date
+// input: editing only `/about`'s description moves all nine routes' `<lastmod>`,
+// and editing `AI_CRAWLERS` — which changes `robots.txt` and no page at all —
+// moves all of them too.
+//
+// Accepted, for three reasons. It is the precedent already set: `src/app/data.js`
+// sits in `/projects`, `/journey` and the project pages' list, so editing one
+// project record has always re-stamped `/journey`. It is the better of the two
+// errors — a stale date tells a crawler not to bother re-reading a page whose
+// description it would now display differently, and suppressing a recrawl is
+// worse than buying one that finds little changed. And this file is almost
+// entirely crawl-surface: of what it holds, only the two crawl-policy arrays
+// can change without altering a page, and both are rare.
+//
+// The per-line alternative (`git log -L`) was not taken: it re-reads as a range
+// of lines rather than a file, so it breaks on every reformat and reorder of
+// this array, and it would trade a date that is occasionally too new for one
+// that is silently wrong after a refactor.
+export const SHARED_ROUTE_SOURCES = ['src/lib/seo/site.js'];
+
+/**
+ * The route registry, each entry's `sources` completed with the shared list.
+ *
+ * Built by `map` rather than by repeating the path in nine literals so that
+ * adding a shared input later reaches every route at once — and so that the
+ * definitions above stay readable as what they are, the per-route half.
+ */
+export const ROUTES = ROUTE_DEFINITIONS.map((route) => ({
+  ...route,
+  sources: [...route.sources, ...SHARED_ROUTE_SOURCES],
+}));
 
 // ── The CV PDF ──────────────────────────────────────────────────────────────
 // Indexable BY DECISION, not by accident (F6, owner call 2026-09-11). It is a

@@ -306,6 +306,15 @@ async function queryAnalytics(token, siteUrl, dimensions) {
         // WEB only. Discover and News are separate surfaces whose position and
         // CTR are not comparable with search, so folding them in would make
         // every derived figure below meaningless.
+        //
+        // `type`, NOT `searchType`. The reference is explicit — "searchType:
+        // Deprecated, use type instead" — because the rename is what added
+        // `discover` and `googleNews` as selectable surfaces alongside the
+        // original web/image/video/news. Sending the old name is the thing that
+        // would break this call, not the current one. Pinned by
+        // tests/unit/seoRequestContract.test.js, which fails if either the
+        // field or its value drifts.
+        // https://developers.google.com/webmaster-tools/v1/searchanalytics/query
         type: 'web',
       }),
       cache: 'no-store',

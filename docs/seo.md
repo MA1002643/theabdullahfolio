@@ -560,6 +560,65 @@ baseline makes every query look new.
 on any `page.js` that is in neither the registry nor its own `EXCLUDED` map —
 verified by adding a throwaway route and watching it go red.
 
+**`sources` must name the directories the route actually renders from**, which is
+worth checking against the route's own imports rather than reasoning from the
+name. `/projects/[id]` had been watching `src/components/projects` — the
+`/projects` LISTING directory, and the correct value for the entry directly above
+it — while the detail route renders out of the sibling
+`src/components/project-detail`. A wrong-but-real path does not fail anything: it
+produces a perfectly well-formed `<lastmod>` carrying another file's date, which
+goes stale when the route changes *and* moves when something unrelated does. Only
+the project route's list is pinned against its imports on disk (the `project
+detail sources` cases in `sitemapDrift.test.js`); for a new route, read the
+`page.js` import block.
+
+**You do not add `src/lib/seo/site.js` yourself** — `SHARED_ROUTE_SOURCES` is
+appended to every entry when `ROUTES` is built. It is there because the registry
+is itself published: a route's `title` and `description` become its `<title>`,
+meta description, OG/Twitter fields, JSON-LD description and `llms.txt` line, and
+`ORIGIN`/`IDENTITY` reach every page through `canonical.js` and `schema.js`. Until
+2026-09-12 no list named it, so editing a description changed five published
+surfaces at a URL while the sitemap swore it had not changed.
+
+**`src/app/data.js` you do add yourself, but only if the route renders from it.**
+It holds `projectsData`, `journeyData`, `usesData` and `BtnList` — content, not
+infrastructure — and six routes list it: `/`, `/projects`, `/journey`, `/about`,
+`/qualifications` and `/uses`, plus the project pages. The test to apply is not
+"can this route reach the module", because every route can: the registry imports
+`projectsData` to count builds for the `/projects` description, so `/contact`,
+`/my-past` and `/guestbook` reach it while rendering nothing from it. The rule is
+**reachable by a path that does not pass through `src/lib/seo/site.js`**, and
+`sitemapDrift.test.js` enforces it as a biconditional — a route that renders from
+the module and does not watch it fails, and so does one that watches it without
+rendering from it.
+
+Watch out for `layout.js`. Three routes (`/about`, `/qualifications`,
+`/guestbook`) have client-component pages that cannot export `metadata`, so their
+metadata and JSON-LD live in a pass-through layout — `/qualifications` reads
+`journeyData` there and publishes it as credentials. Reading only `page.js` when
+deciding `sources` misses it.
+
+**And watch out for inputs that are not imports at all.** `/uses` reads eight
+repository paths at build time through `readBuildFacts()` — `package.json`,
+`package-lock.json`, `.nvmrc`, `vercel.json`, `.github/workflows`, `tests/unit`,
+`tests/e2e`, `src/app/api` — with `fs`, not `import`, so no dependency walk can
+find them. Listing `src/lib/uses` covers the *reader*; it says nothing about what
+the reader *reads*, and that distinction is what left a dependency bump able to
+rewrite the page's bill of materials with the timestamp unmoved. If a new route
+ever derives content from a file it opens rather than imports, its `sources` need
+that file by name. The `uses build facts` cases in `sitemapDrift.test.js` pin this
+one by scraping `buildFacts.js` for path literals that exist on disk.
+
+The consequence to know about: `git log` resolves **per file**, so all nine routes
+share that one input. Editing a single route's description moves every route's
+`<lastmod>`, and so does editing `AI_CRAWLERS`, which changes only `robots.txt`.
+That is the same granularity every other entry already has — `src/app/data.js`
+sits in three lists — and it is the deliberate direction to err in, since an
+over-stamped date costs a crawl and a stale one suppresses it. If a route ever
+needs a date of its own, the fix is to move its metadata into a per-route file,
+not to reach for `git log -L`: line ranges break on the next reformat of the array
+and fail silently.
+
 ### Credentials: only what has been awarded
 
 `credentialsFromJourney` emits a `type: 'education'` entry **only once it has an

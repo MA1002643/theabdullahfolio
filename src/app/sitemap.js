@@ -30,7 +30,7 @@
 import { projectsData } from '@/app/data';
 import { absoluteUrl } from '@/lib/seo/canonical';
 import { lastModifiedFor } from '@/lib/seo/lastModified';
-import { CV_ASSET, ROUTES } from '@/lib/seo/site';
+import { CV_ASSET, ROUTES, SHARED_ROUTE_SOURCES } from '@/lib/seo/site';
 
 // Static: the registry and the project data are both build-time constants, and
 // `lastModifiedFor` shells out to git — which must happen at build, never per
@@ -41,10 +41,39 @@ export const dynamic = 'force-static';
 // than per project: all 11 are rendered by the same template from the same
 // data file, so the answer is identical for each and would otherwise cost 11
 // git spawns to learn that.
-const PROJECT_SOURCES = [
+//
+// `src/components/project-detail`, NOT `src/components/projects`. The two are a
+// sibling pair with confusingly similar names and this list named the wrong one
+// until 2026-09-12. `components/projects` renders the /projects LISTING — the
+// cards, the filter tabs, the scene behind them — and is already the listing
+// route's own `sources` entry in site.js; the detail route imports nothing from
+// it. The detail route renders out of `components/project-detail` (the aurora,
+// the lantern sweep, the intro headline, the scene loader and the WebGL scene
+// behind it).
+//
+// Naming the listing directory here broke `<lastmod>` in BOTH directions, which
+// is why it is worth a paragraph. A change to the detail scene, intro or loader
+// left all eleven dates untouched — the stale half, and the obvious one. But a
+// change to a listing card also re-stamped all eleven detail URLs as modified,
+// which is a date asserting a change that did not happen to those documents:
+// the same fabrication `new Date()` would commit, arrived at by aliasing rather
+// than by reading the clock. P4 rules out both.
+//
+// `SHARED_ROUTE_SOURCES` is appended for the same reason it is appended to every
+// registry entry — see the note beside it in site.js. These eleven reach that
+// file TRANSITIVELY rather than by importing it: `canonical.js` reads `ORIGIN`
+// for the canonical each page declares about itself, and `schema.js` reads
+// `ORIGIN` and `IDENTITY` for the `@id`s and the `Person` that
+// `projectPage(project)` points its authorship at. Editing the site identity
+// rewrites all eleven documents' structured data, so it has to move their date.
+//
+// Pinned by the `project detail sources` cases in tests/unit/sitemapDrift.test.js,
+// which resolve this route's real import graph off disk.
+export const PROJECT_SOURCES = [
   'src/app/(sub pages)/projects/[id]/page.js',
   'src/app/data.js',
-  'src/components/projects',
+  'src/components/project-detail',
+  ...SHARED_ROUTE_SOURCES,
 ];
 
 export default function sitemap() {
