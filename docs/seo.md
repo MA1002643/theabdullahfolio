@@ -577,16 +577,40 @@ looked. That is the entire reason snapshots are stored, and it makes the choice
 of baseline the part most worth getting right.
 
 Both `seo:gsc:<date>` and `seo:gsc:latest` hold the **first** snapshot captured
-on their day — the daily key is written `nx`, and `latest` is left alone once it
-already holds a capture from today. Run the route a second time on the same day
-(by hand, with the bearer token) and it reports fresh figures but **writes
-nothing**, answering `rerun: true`.
+on their day. The daily key is claimed with `nx`, and that claim — not a date read
+a moment earlier — decides which run owns the day. A run that loses it reads back
+the snapshot that won and republishes *that* as `latest`, so a second run reports
+fresh figures without becoming the baseline (`rerun: true`), and a `latest` left
+stale by a half-completed run is repaired rather than skipped.
 
 Without that, the second run became tomorrow's baseline, tomorrow compared
 against an afternoon capture instead of the morning one, and every new query and
 position drop from the hours in between was reported by *no* run — silently,
-with both responses looking perfectly well-formed. `tests/unit/seoReportBaseline.test.js`
-drives three runs across a day boundary to pin it.
+with both responses looking perfectly well-formed.
+
+**`nx` only serialises runs that share a daily key** (tightened 2026-09-13), and
+two runs either side of UTC midnight do not: one claims `seo:gsc:<day1>`, the
+other `seo:gsc:<day2>`, both claims succeed, and nothing ordered their `latest`
+writes. With an unconditional `SET` the last writer won — and the likely last
+writer is the run that was already delayed, i.e. the *older* one. The baseline
+then went **backwards**, which is the original failure one boundary over: the
+next report compares against data a day too old and silently skips everything in
+between.
+
+`latest` is therefore published by a Lua compare-and-set (`PUBLISH_LATEST_LUA`),
+not a `SET`. Redis runs a script atomically, so the version check and the write
+cannot interleave — a read-then-write in JS would be the same race with more
+steps. The version is the snapshot's own `capturedAt`: `toISOString()` is fixed
+width and always UTC, so a lexicographic compare in Lua *is* chronological and
+nothing has to parse a date. The comparison is strict, so an equal timestamp
+still writes and the self-healing republish above keeps working; a stored value
+with no readable `capturedAt` is overwritten rather than stranded. A run whose
+snapshot was refused answers `baselinePublished: false` and logs it.
+
+`tests/unit/seoReportBaseline.test.js` pins both halves: three runs across a day
+boundary for the rerun case, and a delayed run publishing *after* a newer day for
+this one — asserting on the stored baseline rather than the payloads, which
+looked correct before the fix either way.
 
 `rerun: true` is also the thing to check before reading an empty report: near-empty
 findings mean "you have already run this today", not "the site stopped ranking".

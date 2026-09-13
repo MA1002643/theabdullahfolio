@@ -30,7 +30,10 @@ import { freshCronSecret, freshSecret } from '../helpers/secrets.js';
 // and every invalid shape is a failure daily-warmup will count.
 
 vi.mock('@/lib/guestbook/redisDriver', () => ({
-  redis: { get: async () => null, set: async () => 'OK' },
+  // `eval` runs the compare-and-set that publishes the baseline. Every case in
+  // this file is refused at a credential guard before reaching it, so it only
+  // has to exist and succeed.
+  redis: { get: async () => null, set: async () => 'OK', eval: async () => 1 },
   redisAvailable: true,
 }));
 

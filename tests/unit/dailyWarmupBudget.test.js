@@ -114,6 +114,78 @@ describe('daily-warmup — the run budget', () => {
       });
     });
 
+  /**
+   * A downstream that answers 200 HEADERS and then stalls streaming its body.
+   *
+   * `fetch` resolves as soon as the headers arrive, so this is not the same
+   * failure as `hangs()` above: the request succeeds and it is the BODY read the
+   * deadline lands on. That difference is the whole case — the step has a real
+   * `res.ok === true` to report by the time anything goes wrong.
+   */
+  const stallsMidBody = () => (_url, options) => {
+    const signal = options?.signal;
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      text: () =>
+        new Promise((_, reject) => {
+          if (signal?.aborted) reject(signal.reason);
+          signal?.addEventListener('abort', () => reject(signal.reason));
+        }),
+    });
+  };
+
+  it('fails the run when a step stalls mid-body on a 200', async () => {
+    globalThis.fetch = stallsMidBody();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const GET = await loadRoute(60);
+    const response = await GET(authed());
+    const body = await response.json();
+
+    // The regression in one line: this was 200, all green, after the deadline
+    // had already expired. `ok: res.ok` was true because the headers really did
+    // say 200 — the abort was swallowed one line above it.
+    expect(
+      response.status,
+      'An all-green verdict after the run budget was exceeded is the one ' +
+        'outcome this orchestrator exists to prevent — the cron monitor reads ' +
+        'the verdict and nothing else.',
+    ).toBe(502);
+    expect(body.ok).toBe(false);
+
+    for (const key of ['workStatus', 'repoRefresh', 'seoReport']) {
+      expect(body.results[key].ok).toBe(false);
+      // Classified as a budget breach, not a downstream fault: re-throwing the
+      // signal's own reason is what keeps that true, since an aborted body read
+      // surfaces under different error names across runtimes.
+      expect(body.results[key].timedOut).toBe(true);
+    }
+  });
+
+  it('still reports a 200 whose body is unreadable for its own reasons', async () => {
+    // The other side of the same branch, and the reason it is a condition on
+    // `signal.aborted` rather than on any body failure: the response completed,
+    // the status is real, and only `detail` is missing. Flattening both into a
+    // failure would fail healthy runs whenever a body could not be decoded.
+    globalThis.fetch = async () => ({
+      ok: true,
+      status: 200,
+      text: async () => {
+        throw new Error('malformed chunked encoding');
+      },
+    });
+
+    const GET = await loadRoute(60);
+    const response = await GET(authed());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.results.workStatus.ok).toBe(true);
+    expect(body.results.workStatus.detail).toBeNull();
+    expect(body.results.workStatus.timedOut).toBeUndefined();
+  });
+
   it('returns a verdict instead of hanging when every step stalls', async () => {
     globalThis.fetch = hangs();
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -167,8 +239,43 @@ describe('daily-warmup — the run budget', () => {
     // budget is too tight or a downstream is broken. A flag set on every failure
     // would answer neither question.
     expect(body.results.workStatus.ok).toBe(false);
-    expect(body.results.workStatus.error).toContain('connection refused');
+    expect(body.results.workStatus.error).toBe('Downstream request failed');
     expect(body.results.workStatus.timedOut).toBeUndefined();
+  });
+
+  it('keeps transport internals out of the response body', async () => {
+    // A rejected `fetch` carries the resolved host and port, DNS state or TLS
+    // detail in its message. This route answers to whoever holds CRON_SECRET,
+    // not only to Vercel's scheduler, and the house rule is that API routes
+    // return display data — so the message is fixed and the raw error stays in
+    // the log. Modelled on the real shape rather than a bare word, so a partial
+    // fix that trimmed the message instead of replacing it still fails.
+    const raw = 'connect ECONNREFUSED 10.1.2.3:3000';
+    globalThis.fetch = async () => {
+      throw new Error(raw);
+    };
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const GET = await loadRoute(60);
+    const body = await (await GET(authed())).json();
+
+    const serialised = JSON.stringify(body);
+    for (const leak of ['ECONNREFUSED', '10.1.2.3', '3000']) {
+      expect(
+        serialised,
+        `The response body carries "${leak}" from the raw exception.`,
+      ).not.toContain(leak);
+    }
+
+    // The other half of the rule, and the reason flattening costs nothing: the
+    // diagnosis is still recorded, just not returned. Asserted on the logged
+    // ERROR OBJECT rather than the formatted string, since that is what carries
+    // the stack an operator actually needs.
+    const logged = errorSpy.mock.calls.flat();
+    expect(
+      logged.some((arg) => arg instanceof Error && arg.message === raw),
+      'The raw exception should still reach console.error.',
+    ).toBe(true);
   });
 
   it('rejects a non-positive budget rather than aborting instantly', async () => {

@@ -259,13 +259,18 @@ const covers = (source, specifier) =>
   `${specifier}.js` === source ||
   `${specifier}.jsx` === source;
 
-// The layout Next wraps around everything in the `(sub pages)` route group.
+// The layouts Next wraps around a route. Both have to be named explicitly
+// because there is NO import edge to find: a page does not import its layout,
+// Next composes the two. Every walker in this file follows imports, so without
+// these the layouts — and everything they render — read as unreachable from the
+// documents they actually appear in, and watching them would look like a
+// mistake.
 //
-// It has to be named explicitly because there is NO import edge to find: a page
-// does not import its layout, Next composes the two. Every walker in this file
-// follows imports, so without this the group layout — and the footer and two nav
-// links it renders — read as unreachable from the nineteen documents they
-// actually appear in, and watching them would look like a mistake.
+// The root layout is the deceptive one. `entryFilesFor('/')` happens to return
+// it, because the homepage's own directory IS `src/app` — so it looked reachable
+// and watched while being invisible from every other route, which is how it
+// stayed in the homepage's per-route list for so long.
+const ROOT_LAYOUT = 'src/app/layout.js';
 const SUB_PAGE_LAYOUT = 'src/app/(sub pages)/layout.js';
 
 /**
@@ -280,7 +285,9 @@ const SUB_PAGE_LAYOUT = 'src/app/(sub pages)/layout.js';
  */
 function renderedEntriesFor(routePath) {
   const entries = entryFilesFor(routePath);
-  return routePath === '/' ? entries : [...entries, SUB_PAGE_LAYOUT];
+  return routePath === '/'
+    ? entries
+    : [...entries, ROOT_LAYOUT, SUB_PAGE_LAYOUT];
 }
 
 function entryFilesFor(routePath) {
@@ -542,10 +549,13 @@ describe('project detail sources', () => {
 
   it('watches nothing the detail route does not actually render', async () => {
     const { PROJECT_SOURCES } = await import('@/app/sitemap');
-    // The group layout is an ENTRY here, not an import: these eleven pages are
-    // composed inside it, so the footer and nav links it renders are part of
-    // what they publish even though no import edge says so.
-    const published = [...publishedFrom([DETAIL_PAGE, SUB_PAGE_LAYOUT])];
+    // Both layouts are ENTRIES here, not imports: these eleven pages are
+    // composed inside them, so the root layout's JSON-LD and the group layout's
+    // footer and nav links are part of what they publish even though no import
+    // edge says so.
+    const published = [
+      ...publishedFrom([DETAIL_PAGE, ROOT_LAYOUT, SUB_PAGE_LAYOUT]),
+    ];
 
     // Guard on the guard, in the dimension this check actually depends on: a
     // walker that resolved nothing beyond the entry file would make every
@@ -627,6 +637,7 @@ describe('registry as a source', () => {
     // which crawl surface stopped being watched.
     expect(SHARED_ROUTE_SOURCES).toEqual(
       expect.arrayContaining([
+        ROOT_LAYOUT,
         'src/lib/seo/site.js',
         'src/lib/seo/canonical.js',
         'src/lib/seo/schema.js',
@@ -659,6 +670,34 @@ describe('registry as a source', () => {
     }
   });
 
+  it('watches the root layout once, and not as a homepage source', async () => {
+    const { ROUTES, SHARED_ROUTE_SOURCES } = await import('@/lib/seo/site');
+
+    // It emits the root metadata and the `Person` + `WebSite` JSON-LD on every
+    // page, but it lived in the HOMEPAGE's own `sources` and nowhere else — so a
+    // root-layout commit moved `/` and left the other nineteen dates untouched.
+    // Deceptive rather than merely missing: the file looked watched, and the
+    // entry naming it was a route-specific list.
+    expect(SHARED_ROUTE_SOURCES).toContain(ROOT_LAYOUT);
+
+    const home = ROUTES.find((route) => route.path === '/');
+    const occurrences = home.sources.filter(
+      (source) => source === ROOT_LAYOUT,
+    ).length;
+
+    // Exactly once. The shared list is spread into every route including `/`,
+    // so leaving the old per-route entry in place would duplicate the pathspec
+    // and, worse, leave the file reading as homepage-specific — which is the
+    // belief that kept it out of the shared list to begin with.
+    expect(
+      occurrences,
+      occurrences > 1
+        ? 'The homepage lists the root layout twice: it is in ' +
+          'SHARED_ROUTE_SOURCES now, so the per-route entry is redundant.'
+        : 'The homepage should still reach the root layout through the shared list.',
+    ).toBe(1);
+  });
+
   it('keeps every shared source a real file', async () => {
     const { SHARED_ROUTE_SOURCES } = await import('@/lib/seo/site');
 
@@ -687,18 +726,23 @@ describe('registry as a source', () => {
     // as a stale one.
     //
     // No barrier here, unlike the data-module check below. Reach-through-the-
-    // registry is not a concern for these three: each is either the registry or
-    // a builder the root layout calls directly, so every path to them is
-    // first-hand use.
+    // registry is not a concern for these: each is either the registry, a
+    // builder the root layout calls directly, or the root layout itself, so
+    // every path to them is first-hand use.
     //
-    // Matched by exact path, which holds only because every shared source is a
-    // single FILE. `publishedFrom` returns resolved files, so a directory added
-    // to the shared list would fail here for all nine routes with a message
-    // blaming the routes rather than the shape — give it the `covers` treatment
-    // the detail-route stray check uses if that day comes.
+    // Walked with `renderedEntriesFor`, not `entryFilesFor`. The list now names
+    // the ROOT LAYOUT, which no route imports — Next composes it — and which
+    // `entryFilesFor` returns for `/` alone, because the homepage's directory
+    // happens to be `src/app`. An import-only walk therefore called it
+    // unreachable from the other nineteen routes: the same false negative that
+    // let it sit in the homepage's per-route list, reproduced in the guard meant
+    // to catch that.
+    //
+    // `covers` rather than exact equality, for when a shared entry is a
+    // directory rather than a file.
     const unpublished = [];
     for (const route of ROUTES) {
-      const entries = entryFilesFor(route.path);
+      const entries = renderedEntriesFor(route.path);
       // Guard on the guard: a route whose entry files cannot be found reaches
       // nothing, and every shared source would look unpublished rather than the
       // lookup looking broken.
@@ -707,9 +751,9 @@ describe('registry as a source', () => {
         `Found no page.js or layout.js for ${route.path}.`,
       ).toBeGreaterThan(0);
 
-      const published = publishedFrom(entries);
+      const published = [...publishedFrom(entries)];
       for (const shared of SHARED_ROUTE_SOURCES) {
-        if (!published.has(shared))
+        if (!published.some((module) => covers(shared, module)))
           unpublished.push(`${route.path} does not reach ${shared}`);
       }
     }

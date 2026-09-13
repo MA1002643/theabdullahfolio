@@ -449,8 +449,8 @@ What it covers:
   *omitted* where git cannot answer rather than fabricated. Each route watches its
   own files *plus* two shared crawl surfaces, so a commit that changes what a
   crawler reads always moves the date that invites it back to read it:
-  `SHARED_ROUTE_SOURCES` (the registry and the canonical + JSON-LD builders,
-  which every URL publishes) and `SUB_PAGE_SHARED_SOURCES` (the `(sub pages)`
+  `SHARED_ROUTE_SOURCES` (the **root layout**, the registry, and the canonical +
+  JSON-LD builders — what every URL publishes) and `SUB_PAGE_SHARED_SOURCES` (the `(sub pages)`
   group layout, its footer and nav links, and `sectionMetadata()` — the nineteen
   non-home URLs only, since `/` renders none of it). The split is what keeps a
   footer edit from re-stamping the homepage.

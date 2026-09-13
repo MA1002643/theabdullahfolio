@@ -124,7 +124,10 @@ const ROUTE_DEFINITIONS = [
     indexable: true,
     sources: [
       'src/app/page.js',
-      'src/app/layout.js',
+      // `src/app/layout.js` is NOT here: it wraps every route, so it lives in
+      // `SHARED_ROUTE_SOURCES` below. Listing it again would be a duplicate
+      // pathspec and, worse, would read as though it were homepage-specific —
+      // which is exactly the belief that kept it out of the shared list.
       'src/components/navigation',
       // Both server-rendered halves of the F1 fix read this file: page.js
       // counts `projectsData` for the `sr-only` summary, and Navigation maps
@@ -370,6 +373,20 @@ const ROUTE_DEFINITIONS = [
 // this array, and it would trade a date that is occasionally too new for one
 // that is silently wrong after a refactor.
 export const SHARED_ROUTE_SOURCES = [
+  // The ROOT LAYOUT, and the one entry here that is a rendered file rather than
+  // a module the rendering reads. It wraps every route — Next composes it around
+  // all 20 URLs — and what it emits is crawl surface, not chrome: the root
+  // metadata (the title template, `metadataBase`, the robots directives and the
+  // OG/Twitter defaults a section route does not restate) and the `Person` +
+  // `WebSite` JSON-LD graph, rendered as `<JsonLd id="ld-root" data={personGraph()} />`
+  // on every page of the site.
+  //
+  // It sat in the HOMEPAGE's own `sources` and nowhere else, which is the same
+  // mistake as the two builders below in a more deceptive form: the file looked
+  // watched, and the entry naming it was a route-specific list, so a root-layout
+  // commit moved `/` and left the other nineteen `<lastmod>` values untouched.
+  // Composition is invisible to an import graph, which is why nothing caught it.
+  'src/app/layout.js',
   'src/lib/seo/site.js',
   'src/lib/seo/canonical.js',
   'src/lib/seo/schema.js',

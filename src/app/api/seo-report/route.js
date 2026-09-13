@@ -105,6 +105,51 @@ const LATEST_KEY = 'seo:gsc:latest';
 // remember, and forgetting it turns a feedback loop into a storage leak.
 const SNAPSHOT_TTL_SECONDS = 90 * 24 * 60 * 60;
 
+// Publish `latest` only if it does not already hold a NEWER snapshot.
+//
+// The `nx` claim further down serialises runs that share a daily key. It does
+// nothing for two runs that DO NOT — and a run straddling UTC midnight is
+// exactly that: it computed `seo:gsc:<day1>` moments before the boundary, a
+// day-2 run claims `seo:gsc:<day2>`, and neither contends with the other. Both
+// claims succeed, both then wrote `latest` unconditionally, and last-writer-wins
+// decided the baseline. If the delayed day-1 run landed second — it is the one
+// that was already slow, so it is the likely loser — it overwrote day 2's
+// snapshot with an older one.
+//
+// The cost is the same silent failure the `nx` machinery was built for, one
+// boundary over: the next report compares against a baseline a day too old, so
+// everything that changed in between is reported by NO run, and nothing about
+// the payload looks wrong.
+//
+// Read-then-write in JS cannot fix it — that is the same race with more steps.
+// Redis runs a script atomically, so the comparison and the write cannot be
+// interleaved. Modelled on SET_REACTION_LUA in redisDriver.js, which exists for
+// the same reason.
+//
+// `capturedAt` is the version. It is `new Date().toISOString()`, which is fixed
+// width and always UTC, so a lexicographic `>` in Lua IS chronological order and
+// no date parsing is needed. The comparison is deliberately STRICT: an equal
+// timestamp still writes, which keeps the republish self-healing — a rerun that
+// lost the daily claim rewrites the canonical it just read, repairing a `latest`
+// left stale by a half-completed run, and rewriting an identical value is free.
+//
+// A stored value that is absent, not JSON, or carries no `capturedAt` is treated
+// as unordered and overwritten: it cannot be shown to be newer, and refusing to
+// write would strand a malformed baseline forever.
+const PUBLISH_LATEST_LUA = `
+local current = redis.call('GET', KEYS[1])
+if current then
+  local ok, decoded = pcall(cjson.decode, current)
+  if ok and type(decoded) == 'table' and type(decoded.capturedAt) == 'string' then
+    if decoded.capturedAt > ARGV[2] then
+      return 0
+    end
+  end
+end
+redis.call('SET', KEYS[1], ARGV[1])
+return 1
+`;
+
 // GSC data lags by roughly two days and the most recent days are always
 // incomplete, so a window ending "today" shows a cliff that looks like a
 // catastrophic traffic collapse and is purely an artefact of the lag.
@@ -567,6 +612,13 @@ export async function GET(request) {
     // rewritten on every run rather than skipped on a rerun, a `latest` left
     // stale by a half-completed earlier run is repaired by the next one.
     //
+    // What `nx` does NOT do, stated because it reads as though it does: it only
+    // serialises runs sharing a daily key. Two runs either side of UTC midnight
+    // claim DIFFERENT keys and never contend, so both claims succeed and the
+    // ordering of their `latest` writes is unconstrained by anything here. That
+    // is why the publish below is a compare-and-set script rather than a SET —
+    // see PUBLISH_LATEST_LUA at the top of this file.
+    //
     // Deliberately NOT `SNAPSHOT_KEY(isoDate(1))` as the baseline: a single
     // missed day (a deploy window, a cron that straddles midnight) would leave
     // that key absent, and an absent baseline makes `deriveFindings` report
@@ -583,8 +635,32 @@ export async function GET(request) {
     // between the rejected claim and this read, leaving `latest` alone keeps a
     // real (if stale) baseline, where writing null would erase it and make the
     // next run report every query as new.
+    //
+    // The write itself goes through PUBLISH_LATEST_LUA rather than a plain SET,
+    // so a run delayed across UTC midnight cannot overwrite a newer day's
+    // baseline with its own — see the note beside the script.
+    let baselinePublished = false;
     if (canonical) {
-      await redis.set(LATEST_KEY, canonical);
+      // `JSON.stringify` explicitly: the client stores objects by stringifying
+      // them, so writing the same string from Lua leaves a value `redis.get`
+      // parses back identically. Passing the object would let the argument
+      // encoding differ from what a plain `set` would have stored.
+      const wrote = await redis.eval(
+        PUBLISH_LATEST_LUA,
+        [LATEST_KEY],
+        [JSON.stringify(canonical), String(canonical.capturedAt ?? '')],
+      );
+      baselinePublished = Number(wrote) === 1;
+
+      if (!baselinePublished) {
+        // Not an error — it is the guard doing its job, and the newer baseline
+        // is the correct one to keep. Logged because a run whose snapshot was
+        // discarded is worth seeing if it starts happening nightly.
+        console.warn(
+          `seo-report: ${todayKey} not published as the baseline; ` +
+            '`latest` already holds a newer snapshot',
+        );
+      }
     } else {
       console.error(
         `seo-report: ${todayKey} rejected the write but read back empty; ` +
@@ -602,6 +678,12 @@ export async function GET(request) {
       // empty report reads as "the site stopped ranking" rather than "this has
       // already run today".
       rerun: isRerun,
+      // False when `latest` already held a NEWER snapshot and this run's was
+      // therefore not published as the baseline — a delayed run landing after a
+      // later day's. Reported for the same reason as `rerun`: it explains a
+      // successful run that did not move the baseline, which is otherwise
+      // indistinguishable from one that did.
+      baselinePublished,
       window: snapshot.window,
       totals: snapshot.totals,
       comparedAgainst: previous?.capturedAt ?? null,
@@ -618,6 +700,16 @@ export async function GET(request) {
     console.error('seo-report: Search Console query failed:', error);
     // Message only — never the error object. A failed token exchange can carry
     // request metadata, and this response is readable by anyone with CRON_SECRET.
+    //
+    // The message is kept DELIBERATELY, unlike the fixed strings the orchestrator
+    // and repo-refresh return: what reaches here is overwhelmingly this route's
+    // own hand-authored labels, because `fetchBounded` rewrites a `TimeoutError`
+    // into `"<step> timed out after <n>ms"` — a step name and a number, naming no
+    // host, no URL and no credential. `tests/unit/seoReportTimeout.test.js` pins
+    // that, including a case asserting no bearer token, JWT assertion or private
+    // key can appear in it. Flattening these would delete real diagnosis (which
+    // of four upstream calls stalled) to remove a leak that is already tested
+    // against.
     return noStoreJson(
       { ok: false, error: error?.message ?? String(error) },
       { status: 502 },

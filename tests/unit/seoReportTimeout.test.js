@@ -32,7 +32,9 @@ const CRON_SECRET = freshCronSecret();
 const TIMEOUT_MS = 80;
 
 vi.mock('@/lib/guestbook/redisDriver', () => ({
-  redis: { get: async () => null, set: async () => 'OK' },
+  // `eval` runs the compare-and-set that publishes the baseline. Every case in
+  // this file fails upstream of it, so it only has to exist and succeed.
+  redis: { get: async () => null, set: async () => 'OK', eval: async () => 1 },
   redisAvailable: true,
 }));
 

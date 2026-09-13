@@ -71,8 +71,27 @@ async function callInternal(baseUrl, path, cronSecret, signal) {
   let detail = null;
   try {
     detail = await res.text();
-  } catch {
-    // body unreadable — leave detail null
+  } catch (err) {
+    // A DEADLINE BREACH HERE MUST NOT BE SWALLOWED. `fetch` resolves as soon as
+    // the response HEADERS arrive, so a downstream can answer 200 and then stall
+    // streaming its body — at which point the shared signal aborts this read,
+    // not the request. Catching that and carrying on returned `ok: res.ok`,
+    // which is TRUE: the step reported success, `allSettled` recorded it
+    // fulfilled, and the run could answer an all-green 200 after its own
+    // deadline had already expired. A false green is the one outcome this
+    // orchestrator exists to prevent, and it is the worst one, because the cron
+    // monitor reads the verdict and nothing else.
+    //
+    // Re-thrown as the signal's own `reason` rather than the body error: an
+    // aborted body read surfaces differently across runtimes (`AbortError`, or
+    // a `TypeError` wrapping it), while `AbortSignal.timeout`'s reason is always
+    // a `TimeoutError`. Throwing it keeps the step classified as a budget breach
+    // by the same check a request-level abort takes.
+    if (signal?.aborted) throw signal.reason ?? err;
+    // Anything else really is just an unreadable body on an otherwise complete
+    // response. The status stands and `detail` stays null — `isNotConfigured`
+    // already fails closed on a missing body, so a step that needed one to
+    // excuse itself counts against the run rather than being forgiven.
   }
   return { ok: res.ok, status: res.status, detail };
 }
@@ -182,9 +201,21 @@ export async function GET(request) {
       }:`,
       err,
     );
+    // The response carries a VERDICT; the log carries the diagnosis. `err.message`
+    // on this path is always transport internals — a rejected `fetch` is a DNS
+    // failure, an `ECONNREFUSED` naming the resolved internal host and port, a TLS
+    // error or an abort — and this route answers to whoever holds `CRON_SECRET`,
+    // not only to Vercel's scheduler. House rule: API routes return display data.
+    //
+    // Nothing is lost by flattening it. The distinction that changes what an
+    // operator DOES is `timedOut` (tighten the budget vs. fix a downstream), and
+    // that is a field of its own; the raw error is one line up in `console.error`,
+    // where a 01:00 cron failure is read from anyway.
     results[key] = {
       ok: false,
-      error: err?.message ?? String(err),
+      error: timedOut
+        ? `Step exceeded the ${RUN_BUDGET_MS}ms run budget`
+        : "Downstream request failed",
       ...(timedOut && { timedOut: true }),
     };
   });

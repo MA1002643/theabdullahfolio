@@ -79,6 +79,44 @@ const { redisStore, redisMock, redisHooks, latestWrites } = vi.hoisted(() => {
         store.set(key, structuredClone(value));
         return 'OK';
       },
+      // PUBLISH_LATEST_LUA, executed in JS.
+      //
+      // Stated plainly because it bounds what these cases prove: this is a
+      // FAITHFUL MODEL of the script's decision, not the script. It reproduces
+      // the compare-and-set — keep the stored value when its `capturedAt` is
+      // strictly newer, otherwise write — and the atomicity it relies on is free
+      // here, since a single-threaded test can no more interleave these lines
+      // than Redis can interleave the script. What it cannot prove is that the
+      // Lua itself parses, that `cjson.decode` accepts what the client stored,
+      // or that the reply marshals back as a number. Those need a real Redis.
+      //
+      // Reads the store directly rather than going through `get`, because the
+      // script runs server-side and cannot see this mock's fault-injection
+      // hooks — modelling it otherwise would let `staleGet` fake an outcome the
+      // real script could never produce.
+      async eval(_script, keys, args) {
+        const [key] = keys;
+        const [serialised, capturedAt] = args;
+        // `failSetOn` has to reach here as well as `set`. The baseline write
+        // moved from SET to this script, so a hook that only faulted `set` would
+        // leave the half-completed-run case injecting nothing and passing while
+        // asserting on a failure that never happened.
+        if (hooks.failSetOn === key) {
+          throw new Error(`redis unavailable for ${key}`);
+        }
+        const current = store.get(key);
+        if (
+          current &&
+          typeof current.capturedAt === 'string' &&
+          current.capturedAt > capturedAt
+        ) {
+          return 0;
+        }
+        const value = JSON.parse(serialised);
+        if (key === 'seo:gsc:latest') latestKeyWrites.push(value);
+        store.set(key, value);
+        return 1;
+      },
     },
   };
 });
@@ -454,5 +492,100 @@ describe('/api/seo-report — concurrent and partial writes', () => {
 
     expect(b.rerun).toBe(true);
     expect(redisStore.get(LATEST_KEY).capturedAt).toBe(aCapture);
+  });
+});
+
+// ── The boundary `nx` does not cover ────────────────────────────────────────
+// The daily claim serialises runs that share a key. Two runs either side of UTC
+// midnight DO NOT share one: one claims `seo:gsc:<day1>`, the other
+// `seo:gsc:<day2>`, both claims succeed, and nothing ordered their `latest`
+// writes. `latest` was written with an unconditional SET, so last-writer-won —
+// and the likely last writer is the run that was already delayed, i.e. the older
+// one.
+//
+// The result is the same silent failure the `nx` machinery exists to prevent,
+// one boundary over: the baseline goes backwards, the next report compares
+// against data a day too old, and everything that changed in between is reported
+// by no run. Nothing about either response looks wrong.
+//
+// These cases drive the two runs in the order that loses, and assert on the
+// STORED baseline rather than on either payload — the payloads were fine before
+// the fix.
+describe('/api/seo-report — a delayed run cannot rewind the baseline', () => {
+  const LATE_NIGHT = '2026-09-11T23:59:50.000Z';
+  const NEXT_DAY = '2026-09-12T00:30:00.000Z';
+
+  it('keeps the newer day when an older run writes last', async () => {
+    redisStore.clear();
+
+    // Day 1's run captures just before midnight. Let it complete, then model the
+    // delay by replaying its publish AFTER day 2 has landed — the route is
+    // deterministic given the clock, so a second call at the same instant
+    // reproduces exactly the write the delayed run would have made.
+    const first = await runAt(LATE_NIGHT, MORNING_ROWS);
+    expect(first.rerun).toBe(false);
+    expect(first.baselinePublished).toBe(true);
+
+    const second = await runAt(NEXT_DAY, AFTERNOON_ROWS);
+    expect(second.rerun).toBe(false);
+    expect(second.baselinePublished).toBe(true);
+    const newest = redisStore.get(LATEST_KEY).capturedAt;
+    expect(newest).toBe(NEXT_DAY);
+
+    // The delayed day-1 run finally reaches its publish. It finds its own daily
+    // key already claimed (by itself), republishes that canonical — and must be
+    // refused, because `latest` now holds a strictly newer snapshot.
+    const delayed = await runAt(LATE_NIGHT, MORNING_ROWS);
+
+    expect(delayed.rerun).toBe(true);
+    expect(
+      delayed.baselinePublished,
+      'The delayed run republished an older snapshot over a newer baseline.',
+    ).toBe(false);
+    expect(
+      redisStore.get(LATEST_KEY).capturedAt,
+      'The baseline went backwards a day — the next report will compare ' +
+        'against stale data and silently skip everything in between.',
+    ).toBe(newest);
+  });
+
+  it('still records the delayed run in its own daily archive', async () => {
+    redisStore.clear();
+    await runAt(LATE_NIGHT, MORNING_ROWS);
+    await runAt(NEXT_DAY, AFTERNOON_ROWS);
+    await runAt(LATE_NIGHT, MORNING_ROWS);
+
+    // Refusing the BASELINE write must not lose the day's archive: the rolling
+    // 90-day history is what a later investigation reads, and day 1 is a real
+    // capture regardless of which snapshot is currently the comparison point.
+    expect(redisStore.get(SNAPSHOT_KEY('2026-09-11')).capturedAt).toBe(
+      LATE_NIGHT,
+    );
+    expect(redisStore.get(SNAPSHOT_KEY('2026-09-12')).capturedAt).toBe(NEXT_DAY);
+  });
+
+  it('publishes normally when the runs arrive in order', async () => {
+    redisStore.clear();
+
+    // The control, without which the two cases above would pass on a guard that
+    // simply never writes.
+    await runAt(LATE_NIGHT, MORNING_ROWS);
+    const inOrder = await runAt(NEXT_DAY, AFTERNOON_ROWS);
+
+    expect(inOrder.baselinePublished).toBe(true);
+    expect(redisStore.get(LATEST_KEY).capturedAt).toBe(NEXT_DAY);
+  });
+
+  it('overwrites a baseline that carries no version at all', async () => {
+    redisStore.clear();
+    // A value from before `capturedAt` existed, or a half-written one. It cannot
+    // be shown to be newer, so refusing to write would strand it forever and
+    // leave `deriveFindings` comparing against something it cannot order.
+    redisStore.set(LATEST_KEY, { queries: [], pages: [], countries: [] });
+
+    const run = await runAt(NEXT_DAY, AFTERNOON_ROWS);
+
+    expect(run.baselinePublished).toBe(true);
+    expect(redisStore.get(LATEST_KEY).capturedAt).toBe(NEXT_DAY);
   });
 });
