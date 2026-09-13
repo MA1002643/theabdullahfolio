@@ -17,9 +17,32 @@
 // everything else here), the metadata has to be written into the binary.
 //
 // ── Why this is SAFER than regenerating from source ─────────────────────────
-// Risk §10.3: /api/experience-summary parses this exact file at runtime to
-// derive /about's employment figure, and a reflowed text layer silently yields
-// "Employment 0%" rather than an error.
+// NOT because a page reads this file. None does, and this comment used to say
+// otherwise: /api/experience-summary once parsed this exact binary at runtime to
+// derive /about's employment figure, where a reflowed text layer silently
+// yielded "Employment 0%" rather than an error. That dependency was removed on
+// purpose — the route derives employment from `journeyData` via
+// src/utils/experience/journeyEmployment.js, and `parseExperienceFromPdf` has no
+// production importer at all. Do not reintroduce one on the strength of a
+// comment; see next.config.mjs, where the build settings that supported the
+// runtime parse were deleted for the same reason.
+//
+// What still reads this binary is TWO TESTS, and they are why a reflow matters:
+//
+//   · tests/unit/pdfExperienceFixture.test.js pins what the parser reads out of
+//     it — both roles, their exact dates and durations. A reflow makes the
+//     regexes miss and fails this test.
+//   · tests/unit/cvJourneyConsistency.test.js compares those contents against
+//     `journeyData` and fails on any disagreement not written down. The CV is a
+//     separately-maintained binary that nothing regenerates from that array, so
+//     this is the only thing keeping the INDEXED PDF and the site's HTML record
+//     in step.
+//
+// The second depends on the first: it can only compare while the parser still
+// works. So a reflow no longer breaks a page — it quietly removes the only check
+// that the published CV and the site still agree, which is a slower and more
+// expensive failure than a visibly wrong figure was. docs/seo.md §4 carries the
+// full account and says which failure means what.
 //
 // pdf-lib rewrites only the document information dictionary and the trailer. It
 // does not re-lay-out anything, does not re-encode content streams, and does
@@ -171,16 +194,20 @@ async function main() {
   // stays readable to `strings`/`grep` so a future audit can verify the title
   // without running this script, and it avoids re-packing objects that the
   // original pdfTeX output had left uncompressed — the smallest possible
-  // structural change to a file that a runtime parser depends on.
+  // structural change to a file the CV-consistency tests parse.
   const output = await pdf.save({ useObjectStreams: false });
   await writeFile(CV_PATH, output);
 
   console.log(`Wrote metadata to ${CV_PATH}`);
   console.log(`  before: ${original.length} bytes`);
   console.log(`  after:  ${output.length} bytes`);
+  // Both, and in this order: the consistency check can only compare while the
+  // parser the fixture pins still works. Neither guards a live page — they keep
+  // the indexed PDF and `journeyData` in step.
   console.log(
-    '\nNow run the guard that proves /about did not break:\n' +
-      '  npx vitest run tests/unit/pdfExperienceFixture.test.js',
+    '\nNow run the guards that prove the CV still reads and still agrees:\n' +
+      '  npx vitest run tests/unit/pdfExperienceFixture.test.js\n' +
+      '  npx vitest run tests/unit/cvJourneyConsistency.test.js',
   );
 }
 

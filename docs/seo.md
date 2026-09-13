@@ -181,28 +181,67 @@ is tracked.
 > `\hypersetup{}` where it belongs, and accessibility tagging (below) becomes
 > possible. Until then, re-run the script after every CV replacement.
 
-### 🔴 The landmine: regenerating the CV can silently break `/about`
+### Regenerating the CV: what breaks, and what no longer can
 
-[`/api/experience-summary`](../src/app/api/experience-summary/route.js) parses
-this exact file **at runtime** via
+**The old danger here is gone, and is recorded because the shape of the tests
+below only makes sense against it.**
+[`/api/experience-summary`](../src/app/api/experience-summary/route.js) used to
+parse this exact file at runtime via
 [`parseExperienceFromPdf`](../src/utils/experience/pdfExperienceParser.js) to
-derive the employment figure on `/about`. A reflowed text layer makes the
-parser's regexes miss, `roles` comes back empty, and `/about` renders
-**"Employment 0%"** — with no exception, no log line, and a 200 response,
-because an empty result is indistinguishable from a CV with no jobs on it.
+derive the employment figure on `/about`. A reflowed text layer made the regexes
+miss, `roles` came back empty, and `/about` rendered "Employment 0%" — no
+exception, no log line, HTTP 200, because an empty parse is indistinguishable
+from a CV with no jobs on it.
 
-That parser was guarded by **no test at all**.
-[`tests/unit/pdfExperienceFixture.test.js`](../tests/unit/pdfExperienceFixture.test.js)
-now pins both roles with their exact dates and durations. It was written and
-passing **before** the binary was touched, then re-run after.
+**That runtime dependency no longer exists.** The route derives employment from
+`journeyData` through
+[`employmentFromJourney`](../src/utils/experience/journeyEmployment.js) — the
+same array `/journey` renders. The parser has **no production importer**; the
+only two files that call it are tests. A reflowed PDF cannot empty a page, and
+nobody should be sent to debug a production failure that is no longer
+representable.
 
-`pdf-lib` was chosen over recompiling precisely because it rewrites only the
-info dictionary and trailer, leaving content streams alone. **Verified: the
-extracted text layer is string-identical, 4,923 characters before and after.**
+#### What is actually at risk now
 
-**If that test ever fails after a CV update**, the PDF is what changed and
-`/about` is what broke. Do not relax the assertions — restore the layout the
-parser reads, or update the parser and re-pin the values deliberately.
+The CV is a **third public surface** and the only one not derived from
+`journeyData`: a separately-maintained binary, built from LaTeX that does not
+live in this repository, deliberately indexed by this work (its own `/Title`,
+its own sitemap entry). So the site can publish **two employment histories** —
+one in HTML from the array, one in a PDF nothing regenerates from it — and the
+likeliest way to discover they disagree is a recruiter with both open.
+
+Two tests cover that, and they have different jobs:
+
+| Test | Asserts | Fails when |
+|---|---|---|
+| [`pdfExperienceFixture.test.js`](../tests/unit/pdfExperienceFixture.test.js) | What the parser reads out of the **binary** — both roles, exact dates and durations | The PDF's text layer changed, or the parser lost its grip on it |
+| [`cvJourneyConsistency.test.js`](../tests/unit/cvJourneyConsistency.test.js) | What that means **next to `journeyData`** — every difference is declared in `KNOWN_DIVERGENCES` | The two documents newly disagree, *or* a declared divergence was resolved and the entry is now stale |
+
+The order matters: the consistency check can only compare while the parser still
+works, so the fixture test is the **instrument check** that keeps it honest. That
+is why it pins exact values rather than `roles.length > 0` — a loose assertion
+passes when the parser finds one role out of two, which is exactly what a text
+reflow produces. A silently broken parser would not fail anything; it would quietly
+stop the two documents from ever being compared again.
+
+`pdf-lib` was chosen over recompiling precisely because it rewrites only the info
+dictionary and trailer, leaving content streams alone. **Verified: the extracted
+text layer is string-identical, 4,923 characters before and after.**
+
+#### If a test fails after a CV update
+
+- **Fixture test** — the PDF is what changed. Do not relax the assertions.
+  Either restore the layout the parser reads, or update the parser and re-pin
+  the values on purpose. Nothing on the site is broken meanwhile.
+- **Consistency test** — the two records now state different things. This is not
+  automatically a bug in either: `journeyData` is the LinkedIn record and the CV
+  is owner-maintained, and conflicts are settled **per conflict, by the owner, on
+  the evidence** — there is no standing rule that one wins. (The BTEC dates went
+  to LinkedIn; the Unisys range went the other way on 2026-09-12, and `data.js`
+  was corrected to match the CV.) Fix a source, or declare the divergence in
+  `KNOWN_DIVERGENCES` with a reason. Deleting a resolved entry is part of the fix.
+- **Both** — if the new CV genuinely states different dates, re-pin the fixture
+  *and* reconcile `journeyData`, or the consistency test will correctly fail next.
 
 ### Not done: accessibility tagging
 
@@ -682,10 +721,19 @@ Load JS unchanged at 191 kB.
 
 ```bash
 node scripts/seo-pdf-metadata.mjs                            # set /Title etc.
-npx vitest run tests/unit/pdfExperienceFixture.test.js       # prove /about works
+npx vitest run tests/unit/pdfExperienceFixture.test.js       # parser still reads the binary
+npx vitest run tests/unit/cvJourneyConsistency.test.js       # CV and journeyData still agree
 ```
 
-If the fixture test fails, see §4's landmine before doing anything else.
+Run both, and in that order — the second can only compare while the parser the
+first pins still works.
+
+Neither one is guarding a live page: `/about` derives employment from
+`journeyData`, not from this file. What they guard is the **indexed PDF agreeing
+with the HTML record**. See §4 for which failure means what, and note that a
+genuine CV edit is expected to fail the consistency test — that is the check
+doing its job, and the fix is to reconcile `journeyData` or declare the
+divergence, not to loosen the test.
 
 ### Weekly
 
