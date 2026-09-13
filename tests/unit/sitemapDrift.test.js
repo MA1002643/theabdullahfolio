@@ -571,14 +571,31 @@ describe('project detail sources', () => {
 // had not changed. Same defect as the project source list pointing at the
 // listing directory, one level up: the registry could rewrite the crawl surface
 // without moving the date that tells a crawler to come and look.
+//
+// The two builders are watched for the same reason and were added in the same
+// spirit: watching the values while leaving the code that renders them unwatched
+// is half a fix. `canonical.js` owns the trailing-slash normalisation behind
+// every self-declared canonical, and `schema.js` decides which JSON-LD nodes
+// exist and what each states — both reach all 20 of them through the root layout,
+// and either can rewrite crawler-visible HTML with no `title` or `description`
+// touched. `src/components/seo/JsonLd.jsx` stays out: it serialises the graph
+// rather than composing it (see `UNWATCHED_COMPONENTS` above).
 describe('registry as a source', () => {
   it('lists the registry in every route source set', async () => {
     const { ROUTES, SHARED_ROUTE_SOURCES } = await import('@/lib/seo/site');
     const { PROJECT_SOURCES } = await import('@/app/sitemap');
 
     // Assert the shared list is what it claims to be before asserting with it:
-    // emptied, every check below would pass while watching nothing.
-    expect(SHARED_ROUTE_SOURCES).toContain('src/lib/seo/site.js');
+    // emptied, every check below would pass while watching nothing. Named
+    // individually rather than counted, so dropping one is a failure that says
+    // which crawl surface stopped being watched.
+    expect(SHARED_ROUTE_SOURCES).toEqual(
+      expect.arrayContaining([
+        'src/lib/seo/site.js',
+        'src/lib/seo/canonical.js',
+        'src/lib/seo/schema.js',
+      ]),
+    );
 
     const missing = ROUTES.filter(
       (route) =>
@@ -612,13 +629,63 @@ describe('registry as a source', () => {
     // A shared source that no longer exists is worse than none: `git log` over
     // a path with no commits returns empty, which `lastModifiedFor` reads as
     // "unknowable" — so a renamed registry would not fail anything here, it
-    // would quietly drop `<lastmod>` from all 21 URLs at once.
+    // would quietly drop `<lastmod>` from all 20 URLs that carry it at once (the
+    // nine routes and the eleven project pages; the CV asset watches only its
+    // own binary and is not affected).
     for (const source of SHARED_ROUTE_SOURCES) {
       expect(
         () => statSync(path.join(process.cwd(), source)),
         `SHARED_ROUTE_SOURCES names "${source}", which does not exist.`,
       ).not.toThrow();
     }
+  });
+
+  it('keeps every shared source one that every route actually publishes', async () => {
+    const { ROUTES, SHARED_ROUTE_SOURCES } = await import('@/lib/seo/site');
+
+    // The other direction, and the one that keeps this list honest as it grows.
+    // A shared source is the most expensive kind of entry there is: it re-stamps
+    // all 20 URLs at once, so one that some route does not actually render from
+    // is a standing over-stamp on every page of the site — a `<lastmod>`
+    // asserting a change that did not happen, which P4 rules out just as firmly
+    // as a stale one.
+    //
+    // No barrier here, unlike the data-module check below. Reach-through-the-
+    // registry is not a concern for these three: each is either the registry or
+    // a builder the root layout calls directly, so every path to them is
+    // first-hand use.
+    //
+    // Matched by exact path, which holds only because every shared source is a
+    // single FILE. `publishedFrom` returns resolved files, so a directory added
+    // to the shared list would fail here for all nine routes with a message
+    // blaming the routes rather than the shape — give it the `covers` treatment
+    // the detail-route stray check uses if that day comes.
+    const unpublished = [];
+    for (const route of ROUTES) {
+      const entries = entryFilesFor(route.path);
+      // Guard on the guard: a route whose entry files cannot be found reaches
+      // nothing, and every shared source would look unpublished rather than the
+      // lookup looking broken.
+      expect(
+        entries.length,
+        `Found no page.js or layout.js for ${route.path}.`,
+      ).toBeGreaterThan(0);
+
+      const published = publishedFrom(entries);
+      for (const shared of SHARED_ROUTE_SOURCES) {
+        if (!published.has(shared))
+          unpublished.push(`${route.path} does not reach ${shared}`);
+      }
+    }
+
+    expect(
+      unpublished,
+      `SHARED_ROUTE_SOURCES is appended to every route, but these routes do ` +
+        `not render from the file — so a commit to it re-stamps their ` +
+        `<lastmod> for a change their HTML never saw:\n  ` +
+        `${unpublished.join('\n  ')}\n\n` +
+        `Move it to the per-route sources of the routes that do publish it.`,
+    ).toEqual([]);
   });
 
   it('does not disturb the per-route sources already declared', async () => {

@@ -446,7 +446,10 @@ What it covers:
   name, a job title and the string `0 %`. It now renders **106 words and 8
   links**, with an explicit AI-crawler policy and a curated `/llms.txt`.
 - **`lastModified` from real git commit dates**, never `new Date()`; the field is
-  *omitted* where git cannot answer rather than fabricated.
+  *omitted* where git cannot answer rather than fabricated. Each route watches its
+  own files *plus* the shared crawl surface — the registry and the canonical and
+  JSON-LD builders (`SHARED_ROUTE_SOURCES`) — so a commit that changes what a
+  crawler reads always moves the date that invites it back to read it.
 
 Full decision record, the measured baseline, and the runbook:
 **[`docs/seo.md`](docs/seo.md)**.

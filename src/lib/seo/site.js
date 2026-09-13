@@ -296,9 +296,10 @@ const ROUTE_DEFINITIONS = [
 ];
 
 // ── Sources every indexable URL shares ──────────────────────────────────────
-// THIS FILE is part of what every route publishes, and until 2026-09-12 no
-// `sources` list said so — which made the registry the one input that could
-// change a URL's crawl surface without moving its `<lastmod>`.
+// THIS FILE and the two builders that publish it are part of what every route
+// emits, and until 2026-09-12 no `sources` list said so — which made them the
+// inputs that could change a URL's crawl surface without moving its
+// `<lastmod>`.
 //
 // It is not a marginal input either. Four published surfaces per route read
 // straight out of this file:
@@ -320,26 +321,59 @@ const ROUTE_DEFINITIONS = [
 // rather than pasted into nine entries: a shared list can only be forgotten
 // once, where nine copies can be forgotten nine times.
 //
+// ── The builders belong here for the same reason the values do ──────────────
+// Watching only this file watches the VALUES and not the code that turns them
+// into markup, which is half an answer. `canonical.js` and `schema.js` are both
+// reached by every route through the root layout — `alternatesFor('/')` and
+// `personGraph()` in src/app/layout.js — and the nine section routes import a
+// page builder from `schema.js` on top of that.
+//
+// Neither is a passive pipe. `canonical.js` owns the trailing-slash and
+// double-slash normalisation, so a change there rewrites the canonical every
+// document on the site declares about itself — the one metadata field where a
+// near-miss is worse than an omission, because a page that names the wrong URL
+// de-duplicates itself away. `schema.js` decides which JSON-LD nodes exist,
+// what `@id` each carries and which fields it states, so a change there rewrites
+// the entity graph an assistant resolves "who is Muhammad Abdullah" against.
+// Either can change crawler-visible HTML at all 20 URLs the shared list reaches
+// — the nine routes and the eleven project pages, the CV asset excepted since it
+// watches only its own binary — while every `title` and `description` in this
+// file stands still. The same defect one level out.
+//
+// `src/components/seo/JsonLd.jsx` is deliberately NOT here, and the line is
+// worth stating because the three files look alike from a distance. It is the
+// SERIALISER: `pruneEmpty` and the escaping that puts an object inside a
+// `<script>` tag. It decides how the graph is printed, never what the graph
+// says, so a commit to it changes no claim a crawler reads. The same reasoning
+// is recorded against it in `UNWATCHED_COMPONENTS` in
+// tests/unit/sitemapDrift.test.js; keep the two in step.
+//
 // ── The cost, stated rather than discovered later ───────────────────────────
-// `git log` resolves per FILE, not per line, so every route now shares one date
-// input: editing only `/about`'s description moves all nine routes' `<lastmod>`,
-// and editing `AI_CRAWLERS` — which changes `robots.txt` and no page at all —
-// moves all of them too.
+// `git log` resolves per FILE, not per line, so every route now shares three
+// date inputs: editing only `/about`'s description moves all nine routes'
+// `<lastmod>`, editing `AI_CRAWLERS` — which changes `robots.txt` and no page at
+// all — moves all of them too, and so does a comment reflow in `schema.js`.
 //
 // Accepted, for three reasons. It is the precedent already set: `src/app/data.js`
 // sits in `/projects`, `/journey` and the project pages' list, so editing one
 // project record has always re-stamped `/journey`. It is the better of the two
 // errors — a stale date tells a crawler not to bother re-reading a page whose
 // description it would now display differently, and suppressing a recrawl is
-// worse than buying one that finds little changed. And this file is almost
-// entirely crawl-surface: of what it holds, only the two crawl-policy arrays
-// can change without altering a page, and both are rare.
+// worse than buying one that finds little changed. And all three files are
+// almost entirely crawl-surface: of what this one holds, only the two
+// crawl-policy arrays can change without altering a page, and the other two
+// exist for no purpose except to produce markup a crawler reads — there is no
+// such thing as an edit to `canonical.js` that is not about a canonical.
 //
 // The per-line alternative (`git log -L`) was not taken: it re-reads as a range
 // of lines rather than a file, so it breaks on every reformat and reorder of
 // this array, and it would trade a date that is occasionally too new for one
 // that is silently wrong after a refactor.
-export const SHARED_ROUTE_SOURCES = ['src/lib/seo/site.js'];
+export const SHARED_ROUTE_SOURCES = [
+  'src/lib/seo/site.js',
+  'src/lib/seo/canonical.js',
+  'src/lib/seo/schema.js',
+];
 
 /**
  * The route registry, each entry's `sources` completed with the shared list.

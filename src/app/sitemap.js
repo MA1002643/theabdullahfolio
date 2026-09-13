@@ -60,12 +60,14 @@ export const dynamic = 'force-static';
 // than by reading the clock. P4 rules out both.
 //
 // `SHARED_ROUTE_SOURCES` is appended for the same reason it is appended to every
-// registry entry — see the note beside it in site.js. These eleven reach that
-// file TRANSITIVELY rather than by importing it: `canonical.js` reads `ORIGIN`
-// for the canonical each page declares about itself, and `schema.js` reads
-// `ORIGIN` and `IDENTITY` for the `@id`s and the `Person` that
-// `projectPage(project)` points its authorship at. Editing the site identity
-// rewrites all eleven documents' structured data, so it has to move their date.
+// registry entry — see the note beside it in site.js. Two of its three entries
+// are imported here outright: the detail page calls `projectPage(project)` from
+// `schema.js`, which in turn calls `absoluteUrl` from `canonical.js`. The third,
+// the registry itself, is reached only TRANSITIVELY through those two — they
+// read `ORIGIN` for the canonical each page declares about itself and for the
+// `@id`s, and `IDENTITY` for the `Person` the page points its authorship at.
+// Editing the site identity, the URL normaliser or the graph's shape rewrites
+// all eleven documents, so each has to move their date.
 //
 // Pinned by the `project detail sources` cases in tests/unit/sitemapDrift.test.js,
 // which resolve this route's real import graph off disk.

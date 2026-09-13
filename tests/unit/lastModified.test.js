@@ -65,12 +65,62 @@ describe('lastModifiedFor', () => {
     // that actually shipped.
     expect(args.slice(0, 4)).toEqual(['log', '-1', '--format=%cI', '--']);
     // Paths after `--`, as an argv vector — nothing can be read as a revision,
-    // and there is no shell to interpret anything.
-    expect(args.slice(4)).toEqual(['src/app/page.js', 'src/components/home']);
+    // and there is no shell to interpret anything. Each carries `:(literal)`
+    // so git compares it as a path rather than as a glob (see below).
+    expect(args.slice(4)).toEqual([
+      ':(literal)src/app/page.js',
+      ':(literal)src/components/home',
+    ]);
     expect(options.timeout).toBe(2000);
     // stderr ignored: a git hook or pager would otherwise pollute the build log
     // once per route.
     expect(options.stdio).toEqual(['ignore', 'pipe', 'ignore']);
+  });
+
+  it('passes a pathspec with glob characters literally', async () => {
+    // The real one: `src/app/(sub pages)/projects/[id]/page.js`, the source
+    // list behind all eleven project URLs. A pathspec is a glob by default and
+    // `[id]` is a character class matching a single `i` or `d`.
+    //
+    // The failure this prevents is NOT the path missing its own file — git
+    // compares literally before it tries fnmatch, so it always found it. It is
+    // over-matching: a sibling directory named `i` or `d` would be swept in,
+    // and `git log -1` reports the newest commit across everything matched, so
+    // these eleven URLs would silently take the date of an unrelated file.
+    // Reproduced in a scratch repo before fixing — with `proj/[id]` and
+    // `proj/i` present, the bare pathspec selected both and returned the
+    // decoy's date.
+    //
+    // Parentheses are not fnmatch metacharacters, so `(sub pages)` is along
+    // for the ride rather than at risk.
+    execFileSync.mockReturnValue('2024-03-07T09:15:22Z');
+    const { lastModifiedFor } = await freshModule();
+
+    const dynamicRoute = 'src/app/(sub pages)/projects/[id]/page.js';
+    lastModifiedFor([dynamicRoute]);
+
+    const [, args] = execFileSync.mock.calls[0];
+    expect(args.at(-1)).toBe(`:(literal)${dynamicRoute}`);
+    // The bracket survives untouched — escaping it would be the other way to
+    // do this, and is the way that silently breaks when someone reformats it.
+    expect(args.at(-1)).toContain('[id]');
+  });
+
+  it('applies the literal prefix to every path, not just globbed ones', async () => {
+    // A rule with an exception is a rule someone forgets. Uniform prefixing is
+    // what makes a future source containing `*`, `?` or `[` safe by default
+    // rather than by being noticed.
+    execFileSync.mockReturnValue('2024-03-07T09:15:22Z');
+    const { lastModifiedFor } = await freshModule();
+
+    lastModifiedFor(['package.json', 'src/components/uses', '.nvmrc']);
+
+    const [, args] = execFileSync.mock.calls[0];
+    expect(args.slice(4)).toEqual([
+      ':(literal)package.json',
+      ':(literal)src/components/uses',
+      ':(literal).nvmrc',
+    ]);
   });
 
   it('omits the field when no commit has ever touched the paths', async () => {

@@ -159,3 +159,125 @@ describe('experience-summary — GitHub healthy', () => {
     );
   });
 });
+
+// ── Fulfilled is not the same as complete ───────────────────────────────────
+// Pagination runs NEWEST-FIRST, so the oldest repositories are on the last
+// pages — and `firstRepoDate` / `months` are read off the last element. When a
+// later page timed out, `fetchOwnedRepos` kept what it had and returned an
+// ordinary array, which is the right call (a throw would drop the whole panel
+// and `unstable_cache` would hold that for ten minutes). What was wrong is that
+// nothing carried the fact: the caller could not tell "all pages fetched" from
+// "some pages fetched", so it published `partial: false` and a `total` anchored
+// on the oldest repo it HAPPENED to see.
+//
+// That undercount is systematic, not a random sample — it always shortens the
+// span, and always by dropping the repos that define it.
+describe('experience-summary — pagination cut short', () => {
+  /** A GitHub page whose `hasNextPage` invites another request. */
+  const page = (nodes, hasNextPage, endCursor = 'cursor-1') => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      data: {
+        user: { repositories: { pageInfo: { hasNextPage, endCursor }, nodes } },
+      },
+    }),
+  });
+
+  const NEWER = {
+    name: 'newer',
+    createdAt: '2024-01-01T00:00:00Z',
+    url: 'https://github.com/x/newer',
+  };
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.GITHUB_TOKEN = 'test-token-not-a-credential';
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.GITHUB_TOKEN;
+  });
+
+  it('reports partial when a later page aborts', async () => {
+    // First page succeeds and says there is more; the second aborts the way a
+    // timeout does. `fetchOwnedRepos` keeps page one and stops.
+    let call = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        call += 1;
+        if (call === 1) return page([NEWER], true);
+        throw new DOMException('The operation was aborted.', 'AbortError');
+      }),
+    );
+
+    const { GET } = await import(ROUTE);
+    const response = await GET(new Request(URL_FOR(USERNAME)));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    // The repos we did get are still returned — the panel is not dropped.
+    expect(body.personalProjects.repos).toHaveLength(1);
+    // But the list is flagged, and the payload no longer claims completeness.
+    expect(body.personalProjects.complete).toBe(false);
+    expect(body.partial).toBe(true);
+    // The undercount specifically: `months` here is anchored on 2024, because
+    // whatever predates it was on the page that never arrived. Publishing that
+    // as the headline is the bug, so the headline is withheld.
+    expect(body.total).toBeNull();
+    // And an incomplete answer must not be cached as though it were whole.
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('reports partial when the page ceiling is reached', async () => {
+    // Every page says there is another. The loop stops at
+    // MAX_OWNED_REPO_PAGES with `hasNextPage` still true — fulfilled, and
+    // definitely not all of them.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => page([NEWER], true)),
+    );
+
+    const { GET } = await import(ROUTE);
+    const body = await GET(new Request(URL_FOR(USERNAME))).then((r) => r.json());
+
+    expect(body.personalProjects.complete).toBe(false);
+    expect(body.partial).toBe(true);
+    expect(body.total).toBeNull();
+  });
+
+  it('treats an empty first page that aborted as incomplete, not as "owns nothing"', async () => {
+    // The zero-repo branch reaches the same place an abort on page one does,
+    // and they are not the same statement: one is a real empty account, the
+    // other is a request that never got an answer.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => page([], true)),
+    );
+
+    const { GET } = await import(ROUTE);
+    const body = await GET(new Request(URL_FOR(USERNAME))).then((r) => r.json());
+
+    expect(body.personalProjects.repos).toEqual([]);
+    expect(body.personalProjects.complete).toBe(false);
+    expect(body.partial).toBe(true);
+  });
+
+  it('marks a genuinely complete single page complete', async () => {
+    // The control. Without it the three cases above pass on a flag that is
+    // simply always false.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => page([NEWER], false, null)),
+    );
+
+    const { GET } = await import(ROUTE);
+    const body = await GET(new Request(URL_FOR(USERNAME))).then((r) => r.json());
+
+    expect(body.personalProjects.complete).toBe(true);
+    expect(body.partial).toBe(false);
+    expect(body.total).toBeTruthy();
+  });
+});

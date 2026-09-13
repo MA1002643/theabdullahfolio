@@ -165,9 +165,15 @@ async function githubGraphQL(query, variables, timeoutMs = GITHUB_TIMEOUT_MS) {
 // Fetch every owned, non-fork repository the account has, paginated and
 // ordered newest-first. `ownerAffiliations: OWNER` excludes contributor
 // / member repos; `isFork: false` excludes forks (those weren't created
-// by this account). Returns `{ name, createdAt, url }` records in DESC
-// order so the modal can render newest-first; the earliest createdAt is
-// always the last element.
+// by this account).
+//
+// Returns `{ repos, complete }` — NOT a bare array, and the second field is
+// the point. `repos` holds `{ name, createdAt, url }` records in DESC order so
+// the modal can render newest-first, which also means the earliest createdAt
+// is the LAST element, on the LAST page. `complete` says whether we got to
+// that page: a caller reading `repos[repos.length - 1]` off a short list is
+// reading the oldest repo it managed to fetch, not the oldest one that exists,
+// and the two are indistinguishable without this flag.
 //
 // Two safety nets:
 //   - `MAX_OWNED_REPO_PAGES` — hard page ceiling so a malformed
@@ -179,6 +185,13 @@ async function githubGraphQL(query, variables, timeoutMs = GITHUB_TIMEOUT_MS) {
 //     better than a thrown error: the catch in `buildExperienceSummary`
 //     would drop the entire personal-projects panel, and the 10-min
 //     `unstable_cache` would lock that state in until the next TTL.
+//
+// That last trade is still the right one, but it was being made silently.
+// Returning a short list as an ordinary success meant the caller published a
+// `total` anchored on the newest-of-the-old repos with `partial: false` beside
+// it — a definite undercount asserting it was complete. `complete` is what
+// keeps the trade honest: the repos are still shown, and the figures derived
+// from them are held back until the list is known to be whole.
 async function fetchOwnedRepos(username) {
   const query = `
     query OwnedRepos($username: String!, $after: String) {
@@ -204,6 +217,13 @@ async function fetchOwnedRepos(username) {
   const deadline = Date.now() + GITHUB_OVERALL_BUDGET_MS;
   const repos = [];
   let cursor = null;
+  // Set ONLY by GitHub telling us there is no next page. Every other way out of
+  // this loop — budget exhausted, a page aborted, a malformed response, the
+  // MAX_OWNED_REPO_PAGES ceiling — leaves it false, because every one of them
+  // means there may be repos we never saw. Default-false and one place to set
+  // it, so a new `break` added later is incomplete until someone decides
+  // otherwise, rather than silently claiming completeness.
+  let complete = false;
   for (let page = 0; page < MAX_OWNED_REPO_PAGES; page++) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
@@ -232,7 +252,10 @@ async function fetchOwnedRepos(username) {
           url: node.url ?? null,
         });
       }
-      if (!conn.pageInfo?.hasNextPage) break;
+      if (!conn.pageInfo?.hasNextPage) {
+        complete = true;
+        break;
+      }
       cursor = conn.pageInfo.endCursor;
     } catch (err) {
       // Timeout / abort mid-pagination — keep what we have, log, and
@@ -249,7 +272,7 @@ async function fetchOwnedRepos(username) {
       throw err;
     }
   }
-  return repos;
+  return { repos, complete };
 }
 
 // GitHub is now the ONLY fallible source. Employment comes from a static
@@ -277,7 +300,7 @@ async function buildExperienceSummary(username) {
     // the response also folds rename/create/delete events into the
     // payload's `changeFingerprint` (so Phase 5's banner will announce
     // a "new repo detected" change naturally without bespoke wiring).
-    const repos = githubResult.value ?? [];
+    const { repos = [], complete = false } = githubResult.value ?? {};
     if (repos.length > 0) {
       const earliest = new Date(repos[repos.length - 1].createdAt);
       const months = Math.max(0, monthsBetween(earliest, now));
@@ -286,6 +309,13 @@ async function buildExperienceSummary(username) {
         months,
         display: formatDuration(months),
         repos,
+        // Whether `repos` is ALL of them. This is not decoration: pagination
+        // runs newest-first, so the oldest repositories are on the LAST pages,
+        // and `firstRepoDate` above is read off the last element. A page that
+        // timed out therefore drops exactly the repos that anchor the span —
+        // the undercount is systematic and always in the same direction, never
+        // a random sample. `months` is a FLOOR when this is false.
+        complete,
       };
     } else {
       personalProjects = {
@@ -293,6 +323,10 @@ async function buildExperienceSummary(username) {
         months: 0,
         display: formatDuration(0),
         repos: [],
+        // An empty list is only an honest "owns nothing yet" if we actually
+        // reached the end. Aborting on the first page reaches here too, and
+        // that is not the same statement.
+        complete,
       };
     }
   } else if (githubResult.status === "rejected") {
@@ -330,7 +364,16 @@ async function buildExperienceSummary(username) {
   //   · the client's localStorage write, which is its instant-paint source on
   //     the NEXT visit — storing a half-answer would make a later, perfectly
   //     healthy page load paint "Unavailable" out of storage.
-  const partial = personalProjects == null;
+  // Two ways to be partial, and the second is the quieter one. The GitHub half
+  // can FAIL outright (null above), or it can SUCCEED INCOMPLETELY — pagination
+  // stopping early on a timeout, the wall-clock budget, or the page ceiling
+  // returns a fulfilled array that simply is not all of them.
+  //
+  // Only the first used to count. A fulfilled-but-short array published
+  // `partial: false` and a `total` anchored on the oldest repo it happened to
+  // see, which is a definite understatement asserting it is complete — worse
+  // than the outright failure, because nothing about it looks wrong.
+  const partial = personalProjects == null || personalProjects.complete !== true;
 
   const totalMonths =
     (personalProjects?.months ?? 0) + (employment?.months ?? 0);
