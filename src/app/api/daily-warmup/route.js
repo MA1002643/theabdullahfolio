@@ -1,4 +1,5 @@
 import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
+import { envPositiveMs } from "../_utils/env";
 
 // Pinned to Node so `node:crypto` (transitively used by `safeBearerEqual`)
 // is available — same constraint as /api/repo-refresh and /api/work-status.
@@ -10,15 +11,58 @@ export const runtime = "nodejs";
 // middleware) can't silently restore static eligibility.
 export const dynamic = "force-dynamic";
 
+// ── Why this route has a wall-clock budget of its own ───────────────────────
+// Every downstream bounds ITSELF, and for a while that was mistaken for the
+// orchestrator being bounded. It is not, because those budgets ADD UP while the
+// steps run one after another:
+//
+//   /api/work-status    ~10 s  — portfolio (10 s) and boards (6 s) concurrently
+//   /api/repo-refresh   ~30 s  — TWO warm fetches, each CRON_WARM_TIMEOUT_MS (15 s)
+//   /api/seo-report     ~20 s  — token exchange, then 3 queries, each 10 s
+//
+// Sixty seconds of legitimate, in-budget work, against a platform function
+// limit this repository documents as 60 s (see /api/repo-refresh) and which is
+// lower on smaller plans. A slow-but-healthy night therefore got the function
+// KILLED — no body, no per-step results, no verdict for cron monitoring to read,
+// and the collected results thrown away at the moment they were most worth
+// having. Adding the seo-report step is what pushed it over; the shape was
+// already there.
+//
+// Two fixes, and both are needed — the second is not redundant:
+//
+//   1. The three steps run CONCURRENTLY (they share nothing: separate handlers,
+//      separate caches, and `revalidateTag` targets that do not overlap). Worst
+//      case becomes the SLOWEST step, ~30 s, not the sum.
+//   2. One shared deadline bounds the run regardless. Concurrency alone cannot
+//      do that: `callInternal` previously passed no `AbortSignal` at all, so a
+//      downstream exceeding its OWN budget — a cold start, a hung body read, a
+//      platform stall — hung this route with no bound whatsoever. Their budgets
+//      are promises they make to themselves, not guarantees to their caller.
+//
+// Because the steps are concurrent, ONE `AbortSignal.timeout` shared by all
+// three IS the overall deadline — no per-call arithmetic, and no way for the
+// per-step budgets to drift out of step with the total.
+//
+// The default leaves real headroom over the ~30 s worst case for three
+// concurrent cold starts, while staying clear of the platform ceiling: the point
+// is to return the results we DID collect, with a 502 the monitor can see,
+// rather than to be killed holding them.
+const RUN_BUDGET_MS = envPositiveMs(process.env.CRON_RUN_BUDGET_MS, 45000);
+
+// Aborting does not stop the downstream — that function keeps running and its
+// warm still lands. It only stops US waiting, which is the right trade for a
+// warming cron: the work completes either way, and the verdict gets reported.
+
 // Hit a downstream cron endpoint with the bearer token the upstream Vercel
 // Cron caller gave us. Each downstream already handles its own cache-
 // busting internally (work-status uses ?bust=1 as a handler signal,
 // repo-refresh appends a timestamp to its warm fetch), so this layer just
 // forwards auth and reports the outcome. Returns `{ ok, status, detail }`
 // so the orchestrator can include per-step results in the response.
-async function callInternal(baseUrl, path, cronSecret) {
+async function callInternal(baseUrl, path, cronSecret, signal) {
   const res = await fetch(`${baseUrl}${path}`, {
     cache: "no-store",
+    signal,
     headers: {
       Authorization: `Bearer ${cronSecret}`,
       "Cache-Control": "no-cache",
@@ -55,13 +99,16 @@ function isNotConfigured(result) {
 }
 
 // Consolidated daily cron — replaces the prior `/api/work-status?bust=1`
-// cron entry in vercel.json, now wrapping both the work-status bust and
-// the new repo-refresh warm-up under a single schedule. Consolidation is
-// driven by Hobby's per-day cron-count cap: a second standalone cron for
-// repo-refresh would silently never run on Hobby. Runs the two steps in
-// independent try/catches so a failure in one doesn't skip the other.
-// Sequential ordering keeps logs and failure modes readable; daily
-// cadence makes parallelism moot.
+// cron entry in vercel.json, now wrapping the work-status bust, the
+// repo-refresh warm-up and the Search Console snapshot under a single
+// schedule. Consolidation is driven by Hobby's per-day cron-count cap: a
+// second standalone cron would silently never run on Hobby.
+//
+// The steps run CONCURRENTLY under one shared deadline. An earlier note here
+// said "daily cadence makes parallelism moot" — true of throughput, and it was
+// never the question: the three budgets summed to the platform's own function
+// limit, so serial execution risked the run being killed with its results
+// uncollected. See RUN_BUDGET_MS above.
 export async function GET(request) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
@@ -85,41 +132,62 @@ export async function GET(request) {
       : "http://localhost:3000")
   ).replace(/\/+$/, "");
 
+  // The three steps, in the order their results are reported. `seoReport` is the
+  // Search Console snapshot (issue #32, W6); it belongs HERE rather than in its
+  // own `vercel.json` cron entry for exactly the reason this route exists —
+  // Hobby caps cron count, so a second standalone entry would silently never run
+  // (risk §10.7). That cap is also why the budget above matters: there is one
+  // cron, so a run that gets killed takes every step down with it.
+  const STEPS = [
+    ["workStatus", "/api/work-status?bust=1"],
+    ["repoRefresh", "/api/repo-refresh"],
+    ["seoReport", "/api/seo-report"],
+  ];
+
+  // One signal for all three. Started HERE rather than at module scope so the
+  // budget is per-invocation — a module-level timer would begin at cold start
+  // and hand a warm instance an already-expired deadline.
+  const runSignal = AbortSignal.timeout(RUN_BUDGET_MS);
+
+  // `allSettled`, not `all`: one step failing must not cancel the others, which
+  // is the property the three separate try/catches used to provide. The steps
+  // are independent, so a failure anywhere still leaves the rest worth running
+  // and worth reporting.
+  const settled = await Promise.allSettled(
+    STEPS.map(([, path]) => callInternal(baseUrl, path, cronSecret, runSignal)),
+  );
+
+  // Logs now interleave, which sequential ordering used to avoid. Accepted:
+  // each line names its own step, and readable logs are not worth a killed
+  // function. Results are keyed back in declaration order regardless, so the
+  // response body reads the same as it always did.
   const results = {};
-  try {
-    results.workStatus = await callInternal(
-      baseUrl,
-      "/api/work-status?bust=1",
-      cronSecret,
+  settled.forEach((outcome, index) => {
+    const [key] = STEPS[index];
+    if (outcome.status === "fulfilled") {
+      results[key] = outcome.value;
+      return;
+    }
+    // `AbortSignal.timeout` rejects with `TimeoutError`; an explicit abort would
+    // be `AbortError`. Both mean the same thing here — we stopped waiting — and
+    // both are recorded as such so a budget breach is not misread as a
+    // downstream fault by whoever reads the log at 01:00.
+    const err = outcome.reason;
+    const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
+    console.error(
+      `daily-warmup: ${key} ${
+        timedOut
+          ? `exceeded the ${RUN_BUDGET_MS}ms run budget`
+          : "failed"
+      }:`,
+      err,
     );
-  } catch (err) {
-    console.error("daily-warmup: work-status bust failed:", err);
-    results.workStatus = { ok: false, error: err?.message ?? String(err) };
-  }
-  try {
-    results.repoRefresh = await callInternal(
-      baseUrl,
-      "/api/repo-refresh",
-      cronSecret,
-    );
-  } catch (err) {
-    console.error("daily-warmup: repo-refresh failed:", err);
-    results.repoRefresh = { ok: false, error: err?.message ?? String(err) };
-  }
-  // Third step: the Search Console snapshot (issue #32, W6). It belongs HERE
-  // rather than in its own `vercel.json` cron entry for exactly the reason this
-  // route exists — Hobby caps cron count, so a second standalone entry would
-  // silently never run (risk §10.7).
-  try {
-    results.seoReport = await callInternal(
-      baseUrl,
-      "/api/seo-report",
-      cronSecret,
-    );
-  } catch (err) {
-    console.error("daily-warmup: seo-report failed:", err);
-    results.seoReport = { ok: false, error: err?.message ?? String(err) };
-  }
+    results[key] = {
+      ok: false,
+      error: err?.message ?? String(err),
+      ...(timedOut && { timedOut: true }),
+    };
+  });
 
   // 502 on partial failure so platform-level cron monitoring (which
   // typically alarms on non-2xx) catches a degraded run instead of seeing

@@ -30,7 +30,12 @@
 import { projectsData } from '@/app/data';
 import { absoluteUrl } from '@/lib/seo/canonical';
 import { lastModifiedFor } from '@/lib/seo/lastModified';
-import { CV_ASSET, ROUTES, SHARED_ROUTE_SOURCES } from '@/lib/seo/site';
+import {
+  CV_ASSET,
+  ROUTES,
+  SHARED_ROUTE_SOURCES,
+  SUB_PAGE_SHARED_SOURCES,
+} from '@/lib/seo/site';
 
 // Static: the registry and the project data are both build-time constants, and
 // `lastModifiedFor` shells out to git — which must happen at build, never per
@@ -75,7 +80,17 @@ export const PROJECT_SOURCES = [
   'src/app/(sub pages)/projects/[id]/page.js',
   'src/app/data.js',
   'src/components/project-detail',
+  // Detail-only, and therefore listed here rather than in either shared set:
+  // `projectMetaDescription()` composes each project's meta description from
+  // the record's own facts instead of reusing its on-page blurb, so a change to
+  // how that sentence is built rewrites the snippet a crawler displays for all
+  // eleven URLs — and no other route calls it.
+  'src/lib/seo/projectMeta.js',
   ...SHARED_ROUTE_SOURCES,
+  // These eleven live inside the `(sub pages)` group too, so they render the
+  // group layout, its footer and its two nav links, and take their metadata
+  // through `sectionMetadata()` exactly as the eight section routes do.
+  ...SUB_PAGE_SHARED_SOURCES,
 ];
 
 export default function sitemap() {

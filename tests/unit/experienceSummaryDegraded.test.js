@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { freshSecret } from '../helpers/secrets.js';
+
 // ── A failed GitHub call must not discard a good employment figure ──────────
 // `/api/experience-summary` answers with two independent halves: `employment`,
 // a pure derivation over `journeyData` that cannot fail, and `personalProjects`,
@@ -32,6 +34,21 @@ const URL_FOR = (username) =>
 
 /** The allowed username, resolved the way the route resolves it. */
 const USERNAME = process.env.NEXT_PUBLIC_GITHUB_USERNAME || 'MA1002643';
+
+// The cases below need `GITHUB_TOKEN` to hold SOMETHING — the route reads it at
+// import time and `fetchOwnedRepos` throws on a missing token, which is what the
+// "GitHub down" suite above uses deliberately. The value is never checked: every
+// fetch here is stubbed, so nothing ever reads the header it is spoken into.
+//
+// Generated rather than written down anyway, because the route does use it as an
+// Authorization credential and a token-shaped literal in the tree is the thing
+// CLAUDE.md §1 rules out with no exception for "just a test key" — it is the
+// string that gets copied into the next suite, then a debug script, and by then
+// nobody remembers it was a placeholder. See tests/helpers/secrets.js.
+//
+// Once at module scope, not per `beforeEach`: vitest forks each test FILE, so
+// one value is already unique to this suite and this run.
+const GITHUB_TOKEN = freshSecret('test-github');
 
 describe('experience-summary — GitHub down', () => {
   beforeEach(() => {
@@ -99,7 +116,7 @@ describe('experience-summary — GitHub down', () => {
 describe('experience-summary — GitHub healthy', () => {
   beforeEach(() => {
     vi.resetModules();
-    process.env.GITHUB_TOKEN = 'test-token-not-a-credential';
+    process.env.GITHUB_TOKEN = GITHUB_TOKEN;
 
     // One page of owned repos, in the shape the route's GraphQL query asks for.
     vi.stubGlobal(
@@ -192,7 +209,7 @@ describe('experience-summary — pagination cut short', () => {
 
   beforeEach(() => {
     vi.resetModules();
-    process.env.GITHUB_TOKEN = 'test-token-not-a-credential';
+    process.env.GITHUB_TOKEN = GITHUB_TOKEN;
   });
 
   afterEach(() => {

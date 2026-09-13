@@ -375,16 +375,73 @@ export const SHARED_ROUTE_SOURCES = [
   'src/lib/seo/schema.js',
 ];
 
+// ── Sources every NON-HOME indexable URL shares ─────────────────────────────
+// `SHARED_ROUTE_SOURCES` above is what EVERY URL publishes from. It is not the
+// whole shared surface, and treating it as though it were left a second gap of
+// the same shape one level down: the homepage sits at `src/app/page.js` under
+// the root layout, while all eight other section routes and all eleven project
+// pages live inside the `(sub pages)` route group and share a second layer that
+// `/` never touches.
+//
+// Everything here renders into those nineteen documents and no others:
+//
+//   • `src/app/(sub pages)/layout.js` — the group layout. It is the reason this
+//     set has to exist separately, and the reason no import graph can find it:
+//     Next COMPOSES a layout around a route, so there is no `import` edge from
+//     a page to its layout at all. A walker that follows imports declares it
+//     unreachable from every route it renders on.
+//   • `src/components/footer` — rendered by that layout, and the largest block
+//     of crawler-visible text and internal links on every one of these pages.
+//     `footer-data.js` inside it is read by `schema.js` for the `Person`'s
+//     `sameAs`, so one edit there changes both the visible links and the
+//     structured data.
+//   • `src/components/HomeBtn.jsx`, `src/components/ProjectsBtn.jsx` — also the
+//     layout's children, each rendering a server-side `<Link>` (`/` and
+//     `/projects`). Small files, but internal links are exactly what a crawler
+//     follows.
+//   • `src/lib/og/meta.js` — `sectionMetadata()`, which builds the `<title>`,
+//     meta description, canonical and the OG/Twitter cards for these routes.
+//     The homepage deliberately does NOT flow through it (its metadata is
+//     declared directly in `src/app/layout.js`), which is precisely why this
+//     belongs here rather than in the shared list above.
+//
+// `src/lib/fluidScale` is imported by that layout and deliberately left out: it
+// returns CSS sizing values, so it changes how a page looks and nothing a
+// crawler reads. Same line the `src/components/seo` serialiser exclusion draws.
+//
+// The homepage is excluded by PATH rather than by listing these on eight
+// entries: `/` genuinely does not render any of it, and watching them there
+// would re-stamp the one URL with the highest priority in the sitemap every
+// time the footer changed — the over-stamp the note above is careful about,
+// applied to the page that can least afford it.
+export const SUB_PAGE_SHARED_SOURCES = [
+  'src/app/(sub pages)/layout.js',
+  'src/components/footer',
+  'src/components/HomeBtn.jsx',
+  'src/components/ProjectsBtn.jsx',
+  'src/lib/og/meta.js',
+];
+
 /**
- * The route registry, each entry's `sources` completed with the shared list.
+ * The route registry, each entry's `sources` completed with the shared lists.
  *
- * Built by `map` rather than by repeating the path in nine literals so that
+ * Built by `map` rather than by repeating the paths in nine literals so that
  * adding a shared input later reaches every route at once — and so that the
  * definitions above stay readable as what they are, the per-route half.
+ *
+ * Two shared lists, not one: `SHARED_ROUTE_SOURCES` is what every URL
+ * publishes, `SUB_PAGE_SHARED_SOURCES` what everything inside the `(sub pages)`
+ * group publishes. The homepage is the only route outside that group, so the
+ * test is a path comparison rather than a flag on each entry — a flag would be
+ * a second place to keep in step with where the file actually lives on disk.
  */
 export const ROUTES = ROUTE_DEFINITIONS.map((route) => ({
   ...route,
-  sources: [...route.sources, ...SHARED_ROUTE_SOURCES],
+  sources: [
+    ...route.sources,
+    ...SHARED_ROUTE_SOURCES,
+    ...(route.path === '/' ? [] : SUB_PAGE_SHARED_SOURCES),
+  ],
 }));
 
 // ── The CV PDF ──────────────────────────────────────────────────────────────

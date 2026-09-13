@@ -450,11 +450,34 @@ export async function GET(request) {
   }
 
   const credentials = credential.credentials;
+
+  // Storage is REQUIRED from here, and this deliberately does not claim
+  // `skipped`. Reaching this line means `GSC_SERVICE_ACCOUNT_KEY` is present and
+  // usable — the integration is switched on — and without Upstash this route can
+  // fetch a snapshot but never store one. That is not a dormant integration, it
+  // is a configured one that cannot do its job.
+  //
+  // It used to answer 503 + `skipped`, which daily-warmup excuses, so the run
+  // came back GREEN every night while no snapshot was ever written. Worse than a
+  // plain silent failure: the findings this route reports (new queries, dropped
+  // positions, low-CTR pages) are all derived by comparing today against the
+  // STORED previous run, so with no storage the loop cannot start at all — and
+  // the one signal that would have said so was being suppressed by design. The
+  // exact blind spot the `isNotConfigured` contract was tightened to close, left
+  // open one guard further down.
+  //
+  // 500, matching the invalid-credential branch above and for the same reason:
+  // nothing upstream was reached or misbehaved, this is the server's own
+  // configuration, and it will not fix itself by being retried tomorrow.
   if (!redis) {
-    return noStoreJson(
-      { ok: false, skipped: 'Upstash credentials are not configured' },
-      { status: 503 },
-    );
+    const reason =
+      'Upstash is not configured (KV_REST_API_URL / KV_REST_API_TOKEN), so no ' +
+      'Search Console snapshot can be stored';
+    // Logged as well as returned, for the same reason as the branch above: the
+    // response goes to daily-warmup, but the reason belongs in the platform log
+    // where the cron failure is actually read from.
+    console.error(`seo-report: ${reason}`);
+    return noStoreJson({ ok: false, error: reason }, { status: 500 });
   }
 
   // The GSC property. A Domain property is addressed `sc-domain:ma.codes`, a

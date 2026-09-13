@@ -499,11 +499,25 @@ monitor would flag. The check **fails closed**: a 503 with no reason, a body
 that is not JSON, a `skipped` on any other status, or a thrown fetch all read as
 failures. Pinned by `tests/unit/dailyWarmupVerdict.test.js`.
 
-> One residual, stated rather than hidden: `/api/seo-report` also answers
-> 503 + `skipped` when the **Upstash** credentials are absent, so that specific
-> misconfiguration is forgiven too. A genuine Upstash *outage* is not — the
-> client throws and the route answers 502. Tighten this if the two ever need
-> telling apart.
+**Missing storage is not a `skipped` state** (tightened 2026-09-13; this was
+previously recorded here as a known residual). `/api/seo-report` used to answer
+503 + `skipped` when the **Upstash** credentials were absent, which
+`daily-warmup` forgives — so with `GSC_SERVICE_ACCOUNT_KEY` configured the run
+came back green every night while no snapshot was ever stored.
+
+That is the blind spot the verdict fix closed, re-entered one guard further down.
+It is also self-concealing in a way the credential case is not: every finding
+this route reports is derived by comparing today's snapshot against the **stored**
+previous one, so with no storage the feedback loop cannot start at all — and the
+one signal that would have said so was suppressed by design.
+
+The storage check sits **after** the credential checks, which is what makes the
+rule expressible: reaching it means the integration is switched on, and a
+configured integration that cannot store anything is broken, not dormant. It now
+answers **500 with an `error`** (and logs the reason), matching the invalid-credential
+branch — nothing upstream was reached, it is the server's own configuration, and
+it will not fix itself by being retried tomorrow. `skipped` is now claimable by
+exactly one condition: `GSC_SERVICE_ACCOUNT_KEY` absent.
 
 ### No `googleapis` dependency
 

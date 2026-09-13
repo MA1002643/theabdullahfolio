@@ -240,6 +240,49 @@ function publishedFrom(entryFiles, barriers = []) {
  * @param {string} routePath Registry route path (`/`, `/about`, …).
  * @returns {string[]} Repo-relative entry files that exist on disk.
  */
+/**
+ * Whether a `sources` entry accounts for an imported module.
+ *
+ * Three shapes, because `sources` entries are written as they are committed
+ * and imports as they are written: an exact file path, a directory the module
+ * sits under, or a file whose extension the specifier omits (`@/app/data`
+ * resolving to `src/app/data.js`).
+ *
+ * Module-scoped rather than local to one describe: the shared-source checks need
+ * the same three shapes now that a shared list can name a DIRECTORY
+ * (`src/components/footer`), and a second copy of this is a second thing to keep
+ * in step.
+ */
+const covers = (source, specifier) =>
+  specifier === source ||
+  specifier.startsWith(`${source}/`) ||
+  `${specifier}.js` === source ||
+  `${specifier}.jsx` === source;
+
+// The layout Next wraps around everything in the `(sub pages)` route group.
+//
+// It has to be named explicitly because there is NO import edge to find: a page
+// does not import its layout, Next composes the two. Every walker in this file
+// follows imports, so without this the group layout — and the footer and two nav
+// links it renders — read as unreachable from the nineteen documents they
+// actually appear in, and watching them would look like a mistake.
+const SUB_PAGE_LAYOUT = 'src/app/(sub pages)/layout.js';
+
+/**
+ * Everything Next renders for a route: its own page/layout, plus the ancestor
+ * layouts it is composed inside.
+ *
+ * Deliberately separate from `entryFilesFor` rather than folded into it. That
+ * function feeds the shared-data-module check below, whose whole mechanism is a
+ * BARRIER at the registry — widening its entry set would change which routes
+ * count as rendering from `src/app/data.js` and quietly rewrite an unrelated
+ * assertion.
+ */
+function renderedEntriesFor(routePath) {
+  const entries = entryFilesFor(routePath);
+  return routePath === '/' ? entries : [...entries, SUB_PAGE_LAYOUT];
+}
+
 function entryFilesFor(routePath) {
   const directory =
     routePath === '/' ? 'src/app' : `src/app/(sub pages)${routePath}`;
@@ -467,21 +510,6 @@ describe('project detail sources', () => {
       'nothing a reader or a crawler sees.',
   };
 
-
-  /**
-   * Whether a `sources` entry accounts for an imported module.
-   *
-   * Three shapes, because `sources` entries are written as they are committed
-   * and imports as they are written: an exact file path, a directory the module
-   * sits under, or a file whose extension the specifier omits (`@/app/data`
-   * resolving to `src/app/data.js`).
-   */
-  const covers = (source, specifier) =>
-    specifier === source ||
-    specifier.startsWith(`${source}/`) ||
-    `${specifier}.js` === source ||
-    `${specifier}.jsx` === source;
-
   it('watches every component directory the detail route renders from', async () => {
     const { PROJECT_SOURCES } = await import('@/app/sitemap');
     const imported = importsFrom(DETAIL_PAGE).filter((specifier) =>
@@ -514,7 +542,10 @@ describe('project detail sources', () => {
 
   it('watches nothing the detail route does not actually render', async () => {
     const { PROJECT_SOURCES } = await import('@/app/sitemap');
-    const published = [...publishedFrom(DETAIL_PAGE)];
+    // The group layout is an ENTRY here, not an import: these eleven pages are
+    // composed inside it, so the footer and nav links it renders are part of
+    // what they publish even though no import edge says so.
+    const published = [...publishedFrom([DETAIL_PAGE, SUB_PAGE_LAYOUT])];
 
     // Guard on the guard, in the dimension this check actually depends on: a
     // walker that resolved nothing beyond the entry file would make every
@@ -524,6 +555,9 @@ describe('project detail sources', () => {
     // floor states the expectation rather than leaving it to the failure text.
     expect(published.length).toBeGreaterThanOrEqual(15);
     expect(published).toContain('src/lib/seo/site.js');
+    // And that the composed layout really was walked, not merely listed — its
+    // footer is the largest block of crawler-visible text on the page.
+    expect(published).toContain('src/components/footer/index.jsx');
 
     // The direction that catches the bug this suite was written for. A stray
     // entry does not fail anything on its own — it quietly widens the date to
@@ -531,8 +565,10 @@ describe('project detail sources', () => {
     // `<lastmod>` asserting a change that did not happen.
     const strays = PROJECT_SOURCES.filter(
       (source) =>
-        // The route file itself is the one entry with no import to match.
+        // The route file itself is the one entry with no import to match, and
+        // the group layout is composed rather than imported.
         source !== DETAIL_PAGE &&
+        source !== SUB_PAGE_LAYOUT &&
         !published.some((module) => covers(source, module)),
     );
 
@@ -721,6 +757,172 @@ describe('registry as a source', () => {
         `${route.path} has no sources of its own beyond the shared list.`,
       ).toBeGreaterThan(1);
     }
+  });
+});
+
+// ── The second shared surface: everything except the homepage ───────────────
+// Watching the registry and its two builders closed the gap for inputs EVERY
+// URL publishes, and it was mistaken for the whole shared surface. It is not.
+// The homepage sits at `src/app/page.js` under the root layout; the other eight
+// section routes and all eleven project pages live inside the `(sub pages)`
+// route group and share a second layer `/` never touches — the group layout,
+// the footer and two nav links it renders, and `sectionMetadata()`.
+//
+// A commit to any of them changes server-rendered links or the metadata a
+// crawler reads at nineteen URLs, and none was in any `sources` list: the same
+// defect as the registry, one level down, and the reason this file now asserts
+// that a shared list is COMPLETE rather than merely non-empty.
+//
+// The group layout is why these need their own set and their own walk. Next
+// COMPOSES a layout around a route rather than the page importing it, so an
+// import graph cannot find it — see `SUB_PAGE_LAYOUT` at the top of this file.
+describe('the non-home shared surface', () => {
+  const HOME = '/';
+
+  it('names the files it claims to watch', async () => {
+    const { SUB_PAGE_SHARED_SOURCES } = await import('@/lib/seo/site');
+
+    // Vacuity guard, and named individually for the same reason as the list
+    // above: emptied or trimmed, every check below passes while watching less.
+    expect(SUB_PAGE_SHARED_SOURCES).toEqual(
+      expect.arrayContaining([
+        'src/app/(sub pages)/layout.js',
+        'src/components/footer',
+        'src/lib/og/meta.js',
+      ]),
+    );
+  });
+
+  it('keeps every entry a real path on disk', async () => {
+    const { SUB_PAGE_SHARED_SOURCES } = await import('@/lib/seo/site');
+
+    // Same failure as a renamed registry: `git log` over a path with no commits
+    // returns empty, which `lastModifiedFor` reads as "unknowable" — so a moved
+    // file would silently drop `<lastmod>` rather than fail anything.
+    for (const source of SUB_PAGE_SHARED_SOURCES) {
+      expect(
+        () => statSync(path.join(process.cwd(), source)),
+        `SUB_PAGE_SHARED_SOURCES names "${source}", which does not exist.`,
+      ).not.toThrow();
+    }
+  });
+
+  it('is carried by every non-home route and by the project pages', async () => {
+    const { ROUTES, SUB_PAGE_SHARED_SOURCES } = await import('@/lib/seo/site');
+    const { PROJECT_SOURCES } = await import('@/app/sitemap');
+
+    const missing = [];
+    for (const route of ROUTES) {
+      if (route.path === HOME) continue;
+      for (const shared of SUB_PAGE_SHARED_SOURCES) {
+        if (!route.sources.includes(shared))
+          missing.push(`${route.path} does not watch ${shared}`);
+      }
+    }
+    for (const shared of SUB_PAGE_SHARED_SOURCES) {
+      if (!PROJECT_SOURCES.includes(shared))
+        missing.push(`PROJECT_SOURCES does not watch ${shared}`);
+    }
+
+    expect(
+      missing,
+      `These URLs render the group layout, its footer and its nav links, and ` +
+        `take their metadata through sectionMetadata() — so a commit to one ` +
+        `changes their HTML with no <lastmod> move:\n  ${missing.join('\n  ')}`,
+    ).toEqual([]);
+  });
+
+  it('is NOT carried by the homepage', async () => {
+    const { ROUTES, SUB_PAGE_SHARED_SOURCES } = await import('@/lib/seo/site');
+    const home = ROUTES.find((route) => route.path === HOME);
+
+    // The direction that keeps the split honest. `/` renders none of this — no
+    // group layout, no footer, and its metadata is declared directly in
+    // src/app/layout.js rather than through `sectionMetadata()`. Watching them
+    // there would re-stamp the highest-priority URL in the sitemap every time
+    // the footer changed, which is the over-stamp this split exists to avoid.
+    const overWatched = SUB_PAGE_SHARED_SOURCES.filter((shared) =>
+      home.sources.includes(shared),
+    );
+
+    expect(
+      overWatched,
+      `The homepage watches these, and they are in the NON-HOME shared list. ` +
+        `One of two things is wrong: either the homepage should not watch them ` +
+        `(they re-stamp the sitemap's highest-priority URL for a change it ` +
+        `never rendered), or the homepage genuinely does publish them and they ` +
+        `belong in SHARED_ROUTE_SOURCES instead of this list:\n  ` +
+        `${overWatched.join('\n  ')}`,
+    ).toEqual([]);
+  });
+
+  it('is actually rendered by the routes that watch it', async () => {
+    const { ROUTES, SUB_PAGE_SHARED_SOURCES } = await import('@/lib/seo/site');
+
+    // Reachability, walked off disk — the expensive direction, since each of
+    // these re-stamps nineteen URLs at once. `renderedEntriesFor` adds the
+    // composed group layout, without which every one of these reads as a stray.
+    const unpublished = [];
+    for (const route of ROUTES) {
+      if (route.path === HOME) continue;
+      const published = [...publishedFrom(renderedEntriesFor(route.path))];
+
+      // Guard on the guard: a route whose entry files cannot be found reaches
+      // nothing, and every shared source would look unpublished rather than the
+      // lookup looking broken.
+      expect(
+        published.length,
+        `Found no modules for ${route.path}.`,
+      ).toBeGreaterThan(3);
+
+      for (const shared of SUB_PAGE_SHARED_SOURCES) {
+        // `covers` rather than exact equality: this list names a DIRECTORY
+        // (`src/components/footer`), which resolves to `…/index.jsx` in a walk.
+        if (!published.some((module) => covers(shared, module)))
+          unpublished.push(`${route.path} does not reach ${shared}`);
+      }
+    }
+
+    expect(
+      unpublished,
+      `SUB_PAGE_SHARED_SOURCES is appended to every non-home URL, but these ` +
+        `routes do not render from the file — so a commit to it re-stamps ` +
+        `their <lastmod> for a change their HTML never saw:\n  ` +
+        `${unpublished.join('\n  ')}`,
+    ).toEqual([]);
+  });
+
+  it('keeps the detail-only helper out of both shared lists', async () => {
+    const { SHARED_ROUTE_SOURCES, SUB_PAGE_SHARED_SOURCES } = await import(
+      '@/lib/seo/site'
+    );
+    const { PROJECT_SOURCES } = await import('@/app/sitemap');
+    const DETAIL_ONLY = 'src/lib/seo/projectMeta.js';
+
+    // `projectMetaDescription()` composes the meta description for the eleven
+    // project URLs and is called by nothing else, so it belongs to that route's
+    // own list. In either shared list it would re-stamp every other URL on the
+    // site for a change only these eleven can see — the same class of error as
+    // the source list that once pointed at the wrong components directory.
+    expect(PROJECT_SOURCES).toContain(DETAIL_ONLY);
+    expect(SHARED_ROUTE_SOURCES).not.toContain(DETAIL_ONLY);
+    expect(SUB_PAGE_SHARED_SOURCES).not.toContain(DETAIL_ONLY);
+
+    // And that it really is detail-only, read off disk rather than asserted:
+    // the claim above is only true while no other route imports it.
+    const importers = [...discoverRoutes()]
+      .filter((routePath) => routePath !== '/projects/[id]')
+      .filter((routePath) =>
+        [...publishedFrom(renderedEntriesFor(routePath))].some((module) =>
+          covers(DETAIL_ONLY, module),
+        ),
+      );
+
+    expect(
+      importers,
+      `${DETAIL_ONLY} is treated as detail-only, but these routes reach it ` +
+        `too — it needs to move to a shared list:\n  ${importers.join('\n  ')}`,
+    ).toEqual([]);
   });
 });
 
