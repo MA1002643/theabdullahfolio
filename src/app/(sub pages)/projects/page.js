@@ -6,12 +6,18 @@ import SceneParallax from "@/components/projects/SceneParallax";
 import SceneSealIgnite from "@/components/projects/SceneSealIgnite";
 import { projectsData } from "../../data";
 import { sectionMetadata } from "@/lib/og/meta";
+import JsonLd from "@/components/seo/JsonLd";
+import { projectsCollection } from "@/lib/seo/schema";
+import { routeFor } from "@/lib/seo/site";
 
+const ROUTE = routeFor("/projects");
+
+// Title and description read from the route registry (issue #32, W7) so the
+// page, the sitemap, the JSON-LD and llms.txt all state one string.
 export const metadata = sectionMetadata({
-  title: "Projects",
-  description:
-    "Eleven builds tracked live from their own GitHub boards — web, systems, and apps.",
-  path: "/projects",
+  title: ROUTE.title,
+  description: ROUTE.description,
+  path: ROUTE.path,
 });
 
 export default function Project() {
@@ -21,6 +27,18 @@ export default function Project() {
     // invalid HTML that screen readers may announce twice (issue #86 bonus
     // cleanup). The qualifications page already uses this fragment structure.
     <>
+      {/* CollectionPage + ItemList (issue #32, W2). Built from the SAME
+          `projectsData` array the cards below render and `generateStaticParams`
+          enumerates, so the list cannot claim a project the site does not have.
+
+          Each `item` is a REFERENCE to the `#project` node defined on that
+          project's own detail page, not a copy of it. So this page describes the
+          shape of the collection — how many, in what order — and each detail
+          page remains the single source for its own properties. A consumer
+          following the reference gets the full record; one reading only this
+          page still learns the collection exists and how to reach every member,
+          which is the half of F8 that a sitemap alone does not fix. */}
+      <JsonLd id="ld-projects" data={projectsCollection(projectsData)} />
       {/* The workshop scene itself: instant paint, the video's "poster", and
           the permanent fallback (reduced motion / Save-Data / video error).
           Source is native 2560×1440 now (issue-era 1024×576 needed a 0.4px

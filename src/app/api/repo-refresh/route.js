@@ -182,10 +182,17 @@ export async function GET(request) {
         "repo-refresh: github-stats warm failed:",
         err?.message ?? err,
       );
+      // Fixed message, not `err.message`. A failed warm fetch rejects with
+      // transport internals — the resolved internal host and port behind
+      // `baseUrl`, DNS state, a TLS error — and this body is returned verbatim
+      // to /api/daily-warmup, which puts it in the `detail` field of the payload
+      // it answers with. Sanitising only the orchestrator while this one still
+      // carried the raw string would move the leak, not close it. `aborted`
+      // already carries the distinction that changes what an operator does.
       githubStats = {
         ok: false,
         attempted: true,
-        error: err?.message ?? String(err),
+        error: "github-stats warm failed",
         aborted: err?.name === "AbortError",
       };
     }
@@ -218,10 +225,12 @@ export async function GET(request) {
         "repo-refresh: experience-summary warm failed:",
         err?.message ?? err,
       );
+      // Same reasoning as the github-stats warm above: a fixed message, with
+      // `aborted` carrying the only distinction the response needs to make.
       experience = {
         ok: false,
         attempted: true,
-        error: err?.message ?? String(err),
+        error: "experience-summary warm failed",
         aborted: err?.name === "AbortError",
       };
     }

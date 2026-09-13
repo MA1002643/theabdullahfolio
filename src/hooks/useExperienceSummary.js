@@ -291,6 +291,24 @@ export function useExperienceSummary(username) {
     // in dev, and StrictMode isn't active in production.
     let cancelled = false;
 
+    /**
+     * Reset every "what changed this poll" indicator to its initial value.
+     *
+     * One step rather than four call sites' worth of setters, so a future
+     * early return clears the whole set or none of it. The normal path does
+     * NOT use this — it has real comparison results to write, and writing them
+     * unconditionally (including the empty ones) is what keeps it honest.
+     *
+     * Declared inside the effect so it closes over nothing but the setters,
+     * which React guarantees are stable — no dependency to thread.
+     */
+    const clearChangeIndicators = () => {
+      setChangeMessage(null);
+      setChangedCategories([]);
+      setAddedRepoNames([]);
+      setAddedRoleKeys([]);
+    };
+
     const fetchOnce = async () => {
       try {
         const res = await fetch(
@@ -303,6 +321,42 @@ export function useExperienceSummary(username) {
         }
         const payload = await res.json();
         if (cancelled) return;
+
+        // A partial payload means GitHub failed and the route returned the
+        // half it could still vouch for (see the note beside `partial` in
+        // route.js). It is worth showing when there is nothing better, and it
+        // must not be allowed to displace something better.
+        //
+        // Storage is skipped because this store is the INSTANT-PAINT source
+        // above, not only the diff baseline: writing a half-answer here would
+        // make the next visit — on a perfectly healthy page load — paint
+        // "Unavailable" and a zeroed years card out of localStorage, long
+        // after GitHub recovered. Diffing is skipped for the same reason it
+        // must not be stored: the personal side vanishing and returning is not
+        // a change worth announcing, and it would report the recovery as
+        // growth.
+        //
+        // `current ?? payload` rather than a plain `setData` so an existing
+        // complete answer — from storage or an earlier poll — is kept, and the
+        // partial one is adopted only by a client that has nothing.
+        // The four change indicators are CLEARED rather than left alone. They
+        // describe what the LAST comparison found, so carrying them past a poll
+        // that made no comparison attributes a change to an observation that
+        // did not happen — and they are not momentary: polling is ten minutes
+        // apart, and the per-row heartbeat is armed by set membership and fired
+        // when the section scrolls into view, so a stale set can light rows up
+        // as "newly added" on a modal opened much later.
+        //
+        // Same failure the normal path below already had once and fixed, in the
+        // note about "only set when truthy" leaving a stale sentence on screen.
+        // Cleared through one named step because the way this goes wrong is an
+        // early return updating some of the four and not the rest.
+        if (payload?.partial) {
+          setData((current) => current ?? payload);
+          setError(null);
+          clearChangeIndicators();
+          return;
+        }
 
         // Diff against stored baseline before updating storage —
         // otherwise the comparison would always see itself and never

@@ -5,6 +5,8 @@
 // its metadata through this helper, which restates the shared fields so
 // no page can accidentally shed them.
 
+import { alternatesFor } from '@/lib/seo/canonical';
+
 const SITE = 'Muhammad Abdullah';
 
 export function sectionMetadata({ title, description, path }) {
@@ -12,6 +14,19 @@ export function sectionMetadata({ title, description, path }) {
   return {
     title,
     description,
+    // Self-referential canonical (issue #32, W1 / F3). It goes HERE rather
+    // than in each page's own metadata export for exactly the shallow-merge
+    // reason above, and the consequence is worth stating: `alternates` set on
+    // a page REPLACES the root layout's `alternates` wholesale, so a route
+    // that declared its own would silently shed whatever the root adds later
+    // (`languages`, when #82 lands). One helper, nine section routes and all
+    // eleven project pages — and no route can forget it, because forgetting
+    // the helper means forgetting its title and share card too, which is
+    // visible immediately.
+    //
+    // The homepage does NOT flow through here (it has no sectionMetadata
+    // call), so its canonical is declared directly in src/app/layout.js.
+    alternates: alternatesFor(path),
     openGraph: {
       type: 'website',
       locale: 'en_GB',

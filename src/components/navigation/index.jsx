@@ -1075,7 +1075,45 @@ const Navigation = ({
           const yOrbit = axes.b * Math.sin(angleRad);
           const y = yOrbit + axes.drop;
 
-          if (!visibleButtons.includes(btn.label)) return null;
+          // EVERY button renders from the first pass, including the server
+          // one. This line used to be `if (!visibleButtons.includes(...))
+          // return null`, and that single `return null` was the whole of
+          // issue #32's F1: `visibleButtons` starts empty and fills in from
+          // `setTimeout`s, so the SERVER rendered zero buttons and the
+          // homepage shipped 10 words of text and NOT ONE internal link.
+          //
+          // The consequence was larger than it sounds. Googlebot renders
+          // JavaScript, so it eventually found them — but discovery was
+          // deferred to the render queue and the anchor text carried
+          // weakened signal. AI crawlers largely do not execute JavaScript
+          // at all, so to GPTBot, ClaudeBot and PerplexityBot this site's
+          // entry point was a name, a job title and the string "0 %". Every
+          // internal link on the site depended on a crawler reaching a
+          // sub-page first, where the footer supplies eight.
+          //
+          // The fix is not new machinery: the sub-480px two-column branch
+          // above ALREADY does it the right way — always render, and drive
+          // the reveal through NavButton's `visible` prop, which only
+          // animates opacity and scale. This branch is the one that
+          // diverged, so it is brought into line rather than given its own
+          // mechanism.
+          //
+          // No layout shift is possible here, and that is structural rather
+          // than lucky: every orbital NavButton root is `position: absolute`
+          // (NavButton.jsx), so going from 0 to 8 children adds nothing to
+          // the `w-max` flex parent's in-flow content. The choreography is
+          // also byte-identical — the same `visibleButtons` timers fire at
+          // the same 300ms spacing, so each button becomes visible at
+          // exactly the moment it did before. What changed is only that it
+          // is now in the DOM at opacity 0 beforehand instead of absent.
+          //
+          // `opacity: 0` (not `display: none`, not `visibility: hidden`) is
+          // the required choice, not an incidental one: hidden text is
+          // cloaking and reads as such, where an animating opacity is the
+          // standard reveal pattern this site already uses everywhere and
+          // leaves the markup genuinely present. See risk §10.5 in the
+          // issue and the note in docs/seo.md.
+          const isVisible = visibleButtons.includes(btn.label);
 
           // Which side of the laptop this button is currently on. Screen y
           // grows downward, so the top of the ellipse (y < 0) is the half of
@@ -1105,6 +1143,10 @@ const Navigation = ({
               // where it is actually drawn, so the drop counts here even though
               // the depth test above deliberately ignores it.
               labelAbove={y > axes.labelFlipY}
+              // Drives the staggered reveal now that the button is always
+              // mounted (see the note above). Same prop, same meaning and the
+              // same inert treatment as the two-column branch uses.
+              visible={isVisible}
               {...btn}
             />
           );
