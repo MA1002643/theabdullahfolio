@@ -66,33 +66,108 @@ const UPSTREAM_TIMEOUT_MS = envPositiveMs(
 );
 
 /**
- * `fetch` that cannot outlive its budget.
+ * Rewrite a deadline failure into this route's own wording, or pass it through.
+ *
+ * Two shapes have to be recognised as the same event. A `fetch` that loses the
+ * race rejects with the signal's reason DIRECTLY, so the DOMException's own name
+ * is `TimeoutError`. A body stream aborted mid-read can instead arrive WRAPPED —
+ * undici reports one as `TypeError: terminated` carrying the reason as `cause` —
+ * and only the signal says what actually happened. Checking the signal covers
+ * both without having to enumerate every runtime's wrapper.
+ *
+ * Anything else is returned untouched: a DNS or socket failure keeps its own
+ * message, which is more useful than "timed out" would be.
+ */
+function labelTimeout(error, signal, label) {
+  const timedOut =
+    error?.name === 'TimeoutError' ||
+    (signal.aborted && signal.reason?.name === 'TimeoutError');
+  return timedOut
+    ? new Error(`${label} timed out after ${UPSTREAM_TIMEOUT_MS}ms`)
+    : error;
+}
+
+/** Rejects with the signal's reason when it aborts; otherwise never settles. */
+function abortRejection(signal) {
+  return new Promise((_, reject) => {
+    if (signal.aborted) reject(signal.reason);
+    else {
+      signal.addEventListener('abort', () => reject(signal.reason), {
+        once: true,
+      });
+    }
+  });
+}
+
+/**
+ * Read a bounded response's body under the SAME deadline that bounded its
+ * headers.
+ *
+ * `fetch` settles as soon as the response HEADERS arrive — the body is still
+ * being streamed off the socket. So `await response.json()` at a call site is an
+ * unbounded read wearing a bounded call's clothes: Google can answer 200 in
+ * milliseconds and then stall part-way through the body, and this route waits
+ * for as long as the platform lets it on a call the comment above promises
+ * cannot outlive its budget. That is the whole failure this file's timeout
+ * machinery exists to prevent, one layer further in.
+ *
+ * It also fails WRONG, which is the half that costs the diagnosis. A rejection
+ * from `response.json()` never passes through `fetchBounded`'s catch, so it
+ * reaches the handler as a bare "aborted"/"terminated" instead of
+ * "<step> timed out after <n>ms" — and with four upstream calls per invocation,
+ * naming WHICH one stalled is the entire value of the message the cron log gets.
+ *
+ * The race against the signal is belt and braces. Aborting a fetch aborts its
+ * body stream too, so `response.json()` should reject on its own; but that is
+ * the runtime's promise to keep rather than this function's, and a stalled read
+ * here is precisely what must not be left to good behaviour upstream.
+ */
+async function readJsonBounded(response, signal, label) {
+  try {
+    return await Promise.race([response.json(), abortRejection(signal)]);
+  } catch (error) {
+    throw labelTimeout(error, signal, label);
+  }
+}
+
+/**
+ * An HTTP exchange — headers AND body — that cannot outlive its budget.
  *
  * `AbortSignal.timeout` rather than the AbortController + setTimeout pair the
  * sibling cron routes hand-roll: there is no timer to leak when the request
  * settles first, and it rejects with a DOMException named `TimeoutError`
- * specifically — which is what lets the message below say "timed out" instead
- * of the bare "aborted" an AbortController produces. Same choice, same reason,
- * as /api/spotify/auth.
+ * specifically — which is what lets the message say "timed out" instead of the
+ * bare "aborted" an AbortController produces. Same choice, same reason, as
+ * /api/spotify/auth.
+ *
+ * ONE signal spans both halves, and the returned `readJson` closes over it. That
+ * is deliberate rather than a per-half budget: the bound this route advertises
+ * is "an upstream call answers within UPSTREAM_TIMEOUT_MS", and a server that
+ * spends the budget on headers and then the budget again on the body has taken
+ * twice as long as anything here allows for. Closing over the signal also keeps
+ * a live reference to it for as long as the body read can still observe it.
+ *
+ * Returning a pair rather than the bare `Response` is what makes the bound hard
+ * to opt out of by accident: there is no `.json()` on what a caller receives, so
+ * reading the body means going through the deadline.
  *
  * @param {string} url Absolute URL.
  * @param {RequestInit} options Passed through; `signal` is supplied here.
  * @param {string} label Names the call in the error. NEVER interpolate a
  *   credential or a response body into it — this route's errors are returned
  *   to any caller holding CRON_SECRET.
- * @returns {Promise<Response>}
+ * @returns {Promise<{response: Response, readJson: () => Promise<any>}>}
  */
 async function fetchBounded(url, options, label) {
+  const signal = AbortSignal.timeout(UPSTREAM_TIMEOUT_MS);
   try {
-    return await fetch(url, {
-      ...options,
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    });
+    const response = await fetch(url, { ...options, signal });
+    return {
+      response,
+      readJson: () => readJsonBounded(response, signal, label),
+    };
   } catch (error) {
-    if (error?.name === 'TimeoutError') {
-      throw new Error(`${label} timed out after ${UPSTREAM_TIMEOUT_MS}ms`);
-    }
-    throw error;
+    throw labelTimeout(error, signal, label);
   }
 }
 
@@ -193,6 +268,34 @@ function isoDate(offsetDays = 0) {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() - offsetDays);
   return date.toISOString().slice(0, 10);
+}
+
+/**
+ * The window this invocation reports on, read from the clock ONCE.
+ *
+ * The offset above is shared by the request and the stored `window`, which made
+ * them look like one derivation. They were two: each `isoDate` call reads the
+ * clock when it runs, and the snapshot's copy ran AFTER the three queries had
+ * returned. A run that crossed UTC midnight in between — up to ~20s of upstream
+ * time, and this route is callable by hand as well as by the 01:00 cron —
+ * therefore stored a window one day later than the one it had asked Google for.
+ *
+ * Which is the disagreement the offset's own comment says matters more than the
+ * off-by-one it was written for: the data is whatever was requested, but the
+ * stored window is what a later reader trusts when interpreting it, and nothing
+ * in the snapshot would look wrong. The same UTC-midnight straddle the baseline
+ * publish defends against with `PUBLISH_LATEST_LUA`, one field over.
+ *
+ * Captured before the queries start and passed down, so the dates are a fact of
+ * the invocation rather than of when each caller happened to ask.
+ *
+ * @returns {{start: string, end: string}} Inclusive `YYYY-MM-DD` bounds.
+ */
+function currentReportWindow() {
+  return {
+    start: isoDate(WINDOW_START_OFFSET_DAYS),
+    end: isoDate(LAG_DAYS),
+  };
 }
 
 /** base64url, which is what JWS requires — not plain base64. */
@@ -323,7 +426,7 @@ async function getAccessToken(credentials) {
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 
-  const response = await fetchBounded(
+  const { response, readJson } = await fetchBounded(
     TOKEN_ENDPOINT,
     {
       method: 'POST',
@@ -345,7 +448,7 @@ async function getAccessToken(credentials) {
     // CRON_SECRET.
     throw new Error(`token exchange failed (HTTP ${response.status})`);
   }
-  const json = await response.json();
+  const json = await readJson();
   if (!json.access_token) throw new Error('token exchange returned no token');
   return json.access_token;
 }
@@ -356,9 +459,12 @@ async function getAccessToken(credentials) {
  * @param {string} token An access token.
  * @param {string} siteUrl The GSC property identifier.
  * @param {string[]} dimensions e.g. `['query']`.
+ * @param {{start: string, end: string}} reportWindow The window captured for
+ *   this invocation. Passed in rather than read here so all three dimensions
+ *   and the stored snapshot describe one window — see `currentReportWindow`.
  * @returns {Promise<Array<object>>} Rows, or an empty array.
  */
-async function queryAnalytics(token, siteUrl, dimensions) {
+async function queryAnalytics(token, siteUrl, dimensions, reportWindow) {
   // The property identifier goes in the PATH, so it must be encoded —
   // `sc-domain:ma.codes` contains a colon and a URL-prefix property contains
   // slashes, both of which would otherwise be read as path structure.
@@ -366,7 +472,7 @@ async function queryAnalytics(token, siteUrl, dimensions) {
     `https://searchconsole.googleapis.com/webmasters/v3/sites/` +
     `${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
 
-  const response = await fetchBounded(
+  const { response, readJson } = await fetchBounded(
     endpoint,
     {
       method: 'POST',
@@ -375,8 +481,8 @@ async function queryAnalytics(token, siteUrl, dimensions) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        startDate: isoDate(WINDOW_START_OFFSET_DAYS),
-        endDate: isoDate(LAG_DAYS),
+        startDate: reportWindow.start,
+        endDate: reportWindow.end,
         dimensions,
         // Plenty for a site with 21 URLs, and it spares us pagination.
         rowLimit: 1000,
@@ -405,7 +511,7 @@ async function queryAnalytics(token, siteUrl, dimensions) {
       `searchAnalytics(${dimensions.join('+')}) failed (HTTP ${response.status})`,
     );
   }
-  const json = await response.json();
+  const json = await readJson();
   return json.rows ?? [];
 }
 
@@ -566,19 +672,24 @@ export async function GET(request) {
   try {
     const token = await getAccessToken(credentials);
 
+    // Read once, before any of it is sent, and then used everywhere: the three
+    // requests and the `window` recorded below. See `currentReportWindow`.
+    const reportWindow = currentReportWindow();
+
     // Independent reads, and the route is on a cron budget.
     const [queryRows, pageRows, countryRows] = await Promise.all([
-      queryAnalytics(token, siteUrl, ['query']),
-      queryAnalytics(token, siteUrl, ['page']),
-      queryAnalytics(token, siteUrl, ['country']),
+      queryAnalytics(token, siteUrl, ['query'], reportWindow),
+      queryAnalytics(token, siteUrl, ['page'], reportWindow),
+      queryAnalytics(token, siteUrl, ['country'], reportWindow),
     ]);
 
     const snapshot = {
+      // Still read here, and deliberately: this is when the snapshot was
+      // assembled, not what it covers. It is also the version the baseline
+      // compare-and-set orders runs by, so moving it earlier would change which
+      // of two overlapping runs wins.
       capturedAt: new Date().toISOString(),
-      window: {
-        start: isoDate(WINDOW_START_OFFSET_DAYS),
-        end: isoDate(LAG_DAYS),
-      },
+      window: reportWindow,
       totals: queryRows.reduce(
         (acc, row) => ({
           clicks: acc.clicks + row.clicks,
@@ -755,11 +866,13 @@ export async function GET(request) {
     // and repo-refresh return: what reaches here is overwhelmingly this route's
     // own hand-authored labels, because `fetchBounded` rewrites a `TimeoutError`
     // into `"<step> timed out after <n>ms"` — a step name and a number, naming no
-    // host, no URL and no credential. `tests/unit/seoReportTimeout.test.js` pins
-    // that, including a case asserting no bearer token, JWT assertion or private
-    // key can appear in it. Flattening these would delete real diagnosis (which
-    // of four upstream calls stalled) to remove a leak that is already tested
-    // against.
+    // host, no URL and no credential. That holds for a stall during the response
+    // BODY as well as one before the headers: both halves run under the one
+    // signal, and `readJsonBounded` relabels the same way.
+    // `tests/unit/seoReportTimeout.test.js` pins that, including a case asserting
+    // no bearer token, JWT assertion or private key can appear in it. Flattening
+    // these would delete real diagnosis (which of four upstream calls stalled) to
+    // remove a leak that is already tested against.
     return noStoreJson(
       { ok: false, error: error?.message ?? String(error) },
       { status: 502 },

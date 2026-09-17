@@ -47,8 +47,23 @@ const stall = (signal) =>
 
 const okJson = (body) => ({ ok: true, status: 200, json: async () => body });
 
+// ── A stall AFTER the headers ───────────────────────────────────────────────
+// `fetch` settles when the response headers arrive, with the body still
+// streaming — so a 200 proves nothing about how long reading it takes. These
+// stubs are that server: status and headers immediately, then a body that never
+// finishes. `deaf` is the same stall by a runtime that does NOT abort its body
+// stream when the signal fires, which is the case a relabel alone cannot save.
+const okStallingBody = (signal, deaf) => ({
+  ok: true,
+  status: 200,
+  json: () => (deaf ? new Promise(() => {}) : stall(signal)),
+});
+
 // Which upstream should hang on this run: 'token', 'analytics', or null.
 let stallTarget = null;
+// WHERE it hangs: before the headers, part-way through the body, or part-way
+// through the body on a runtime that ignores the abort.
+let stallPhase = 'headers';
 // Set by a case that wants a non-timeout failure instead.
 let throwInstead = null;
 let seenSignals = [];
@@ -85,11 +100,17 @@ beforeAll(async () => {
     ) {
       throw new TypeError('fetch failed');
     }
+    const stalls = isToken
+      ? stallTarget === 'token'
+      : stallTarget === 'analytics';
+    if (stalls && stallPhase !== 'headers') {
+      return okStallingBody(init.signal, stallPhase === 'body-deaf');
+    }
     if (isToken) {
-      if (stallTarget === 'token') return stall(init.signal);
+      if (stalls) return stall(init.signal);
       return okJson({ access_token: 'test' });
     }
-    if (stallTarget === 'analytics') return stall(init.signal);
+    if (stalls) return stall(init.signal);
     return okJson({ rows: [] });
   };
 
@@ -102,6 +123,7 @@ afterAll(() => {
 
 beforeEach(() => {
   stallTarget = null;
+  stallPhase = 'headers';
   throwInstead = null;
   seenSignals = [];
 });
@@ -169,6 +191,60 @@ describe('seo-report bounds every upstream call', () => {
 
     expect(body.error).not.toMatch(/Bearer|assertion|PRIVATE KEY|eyJ/i);
     expect(body.error).toBe(`token exchange timed out after ${TIMEOUT_MS}ms`);
+  });
+
+  it('answers 502 when the token response stalls part-way through its body', async () => {
+    // The gap the headers-only bound left open: Google answers 200 in
+    // milliseconds and then stops sending. The request "succeeded", so a bound
+    // that ends at `fetch` is already spent, and the read that follows it is
+    // what the function actually sits in.
+    stallTarget = 'token';
+    stallPhase = 'body';
+    const started = Date.now();
+
+    const response = await call();
+
+    expect(response.status).toBe(502);
+    const body = await response.json();
+    // The SAME message as a pre-headers stall. A slow body is the same event to
+    // whoever reads the cron log — this upstream did not answer in time — and
+    // reporting it as a bare "aborted" would hide which of the four calls it was.
+    expect(body.error).toBe(`token exchange timed out after ${TIMEOUT_MS}ms`);
+    expect(Date.now() - started).toBeLessThan(3000);
+  });
+
+  it('answers 502 when a Search Console response stalls part-way through its body', async () => {
+    stallTarget = 'analytics';
+    stallPhase = 'body';
+    const started = Date.now();
+
+    const response = await call();
+
+    expect(response.status).toBe(502);
+    const body = await response.json();
+    expect(body.error).toMatch(
+      /^searchAnalytics\([a-z]+\) timed out after \d+ms$/,
+    );
+    expect(Date.now() - started).toBeLessThan(3000);
+  });
+
+  it('bounds the body read even if the runtime never aborts the stream', async () => {
+    // Aborting a fetch is supposed to abort its body stream, so `json()` should
+    // reject by itself. This case takes that away: the read never settles, for
+    // any reason. The deadline is this route's promise to the orchestrator that
+    // invokes it, so it cannot rest on the runtime keeping one of its own.
+    stallTarget = 'analytics';
+    stallPhase = 'body-deaf';
+    const started = Date.now();
+
+    const response = await call();
+
+    expect(response.status).toBe(502);
+    const body = await response.json();
+    expect(body.error).toMatch(
+      /^searchAnalytics\([a-z]+\) timed out after \d+ms$/,
+    );
+    expect(Date.now() - started).toBeLessThan(3000);
   });
 
   it('leaves a non-timeout failure to propagate as itself', async () => {

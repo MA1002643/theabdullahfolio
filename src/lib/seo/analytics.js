@@ -104,12 +104,16 @@ export const EVENT_PARAMS = Object.freeze({
  * condition that could be got wrong, and no path by which a mistake here sends
  * a hit to Google.
  *
- * Never throws. An analytics failure must not be able to break the interaction
- * that triggered it — a contact-form submission has to complete whether or not
- * its event was recorded.
+ * Never throws — including on its own arguments, which is the part that has to
+ * be enforced rather than assumed. An analytics failure must not be able to
+ * break the interaction that triggered it: a contact-form submission has to
+ * complete whether or not its event was recorded, and that promise is worth
+ * nothing if a malformed params bag can take the submission down with it.
  *
  * @param {string} name A value from `EVENTS`.
- * @param {Record<string, unknown>} [params] Event parameters.
+ * @param {Record<string, unknown>} [params] Event parameters. Anything that is
+ *   not a plain object — `null` included — is normalised to `{}` and warned
+ *   about in development, never trusted and never forwarded as-is.
  * @returns {boolean} True when the event was handed to gtag.
  */
 export function trackEvent(name, params = {}) {
@@ -127,9 +131,46 @@ export function trackEvent(name, params = {}) {
     return false;
   }
 
+  // ── Normalised BEFORE anything reads it ─────────────────────────────────────
+  // A default parameter fires for `undefined` and nothing else, so `params = {}`
+  // above does not cover `trackEvent(name, null)` — and null is the shape a call
+  // site produces the moment its params come from something that can return one
+  // (a ref that has not attached, a lookup that missed, a JSON field that came
+  // back null). That value arrived here intact, and the development check below
+  // then indexed it: `null['mode']` THROWS, out of a function whose whole
+  // contract is that it cannot.
+  //
+  // Which made the throw both real and easy to miss. It needs an event that
+  // DECLARES params — `REFINE_USED` and ten others; the two with an empty list
+  // filter over nothing and never index — and it is development-only, because
+  // production skips this block and hands the null to `gtag` inside the `try`.
+  // So it fires exactly where an analytics bug is least acceptable: in the
+  // browser of whoever is mid-interaction on the feature, breaking the click
+  // that triggered it rather than the reporting it was for.
+  //
+  // `typeof null === 'object'` is why null is checked explicitly. Arrays are
+  // objects too and would validate without throwing, but an array carries no
+  // parameter NAMES, so forwarding one can only produce a hit GA4 cannot read.
+  // Both become `{}`: a dropped dimension is worth less than the event, and far
+  // less than the interaction.
+  const isParamBag =
+    typeof params === 'object' && params !== null && !Array.isArray(params);
+  const safeParams = isParamBag ? params : {};
+
   if (process.env.NODE_ENV !== 'production') {
+    // Said out loud rather than normalised quietly. The missing-param warning
+    // below will fire too, but it reports the symptom — every expected param
+    // absent — while this names the cause, which is the difference between
+    // hunting for the wrong bug and fixing the call site.
+    if (!isParamBag) {
+      console.warn(
+        `trackEvent("${name}"): params must be an object, received ` +
+          `${params === null ? 'null' : typeof params}. Sent as {} instead.`,
+      );
+    }
+
     const missing = (EVENT_PARAMS[name] ?? []).filter(
-      (key) => params[key] === undefined,
+      (key) => safeParams[key] === undefined,
     );
     if (missing.length > 0) {
       console.warn(
@@ -144,7 +185,7 @@ export function trackEvent(name, params = {}) {
   }
 
   try {
-    window.gtag('event', name, params);
+    window.gtag('event', name, safeParams);
     return true;
   } catch {
     // Swallowed on purpose — see the note above. A blocked or half-initialised

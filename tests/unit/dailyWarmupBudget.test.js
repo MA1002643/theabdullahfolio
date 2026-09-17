@@ -326,7 +326,7 @@ describe('daily-warmup — the run budget', () => {
       'utf8',
     );
     const [, fraction] = source.match(
-      /CRON_RUN_BUDGET_MS,\s*maxDuration \* 1000 \* (0\.\d+)/,
+      /RUN_BUDGET_CEILING_MS\s*=\s*maxDuration \* 1000 \* (0\.\d+)/,
     ) ?? [];
     expect(
       fraction,
@@ -345,5 +345,48 @@ describe('daily-warmup — the run budget', () => {
     expect(budgetMs).toBeLessThan(ceilingMs);
     expect(ceilingMs - budgetMs).toBeGreaterThanOrEqual(5000);
     expect(budgetMs).toBeGreaterThanOrEqual(30000);
+  });
+
+  it('cannot have that ceiling raised by the env override', async () => {
+    // Deriving the DEFAULT from `maxDuration` fixed the drift only for
+    // deployments that leave the knob alone. `envPositiveMs` takes any finite
+    // positive number, so `CRON_RUN_BUDGET_MS=120000` put the deadline past the
+    // platform's own — a budget that cannot expire before the function is
+    // killed is no budget, and the results are discarded at 60 s exactly as
+    // they were before any of this existed. `Infinity` was already refused for
+    // that reason; every number large enough to mean the same thing was not.
+    //
+    // ── Read off the source, and this is the honest limit of it ──────────────
+    // The clamped value is observable only through the breach message, and
+    // observing it means letting a stalled run reach the ceiling — 45 s, in a
+    // suite that runs in nine. So this asserts the SHAPE of the expression, in
+    // the same spirit and for the same reason as the case above (the constant
+    // is module-private on purpose). It would survive a rewrite into something
+    // equivalent that does not mention `Math.min`; it would not survive the
+    // clamp being dropped, which is the regression that matters.
+    //
+    // The other direction is already covered behaviourally: every stall case
+    // above loads the route at 60 ms, so a clamp written the wrong way round
+    // (`Math.max`) would pin them to 45 s and time the suite out rather than
+    // quietly passing.
+    const source = readFileSync(
+      path.join(process.cwd(), 'src/app/api/daily-warmup/route.js'),
+      'utf8',
+    );
+    const [, budgetExpression] =
+      source.match(/const RUN_BUDGET_MS =([\s\S]*?);\n/) ?? [];
+
+    expect(budgetExpression, 'RUN_BUDGET_MS should still exist').toBeTruthy();
+    expect(
+      budgetExpression,
+      'The env override must be combined with the platform-derived ceiling ' +
+        'rather than used raw, or a large value disables the deadline entirely.',
+    ).toContain('Math.min');
+    expect(budgetExpression).toContain('CRON_RUN_BUDGET_MS');
+    // Both operands, not one: a `Math.min` over the override alone would read
+    // as a clamp and bound nothing.
+    expect(
+      budgetExpression.match(/RUN_BUDGET_CEILING_MS/g)?.length ?? 0,
+    ).toBeGreaterThanOrEqual(2);
   });
 });

@@ -72,9 +72,35 @@ export const maxDuration = 60;
 // starts, which is what the budget is for — returning the results we DID
 // collect, with a 502 the monitor can see, rather than being killed holding
 // them.
-const RUN_BUDGET_MS = envPositiveMs(
-  process.env.CRON_RUN_BUDGET_MS,
-  maxDuration * 1000 * 0.75,
+const RUN_BUDGET_CEILING_MS = maxDuration * 1000 * 0.75;
+
+// ── The env override can lower this, never raise it ─────────────────────────
+// Deriving the DEFAULT from `maxDuration` closed the drift between the budget
+// and the ceiling it is measured against — but only for deployments that leave
+// the knob alone. `envPositiveMs` accepts any finite positive number, so
+// `CRON_RUN_BUDGET_MS=120000` reinstated exactly the failure the paragraph
+// above describes: a deadline that cannot expire before the platform kills the
+// function, which is no deadline at all, with the collected results discarded
+// at 60 s.
+//
+// Nor is that a different hazard from the one already defended against.
+// `envPositiveMs` refuses `Infinity` precisely because it would switch the
+// bound off — and any value at or past the ceiling switches it off just as
+// completely, so the guard was rejecting the SYMBOLIC way to disable the budget
+// while accepting every numeric one.
+//
+// Clamped rather than rejected because module scope has no good failure mode:
+// throwing takes the cron down over a tuning knob, and falling back to the
+// default would silently overrule an operator who meant to lower it. `Math.min`
+// leaves the knob doing the one thing it is for — making the run give up
+// SOONER, which is what exercising the breach path needs — while keeping the
+// platform-derived margin out of reach of an env var. A value above the ceiling
+// therefore takes effect AS the ceiling; this comment is its documentation,
+// since the knob is deliberately absent from `.env.example` alongside
+// `CRON_WARM_TIMEOUT_MS` and `SEO_REPORT_TIMEOUT_MS`.
+const RUN_BUDGET_MS = Math.min(
+  envPositiveMs(process.env.CRON_RUN_BUDGET_MS, RUN_BUDGET_CEILING_MS),
+  RUN_BUDGET_CEILING_MS,
 );
 
 // Aborting does not stop the downstream — that function keeps running and its

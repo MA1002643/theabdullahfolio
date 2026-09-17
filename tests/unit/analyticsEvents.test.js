@@ -173,6 +173,84 @@ describe('trackEvent — expected parameters', () => {
   });
 });
 
+describe('trackEvent — a malformed params bag cannot take the call site down', () => {
+  // The default parameter fires for `undefined` and nothing else, so `null` —
+  // what a call site passes whenever its params come from something that can
+  // return one — reached the validation below intact, and `null['mode']` threw
+  // out of a function documented as never throwing.
+  //
+  // Two things kept it hidden. It needs an event that DECLARES params, since
+  // the two with an empty list filter over nothing and never index. And it is
+  // development-only: production skips the check and hands the null to `gtag`
+  // inside the try. So it fired in the browser of whoever was mid-interaction,
+  // breaking the click rather than the reporting it was for.
+  const MALFORMED = [
+    ['null', null],
+    ['a string', 'concise'],
+    ['a number', 42],
+    ['a boolean', true],
+    ['an array', ['concise', -42]],
+  ];
+
+  it.each(MALFORMED)('does not throw when params is %s', (_label, bad) => {
+    mountGtag();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // REFINE_USED, specifically: it declares `mode` and `length_delta`, so the
+    // validation actually indexes the bag. An event with no expected params
+    // passes this whatever it is handed, which is why the original defect
+    // survived a suite that exercised one.
+    expect(() => trackEvent(EVENTS.REFINE_USED, bad)).not.toThrow();
+  });
+
+  it('sends the event anyway, with the normalised object', () => {
+    const gtag = mountGtag();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Still true, not false: the event is worth more than the dimensions, and
+    // dropping it would trade a reporting gap for a bigger reporting gap.
+    expect(trackEvent(EVENTS.REFINE_USED, null)).toBe(true);
+    // `{}`, never `null` — a null third argument is not a payload GA4 can read.
+    expect(gtag).toHaveBeenCalledWith('event', 'refine_used', {});
+  });
+
+  it('names the cause as well as the symptom, in development', () => {
+    mountGtag();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    trackEvent(EVENTS.REFINE_USED, null);
+
+    const messages = warn.mock.calls.map(([message]) => message).join('\n');
+    // The symptom alone ("missing mode, length_delta") sends whoever reads it
+    // hunting for the params that were passed — which is why the cause is said
+    // separately.
+    expect(messages).toContain('params must be an object');
+    expect(messages).toContain('null');
+    expect(messages).toContain('length_delta');
+  });
+
+  it('stays silent in production, and still sends {}', () => {
+    process.env.NODE_ENV = 'production';
+    const gtag = mountGtag();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    expect(trackEvent(EVENTS.REFINE_USED, null)).toBe(true);
+    expect(gtag).toHaveBeenCalledWith('event', 'refine_used', {});
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('leaves a well-formed bag exactly as given', () => {
+    // The normalisation must not become a copy or a filter: GA4 receives what
+    // the call site meant to send, object identity included.
+    const gtag = mountGtag();
+    const params = { mode: 'concise', length_delta: -42 };
+
+    trackEvent(EVENTS.REFINE_USED, params);
+
+    expect(gtag.mock.calls[0][2]).toBe(params);
+  });
+});
+
 describe('the event taxonomy itself', () => {
   it('gives every event a unique wire name', () => {
     // The check the module header promises. A copy-paste duplicate would make

@@ -202,6 +202,91 @@ describe('the Search Analytics request body', () => {
     });
   });
 
+  it('keeps one window when the run crosses UTC midnight', async () => {
+    // The dates were read from the clock THREE times — once per request, and
+    // again for the snapshot's `window` after `Promise.all` resolved. The first
+    // three land in the same synchronous tick, so they agree; the fourth is
+    // separated from them by the upstream round-trip. A run that crossed UTC
+    // midnight in that gap asked Google for one window and then stored a
+    // different one, one day later, against the data it had just fetched.
+    //
+    // Nothing about the result would look wrong — the rows are real, the window
+    // is a plausible window, and the disagreement is only visible by comparing
+    // the request with the record nobody kept. This is the same straddle the
+    // baseline publish already defends against with its compare-and-set, one
+    // field over, and the offset constant's own comment names the two agreeing
+    // as mattering more than the off-by-one it was written for.
+    //
+    // Reproduced rather than described: the clock is moved past midnight while
+    // the three requests are in flight, which is exactly where the real gap is.
+    // Only `Date` is faked — `toFake` — so nothing that relies on real timers
+    // (the route's `AbortSignal.timeout` bounds) changes behaviour here.
+    const straddleCalls = [];
+    let stored = null;
+
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-09-17T23:59:59.500Z'));
+
+      const previousFetch = globalThis.fetch;
+      globalThis.fetch = async (url, init = {}) => {
+        const target = String(url);
+        if (target.startsWith('https://oauth2.googleapis.com/token')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ access_token: 'test-token' }),
+          };
+        }
+        straddleCalls.push(JSON.parse(init.body));
+        // The round-trip, with the day boundary inside it. Set on every call so
+        // the assertion does not depend on which of the three resolves first.
+        vi.setSystemTime(new Date('2026-09-18T00:00:01.000Z'));
+        return { ok: true, status: 200, json: async () => ({ rows: [] }) };
+      };
+
+      const redisModule = await import('@/lib/guestbook/redisDriver');
+      const setSpy = vi
+        .spyOn(redisModule.redis, 'set')
+        .mockImplementation(async (_key, value) => {
+          stored ??= typeof value === 'string' ? JSON.parse(value) : value;
+          return 'OK';
+        });
+
+      const response = await GET(
+        new Request('http://localhost/api/seo-report', {
+          headers: { authorization: `Bearer ${CRON_SECRET}` },
+        }),
+      );
+      const body = await response.json();
+
+      globalThis.fetch = previousFetch;
+      setSpy.mockRestore();
+
+      expect(straddleCalls).toHaveLength(3);
+      // Every request on the pre-midnight window, as before — this half was
+      // never broken, and asserting it keeps the case honest about what moved.
+      for (const requested of straddleCalls) {
+        expect(requested.startDate).toBe(straddleCalls[0].startDate);
+        expect(requested.endDate).toBe(straddleCalls[0].endDate);
+      }
+      expect(straddleCalls[0].endDate).toBe('2026-09-14');
+
+      // The half that was: the window REPORTED and the window STORED must both
+      // be the one the data was actually fetched for, not the one the clock
+      // happened to show by the time the rows came back.
+      const asked = {
+        start: straddleCalls[0].startDate,
+        end: straddleCalls[0].endDate,
+      };
+      expect(body.window).toEqual(asked);
+      expect(stored, 'the snapshot should have been written').toBeTruthy();
+      expect(stored.window).toEqual(asked);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('percent-encodes the property identifier into the path', () => {
     // `sc-domain:ma.codes` carries a colon, and a URL-prefix property carries
     // slashes — both would otherwise be read as path structure.
