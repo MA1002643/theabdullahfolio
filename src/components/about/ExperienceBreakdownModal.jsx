@@ -205,7 +205,20 @@ function CategoryCount({ months, unavailable = false }) {
 function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false }) {
   const prefersReducedMotion = useReducedMotion();
   const total = personalMonths + employmentMonths;
-  if (total === 0) return null;
+  // Rendering nothing is the EMPTY answer — "there is no experience to draw" —
+  // and it has to stay behind `!unavailable`, because a zero sum does not
+  // retract the other claim. With a source failed the surviving half can
+  // legitimately be 0 (GitHub down while the resume parses to no roles), and
+  // this return fired first: the arcs, the em-dash and "total unavailable" all
+  // disappeared together, leaving the category rows saying "Unavailable" beside
+  // a hole where the total belongs. A missing donut reads as "nothing to show",
+  // which is the one thing a degraded payload is not allowed to imply.
+  //
+  // The loading state is unaffected, and by design rather than by luck:
+  // `experienceSourceAvailability` reports both halves AVAILABLE until a
+  // payload arrives (its `!loaded ||`), so a pending request is `total === 0`
+  // with `unavailable` false and still renders nothing.
+  if (total === 0 && !unavailable) return null;
 
   const personalPct = personalMonths / total;
   const employmentPct = employmentMonths / total;

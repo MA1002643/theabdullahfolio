@@ -44,6 +44,23 @@ const DEGRADED = {
   total: null,
 };
 
+/**
+ * Degraded, and the surviving half is a genuine zero.
+ *
+ * `employment` is never null — it is a pure derivation over a static import, so
+ * only the GitHub side can fail — which means the two halves sum to 0 exactly
+ * when the resume parses to no roles while GitHub is down. `{ months: 0 }` is
+ * the route's deliberate "successful but empty", distinct from the `null` that
+ * means failed, so this is a payload it can build rather than an invented shape.
+ */
+const DEGRADED_EMPTY = {
+  generatedAt: '2026-09-17T12:00:00.000Z',
+  partial: true,
+  personalProjects: null,
+  employment: { months: 0, display: 'Less than a year', roles: [] },
+  total: null,
+};
+
 /** A complete payload, to prove the donut still states a total normally. */
 const COMPLETE = {
   generatedAt: '2026-09-17T12:00:00.000Z',
@@ -152,6 +169,74 @@ describe('ExperienceBreakdownModal — a degraded payload', () => {
     const text = container.textContent ?? '';
     expect(text).not.toMatch(/7\+\s*(total|yrs)/i);
     expect(text).not.toMatch(/total\s*7/i);
+  });
+});
+
+describe('ExperienceBreakdownModal — degraded with a zero-month remainder', () => {
+  it('still states that the total is unavailable', () => {
+    // The donut returned early on `total === 0` BEFORE it reached the
+    // unavailable branch, so this payload lost the em-dash and the "total
+    // unavailable" caption entirely. The category rows still rendered, which is
+    // what made it quiet: the modal showed "Unavailable" beside a hole where
+    // the total belongs, and a missing donut reads as "nothing to show" rather
+    // than "this cannot be computed" — the one implication a degraded payload
+    // must not make.
+    open(DEGRADED_EMPTY);
+
+    expect(screen.getByText(/total unavailable/i)).toBeTruthy();
+    expect(screen.queryByText(/total (yrs|mo)/i)).toBeNull();
+  });
+
+  it('does not invent a zero total instead', () => {
+    // The other way to get this wrong: dropping the early return altogether
+    // would draw the ring and print "0" under "total mo", which is a stated
+    // figure and therefore a claim — the same class of false total the rest of
+    // this suite exists to prevent, just with a smaller number on it.
+    const { container } = open(DEGRADED_EMPTY);
+    const text = container.textContent ?? '';
+
+    expect(text).toMatch(/total unavailable/i);
+    expect(text).not.toMatch(/0\s*total/i);
+    expect(text).not.toMatch(/total\s*0/i);
+  });
+});
+
+describe('ExperienceBreakdownModal — a truncated personal half', () => {
+  /**
+   * Partial the QUIET way: the repos are present, the list is short.
+   *
+   * Pagination stopped early (budget exhausted, a page aborted, the ceiling
+   * hit), so the route returns what it collected with `complete: false`, marks
+   * the payload partial and withholds `total` — the same treatment a failure
+   * gets. The half is a present object, which is exactly why a `!= null`
+   * availability check waved it through.
+   */
+  const TRUNCATED = {
+    ...COMPLETE,
+    partial: true,
+    personalProjects: { ...COMPLETE.personalProjects, complete: false },
+    total: null,
+  };
+
+  it('states no grand total for a short repo list either', () => {
+    open(TRUNCATED);
+
+    // 60 + 90 months = 150 → "12+" under "total yrs", derived from a personal
+    // half that is a floor. Pagination runs newest-first, so a truncated list
+    // is missing precisely the OLDEST repos — the ones the span is anchored on
+    // — and the undercount is systematic rather than a rounding error.
+    expect(screen.getByText(/total unavailable/i)).toBeTruthy();
+    expect(screen.queryByText(/total (yrs|mo)/i)).toBeNull();
+  });
+
+  it('keeps the repos it did collect, rather than blanking the section', () => {
+    // The other half of the trade the route documents for this flag: "the repos
+    // are still shown, and the figures derived from them are held back until
+    // the list is known to be whole." Withholding the total must not turn into
+    // withholding the content — that would make a slow page look like an outage.
+    open(TRUNCATED);
+
+    expect(screen.getByText(/culina/i)).toBeTruthy();
   });
 });
 

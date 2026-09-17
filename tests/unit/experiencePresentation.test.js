@@ -113,6 +113,69 @@ describe('experienceSourceAvailability', () => {
     });
   });
 
+  it('marks a TRUNCATED personal half unavailable too', () => {
+    // The route answers partially in two ways, and a `null` half is only the
+    // loud one. Repo pagination that stops early (budget exhausted, a page
+    // aborted, the page ceiling hit) returns the repos it collected with
+    // `complete: false`, and the route marks the payload partial and withholds
+    // `total` on exactly that basis — the same treatment as a failure.
+    //
+    // A `!= null` check called this available, so the grand total and the
+    // spoken split were recomputed from it. The undercount is systematic:
+    // pagination runs newest-first, so a truncated list is missing precisely
+    // the OLDEST repos, which are the ones the span is anchored on. `months` is
+    // a floor — a fine lower bound, and not a magnitude a percentage can be
+    // taken over.
+    const truncated = {
+      ...COMPLETE,
+      partial: true,
+      personalProjects: { ...COMPLETE.personalProjects, complete: false },
+      total: null,
+    };
+
+    expect(experienceSourceAvailability(truncated)).toEqual({
+      loaded: true,
+      personalAvailable: false,
+      employmentAvailable: true,
+      totalComputable: false,
+    });
+  });
+
+  it('does not read a MISSING `complete` flag as truncated', () => {
+    // `!== false`, not the route's `!== true`, and the asymmetry is deliberate:
+    // the route always sets the field, while this also reads payloads hydrated
+    // from localStorage that can predate it. Only complete payloads are ever
+    // written there, so an absent flag means complete — reading absence as
+    // truncated would paint "unavailable" over a perfectly healthy visit.
+    const legacyPersonal = {
+      firstRepoDate: '2020-01-01',
+      months: 60,
+      display: '5+ years',
+      repos: [],
+    };
+    expect('complete' in legacyPersonal).toBe(false);
+
+    const stored = { ...LEGACY_STORED, personalProjects: legacyPersonal };
+    expect(experienceSourceAvailability(stored).personalAvailable).toBe(true);
+    expect(experienceSourceAvailability(stored).totalComputable).toBe(true);
+  });
+
+  it('turns on `complete === false` and nothing else', () => {
+    // The mirror of the `partial` case above: a serialiser round-trip that
+    // turned the flag into `0` or `'false'` must not flip a healthy payload
+    // into the unavailable state, and `undefined` is the legacy case.
+    for (const complete of [0, 'false', null, undefined]) {
+      const payload = {
+        ...COMPLETE,
+        personalProjects: { ...COMPLETE.personalProjects, complete },
+      };
+      expect(
+        experienceSourceAvailability(payload).personalAvailable,
+        `complete: ${JSON.stringify(complete)} should not read as truncated`,
+      ).toBe(true);
+    }
+  });
+
   it('keeps a present-but-empty side available', () => {
     // `{ months: 0 }` is a genuine "owns nothing yet", and it must read as a
     // real zero rather than as a failure — the distinction the whole `null`
@@ -196,6 +259,30 @@ describe('buildSplitBreakdownLabel', () => {
     // Without this guard both halves read as unavailable and a pending request
     // announces a double failure.
     expect(buildSplitBreakdownLabel(null)).toBe('');
+  });
+
+  it('refuses to state a percentage over a truncated half', () => {
+    // The consumer where the truncation bug did the most damage, because a
+    // percentage has no "+" to hedge it. With `personalProjects` present but
+    // `complete: false`, the personal months are a FLOOR, and
+    // `personal / (personal + employment)` over a floored numerator is not a
+    // bound in either direction — it is simply a wrong number, and this sentence
+    // is the only place a screen-reader user hears the split at all.
+    //
+    // 60 and 90 months would have been spoken as "40 percent / 60 percent",
+    // which is what the assertion below is the absence of.
+    const truncated = {
+      ...COMPLETE,
+      partial: true,
+      personalProjects: { ...COMPLETE.personalProjects, complete: false },
+      total: null,
+    };
+
+    const label = buildSplitBreakdownLabel(truncated);
+    expect(label).toBe(
+      'Experience split: personal projects data unavailable, employment 100 percent.',
+    );
+    expect(label).not.toMatch(/40 percent/);
   });
 
   it('says nothing when both halves loaded and measured zero', () => {

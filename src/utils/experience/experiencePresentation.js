@@ -57,13 +57,46 @@ export function experienceSummaryState(payload) {
  * from these two halves rather than reading `payload.total`, so each would
  * otherwise recompute exactly the figure the route withholds.
  *
+ * ── A present `personalProjects` is not the same as a usable one ─────────────
+ * The route has TWO ways to answer partially, and a `null` half is only the
+ * loud one. When repo pagination stops early — wall-clock budget exhausted, a
+ * page aborted, the page ceiling hit — it returns the repos it did collect with
+ * `complete: false`, and marks the payload partial on exactly that basis
+ * (`personalProjects == null || personalProjects.complete !== true`), setting
+ * `total: null` for the same reason as an outright failure.
+ *
+ * A `!= null` check called that half available, so `totalComputable` stayed
+ * true and both consumers recomputed the withheld figure from it. And the
+ * undercount is not a rounding error: pagination runs newest-first, so a
+ * truncated list is missing exactly the OLDEST repos — the ones `firstRepoDate`
+ * is read off. `months` is a floor, always short, never a random sample.
+ *
+ * A floor is honest as a lower bound and useless as a magnitude, which is what
+ * makes this worse in the split than in the count: `personal / (personal +
+ * employment)` over a floored numerator is not a bound in either direction, it
+ * is simply a wrong percentage, spoken to screen-reader users as fact. So a
+ * truncated half is treated as unavailable — the route's own note for the flag
+ * says the repos are still shown and "the figures derived from them are held
+ * back until the list is known to be whole".
+ *
+ * ── `!== false`, not `!== true` ─────────────────────────────────────────────
+ * Deliberately NOT the route's test, and the asymmetry is the point. The route
+ * builds payloads where `complete` is always set, so absent-means-partial costs
+ * it nothing. This function also reads payloads hydrated from `localStorage`,
+ * which can predate the field entirely — and only COMPLETE payloads are ever
+ * written there, so an absent flag means complete. Reading absence as truncated
+ * would make a healthy visit paint "unavailable" out of storage, which is the
+ * same trap `experienceSummaryState` documents for `partial`.
+ *
  * @param {object|null|undefined} payload An `/api/experience-summary` payload.
  * @returns {{loaded: boolean, personalAvailable: boolean,
  *   employmentAvailable: boolean, totalComputable: boolean}}
  */
 export function experienceSourceAvailability(payload) {
   const loaded = payload != null;
-  const personalAvailable = !loaded || payload.personalProjects != null;
+  const personal = loaded ? payload.personalProjects : null;
+  const personalAvailable =
+    !loaded || (personal != null && personal.complete !== false);
   const employmentAvailable = !loaded || payload.employment != null;
   return {
     loaded,

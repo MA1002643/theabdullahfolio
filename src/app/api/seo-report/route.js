@@ -263,15 +263,21 @@ const WINDOW_DAYS = 28;
 // interpreting the numbers.
 const WINDOW_START_OFFSET_DAYS = LAG_DAYS + WINDOW_DAYS - 1;
 
-/** `YYYY-MM-DD`, `offsetDays` before today, in UTC. */
-function isoDate(offsetDays = 0) {
-  const date = new Date();
+/**
+ * `YYYY-MM-DD`, `offsetDays` before `from`, in UTC.
+ *
+ * `from` is a parameter rather than an implicit `new Date()` so a caller can
+ * derive several dates from ONE instant — which is the only way they can be
+ * guaranteed to describe the same UTC day. See `currentRunDates`.
+ */
+function isoDate(offsetDays = 0, from = new Date()) {
+  const date = new Date(from);
   date.setUTCDate(date.getUTCDate() - offsetDays);
   return date.toISOString().slice(0, 10);
 }
 
 /**
- * The window this invocation reports on, read from the clock ONCE.
+ * Every date this invocation needs, off ONE clock read.
  *
  * The offset above is shared by the request and the stored `window`, which made
  * them look like one derivation. They were two: each `isoDate` call reads the
@@ -283,18 +289,38 @@ function isoDate(offsetDays = 0) {
  * Which is the disagreement the offset's own comment says matters more than the
  * off-by-one it was written for: the data is whatever was requested, but the
  * stored window is what a later reader trusts when interpreting it, and nothing
- * in the snapshot would look wrong. The same UTC-midnight straddle the baseline
- * publish defends against with `PUBLISH_LATEST_LUA`, one field over.
+ * in the snapshot would look wrong.
  *
- * Captured before the queries start and passed down, so the dates are a fact of
- * the invocation rather than of when each caller happened to ask.
+ * ── `today` belongs to the same read, and for a harder reason ────────────────
+ * It was left out of the first pass on the grounds that the daily key is
+ * storage identity rather than a description of the data. That is half true and
+ * the wrong half: `SNAPSHOT_KEY(today)` is also a CLAIM. The comment beside the
+ * write says so outright — the `nx` "decides which run owns the day" — so a key
+ * is a lock on a slot, not a label on a shelf.
  *
- * @returns {{start: string, end: string}} Inclusive `YYYY-MM-DD` bounds.
+ * A run reading the clock after its queries therefore did not merely file
+ * day 1's data under day 2's name: it CONSUMED day 2's claim. The genuine day-2
+ * run then found the key taken, counted itself a rerun, and discarded its own
+ * snapshot — so day 2's archive holds a day-1 window, day 2's real snapshot is
+ * never stored anywhere, and `latest` republishes the straddler's. A whole
+ * day's change is reported by no run, which is the silent failure the `nx` and
+ * the compare-and-set were both built to prevent, arriving through the one date
+ * neither of them guards.
+ *
+ * Derived from a single `Date` so the window and the day cannot disagree: they
+ * are facts of the invocation, not of when each caller happened to ask.
+ *
+ * @returns {{today: string, window: {start: string, end: string}}} `today` keys
+ *   the daily snapshot; `window` is the inclusive `YYYY-MM-DD` report range.
  */
-function currentReportWindow() {
+function currentRunDates() {
+  const now = new Date();
   return {
-    start: isoDate(WINDOW_START_OFFSET_DAYS),
-    end: isoDate(LAG_DAYS),
+    today: isoDate(0, now),
+    window: {
+      start: isoDate(WINDOW_START_OFFSET_DAYS, now),
+      end: isoDate(LAG_DAYS, now),
+    },
   };
 }
 
@@ -673,8 +699,9 @@ export async function GET(request) {
     const token = await getAccessToken(credentials);
 
     // Read once, before any of it is sent, and then used everywhere: the three
-    // requests and the `window` recorded below. See `currentReportWindow`.
-    const reportWindow = currentReportWindow();
+    // requests, the `window` recorded below, and the daily key this run claims.
+    // See `currentRunDates`.
+    const { today, window: reportWindow } = currentRunDates();
 
     // Independent reads, and the route is on a cron budget.
     const [queryRows, pageRows, countryRows] = await Promise.all([
@@ -723,7 +750,9 @@ export async function GET(request) {
     const previous = await redis.get(LATEST_KEY);
     const findings = deriveFindings(snapshot, previous);
 
-    const today = isoDate(0);
+    // `today` comes from the pre-flight read above, NOT from the clock as it
+    // reads here — this line is on the far side of the upstream round-trip, and
+    // the claim below is the one thing a date drift cannot be allowed to move.
     const todayKey = SNAPSHOT_KEY(today);
 
     // A SECOND run on the same UTC day must not become tomorrow's baseline.

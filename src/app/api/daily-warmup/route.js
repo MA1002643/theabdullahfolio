@@ -98,9 +98,21 @@ const RUN_BUDGET_CEILING_MS = maxDuration * 1000 * 0.75;
 // therefore takes effect AS the ceiling; this comment is its documentation,
 // since the knob is deliberately absent from `.env.example` alongside
 // `CRON_WARM_TIMEOUT_MS` and `SEO_REPORT_TIMEOUT_MS`.
-const RUN_BUDGET_MS = Math.min(
-  envPositiveMs(process.env.CRON_RUN_BUDGET_MS, RUN_BUDGET_CEILING_MS),
-  RUN_BUDGET_CEILING_MS,
+// `Math.round` on the OUTSIDE, and it is not a duplicate of the one inside
+// `envPositiveMs`. That one normalises what came from the environment; the
+// `Math.min` here introduces a second operand the helper never saw, and
+// `RUN_BUDGET_CEILING_MS` is arithmetic over a fraction that is meant to be
+// edited (the comment above invites exactly that). At 0.75 of 60 000 it lands on
+// a whole millisecond, but a fraction with more places would not, and the
+// ceiling WINS the `Math.min` in the ordinary case — so the fractional value
+// would be the one reaching `AbortSignal.timeout`, which rejects it outright
+// with `ERR_OUT_OF_RANGE`. Created inside the handler, so that throw is the cron
+// dying with no body and no per-step results.
+const RUN_BUDGET_MS = Math.round(
+  Math.min(
+    envPositiveMs(process.env.CRON_RUN_BUDGET_MS, RUN_BUDGET_CEILING_MS),
+    RUN_BUDGET_CEILING_MS,
+  ),
 );
 
 // Aborting does not stop the downstream — that function keeps running and its

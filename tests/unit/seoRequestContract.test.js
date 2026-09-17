@@ -223,6 +223,7 @@ describe('the Search Analytics request body', () => {
     // (the route's `AbortSignal.timeout` bounds) changes behaviour here.
     const straddleCalls = [];
     let stored = null;
+    let storedKey = null;
 
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
@@ -248,7 +249,8 @@ describe('the Search Analytics request body', () => {
       const redisModule = await import('@/lib/guestbook/redisDriver');
       const setSpy = vi
         .spyOn(redisModule.redis, 'set')
-        .mockImplementation(async (_key, value) => {
+        .mockImplementation(async (key, value) => {
+          storedKey ??= key;
           stored ??= typeof value === 'string' ? JSON.parse(value) : value;
           return 'OK';
         });
@@ -282,6 +284,20 @@ describe('the Search Analytics request body', () => {
       expect(body.window).toEqual(asked);
       expect(stored, 'the snapshot should have been written').toBeTruthy();
       expect(stored.window).toEqual(asked);
+
+      // ── And the DAY it is filed under, which is a claim rather than a label ─
+      // `SNAPSHOT_KEY(today)` is written with `nx`, and the comment beside that
+      // write is explicit that the claim — "not a date read a moment ago" —
+      // decides which run owns the day. So a run that read the clock after its
+      // queries did not just misfile day 1's data under day 2's name, it
+      // CONSUMED day 2's claim: the genuine day-2 run found the key taken,
+      // counted itself a rerun and threw its own snapshot away. Day 2's archive
+      // would hold a day-1 window, day 2's real snapshot would exist nowhere,
+      // and a full day of change would be reported by no run at all.
+      expect(storedKey, 'the daily key should belong to the run, not the wall ' +
+        'clock at the moment the upstreams happened to finish').toBe(
+        'seo:gsc:2026-09-17',
+      );
     } finally {
       vi.useRealTimers();
     }
