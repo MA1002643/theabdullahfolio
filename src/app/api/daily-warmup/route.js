@@ -207,10 +207,25 @@ function bodyReportsFailure(detail) {
 // a 401, a thrown fetch — all read as NOT-skipped and therefore count against
 // the run. Treating an ambiguous answer as "skipped" would rebuild the exact
 // blind spot this function exists to close.
+// `ok: false` is required as well as `skipped`, because the excused answer is a
+// SHAPE and half of it was going unchecked: /api/seo-report emits
+// `{ ok: false, skipped: '…' }`, and a 503 body that carries a `skipped` string
+// without it is something else wearing the contract's clothes — a proxy, an
+// error envelope, a future handler reusing the word.
+//
+// What this does NOT do, said plainly so nobody reads more into it: it still
+// excuses ANY reason string. Pinning the exact prose was considered and
+// rejected — it would couple this route's green/red to a sentence in another
+// file, so rewording that sentence would start counting a legitimately
+// unconfigured step against the run, which is the alarm-fatigue failure the
+// exclusion exists to prevent. Making it airtight needs a stable machine
+// discriminator (a `code`, not a message) on both sides; today the invariant
+// "only one condition claims `skipped`" is held by the downstream's own tests.
 function isNotConfigured(result) {
   if (result?.status !== 503) return false;
   try {
-    return typeof JSON.parse(result.detail)?.skipped === "string";
+    const body = JSON.parse(result.detail);
+    return body?.ok === false && typeof body?.skipped === "string";
   } catch {
     // Not JSON, or no body at all. That is not a configuration message.
     return false;

@@ -93,8 +93,15 @@ describe('seo-report — storage is required once configured', () => {
       'A `skipped` field here is excused by daily-warmup and the run goes green ' +
         'while no snapshot can be stored.',
     ).toBeUndefined();
+    // BOTH accepted pairs. `redisDriver` reads `KV_REST_API_URL ||
+    // UPSTASH_REDIS_REST_URL` (and the matching tokens), so naming only the
+    // Vercel-integration pair sent an operator on a direct Upstash setup to
+    // add a variable the driver would never have read. The guestbook store's
+    // messages already name both; this keeps the two in step.
     expect(body.error).toMatch(/KV_REST_API_URL/);
     expect(body.error).toMatch(/KV_REST_API_TOKEN/);
+    expect(body.error).toMatch(/UPSTASH_REDIS_REST_URL/);
+    expect(body.error).toMatch(/UPSTASH_REDIS_REST_TOKEN/);
   });
 
   it('logs the reason, not just returns it', async () => {
@@ -155,8 +162,9 @@ describe('daily-warmup — the verdict catches missing storage', () => {
         JSON.stringify({
           ok: false,
           error:
-            'Upstash is not configured (KV_REST_API_URL / KV_REST_API_TOKEN), ' +
-            'so no Search Console snapshot can be stored',
+            'Upstash is not configured (KV_REST_API_URL / KV_REST_API_TOKEN, ' +
+            'or UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN), so no ' +
+            'Search Console snapshot can be stored',
         }),
     };
     const OK = { ok: true, status: 200, text: async () => '{"ok":true}' };

@@ -156,11 +156,25 @@ export default async function ProjectDetailPage({ params }) {
                 aria-label="Project navigation"
                 className="project-sibling-nav sr-only custom-bg"
             >
-                <Link href="/projects">All projects</Link>
-                <Link href={`/projects/${previous.id}`}>
+                {/* `prefetch={false}` on all three: this panel is `sr-only`
+                    until `:focus-within`, so it is in the viewport on every
+                    visit and reachable by no pointer. Next's default viewport
+                    prefetch therefore warmed the listing plus both sibling
+                    routes for EVERY visitor, to serve links only keyboard and
+                    AT users can reach — three extra RSC round-trips on a page
+                    that is already loading a 3D scene.
+                    It stays crawlable (the `href`s are server-rendered, which
+                    is the whole point of this nav) and stays fast for the
+                    people who use it: `prefetch={false}` only stands down the
+                    viewport prefetch, so hover and touch still warm the route
+                    on intent. Same call as HomeBtn/ProjectsBtn/ReturnPortal. */}
+                <Link href="/projects" prefetch={false}>
+                    All projects
+                </Link>
+                <Link href={`/projects/${previous.id}`} prefetch={false}>
                     Previous project: {previous.name}
                 </Link>
-                <Link href={`/projects/${next.id}`}>
+                <Link href={`/projects/${next.id}`} prefetch={false}>
                     Next project: {next.name}
                 </Link>
             </nav>

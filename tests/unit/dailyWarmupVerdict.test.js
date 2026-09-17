@@ -139,6 +139,18 @@ describe('daily-warmup verdict', () => {
     expect(status).toBe(502);
   });
 
+  it('counts a 503 carrying `skipped` without the `ok: false` beside it', async () => {
+    // The excused answer is a SHAPE — `{ ok: false, skipped: '…' }` — and half
+    // of it was going unchecked, so a 503 body that merely contains the word
+    // was forgiven. A proxy envelope, an error wrapper, or a future handler
+    // reusing the field would have kept the cron green while nothing was
+    // stored, which is the blind spot `isNotConfigured` exists to close.
+    const { status } = await run({
+      seoReport: reply(503, { skipped: 'temporary outage' }),
+    });
+    expect(status).toBe(502);
+  });
+
   it('counts a thrown fetch, which has no status at all', async () => {
     routes = { workStatus: OK, repoRefresh: OK };
     const response = await GET(

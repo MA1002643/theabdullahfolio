@@ -679,9 +679,17 @@ export async function GET(request) {
   // nothing upstream was reached or misbehaved, this is the server's own
   // configuration, and it will not fix itself by being retried tomorrow.
   if (!redis) {
+    // BOTH accepted pairs, because `redisDriver` reads either
+    // (`KV_REST_API_URL || UPSTASH_REDIS_REST_URL`, same for the token): the
+    // KV_ names are what the Vercel/Upstash integration injects, the UPSTASH_
+    // names what a direct Upstash setup uses. Naming only the first sent an
+    // operator on the second to add a variable the driver would not have read
+    // anyway. The guestbook store's messages already name both pairs — this is
+    // that convention, not a new one.
     const reason =
-      'Upstash is not configured (KV_REST_API_URL / KV_REST_API_TOKEN), so no ' +
-      'Search Console snapshot can be stored';
+      'Upstash is not configured (KV_REST_API_URL / KV_REST_API_TOKEN, or ' +
+      'UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN), so no Search ' +
+      'Console snapshot can be stored';
     // Logged as well as returned, for the same reason as the branch above: the
     // response goes to daily-warmup, but the reason belongs in the platform log
     // where the cron failure is actually read from.
