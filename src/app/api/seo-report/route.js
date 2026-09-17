@@ -136,6 +136,22 @@ const SNAPSHOT_TTL_SECONDS = 90 * 24 * 60 * 60;
 // A stored value that is absent, not JSON, or carries no `capturedAt` is treated
 // as unordered and overwritten: it cannot be shown to be newer, and refusing to
 // write would strand a malformed baseline forever.
+//
+// ── The TTL is not optional here either ─────────────────────────────────────
+// `ARGV[3]` is the expiry, and this script used to write without one. Only the
+// daily keys carried `SNAPSHOT_TTL_SECONDS`, so the "rolling 90-day store" kept
+// one snapshot — `latest`, the full payload including every query, page and
+// country row — FOREVER, and each run rewrote it larger as the site accrued
+// impressions. A retention policy with one unbounded key is not a retention
+// policy; it is a leak with a schedule.
+//
+// Passing it as an argument rather than hardcoding the number in Lua keeps one
+// definition of the window: `SNAPSHOT_TTL_SECONDS` is the policy, and both the
+// daily key and this pointer read it. In steady state the pointer never
+// actually expires — every run rewrites it and the TTL restarts — so the
+// expiry only bites after 90 days with no successful run, by which time the
+// baseline it holds is older than the retention window and worthless as a
+// comparison anyway.
 const PUBLISH_LATEST_LUA = `
 local current = redis.call('GET', KEYS[1])
 if current then
@@ -146,7 +162,7 @@ if current then
     end
   end
 end
-redis.call('SET', KEYS[1], ARGV[1])
+redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[3])
 return 1
 `;
 
@@ -155,6 +171,22 @@ return 1
 // catastrophic traffic collapse and is purely an artefact of the lag.
 const LAG_DAYS = 3;
 const WINDOW_DAYS = 28;
+
+// The offset of the window's FIRST day, and the `- 1` is the whole point.
+//
+// Search Console treats `startDate` and `endDate` as INCLUSIVE, so a range from
+// `LAG_DAYS + WINDOW_DAYS` to `LAG_DAYS` spans 29 calendar days, not 28: the
+// arithmetic counts the gap between the endpoints and the API counts the days.
+// Every total, CTR and average position was therefore computed over one day
+// more than the runbook, this file and the response's own `window` all claimed
+// — and a 29-day figure compared against a 29-day figure looks perfectly
+// consistent, which is why nothing surfaced it.
+//
+// Derived once and used by BOTH the request and the `window` recorded in the
+// snapshot, because the failure that matters more than the off-by-one is those
+// two disagreeing: the stored window is what a later reader trusts when
+// interpreting the numbers.
+const WINDOW_START_OFFSET_DAYS = LAG_DAYS + WINDOW_DAYS - 1;
 
 /** `YYYY-MM-DD`, `offsetDays` before today, in UTC. */
 function isoDate(offsetDays = 0) {
@@ -343,7 +375,7 @@ async function queryAnalytics(token, siteUrl, dimensions) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        startDate: isoDate(LAG_DAYS + WINDOW_DAYS),
+        startDate: isoDate(WINDOW_START_OFFSET_DAYS),
         endDate: isoDate(LAG_DAYS),
         dimensions,
         // Plenty for a site with 21 URLs, and it spares us pagination.
@@ -544,7 +576,7 @@ export async function GET(request) {
     const snapshot = {
       capturedAt: new Date().toISOString(),
       window: {
-        start: isoDate(LAG_DAYS + WINDOW_DAYS),
+        start: isoDate(WINDOW_START_OFFSET_DAYS),
         end: isoDate(LAG_DAYS),
       },
       totals: queryRows.reduce(
@@ -648,7 +680,13 @@ export async function GET(request) {
       const wrote = await redis.eval(
         PUBLISH_LATEST_LUA,
         [LATEST_KEY],
-        [JSON.stringify(canonical), String(canonical.capturedAt ?? '')],
+        [
+          JSON.stringify(canonical),
+          String(canonical.capturedAt ?? ''),
+          // The same retention window the daily key gets — see the note beside
+          // the script for why the pointer needs one at all.
+          String(SNAPSHOT_TTL_SECONDS),
+        ],
       );
       baselinePublished = Number(wrote) === 1;
 
@@ -688,6 +726,18 @@ export async function GET(request) {
       totals: snapshot.totals,
       comparedAgainst: previous?.capturedAt ?? null,
       findings,
+      // The geographic split — one of the four things §9 says this report is
+      // FOR, and the only one that was stored and then not returned. Reading it
+      // meant opening Upstash by hand, which is precisely the "go and look"
+      // this route exists to remove: a cron log or a manual call could show new
+      // queries, dropped positions and low-CTR pages while the audience answer
+      // stayed invisible.
+      //
+      // Returned whole rather than as a top-N slice, unlike `queries` and
+      // `pages` which are represented by `findings` alone: countries are capped
+      // by geography at a couple of hundred rows of three small fields, where
+      // those two are capped only by `rowLimit: 1000`.
+      countries: snapshot.countries,
       // Stated in the payload rather than only in the docs, so whoever reads a
       // cron log is told why the assistant numbers are absent here rather than
       // filing it as a bug.

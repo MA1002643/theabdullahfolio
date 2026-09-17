@@ -336,9 +336,26 @@ export function useExperienceSummary(username) {
         // a change worth announcing, and it would report the recovery as
         // growth.
         //
-        // `current ?? payload` rather than a plain `setData` so an existing
-        // complete answer — from storage or an earlier poll — is kept, and the
-        // partial one is adopted only by a client that has nothing.
+        // Held state is kept only when it is BETTER, which is not the same as
+        // "kept when it exists". The first cut read `current ?? payload`, so
+        // anything already in state survived — including an earlier PARTIAL
+        // answer, which made the first degraded response a cold client happened
+        // to receive permanent for the rest of the visit. During a prolonged
+        // outage the later polls are the better ones: pagination that timed out
+        // on page one can reach page three on the next attempt, so a newer
+        // partial routinely carries more repos and a longer span than the one
+        // being clung to, and the client would show the worse of the two until
+        // the page was reloaded.
+        //
+        // So: a complete answer is kept, a partial one is replaced by this
+        // payload, and a client with nothing adopts it. An entry hydrated from
+        // storage counts as complete even without the flag — only complete
+        // payloads are ever written there, and entries written before `partial`
+        // existed have no field to read.
+        //
+        // "Newest wins" is decided by arrival, not by comparing `generatedAt`:
+        // a stored entry has no such stamp (`pickContent` strips it), and two
+        // degraded answers seconds apart are not worth ordering.
         // The four change indicators are CLEARED rather than left alone. They
         // describe what the LAST comparison found, so carrying them past a poll
         // that made no comparison attributes a change to an observation that
@@ -352,7 +369,9 @@ export function useExperienceSummary(username) {
         // Cleared through one named step because the way this goes wrong is an
         // early return updating some of the four and not the rest.
         if (payload?.partial) {
-          setData((current) => current ?? payload);
+          setData((current) =>
+            current == null || current.partial === true ? payload : current,
+          );
           setError(null);
           clearChangeIndicators();
           return;

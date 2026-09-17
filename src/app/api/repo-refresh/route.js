@@ -240,6 +240,15 @@ export async function GET(request) {
     // and `_fallback` keeps its 503 distinction. An experience-summary
     // failure alone remains best-effort and returns 200 — consumers
     // should read `experience.ok` for that signal.
+    //
+    // "Consumers should read it" was doing more work than it could bear while
+    // the only consumer did not. `/api/daily-warmup` is now this route's sole
+    // caller (it owns the single cron entry), and it judged each step by HTTP
+    // status alone — so a failed experience warm produced an all-green cron
+    // verdict, which is the one thing that route exists to prevent. It now
+    // reads the `ok` below as well as the status, which is why this best-effort
+    // 200 can stay best-effort: the field is load-bearing, not advisory. Keep
+    // `ok` truthful if a third warm is ever added here.
     let status = 200;
     if (!githubStats.ok) {
       status = githubStats.reason === "upstream-fallback" ? 503 : 502;

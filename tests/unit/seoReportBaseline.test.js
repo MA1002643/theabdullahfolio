@@ -28,8 +28,12 @@ import { freshCronSecret } from '../helpers/secrets.js';
 // Everything external is faked — Upstash in memory, Google over a stubbed
 // fetch — so the assertions are about ordering, not about the network.
 
-const { redisStore, redisMock, redisHooks, latestWrites } = vi.hoisted(() => {
+const { redisStore, redisMock, redisHooks, latestWrites, redisTtls } = vi.hoisted(() => {
   const store = new Map();
+  // key → the expiry, in seconds, the last write to it asked for (undefined when
+  // a write set none). The retention policy is only real if every key that
+  // holds a snapshot carries one, and `latest` held the whole payload forever.
+  const ttls = new Map();
   // EVERY value ever written to `latest`, in order — not just the one that
   // survived. Asserting on the final value alone is order-dependent: when two
   // runs race, a version that publishes the LOSER's capture still leaves the
@@ -55,6 +59,7 @@ const { redisStore, redisMock, redisHooks, latestWrites } = vi.hoisted(() => {
   return {
     redisStore: store,
     redisHooks: hooks,
+    redisTtls: ttls,
     latestWrites: latestKeyWrites,
     redisMock: {
       async get(key) {
@@ -77,6 +82,7 @@ const { redisStore, redisMock, redisHooks, latestWrites } = vi.hoisted(() => {
         if (key === 'seo:gsc:latest')
           latestKeyWrites.push(structuredClone(value));
         store.set(key, structuredClone(value));
+        ttls.set(key, options.ex);
         return 'OK';
       },
       // PUBLISH_LATEST_LUA, executed in JS.
@@ -94,9 +100,20 @@ const { redisStore, redisMock, redisHooks, latestWrites } = vi.hoisted(() => {
       // script runs server-side and cannot see this mock's fault-injection
       // hooks — modelling it otherwise would let `staleGet` fake an outcome the
       // real script could never produce.
-      async eval(_script, keys, args) {
+      async eval(script, keys, args) {
         const [key] = keys;
-        const [serialised, capturedAt] = args;
+        // `expiry` is ARGV[3]. The script SETs with `EX`, so a model that
+        // ignored it would let an unbounded write pass here unnoticed — which is
+        // exactly how `latest` came to be the one key with no retention.
+        const [serialised, capturedAt, expiry] = args;
+        // Whether the SCRIPT actually applies that argument. Read off the Lua
+        // text rather than assumed, because this mock models the script's
+        // DECISION and would otherwise record a TTL the script never set: the
+        // route can pass ARGV[3] to a `SET` that ignores it, which is precisely
+        // the state this key was in. Text-matching is the only check available
+        // to a JS model; that the Lua parses and that Redis honours the expiry
+        // need a real server.
+        const boundedWrite = /'EX',\s*ARGV\[3\]/.test(script);
         // `failSetOn` has to reach here as well as `set`. The baseline write
         // moved from SET to this script, so a hook that only faulted `set` would
         // leave the half-completed-run case injecting nothing and passing while
@@ -115,6 +132,10 @@ const { redisStore, redisMock, redisHooks, latestWrites } = vi.hoisted(() => {
         const value = JSON.parse(serialised);
         if (key === 'seo:gsc:latest') latestKeyWrites.push(value);
         store.set(key, value);
+        ttls.set(
+          key,
+          boundedWrite && expiry !== undefined ? Number(expiry) : undefined,
+        );
         return 1;
       },
     },
@@ -129,6 +150,8 @@ function resetHooks() {
   latestWrites.length = 0;
   raceRows.length = 0;
   rowsByToken.clear();
+  countryRows = [];
+  redisTtls.clear();
 }
 
 vi.mock('@/lib/guestbook/redisDriver', () => ({
@@ -144,6 +167,11 @@ const LATEST_KEY = 'seo:gsc:latest';
 // Rows the stubbed Search Analytics answers with. Mutated between runs to
 // simulate the site's ranking actually changing during the day.
 let queryRows = [];
+
+// Rows the `country` dimension answers with. Empty for every case but the one
+// about the geographic split, so the snapshots the other cases build stay as
+// readable as they were.
+let countryRows = [];
 
 // Per-RUN rows, for the overlapping case. `queryRows` above is module state, so
 // two invocations started together both read whichever value was assigned last
@@ -240,7 +268,12 @@ beforeAll(async () => {
         ok: true,
         status: 200,
         json: async () => ({
-          rows: dimensions[0] === 'query' ? rows : [],
+          rows:
+            dimensions[0] === 'query'
+              ? rows
+              : dimensions[0] === 'country'
+                ? countryRows
+                : [],
         }),
       };
     }
@@ -587,5 +620,106 @@ describe('/api/seo-report — a delayed run cannot rewind the baseline', () => {
 
     expect(run.baselinePublished).toBe(true);
     expect(redisStore.get(LATEST_KEY).capturedAt).toBe(NEXT_DAY);
+  });
+});
+
+// ── The retention window has to cover every key that holds a snapshot ───────
+// W6 specifies a ROLLING 90-day store, and the daily keys implemented it: each
+// is written with `SNAPSHOT_TTL_SECONDS` so expiry is the database's job. The
+// baseline pointer was not — `latest` was SET with no expiry at all, and it
+// holds a FULL snapshot: every query, page and country row of the run that
+// published it. So the "rolling" store kept one copy of its largest value
+// permanently, rewritten larger each night as the site accrued impressions.
+// Nothing observable goes wrong; the bill goes up.
+describe('/api/seo-report — the snapshot retention window', () => {
+  const NINETY_DAYS_SECONDS = 90 * 24 * 60 * 60;
+  const DAY = '2026-09-14';
+  const MORNING = `${DAY}T06:00:00.000Z`;
+  const NEXT_MORNING = '2026-09-15T06:00:00.000Z';
+
+  it('bounds the baseline pointer, not only the daily keys', async () => {
+    redisStore.clear();
+
+    await runAt(MORNING, MORNING_ROWS);
+
+    // Vacuity guard: the daily key's TTL is the behaviour that was already
+    // right, so if this is absent the mock stopped recording and the assertion
+    // below would be meaningless.
+    expect(redisTtls.get(SNAPSHOT_KEY(DAY))).toBe(NINETY_DAYS_SECONDS);
+
+    // The regression in one line: this was `undefined`.
+    expect(
+      redisTtls.get(LATEST_KEY),
+      '`latest` holds a full snapshot; without an expiry it is a permanent copy ' +
+        'of the largest value this route writes.',
+    ).toBe(NINETY_DAYS_SECONDS);
+  });
+
+  it('keeps the two windows equal rather than separately chosen', async () => {
+    redisStore.clear();
+
+    await runAt(MORNING, MORNING_ROWS);
+
+    // One policy, read from one constant, applied by both writers — a second
+    // literal in the Lua would be a second thing to keep in step, and the
+    // pointer expiring before its own daily archive would be a stranger state
+    // than having no expiry at all.
+    expect(redisTtls.get(LATEST_KEY)).toBe(redisTtls.get(SNAPSHOT_KEY(DAY)));
+  });
+
+  it('refreshes the pointer window on every publish', async () => {
+    redisStore.clear();
+
+    // The reason a 90-day TTL on the pointer is harmless in steady state: each
+    // run rewrites it, which restarts the clock. It can only expire after 90
+    // days with no successful run — by which point the baseline it holds is
+    // older than the retention window and useless as a comparison.
+    await runAt(MORNING, MORNING_ROWS);
+    redisTtls.delete(LATEST_KEY);
+    await runAt(NEXT_MORNING, AFTERNOON_ROWS);
+
+    expect(redisTtls.get(LATEST_KEY)).toBe(NINETY_DAYS_SECONDS);
+  });
+});
+
+// ── The report has to return what it says it derives ────────────────────────
+// docs/seo.md §9: this route derives "new queries, positions that dropped > 3,
+// pages with impressions but CTR < 1%, and the geographic split". Three of the
+// four reach the caller through `findings`. The fourth was fetched, stored and
+// then dropped from the response, so the only way to read it was to open
+// Upstash by hand — the "go and look" this whole loop exists to remove.
+describe('/api/seo-report — the geographic split', () => {
+  const DAY = '2026-09-14';
+  const MORNING = `${DAY}T06:00:00.000Z`;
+
+  it('returns the countries it collected', async () => {
+    redisStore.clear();
+    countryRows = [
+      row('gbr', { clicks: 4, impressions: 90 }),
+      row('usa', { clicks: 1, impressions: 30 }),
+    ];
+
+    const body = await runAt(MORNING, MORNING_ROWS);
+
+    expect(body.countries).toEqual([
+      { country: 'gbr', clicks: 4, impressions: 90 },
+      { country: 'usa', clicks: 1, impressions: 30 },
+    ]);
+    // The same rows the snapshot stored, not a second derivation of them.
+    expect(body.countries).toEqual(
+      redisStore.get(SNAPSHOT_KEY(DAY)).countries,
+    );
+  });
+
+  it('returns an empty split rather than omitting it', async () => {
+    redisStore.clear();
+    countryRows = [];
+
+    const body = await runAt(MORNING, MORNING_ROWS);
+
+    // A missing field and "no impressions from anywhere yet" are different
+    // answers, and the second is the true one for a site that is still being
+    // indexed. `[]` says it.
+    expect(body.countries).toEqual([]);
   });
 });

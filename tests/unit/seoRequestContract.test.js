@@ -24,8 +24,16 @@ import { freshCronSecret } from '../helpers/secrets.js';
 // has it backwards. This file exists so that is settled by a failing test
 // rather than by argument.
 
+// `eval` is the baseline publish (PUBLISH_LATEST_LUA). Stubbed as "wrote" so
+// the route reaches its success response — without it the handler throws on a
+// missing method and answers 502, which would leave the response-shape
+// assertions below reading an error body.
 vi.mock('@/lib/guestbook/redisDriver', () => ({
-  redis: { get: async () => null, set: async () => 'OK' },
+  redis: {
+    get: async () => null,
+    set: async () => 'OK',
+    eval: async () => 1,
+  },
   redisAvailable: true,
 }));
 
@@ -144,6 +152,54 @@ describe('the Search Analytics request body', () => {
       expect(new Date(body.startDate) < new Date(body.endDate)).toBe(true);
       expect(new Date(body.endDate) < new Date()).toBe(true);
     }
+  });
+
+  it('asks for exactly 28 days, counted the way the API counts them', () => {
+    // The regression: `startDate` was `LAG_DAYS + WINDOW_DAYS` days back and
+    // `endDate` `LAG_DAYS` days back, which is 29 CALENDAR DAYS because Search
+    // Console treats both endpoints as inclusive — the arithmetic counted the
+    // gap and the API counted the days. Every total, CTR and average position
+    // was computed over a day more than the runbook and the response's own
+    // `window` claimed, and a 29-day figure compared against another 29-day
+    // figure looks entirely consistent.
+    //
+    // Pinned as the INCLUSIVE count, in days, so the assertion fails for the
+    // same reason a reader would object rather than restating the arithmetic
+    // the route uses.
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    for (const { body } of analyticsCalls) {
+      const span =
+        (Date.parse(`${body.endDate}T00:00:00Z`) -
+          Date.parse(`${body.startDate}T00:00:00Z`)) /
+        DAY_MS;
+      expect(span + 1, 'inclusive day count of the requested window').toBe(28);
+    }
+
+    // All three dimensions must cover the SAME window, or the geographic split
+    // is measured over a different period than the totals it sits beside.
+    const windows = new Set(
+      analyticsCalls.map(({ body }) => `${body.startDate}..${body.endDate}`),
+    );
+    expect(windows.size).toBe(1);
+  });
+
+  it('records the window it actually requested', async () => {
+    // The off-by-one had a second copy: the snapshot's `window` was built from
+    // the same expression as the request, so fixing one and not the other would
+    // leave the stored/reported window disagreeing with the data — and the
+    // stored window is what a later reader trusts when interpreting figures.
+    const response = await GET(
+      new Request('http://localhost/api/seo-report', {
+        headers: { authorization: `Bearer ${CRON_SECRET}` },
+      }),
+    );
+    const body = await response.json();
+    const requested = analyticsCalls.at(-1).body;
+
+    expect(body.window).toEqual({
+      start: requested.startDate,
+      end: requested.endDate,
+    });
   });
 
   it('percent-encodes the property identifier into the path', () => {

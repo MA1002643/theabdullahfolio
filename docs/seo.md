@@ -464,6 +464,11 @@ stores a rolling 90-day snapshot in Upstash, and derives what is actionable:
 new queries, positions that dropped > 3, pages with impressions but CTR < 1%,
 and the geographic split.
 
+All four reach the caller. The first three arrive as `findings`; the geographic
+split is returned as `countries` — it was fetched and stored but left out of the
+response until 2026-09-17, so reading it meant opening Upstash by hand, which is
+the "go and look" this loop exists to remove.
+
 ### Wiring
 
 Invoked as a **third step in [`/api/daily-warmup`](../src/app/api/daily-warmup/route.js)'s
@@ -473,6 +478,27 @@ a standalone entry would silently never run — which is exactly why
 
 It **counts toward `daily-warmup`'s `allOk` verdict, but only once it is
 configured** — the revisit the previous note asked for, now done.
+
+**A 2xx is not a verdict** (tightened 2026-09-17). `daily-warmup` judged each
+step by HTTP status alone, and `/api/repo-refresh` answers **200** when only its
+`/api/experience-summary` warm failed — a best-effort semantic it documents on
+purpose, since a non-2xx there is a retry/alert signal about a cache that
+refills on the next visitor anyway. The two together produced an all-green cron
+over a half-failed step: the body said `ok: false` and nobody read it. Each
+step's result is now `res.ok && body.ok !== false`, marked
+`bodyReportedFailure: true` so a 200-that-failed stays distinguishable from a
+502. It reads only an explicit `ok: false` and fails **open** — the deliberate
+opposite of the `skipped` check, which must not let an ambiguous body excuse a
+step — because `/api/work-status` returns no `ok` field at all and inventing an
+admission from it would turn every healthy run red.
+
+The cron's own deadline is also no longer a guess: the route **declares**
+`maxDuration`, and `CRON_RUN_BUDGET_MS` defaults to 75% of it. A budget is only
+a bound if it expires before the platform kills the function, and 45 s against a
+"60 s, lower on smaller plans" comment was a bet on an unstated plan fact — one
+that, on the smaller of its own two claims, could not fire at all. A plan that
+cannot grant the declared duration now fails at deploy time rather than at
+01:00.
 
 The step answers 503 with a `skipped` reason whenever `GSC_SERVICE_ACCOUNT_KEY`
 is **unset**, which is the correct state until verification is done by hand, and
@@ -574,11 +600,35 @@ The window ends **three days ago** and spans 28 days. GSC data lags ~2 days and
 the most recent days are always incomplete, so a window ending "today" shows a
 cliff that looks like a traffic collapse and is purely an artefact.
 
+**28 days counted the way the API counts them** (fixed 2026-09-17). Search
+Console treats `startDate` *and* `endDate` as inclusive, so the first cut —
+`start = LAG_DAYS + WINDOW_DAYS`, `end = LAG_DAYS` — requested **29** calendar
+days: the arithmetic counted the gap between the endpoints while the API counted
+the days. Every total, CTR and average position was computed over a day more
+than this page and the response's own `window` field claimed, and because a
+29-day figure was compared against another 29-day figure nothing looked wrong.
+The start offset is now `LAG_DAYS + WINDOW_DAYS - 1`, derived once and used by
+both the request and the `window` recorded in the snapshot — the two
+disagreeing would be worse than the off-by-one, since the stored window is what
+a later reader trusts when interpreting the figures. Pinned as an inclusive day
+count in `tests/unit/seoRequestContract.test.js`.
+
 ### The comparison baseline, and why a rerun stores nothing
 
 The API can only report a *window*; it cannot say what changed since you last
 looked. That is the entire reason snapshots are stored, and it makes the choice
 of baseline the part most worth getting right.
+
+**Both keys expire** (fixed 2026-09-17). `SNAPSHOT_TTL_SECONDS` is the 90-day
+policy, and only the daily keys carried it: `seo:gsc:latest` was written without
+an expiry, and it holds a *full* snapshot — every query, page and country row of
+the run that published it. A rolling 90-day store with one permanent key that
+grows as the site accrues impressions is not a retention policy. The publish
+script now takes the TTL as an argument (`ARGV[3]`) so both writers read the
+same constant. In steady state the pointer never actually expires, because every
+run rewrites it and restarts the clock; the expiry only bites after 90 days with
+no successful run, by which point the baseline is older than the retention
+window and worthless as a comparison anyway.
 
 Both `seo:gsc:<date>` and `seo:gsc:latest` hold the **first** snapshot captured
 on their day. The daily key is claimed with `nx`, and that claim — not a date read

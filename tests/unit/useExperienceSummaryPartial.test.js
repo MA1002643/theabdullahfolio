@@ -47,6 +47,32 @@ const PARTIAL = {
   total: null,
 };
 
+/**
+ * A LATER degraded payload that got further than `PARTIAL` did.
+ *
+ * This is what a second attempt during an outage actually looks like: the
+ * pagination that failed on page one reached a page or two, so the repo list is
+ * longer and the span is anchored further back — still flagged partial, still
+ * without a `total`, and strictly more informative than the answer before it.
+ */
+const BETTER_PARTIAL = {
+  generatedAt: '2026-09-13T00:20:00.000Z',
+  partial: true,
+  personalProjects: {
+    firstRepoDate: '2021-01-01',
+    months: 40,
+    display: '3+ years',
+    complete: false,
+    repos: [
+      { name: 'one', createdAt: '2023-01-01T00:00:00Z' },
+      { name: 'two', createdAt: '2022-01-01T00:00:00Z' },
+      { name: 'three', createdAt: '2021-01-01T00:00:00Z' },
+    ],
+  },
+  employment: { months: 90, display: '7+ years', roles: [] },
+  total: null,
+};
+
 /** Queue of responses `fetch` hands out, one per poll. */
 const respondWith = (...payloads) => {
   let call = 0;
@@ -186,6 +212,66 @@ describe('useExperienceSummary — a partial poll', () => {
     expect(result.current.addedRepoNames).toEqual([]);
     expect(result.current.addedRoleKeys).toEqual([]);
     expect(result.current.changedCategories).toEqual([]);
+  });
+
+  it('replaces a held partial with a newer, better partial', async () => {
+    // `current ?? payload` kept ANYTHING already in state, so the first
+    // degraded answer a cold client happened to receive became permanent for
+    // the rest of the visit — even as later polls returned more repos and a
+    // longer span. Only a COMPLETE answer earns that protection.
+    vi.stubGlobal('fetch', respondWith(PARTIAL, BETTER_PARTIAL));
+
+    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+
+    await settle();
+    expect(result.current.data.personalProjects).toBeNull();
+
+    await settle(POLL_MS);
+
+    expect(result.current.data.personalProjects.repos).toHaveLength(3);
+    expect(result.current.data.personalProjects.firstRepoDate).toBe('2021-01-01');
+    // Still a degraded answer in every other respect: no total, no indicators,
+    // and nothing written to the instant-paint store.
+    expect(result.current.data.total).toBeNull();
+    expect(result.current.changeMessage).toBeNull();
+    expect(result.current.addedRepoNames).toEqual([]);
+    expect(
+      window.localStorage.getItem(
+        `experience-summary:last-payload:${USERNAME}`,
+      ),
+    ).toBe(null);
+  });
+
+  it('keeps a stored complete answer that predates the partial flag', async () => {
+    // The instant-paint hydration path. Entries written before `partial`
+    // existed carry no flag at all, and they are complete by construction —
+    // only complete payloads are ever written — so "not marked partial" must
+    // read as complete, or a degraded poll would displace a good stored answer
+    // on the visit after a deploy.
+    window.localStorage.setItem(
+      `experience-summary:last-payload:${USERNAME}`,
+      JSON.stringify({
+        personalProjects: {
+          firstRepoDate: '2020-01-01',
+          months: 60,
+          display: '5+ years',
+          complete: true,
+          repos: [{ name: 'older', createdAt: '2020-01-01T00:00:00Z' }],
+        },
+        employment: { months: 90, display: '7+ years', roles: [] },
+        total: { months: 150, display: '12+ years' },
+      }),
+    );
+    vi.stubGlobal('fetch', respondWith(PARTIAL));
+
+    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    await settle();
+
+    expect(result.current.data.total).toEqual({
+      months: 150,
+      display: '12+ years',
+    });
+    expect(result.current.data.personalProjects.repos).toHaveLength(1);
   });
 
   it('does not write a partial payload to the instant-paint store', async () => {

@@ -765,6 +765,8 @@ Three Vercel-specific bundling gotchas were solved for that path. All were remov
 
 The parser and the polyfill still exist and are still exercised by the test suite: `tests/unit/pdfExperienceFixture.test.js` pins what the binary contains, and `tests/unit/cvJourneyConsistency.test.js` compares those contents against `journeyData` and fails on any disagreement that is not written down — which is what keeps the published CV and the site in step now that the site no longer reads it.
 
+Because those two fixtures are its only remaining importers, **`pdf-parse` is a `devDependency`** (moved 2026-09-17). Deleting the `experimental` block in `next.config.mjs` stopped the PDF and two pdfjs worker builds being traced into the function bundle, but the package itself stayed in `dependencies`, so every production install still fetched it and `pdfjs-dist` regardless. `npm ci --omit=dev` now leaves that whole subtree out — 25 packages marked `dev` in the lockfile — and `/uses` is unaffected: its bill of materials classifies by package name and counts dependencies and devDependencies together.
+
 </details>
 
 ---

@@ -20,13 +20,13 @@ export const dynamic = "force-dynamic";
 //   /api/repo-refresh   ~30 s  — TWO warm fetches, each CRON_WARM_TIMEOUT_MS (15 s)
 //   /api/seo-report     ~20 s  — token exchange, then 3 queries, each 10 s
 //
-// Sixty seconds of legitimate, in-budget work, against a platform function
-// limit this repository documents as 60 s (see /api/repo-refresh) and which is
-// lower on smaller plans. A slow-but-healthy night therefore got the function
-// KILLED — no body, no per-step results, no verdict for cron monitoring to read,
-// and the collected results thrown away at the moment they were most worth
-// having. Adding the seo-report step is what pushed it over; the shape was
-// already there.
+// Sixty seconds of legitimate, in-budget work, against a function limit that
+// this route now declares for itself (`maxDuration` below) rather than inheriting
+// from whatever the account's default happens to be. A slow-but-healthy night
+// got the function KILLED — no body, no per-step results, no verdict for cron
+// monitoring to read, and the collected results thrown away at the moment they
+// were most worth having. Adding the seo-report step is what pushed it over; the
+// shape was already there.
 //
 // Two fixes, and both are needed — the second is not redundant:
 //
@@ -43,11 +43,39 @@ export const dynamic = "force-dynamic";
 // three IS the overall deadline — no per-call arithmetic, and no way for the
 // per-step budgets to drift out of step with the total.
 //
-// The default leaves real headroom over the ~30 s worst case for three
-// concurrent cold starts, while staying clear of the platform ceiling: the point
-// is to return the results we DID collect, with a 502 the monitor can see,
-// rather than to be killed holding them.
-const RUN_BUDGET_MS = envPositiveMs(process.env.CRON_RUN_BUDGET_MS, 45000);
+// ── The ceiling this budget is measured against, declared rather than assumed ─
+// A wall-clock budget is only a bound if it expires BEFORE the platform kills
+// the function, and that made the previous default a bet on an unstated fact.
+// It was 45 s against a "60 s, lower on smaller plans" comment, in a repository
+// whose four other GitHub routes size themselves to 9 s because they assume a
+// 10 s Hobby ceiling. Under the smaller of its own two claims the signal could
+// not fire at all: the function would be terminated at 10 s with no body, no
+// per-step results and no verdict — exactly the outcome this budget exists to
+// prevent, reintroduced by the number chosen to prevent it.
+//
+// So the duration is now DECLARED. `maxDuration` is the route-segment config
+// Vercel reads at deploy time, which turns a plan mismatch into a deployment
+// error instead of a 01:00 kill, and gives the budget below something real to
+// be a fraction of. (The 9 s budgets elsewhere are not wrong — a route that
+// declares nothing takes the account's default, and those were written against
+// the older, smaller one. Verify the account's ceiling in the Vercel project
+// settings before raising this.)
+export const maxDuration = 60;
+
+// 75% of the declared duration, expressed as arithmetic so the two cannot drift
+// apart in a later edit. The remaining quarter is the margin the response
+// itself needs: aborting the steps is not the end of the work, it is the point
+// at which this route still has to key the results, log, and serialise a body a
+// cron monitor can read.
+//
+// That leaves real headroom over the ~30 s worst case of three concurrent cold
+// starts, which is what the budget is for — returning the results we DID
+// collect, with a 502 the monitor can see, rather than being killed holding
+// them.
+const RUN_BUDGET_MS = envPositiveMs(
+  process.env.CRON_RUN_BUDGET_MS,
+  maxDuration * 1000 * 0.75,
+);
 
 // Aborting does not stop the downstream — that function keeps running and its
 // warm still lands. It only stops US waiting, which is the right trade for a
@@ -93,7 +121,41 @@ async function callInternal(baseUrl, path, cronSecret, signal) {
     // already fails closed on a missing body, so a step that needed one to
     // excuse itself counts against the run rather than being forgiven.
   }
-  return { ok: res.ok, status: res.status, detail };
+  // A 2xx is not a verdict on its own. `/api/repo-refresh` warms TWO caches and
+  // deliberately answers 200 when only the experience-summary half failed — a
+  // best-effort semantic it documents, and the right one for it, since a
+  // non-2xx there is a retry/alert signal about a warm that will refill on the
+  // next visitor anyway. But this route read nothing except `res.ok`, so that
+  // half-failure arrived as an all-green cron: the body said `ok: false` and
+  // nobody looked. The monitor reads the verdict and nothing else, so a step
+  // whose own body reports failure must not count as success here.
+  const reportedFailure = bodyReportsFailure(detail);
+  return {
+    ok: res.ok && !reportedFailure,
+    status: res.status,
+    detail,
+    // Marked, not merely folded in, so an operator can tell a step that
+    // answered 502 from one that answered 200 and then said it had failed.
+    ...(reportedFailure && { bodyReportedFailure: true }),
+  };
+}
+
+// Did a downstream's own body say it failed?
+//
+// Only an explicit `ok: false` counts. Fails OPEN — the opposite of
+// `isNotConfigured` below, and deliberately: that function answers "may this
+// step be excused?", where an ambiguous answer must not excuse anything, while
+// this one answers "did the step admit failure?", where inventing an admission
+// from a body that says nothing (`/api/work-status` returns no `ok` field at
+// all) would turn every healthy run red.
+function bodyReportsFailure(detail) {
+  if (typeof detail !== "string" || detail.length === 0) return false;
+  try {
+    return JSON.parse(detail)?.ok === false;
+  } catch {
+    // Not JSON. The status is the only verdict available, and it stands.
+    return false;
+  }
 }
 
 // Did a downstream answer "I am not configured yet" rather than "I failed"?

@@ -15,28 +15,37 @@ import { freshSecret } from '../helpers/secrets.js';
 // held on the server, and nothing in the response said the hold-time existed.
 //
 // The route now gives a degraded answer its own, much shorter server-side life
-// and retries through a second cache entry keyed by a time BUCKET. This suite
-// pins the three properties that make that a fix rather than a rewrite:
+// and retries through a second cache entry keyed by THE DEGRADED PAYLOAD IT
+// REPLACES (`generatedAt`). This suite pins the four properties that make that
+// a fix rather than a rewrite:
 //
 //   · a stale degraded answer is retried, and a recovery is published;
-//   · a FRESH degraded answer is not — the bucket bounds the retries, which is
-//     what stops a public endpoint firing one 9 s GitHub fan-out per request
-//     during an outage;
-//   · a complete answer never reaches the retry path at all.
+//   · that recovery is REMEMBERED — one attempt per degraded answer, not one
+//     per minute. An earlier cut keyed this entry by a wall-clock bucket, which
+//     bounded the retries and then discarded each result: every new minute was
+//     a new key, so a recovery was re-fetched from GitHub on the minute for the
+//     rest of the primary entry's ten-minute window;
+//   · a FRESH degraded answer is not retried at all, which is what stops a
+//     public endpoint firing one 9 s fan-out per request during an outage;
+//   · a complete answer never reaches the retry path.
 //
 // The cache is mocked rather than run, because the behaviour under test is
-// which ENTRY the route reads and when — not Next's cache implementation. The
-// mock keeps the one property the design leans on: `unstable_cache` keys by the
-// wrapped function's arguments, so the retry entry is memoised per bucket here
-// exactly as it is in production.
+// which ENTRY the route reads and with what key — not Next's cache
+// implementation. The mock keeps the one property the design leans on:
+// `unstable_cache` keys by the wrapped function's arguments, so the retry entry
+// is memoised per degraded payload here exactly as it is in production. What
+// the mock cannot model is TTL expiry, so the continuing-outage retry — which
+// rides on this entry's own `revalidate` — is pinned as a contract on the
+// options the route registers instead.
 
 const { cache } = vi.hoisted(() => ({
-  cache: { primary: null, retryStore: new Map() },
+  cache: { primary: null, retryStore: new Map(), retryOptions: null },
 }));
 
 vi.mock('next/cache', () => ({
-  unstable_cache: (fn, keys) => {
+  unstable_cache: (fn, keys, options) => {
     const isPrimary = keys?.[0] === 'experience-summary';
+    if (!isPrimary) cache.retryOptions = options;
     return async (...args) => {
       // The primary entry answers with whatever the test has parked in it,
       // which is how an AGED payload is expressed — the route reads the age off
@@ -120,6 +129,7 @@ beforeEach(() => {
   vi.resetModules();
   cache.primary = null;
   cache.retryStore.clear();
+  cache.retryOptions = null;
   process.env.GITHUB_TOKEN = GITHUB_TOKEN;
   // `Date` ONLY. The route arms a real `setTimeout` per GitHub call for its
   // abort controller, and faking that too would leave those timers pending on a
@@ -158,10 +168,11 @@ describe('experience-summary — a stale degraded answer', () => {
     expect(response.headers.get('cache-control')).toContain('s-maxage=600');
   });
 
-  it('shares ONE GitHub call across every request in the same window', async () => {
-    // The retry bound, and the reason the entry is keyed by a bucket rather
-    // than simply not cached: without this, an outage turns every request into
-    // its own paginated fan-out with a 9 s budget behind it.
+  it('remembers the recovery instead of re-fetching it every minute', async () => {
+    // The regression this key shape exists for. With a wall-clock bucket, the
+    // three requests below fired THREE identical paginated fan-outs — one per
+    // minute crossed — each arriving at the answer the previous one had already
+    // computed, for as long as the primary entry kept serving its partial.
     cache.primary = partialPayload(
       new Date(NOW - 5 * 60 * 1000).toISOString(),
     );
@@ -176,15 +187,52 @@ describe('experience-summary — a stale degraded answer', () => {
       r.json(),
     );
 
+    // Two requests, one fan-out — the same bound a bucket gave.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(first.partial).toBe(false);
     expect(second.partial).toBe(false);
 
-    // Past the window, the next request is allowed to ask again — a bound, not
-    // a lock: this is what keeps the recovery time a minute rather than ten.
-    vi.setSystemTime(NOW + PARTIAL_RETRY_MS + 1000);
+    // And crossing the window changes nothing, because the key describes the
+    // degraded ANSWER rather than the clock: there is no new question to ask
+    // while the primary entry is still handing out the same payload.
+    vi.setSystemTime(NOW + 4 * PARTIAL_RETRY_MS);
+    const later = await GET(new Request(URL_FOR(USERNAME))).then((r) =>
+      r.json(),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(later.partial).toBe(false);
+  });
+
+  it('spends one attempt per degraded answer, not one per window', async () => {
+    // The other side of the same property: a NEW degraded payload — the primary
+    // entry's ten minutes expired and it rebuilt while GitHub was still down —
+    // is a new question, and earns exactly one fresh attempt.
+    cache.primary = partialPayload(
+      new Date(NOW - 5 * 60 * 1000).toISOString(),
+    );
+    const fetchMock = vi.fn(async () => healthyPage());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { GET } = await import(ROUTE);
+    await GET(new Request(URL_FOR(USERNAME)));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    cache.primary = partialPayload(new Date(NOW - 60 * 1000).toISOString());
     await GET(new Request(URL_FOR(USERNAME)));
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('registers the retry entry with the short TTL and the shared tag', async () => {
+    // A contract, because the mock cannot model TTL expiry and this option is
+    // what retries a CONTINUING outage: once the entry is a minute old,
+    // `unstable_cache` serves what it holds and rebuilds behind it. The tag is
+    // the other half — `/api/repo-refresh` must be able to drop this entry with
+    // the single `revalidateTag('experience-summary')` call it already makes,
+    // or a forced refresh would leave the retry answer behind.
+    await import(ROUTE);
+
+    expect(cache.retryOptions?.revalidate).toBe(PARTIAL_RETRY_MS / 1000);
+    expect(cache.retryOptions?.tags).toEqual(['experience-summary']);
   });
 
   it('serves a fresher degraded answer when GitHub is still down', async () => {

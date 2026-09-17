@@ -1,4 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import { freshCronSecret } from '../helpers/secrets.js';
 
@@ -289,5 +291,59 @@ describe('daily-warmup — the run budget', () => {
 
     expect(response.status).toBe(200);
     expect((await response.json()).ok).toBe(true);
+  });
+
+  // ── The budget has to expire before the platform does ─────────────────────
+  // A wall-clock deadline is only a bound if the function outlives it. The
+  // default was 45 s against a comment that said the platform limit was "60 s,
+  // lower on smaller plans" — so on the smaller of its own two claims the
+  // signal could never fire, and the run would be killed with no body, no
+  // per-step results and no verdict: the exact outcome the budget exists to
+  // prevent. The route now DECLARES the duration it needs, so a plan that
+  // cannot grant it fails at deploy time instead of at 01:00.
+  it('declares a function duration the default budget fits inside', async () => {
+    // No env override: the claim is about the DEFAULT's relationship to the
+    // ceiling, which is what a deployment actually runs with.
+    delete process.env.CRON_RUN_BUDGET_MS;
+    vi.resetModules();
+    const route = await import('@/app/api/daily-warmup/route');
+
+    // Declared at all. Without this the function silently takes the account's
+    // default duration — the unstated assumption that made the old number a
+    // bet rather than a bound.
+    expect(typeof route.maxDuration).toBe('number');
+    expect(route.maxDuration).toBeGreaterThan(0);
+
+    // The default must be DERIVED from that ceiling rather than typed as a
+    // literal beside it, because a literal is what drifts: raising the declared
+    // duration and forgetting the budget leaves the run bounded by the old
+    // number, and lowering it leaves the budget unreachable again with nothing
+    // to notice. Read off the source, since the constant is module-private on
+    // purpose (see `loadRoute` above) and a copy of it here would be one more
+    // thing to keep in step.
+    const source = readFileSync(
+      path.join(process.cwd(), 'src/app/api/daily-warmup/route.js'),
+      'utf8',
+    );
+    const [, fraction] = source.match(
+      /CRON_RUN_BUDGET_MS,\s*maxDuration \* 1000 \* (0\.\d+)/,
+    ) ?? [];
+    expect(
+      fraction,
+      'The default run budget should be a fraction of `maxDuration`, not a ' +
+        'literal that can drift away from it.',
+    ).toBeTruthy();
+
+    const ceilingMs = route.maxDuration * 1000;
+    const budgetMs = ceilingMs * Number(fraction);
+
+    // Asserted as a range, not a pair of magic numbers: the properties that
+    // matter are that the deadline expires FIRST, that what remains is enough
+    // to key the results, log and serialise a body, and that the budget still
+    // covers the ~30 s worst case of three concurrent cold starts — otherwise
+    // it would abort healthy work every slow night.
+    expect(budgetMs).toBeLessThan(ceilingMs);
+    expect(ceilingMs - budgetMs).toBeGreaterThanOrEqual(5000);
+    expect(budgetMs).toBeGreaterThanOrEqual(30000);
   });
 });

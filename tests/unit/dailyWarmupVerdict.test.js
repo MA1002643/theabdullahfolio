@@ -178,4 +178,69 @@ describe('daily-warmup verdict', () => {
     const response = await GET(new Request(ENDPOINT));
     expect(response.status).toBe(401);
   });
+
+  // ── A 2xx is not a verdict ────────────────────────────────────────────────
+  // `/api/repo-refresh` warms two caches and answers 200 when only the
+  // experience-summary half failed — a best-effort semantic it documents on
+  // purpose. This route judged every step by HTTP status alone, so that
+  // half-failure arrived as an all-green cron: the body said `ok: false` and
+  // nothing read it. The step's own report now counts.
+  it('counts a 200 whose body reports failure', async () => {
+    // Exactly what repo-refresh answers when the experience warm fails: 200,
+    // `ok: false`, and the failing half named in its own field.
+    const { status, body } = await run({
+      repoRefresh: reply(200, {
+        ok: false,
+        githubStats: { ok: true, attempted: true },
+        experience: {
+          ok: false,
+          attempted: true,
+          error: 'experience-summary warm failed',
+        },
+      }),
+    });
+
+    expect(status).toBe(502);
+    expect(body.ok).toBe(false);
+    expect(body.results.repoRefresh.ok).toBe(false);
+    // Distinguishable from a step that answered 502 — the status it really
+    // gave is still reported beside the marker.
+    expect(body.results.repoRefresh.status).toBe(200);
+    expect(body.results.repoRefresh.bodyReportedFailure).toBe(true);
+  });
+
+  it('leaves a step with no `ok` field alone', async () => {
+    // `/api/work-status` returns no `ok` at all, so "did it admit failure?"
+    // must read as no rather than as yes — inventing an admission from a body
+    // that says nothing would turn every healthy run red.
+    const { status, body } = await run({
+      workStatus: reply(200, { status: 'building', repo: 'theabdullahfolio' }),
+    });
+
+    expect(status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.results.workStatus.bodyReportedFailure).toBeUndefined();
+  });
+
+  it('leaves a non-JSON 200 alone', async () => {
+    // The status is the only verdict available for a plain-text body, and it
+    // stands. Failing OPEN here is the deliberate opposite of `isNotConfigured`,
+    // which must not let an ambiguous body excuse a step.
+    const { status, body } = await run({ workStatus: reply(200, 'warmed') });
+
+    expect(status).toBe(200);
+    expect(body.ok).toBe(true);
+  });
+
+  it('does not let a body-reported failure count as "not configured"', async () => {
+    // A 503 + `skipped` is the opt-out; a 200 + `ok: false` is a failure. The
+    // two must not be confused now that both are read out of the body.
+    const { status, body } = await run({
+      seoReport: reply(200, { ok: false, skipped: 'not really' }),
+    });
+
+    expect(status).toBe(502);
+    expect(body.ok).toBe(false);
+    expect(body.results.seoReport.notConfigured).toBeUndefined();
+  });
 });

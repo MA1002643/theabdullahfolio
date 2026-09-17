@@ -32,6 +32,14 @@ const nextConfig = {
   // the file-tracing entry was still bundling the PDF and two pdfjs worker
   // builds into a function that never opens them.
   //
+  // Removing them here was only half the weight, and the half a reader of this
+  // file would assume was all of it: `pdf-parse` stayed in `dependencies`, so
+  // every production install still fetched it and `pdfjs-dist` whether or not
+  // anything traced them into a bundle. Its only remaining importer is
+  // src/utils/experience/pdfExperienceParser.js, which only the two CV fixtures
+  // import, so it now sits in `devDependencies` — and `npm ci --omit=dev`
+  // leaves the whole pdfjs subtree out (25 packages marked `dev` in the lock).
+  //
   // Restore BOTH together if a runtime PDF parse ever returns, because each
   // one cost a production-only failure to find:
   //
