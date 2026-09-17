@@ -57,6 +57,22 @@ const respondWith = (...payloads) => {
   });
 };
 
+/**
+ * One good poll, then a failing one — an HTTP error rather than a payload.
+ *
+ * `ok: false` rather than a thrown network error because it exercises the
+ * hook's own `throw` on a bad status, which is the path most likely to be
+ * refactored; a rejected `fetch` lands in the same catch.
+ */
+const respondThenFail = (payload) => {
+  let call = 0;
+  return vi.fn(async () => {
+    call += 1;
+    if (call === 1) return { ok: true, status: 200, json: async () => payload };
+    return { ok: false, status: 503, statusText: 'Service Unavailable' };
+  });
+};
+
 const POLL_MS = 10 * 60 * 1000;
 
 beforeEach(() => {
@@ -184,5 +200,91 @@ describe('useExperienceSummary — a partial poll', () => {
     expect(window.localStorage.getItem(`experience-summary:last-payload:${USERNAME}`)).toBe(
       null,
     );
+  });
+});
+
+// ── The other early exit ────────────────────────────────────────────────────
+// A poll that THREW made no comparison either, so it leaves the four indicators
+// describing the last poll that did — the same defect as the partial branch
+// above, reached through the catch instead of the early return. It was fixed on
+// one path and not the other, which is exactly the failure mode the shared
+// `clearChangeIndicators` step was introduced to prevent.
+describe('useExperienceSummary — a failed poll', () => {
+  const SEEDED_BASELINE = {
+    personalProjects: {
+      firstRepoDate: '2020-01-01',
+      months: 60,
+      display: '5+ years',
+      complete: true,
+      repos: [{ name: 'older', createdAt: '2020-01-01T00:00:00Z' }],
+    },
+    employment: { months: 90, display: '7+ years', roles: [] },
+    total: { months: 150, display: '12+ years' },
+  };
+
+  beforeEach(() => {
+    // The hook logs the failure by design ("don't throw — the about page should
+    // still render"). Silenced so a passing run is not noisy, and spied rather
+    // than blanked so the logging itself can be asserted.
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('clears the change indicators a previous complete poll set', async () => {
+    window.localStorage.setItem(
+      `experience-summary:last-payload:${USERNAME}`,
+      JSON.stringify(SEEDED_BASELINE),
+    );
+    vi.stubGlobal(
+      'fetch',
+      respondThenFail(withRepo('brand-new', '2026-09-01T00:00:00Z')),
+    );
+
+    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+
+    // Poll 1 — a real change, asserted so the clearing below is not vacuous.
+    await settle();
+    expect(result.current.addedRepoNames).toContain('brand-new');
+    expect(result.current.changeMessage).toBeTruthy();
+
+    // Poll 2 — the endpoint answers 503.
+    await settle(POLL_MS);
+
+    expect(result.current.error).toBeTruthy();
+    // The regression: all four used to survive the catch.
+    expect(result.current.addedRepoNames).toEqual([]);
+    expect(result.current.addedRoleKeys).toEqual([]);
+    expect(result.current.changedCategories).toEqual([]);
+    expect(result.current.changeMessage).toBeNull();
+  });
+
+  it('keeps the last good payload and the stored baseline', async () => {
+    // Clearing the decoration is not clearing the answer. The years card and
+    // the modal keep rendering what the last successful poll returned, and the
+    // diff baseline in localStorage is untouched — so the NEXT successful poll
+    // still compares against real data rather than starting from nothing and
+    // announcing the whole payload as new.
+    vi.stubGlobal(
+      'fetch',
+      respondThenFail(withRepo('kept', '2026-09-01T00:00:00Z')),
+    );
+
+    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+
+    await settle();
+    const complete = result.current.data;
+    expect(complete?.partial).toBe(false);
+    const storedAfterSuccess = window.localStorage.getItem(
+      `experience-summary:last-payload:${USERNAME}`,
+    );
+    expect(storedAfterSuccess).toBeTruthy();
+
+    await settle(POLL_MS);
+
+    expect(result.current.data).toBe(complete);
+    expect(
+      window.localStorage.getItem(
+        `experience-summary:last-payload:${USERNAME}`,
+      ),
+    ).toBe(storedAfterSuccess);
   });
 });

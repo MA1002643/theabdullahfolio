@@ -29,10 +29,17 @@
 // ── Truthfulness ────────────────────────────────────────────────────────────
 // P4 applies here as much as to `lastModified`. Nothing below invents a value:
 // `dateCreated` on a project is the `date` field from data.js (the repo's
-// creation date), `codeRepository` is its real `repo`, and `knowsAbout` is fed
-// from live skill data by the caller rather than from a wishlist. Anything not
-// knowable is left out — `pruneEmpty` in JsonLd.jsx drops it — because an
-// absent claim is honest and a guessed one is not.
+// creation date), `codeRepository` is its real `repo`, and `knowsAbout` is
+// DERIVED by the caller from the curated `/uses` stack rather than typed from a
+// wishlist. Anything not knowable is left out — `pruneEmpty` in JsonLd.jsx
+// drops it — because an absent claim is honest and a guessed one is not.
+//
+// That derivation is deliberately not the live `/api/github-skills` route, and
+// the reasoning is recorded once, at `knowsAboutFromStack` in site.js: the
+// claim has to be in server-rendered HTML to be worth anything, which would
+// make it a BUILD-time fetch depending on a token and a network call — a
+// snapshot that rots invisibly. `usesData.stack` is reviewed in diffs and is
+// already rendered on /uses, so the claim and the visible page cannot disagree.
 
 import { absoluteUrl } from './canonical';
 import { IDENTITY, ORIGIN } from './site';
@@ -60,8 +67,11 @@ const ref = (id) => ({ '@id': id });
  * and a `sameAs` pointing at a profile the site does not actually link to is a
  * weaker signal, not a stronger one.
  *
- * @param {{knowsAbout?: string[]}} [options] `knowsAbout` accepts live skill
- *   names (from /api/github-skills) so the claim is derived, not typed.
+ * @param {{knowsAbout?: string[]}} [options] `knowsAbout` accepts topic names
+ *   derived from data this repository already renders — in production, the
+ *   curated `/uses` stack via `knowsAboutFromStack(usesData.stack)` in
+ *   about/layout.js. Not the live `/api/github-skills` route: see the note on
+ *   that helper in site.js for why a build-time fetch was rejected.
  * @returns {object} A schema.org Person node.
  */
 export function person({ knowsAbout } = {}) {
@@ -86,7 +96,7 @@ export function person({ knowsAbout } = {}) {
     // already holds — which is why W3 requires the name and role strings to be
     // byte-identical across all three.
     sameAs: [profileGithubUrl, linkedInUrl],
-    // Pruned away entirely when the caller has no live data, rather than
+    // Pruned away entirely when the caller passes nothing, rather than
     // shipping a hardcoded skill list that would rot (P4).
     knowsAbout,
   };
@@ -142,9 +152,9 @@ export function personGraph(options) {
  * page too. So /about adds the "this page is about that entity" statement
  * without restating the entity.
  *
- * @param {{knowsAbout?: string[]}} [options] When live skills are available
- *   they are attached to the referenced Person here, since /about is the page
- *   that actually renders them.
+ * @param {{knowsAbout?: string[]}} [options] The derived stack topics, attached
+ *   to the referenced Person here rather than in the root graph — /about is the
+ *   page that actually renders the stack this claim is read from.
  * @returns {object} A JSON-LD ProfilePage document.
  */
 export function profilePage({ knowsAbout } = {}) {

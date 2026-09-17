@@ -970,6 +970,186 @@ describe('the non-home shared surface', () => {
   });
 });
 
+// ── Narrow sources: crawl surface a shared list would over-stamp ────────────
+// Three inputs reach many routes and belong in NO shared list, because in each
+// case the set of URLs that publishes them is not one of the two the shared
+// lists describe. They were all missing from `sources` entirely, which is the
+// same defect the shared lists were added for, one notch narrower:
+//
+//   • `src/components/PageTitle.jsx` renders the `<h1>`/`<h2>` of eight
+//     routes — real text in the server HTML — and of neither the homepage nor
+//     the eleven project pages, so both shared lists would stamp URLs that
+//     publish none of it.
+//   • `src/lib/numberWords.js` turns a count into the WORD two routes print:
+//     the homepage's `sr-only` summary and the `/projects` description the
+//     registry computes (its `<title>`, meta description, cards, JSON-LD and
+//     `/llms.txt` line). Editing the table rewrites those sentences with
+//     nothing else touched.
+//   • `src/components/footer/footer-data.js` holds the two profile URLs
+//     `schema.js` states as the Person's `sameAs` — the identity claim an
+//     engine merges this site against. The nineteen non-home URLs watch it
+//     through `src/components/footer`; the homepage publishes it through the
+//     root layout's graph while rendering no footer at all, and watched
+//     nothing.
+//
+// Each check reads REACHABILITY off disk rather than trusting a list, in both
+// directions: an input a route publishes and does not watch is a stale
+// `<lastmod>`, and one it watches without publishing is an over-stamp.
+describe('narrowly shared sources', () => {
+  const PAGE_TITLE = 'src/components/PageTitle.jsx';
+  const COUNT_HELPER = 'src/lib/numberWords.js';
+  const FOOTER_DATA = 'src/components/footer/footer-data.js';
+  const DETAIL_PAGE = 'src/app/(sub pages)/projects/[id]/page.js';
+  const REGISTRY = 'src/lib/seo/site.js';
+
+  /** Whether any of a route's `sources` entries accounts for a module. */
+  const watches = (route, module) =>
+    route.sources.some((source) => covers(source, module));
+
+  it('watches the shared headline on exactly the routes that render it', async () => {
+    const { ROUTES } = await import('@/lib/seo/site');
+
+    const renders = (route) =>
+      [...publishedFrom(renderedEntriesFor(route.path))].includes(PAGE_TITLE);
+
+    // Vacuity guard: eight of the nine render it (`/projects` through its
+    // listing component rather than its page file). A walk that found none
+    // would make every assertion below pass while proving nothing.
+    expect(ROUTES.filter(renders).map((route) => route.path).sort()).toEqual([
+      '/about',
+      '/contact',
+      '/guestbook',
+      '/journey',
+      '/my-past',
+      '/projects',
+      '/qualifications',
+      '/uses',
+    ]);
+
+    const wrong = ROUTES.filter(
+      (route) => renders(route) !== watches(route, PAGE_TITLE),
+    ).map(
+      (route) =>
+        `${route.path} ${renders(route) ? 'renders' : 'does not render'} the ` +
+        `headline but ${watches(route, PAGE_TITLE) ? 'watches' : 'does not watch'} it`,
+    );
+
+    expect(
+      wrong,
+      `PageTitle emits each section's <h1> and <h2> into the server HTML, so a ` +
+        `commit to it changes what these pages say at the top:\n  ` +
+        `${wrong.join('\n  ')}`,
+    ).toEqual([]);
+  });
+
+  it('keeps the headline out of the shared lists and off the project pages', async () => {
+    const { SHARED_ROUTE_SOURCES, SUB_PAGE_SHARED_SOURCES } = await import(
+      '@/lib/seo/site'
+    );
+    const { PROJECT_SOURCES } = await import('@/app/sitemap');
+
+    // The detail scene takes its heading from the project record, read off disk
+    // rather than asserted — the claim is only true while no import says
+    // otherwise, and it is what rules out both shared lists (either would reach
+    // these eleven URLs).
+    expect(
+      [...publishedFrom([DETAIL_PAGE, ROOT_LAYOUT, SUB_PAGE_LAYOUT])],
+    ).not.toContain(PAGE_TITLE);
+
+    expect(SHARED_ROUTE_SOURCES).not.toContain(PAGE_TITLE);
+    expect(SUB_PAGE_SHARED_SOURCES).not.toContain(PAGE_TITLE);
+    expect(PROJECT_SOURCES).not.toContain(PAGE_TITLE);
+  });
+
+  it('watches the count helper wherever a published sentence reads through it', async () => {
+    const { ROUTES } = await import('@/lib/seo/site');
+
+    // Two ways a route can depend on the word table, and they need different
+    // questions asked. FIRST-HAND: the route's own tree imports it — walked
+    // with the registry as a BARRIER, because the registry imports it too and
+    // without the barrier every route would look like a consumer (the same
+    // mechanism the `src/app/data.js` check below uses). THROUGH THE REGISTRY:
+    // the entry's own `description` is computed with `countWord`, which is not
+    // an import edge at all — it is this file rendering that route's snippet.
+    const firstHand = (route) =>
+      [...publishedFrom(renderedEntriesFor(route.path), [REGISTRY])].includes(
+        COUNT_HELPER,
+      );
+
+    const source = readFileSync(path.join(process.cwd(), REGISTRY), 'utf8');
+    const definitions = source.slice(
+      source.indexOf('const ROUTE_DEFINITIONS'),
+    );
+    const countedCopy = definitions
+      .slice(0, definitions.indexOf('\n];'))
+      .split(/\n {2}\{\n/)
+      .slice(1)
+      .map((entry) => ({
+        path: entry.match(/path: '([^']+)'/)?.[1],
+        counted: entry.includes('countWord('),
+      }))
+      .filter((entry) => entry.path && entry.counted)
+      .map((entry) => entry.path);
+
+    // Vacuity guards on both halves: the homepage counts projects in its
+    // `sr-only` summary, and the `/projects` description interpolates the word.
+    expect(ROUTES.filter(firstHand).map((route) => route.path)).toEqual(['/']);
+    expect(countedCopy).toContain('/projects');
+
+    const wrong = [];
+    for (const route of ROUTES) {
+      const prints = firstHand(route) || countedCopy.includes(route.path);
+      if (prints && !watches(route, COUNT_HELPER)) {
+        wrong.push(`${route.path} prints a counted word and does not watch it`);
+      }
+      // The over-stamp direction. Every route REACHES this module through the
+      // registry, so watching it on a route whose copy states no count would
+      // re-stamp that URL for a table it never reads — the line the data-module
+      // note draws, applied one file over.
+      if (!prints && watches(route, COUNT_HELPER)) {
+        wrong.push(`${route.path} watches it without stating a count`);
+      }
+    }
+
+    expect(
+      wrong,
+      `src/lib/numberWords.js decides how a count is spelled, so it is an ` +
+        `input to every sentence that prints one:\n  ${wrong.join('\n  ')}`,
+    ).toEqual([]);
+  });
+
+  it('watches the identity links at every URL that states them', async () => {
+    const { ROUTES } = await import('@/lib/seo/site');
+
+    // `personGraph()` is emitted by the ROOT layout, so `sameAs` is stated on
+    // all 20 URLs — including the homepage, which is why this cannot be left to
+    // `SUB_PAGE_SHARED_SOURCES` and its `src/components/footer` entry.
+    const reaching = ROUTES.filter((route) =>
+      [...publishedFrom(renderedEntriesFor(route.path))].includes(FOOTER_DATA),
+    );
+    expect(reaching.length).toBe(ROUTES.length);
+
+    const unwatched = reaching
+      .filter((route) => !watches(route, FOOTER_DATA))
+      .map((route) => route.path);
+
+    expect(
+      unwatched,
+      `These URLs state profileGithubUrl / linkedInUrl in their JSON-LD as the ` +
+        `Person's sameAs, but do not date themselves by the module holding ` +
+        `them — so changing a profile link changes the identity claim a ` +
+        `crawler reads with no <lastmod> move:\n  ${unwatched.join('\n  ')}`,
+    ).toEqual([]);
+
+    // And the homepage watches the FILE, not the directory: the rest of
+    // src/components/footer is the largest block of markup on the other
+    // nineteen URLs and reaches `/` nowhere.
+    const home = ROUTES.find((route) => route.path === '/');
+    expect(home.sources).toContain(FOOTER_DATA);
+    expect(home.sources).not.toContain('src/components/footer');
+  });
+});
+
 // ── The shared data module ──────────────────────────────────────────────────
 // `src/app/data.js` holds `projectsData`, `journeyData`, `usesData` and
 // `BtnList` — CONTENT, rendered into server HTML as text, links and structured

@@ -70,6 +70,10 @@ export const IDENTITY = {
 // `countWord` lives in its own module rather than here because the homepage
 // states a count too and is `'use client'`: importing it from THIS file would
 // pull the whole route registry into the browser bundle.
+//
+// Because the WORD is looked up in a table there, `src/lib/numberWords.js` is a
+// crawl-surface input in its own right and is watched by the two routes whose
+// published copy reads through it — see the note on those `sources` entries.
 
 // ── Route registry ──────────────────────────────────────────────────────────
 // One entry per PUBLIC route pattern. `/projects/[id]` is deliberately absent:
@@ -109,6 +113,27 @@ export const IDENTITY = {
 //
 // The rule, and it is the one the test enforces: a route lists the data module
 // when its graph reaches it by SOME PATH THAT DOES NOT PASS THROUGH THIS FILE.
+
+// ── The shared headline ─────────────────────────────────────────────────────
+// `PageTitle` renders each section's `<h1>` and `<h2>` — the strongest heading
+// signal on the page, and real crawlable text in the server-rendered HTML
+// (the animated spans are `aria-hidden`; the `<h1>` carries the full string).
+// So it is crawl surface, and a commit to it changes what every section page
+// says at the top while nothing in that route's own directory moves.
+//
+// Eight of the nine routes render it, which makes a shared list tempting — and
+// wrong on both of the existing ones. `SHARED_ROUTE_SOURCES` reaches all 20
+// URLs, and the homepage does not render a `PageTitle` at all (its headline is
+// the orbit hero). `SUB_PAGE_SHARED_SOURCES` reaches the eleven
+// `/projects/[id]` pages through `PROJECT_SOURCES`, and the detail scene does
+// not render one either — its heading comes from the project record. Either
+// list would therefore stamp URLs that never published a line of it.
+//
+// A named constant rather than the string eight times: eight literals are eight
+// chances to typo a path that fails SILENTLY, since `git log` over a pathspec
+// that matches nothing simply contributes no date.
+const PAGE_TITLE_SOURCE = 'src/components/PageTitle.jsx';
+
 const ROUTE_DEFINITIONS = [
   {
     path: '/',
@@ -134,6 +159,26 @@ const ROUTE_DEFINITIONS = [
       // `BtnList` into the eight orbit links. A twelfth project or a renamed
       // nav entry changes the homepage's HTML.
       'src/app/data.js',
+      // The count above is printed as a WORD, and the word comes from a lookup
+      // table in this module — so the `sr-only` summary reads "eleven projects"
+      // only while that table says so. Watching `data.js` catches a twelfth
+      // project; this catches an edit to how eleven is spelled, which changes
+      // the same sentence with nothing in `data.js` touched.
+      'src/lib/numberWords.js',
+      // The ONE file the homepage publishes from the footer without rendering
+      // the footer. `/` is outside the `(sub pages)` group, so it carries none
+      // of `SUB_PAGE_SHARED_SOURCES` (see there) — but the root layout emits
+      // `personGraph()` on every page, and `schema.js` reads `profileGithubUrl`
+      // and `linkedInUrl` from this module for the Person's `sameAs`. Those two
+      // URLs are the identity claim an engine matches this site against, so
+      // editing one rewrites the homepage's JSON-LD.
+      //
+      // Named as the exact module rather than `src/components/footer`: the
+      // directory is the largest block of markup on the other nineteen URLs and
+      // none of it reaches `/`, so watching the directory here would re-stamp
+      // the sitemap's highest-priority URL for every footer change — the
+      // over-stamp the shared-source split exists to avoid.
+      'src/components/footer/footer-data.js',
     ],
   },
   {
@@ -151,6 +196,7 @@ const ROUTE_DEFINITIONS = [
       // in this page's ProfilePage JSON-LD, so adding a tool to /uses changes
       // what this page claims the person knows.
       'src/app/data.js',
+      PAGE_TITLE_SOURCE,
     ],
   },
   {
@@ -167,6 +213,22 @@ const ROUTE_DEFINITIONS = [
       'src/app/(sub pages)/projects/page.js',
       'src/app/data.js',
       'src/components/projects',
+      // This route's own description interpolates `countWord(projectsData.length)`
+      // — "Eleven builds — web, systems, mobile and AI" — and that string is the
+      // `<title>`/meta description, the OG and Twitter cards, the description
+      // stated in its JSON-LD and the line `/llms.txt` prints. So the word table
+      // is an input to THIS route's published copy.
+      //
+      // Worth distinguishing from the `data.js` line drawn above, which the
+      // `/contact`, `/my-past` and `/guestbook` entries turn on: those reach
+      // `data.js` only because the registry counts builds for ANOTHER route's
+      // description, and render nothing from it. Here the registry is computing
+      // this route's own snippet, which is exactly the crawl surface `<lastmod>`
+      // is meant to date.
+      'src/lib/numberWords.js',
+      // Rendered by `src/components/projects/index.jsx`, not by page.js — the
+      // one route where the headline arrives through the listing component.
+      PAGE_TITLE_SOURCE,
     ],
   },
   {
@@ -184,6 +246,7 @@ const ROUTE_DEFINITIONS = [
       // `EducationalOccupationalCredential[]` from `journeyData` — the
       // credentials are published from this file, not from the carousel.
       'src/app/data.js',
+      PAGE_TITLE_SOURCE,
     ],
   },
   {
@@ -198,6 +261,7 @@ const ROUTE_DEFINITIONS = [
       'src/app/(sub pages)/journey',
       'src/app/data.js',
       'src/components/journey',
+      PAGE_TITLE_SOURCE,
     ],
   },
   {
@@ -249,6 +313,7 @@ const ROUTE_DEFINITIONS = [
       'tests/unit',
       'tests/e2e',
       'src/app/api',
+      PAGE_TITLE_SOURCE,
     ],
   },
   {
@@ -259,7 +324,11 @@ const ROUTE_DEFINITIONS = [
     changeFrequency: 'yearly',
     priority: 0.7,
     indexable: true,
-    sources: ['src/app/(sub pages)/contact', 'src/components/contact'],
+    sources: [
+      'src/app/(sub pages)/contact',
+      'src/components/contact',
+      PAGE_TITLE_SOURCE,
+    ],
   },
   {
     path: '/my-past',
@@ -269,7 +338,7 @@ const ROUTE_DEFINITIONS = [
     changeFrequency: 'yearly',
     priority: 0.5,
     indexable: true,
-    sources: ['src/app/(sub pages)/my-past'],
+    sources: ['src/app/(sub pages)/my-past', PAGE_TITLE_SOURCE],
   },
   {
     path: '/guestbook',
@@ -294,6 +363,7 @@ const ROUTE_DEFINITIONS = [
       'src/app/(sub pages)/guestbook',
       'src/components/guestbook',
       'src/lib/guestbook',
+      PAGE_TITLE_SOURCE,
     ],
   },
 ];
@@ -411,7 +481,10 @@ export const SHARED_ROUTE_SOURCES = [
 //     of crawler-visible text and internal links on every one of these pages.
 //     `footer-data.js` inside it is read by `schema.js` for the `Person`'s
 //     `sameAs`, so one edit there changes both the visible links and the
-//     structured data.
+//     structured data. That module is the one piece of this directory that
+//     reaches `/` as well — through the root layout's graph, not through any
+//     footer — so the homepage watches the FILE on its own entry rather than
+//     inheriting the directory here. Keep the two in step.
 //   • `src/components/HomeBtn.jsx`, `src/components/ProjectsBtn.jsx` — also the
 //     layout's children, each rendering a server-side `<Link>` (`/` and
 //     `/projects`). Small files, but internal links are exactly what a crawler

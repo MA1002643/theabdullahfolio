@@ -453,7 +453,12 @@ What it covers:
   JSON-LD builders — what every URL publishes) and `SUB_PAGE_SHARED_SOURCES` (the `(sub pages)`
   group layout, its footer and nav links, and `sectionMetadata()` — the nineteen
   non-home URLs only, since `/` renders none of it). The split is what keeps a
-  footer edit from re-stamping the homepage.
+  footer edit from re-stamping the homepage. Three inputs stay deliberately
+  *narrow* rather than shared, because the set of URLs publishing each is
+  neither of those two: the shared `PageTitle` headline (the eight section
+  routes — not `/`, not the project pages), the number-word table behind the two
+  counted sentences, and `footer-data.js`, which the homepage states as the
+  Person's `sameAs` while rendering no footer at all.
 
 Full decision record, the measured baseline, and the runbook:
 **[`docs/seo.md`](docs/seo.md)**.
@@ -622,7 +627,7 @@ upgrade-insecure-requests   # production only — real WebKit honours it even on
 | **Image pipeline** | Sharp — automatic WebP / AVIF conversion |
 | **Font loading** | `next/font` self-hosted Inter (body) + Varela Round + Montserrat (loader emblem), zero layout shift |
 | **Code splitting** | Route-based automatic splitting; Three.js loads on `/projects/[id]`, and lazily via client-only `next/dynamic` for the Contact / About aurora so it never enters the critical bundle |
-| **API caching** | `/api/github-stats` wrapped in two `unstable_cache` layers — 24-hr for the most-active-repo selection, 10-min for the display-data refresh; both invalidated by tag on demand via the daily `/api/repo-refresh` cron. CDN response is also `s-maxage=10min` / `stale-while-revalidate=5min` / `stale-if-error=24hr`, with a bundled JSON snapshot served on total upstream failure. `/api/github-skills` adds its own 10-min `unstable_cache` (key `github-skills-v3`) behind the same CDN policy, with a budget-bounded crawl that retains partial results under a shared wall-clock deadline |
+| **API caching** | `/api/github-stats` wrapped in two `unstable_cache` layers — 24-hr for the most-active-repo selection, 10-min for the display-data refresh; both invalidated by tag on demand via the daily `/api/repo-refresh` cron. CDN response is also `s-maxage=10min` / `stale-while-revalidate=5min` / `stale-if-error=24hr`, with a bundled JSON snapshot served on total upstream failure. `/api/github-skills` adds its own 10-min `unstable_cache` (key `github-skills-v3`) behind the same CDN policy, with a budget-bounded crawl that retains partial results under a shared wall-clock deadline. `/api/experience-summary` caches a **complete** answer for 10 min and a **degraded** one (GitHub failed, or pagination stopped short) for **60 seconds**, through a second `unstable_cache` entry keyed by a time bucket — so an outage recovers within a minute instead of being held for the full window, while every request inside that minute still shares one GitHub fan-out. Response headers already kept a partial answer `no-store`; the bucket is what bounds the *server-side* hold `Cache-Control` cannot reach |
 | **Analytics** | Vercel Speed Insights + Web Analytics for real-user Core Web Vitals |
 
 </details>

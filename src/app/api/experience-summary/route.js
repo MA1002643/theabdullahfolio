@@ -24,6 +24,22 @@ export const runtime = "nodejs";
 const EXPERIENCE_REVALIDATE_SECONDS = 10 * 60;
 const EXPERIENCE_CACHE_TAG = "experience-summary";
 
+// How long a DEGRADED answer may be reused before this route asks GitHub again.
+//
+// The ten minutes above is the freshness contract a COMPLETE answer earns, and
+// a partial one used to inherit it: `unstable_cache` memoises whatever
+// `buildExperienceSummary` returns, so one rate-limited GitHub call parked
+// "Unavailable" in the server-side cache for the full window. The response
+// headers cannot reach that — `no-store` in GET keeps a partial out of the CDN
+// and the browser, and says nothing about the memoised value behind them, so
+// the next request read the same degraded payload straight back out.
+//
+// A minute is the shortest window that still BOUNDS the retries. Simply not
+// caching a partial answer would mean one GitHub fan-out per request on a
+// public endpoint, each with a 9 s wall-clock budget behind it; this is one per
+// window per cache key, with recovery inside a minute instead of ten.
+const EXPERIENCE_PARTIAL_RETRY_SECONDS = 60;
+
 // Hard cap on owned-repo pagination. GitHub returns 100 per page, so
 // 10 pages covers up to 1,000 owned non-fork repos — comfortably above
 // any realistic personal account. Above this we stop paging and the
@@ -419,6 +435,77 @@ const getCachedExperienceSummary = unstable_cache(
   },
 );
 
+// The RETRY entry, read only when the entry above holds a degraded answer that
+// has outlived `EXPERIENCE_PARTIAL_RETRY_SECONDS`.
+//
+// A SECOND cache rather than an invalidation of the first, and the reason is
+// worth stating because `revalidateTag` looks like the obvious tool for this.
+// Tag revalidation cannot be relied on to make the very next read miss: when
+// `unstable_cache` finds an entry it considers stale it returns the stale value
+// and rebuilds in the BACKGROUND, so a retry built that way would hand this
+// request the same partial payload it had just judged too old, and the fix
+// would depend on which incremental-cache handler is installed. A time BUCKET
+// in the key needs no such guarantee — a new bucket is a new key, and a new key
+// can only be a miss.
+//
+// The bucket is also what bounds the retries, and it does so in the cache
+// rather than in module state: every request inside the same window shares one
+// key, so they share ONE GitHub fan-out no matter how many serverless instances
+// are warm or how recently one cold-started.
+//
+// Both entries carry `EXPERIENCE_CACHE_TAG`, so `/api/repo-refresh` still drops
+// the whole route's memoised state with the one `revalidateTag` call it already
+// makes.
+const getRetriedExperienceSummary = unstable_cache(
+  async (username, bucket) => {
+    // `bucket` is unread ON PURPOSE, and not forwarded to the builder either —
+    // it would be a phantom second parameter there. `unstable_cache` keys by
+    // this function's arguments, so RECEIVING it is the entire mechanism: it
+    // partitions the cache by window, and the build has no use for the value.
+    void bucket;
+    return buildExperienceSummary(username);
+  },
+  ["experience-summary-retry"],
+  {
+    revalidate: EXPERIENCE_PARTIAL_RETRY_SECONDS,
+    tags: [EXPERIENCE_CACHE_TAG],
+  },
+);
+
+/**
+ * The current retry window as an integer, changing once per window.
+ *
+ * @param {number} [now] Epoch milliseconds; defaults to the clock.
+ * @returns {number} The window index.
+ */
+const partialRetryBucket = (now = Date.now()) =>
+  Math.floor(now / (EXPERIENCE_PARTIAL_RETRY_SECONDS * 1000));
+
+/**
+ * Whether a cached payload is a degraded answer that has outlived the short
+ * window a degraded answer gets.
+ *
+ * Read off the payload's own `generatedAt` rather than tracked beside the
+ * cache, because that stamp is the only age signal that survives the thing
+ * holding it: the cache is shared across instances and outlives any of them, so
+ * a module-level "when did we last see a partial" would reset on every cold
+ * start and disagree between two warm instances.
+ *
+ * @param {object|null|undefined} payload A payload from either cache entry.
+ * @param {number} [now] Epoch milliseconds; defaults to the clock.
+ * @returns {boolean} True when the answer is partial AND past the window.
+ */
+function isExpiredPartial(payload, now = Date.now()) {
+  if (payload?.partial !== true) return false;
+  const generatedAt = Date.parse(payload.generatedAt ?? "");
+  // A missing or unparseable stamp counts as EXPIRED, not as fresh. The bucket
+  // bounds the cost of being wrong in this direction at one GitHub call per
+  // window; being wrong in the other direction pins a degraded answer for the
+  // full ten minutes on a malformed field.
+  if (Number.isNaN(generatedAt)) return true;
+  return now - generatedAt >= EXPERIENCE_PARTIAL_RETRY_SECONDS * 1000;
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const username = searchParams.get("username");
@@ -437,7 +524,24 @@ export async function GET(request) {
   }
 
   try {
-    const data = await getCachedExperienceSummary(ALLOWED_USERNAME);
+    let data = await getCachedExperienceSummary(ALLOWED_USERNAME);
+    // A degraded answer does not get to hold the ten-minute window a good one
+    // earns. Past `EXPERIENCE_PARTIAL_RETRY_SECONDS` we ask GitHub again
+    // through the bucketed entry and take what it says — a recovered complete
+    // answer, or a fresher partial one if GitHub is still failing.
+    //
+    // The primary entry keeps its degraded payload until its own TTL expires,
+    // so every request for the rest of that window pays two cache reads and is
+    // served the retry's answer. Left that way deliberately: the alternative is
+    // a `revalidateTag` on recovery, which buys back one cache read per request
+    // at the price of an extra GitHub fan-out and a dependence on the tag
+    // semantics this design exists to avoid.
+    if (isExpiredPartial(data)) {
+      data = await getRetriedExperienceSummary(
+        ALLOWED_USERNAME,
+        partialRetryBucket(),
+      );
+    }
     // Internal-only fields reach the response ONLY when the caller presents a
     // bearer matching CRON_SECRET (the same secret `/api/repo-refresh` uses).
     // Anyone else gets them stripped, and the authenticated branch is
@@ -479,11 +583,16 @@ export async function GET(request) {
     // directive inapplicable — so a partial answer must not be storable, or it
     // would evict a complete one that was still being served.
     //
-    // `buildExperienceSummary` is memoised by `unstable_cache` for ten
-    // minutes, which these headers cannot reach: a partial result IS held
-    // server-side for that window, bounding GitHub retries during an outage at
-    // the cost of a slower recovery. That is the one residual, and it is the
-    // same freshness contract a good answer gets.
+    // These headers only ever governed the CDN and the browser, and for a while
+    // that left the real hold-time unaddressed: `buildExperienceSummary` is
+    // memoised by `unstable_cache`, so a partial payload sat in the server-side
+    // cache for the same ten minutes a good answer gets, and every request in
+    // that window read it back out no matter what `Cache-Control` said. The
+    // server side is now bounded on its own terms — a degraded answer is
+    // retried after `EXPERIENCE_PARTIAL_RETRY_SECONDS` through the second cache
+    // entry above — so the two halves of the contract finally agree: a partial
+    // answer is short-lived everywhere, and a complete one is cacheable for the
+    // full window in both places.
     return NextResponse.json(publicData, {
       headers: publicData.partial
         ? { "Cache-Control": "no-store" }

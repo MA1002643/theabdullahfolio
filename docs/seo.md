@@ -140,9 +140,13 @@ fabricated one is not (P4).
 > writes the git dates before `next build` runs — do **not** switch to
 > `new Date()`.
 >
-> `tests/unit/sitemapDrift.test.js` asserts no entry carries a timestamp within
-> 60 seconds of now, so a future "fix" that reintroduces build-time stamping
-> fails CI.
+> `tests/unit/sitemapDrift.test.js` asserts every entry's date is *identically*
+> the value `lastModifiedFor(route.sources)` returns, so a future "fix" that
+> reintroduces build-time stamping fails CI. (It used to require each date to be
+> more than 60 seconds old, which is the same statement made by timing — and
+> failed whenever someone committed a source file and ran the suite inside a
+> minute. A day's clock-skew tolerance still caps how far into the future a date
+> may sit, since committer dates come from the committing machine's clock.)
 
 ---
 
@@ -668,6 +672,33 @@ infrastructure — and six routes list it: `/`, `/projects`, `/journey`, `/about
 `sitemapDrift.test.js` enforces it as a biconditional — a route that renders from
 the module and does not watch it fails, and so does one that watches it without
 rendering from it.
+
+**Some inputs are shared, and still belong on the individual entries.** Three
+are in neither shared list because the set of URLs publishing each is neither
+"all of them" nor "all but the homepage":
+
+- `src/components/PageTitle.jsx` renders the `<h1>`/`<h2>` of the eight section
+  routes — real text in the server HTML. Not `/` (its headline is the orbit
+  hero) and not `/projects/[id]` (its heading comes from the project record), so
+  either shared list would stamp URLs that publish none of it. It is spread from
+  the `PAGE_TITLE_SOURCE` constant rather than typed eight times, because a
+  typo'd pathspec fails *silently* — `git log` over a path that matches nothing
+  simply contributes no date.
+- `src/lib/numberWords.js` decides how a count is *spelled*, and two published
+  sentences read through it: the homepage's `sr-only` summary and the
+  `/projects` description the registry composes. `/projects` reaches it only
+  through the registry, which is where this differs from the `data.js` rule
+  above — the registry is computing *that route's own* snippet, not another
+  route's, so it is genuinely that URL's crawl surface.
+- `src/components/footer/footer-data.js` holds the two profile URLs `schema.js`
+  states as the Person's `sameAs`. The nineteen non-home URLs cover it through
+  `src/components/footer`; `/` publishes it through the root layout's graph
+  while rendering no footer, so it names the module exactly — watching the whole
+  directory there would re-stamp the sitemap's highest-priority URL for every
+  footer edit.
+
+The `narrowly shared sources` cases in `sitemapDrift.test.js` enforce all three
+as biconditionals, reading reachability off disk in both directions.
 
 Watch out for `layout.js`. Three routes (`/about`, `/qualifications`,
 `/guestbook`) have client-component pages that cannot export `metadata`, so their

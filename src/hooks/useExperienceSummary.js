@@ -388,6 +388,20 @@ export function useExperienceSummary(username) {
         // Log but don't throw — the about page should still render with
         // its other cards even when this endpoint is degraded.
         console.warn("useExperienceSummary fetch failed:", err);
+        // The other early exit, and the same reasoning as the partial branch
+        // above: a poll that THREW made no comparison either, so the four
+        // indicators still describe the last poll that did. `data` is left
+        // alone deliberately — the last good answer is still the best thing to
+        // render — but a sentence reading "Years of experience updated: 4+ → 5+"
+        // standing beside it, or a modal row lit as newly added, credits a
+        // change to an observation that never got an answer.
+        //
+        // Not a flicker, for the same two reasons it was not one there: polls
+        // are ten minutes apart, and the per-row heartbeat is armed by set
+        // MEMBERSHIP and fired when the section scrolls into view, so a stale
+        // set can light rows up in a modal opened long afterwards. Clearing
+        // both exits through the one named step is the point of having it.
+        clearChangeIndicators();
         setError(err);
       } finally {
         if (!cancelled) setIsLoading(false);
