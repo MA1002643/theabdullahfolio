@@ -177,23 +177,93 @@ function pickContent(payload) {
   return rest;
 }
 
+// Schema stamp on the stored entry, and the reason this starts at 2.
+//
+// `storageKey` has never changed, so a returning visitor's browser still holds
+// whatever the PREVIOUS writer put there — and that writer stored every
+// successful response, including the degraded ones. It predates `partial`
+// entirely: the route it talked to answered a GitHub failure with
+// `personalProjects: null` and no flag of any kind, so such an entry is
+// indistinguishable on disk from a genuine "owns nothing yet" baseline.
+//
+// Read as a baseline it is not merely stale, it is actively wrong. The next
+// COMPLETE response diffs against a zeroed personal side, so `buildChangeMessage`
+// announces "N new repositories detected on GitHub", `changedExperienceCategories`
+// pulses Personal, and `addedExperienceItems` lights EVERY repo row in the
+// breakdown modal as just-added — for a visitor whose repos did not change. The
+// same entry hydrates the instant paint, so the visit opens on a zeroed years
+// card before the network answers. Recovery is not growth, which is the rule the
+// partial branch in `fetchOnce` already enforces for the live path; storage is
+// the other way the same false claim gets made, one visit later.
+//
+// So an unstamped entry is not read. The cost is one visit's instant paint and
+// one diff — no baseline means no message, by design — against announcing a
+// change that never happened. Bump this whenever a previously written entry
+// stops being trustworthy for a new reason.
+const STORED_SCHEMA = 2;
+
+/**
+ * Drop a stored entry this version has decided not to trust.
+ *
+ * Deleted rather than skipped, so it cannot resurface on the next poll or
+ * outlive the reason it was rejected — the same rule `useProjectProgress`
+ * applies to a version-mismatched snapshot.
+ */
+function discardStoredPayload(username) {
+  try {
+    window.localStorage.removeItem(storageKey(username));
+  } catch {
+    // Storage access blocked — there is nothing to clean up in a store we
+    // cannot reach, and the read that called this already returned null.
+  }
+}
+
 function readStoredPayload(username) {
   if (typeof window === "undefined") return null;
+  let entry;
   try {
     const raw = window.localStorage.getItem(storageKey(username));
     if (!raw) return null;
-    return JSON.parse(raw);
+    entry = JSON.parse(raw);
   } catch {
     // Corrupt entry or storage access blocked — treat as no prior
     // baseline so the banner stays silent on the next compare.
     return null;
   }
+
+  // Everything below is one rule: a baseline is trusted because of who WROTE
+  // it, never because of what it looks like. The absence of a `partial` flag
+  // used to be read as evidence of completeness, and that inference is what
+  // this guard exists to stop making.
+  if (entry?.schemaVersion !== STORED_SCHEMA || !entry.content) {
+    discardStoredPayload(username);
+    return null;
+  }
+
+  // A partial is never written (see the early return in `fetchOnce`), so this
+  // is belt-and-braces — and it belongs here, at the single point where a
+  // baseline is handed out, rather than at each of the two call sites. A
+  // half-answer that ever reached storage would announce its own recovery as
+  // growth, which is precisely what the write is skipped to prevent.
+  if (entry.content.partial === true) {
+    discardStoredPayload(username);
+    return null;
+  }
+
+  return entry.content;
 }
 
 function writeStoredPayload(username, content) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(storageKey(username), JSON.stringify(content));
+    // Wrapped rather than stamped onto the content: the stored object is the
+    // DIFF BASELINE, and `pickContent` above strips fields for exactly this
+    // reason — housekeeping that rides along inside it would be one more thing
+    // a future object-level comparison could trip on.
+    window.localStorage.setItem(
+      storageKey(username),
+      JSON.stringify({ schemaVersion: STORED_SCHEMA, content }),
+    );
   } catch {
     // QuotaExceededError, private-mode blocks, etc. The hook still
     // returns the live data; we just lose the next-visit diff.
@@ -349,9 +419,12 @@ export function useExperienceSummary(username) {
         //
         // So: a complete answer is kept, a partial one is replaced by this
         // payload, and a client with nothing adopts it. An entry hydrated from
-        // storage counts as complete even without the flag — only complete
-        // payloads are ever written there, and entries written before `partial`
-        // existed have no field to read.
+        // storage counts as complete despite carrying no flag — not because a
+        // missing flag implies anything, but because `readStoredPayload` hands
+        // out only entries stamped by a writer that stores complete answers
+        // alone. The earlier version of this note reasoned from the absence of
+        // the field instead, which was wrong in the one case it was meant to
+        // cover: the writer that predates `partial` stored degraded answers too.
         //
         // "Newest wins" is decided by arrival, not by comparing `generatedAt`:
         // a stored entry has no such stamp (`pickContent` strips it), and two

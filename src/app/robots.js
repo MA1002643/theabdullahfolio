@@ -45,6 +45,12 @@ export default function robots() {
     // Names the canonical host for the crawlers that honour it (Yandex most
     // notably). Belt-and-braces alongside the www→apex 308 in next.config.mjs
     // and the per-route canonicals — three signals, one answer (F2/F3).
-    host: ORIGIN,
+    //
+    // A HOSTNAME, not a URL. Next serialises this field verbatim
+    // (`Host: ${host}`), and the directive's grammar is a host — an absolute
+    // URL here is a parse error to the consumers that read it at all, so the
+    // one signal this line exists to send would be dropped on the floor. The
+    // Sitemap directive above is the opposite case and stays absolute.
+    host: new URL(ORIGIN).hostname,
   };
 }

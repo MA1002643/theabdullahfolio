@@ -252,6 +252,71 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
     expect(logged).not.toContain('ghp_notreal');
   });
 
+  // ── The premise the excerpt rests on, made executable ───────────────────────
+  // `logExcerpt` is a VOLUME bound, and its docblock is explicit that it is not
+  // a secret filter: a credential inside the first 300 characters survives. The
+  // reason that is acceptable is not the truncation — it is that the warm sends
+  // the target NOTHING of this deployment's to echo back. No `Authorization`
+  // header (both warm targets are public), no bearer in the query string.
+  //
+  // That argument is load-bearing and, until this case, lived only in a comment.
+  // Adding `Authorization: Bearer ${CRON_SECRET}` to a warm is a one-line change
+  // a future reader could make for a perfectly good reason — the sibling route
+  // it orchestrates is bearer-gated — and it would silently convert the excerpt
+  // from a bounded diagnostic into a reflection channel for the cron secret,
+  // with every existing case here still green. Asserted against the header set
+  // rather than against the header NAME, so a bearer smuggled under any other
+  // name fails too.
+  it('sends the warm targets nothing they could reflect into that excerpt', async () => {
+    const calls = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url, init) => {
+        calls.push({ url: String(url), init });
+        return {
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+          // An echoing downstream: whatever it was sent comes straight back.
+          text: async () =>
+            `reflected: ${JSON.stringify({ url: String(url), init })}`,
+        };
+      }),
+    );
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { GET } = await import('@/app/api/repo-refresh/route');
+    await GET(authed());
+
+    // Both warms, or the loop below proves nothing about the one it missed.
+    expect(calls).toHaveLength(2);
+    for (const { url, init } of calls) {
+      const headers = new Headers(init?.headers ?? {});
+      expect(
+        headers.has('authorization'),
+        `${url} forwards an Authorization header to a warm target.`,
+      ).toBe(false);
+      for (const [name, value] of headers) {
+        expect(
+          value,
+          `The "${name}" header carries CRON_SECRET to a warm target.`,
+        ).not.toContain(CRON_SECRET);
+      }
+      expect(url, 'The warm URL carries CRON_SECRET.').not.toContain(
+        CRON_SECRET,
+      );
+    }
+
+    // And so the reflection carries nothing: the excerpt is logged in full
+    // (well under the cap) and there is no secret in it to truncate away.
+    const loggedText = [...errorSpy.mock.calls, ...warnSpy.mock.calls]
+      .flat()
+      .map(String)
+      .join('\n');
+    expect(loggedText).toContain('reflected:');
+    expect(loggedText).not.toContain(CRON_SECRET);
+  });
+
   it('keeps the raw exception in the log', async () => {
     vi.stubGlobal(
       'fetch',

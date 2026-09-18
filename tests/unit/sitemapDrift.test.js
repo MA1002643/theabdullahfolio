@@ -254,35 +254,108 @@ function publishedFrom(entryFiles, barriers = []) {
  * in step.
  */
 /**
- * Repo-relative paths a module names as string literals AND that exist on disk.
+ * The first argument of every `readFile` / `readFileSync` call in a source file.
  *
- * The escape hatch for inputs that are read rather than imported: `readFile`
- * against a font, a PNG, a manifest. Existence is the filter — a literal that
- * is not a path simply is not one — and over-reporting is the safe direction
- * here, since this only ever ADDS reachability to a check asking whether a
- * watched file is genuinely published.
+ * Returned as raw expression text, balanced rather than regex-matched, because
+ * the argument that matters here is itself a call — `path.join(process.cwd(),
+ * '…')` — and a lazy `\(([^)]*)\)` stops at the inner closing paren.
  *
- * Deliberately narrow: only files the walk has already reached are scraped, so
- * an unrelated string in an unrelated module cannot widen anything.
+ * @param {string} source File contents.
+ * @returns {string[]} One expression per read call, in source order.
  */
-function onDiskPathLiteralsIn(relativeFile) {
+function readCallArguments(source) {
+  const args = [];
+  // `fs.readFileSync`, `promises.readFile`, a bare imported `readFile`. The
+  // `\b` keeps it off `myReadFile`, and a helper that WRAPS a read (`/uses`'s
+  // `readText(root, rel)`) is deliberately not followed — see below.
+  const callSite = /\b(?:[A-Za-z_$][\w$]*\s*\.\s*)*readFile(?:Sync)?\s*\(/g;
+  for (const match of source.matchAll(callSite)) {
+    let depth = 1;
+    let quote = null;
+    let index = match.index + match[0].length;
+    const start = index;
+    for (; index < source.length && depth > 0; index += 1) {
+      const char = source[index];
+      if (quote) {
+        if (char === '\\') index += 1;
+        else if (char === quote) quote = null;
+        continue;
+      }
+      if (char === "'" || char === '"' || char === '`') quote = char;
+      else if (char === '(' || char === '[' || char === '{') depth += 1;
+      else if (char === ')' || char === ']' || char === '}') depth -= 1;
+      // Top-level comma ends the FIRST argument — the encoding (`'utf8'`) and
+      // any options object are not paths and must not be scraped.
+      else if (char === ',' && depth === 1) break;
+    }
+    if (depth > 0 || index > start) args.push(source.slice(start, index));
+  }
+  return args;
+}
+
+/**
+ * Repo-relative paths a module READS off disk, as opposed to importing.
+ *
+ * The escape hatch for inputs no dependency walk can find: `readFile` against a
+ * font, a PNG, a manifest. `src/lib/og/assets.js` is the case that needs it —
+ * two woff files and the monogram reach every OG card through no import edge at
+ * all, and `SHARED_ROUTE_SOURCES` watches the directories they sit in.
+ *
+ * Read ARGUMENTS, not every quoted literal in the file. The earlier version
+ * scraped any 2–80 character string that contained a slash and happened to stat,
+ * on the reasoning that over-reporting is the safe direction: this only ever
+ * ADDS reachability to checks asking whether a watched path is genuinely
+ * published, so a spurious hit can only make one of those checks pass. That is
+ * the correct reading of the risk and the wrong conclusion about the cost —
+ * passing IS the failure mode for those two checks. Both exist to catch an
+ * over-stamp (a `<lastmod>` claiming a change the HTML never saw), and a stray
+ * entry that no longer corresponds to anything is exactly what they are looking
+ * for. A literal that satisfies the check without being read makes the stray
+ * invisible.
+ *
+ * It is not a hypothetical shape in this repository, either: the house comment
+ * style names repo paths in prose, in backticks — `src/lib/seo/site.js`,
+ * `src/app/data.js` — and the old regex accepted backticks as quotes, so any
+ * reached file whose comments mention a watched path vouched for it.
+ *
+ * What this does NOT do is follow a read helper. `/uses` opens its build facts
+ * through `readText(root, rel)`, so its paths appear as that helper's arguments
+ * and not as any `readFile` call's — which is why the `uses build facts` suite
+ * below keeps its own blunt scraper, pointed at one known file, and why this
+ * narrowing is not the same change applied there.
+ *
+ * Deliberately narrow in the other dimension too: only files the walk has
+ * already reached are scraped, so a read in an unrelated module widens nothing.
+ */
+function onDiskReadPathsIn(relativeFile) {
   let source;
   try {
     source = readFileSync(path.join(process.cwd(), relativeFile), 'utf8');
   } catch {
     return [];
   }
-  return [...source.matchAll(/['"`]([^'"`\n]{2,80})['"`]/g)]
-    .map((match) => match[1])
-    .filter((literal) => {
-      if (!literal.includes('/')) return false;
-      try {
-        statSync(path.join(process.cwd(), literal));
-        return true;
-      } catch {
-        return false;
-      }
-    });
+
+  const paths = [];
+  for (const argument of readCallArguments(source)) {
+    // The literal segments of the expression, joined the way `path.join` would.
+    // `process.cwd()` contributes none, which is what leaves the result
+    // repo-relative; a fully dynamic argument contributes none either and is
+    // skipped rather than guessed at.
+    const segments = [...argument.matchAll(/['"`]([^'"`\n]*)['"`]/g)]
+      .map((match) => match[1])
+      .filter((segment) => segment.length > 0);
+    if (segments.length === 0) continue;
+    const joined = path.join(...segments);
+    // Existence stays the final filter: a read of a path built at runtime, or
+    // of something since deleted, is not a published source.
+    try {
+      statSync(path.join(process.cwd(), joined));
+      paths.push(joined);
+    } catch {
+      // Not a real path from the repository root.
+    }
+  }
+  return paths;
 }
 
 const covers = (source, specifier) =>
@@ -741,7 +814,7 @@ describe('project detail sources', () => {
     ];
     // Reads as well as imports — the typefaces are `readFile`d, not imported.
     published.push(
-      ...published.flatMap((module) => onDiskPathLiteralsIn(module)),
+      ...published.flatMap((module) => onDiskReadPathsIn(module)),
     );
 
     // Guard on the guard, in the dimension this check actually depends on: a
@@ -957,7 +1030,7 @@ describe('registry as a source', () => {
       const reached = publishedFrom(entries);
       const published = [
         ...reached,
-        ...[...reached].flatMap((module) => onDiskPathLiteralsIn(module)),
+        ...[...reached].flatMap((module) => onDiskReadPathsIn(module)),
       ];
       for (const shared of SHARED_ROUTE_SOURCES) {
         if (!published.some((module) => covers(shared, module)))
@@ -973,6 +1046,41 @@ describe('registry as a source', () => {
         `${unpublished.join('\n  ')}\n\n` +
         `Move it to the per-route sources of the routes that do publish it.`,
     ).toEqual([]);
+  });
+
+  // ── Guard on the guard above, in the dimension that made it tautological ────
+  // The check depends on `onDiskReadPathsIn` to find the fonts and the monogram,
+  // which reach a card through no import edge. Its predecessor found them by
+  // scraping EVERY quoted on-disk path in every reached file, and the cost of
+  // that breadth was the check itself: `SHARED_ROUTE_SOURCES` is declared as
+  // string literals inside `src/lib/seo/site.js`, and every route reaches the
+  // registry — so each entry vouched for ITSELF, and the loop above could not
+  // fail for any path that stayed in the list. Measured, not inferred: with the
+  // old scraper, a `SHARED_ROUTE_SOURCES` entry naming a file no route reaches
+  // (`scripts/seo-pdf-metadata.mjs`) passed for all twenty URLs; with this one
+  // it fails for all twenty.
+  //
+  // Both halves are asserted because both can regress, and only one of them
+  // regresses loudly. Under-reporting fails the check above for every route at
+  // once and is hard to miss; over-reporting quietly restores the tautology.
+  it('finds what a card reads, and nothing a file merely mentions', () => {
+    const reads = onDiskReadPathsIn('src/lib/og/assets.js');
+    expect(reads).toContain('src/lib/og/fonts/Montserrat-800.woff');
+    expect(reads).toContain('src/lib/og/fonts/Inter-600.woff');
+    expect(reads).toContain('src/lib/og/assets/monogram.png');
+
+    // The registry names dozens of real paths — every route's `sources`, in
+    // quotes — and opens none of them.
+    expect(
+      onDiskReadPathsIn('src/lib/seo/site.js'),
+      'The registry vouches for the paths it declares, so the check above ' +
+        'passes on its own say-so.',
+    ).toEqual([]);
+
+    // A path handed to a read at runtime is not a source: `/uses` opens its
+    // build facts through `readText(root, rel)`, so nothing here is resolvable
+    // and the `uses build facts` suite below is what watches those instead.
+    expect(onDiskReadPathsIn('src/lib/uses/buildFacts.js')).toEqual([]);
   });
 
   it('does not disturb the per-route sources already declared', async () => {

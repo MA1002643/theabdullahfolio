@@ -60,7 +60,11 @@ test.describe('crawl control', () => {
     // Absolute, per the sitemap protocol — a relative Sitemap directive is
     // invalid and silently ignored by every consumer.
     expect(body).toContain('Sitemap: https://ma.codes/sitemap.xml');
-    expect(body).toContain('Host: https://ma.codes');
+    // Host is the opposite: the directive takes a HOSTNAME, and a consumer
+    // that is handed an absolute URL ignores the line. Asserted with the
+    // trailing newline, so the line has to END at the apex — a substring
+    // match alone would also pass on `Host: ma.codes.example`.
+    expect(body).toContain('Host: ma.codes\n');
     expect(body).toMatch(/User-Agent: \*/);
     // F7: the AI-crawler posture is stated rather than inherited. A named
     // stanza is what makes the allow a policy instead of an accident.
