@@ -484,15 +484,18 @@ step by HTTP status alone, and `/api/repo-refresh` answers **200** when only its
 `/api/experience-summary` warm failed — a best-effort semantic it documents on
 purpose, since a non-2xx there is a retry/alert signal about a cache that
 refills on the next visitor anyway. The two together produced an all-green cron
-over a half-failed step: the body said `ok: false` and nobody read it. Each
-step's result is now `res.ok && body.ok !== false`, marked
-`bodyReportedFailure: true` so a 200-that-failed stays distinguishable from a
-502. It reads only an explicit `ok: false` and fails **open** — the deliberate
-opposite of the `skipped` check, which must not let an ambiguous body excuse a
-step — because `/api/work-status` returns no `ok` field at all and inventing an
-admission from it would turn every healthy run red.
+over a half-failed step: the body said `ok: false` and nobody read it. A step
+that answers 2xx and then says `ok: false` in its body is now counted as a
+failure, marked `bodyReportedFailure: true` so a 200-that-failed stays
+distinguishable from a 502. That check reads only an explicit `ok: false` and
+fails **open** — the deliberate opposite of the `skipped` check, which must not
+let an ambiguous body excuse a step — because `/api/work-status` returns no `ok`
+field at all and inventing an admission from it would turn every healthy run
+red.
 
-**A 2xx it cannot read is not a verdict either** (closed 2026-09-18). Failing
+**A 2xx it cannot read is not a verdict either** (closed 2026-09-18), and this
+is where the rule stops being uniform across the three steps — the paragraph
+above describes the check, not a blanket policy. Failing
 open is right for a body that carries no `ok`, and wrong for every body that
 could not be read at all — an intermediary's HTML error page, a truncated
 payload, a body that threw on read. Those went back through `res.ok`, which is
@@ -579,11 +582,14 @@ The token exchange and the three `searchAnalytics` queries all go through one
 is therefore ~2× that — one token call, then three queries in parallel.
 
 That worst case now has a **declared ceiling to fit inside** (added 2026-09-18).
-This route inherited whatever function duration the account defaulted to, while
-the repo's other GitHub routes are written for a 10 s Hobby limit — and a route
-killed at its ceiling returns no 502 and no message naming which of its four
-calls stalled, leaving the orchestrator with a bare transport failure. It
-declares `maxDuration = 30` (two phases at 10 s, leaving a third of the budget
+This route inherited whatever function duration the account defaulted to — and a
+route killed at its ceiling returns no 502 and no message naming which of its
+four calls stalled, leaving the orchestrator with a bare transport failure.
+(Measured 2026-09-18: this project runs Fluid Compute with
+`functionDefaultTimeout` at **300 s** on Hobby, so the 10 s written into the
+repo's older GitHub routes is the pre-Fluid number, not the live ceiling. The
+point of declaring a duration is that a deployment which cannot grant it fails
+at deploy time rather than at 01:00.) It declares `maxDuration = 30` (two phases at 10 s, leaving a third of the budget
 for the Upstash writes and the response, which carry no bound of their own), and
 the per-call ceiling is arithmetic over it — `(maxDuration * 1000 * 0.75) /
 UPSTREAM_PHASES` — with `SEO_REPORT_TIMEOUT_MS` clamped against that ceiling, so
@@ -602,6 +608,21 @@ A timeout surfaces as a 502 naming the step and the budget
 (`token exchange timed out after 10000ms`) — never the request body, which
 carries the signed assertion, nor the bearer token. Pinned by
 `tests/unit/seoReportTimeout.test.js`.
+
+**Only messages this route wrote are quoted back** (tightened 2026-09-18). The
+handler's `try` wraps the RS256 signing, the four upstream calls *and* the four
+Upstash operations, so `error.message` was not reliably this route's own
+wording: a non-timeout `fetch` rejection keeps undici's, and `@upstash/redis`
+rejects with text that can name the REST endpoint — half of `KV_REST_API_URL`,
+a credential by CLAUDE.md's table. Since `/api/daily-warmup` returns this body
+verbatim as its own `detail`, anything quoted reaches every holder of
+`CRON_SECRET`. Quoting is now opt-in: the route marks the messages it authors
+(the relabelled timeouts, `token exchange failed (HTTP …)`,
+`searchAnalytics(…) failed (HTTP …)`) with a module-private Symbol — unforgeable
+by a library or a downstream — and everything else answers
+`Search Console report failed; see server logs` while the real error goes to
+`console.error`. The timeout classification is carried as a separate `timedOut`
+field so it survives the fixed message and any future reword of the label.
 
 ### Setup, which must be done by hand
 

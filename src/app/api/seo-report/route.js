@@ -65,13 +65,17 @@ const GSC_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
 // ── The ceiling that worst case is measured against, declared not assumed ────
 // "Well inside any platform timeout" was the unstated bet, and it is the same
 // one /api/daily-warmup was corrected for: this route DECLARED no duration, so
-// it took whatever the account default happened to be, while the four other
-// GitHub routes in this repo size themselves to 9 s on the assumption of a 10 s
-// Hobby ceiling. Under that assumption ~20 s of legitimate, in-budget work gets
-// the function killed before it can return the 502 its own timeout machinery
-// exists to produce — and the orchestrator upstream then sees a bare transport
-// failure instead of "<step> timed out after <n>ms", losing the diagnosis that
-// is the entire value of `labelTimeout`.
+// it took whatever the account default happened to be. A route killed at its
+// ceiling returns no 502 and no "<step> timed out after <n>ms" — the
+// orchestrator upstream sees a bare transport failure instead, losing the
+// diagnosis that is the entire value of `labelTimeout` on a route making four
+// upstream calls.
+//
+// What that default actually is, measured rather than assumed (2026-09-18):
+// this project runs Fluid Compute with `functionDefaultTimeout` at 300 s, on
+// Hobby. The 10 s ceiling repeated in this repo's older GitHub routes is the
+// pre-Fluid number and is not what this deployment enforces — see the fuller
+// note in /api/daily-warmup, which is where that correction lives.
 //
 // So the duration is declared, which turns a plan that cannot grant it into a
 // deployment error rather than a 01:00 kill. 30 s: two phases at the 10 s
@@ -109,6 +113,34 @@ const UPSTREAM_TIMEOUT_MS = Math.round(
   ),
 );
 
+// ── Which errors may be QUOTED to a caller ──────────────────────────────────
+// The handler's `try` is one block around everything: the RS256 signing, four
+// bounded upstream calls, and four Upstash operations. Its catch used to answer
+// with `error.message` on the reasoning that what reaches it is "overwhelmingly
+// this route's own hand-authored labels" — which is true of the failures that
+// were being thought about, and says nothing about the rest of the block.
+// `labelTimeout` passes a non-timeout through UNTOUCHED, so a DNS or socket
+// failure arrives with undici's own words; `redis.get`/`set`/`eval` reject with
+// whatever `@upstash/redis` puts in a message, and the REST endpoint it names is
+// half of `KV_REST_API_URL`, which CLAUDE.md lists as a credential. And this
+// body does not stop here: /api/daily-warmup reads the whole response and
+// returns it as its own `detail`, so anything quoted reaches every holder of
+// CRON_SECRET.
+//
+// So quoting is OPT-IN, and the opt-in is a module-private Symbol rather than a
+// flag or a message pattern. A library cannot set it by accident and a
+// downstream cannot forge it, which is the property a "safe to quote" mark has
+// to have — the same reasoning that made /api/daily-warmup want a machine
+// discriminator rather than matching prose. Everything unmarked answers with a
+// fixed string and keeps its real message in the log.
+const REPORTABLE = Symbol('seo-report.reportable');
+const TIMED_OUT = Symbol('seo-report.timedOut');
+
+/** An error whose message is safe to return: this route wrote every word. */
+function reportable(message, extra) {
+  return Object.assign(new Error(message), { [REPORTABLE]: true }, extra);
+}
+
 /**
  * Rewrite a deadline failure into this route's own wording, or pass it through.
  *
@@ -120,14 +152,21 @@ const UPSTREAM_TIMEOUT_MS = Math.round(
  * both without having to enumerate every runtime's wrapper.
  *
  * Anything else is returned untouched: a DNS or socket failure keeps its own
- * message, which is more useful than "timed out" would be.
+ * message, which is more useful than "timed out" would be — in the LOG. It is
+ * returned unmarked, so the handler answers it with a fixed string rather than
+ * with undici's account of this deployment's network.
  */
 function labelTimeout(error, signal, label) {
   const timedOut =
     error?.name === 'TimeoutError' ||
     (signal.aborted && signal.reason?.name === 'TimeoutError');
   return timedOut
-    ? new Error(`${label} timed out after ${UPSTREAM_TIMEOUT_MS}ms`)
+    ? // A step name and a number: no host, no URL, no credential. This is the
+      // message the whole opt-in exists to preserve, because "which of four
+      // upstream calls stalled" is the diagnosis a fixed string would delete.
+      reportable(`${label} timed out after ${UPSTREAM_TIMEOUT_MS}ms`, {
+        [TIMED_OUT]: true,
+      })
     : error;
 }
 
@@ -532,10 +571,10 @@ async function getAccessToken(credentials) {
     // Status only. The body of a failed token exchange echoes parts of the
     // assertion, and this route's response is readable by anyone holding
     // CRON_SECRET.
-    throw new Error(`token exchange failed (HTTP ${response.status})`);
+    throw reportable(`token exchange failed (HTTP ${response.status})`);
   }
   const json = await readJson();
-  if (!json.access_token) throw new Error('token exchange returned no token');
+  if (!json.access_token) throw reportable('token exchange returned no token');
   return json.access_token;
 }
 
@@ -593,7 +632,7 @@ async function queryAnalytics(token, siteUrl, dimensions, reportWindow) {
   );
 
   if (!response.ok) {
-    throw new Error(
+    throw reportable(
       `searchAnalytics(${dimensions.join('+')}) failed (HTTP ${response.status})`,
     );
   }
@@ -956,23 +995,38 @@ export async function GET(request) {
         `ASSISTANT_REFERRERS: ${ASSISTANT_REFERRERS.join(', ')}`,
     });
   } catch (error) {
+    // The whole error, and only here. The log is where a 01:00 cron failure is
+    // read from, and it is the one place the Upstash message or undici's socket
+    // account is worth having.
     console.error('seo-report: Search Console query failed:', error);
-    // Message only — never the error object. A failed token exchange can carry
-    // request metadata, and this response is readable by anyone with CRON_SECRET.
+    // ── Quoted only if this route wrote it ──────────────────────────────────
+    // `error.message` used to go out unconditionally, on the argument that what
+    // reaches here is "overwhelmingly" this route's own labels. Overwhelmingly
+    // is not a guarantee, and the exceptions are the ones that matter: a
+    // non-timeout `fetch` rejection keeps undici's wording (`labelTimeout`
+    // passes it through by design), and the four `redis` calls in this try
+    // reject with whatever `@upstash/redis` says — which can name the REST
+    // endpoint that is half of `KV_REST_API_URL`. /api/daily-warmup returns
+    // this body verbatim as its own `detail`, so an unquoted-by-accident
+    // message reaches every holder of CRON_SECRET.
     //
-    // The message is kept DELIBERATELY, unlike the fixed strings the orchestrator
-    // and repo-refresh return: what reaches here is overwhelmingly this route's
-    // own hand-authored labels, because `fetchBounded` rewrites a `TimeoutError`
-    // into `"<step> timed out after <n>ms"` — a step name and a number, naming no
-    // host, no URL and no credential. That holds for a stall during the response
-    // BODY as well as one before the headers: both halves run under the one
-    // signal, and `readJsonBounded` relabels the same way.
-    // `tests/unit/seoReportTimeout.test.js` pins that, including a case asserting
-    // no bearer token, JWT assertion or private key can appear in it. Flattening
-    // these would delete real diagnosis (which of four upstream calls stalled) to
-    // remove a leak that is already tested against.
+    // The diagnosis the old comment was protecting is kept intact: every
+    // message this route authors is marked `REPORTABLE`, so "which of four
+    // upstream calls stalled" still comes back. What changes is that anything
+    // it did NOT author answers with a fixed string.
+    const quotable = error?.[REPORTABLE] === true;
     return noStoreJson(
-      { ok: false, error: error?.message ?? String(error) },
+      {
+        ok: false,
+        error: quotable
+          ? error.message
+          : 'Search Console report failed; see server logs',
+        // Classification kept as a FIELD rather than left to be inferred from
+        // prose, so a consumer can still separate "tighten the budget" from
+        // "something else broke" even when the message is the fixed one — and
+        // so the distinction survives a future reword of the label.
+        ...(error?.[TIMED_OUT] === true && { timedOut: true }),
+      },
       { status: 502 },
     );
   }

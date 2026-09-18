@@ -756,13 +756,29 @@ export function credentialsFromJourney(journey) {
       // finished, so `dateCreated` can say when the credential actually came
       // into being.
       date: entry.end,
-      // Schema's `credentialCategory` is a free-text hint. "degree" and
-      // "diploma" are the two values Google's documentation uses as examples,
-      // and every education entry here is one or the other — so it is derived
-      // from the name rather than typed per entry.
-      type: /\b(bsc|ba|msc|beng|degree)\b/i.test(entry.title)
+      // Schema's `credentialCategory` is a free-text hint, derived from the
+      // name rather than typed per entry.
+      //
+      // It used to be a BINARY — degree, else diploma — on the stated ground
+      // that "every education entry here is one or the other". That was wrong
+      // about the data it was written against: "OCNLR Certificate in Digital
+      // Skills" has no degree keyword, fell through, and was published to
+      // search engines as a diploma. A certificate is a different award, and
+      // the JSON-LD said otherwise about a real credential.
+      //
+      // Each category is now RECOGNISED rather than assumed, and an
+      // unrecognised title yields `undefined` — which `schema.js` already
+      // expects and prunes, its own comment saying a missing value is better
+      // than a wrong one. That is the property that matters here: the next
+      // award whose name fits none of these is left uncategorised instead of
+      // being silently filed under whichever branch happened to be last.
+      type: /\b(bsc|ba|msc|beng|meng|phd|degree)\b/i.test(entry.title)
         ? 'degree'
-        : 'diploma',
+        : /\bdiploma\b/i.test(entry.title)
+          ? 'diploma'
+          : /\bcertificate\b/i.test(entry.title)
+            ? 'certificate'
+            : undefined,
     }));
 }
 

@@ -33,12 +33,28 @@ import { freshCronSecret } from '../helpers/secrets.js';
 const CRON_SECRET = freshCronSecret();
 const TIMEOUT_MS = 80;
 
-vi.mock('@/lib/guestbook/redisDriver', () => ({
-  // `eval` runs the compare-and-set that publishes the baseline. Every case in
-  // this file fails upstream of it, so it only has to exist and succeed.
-  redis: { get: async () => null, set: async () => 'OK', eval: async () => 1 },
-  redisAvailable: true,
-}));
+// `eval` runs the compare-and-set that publishes the baseline. Most cases in
+// this file fail upstream of it, so it only has to exist and succeed — but one
+// needs it to FAIL, because the storage calls sit inside the same try as the
+// upstream ones and their messages are the least safe thing in the block.
+const { redisStub } = vi.hoisted(() => ({ redisStub: { failWith: null } }));
+
+vi.mock('@/lib/guestbook/redisDriver', () => {
+  const failIfAsked = () => {
+    if (redisStub.failWith) throw new Error(redisStub.failWith);
+  };
+  return {
+    redis: {
+      get: async () => {
+        failIfAsked();
+        return null;
+      },
+      set: async () => 'OK',
+      eval: async () => 1,
+    },
+    redisAvailable: true,
+  };
+});
 
 /** A fetch that never settles on its own — only when the signal aborts. */
 const stall = (signal) =>
@@ -128,7 +144,21 @@ beforeEach(() => {
   stallPhase = 'headers';
   throwInstead = null;
   seenSignals = [];
+  redisStub.failWith = null;
 });
+
+/**
+ * Everything a console spy was handed, as text.
+ *
+ * `JSON.stringify` cannot be used here: an Error serialises to `{}`, so a naive
+ * assertion passes whatever the log holds — which would make "the diagnosis
+ * moved to the log" a claim this suite never actually checks.
+ */
+const loggedText = (spy) =>
+  spy.mock.calls
+    .flat()
+    .map((arg) => (arg instanceof Error ? arg.message : String(arg)))
+    .join('\n');
 
 const call = () =>
   GET(
@@ -249,14 +279,65 @@ describe('seo-report bounds every upstream call', () => {
     expect(Date.now() - started).toBeLessThan(3000);
   });
 
-  it('leaves a non-timeout failure to propagate as itself', async () => {
-    // The helper only rewrites TimeoutError. A DNS or socket failure keeps its
-    // own message, which is more useful than "timed out" would be.
+  it('does not quote a non-timeout failure it did not write', async () => {
+    // This case used to assert the OPPOSITE — that undici's `fetch failed`
+    // reached the response verbatim — on the reasoning that a socket failure's
+    // own message is more useful than "timed out" would be. It is, in the LOG.
+    // In the body it is a description of this deployment's network written by
+    // somebody else, and /api/daily-warmup forwards this body as its own
+    // `detail`, so it travels to every holder of CRON_SECRET.
     throwInstead = 'token';
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     const body = await (await call()).json();
 
     expect(body.ok).toBe(false);
-    expect(body.error).toBe('fetch failed');
+    expect(body.error).not.toContain('fetch failed');
+    expect(body.error).toBe('Search Console report failed; see server logs');
+    // Not a timeout, and the field says so rather than leaving it to be read
+    // out of a message that is now fixed for every unquotable failure.
+    expect(body.timedOut).toBeUndefined();
+    // The diagnosis is not lost, it moved.
+    expect(loggedText(errorSpy)).toContain('fetch failed');
+  });
+
+  it('does not quote a storage failure, which is the least safe of them', async () => {
+    // The four `redis` calls live inside the same try as the upstream ones, and
+    // `@upstash/redis` rejects with its own wording — which can name the REST
+    // endpoint that is half of `KV_REST_API_URL`, a credential by this repo's
+    // own table. Nothing in the old "overwhelmingly our own labels" reasoning
+    // covered them.
+    redisStub.failWith =
+      'fetch failed: https://eu2-notreal-12345.upstash.io (token AXY_notreal)';
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const response = await call();
+    const body = await response.json();
+
+    expect(response.status).toBe(502);
+    const serialised = JSON.stringify(body);
+    for (const leak of ['upstash.io', 'eu2-notreal', 'AXY_notreal']) {
+      expect(
+        serialised,
+        `The 502 body carries "${leak}" from the storage error.`,
+      ).not.toContain(leak);
+    }
+    expect(body.error).toBe('Search Console report failed; see server logs');
+    // And the operator still gets the whole thing, where it belongs.
+    expect(loggedText(errorSpy)).toContain('upstash.io');
+  });
+
+  it('still quotes the labels it wrote itself, and flags the timeout', async () => {
+    // The half that must not be lost to the fix: naming WHICH of four upstream
+    // calls stalled is the entire value of the relabel, and a blanket fixed
+    // string would have deleted it to close a leak those labels never had.
+    stallTarget = 'analytics';
+    const body = await (await call()).json();
+
+    expect(body.error).toMatch(
+      /^searchAnalytics\([a-z]+\) timed out after \d+ms$/,
+    );
+    expect(body.timedOut).toBe(true);
   });
 });
 

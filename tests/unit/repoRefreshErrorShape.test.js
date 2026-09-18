@@ -177,6 +177,12 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
     // go and read either. The distinction the old `detail: null` carried,
     // without the half that carried the body.
     expect(body.githubStats.detailLogged).toBe(false);
+    // WHY there is nothing logged, and it is the distinction this route exists
+    // to publish: the budget fired. Swallowing the rejection is right — the
+    // status is the finding — but swallowing the breach with it reported a
+    // body-stalled 500 as an ordinary warm failure, so an operator could not
+    // tell "tighten CRON_WARM_TIMEOUT_MS" from "go and fix the downstream".
+    expect(body.githubStats.aborted).toBe(true);
     expect(Date.now() - started).toBeLessThan(3000);
     delete process.env.CRON_WARM_TIMEOUT_MS;
   });

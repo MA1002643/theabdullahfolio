@@ -121,6 +121,21 @@ async function fetchWithTimeout(url, options, timeoutMs) {
       readText: () => bounded(res.text()),
       readJson: () => bounded(res.json()),
       release,
+      // Whether the budget has fired, readable AFTER the fact.
+      //
+      // A caller that swallows a failed body read — the error-body path below
+      // does, deliberately, because the status is already the finding —
+      // swallows the budget breach along with it, and those are not the same
+      // event: `aborted` is the one flag that separates "tighten
+      // CRON_WARM_TIMEOUT_MS" from "fix the downstream", so losing it on the
+      // body read costs exactly the distinction this route exists to publish.
+      //
+      // The SIGNAL rather than the rejection's name, for the reason
+      // /api/seo-report's `labelTimeout` gives: an aborted body read surfaces
+      // differently across runtimes (`AbortError`, or a `TypeError` wrapping
+      // one), while the signal says what actually happened whichever shape
+      // arrived.
+      timedOut: () => controller.signal.aborted,
     };
   } catch (err) {
     release();
@@ -208,7 +223,7 @@ export async function GET(request) {
     let githubStats = { ok: false, attempted: true };
     let data = null;
     try {
-      const { res, readText, readJson } = await fetchWithTimeout(
+      const { res, readText, readJson, timedOut } = await fetchWithTimeout(
         `${baseUrl}/api/github-stats?username=${encodeURIComponent(username)}&_=${cacheBust}`,
         {
           cache: "no-store",
@@ -228,7 +243,17 @@ export async function GET(request) {
           // the status is already known and reported, and `detail` is context.
           detail = await readText();
         } catch {
-          // ignore — body unreadable, or the budget ran out reading it
+          // ignore — body unreadable, or the budget ran out reading it.
+          //
+          // Swallowing the REJECTION is right: the status is the finding and
+          // the body was only ever context. Swallowing the BUDGET BREACH with
+          // it was not, and that is what this branch used to do — a downstream
+          // that answered 500 and then stalled its error body came back as an
+          // ordinary warm failure, indistinguishable from one that answered
+          // promptly, on the very route whose `aborted` flag exists to tell an
+          // operator to tighten `CRON_WARM_TIMEOUT_MS` rather than go looking
+          // downstream. Read off the signal below, where the fact survives the
+          // rejection that carried it.
         }
         // ── The body goes in the LOG, and only in the log ───────────────────
         // It used to be returned as `detail` too, which is the same leak the
@@ -273,6 +298,11 @@ export async function GET(request) {
           // cannot promise a log line that is not there: a whitespace-only body
           // is something read and nothing recorded.
           detailLogged: excerpt !== null,
+          // Same flag, same meaning, as the thrown-warm path below: the budget
+          // fired. It can only be true here alongside `detailLogged: false` —
+          // the read that was cut short is the reason there is nothing logged —
+          // and together they say which of the two silences this was.
+          ...(timedOut() && { aborted: true }),
         };
       } else {
         // Bounded too, and this is the read that matters most: a 200 whose body

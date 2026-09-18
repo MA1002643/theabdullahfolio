@@ -387,8 +387,35 @@ test.describe('structured data', () => {
     await page.locator('nav.project-sibling-nav a').first().focus();
 
     const navBox = await page.locator('nav.project-sibling-nav').boundingBox();
+
     // ProjectsBtn — the route's primary exit, fixed top-left.
-    const exitBox = await page.locator('a[href="/projects"]').last().boundingBox();
+    //
+    // Located by its `aria-label`, NOT by `a[href="/projects"]`. That selector
+    // matches three elements on this route, and `.last()` picked the wrong one:
+    // `SubPagesLayout` renders `ProjectsBtn` BEFORE `<main>`, the sibling nav's
+    // own "All projects" link sits inside `<main>`, and the footer's index
+    // renders a third AFTER it — so the last match is a link at the bottom of
+    // the page, which of course never overlaps a panel pinned top-right. The
+    // case passed without once looking at the control it names.
+    const exit = page.locator('a[aria-label="Projects"]');
+    // Pinned so the locator cannot quietly become ambiguous again — which is
+    // the failure this case is being repaired for, not a defensive extra.
+    await expect(exit).toHaveCount(1);
+    // And it is the FIXED control rather than something that merely shares the
+    // label: an overlap test against an element that scrolls away is vacuous in
+    // the same way the old one was.
+    await expect(exit).toHaveCSS('position', 'fixed');
+    // ── Wait for it to have a SIZE, which is a second way to be vacuous ──────
+    // ProjectsBtn enters on `initial={{ scale: 0 }}` with a 1s delay, and
+    // `boundingBox()` reports the TRANSFORMED box — so measured too early it is
+    // 0×0 at the right coordinates, and a rectangle test against a zero-area
+    // box degenerates into asking whether one corner point is covered. Scoping
+    // the locator and then measuring a collapsed box would have replaced one
+    // empty assertion with another.
+    await expect
+      .poll(async () => (await exit.boundingBox())?.width ?? 0)
+      .toBeGreaterThan(10);
+    const exitBox = await exit.boundingBox();
 
     const overlaps =
       navBox.x < exitBox.x + exitBox.width &&

@@ -240,10 +240,27 @@ describe('per-surface documents', () => {
       expect(credential.name).toBeTruthy();
       // The awarding body is the half that makes a credential checkable.
       expect(credential.recognizedBy.name).toBeTruthy();
-      expect(credential.credentialCategory).toMatch(/^(degree|diploma)$/);
+      // Categorised, and categorised as the award it actually is. This used to
+      // allow only degree-or-diploma, which is the shape of the defect it was
+      // meant to guard: the derivation had no `certificate` branch, so a
+      // certificate was published as a diploma and the assertion agreed with
+      // it. Pruning is why an unrecognised title is absent rather than null.
+      if (credential.credentialCategory !== undefined) {
+        expect(credential.credentialCategory).toMatch(
+          /^(degree|diploma|certificate)$/,
+        );
+      }
       // Dated by the award, which every surviving entry has.
       expect(credential.dateCreated).toMatch(/^\d{4}-\d{2}/);
     }
+
+    // The specific claim the binary got wrong, pinned by name so a future
+    // refactor cannot quietly re-file it: this is a certificate.
+    const certificate = doc.mainEntity.hasCredential.find((credential) =>
+      /certificate/i.test(credential.name),
+    );
+    expect(certificate, 'The journey no longer holds a certificate').toBeTruthy();
+    expect(certificate.credentialCategory).toBe('certificate');
 
     expectNoNullish(doc);
   });

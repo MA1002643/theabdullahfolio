@@ -57,10 +57,29 @@ export const dynamic = "force-dynamic";
 // So the duration is now DECLARED. `maxDuration` is the route-segment config
 // Vercel reads at deploy time, which turns a plan mismatch into a deployment
 // error instead of a 01:00 kill, and gives the budget below something real to
-// be a fraction of. (The 9 s budgets elsewhere are not wrong — a route that
-// declares nothing takes the account's default, and those were written against
-// the older, smaller one. Verify the account's ceiling in the Vercel project
-// settings before raising this.)
+// be a fraction of.
+//
+// ── The ceiling, MEASURED rather than assumed (2026-09-18) ──────────────────
+// This comment used to end "verify the account's ceiling before raising this",
+// and review duly read the 10 s repeated across this repo's other GitHub routes
+// as the live limit and called 60 unreachable. It is not, and the number that
+// settles it is the project's own configuration rather than a plan fact:
+// Fluid Compute is ENABLED and `functionDefaultTimeout` is 300 s (read from
+// `api.vercel.com/v9/projects/<id>`; the account is Hobby). Sixty is therefore
+// comfortably inside what this deployment already grants.
+//
+// The 10 s in `/api/github-stats`, `/api/github-skills`, `/api/experience-
+// summary` and `/api/project-progress` predates that: it was the pre-Fluid
+// Hobby limit, and the 9 s budgets sized against it are now conservative rather
+// than necessary. They are left alone deliberately — those are GitHub
+// wall-clock budgets protecting a visitor-facing request, and nothing about a
+// larger platform ceiling makes a slower answer better.
+//
+// Treat the 300 as configuration, not as a guarantee: turning Fluid off, or
+// deploying this repo under a project that has, lowers it. That is exactly why
+// the duration is declared rather than assumed — a deployment that cannot grant
+// it fails loudly at deploy time, which is the failure mode this whole note is
+// about.
 export const maxDuration = 60;
 
 // 75% of the declared duration, expressed as arithmetic so the two cannot drift

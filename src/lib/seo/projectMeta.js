@@ -121,9 +121,18 @@ export function projectMetaDescription(project) {
   // useful fact differs: for a public repo it is that the source is readable,
   // and for a private one it is honest to say so rather than imply a link that
   // does not exist.
+  //
+  // "Public repository", not "Open source", and the distinction is not
+  // pedantry. `project.private` is a VISIBILITY flag: it says the source can be
+  // read, and nothing at all about the licence that says what may be done with
+  // it. Nothing in `projectsData` carries licence data, so "open source" was an
+  // unverified claim on every public project — and a false one on this very
+  // repository, whose LICENSE is "All rights reserved". It also went out as a
+  // meta description, which is the worst place to be wrong: it is what a search
+  // engine quotes, so the claim travels further than the page does.
   const provenance = project.private
     ? 'Private repository, tracked live from its GitHub board'
-    : 'Open source, tracked live from its GitHub board';
+    : 'Public repository, tracked live from its GitHub board';
 
   // No "by Muhammad Abdullah" here, deliberately. The title template already
   // stamps "· Muhammad Abdullah" onto every one of these pages, so repeating it
