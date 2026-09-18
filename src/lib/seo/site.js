@@ -413,13 +413,19 @@ const ROUTE_DEFINITIONS = [
 // watches only its own binary — while every `title` and `description` in this
 // file stands still. The same defect one level out.
 //
-// `src/components/seo/JsonLd.jsx` is deliberately NOT here, and the line is
-// worth stating because the three files look alike from a distance. It is the
-// SERIALISER: `pruneEmpty` and the escaping that puts an object inside a
-// `<script>` tag. It decides how the graph is printed, never what the graph
-// says, so a commit to it changes no claim a crawler reads. The same reasoning
-// is recorded against it in `UNWATCHED_COMPONENTS` in
-// tests/unit/sitemapDrift.test.js; keep the two in step.
+// `src/components/seo/JsonLd.jsx` used to be excluded here, on the reading that
+// it is the SERIALISER — how the graph is printed, never what it says — so a
+// commit to it changed no claim a crawler reads. That was drawn one function too
+// wide. It holds for `serializeJsonLd`, and not for `pruneEmpty`, which decides
+// which properties survive into the printed graph and can prune a graph to
+// nothing at all — and `<JsonLd>` answers an empty graph by rendering NO TAG.
+// Strip a property from every block on the site, or delete the block: both are
+// claims a crawler reads, and neither needs `schema.js` touched. The escaping is
+// no less load-bearing, since it is what stops a block being truncated mid-graph
+// at the first `</script` in a value.
+//
+// So it is in the list below, and the matching exemption in
+// tests/unit/sitemapDrift.test.js is gone; keep the two in step.
 //
 // ── The cost, stated rather than discovered later ───────────────────────────
 // `git log` resolves per FILE, not per line, so every route now shares three
@@ -432,11 +438,12 @@ const ROUTE_DEFINITIONS = [
 // project record has always re-stamped `/journey`. It is the better of the two
 // errors — a stale date tells a crawler not to bother re-reading a page whose
 // description it would now display differently, and suppressing a recrawl is
-// worse than buying one that finds little changed. And all three files are
-// almost entirely crawl-surface: of what this one holds, only the two
-// crawl-policy arrays can change without altering a page, and the other two
-// exist for no purpose except to produce markup a crawler reads — there is no
-// such thing as an edit to `canonical.js` that is not about a canonical.
+// worse than buying one that finds little changed. And every one of these files
+// is almost entirely crawl-surface: of what this one holds, only the two
+// crawl-policy arrays can change without altering a page, and the rest exist for
+// no purpose except to produce markup a crawler reads — there is no such thing
+// as an edit to `canonical.js` that is not about a canonical, nor to `JsonLd.jsx`
+// that is not about what the JSON-LD block contains or whether it renders.
 //
 // The per-line alternative (`git log -L`) was not taken: it re-reads as a range
 // of lines rather than a file, so it breaks on every reformat and reorder of
@@ -460,6 +467,26 @@ export const SHARED_ROUTE_SOURCES = [
   'src/lib/seo/site.js',
   'src/lib/seo/canonical.js',
   'src/lib/seo/schema.js',
+  // The component that RENDERS that graph, and it was left out on the grounds
+  // that it "serialises rather than composes" — which is true of one of its two
+  // exported functions and false of the file.
+  //
+  // `pruneEmpty` decides which properties survive: change what counts as empty
+  // and properties appear or vanish across every JSON-LD block on the site, with
+  // no edit to `schema.js`. It can also delete the block entirely — when it
+  // prunes a graph to `undefined`, `<JsonLd>` renders NO TAG, by design. And
+  // `serializeJsonLd` decides whether what does render is valid raw text at all:
+  // `<script type="application/ld+json">` ends at the first `</script`, so the
+  // escaping is what keeps the block from being truncated mid-graph (and, on an
+  // origin that accepts guestbook text, what keeps it from becoming a script
+  // sink).
+  //
+  // Each of those is a change a crawler sees, reachable without touching any
+  // watched file — the same test `schema.js` earns its place by ("decides which
+  // nodes exist and what each states"), one layer down. The over-stamping
+  // objection is real and is the one already accepted three lines up: this file
+  // exists for no purpose except to produce markup a crawler reads.
+  'src/components/seo/JsonLd.jsx',
 ];
 
 // ── Sources every NON-HOME indexable URL shares ─────────────────────────────

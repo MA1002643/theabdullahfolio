@@ -190,10 +190,27 @@ export function buildExperienceCardLabel({
     // this state — every employment role, with the personal side marked
     // unavailable — and the invitation says what is behind it rather than
     // implying a complete summary.
+    // ── One sentence, two ways to be degraded ─────────────────────────────────
+    // `partial: true` covers BOTH of the route's partial answers, and this
+    // sentence used to describe only the loud one: "could not be loaded" is
+    // false when repo pagination stopped early, where GitHub answered and the
+    // list is merely short. An AT user was told a request had failed when it
+    // had partly succeeded — the same class of false claim as the withheld
+    // total this branch exists to avoid, in the text that replaces it.
+    //
+    // "missing or incomplete" is true of both: missing when the half came back
+    // null, incomplete when it came back truncated. Named rather than carried
+    // as a reason, deliberately — the rest of the UI does not draw the
+    // distinction either. `experienceSourceAvailability` folds truncation into
+    // "unavailable" on purpose (a floor is not a magnitude), so the split bar
+    // and the modal's category block already say the same thing in both states.
+    // A label finer-grained than everything it labels would be the odd one out,
+    // and enumerating reasons is what goes stale the next time a third way to
+    // be partial appears — which is exactly how this sentence went wrong.
     return (
       'Total years of experience unavailable — the GitHub half of the summary ' +
-      `could not be loaded.${split} Activate to open the breakdown of what is ` +
-      'available.'
+      `is missing or incomplete.${split} Activate to open the breakdown of ` +
+      'what is available.'
     );
   }
   return `${counterValue}+ ${counterUnit} of experience.${split} Activate to open category breakdown.`;

@@ -211,6 +211,46 @@ describe('buildExperienceCardLabel', () => {
     expect(label).toContain('Activate to open the breakdown of what is available');
   });
 
+  it('does not tell a truncated payload that nothing loaded', () => {
+    // `partial: true` covers both of the route's partial answers, so ONE
+    // sentence has to be true of both — and it was written for the loud one.
+    // "could not be loaded" is simply false when repo pagination stopped early:
+    // GitHub answered, the list is just short. An AT user was told a request
+    // had failed when it had partly succeeded, which is the same class of false
+    // claim as the withheld total this branch exists to avoid.
+    const truncated = {
+      ...COMPLETE,
+      partial: true,
+      personalProjects: { ...COMPLETE.personalProjects, complete: false },
+      total: null,
+    };
+    const label = (payload) =>
+      buildExperienceCardLabel({
+        state: experienceSummaryState(payload),
+        counterValue: 0,
+        counterUnit: 'months',
+        splitLabel: buildSplitBreakdownLabel(payload),
+      });
+
+    // The constraint, stated as an assertion rather than left to prose: both
+    // sub-states resolve to `degraded`, so they get the SAME sentence, so that
+    // sentence has to hold for the truncated one too.
+    expect(label(truncated)).toBe(label(DEGRADED));
+    expect(
+      label(truncated),
+      'A truncated list is not a failed request, and the name must not say so.',
+    ).not.toMatch(/could not be loaded/i);
+    // True either way: missing when the half came back null, incomplete when it
+    // came back short.
+    expect(label(truncated)).toMatch(/missing or incomplete/);
+    // And the rest of the contract is unchanged — still no figure, still an
+    // honest invitation to the breakdown.
+    expect(label(truncated)).not.toMatch(/\b0\+/);
+    expect(label(truncated)).toMatch(
+      /Activate to open the breakdown of what is available/,
+    );
+  });
+
   it('does not say "loading" once the request has answered', () => {
     // A degraded answer is not a pending one. "Loading" would promise a number
     // that is not coming until GitHub recovers.

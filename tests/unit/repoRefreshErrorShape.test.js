@@ -97,6 +97,81 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
     expect(body.githubStats.error).toBe('github-stats warm failed');
   });
 
+  it('bounds a warm that sends headers and then stalls its body', async () => {
+    // The budget used to end at the headers. `clearTimeout` sat in a `finally`
+    // around the fetch, and `fetch` settles the moment the headers arrive — so
+    // the abort was CANCELLED while the body was still streaming, and the
+    // `await res.json()` below it ran with no deadline at all. Not a
+    // runtime-dependent one, as in the sibling routes that race their reads:
+    // here nothing could fire, because the timer had already been cleared.
+    //
+    // A downstream answering 200 and then never finishing therefore held this
+    // route open until the platform killed it — and `aborted`, the one flag
+    // that tells an operator "tighten the budget" apart from "fix the
+    // downstream", could never be set for the failure most likely to need it.
+    //
+    // The body here never settles for any reason, so the case fails by HANGING
+    // if the bound is lost, which is the production shape.
+    process.env.CRON_WARM_TIMEOUT_MS = '60';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url) => {
+        if (String(url).includes('/api/github-stats')) {
+          return { ok: true, status: 200, json: () => new Promise(() => {}) };
+        }
+        return { ok: true, status: 200, json: async () => ({}) };
+      }),
+    );
+
+    const { GET } = await import('@/app/api/repo-refresh/route');
+    const started = Date.now();
+    const body = await (await GET(authed())).json();
+
+    expect(body.githubStats.ok).toBe(false);
+    expect(
+      body.githubStats.aborted,
+      'A stalled BODY is a budget breach exactly as a stalled request is — the ' +
+        'operator acts on the same flag either way.',
+    ).toBe(true);
+    expect(body.githubStats.error).toBe('github-stats warm failed');
+    expect(Date.now() - started).toBeLessThan(3000);
+    delete process.env.CRON_WARM_TIMEOUT_MS;
+  });
+
+  it('bounds the error-detail read too, without losing the status', async () => {
+    // The other body read: a downstream that fails AND stalls the body
+    // explaining why. That read is deliberately swallowed — `detail` is
+    // context, the status is the finding — but swallowed is not the same as
+    // unbounded, and before the fix this one hung just as hard.
+    process.env.CRON_WARM_TIMEOUT_MS = '60';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url) => {
+        if (String(url).includes('/api/github-stats')) {
+          return {
+            ok: false,
+            status: 500,
+            statusText: 'Internal Server Error',
+            text: () => new Promise(() => {}),
+          };
+        }
+        return { ok: true, status: 200, json: async () => ({}) };
+      }),
+    );
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { GET } = await import('@/app/api/repo-refresh/route');
+    const started = Date.now();
+    const body = await (await GET(authed())).json();
+
+    // The HTTP failure still reported, with the unreadable body simply absent.
+    expect(body.githubStats.ok).toBe(false);
+    expect(body.githubStats.status).toBe(500);
+    expect(body.githubStats.detail).toBeNull();
+    expect(Date.now() - started).toBeLessThan(3000);
+    delete process.env.CRON_WARM_TIMEOUT_MS;
+  });
+
   it('keeps the raw exception in the log', async () => {
     vi.stubGlobal(
       'fetch',

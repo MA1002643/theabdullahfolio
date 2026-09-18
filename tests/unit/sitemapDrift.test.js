@@ -509,13 +509,19 @@ describe('project detail sources', () => {
   // NOT watched. Same contract as `EXCLUDED` above: every entry needs a written
   // reason, because an unexplained omission is indistinguishable from the
   // oversight this test exists to catch.
-  const UNWATCHED_COMPONENTS = {
-    'src/components/seo':
-      'Shared JSON-LD serialiser, not content. It renders into nine routes ' +
-      'and none of them list it in `sources` either — watching it here would ' +
-      'date these eleven pages by an infrastructure commit that changed ' +
-      'nothing a reader or a crawler sees.',
-  };
+  // Deliberately EMPTY. The escape hatch stays — the failure message below
+  // offers it, and a component that genuinely publishes nothing should be able
+  // to say so in writing rather than by being quietly added to the watch list.
+  //
+  // Its one former entry, `src/components/seo`, is gone: it was excused as a
+  // "serialiser, not content", which describes one of that module's two
+  // exported functions and not the module. `pruneEmpty` decides which schema
+  // properties survive and can prune a graph to nothing, at which point
+  // `<JsonLd>` renders no tag at all — so a change there can strip properties
+  // from, or delete outright, the JSON-LD on every page without any watched
+  // file being touched. It is in `SHARED_ROUTE_SOURCES` now, which is where a
+  // file that reaches all 20 URLs through the root layout belongs.
+  const UNWATCHED_COMPONENTS = {};
 
   it('watches every component directory the detail route renders from', async () => {
     const { PROJECT_SOURCES } = await import('@/app/sitemap');
@@ -624,8 +630,14 @@ describe('project detail sources', () => {
 // every self-declared canonical, and `schema.js` decides which JSON-LD nodes
 // exist and what each states — both reach all 20 of them through the root layout,
 // and either can rewrite crawler-visible HTML with no `title` or `description`
-// touched. `src/components/seo/JsonLd.jsx` stays out: it serialises the graph
-// rather than composing it (see `UNWATCHED_COMPONENTS` above).
+// touched.
+//
+// `src/components/seo/JsonLd.jsx` is watched now too, and used not to be, on the
+// reading that it "serialises rather than composes". That holds for
+// `serializeJsonLd` and not for the file: `pruneEmpty` decides which properties
+// survive into every block on the site, and a graph it prunes to nothing makes
+// `<JsonLd>` render NO TAG — so the same half-fix applied one layer further down,
+// where the last thing standing between `schema.js` and the HTML was unwatched.
 describe('registry as a source', () => {
   it('lists the registry in every route source set', async () => {
     const { ROUTES, SHARED_ROUTE_SOURCES } = await import('@/lib/seo/site');
@@ -641,6 +653,9 @@ describe('registry as a source', () => {
         'src/lib/seo/site.js',
         'src/lib/seo/canonical.js',
         'src/lib/seo/schema.js',
+        // The renderer, not just the builders: `pruneEmpty` decides which
+        // properties survive and whether a block is emitted at all.
+        'src/components/seo/JsonLd.jsx',
       ]),
     );
 

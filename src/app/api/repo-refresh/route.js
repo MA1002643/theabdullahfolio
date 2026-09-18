@@ -1,5 +1,6 @@
 import { revalidateTag } from "next/cache";
 
+import { raceAbort } from "../_utils/abort";
 import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
 import { envPositiveMs } from "../_utils/env";
 
@@ -37,13 +38,49 @@ const CRON_WARM_TIMEOUT_MS = envPositiveMs(
 // the fetch rejects with an AbortError that the outer try/catch (for
 // github-stats) or the inner try/catch (for experience-summary) will
 // log and surface as a degraded cron result instead of a silent stall.
+//
+// ── The budget has to survive the headers ───────────────────────────────────
+// It used to end there. `clearTimeout` sat in a `finally` around the fetch, and
+// `fetch` settles the moment the response HEADERS arrive — so the timer was
+// disarmed while the body was still streaming, and the `await res.json()` at
+// the call site ran with no deadline AT ALL. Not a runtime-dependent one, as in
+// the two sibling routes that raced their reads: here the abort had been
+// explicitly cancelled, so nothing could ever fire.
+//
+// A downstream answering 200 and then stalling its body therefore held this
+// route open until the platform killed it, and the `aborted` flag this route
+// reports — the one distinction that tells an operator "tighten the budget"
+// from "fix the downstream" — could never be set for the failure most likely to
+// need it.
+//
+// So the reader is returned WITH the response and the timer outlives the
+// headers: the budget now covers the whole exchange, and `raceAbort` makes it
+// hold whether or not the runtime propagates the abort into the body stream.
+// `release` is for callers that never read a body (the experience-summary warm
+// reads only `ok`/`status`) — without it the timer would sit armed for the full
+// budget after the work was done.
 async function fetchWithTimeout(url, options, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
     clearTimeout(timer);
+  };
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    const bounded = (read) =>
+      raceAbort(read, controller.signal).finally(release);
+    return {
+      res,
+      readText: () => bounded(res.text()),
+      readJson: () => bounded(res.json()),
+      release,
+    };
+  } catch (err) {
+    release();
+    throw err;
   }
 }
 
@@ -127,7 +164,7 @@ export async function GET(request) {
     let githubStats = { ok: false, attempted: true };
     let data = null;
     try {
-      const res = await fetchWithTimeout(
+      const { res, readText, readJson } = await fetchWithTimeout(
         `${baseUrl}/api/github-stats?username=${encodeURIComponent(username)}&_=${cacheBust}`,
         {
           cache: "no-store",
@@ -141,9 +178,13 @@ export async function GET(request) {
         // failure mask the original HTTP error.
         let detail = null;
         try {
-          detail = await res.text();
+          // Through the bounded reader, so a downstream that fails AND stalls
+          // its error body cannot hold the cron open. A breach here is
+          // swallowed on purpose, exactly as an unreadable body always was:
+          // the status is already known and reported, and `detail` is context.
+          detail = await readText();
         } catch {
-          // ignore — body unreadable
+          // ignore — body unreadable, or the budget ran out reading it
         }
         console.error(
           `repo-refresh: /api/github-stats returned ${res.status} ${res.statusText}`,
@@ -157,7 +198,12 @@ export async function GET(request) {
           detail,
         };
       } else {
-        data = await res.json();
+        // Bounded too, and this is the read that matters most: a 200 whose body
+        // never finishes is the stall that looked like success. An abort here
+        // rejects with the controller's reason and lands in the catch below,
+        // which reports it with `aborted: true` — the timeout contract this
+        // route advertises, now actually covering the whole exchange.
+        data = await readJson();
         if (data?._fallback) {
           // `_fallback: true` means /api/github-stats served the bundled
           // snapshot because the upstream GitHub fetch failed. The cache
@@ -206,7 +252,7 @@ export async function GET(request) {
     // `cacheBust` so a single timestamp tags both warm fetches in logs.
     let experience = { ok: false, attempted: true };
     try {
-      const expRes = await fetchWithTimeout(
+      const { res: expRes, release } = await fetchWithTimeout(
         `${baseUrl}/api/experience-summary?username=${encodeURIComponent(username)}&_=${cacheBust}`,
         {
           cache: "no-store",
@@ -214,6 +260,10 @@ export async function GET(request) {
         },
         CRON_WARM_TIMEOUT_MS,
       );
+      // This warm reads no body — only `ok`/`status` — so nothing will consume
+      // the reader that would otherwise disarm the timer. Released explicitly,
+      // or it would sit armed for the rest of the budget after the work is done.
+      release();
       experience = { ok: expRes.ok, attempted: true, status: expRes.status };
       if (!expRes.ok) {
         console.warn(
