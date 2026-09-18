@@ -253,6 +253,38 @@ function publishedFrom(entryFiles, barriers = []) {
  * (`src/components/footer`), and a second copy of this is a second thing to keep
  * in step.
  */
+/**
+ * Repo-relative paths a module names as string literals AND that exist on disk.
+ *
+ * The escape hatch for inputs that are read rather than imported: `readFile`
+ * against a font, a PNG, a manifest. Existence is the filter — a literal that
+ * is not a path simply is not one — and over-reporting is the safe direction
+ * here, since this only ever ADDS reachability to a check asking whether a
+ * watched file is genuinely published.
+ *
+ * Deliberately narrow: only files the walk has already reached are scraped, so
+ * an unrelated string in an unrelated module cannot widen anything.
+ */
+function onDiskPathLiteralsIn(relativeFile) {
+  let source;
+  try {
+    source = readFileSync(path.join(process.cwd(), relativeFile), 'utf8');
+  } catch {
+    return [];
+  }
+  return [...source.matchAll(/['"`]([^'"`\n]{2,80})['"`]/g)]
+    .map((match) => match[1])
+    .filter((literal) => {
+      if (!literal.includes('/')) return false;
+      try {
+        statSync(path.join(process.cwd(), literal));
+        return true;
+      } catch {
+        return false;
+      }
+    });
+}
+
 const covers = (source, specifier) =>
   specifier === source ||
   specifier.startsWith(`${source}/`) ||
@@ -283,8 +315,46 @@ const SUB_PAGE_LAYOUT = 'src/app/(sub pages)/layout.js';
  * count as rendering from `src/app/data.js` and quietly rewrite an unrelated
  * assertion.
  */
+// The homepage's card handlers. Every other route declares its cards by file
+// convention — a sibling of its `page.js`, found by `imageHandlersFor` below —
+// while `/` declares two route handlers through `openGraph.images` in the root
+// layout, so they live nowhere near the page that publishes them.
+const HOME_CARD_ROUTES = [
+  'src/app/og/home/route.js',
+  'src/app/og/home-square/route.js',
+];
+
+/**
+ * The metadata image renderers Next composes for a route.
+ *
+ * A THIRD kind of file with no import edge, alongside the two layouts above and
+ * for the same reason: a page does not import its `opengraph-image.js`, Next
+ * pairs them by convention. Every walker here follows imports, so without this
+ * the card renderers — and `src/lib/og/card.js` behind them — read as
+ * unreachable from the documents whose previews they draw, and watching them
+ * would look like a mistake rather than the fix for one.
+ *
+ * @param {string} routePath Registry route path (`/`, `/about`, …).
+ * @returns {string[]} Repo-relative handler paths that exist on disk.
+ */
+function imageHandlersFor(routePath) {
+  const candidates =
+    routePath === '/'
+      ? HOME_CARD_ROUTES
+      : ['opengraph-image.js', 'twitter-image.js'].map(
+          (file) => `src/app/(sub pages)${routePath}/${file}`,
+        );
+  return candidates.filter((file) => {
+    try {
+      return statSync(path.join(process.cwd(), file)).isFile();
+    } catch {
+      return false;
+    }
+  });
+}
+
 function renderedEntriesFor(routePath) {
-  const entries = entryFilesFor(routePath);
+  const entries = [...entryFilesFor(routePath), ...imageHandlersFor(routePath)];
   return routePath === '/'
     ? entries
     : [...entries, ROOT_LAYOUT, SUB_PAGE_LAYOUT];
@@ -388,6 +458,61 @@ describe('sitemap drift', () => {
         `them and the routes below silently lose <lastmod> inputs:\n  ${missing.join(
           '\n  ',
         )}`,
+    ).toEqual([]);
+  });
+
+  it('watches the card renderer of every route that publishes one', async () => {
+    // The share card is the part of a URL most people see FIRST — an unfurl in
+    // a message, a result card — and it is drawn by a file the page does not
+    // import. Next pairs `opengraph-image.js` with the route by convention, so
+    // every dependency walk in this file goes straight past it, and four
+    // separate lists ended up not naming one: `/`'s two live handlers under
+    // `src/app/og/`, `/projects`' two (its entry names `page.js` rather than
+    // its directory, because the eleven detail routes live under it), and the
+    // detail route's own two.
+    //
+    // The failure is the quiet one this suite exists for: redraw a card and
+    // every preview changes while `<lastmod>` swears the page has not. Asserted
+    // from DISK rather than from a list, so a route that gains a handler
+    // tomorrow is covered by this the day it does.
+    const unwatched = [];
+    for (const route of ROUTES) {
+      for (const handler of imageHandlersFor(route.path)) {
+        if (!route.sources.some((source) => covers(source, handler)))
+          unwatched.push(`${route.path} does not watch ${handler}`);
+      }
+    }
+
+    // The eleven project pages are not in `ROUTES` — `sitemap.js` generates
+    // them from `projectsData` against `PROJECT_SOURCES` — so a loop over the
+    // registry alone would leave the route with the MOST URLs behind exactly
+    // this kind of handler unchecked. Found the first time this case was
+    // mutation-tested, by the mutation that was supposed to prove it.
+    const { PROJECT_SOURCES } = await import('@/app/sitemap');
+    const detailCards = [
+      'src/app/(sub pages)/projects/[id]/opengraph-image.js',
+      'src/app/(sub pages)/projects/[id]/twitter-image.js',
+    ];
+    for (const handler of detailCards) {
+      expect(
+        statSync(path.join(process.cwd(), handler)).isFile(),
+        `${handler} no longer exists — update this case rather than deleting it.`,
+      ).toBe(true);
+      if (!PROJECT_SOURCES.some((source) => covers(source, handler)))
+        unwatched.push(`/projects/[id] does not watch ${handler}`);
+    }
+
+    // Guard on the guard: if `imageHandlersFor` ever stops finding anything,
+    // every route passes vacuously. The site publishes cards at every URL.
+    const found = ROUTES.flatMap((route) => imageHandlersFor(route.path));
+    expect(found.length).toBeGreaterThanOrEqual(16);
+
+    expect(
+      unwatched,
+      `These routes publish a share card from a handler no source list names, ` +
+        `so redrawing it changes what every crawler and unfurler displays ` +
+        `while the sitemap reports the page unchanged:\n  ` +
+        `${unwatched.join('\n  ')}`,
     ).toEqual([]);
   });
 
@@ -541,6 +666,12 @@ describe('project detail sources', () => {
   // string equality against a PROJECT_SOURCES entry — and those are repo paths
   // in git's spelling, which is `/` on every platform.
   const DETAIL_PAGE = 'src/app/(sub pages)/projects/[id]/page.js';
+  // The detail route's file-convention card renderers — composed by Next, so
+  // they are entries to the walk rather than anything it can reach.
+  const DETAIL_CARDS = [
+    'src/app/(sub pages)/projects/[id]/opengraph-image.js',
+    'src/app/(sub pages)/projects/[id]/twitter-image.js',
+  ];
 
   // Component directories the detail route imports from that are deliberately
   // NOT watched. Same contract as `EXCLUDED` above: every entry needs a written
@@ -596,9 +727,22 @@ describe('project detail sources', () => {
     // composed inside them, so the root layout's JSON-LD and the group layout's
     // footer and nav links are part of what they publish even though no import
     // edge says so.
+    // The card handlers are entries too, and for the third time the same
+    // reason: Next pairs `opengraph-image.js` with the route by convention, so
+    // no import edge reaches it — and everything it draws with (`card.js`, the
+    // fonts, the monogram) is published at all eleven URLs through it alone.
     const published = [
-      ...publishedFrom([DETAIL_PAGE, ROOT_LAYOUT, SUB_PAGE_LAYOUT]),
+      ...publishedFrom([
+        DETAIL_PAGE,
+        ...DETAIL_CARDS,
+        ROOT_LAYOUT,
+        SUB_PAGE_LAYOUT,
+      ]),
     ];
+    // Reads as well as imports — the typefaces are `readFile`d, not imported.
+    published.push(
+      ...published.flatMap((module) => onDiskPathLiteralsIn(module)),
+    );
 
     // Guard on the guard, in the dimension this check actually depends on: a
     // walker that resolved nothing beyond the entry file would make every
@@ -622,6 +766,7 @@ describe('project detail sources', () => {
         // the group layout is composed rather than imported.
         source !== DETAIL_PAGE &&
         source !== SUB_PAGE_LAYOUT &&
+        !DETAIL_CARDS.includes(source) &&
         !published.some((module) => covers(source, module)),
     );
 
@@ -803,7 +948,17 @@ describe('registry as a source', () => {
         `Found no page.js or layout.js for ${route.path}.`,
       ).toBeGreaterThan(0);
 
-      const published = [...publishedFrom(entries)];
+      // Imports AND reads. `src/lib/og/assets.js` pulls its two typefaces and
+      // the monogram off disk with `readFile`, so those files reach a card
+      // through no import edge at all — the same shape as `/uses`'s build
+      // facts, where watching the reader was found to say nothing about the
+      // read. Without this expansion a font is either unwatchable or watched
+      // and reported unpublished, and neither is true.
+      const reached = publishedFrom(entries);
+      const published = [
+        ...reached,
+        ...[...reached].flatMap((module) => onDiskPathLiteralsIn(module)),
+      ];
       for (const shared of SHARED_ROUTE_SOURCES) {
         if (!published.some((module) => covers(shared, module)))
           unpublished.push(`${route.path} does not reach ${shared}`);

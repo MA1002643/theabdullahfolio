@@ -422,11 +422,19 @@ GSC_SERVICE_ACCOUNT_KEY=your-base64-encoded-service-account-json
 
 Issue [#32](https://github.com/MA1002643/theabdullahfolio/issues/32). Everything
 crawl-related is **generated from one registry** —
-[`src/lib/seo/site.js`](src/lib/seo/site.js) — which `sitemap.js`, `robots.js`,
-`manifest.js`, `llms.txt`, the canonical builder and the JSON-LD builders all
-read. A route can only be missing from one of them if it is missing from all,
-and `tests/unit/sitemapDrift.test.js` **fails CI** when a `page.js` exists on
-disk with no registry entry. Adding a page updates the sitemap by construction.
+[`src/lib/seo/site.js`](src/lib/seo/site.js). Its **route list** is read by
+`sitemap.js`, `llms.txt`, the canonical builder and the JSON-LD builders, so a
+route can only be missing from one of them if it is missing from all, and
+`tests/unit/sitemapDrift.test.js` **fails CI** when a `page.js` exists on disk
+with no registry entry. Adding a page updates the sitemap by construction.
+
+`robots.js` and `manifest.js` read the registry too, but for its **identity and
+policy exports rather than its routes** — `ORIGIN`, `IDENTITY`,
+`DISALLOWED_PATHS`, `AI_CRAWLERS` — and neither output enumerates pages at all
+(the manifest is a name, an icon set and a start URL; robots.txt is a set of
+path rules plus the sitemap link). They are one source of truth for the site's
+identity, not for its page list: adding a page changes neither file, and the
+drift test makes no claim about them.
 
 What it covers:
 

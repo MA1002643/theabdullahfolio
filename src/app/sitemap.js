@@ -86,6 +86,15 @@ export const PROJECT_SOURCES = [
   // how that sentence is built rewrites the snippet a crawler displays for all
   // eleven URLs — and no other route calls it.
   'src/lib/seo/projectMeta.js',
+  // The detail route's own card handlers. Listed as files for the same reason
+  // the entry above names `page.js` rather than the directory — `[id]/` also
+  // holds `loading.js`, which renders nothing a crawler reads — and they are
+  // detail-only: these two draw the card for all ELEVEN project URLs, so an
+  // edit to either redraws every project preview on the site. Nothing else
+  // watches them, because a page does not import its `opengraph-image.js`;
+  // Next composes the two, so no dependency walk can reach them.
+  'src/app/(sub pages)/projects/[id]/opengraph-image.js',
+  'src/app/(sub pages)/projects/[id]/twitter-image.js',
   ...SHARED_ROUTE_SOURCES,
   // These eleven live inside the `(sub pages)` group too, so they render the
   // group layout, its footer and its two nav links, and take their metadata

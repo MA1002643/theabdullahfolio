@@ -1,4 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// The root layout is the only module here that pulls `next/font/google`, which
+// needs the Next build pipeline and throws in a plain unit process. Stubbed to
+// the shape the layout consumes (a `variable` class name) so its METADATA — the
+// thing under test at the bottom of this file — can be imported at all.
+vi.mock('next/font/google', () => {
+  const font = () => ({ variable: '', className: '' });
+  return { Inter: font, Montserrat: font, Varela_Round: font };
+});
 import { projectsData } from '@/app/data';
 import { absoluteUrl, alternatesFor } from '@/lib/seo/canonical';
 import { sectionMetadata } from '@/lib/og/meta';
@@ -214,5 +223,48 @@ describe('metadata contract — project pages', () => {
         `wrong article for category "${project.category}"`,
       ).toContain(`${startsWithVowel ? 'An' : 'A'} ${project.category} build`);
     }
+  });
+});
+
+// ── A card the site advertises must be a card a crawler may fetch ───────────
+// `disallow` and `noindex` are not interchangeable, and treating them as such
+// broke the homepage's unfurl: `/og/` sat in `DISALLOWED_PATHS` while the root
+// layout advertised `/og/home` and `/og/home-square` in `openGraph.images`, so
+// the very agents that act on those tags — Twitterbot, facebookexternalhit,
+// Slackbot, LinkedInBot all read robots.txt before fetching — were told not to
+// fetch the image they had just been pointed at. The card could render as bare
+// text on the one page that matters most, while the other nineteen URLs, whose
+// cards are file-convention images outside `/og/`, unfurled normally.
+//
+// Asserted from the metadata itself rather than from a list of known paths, so
+// a card added at a new prefix tomorrow is covered the day it is added.
+describe('metadata contract — advertised images stay fetchable', () => {
+  it('disallows no path the site publishes as a share card', async () => {
+    const { DISALLOWED_PATHS } = await import('@/lib/seo/site');
+    const { metadata } = await import('@/app/layout');
+
+    const advertised = [
+      ...(metadata.openGraph?.images ?? []),
+      ...(metadata.twitter?.images ?? []),
+    ].map((image) => (typeof image === 'string' ? image : image.url));
+
+    // Guard on the guard: if the shape of `images` ever changes, an empty list
+    // would make every assertion below pass without checking anything.
+    expect(advertised.length).toBeGreaterThanOrEqual(3);
+    expect(advertised).toContain('/og/home');
+
+    const blocked = advertised.filter((url) =>
+      DISALLOWED_PATHS.some((rule) => url.startsWith(rule)),
+    );
+
+    expect(
+      blocked,
+      `robots.txt disallows these paths, but the site advertises them as share ` +
+        `card images — an unfurler that honours robots.txt will refuse to ` +
+        `fetch them and the card degrades to text:\n  ${blocked.join('\n  ')}\n\n` +
+        `To keep a card out of image search, send X-Robots-Tag: noindex from ` +
+        `its route instead — noindex prevents the listing, disallow prevents ` +
+        `the fetch.`,
+    ).toEqual([]);
   });
 });

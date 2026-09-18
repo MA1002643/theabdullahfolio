@@ -179,6 +179,22 @@ const ROUTE_DEFINITIONS = [
       // the sitemap's highest-priority URL for every footer change — the
       // over-stamp the shared-source split exists to avoid.
       'src/components/footer/footer-data.js',
+      // ── The homepage's share cards, which are ROUTES rather than files ─────
+      // Every other page declares its card by file convention, so the handler
+      // sits inside the route directory its entry already watches. The
+      // homepage's are two route handlers under `src/app/og/`, declared through
+      // `openGraph.images` in the root layout — the deliberate choice recorded
+      // in `/og/home/route.js`, because a file-convention image would override
+      // the config array and take the square WhatsApp companion down with it.
+      //
+      // The consequence for this list is that `src/app/page.js` covers neither,
+      // so the most-shared preview on the site could be redrawn with `/`'s
+      // `<lastmod>` insisting nothing had changed. `live.js` is named with them:
+      // it is the live-signals fetch typeset into the strip, it is homepage-only
+      // (nothing else imports it), and it decides what the card SAYS.
+      'src/app/og/home/route.js',
+      'src/app/og/home-square/route.js',
+      'src/lib/og/live.js',
     ],
   },
   {
@@ -246,6 +262,13 @@ const ROUTE_DEFINITIONS = [
       // Rendered by `src/components/projects/index.jsx`, not by page.js — the
       // one route where the headline arrives through the listing component.
       PAGE_TITLE_SOURCE,
+      // Named as FILES because this entry cannot watch its own directory: the
+      // eleven detail routes live under it, so `src/app/(sub pages)/projects`
+      // would stamp the listing for every project-page edit. That narrowing is
+      // deliberate and it is what left these two — the listing's own card
+      // handlers, siblings of its `page.js` — outside every list.
+      'src/app/(sub pages)/projects/opengraph-image.js',
+      'src/app/(sub pages)/projects/twitter-image.js',
     ],
   },
   {
@@ -504,6 +527,32 @@ export const SHARED_ROUTE_SOURCES = [
   // objection is real and is the one already accepted three lines up: this file
   // exists for no purpose except to produce markup a crawler reads.
   'src/components/seo/JsonLd.jsx',
+  // ── The share card every URL publishes ────────────────────────────────────
+  // `card.js` composes every Open Graph and Twitter image on the site — the
+  // nine section handlers, the eleven project ones and the homepage's two live
+  // routes all call into it — and `assets.js` supplies the fonts and the
+  // monogram it draws with.
+  //
+  // A card is crawl surface in the strictest sense this file uses: it is what a
+  // crawler and every unfurler DISPLAY for the URL, and it is often the only
+  // part of a page a person sees before deciding whether to open it. Change a
+  // composition, a typeface or the seal and all 20 previews change — while the
+  // markup referencing them does not, because the `<meta>` tag keeps the same
+  // URL. So `<lastmod>` is the only signal that the thing behind that URL is
+  // new, and until now it never moved.
+  //
+  // Reached by no import edge, exactly like the root layout above: a page does
+  // not import its `opengraph-image.js`, Next composes the two. The drift
+  // test's walk now names those handlers for the same reason it names the
+  // layouts.
+  'src/lib/og/card.js',
+  'src/lib/og/assets.js',
+  // What `assets.js` READS rather than imports — `readFile` against two woff
+  // files and a PNG, so no dependency walk can find them. Same rule, and the
+  // same reason, as the eight repository paths `/uses` watches for
+  // `readBuildFacts`: watching the reader says nothing about the read.
+  'src/lib/og/fonts',
+  'src/lib/og/assets',
 ];
 
 // ── Sources every NON-HOME indexable URL shares ─────────────────────────────
@@ -605,10 +654,24 @@ export const CV_ASSET = {
 // information.
 export const DISALLOWED_PATHS = [
   '/api/',
-  // The OG/Twitter card renderers. They emit PNGs meant to be fetched by an
-  // unfurler that was handed the URL in a meta tag, never crawled directly,
-  // and an image-search result for a share card is not a useful entrance.
-  '/og/',
+  // ── `/og/` is NOT here, and that is the correction ──────────────────────────
+  // It was, with the reasoning that those routes "emit PNGs meant to be fetched
+  // by an unfurler that was handed the URL in a meta tag, never crawled
+  // directly". The first half is right and the conclusion inverted it: the root
+  // layout advertises `/og/home` and `/og/home-square` in `openGraph.images`,
+  // and the unfurlers that act on that advertisement — Twitterbot,
+  // facebookexternalhit, Slackbot, LinkedInBot — read robots.txt before
+  // fetching. Disallowing the path told every one of them not to fetch the
+  // image the same document had just pointed them at, so the homepage's card
+  // could unfurl as bare text while the other nineteen URLs, whose cards are
+  // file-convention images outside `/og/`, unfurled fine. A rule that blocks
+  // only the page it most matters on.
+  //
+  // The intent worth keeping — a share card is not a useful image-search
+  // entrance — is a NOINDEX concern, not a DISALLOW one, and the two are not
+  // interchangeable: disallow prevents the fetch, noindex prevents the listing.
+  // Both routes now send `X-Robots-Tag: noindex`, which keeps the card out of
+  // image search while leaving every unfurler able to draw it.
 ];
 
 // AI-crawler posture (F7). The default is ALLOW and it is stated rather than
