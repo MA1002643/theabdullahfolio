@@ -57,13 +57,56 @@ const GSC_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
 // the failure mode /api/repo-refresh's CRON_WARM_TIMEOUT_MS exists to prevent
 // and the reason /api/work-status bounds each GraphQL query.
 //
-// Four calls run per invocation: one token exchange, then three analytics
-// queries in parallel. At this budget the worst case is ~2 × the bound, well
-// inside any platform timeout, and a failure arrives as a 502 the cron can act
-// on rather than as a dead function.
-const UPSTREAM_TIMEOUT_MS = envPositiveMs(
-  process.env.SEO_REPORT_TIMEOUT_MS,
-  10000,
+// Four calls run per invocation, in TWO sequential phases: one token exchange,
+// then three analytics queries in parallel. Each phase is bounded separately,
+// so the worst case is ~2 × the bound — and a failure arrives as a 502 the cron
+// can act on rather than as a dead function.
+//
+// ── The ceiling that worst case is measured against, declared not assumed ────
+// "Well inside any platform timeout" was the unstated bet, and it is the same
+// one /api/daily-warmup was corrected for: this route DECLARED no duration, so
+// it took whatever the account default happened to be, while the four other
+// GitHub routes in this repo size themselves to 9 s on the assumption of a 10 s
+// Hobby ceiling. Under that assumption ~20 s of legitimate, in-budget work gets
+// the function killed before it can return the 502 its own timeout machinery
+// exists to produce — and the orchestrator upstream then sees a bare transport
+// failure instead of "<step> timed out after <n>ms", losing the diagnosis that
+// is the entire value of `labelTimeout`.
+//
+// So the duration is declared, which turns a plan that cannot grant it into a
+// deployment error rather than a 01:00 kill. 30 s: two phases at the 10 s
+// default is 20 s, leaving a third of the budget for the Upstash writes and the
+// response itself, which are not upstream calls and carry no bound of their
+// own. It is also well under the 45 s `RUN_BUDGET_MS` the orchestrator gives
+// the whole fan-out, so this step gives up before its caller does.
+export const maxDuration = 30;
+
+// PHASES, not calls: the three analytics queries run concurrently, so they cost
+// one bound between them, not three. Naming it is what keeps the arithmetic
+// below honest if a fourth sequential call is ever added.
+const UPSTREAM_PHASES = 2;
+
+// A per-call bound the two phases cannot collectively outlive. Expressed as
+// arithmetic over `maxDuration` for the same reason daily-warmup's budget is:
+// a literal beside a declared duration is what drifts, and the drift is silent
+// in the direction that matters — raise the timeout, forget the duration, and
+// the deadline stops being reachable before the platform's own.
+const UPSTREAM_TIMEOUT_CEILING_MS =
+  (maxDuration * 1000 * 0.75) / UPSTREAM_PHASES;
+
+// `Math.min` against that ceiling, not the raw env read. `envPositiveMs` takes
+// any finite positive number, so `SEO_REPORT_TIMEOUT_MS=60000` would put a
+// single phase past the whole function's declared duration — a bound that
+// cannot expire before the function is killed is not a bound, which is exactly
+// why `CRON_RUN_BUDGET_MS` is clamped one route over. Clamped rather than
+// rejected for the same reason as there: module scope has no good failure mode,
+// and the knob is still free to do the one thing it is for, which is making
+// this route give up SOONER.
+const UPSTREAM_TIMEOUT_MS = Math.round(
+  Math.min(
+    envPositiveMs(process.env.SEO_REPORT_TIMEOUT_MS, 10000),
+    UPSTREAM_TIMEOUT_CEILING_MS,
+  ),
 );
 
 /**

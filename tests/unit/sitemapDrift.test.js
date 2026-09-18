@@ -354,6 +354,43 @@ describe('sitemap drift', () => {
     ).toEqual([]);
   });
 
+  it('keeps every declared source a real path on disk', () => {
+    // The two shared lists are checked further down, and the project source set
+    // has its own case — which left the PER-ROUTE lists, the largest and most
+    // frequently edited of the three, unchecked.
+    //
+    // A typo or a rename there fails SILENTLY, and silently in the worst
+    // direction: `lastModifiedFor` dates a route by `git log` over its
+    // pathspecs, and git reports no commits for a path that matches nothing.
+    // So a misspelled entry does not error — it contributes no date, and if it
+    // was the newest input the route's `<lastmod>` quietly rewinds to whatever
+    // the surviving entries say. The sitemap then swears a page has not changed
+    // since a date that is simply wrong, which is precisely the claim P1 says
+    // it must never make, and the suite stays green while it does.
+    //
+    // `statSync` rather than a file check: directory entries are legitimate
+    // here (`src/components/about`, `tests/unit`) and are how most of the list
+    // is written.
+    const missing = [];
+    for (const route of ROUTES) {
+      for (const source of route.sources) {
+        try {
+          statSync(path.join(process.cwd(), source));
+        } catch {
+          missing.push(`${route.path} → ${source}`);
+        }
+      }
+    }
+
+    expect(
+      missing,
+      'These declared sources do not exist, so `git log` returns no date for ' +
+        `them and the routes below silently lose <lastmod> inputs:\n  ${missing.join(
+          '\n  ',
+        )}`,
+    ).toEqual([]);
+  });
+
   it('keeps every EXCLUDED entry real, and explained', () => {
     for (const [route, reason] of Object.entries(EXCLUDED)) {
       // A stale exclusion is clutter that outlives the thing it described, and

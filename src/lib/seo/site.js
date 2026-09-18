@@ -197,6 +197,23 @@ const ROUTE_DEFINITIONS = [
       // what this page claims the person knows.
       'src/app/data.js',
       PAGE_TITLE_SOURCE,
+      // The years card's accessible name is BUILT here and rendered on the
+      // server. `AboutDetails` is a client component, which in the App Router
+      // still prerenders: `buildExperienceCardLabel` runs with no payload, and
+      // its `loading` sentence ships in the HTML as the card's `aria-label`.
+      // Editing that sentence — or the degraded one beside it — changes what
+      // /about publishes with nothing in `src/components/about` touched.
+      //
+      // Its NEIGHBOURS are deliberately not here, and the line is the same one
+      // drawn everywhere else in this registry: `<lastmod>` dates the crawl
+      // surface, not the module graph. `useExperienceSummary`,
+      // `/api/experience-summary` and `journeyEmployment` decide what the card
+      // says AFTER hydration — the months, the split, the breakdown rows — and
+      // none of that is ever in the server HTML a crawler or an engine reads.
+      // Listing them would re-stamp this URL for changes no crawler can see,
+      // which is the over-stamp `SHARED_ROUTE_SOURCES` is careful about, in the
+      // opposite direction.
+      'src/utils/experience/experiencePresentation.js',
     ],
   },
   {

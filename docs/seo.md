@@ -492,6 +492,20 @@ opposite of the `skipped` check, which must not let an ambiguous body excuse a
 step — because `/api/work-status` returns no `ok` field at all and inventing an
 admission from it would turn every healthy run red.
 
+**A 2xx it cannot read is not a verdict either** (closed 2026-09-18). Failing
+open is right for a body that carries no `ok`, and wrong for every body that
+could not be read at all — an intermediary's HTML error page, a truncated
+payload, a body that threw on read. Those went back through `res.ok`, which is
+true, so the step whose status was never the verdict was still being green-lit
+by it. Each step now declares what its own 2xx *means*: `statusIsVerdict`
+defaults to true, and only `/api/repo-refresh` sets it false, so only that step
+must be **corroborated** by a body parsing to `ok: true` (a field it sets on
+every 2xx it emits). An uncorroborated 200 there fails the run and is marked
+`bodyUnverified: true` — a separate marker from `bodyReportedFailure`, because a
+step that could not answer and a step that admitted failure call for different
+actions. Per step rather than globally: demanding corroboration from
+`/api/work-status`, which carries no `ok`, would fail every healthy run.
+
 The cron's own deadline is also no longer a guess: the route **declares**
 `maxDuration`, and `CRON_RUN_BUDGET_MS` defaults to 75% of it. A budget is only
 a bound if it expires before the platform kills the function, and 45 s against a
@@ -563,6 +577,18 @@ dominate the function bundle.
 The token exchange and the three `searchAnalytics` queries all go through one
 `fetchBounded()` helper, at `SEO_REPORT_TIMEOUT_MS` (default **10s**). Worst case
 is therefore ~2× that — one token call, then three queries in parallel.
+
+That worst case now has a **declared ceiling to fit inside** (added 2026-09-18).
+This route inherited whatever function duration the account defaulted to, while
+the repo's other GitHub routes are written for a 10 s Hobby limit — and a route
+killed at its ceiling returns no 502 and no message naming which of its four
+calls stalled, leaving the orchestrator with a bare transport failure. It
+declares `maxDuration = 30` (two phases at 10 s, leaving a third of the budget
+for the Upstash writes and the response, which carry no bound of their own), and
+the per-call ceiling is arithmetic over it — `(maxDuration * 1000 * 0.75) /
+UPSTREAM_PHASES` — with `SEO_REPORT_TIMEOUT_MS` clamped against that ceiling, so
+an override cannot put one phase past the whole function the way
+`CRON_RUN_BUDGET_MS` once could. The default is unchanged by the clamp.
 
 The bound matters more here than in a standalone route. This one runs *inside*
 `/api/daily-warmup`'s fan-out, and that orchestrator returns **one** response
@@ -733,7 +759,11 @@ are in neither shared list because the set of URLs publishing each is neither
   either shared list would stamp URLs that publish none of it. It is spread from
   the `PAGE_TITLE_SOURCE` constant rather than typed eight times, because a
   typo'd pathspec fails *silently* — `git log` over a path that matches nothing
-  simply contributes no date.
+  simply contributes no date. Silently at runtime, that is: since 2026-09-18
+  every entry in every route's `sources` is `statSync`'d by
+  `sitemapDrift.test.js`, so a misspelling fails CI naming the route and the
+  path. The shared lists and the project set each had that check; the per-route
+  lists, the largest and most edited of the three, did not.
 - `src/lib/numberWords.js` decides how a count is *spelled*, and two published
   sentences read through it: the homepage's `sr-only` summary and the
   `/projects` description the registry composes. `/projects` reaches it only
@@ -755,6 +785,17 @@ Watch out for `layout.js`. Three routes (`/about`, `/qualifications`,
 metadata and JSON-LD live in a pass-through layout — `/qualifications` reads
 `journeyData` there and publishes it as credentials. Reading only `page.js` when
 deciding `sources` misses it.
+
+**A `'use client'` page still prerenders, and the line runs through what it
+prerenders.** `/about` watches `src/utils/experience/experiencePresentation.js`
+because `buildExperienceCardLabel` runs during that prerender with no payload
+yet, so its `loading` sentence ships in the server HTML as the years card's
+`aria-label` — editable with nothing in `src/components/about` touched. The
+hook, `/api/experience-summary` and `journeyEmployment` are deliberately *not*
+watched: they decide what the card says after hydration — the months, the split,
+the breakdown rows — and none of that is ever in the HTML a crawler reads.
+`<lastmod>` dates the crawl surface, not the module graph, and listing them
+would re-stamp the URL for changes no crawler can see.
 
 **And watch out for inputs that are not imports at all.** `/uses` reads eight
 repository paths at build time through `readBuildFacts()` — `package.json`,

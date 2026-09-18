@@ -120,9 +120,34 @@ describe('trackEvent — unknown names are rejected, not forwarded', () => {
   it('rejects non-string names without throwing', () => {
     mountGtag();
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    for (const bad of [undefined, null, 42, {}, ['project_open']]) {
+    // `Symbol` is the one that bit. Every other value here interpolates into
+    // the development diagnostic harmlessly; a Symbol THROWS on interpolation,
+    // so the report of a bad argument became an exception out of the function
+    // documented as unable to throw — the same defect as the `null` params bag
+    // below, in the line that exists to describe it.
+    for (const bad of [
+      undefined,
+      null,
+      42,
+      {},
+      ['project_open'],
+      Symbol('project_open'),
+    ]) {
       expect(trackEvent(bad)).toBe(false);
     }
+  });
+
+  it('still names the offending value when it is a Symbol', () => {
+    // Not merely "does not throw": the diagnostic has to stay USEFUL, or the
+    // safe version is one that quietly says nothing about what was passed.
+    mountGtag();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(trackEvent(Symbol('made_up_event'))).toBe(false);
+
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error.mock.calls[0][0]).toContain('made_up_event');
+    expect(error.mock.calls[0][0]).toContain('src/lib/seo/analytics.js');
   });
 });
 

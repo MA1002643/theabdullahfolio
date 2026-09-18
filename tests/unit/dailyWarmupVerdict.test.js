@@ -238,10 +238,64 @@ describe('daily-warmup verdict', () => {
     // The status is the only verdict available for a plain-text body, and it
     // stands. Failing OPEN here is the deliberate opposite of `isNotConfigured`,
     // which must not let an ambiguous body excuse a step.
+    //
+    // The subject is `workStatus` on purpose, and the two cases below are why:
+    // this claim is true of a step whose 2xx IS its verdict, and false of the
+    // one whose 2xx is conditional.
     const { status, body } = await run({ workStatus: reply(200, 'warmed') });
 
     expect(status).toBe(200);
     expect(body.ok).toBe(true);
+  });
+
+  // ── A 200 that cannot be corroborated, from the step that needs to be ──────
+  // repo-refresh answers 200 when only the experience half failed, so its body
+  // is the verdict. Reading only an explicit `ok: false` out of it meant every
+  // OTHER unreadable answer — an intermediary's HTML error page, a truncated
+  // payload, a body that never arrived — came back `ok: res.ok`, which is true.
+  // The false green this route exists to prevent, reached by saying nothing
+  // instead of by saying the wrong thing.
+  it('counts a 200 whose body cannot be read as a verdict', async () => {
+    const { status, body } = await run({ repoRefresh: reply(200, 'warmed') });
+
+    expect(status).toBe(502);
+    expect(body.ok).toBe(false);
+    expect(body.results.repoRefresh.ok).toBe(false);
+    // The status it really gave is still reported, and the marker says which
+    // kind of not-ok this is: it did not admit failure, it failed to answer.
+    expect(body.results.repoRefresh.status).toBe(200);
+    expect(body.results.repoRefresh.bodyUnverified).toBe(true);
+    expect(body.results.repoRefresh.bodyReportedFailure).toBeUndefined();
+  });
+
+  it('counts a 200 from that step whose JSON carries no verdict at all', async () => {
+    // Valid JSON, and still not an answer. `/api/repo-refresh` sets `ok` on
+    // every 2xx it emits, so a 200 without it did not come from that handler —
+    // which is exactly the case a `!== false` test waves through.
+    const { status, body } = await run({
+      repoRefresh: reply(200, { warmed: true }),
+    });
+
+    expect(status).toBe(502);
+    expect(body.ok).toBe(false);
+    expect(body.results.repoRefresh.bodyUnverified).toBe(true);
+  });
+
+  it('still lets that step pass on the answer it actually gives', async () => {
+    // The control, and the half that must not change: corroboration has to be
+    // satisfiable by the real response, or this is just a nightly red light.
+    // Verbatim what repo-refresh returns when both warms land.
+    const { status, body } = await run({
+      repoRefresh: reply(200, {
+        ok: true,
+        githubStats: { ok: true, attempted: true },
+        experience: { ok: true, attempted: true, status: 200 },
+      }),
+    });
+
+    expect(status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.results.repoRefresh.bodyUnverified).toBeUndefined();
   });
 
   it('does not let a body-reported failure count as "not configured"', async () => {

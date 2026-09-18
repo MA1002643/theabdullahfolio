@@ -46,7 +46,9 @@ afterEach(() => {
 });
 
 const authed = () =>
-  new Request(ENDPOINT, { headers: { authorization: `Bearer ${CRON_SECRET}` } });
+  new Request(ENDPOINT, {
+    headers: { authorization: `Bearer ${CRON_SECRET}` },
+  });
 
 describe('repo-refresh — warm failures carry no transport detail', () => {
   it('returns a fixed message when both warms reject', async () => {
@@ -167,9 +169,59 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
     // The HTTP failure still reported, with the unreadable body simply absent.
     expect(body.githubStats.ok).toBe(false);
     expect(body.githubStats.status).toBe(500);
-    expect(body.githubStats.detail).toBeNull();
+    // `detailLogged: false` is what "absent" looks like now the body itself no
+    // longer travels: nothing was captured, so there is nothing in the log to
+    // go and read either. The distinction the old `detail: null` carried,
+    // without the half that carried the body.
+    expect(body.githubStats.detailLogged).toBe(false);
     expect(Date.now() - started).toBeLessThan(3000);
     delete process.env.CRON_WARM_TIMEOUT_MS;
+  });
+
+  // ── The branch the cases above do not reach ────────────────────────────────
+  // Every case so far fails by THROWING, and the fixed-message rule was applied
+  // to the catch that handles it. The non-OK branch is the other half of the
+  // same try, and it was still returning the downstream's error body verbatim
+  // as `detail` — the leak this file's header describes, moved one field over
+  // rather than closed. An error body is the worst one to forward, too: it is
+  // the response nobody chose the contents of.
+  it('returns no part of a failed warm’s error body', async () => {
+    const ERROR_BODY =
+      '<html><body>upstream 502 from 10.1.2.3:3000 — token ghp_notreal</body></html>';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url) => {
+        if (String(url).includes('/api/github-stats')) {
+          return {
+            ok: false,
+            status: 502,
+            statusText: 'Bad Gateway',
+            text: async () => ERROR_BODY,
+          };
+        }
+        return { ok: true, status: 200, json: async () => ({}) };
+      }),
+    );
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { GET } = await import('@/app/api/repo-refresh/route');
+    const body = await (await GET(authed())).json();
+
+    const serialised = JSON.stringify(body);
+    for (const leak of ['10.1.2.3', 'ghp_notreal', 'upstream 502', '<html>']) {
+      expect(
+        serialised,
+        `The response body carries "${leak}" from the downstream error body.`,
+      ).not.toContain(leak);
+    }
+
+    // What an operator acts on is still there, and so is the pointer to where
+    // the body went — this must not become a silent drop.
+    expect(body.githubStats.ok).toBe(false);
+    expect(body.githubStats.status).toBe(502);
+    expect(body.githubStats.statusText).toBe('Bad Gateway');
+    expect(body.githubStats.detailLogged).toBe(true);
+    expect(errorSpy.mock.calls[0]).toContain(ERROR_BODY);
   });
 
   it('keeps the raw exception in the log', async () => {

@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import {
   afterAll,
@@ -255,5 +257,94 @@ describe('seo-report bounds every upstream call', () => {
 
     expect(body.ok).toBe(false);
     expect(body.error).toBe('fetch failed');
+  });
+});
+
+// ── The bounds are only bounds if the function outlives them ────────────────
+// Everything above proves this route gives up on a stalled upstream and answers
+// 502. None of it proves the function is still ALIVE to answer: the two phases
+// each get UPSTREAM_TIMEOUT_MS, so ~20 s of in-budget work runs against a
+// duration this route never declared — whatever the account default happens to
+// be, in a repository whose other GitHub routes are written for a 10 s ceiling.
+// Killed at the limit there is no 502, no relabelled message naming which call
+// stalled, and the orchestrator sees only a dead socket.
+describe('seo-report declares the duration its bounds assume', () => {
+  const SOURCE = readFileSync(
+    path.join(process.cwd(), 'src/app/api/seo-report/route.js'),
+    'utf8',
+  );
+
+  it('declares a function duration both bounded phases fit inside', async () => {
+    const route = await import('@/app/api/seo-report/route');
+
+    // Declared at all — without this the bound above is measured against an
+    // unstated number, which is what made it a bet rather than a guarantee.
+    expect(typeof route.maxDuration).toBe('number');
+    expect(route.maxDuration).toBeGreaterThan(0);
+
+    // Read off the source, since these constants are module-private on purpose
+    // and this suite has already imported the route with the budget turned down
+    // to 80ms. The claim is about the DEFAULT's relationship to the declared
+    // duration, which is what a deployment actually runs with.
+    const [, fraction] =
+      SOURCE.match(
+        /UPSTREAM_TIMEOUT_CEILING_MS\s*=\s*\(maxDuration \* 1000 \* (0\.\d+)\)\s*\/\s*UPSTREAM_PHASES/,
+      ) ?? [];
+    expect(
+      fraction,
+      'The per-call ceiling should be a fraction of `maxDuration`, not a ' +
+        'literal that can drift away from it.',
+    ).toBeTruthy();
+
+    const [, phases] = SOURCE.match(/UPSTREAM_PHASES = (\d+)/) ?? [];
+    const [, defaultMs] =
+      SOURCE.match(
+        /envPositiveMs\(\s*process\.env\.SEO_REPORT_TIMEOUT_MS,\s*(\d+)/,
+      ) ?? [];
+    expect(phases).toBeTruthy();
+    expect(defaultMs).toBeTruthy();
+
+    // Both phases are sequential — token exchange, then the parallel queries —
+    // so the worst case is their SUM, and it is the sum that has to fit.
+    const durationMs = route.maxDuration * 1000;
+    const worstCaseMs = Number(defaultMs) * Number(phases);
+
+    expect(worstCaseMs).toBeLessThan(durationMs);
+    // Asserted as a range rather than a pair of magic numbers: what matters is
+    // that the deadline expires FIRST and that what remains is enough for the
+    // Upstash writes and serialising a body the cron can read, neither of which
+    // is an upstream call or carries a bound of its own.
+    expect(durationMs - worstCaseMs).toBeGreaterThanOrEqual(5000);
+
+    // And the default must survive its own clamp. A default above the ceiling
+    // would be silently lowered, leaving this file's arithmetic describing a
+    // timeout no deployment actually runs with.
+    const ceilingMs = (durationMs * Number(fraction)) / Number(phases);
+    expect(Number(defaultMs)).toBeLessThanOrEqual(ceilingMs);
+  });
+
+  it('cannot have that ceiling raised by the env override', async () => {
+    // `envPositiveMs` guarantees finite and positive, not USABLE: at
+    // `SEO_REPORT_TIMEOUT_MS=60000` a single phase outlasts the whole declared
+    // duration, so the function is killed before its own deadline can fire —
+    // the bound switched off through the knob that tunes it, which is the
+    // defect already fixed for `CRON_RUN_BUDGET_MS` one route over.
+    //
+    // The shape is asserted rather than the behaviour, and this is the honest
+    // limit of it: observing the clamped value means letting a stalled phase
+    // reach 11 s in a suite that runs in one. It would survive an equivalent
+    // rewrite that does not mention `Math.min`; it would not survive the clamp
+    // being dropped, which is the regression that matters.
+    const [, expression] =
+      SOURCE.match(/const UPSTREAM_TIMEOUT_MS =([\s\S]*?);\n/) ?? [];
+
+    expect(expression, 'UPSTREAM_TIMEOUT_MS should still exist').toBeTruthy();
+    expect(
+      expression,
+      'The env override must be combined with the duration-derived ceiling ' +
+        'rather than used raw, or one phase can outlive the whole function.',
+    ).toContain('Math.min');
+    expect(expression).toContain('SEO_REPORT_TIMEOUT_MS');
+    expect(expression).toContain('UPSTREAM_TIMEOUT_CEILING_MS');
   });
 });

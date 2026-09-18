@@ -89,8 +89,15 @@ export const BOM_RULES = [
     // pattern in a rules table is worse than no pattern — it tells the next
     // reader this rule owns something it does not.
     //
-    // It became a devDependency on 2026-09-17 (its only importer is the CV
-    // fixtures), which changes nothing the plate prints: classification is by
+    // `pdf-parse` — named again rather than carried as "it", because a pronoun
+    // here reads as the package the rule claims — became a devDependency on
+    // 2026-09-17, its only importer being `pdfExperienceParser` and its only
+    // importers the CV fixtures. `pdf-lib` is a devDependency too but for an
+    // unrelated reason, and the distinction is worth keeping straight: its
+    // importer is a maintenance COMMAND rather than a test, and it is the only
+    // thing that writes the tracked CV metadata.
+    //
+    // Neither move changes what the plate prints: classification is by
     // NAME, the `total` counts dependencies and devDependencies together, and
     // the two fallback labels apply only to packages no rule claims. Left in
     // "Data & services" on purpose — regrouping it would be a display change,

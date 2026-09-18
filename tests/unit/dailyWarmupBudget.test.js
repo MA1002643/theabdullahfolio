@@ -211,11 +211,19 @@ describe('daily-warmup — the run budget', () => {
     }
   });
 
-  it('still reports a 200 whose body is unreadable for its own reasons', async () => {
+  it('still passes a step whose body is unreadable for its own reasons', async () => {
     // The other side of the same branch, and the reason it is a condition on
     // `signal.aborted` rather than on any body failure: the response completed,
     // the status is real, and only `detail` is missing. Flattening both into a
     // failure would fail healthy runs whenever a body could not be decoded.
+    //
+    // "The status is real" is the load-bearing half, and it is a claim about
+    // the STEP rather than about unreadable bodies in general — which is why
+    // this case now asserts per step instead of reading the overall verdict.
+    // For work-status and seo-report a 2xx is the answer, so a lost body costs
+    // only the detail. For repo-refresh a 2xx means "I ran" and the body holds
+    // the verdict, so a lost body costs the verdict itself — and a warm that
+    // cannot be shown to have happened must not be recorded as one.
     globalThis.fetch = async () => ({
       ok: true,
       status: 200,
@@ -228,10 +236,17 @@ describe('daily-warmup — the run budget', () => {
     const response = await GET(authed());
     const body = await response.json();
 
-    expect(response.status).toBe(200);
     expect(body.results.workStatus.ok).toBe(true);
     expect(body.results.workStatus.detail).toBeNull();
     expect(body.results.workStatus.timedOut).toBeUndefined();
+    expect(body.results.seoReport.ok).toBe(true);
+
+    // Not a timeout and not an admission of failure — an unverifiable claim,
+    // and it carries its own marker so the two are told apart at 01:00.
+    expect(body.results.repoRefresh.ok).toBe(false);
+    expect(body.results.repoRefresh.bodyUnverified).toBe(true);
+    expect(body.results.repoRefresh.timedOut).toBeUndefined();
+    expect(response.status).toBe(502);
   });
 
   it('returns a verdict instead of hanging when every step stalls', async () => {

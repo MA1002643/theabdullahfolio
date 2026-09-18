@@ -122,8 +122,17 @@ export function trackEvent(name, params = {}) {
   // prevent.
   if (!EVENT_NAMES.has(name)) {
     if (process.env.NODE_ENV !== 'production') {
+      // `String(name)`, not `${name}`, and it is the same defect as the params
+      // normalisation below rather than a stylistic preference. Template
+      // interpolation on a Symbol THROWS ("Cannot convert a Symbol value to a
+      // string"), so the diagnostic for a bad argument became an exception out
+      // of the function whose contract is that it never throws — reached only
+      // by the malformed call it exists to report, and development-only, so it
+      // breaks the interaction in the browser of whoever is mid-feature while
+      // production swallows it. `String()` is total: every value has a string
+      // form, Symbols included.
       console.error(
-        `trackEvent: "${name}" is not in the EVENTS map (src/lib/seo/analytics.js). ` +
+        `trackEvent: "${String(name)}" is not in the EVENTS map (src/lib/seo/analytics.js). ` +
           'Add it there first — GA4 silently creates unknown events and they ' +
           'cannot be merged with the one you meant afterwards.',
       );

@@ -186,6 +186,26 @@ export async function GET(request) {
         } catch {
           // ignore — body unreadable, or the budget ran out reading it
         }
+        // ── The body goes in the LOG, and only in the log ───────────────────
+        // It used to be returned as `detail` too, which is the same leak the
+        // catch below was corrected for — in the neighbouring branch of the
+        // same try. The reasoning is identical and worth not re-deriving: this
+        // response is read verbatim by /api/daily-warmup, which returns it as
+        // the `detail` of its own payload, so whatever lands here is handed to
+        // anyone holding CRON_SECRET. And it is an ERROR body, which is exactly
+        // the kind that carries what nobody chose to publish — an upstream
+        // error envelope, an intermediary's HTML page naming internal hosts, a
+        // framework page from whatever actually answered `baseUrl`. Sanitising
+        // the orchestrator while this route still supplied the string would
+        // have moved the leak one field over and looked fixed.
+        //
+        // `status` and `statusText` stay: they are HTTP metadata, they are the
+        // half an operator acts on, and they are already the shape the catch
+        // below settled on (a fixed verdict plus a flag). `detailLogged`
+        // replaces the body with the one bit of it that was diagnostic — is
+        // there anything in the log to go and read, or did the body never
+        // arrive? That distinction is what the bounded-read case pins, and it
+        // survives without carrying a byte of the response.
         console.error(
           `repo-refresh: /api/github-stats returned ${res.status} ${res.statusText}`,
           detail,
@@ -195,7 +215,7 @@ export async function GET(request) {
           attempted: true,
           status: res.status,
           statusText: res.statusText,
-          detail,
+          detailLogged: typeof detail === "string" && detail.length > 0,
         };
       } else {
         // Bounded too, and this is the read that matters most: a 200 whose body

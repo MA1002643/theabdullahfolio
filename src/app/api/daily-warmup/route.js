@@ -126,7 +126,26 @@ const RUN_BUDGET_MS = Math.round(
 // repo-refresh appends a timestamp to its warm fetch), so this layer just
 // forwards auth and reports the outcome. Returns `{ ok, status, detail }`
 // so the orchestrator can include per-step results in the response.
-async function callInternal(baseUrl, path, cronSecret, signal) {
+//
+// `statusIsVerdict` says what a 2xx from this step MEANS, and it is declared
+// per step because the three do not agree. For work-status and seo-report a 2xx
+// is the answer: they have no way to say "I succeeded but did not". For
+// repo-refresh it is only "I ran" — the verdict is `ok` in the body, which is
+// why `bodyReportsFailure` exists at all. That distinction was drawn for a body
+// that SAYS `ok: false` and then dropped for every body that says nothing
+// readable: an HTML error page from an intermediary, a truncated payload, a
+// body that could not be read at all (`detail === null`, below). Each of those
+// arrived as `ok: res.ok` — true — so the one step whose 200 is not a verdict
+// was still being green-lit by its status alone, through the door the fix left
+// open. A conditional 2xx has to be CORROBORATED, not merely left
+// uncontradicted.
+async function callInternal(
+  baseUrl,
+  path,
+  cronSecret,
+  signal,
+  { statusIsVerdict = true } = {},
+) {
   const res = await fetch(`${baseUrl}${path}`, {
     cache: "no-store",
     signal,
@@ -180,13 +199,29 @@ async function callInternal(baseUrl, path, cronSecret, signal) {
   // nobody looked. The monitor reads the verdict and nothing else, so a step
   // whose own body reports failure must not count as success here.
   const reportedFailure = bodyReportsFailure(detail);
+  // The other half of that read, and only for a step whose 2xx is conditional:
+  // a body that neither confirms nor denies leaves the claim unverified, and an
+  // unverified warm must not count as a warm. Deliberately NOT applied to the
+  // other two — `/api/work-status` returns no `ok` field at all, so demanding
+  // corroboration there would fail every healthy run, which is the alarm
+  // fatigue this route is careful about everywhere else.
+  const unverified =
+    !statusIsVerdict &&
+    res.ok &&
+    !reportedFailure &&
+    !bodyConfirmsSuccess(detail);
   return {
-    ok: res.ok && !reportedFailure,
+    ok: res.ok && !reportedFailure && !unverified,
     status: res.status,
     detail,
     // Marked, not merely folded in, so an operator can tell a step that
     // answered 502 from one that answered 200 and then said it had failed.
     ...(reportedFailure && { bodyReportedFailure: true }),
+    // A third outcome, and it needs its own name: this one did not admit
+    // failure, it failed to say anything a verdict can be read from. The two
+    // want different actions — fix the downstream vs. find out what is
+    // rewriting its response.
+    ...(unverified && { bodyUnverified: true }),
   };
 }
 
@@ -204,6 +239,31 @@ function bodyReportsFailure(detail) {
     return JSON.parse(detail)?.ok === false;
   } catch {
     // Not JSON. The status is the only verdict available, and it stands.
+    return false;
+  }
+}
+
+// Did a downstream's own body CONFIRM that it succeeded?
+//
+// The mirror of the function above, and not its negation — that is the whole
+// point of having both. `bodyReportsFailure` asks "did it admit failure?" and
+// fails open, so silence is not an admission; this asks "did it say it
+// worked?" and fails CLOSED, so silence is not a confirmation either. A body
+// that is absent, unreadable, not JSON, or JSON without `ok` answers no to both
+// questions, which is the accurate reading of it: nothing is known.
+//
+// Only consulted for a step declaring `statusIsVerdict: false`, where "nothing
+// is known" and "it worked" must not be the same answer. `ok === true`
+// specifically — `/api/repo-refresh` sets that field on every 2xx it emits
+// (`ok: githubStats.ok && experience.ok`), so a 200 arriving without it did not
+// come from that handler.
+function bodyConfirmsSuccess(detail) {
+  if (typeof detail !== "string" || detail.length === 0) return false;
+  try {
+    return JSON.parse(detail)?.ok === true;
+  } catch {
+    // Not JSON. For a step whose status is not a verdict, that is the end of
+    // the evidence — and no evidence is not a pass.
     return false;
   }
 }
@@ -286,7 +346,11 @@ export async function GET(request) {
   // cron, so a run that gets killed takes every step down with it.
   const STEPS = [
     ["workStatus", "/api/work-status?bust=1"],
-    ["repoRefresh", "/api/repo-refresh"],
+    // The one step whose 2xx is not a verdict: it warms TWO caches and answers
+    // 200 when only the experience-summary half failed, deliberately. So its
+    // body is the verdict, and a 200 this route cannot read one out of counts
+    // against the run rather than for it. See `callInternal`.
+    ["repoRefresh", "/api/repo-refresh", { statusIsVerdict: false }],
     ["seoReport", "/api/seo-report"],
   ];
 
@@ -300,7 +364,9 @@ export async function GET(request) {
   // are independent, so a failure anywhere still leaves the rest worth running
   // and worth reporting.
   const settled = await Promise.allSettled(
-    STEPS.map(([, path]) => callInternal(baseUrl, path, cronSecret, runSignal)),
+    STEPS.map(([, path, options]) =>
+      callInternal(baseUrl, path, cronSecret, runSignal, options),
+    ),
   );
 
   // Logs now interleave, which sequential ordering used to avoid. Accepted:
