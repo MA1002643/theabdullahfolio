@@ -38,10 +38,29 @@ const EXPERIENCE_CACHE_TAG = "experience-summary";
 // caching a partial answer would mean one GitHub fan-out per request on a
 // public endpoint, each with a 9 s wall-clock budget behind it. Here the cost
 // is one attempt per degraded answer — the retry entry below is keyed by the
-// payload it replaces, so the attempt's result is reused rather than recomputed
-// — plus, while an outage continues, one background refresh a minute from that
-// entry's own `revalidate`. Recovery lands inside a minute instead of ten.
+// payload it replaces, so the attempt's result is reused rather than recomputed.
+// Recovery lands inside a minute instead of ten.
+//
+// This is a CADENCE, not a cache lifetime, and the distinction is what the
+// note on the retry entry is about: it says how long any degraded answer may
+// stand before another attempt is earned, and `isExpiredPartial` is the only
+// thing that reads it.
 const EXPERIENCE_PARTIAL_RETRY_SECONDS = 60;
+
+// How many replacement attempts ONE degraded primary payload earns before this
+// route waits for the primary entry to roll on its own.
+//
+// Retrying every minute for the whole ten-minute window is the wrong shape for
+// the failure that actually produces a partial. A rate limit is the common
+// cause, and it is the one thing that a retry loop makes WORSE — nine more
+// paginated fan-outs into a 403 is how an account stays limited. Three
+// attempts, spread across the first few minutes, catch the transient case the
+// retry exists for (a blip, a single dropped page) and then back off.
+//
+// It also bounds the chain walk in GET: each attempt's answer is cached under
+// the answer it replaced, so a request during a long outage reads one entry per
+// attempt already made. Three is a walk of three, not of ten.
+const MAX_PARTIAL_RETRIES = 3;
 
 // Hard cap on owned-repo pagination. GitHub returns 100 per page, so
 // 10 pages covers up to 1,000 owned non-fork repos — comfortably above
@@ -467,12 +486,44 @@ const getCachedExperienceSummary = unstable_cache(
 // does: the primary entry's TTL expires, it rebuilds, and a new degraded answer
 // (new `generatedAt`) earns exactly one fresh attempt.
 //
-// Retries during a continuing outage come from this entry's own `revalidate`
-// rather than from the key: after 60 seconds `unstable_cache` treats it as
-// stale, serves the degraded answer it holds and rebuilds behind it. That is
-// the same stale-then-rebuild behaviour that made `revalidateTag` unusable
-// above, and here it is precisely what is wanted — a bounded retry loop that
-// never blocks a request on GitHub twice.
+// ── The TTL is the PRIMARY's, and that is the whole fix ─────────────────────
+// This entry used to hold `revalidate: EXPERIENCE_PARTIAL_RETRY_SECONDS`, on
+// the reasoning that a continuing outage should be retried by the entry's own
+// staleness: after 60 seconds `unstable_cache` serves what it holds and rebuilds
+// behind it, so the retry loop never blocked a request on GitHub twice.
+//
+// That reasoning only ever looked at the outage. Once this entry holds a
+// COMPLETE recovery, the primary is still handing out its partial — for up to
+// ten minutes — so `isExpiredPartial` keeps routing every request here, every
+// read past the first minute finds a stale entry, and each one kicks off
+// another full paginated fan-out that arrives at the answer already cached.
+// Up to nine of them, and all nine are invisible: the served payload is correct
+// throughout, so nothing looks wrong. On the failure that most often produces a
+// partial in the first place — a rate limit — it is nine more calls into the
+// limit that caused it.
+//
+// A TTL cannot tell those apart, because `unstable_cache` fixes `revalidate`
+// per FUNCTION and cannot vary it by result, while the two results want
+// opposite lifetimes: a recovery should be kept, a partial must not be. The KEY
+// is the only lever that sees the result, and this entry already uses it — so
+// the fix is to let it carry the whole job. The entry answers "what replaced
+// payload X?", which is an immutable fact about X, and it is cached for as long
+// as X itself can be served (`EXPERIENCE_REVALIDATE_SECONDS`, the primary's own
+// window). A recovery is therefore computed once and read back for the rest of
+// that window, with nothing left stale to rebuild.
+//
+// Retries during a continuing outage come from the KEY instead, by applying the
+// route's existing rule one more time: if the answer here is itself a degraded
+// payload that has outlived `EXPERIENCE_PARTIAL_RETRY_SECONDS`, then IT is what
+// the next attempt replaces, and its stamp is the next key. GET walks that
+// chain, `MAX_PARTIAL_RETRIES` bounds it.
+//
+// The cost of moving the cadence off `revalidate` is stated rather than hidden:
+// a new link is a cache MISS, and a miss blocks the request that finds it,
+// where a stale read did not. It falls on at most one request per minute, up to
+// three times per window, and only ever on a request that would otherwise have
+// been handed a degraded answer anyway — which is the trade this route should
+// want. Nothing blocks on the recovery path, which is the common one.
 //
 // Both entries carry `EXPERIENCE_CACHE_TAG`, so `/api/repo-refresh` still drops
 // the whole route's memoised state with the one `revalidateTag` call it already
@@ -489,7 +540,10 @@ const getRetriedExperienceSummary = unstable_cache(
   },
   ["experience-summary-retry"],
   {
-    revalidate: EXPERIENCE_PARTIAL_RETRY_SECONDS,
+    // The primary's window, deliberately — see above. A recovery has to outlive
+    // the degraded payload it replaces, or it is re-fetched for the rest of
+    // that payload's life.
+    revalidate: EXPERIENCE_REVALIDATE_SECONDS,
     tags: [EXPERIENCE_CACHE_TAG],
   },
 );
@@ -558,17 +612,36 @@ export async function GET(request) {
     // request in that window reads.
     //
     // The primary entry keeps its degraded payload until its own TTL expires,
-    // so requests for the rest of that window pay two cache reads and are
-    // served the retry's answer. That is the whole residual now, and it is
-    // cheap: two reads, no second fan-out. Promoting the recovery into the
-    // primary entry would need a `revalidateTag` and a rebuild — one more
-    // GitHub fan-out to save one cache read, on the tag semantics this design
-    // deliberately does not depend on.
-    if (isExpiredPartial(data)) {
-      data = await getRetriedExperienceSummary(
+    // so requests for the rest of that window pay a cache read per attempt
+    // already made and are served the last answer in the chain. That is the
+    // whole residual now, and it is cheap: reads, no second fan-out. Promoting
+    // the recovery into the primary entry would need a `revalidateTag` and a
+    // rebuild — one more GitHub fan-out to save one cache read, on the tag
+    // semantics this design deliberately does not depend on.
+    //
+    // A LOOP rather than a single read, because the same rule applies to the
+    // answer as to the question. If the replacement is itself a degraded
+    // payload that has outlived its minute, it is what the next attempt
+    // replaces — so the walk follows the chain of "what replaced what" until it
+    // reaches an answer that is complete, or one still inside its minute, or
+    // the attempt bound. Each link is cached under the payload it replaced, so
+    // every link but the last is a hit; only the frontier can be a miss, and it
+    // can only be a miss once.
+    for (let attempt = 0; attempt < MAX_PARTIAL_RETRIES; attempt += 1) {
+      if (!isExpiredPartial(data)) break;
+      const replacing = partialRetryKey(data);
+      const replacement = await getRetriedExperienceSummary(
         ALLOWED_USERNAME,
-        partialRetryKey(data),
+        replacing,
       );
+      // No progress: the replacement carries the same identity as the payload
+      // it replaced, so asking again would read the same entry back forever.
+      // Only reachable through the unstamped key (`partialRetryKey`'s fallback,
+      // which is deliberately shared rather than per-request), and the bound
+      // above would catch it anyway — but stopping on the condition itself says
+      // why the walk terminates instead of leaving it to the counter.
+      if (partialRetryKey(replacement) === replacing) break;
+      data = replacement;
     }
     // Internal-only fields reach the response ONLY when the caller presents a
     // bearer matching CRON_SECRET (the same secret `/api/repo-refresh` uses).

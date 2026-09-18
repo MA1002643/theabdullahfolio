@@ -42,6 +42,17 @@ const { cache } = vi.hoisted(() => ({
   cache: { primary: null, retryStore: new Map(), retryOptions: null },
 }));
 
+// ── The mock models TTL, and it has to ─────────────────────────────────────
+// It did not, and that omission hid a defect for a week: an entry once stored
+// was served forever, so "the recovery is remembered" passed here while
+// production re-fetched it every minute. A harness that cannot express the
+// thing under test agrees with whatever the code does.
+//
+// `revalidate` is now honoured the way `unstable_cache` honours it — a read
+// past the TTL is served the value the entry HOLDS and rebuilds behind it — so
+// a needless rebuild costs a countable fan-out here exactly as it costs a real
+// one in production. Modelled synchronously because the count is the subject;
+// whether the rebuild is awaited is not.
 vi.mock('next/cache', () => ({
   unstable_cache: (fn, keys, options) => {
     const isPrimary = keys?.[0] === 'experience-summary';
@@ -52,10 +63,19 @@ vi.mock('next/cache', () => ({
       // the payload's own `generatedAt`, so there is nothing else to fake.
       if (isPrimary) return cache.primary ?? fn(...args);
       const key = JSON.stringify(args);
-      if (!cache.retryStore.has(key)) {
-        cache.retryStore.set(key, await fn(...args));
+      const held = cache.retryStore.get(key);
+      if (!held) {
+        const value = await fn(...args);
+        cache.retryStore.set(key, { value, storedAt: Date.now() });
+        return value;
       }
-      return cache.retryStore.get(key);
+      const ttlMs = (options?.revalidate ?? 0) * 1000;
+      if (ttlMs > 0 && Date.now() - held.storedAt >= ttlMs) {
+        const rebuilt = await fn(...args);
+        cache.retryStore.set(key, { value: rebuilt, storedAt: Date.now() });
+        return held.value;
+      }
+      return held.value;
     };
   },
 }));
@@ -72,6 +92,12 @@ const GITHUB_TOKEN = freshSecret('test-github');
 
 /** The window the route allows a degraded answer, in ms. Mirrors the route. */
 const PARTIAL_RETRY_MS = 60 * 1000;
+
+/** The window a COMPLETE answer earns, in ms. Mirrors the route. */
+const PRIMARY_WINDOW_MS = 10 * 60 * 1000;
+
+/** How many replacements one degraded primary payload earns. Mirrors the route. */
+const MAX_PARTIAL_RETRIES = 3;
 
 /** A fixed instant, so the time bucket is exact rather than whenever CI ran. */
 const NOW = Date.parse('2026-09-17T12:00:00.000Z');
@@ -195,6 +221,13 @@ describe('experience-summary — a stale degraded answer', () => {
     // And crossing the window changes nothing, because the key describes the
     // degraded ANSWER rather than the clock: there is no new question to ask
     // while the primary entry is still handing out the same payload.
+    //
+    // This is the assertion the TTL-less mock could not make. With
+    // `revalidate` at 60 s the entry holding the recovery went stale a minute
+    // after it was stored, and every read for the rest of the primary's ten
+    // minutes rebuilt it — the same complete answer, re-fetched from GitHub up
+    // to nine more times, invisibly, because the payload served stayed correct
+    // throughout. The entry now lives as long as the payload it replaces.
     vi.setSystemTime(NOW + 4 * PARTIAL_RETRY_MS);
     const later = await GET(new Request(URL_FOR(USERNAME))).then((r) =>
       r.json(),
@@ -222,16 +255,28 @@ describe('experience-summary — a stale degraded answer', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('registers the retry entry with the short TTL and the shared tag', async () => {
-    // A contract, because the mock cannot model TTL expiry and this option is
-    // what retries a CONTINUING outage: once the entry is a minute old,
-    // `unstable_cache` serves what it holds and rebuilds behind it. The tag is
-    // the other half — `/api/repo-refresh` must be able to drop this entry with
-    // the single `revalidateTag('experience-summary')` call it already makes,
-    // or a forced refresh would leave the retry answer behind.
+  it('gives the retry entry the life of the answer it replaces', async () => {
+    // The option this turns on, stated as the relationship rather than as a
+    // number: a replacement has to outlive the degraded payload it replaces, or
+    // it is re-fetched for the remainder of that payload's window — which is
+    // exactly what a retry-length TTL did. Anything at or above the primary's
+    // window satisfies it; the retry CADENCE is no longer this option's job at
+    // all, it is `isExpiredPartial` walking the chain of keys.
+    //
+    // The tag is the other half — `/api/repo-refresh` must be able to drop this
+    // entry with the single `revalidateTag('experience-summary')` call it
+    // already makes, or a forced refresh would leave the retry answer behind.
     await import(ROUTE);
 
-    expect(cache.retryOptions?.revalidate).toBe(PARTIAL_RETRY_MS / 1000);
+    expect(cache.retryOptions?.revalidate).toBeGreaterThanOrEqual(
+      PRIMARY_WINDOW_MS / 1000,
+    );
+    expect(
+      cache.retryOptions?.revalidate,
+      'A retry-length TTL is the defect: the recovery goes stale while the ' +
+        'primary is still serving the partial that sent us here, so every ' +
+        'later read rebuilds it against GitHub.',
+    ).toBeGreaterThan(PARTIAL_RETRY_MS / 1000);
     expect(cache.retryOptions?.tags).toEqual(['experience-summary']);
   });
 
@@ -253,6 +298,87 @@ describe('experience-summary — a stale degraded answer', () => {
     expect(body.total).toBeNull();
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(body.generatedAt).toBe(new Date(NOW).toISOString());
+  });
+
+  // ── The cadence moved off the TTL, so it needs pinning where it went ───────
+  // Lengthening the retry entry's TTL is what stops a recovery being re-fetched,
+  // and on its own it would ALSO stop a continuing outage being retried — the
+  // entry would hold one degraded answer for the primary's whole window. The
+  // retries now come from the KEY: a replacement that is itself an expired
+  // partial is what the next attempt replaces. These two cases are that
+  // mechanism, and without them the fix trades one defect for a worse one.
+  it('keeps retrying while GitHub is still failing', async () => {
+    cache.primary = partialPayload(
+      new Date(NOW - 5 * 60 * 1000).toISOString(),
+    );
+    // Thrown rather than unset-token, because this case has to COUNT attempts
+    // and an unset token never reaches the network. The builder catches it the
+    // same way and answers partial.
+    const fetchMock = vi.fn(async () => {
+      throw new Error('github unreachable');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { GET } = await import(ROUTE);
+    const first = await GET(new Request(URL_FOR(USERNAME))).then((r) =>
+      r.json(),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(first.partial).toBe(true);
+    expect(first.generatedAt).toBe(new Date(NOW).toISOString());
+
+    // Inside the minute that answer earns: no new attempt, and the same answer.
+    vi.setSystemTime(NOW + PARTIAL_RETRY_MS - 1);
+    const inside = await GET(new Request(URL_FOR(USERNAME))).then((r) =>
+      r.json(),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(inside.generatedAt).toBe(first.generatedAt);
+
+    // Past it, the REPLACEMENT is now the expired partial, so it is what the
+    // next attempt replaces — a new key, one new fan-out, a fresher answer.
+    vi.setSystemTime(NOW + PARTIAL_RETRY_MS);
+    const next = await GET(new Request(URL_FOR(USERNAME))).then((r) => r.json());
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(next.generatedAt).toBe(
+      new Date(NOW + PARTIAL_RETRY_MS).toISOString(),
+    );
+  });
+
+  it('stops after the attempt bound rather than retrying all window', async () => {
+    // The other side of the cadence, and the reason there is a bound at all: a
+    // rate limit is the likeliest cause of a partial, and it is the one failure
+    // a retry loop deepens. After three attempts the route waits for the
+    // primary entry to roll instead of paging GitHub into the limit that caused
+    // this.
+    cache.primary = partialPayload(
+      new Date(NOW - 5 * 60 * 1000).toISOString(),
+    );
+    const fetchMock = vi.fn(async () => {
+      throw new Error('github unreachable');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { GET } = await import(ROUTE);
+    // One request per minute crossed, well past the bound.
+    for (let minute = 0; minute <= MAX_PARTIAL_RETRIES + 2; minute += 1) {
+      vi.setSystemTime(NOW + minute * PARTIAL_RETRY_MS);
+      await GET(new Request(URL_FOR(USERNAME)));
+    }
+
+    expect(
+      fetchMock,
+      'Attempts must be bounded per degraded primary payload — the retry is ' +
+        'for a transient failure, not a standing poll.',
+    ).toHaveBeenCalledTimes(MAX_PARTIAL_RETRIES);
+
+    // And the answer served is still the freshest link in the chain, not a
+    // fallback to the payload the walk started from.
+    const body = await GET(new Request(URL_FOR(USERNAME))).then((r) => r.json());
+    expect(body.partial).toBe(true);
+    expect(body.generatedAt).toBe(
+      new Date(NOW + (MAX_PARTIAL_RETRIES - 1) * PARTIAL_RETRY_MS).toISOString(),
+    );
   });
 
   it('treats a payload with no usable timestamp as expired', async () => {
