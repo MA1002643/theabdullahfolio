@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
 import { Redis } from '@upstash/redis';
 
+import { describeError } from '../_utils/redact';
+
 // Pin the Node.js runtime, matching the repo's other API routes. Required here:
 // nodemailer relies on Node core modules (net/tls/stream) and cannot run on Edge.
 export const runtime = 'nodejs';
@@ -321,7 +323,13 @@ export async function POST(req) {
       { status: 200 },
     );
   } catch (err) {
-    console.error('Error sending email:', err);
+    // Redacted for the reason /api/seo-report's catch is, and reached by the
+    // same route: `sendErr` is rethrown here, and a nodemailer auth rejection
+    // quotes the account it tried to log in as — `SMTP_USER`, which this repo's
+    // credential table lists as a secret. The idempotency catch above already
+    // logs `storeErr?.name` alone rather than the object, so this is the last
+    // place in the route where a library's own wording reaches the log intact.
+    console.error('Error sending email:', describeError(err));
     const message = err?.responseCode
       ? `Mail server rejected the request (code ${err.responseCode}).`
       : 'Failed to send email. Please try again later.';

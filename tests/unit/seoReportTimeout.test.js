@@ -145,6 +145,13 @@ beforeEach(() => {
   throwInstead = null;
   seenSignals = [];
   redisStub.failWith = null;
+  // The redaction is keyed off CONFIGURED values, so the one case that needs
+  // them sets them itself. Cleared here rather than left standing: a value that
+  // outlives its case would scrub text in a later one and hide what that case
+  // was asserting about. (The route reaches Upstash through the mock above, so
+  // unsetting these does not turn storage off.)
+  delete process.env.KV_REST_API_URL;
+  delete process.env.KV_REST_API_TOKEN;
 });
 
 /**
@@ -307,8 +314,11 @@ describe('seo-report bounds every upstream call', () => {
     // endpoint that is half of `KV_REST_API_URL`, a credential by this repo's
     // own table. Nothing in the old "overwhelmingly our own labels" reasoning
     // covered them.
+    process.env.KV_REST_API_URL = 'https://eu2-notreal-12345.upstash.io';
+    process.env.KV_REST_API_TOKEN = 'AXY_notreal_token_value';
     redisStub.failWith =
-      'fetch failed: https://eu2-notreal-12345.upstash.io (token AXY_notreal)';
+      `fetch failed: ${process.env.KV_REST_API_URL} ` +
+      `(token ${process.env.KV_REST_API_TOKEN})`;
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const response = await call();
@@ -323,8 +333,26 @@ describe('seo-report bounds every upstream call', () => {
       ).not.toContain(leak);
     }
     expect(body.error).toBe('Search Console report failed; see server logs');
-    // And the operator still gets the whole thing, where it belongs.
-    expect(loggedText(errorSpy)).toContain('upstash.io');
+
+    // ── And the LOG does not take it either ─────────────────────────────────
+    // This used to assert the opposite — "the operator still gets the whole
+    // thing, where it belongs" — on the reasoning that a log is where a 01:00
+    // cron failure is read from. True, and not a reason to write a credential
+    // into a sink that persists, drains and is readable by anyone with project
+    // access. Nobody chose to log the endpoint: `@upstash/redis` quoted the
+    // configuration it was handed, and the raw object carried it through.
+    const logged = loggedText(errorSpy);
+    for (const leak of ['upstash.io', 'eu2-notreal', 'AXY_notreal']) {
+      expect(
+        logged,
+        `The platform log carries "${leak}" from the storage error.`,
+      ).not.toContain(leak);
+    }
+    // The diagnosis survives, and says which configuration it was about — which
+    // is the half of that endpoint an operator could act on anyway.
+    expect(logged).toContain('fetch failed');
+    expect(logged).toContain('[KV_REST_API_URL]');
+    expect(logged).toContain('[KV_REST_API_TOKEN]');
   });
 
   it('still quotes the labels it wrote itself, and flags the timeout', async () => {

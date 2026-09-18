@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { raceAbort } from '../_utils/abort';
 import { noStoreJson, safeBearerEqual } from '../_utils/cronAuth';
 import { envPositiveMs } from '../_utils/env';
+import { describeError } from '../_utils/redact';
 import { redis } from '@/lib/guestbook/redisDriver';
 import { ORIGIN } from '@/lib/seo/site';
 import { ASSISTANT_REFERRERS } from '@/lib/seo/analytics';
@@ -995,10 +996,32 @@ export async function GET(request) {
         `ASSISTANT_REFERRERS: ${ASSISTANT_REFERRERS.join(', ')}`,
     });
   } catch (error) {
-    // The whole error, and only here. The log is where a 01:00 cron failure is
-    // read from, and it is the one place the Upstash message or undici's socket
-    // account is worth having.
-    console.error('seo-report: Search Console query failed:', error);
+    // ── The whole error, minus this deployment's own configuration ───────────
+    // The log is where a 01:00 cron failure is read from, and it is the one
+    // place the Upstash message or undici's socket account is worth having.
+    // That argued correctly for keeping the error and then handed over the raw
+    // object, which is a different claim: a log is a sink with an audience of
+    // its own — persisted, drainable, readable by anyone with project access.
+    // The rule the response below obeys, name the variable and never the value,
+    // does not stop applying because the reader is an operator.
+    //
+    // And the value in question arrives without anyone writing a line to put it
+    // there. `@upstash/redis` names the REST endpoint it could not reach, and
+    // undici reports the DNS failure underneath it as `getaddrinfo ENOTFOUND
+    // <host>` — the host being half of `KV_REST_API_URL`, which this repo's own
+    // credential table lists as a secret. The comment two lines above used to
+    // cite that fact as the reason not to QUOTE the message, while logging it
+    // whole: the same value, the same file, two opposite conclusions.
+    //
+    // `describeError` keeps the diagnosis intact — the message, the stack, and
+    // the cause chain where undici actually puts the refused address — and
+    // replaces each configured credential with the NAME of its variable, so
+    // `[KV_REST_API_URL]` says which piece of configuration failed without
+    // saying what it is.
+    console.error(
+      'seo-report: Search Console query failed:',
+      describeError(error),
+    );
     // ── Quoted only if this route wrote it ──────────────────────────────────
     // `error.message` used to go out unconditionally, on the argument that what
     // reaches here is "overwhelmingly" this route's own labels. Overwhelmingly
