@@ -31,6 +31,9 @@ const ENDPOINT = 'https://ma.codes/api/repo-refresh';
 // that trimmed the message instead of replacing it still fails.
 const RAW = 'connect ECONNREFUSED 10.1.2.3:3000';
 
+/** How much of an error body the route lets into the log. Mirrors the route. */
+const LOG_EXCERPT_MAX_CHARS = 300;
+
 let warnSpy;
 
 beforeEach(() => {
@@ -186,8 +189,7 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
   // rather than closed. An error body is the worst one to forward, too: it is
   // the response nobody chose the contents of.
   it('returns no part of a failed warm’s error body', async () => {
-    const ERROR_BODY =
-      '<html><body>upstream 502 from 10.1.2.3:3000 — token ghp_notreal</body></html>';
+    const ERROR_BODY = `<html>\n<title>502</title>\n<body>upstream 502 from 10.1.2.3:3000</body>\n${'x'.repeat(LOG_EXCERPT_MAX_CHARS)}\ntoken ghp_notreal\n</html>`;
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url) => {
@@ -221,7 +223,27 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
     expect(body.githubStats.status).toBe(502);
     expect(body.githubStats.statusText).toBe('Bad Gateway');
     expect(body.githubStats.detailLogged).toBe(true);
-    expect(errorSpy.mock.calls[0]).toContain(ERROR_BODY);
+
+    // ── And the LOG gets an excerpt, not the body ────────────────────────────
+    // "Keep it in the log" is where the previous pass stopped, and the log is a
+    // sink of its own: persisted, drainable, read by anyone with project
+    // access, and fed here by whatever answered a deployment-configurable
+    // origin. The two properties that bounds it, asserted as properties rather
+    // than as a string — the diagnosis survives, the body's freedom does not.
+    const logged = errorSpy.mock.calls[0][1];
+    expect(logged, 'The whole body is in the log again.').not.toBe(ERROR_BODY);
+    // Still diagnostic: which reply this was, and what answered.
+    expect(logged).toContain('<title>502</title>');
+    // Bounded — a page cannot spend the log budget.
+    expect(logged.length).toBeLessThanOrEqual(LOG_EXCERPT_MAX_CHARS + 32);
+    // Single line — a body cannot forge log lines with newlines of its own.
+    expect(logged).not.toMatch(/[\r\n]/);
+    // And what sat beyond the cap did not travel. This is a VOLUME bound, not
+    // a secret filter, and the fixture says so by construction: `ghp_notreal`
+    // is dropped because it is past the cap, not because anything recognised
+    // it. The route sends no `Authorization` header on this warm, which is what
+    // makes a reflected credential not the threat here in the first place.
+    expect(logged).not.toContain('ghp_notreal');
   });
 
   it('keeps the raw exception in the log', async () => {

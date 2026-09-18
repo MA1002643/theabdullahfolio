@@ -59,6 +59,50 @@ const CRON_WARM_TIMEOUT_MS = envPositiveMs(
 // `release` is for callers that never read a body (the experience-summary warm
 // reads only `ok`/`status`) — without it the timer would sit armed for the full
 // budget after the work was done.
+// How much of a downstream error body may reach the platform log.
+//
+// Enough to carry the diagnosis — a JSON error envelope, or the opening of an
+// HTML page down to its `<title>`, which is what tells "our own route returned
+// 500" apart from "something else answered `baseUrl`" — and no more.
+const LOG_EXCERPT_MAX_CHARS = 300;
+
+/**
+ * A downstream error body, reduced to something a log can hold.
+ *
+ * The body is UNTRUSTED. It is whatever answered `baseUrl` — a deployment-
+ * configurable origin — so it may be an intermediary's page rather than this
+ * app's own reply, and the platform log is a real sink: it persists, it can be
+ * forwarded to a drain, and it is read by anyone with project access. Handing
+ * it an arbitrary response verbatim is the same class of mistake as returning
+ * one, with a different audience.
+ *
+ * Two properties, and they are worth stating exactly because neither is the one
+ * it might be mistaken for:
+ *
+ *   · BOUNDED — a body cannot spend the log budget, or bury the run's other
+ *     lines under an HTML page.
+ *   · SINGLE-LINE — whitespace collapses, so a body cannot forge log lines with
+ *     newlines and make a page look like the route's own output.
+ *
+ * What it is NOT is a secret filter, and it must not be read as one: a
+ * credential inside the first 300 characters survives. The reason a credential
+ * is not expected here at all is one line up — the warm fetch sends NO
+ * `Authorization` header (github-stats is public), so there is nothing of this
+ * deployment's for an echoing proxy to reflect back. Truncation bounds what an
+ * unexpected body can cost; it does not license sending one a secret.
+ *
+ * @param {unknown} body The body as read, or null when it could not be.
+ * @returns {string|null} The excerpt, or null when there was nothing to log.
+ */
+function logExcerpt(body) {
+  if (typeof body !== "string") return null;
+  const oneLine = body.replace(/\s+/g, " ").trim();
+  if (oneLine.length === 0) return null;
+  return oneLine.length > LOG_EXCERPT_MAX_CHARS
+    ? `${oneLine.slice(0, LOG_EXCERPT_MAX_CHARS)}… [${oneLine.length} chars]`
+    : oneLine;
+}
+
 async function fetchWithTimeout(url, options, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -206,16 +250,29 @@ export async function GET(request) {
         // there anything in the log to go and read, or did the body never
         // arrive? That distinction is what the bounded-read case pins, and it
         // survives without carrying a byte of the response.
+        //
+        // ── And the log gets an EXCERPT, not the body ───────────────────────
+        // "Keep it in the log" answered the wrong half of the question. The log
+        // is a sink too — persisted, drainable, readable by anyone with project
+        // access — and this body is untrusted input from a deployment-
+        // configurable origin, so the volume it can spend and the lines it can
+        // forge both belong to whatever answered. `logExcerpt` bounds both; the
+        // diagnosis (which reply this was, from what) survives in 300
+        // characters, which is the only part anyone reads.
+        const excerpt = logExcerpt(detail);
         console.error(
           `repo-refresh: /api/github-stats returned ${res.status} ${res.statusText}`,
-          detail,
+          excerpt,
         );
         githubStats = {
           ok: false,
           attempted: true,
           status: res.status,
           statusText: res.statusText,
-          detailLogged: typeof detail === "string" && detail.length > 0,
+          // Read off what was LOGGED rather than off what was read, so the flag
+          // cannot promise a log line that is not there: a whitespace-only body
+          // is something read and nothing recorded.
+          detailLogged: excerpt !== null,
         };
       } else {
         // Bounded too, and this is the read that matters most: a 200 whose body
