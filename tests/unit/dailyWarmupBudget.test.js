@@ -137,6 +137,52 @@ describe('daily-warmup — the run budget', () => {
     });
   };
 
+  /**
+   * The same 200-then-stall, by a runtime that does NOT abort its body stream.
+   *
+   * `stallsMidBody` above models a well-behaved runtime: the signal fires and
+   * the read rejects. This one takes that away — the read never settles, for
+   * any reason — which is the case a deadline expressed only as a `signal`
+   * cannot reach. Aborting a fetch is supposed to abort its body, so undici
+   * does reject here in practice; that is exactly what makes the gap invisible
+   * until a runtime disagrees, and why the bound is raced rather than assumed.
+   */
+  const stallsMidBodyDeaf = () => () =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      text: () => new Promise(() => {}),
+    });
+
+  it('returns a verdict when a body read ignores the deadline entirely', async () => {
+    // The failure this prevents is the worst one available to this route, and
+    // it is silent: an unsettled `res.text()` leaves `callInternal` pending, so
+    // `Promise.allSettled` never resolves, the handler never returns, and the
+    // platform kills the function with no body, no per-step results and no
+    // non-2xx for a cron monitor to alarm on. Not a wrong verdict — NO verdict,
+    // which is the outcome the run budget was added to make impossible.
+    //
+    // Without the race this case does not fail an assertion, it HANGS to the
+    // test timeout — the same shape as production, which is the point.
+    globalThis.fetch = stallsMidBodyDeaf();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const started = Date.now();
+
+    const GET = await loadRoute(60);
+    const response = await GET(authed());
+    const body = await response.json();
+
+    expect(response.status).toBe(502);
+    expect(body.ok).toBe(false);
+    for (const key of ['workStatus', 'repoRefresh', 'seoReport']) {
+      // Classified as a budget breach rather than a downstream fault: the race
+      // rejects with the signal's own reason, so it lands on the same check a
+      // request-level abort takes.
+      expect(body.results[key].timedOut).toBe(true);
+    }
+    expect(Date.now() - started).toBeLessThan(3000);
+  });
+
   it('fails the run when a step stalls mid-body on a 200', async () => {
     globalThis.fetch = stallsMidBody();
     vi.spyOn(console, 'error').mockImplementation(() => {});

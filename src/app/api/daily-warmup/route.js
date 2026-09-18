@@ -1,3 +1,4 @@
+import { raceAbort } from "../_utils/abort";
 import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
 import { envPositiveMs } from "../_utils/env";
 
@@ -136,12 +137,23 @@ async function callInternal(baseUrl, path, cronSecret, signal) {
   });
   let detail = null;
   try {
-    detail = await res.text();
+    // RACED, not merely signalled. Aborting a fetch is supposed to abort its
+    // body stream, so `res.text()` should reject on its own — but that is the
+    // runtime's promise to keep, and this is the route that cannot afford to
+    // borrow one. A read that never settles leaves this function pending, so
+    // the `Promise.allSettled` below never resolves, the handler never returns,
+    // and the platform kills the function with no body, no per-step results and
+    // no verdict: the precise outcome RUN_BUDGET_MS exists to prevent, reached
+    // through the one await it was assumed to already cover.
+    //
+    // /api/seo-report reached the same conclusion about its own body reads
+    // first; `raceAbort` is that guard, shared rather than copied.
+    detail = await raceAbort(res.text(), signal);
   } catch (err) {
     // A DEADLINE BREACH HERE MUST NOT BE SWALLOWED. `fetch` resolves as soon as
     // the response HEADERS arrive, so a downstream can answer 200 and then stall
-    // streaming its body — at which point the shared signal aborts this read,
-    // not the request. Catching that and carrying on returned `ok: res.ok`,
+    // streaming its body — at which point the deadline lands on this read, not
+    // on the request. Catching that and carrying on returned `ok: res.ok`,
     // which is TRUE: the step reported success, `allSettled` recorded it
     // fulfilled, and the run could answer an all-green 200 after its own
     // deadline had already expired. A false green is the one outcome this

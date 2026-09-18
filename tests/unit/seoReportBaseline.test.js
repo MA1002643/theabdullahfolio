@@ -511,6 +511,87 @@ describe('/api/seo-report — concurrent and partial writes', () => {
     expect(redisStore.get(dayKey).capturedAt).toBe(aCapture);
   });
 
+  it('does not let a slower day-1 run outrank the day-2 baseline it overlapped', async () => {
+    // The boundary race that survived the compare-and-set, because it was the
+    // COMPARISON's own input that was wrong.
+    //
+    // `capturedAt` was read when the snapshot was assembled — after the
+    // upstream calls — while the window it describes is chosen before them. For
+    // a run that does not cross midnight those two order identically, which is
+    // why every existing case here passes either way. Overlap the boundary and
+    // they come apart:
+    //
+    //   A  reads day 1 at 23:59:59, upstreams stall, finishes  00:00:20
+    //   B  reads day 2 at 00:00:02, upstreams answer, finishes 00:00:10
+    //
+    // B publishes the day-2 window first. A then arrives with the LATER
+    // assembly stamp, wins the `>` comparison, and overwrites `latest` with the
+    // OLDER day-1 window — the exact baseline rewind PUBLISH_LATEST_LUA was
+    // added to prevent, re-entered through the field it prevents it with. And
+    // it is silent: both snapshots are well-formed, and the only symptom is the
+    // next report comparing against a window a day too old, so everything that
+    // changed in between is reported by no run.
+    //
+    // Reproduced rather than described: the clock is moved between A's
+    // pre-flight and its completion, which is the only place the divergence can
+    // appear.
+    redisStore.clear();
+    vi.useFakeTimers({ toFake: ['Date'] });
+
+    // A's analytics calls are held open until B has been and gone.
+    let releaseA;
+    const aGate = new Promise((resolve) => {
+      releaseA = resolve;
+    });
+    const realStub = globalThis.fetch;
+    let gateNextRun = true;
+    globalThis.fetch = async (url, init = {}) => {
+      const held = gateNextRun && String(url).includes('searchAnalytics/query');
+      const response = await realStub(url, init);
+      if (held) await aGate;
+      return response;
+    };
+
+    try {
+      vi.setSystemTime(new Date('2026-09-17T23:59:59.000Z'));
+      queryRows = MORNING_ROWS;
+      const pendingA = GET(
+        new Request('http://localhost/api/seo-report', {
+          headers: { authorization: `Bearer ${CRON_SECRET}` },
+        }),
+      );
+      // Let A get past its token exchange and its pre-flight date read, so it
+      // is parked on the gated analytics calls with day 1 already chosen.
+      await new Promise((resolve) => setImmediate(resolve));
+      gateNextRun = false;
+
+      // B runs start to finish on day 2 while A is still waiting.
+      const b = await runAt('2026-09-18T00:00:02.000Z', AFTERNOON_ROWS);
+      expect(b.window.end).toBe('2026-09-15');
+      const dayTwoBaseline = redisStore.get(LATEST_KEY).capturedAt;
+
+      // Now A completes, twenty seconds the far side of the boundary.
+      vi.setSystemTime(new Date('2026-09-18T00:00:20.000Z'));
+      releaseA();
+      const responseA = await pendingA;
+      const bodyA = await responseA.json();
+
+      expect(responseA.status).toBe(200);
+      // A is still a perfectly good day-1 snapshot and still archived — it is
+      // only its claim to be the NEWEST that has to be refused.
+      expect(bodyA.window.end).toBe('2026-09-14');
+      expect(bodyA.baselinePublished).toBe(false);
+      expect(
+        redisStore.get(LATEST_KEY).capturedAt,
+        'the day-2 baseline must survive a day-1 run that merely finished later',
+      ).toBe(dayTwoBaseline);
+      expect(redisStore.get(LATEST_KEY).window.end).toBe('2026-09-15');
+    } finally {
+      globalThis.fetch = realStub;
+      releaseA();
+    }
+  });
+
   it('leaves the baseline alone rather than nulling it if the claim reads back empty', async () => {
     // Belt and braces: an `nx` rejection proves the key exists, so this should
     // be unreachable. If it ever happens anyway, erasing `latest` would make

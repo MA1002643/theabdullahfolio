@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 
+import { raceAbort } from '../_utils/abort';
 import { noStoreJson, safeBearerEqual } from '../_utils/cronAuth';
 import { envPositiveMs } from '../_utils/env';
 import { redis } from '@/lib/guestbook/redisDriver';
@@ -87,18 +88,6 @@ function labelTimeout(error, signal, label) {
     : error;
 }
 
-/** Rejects with the signal's reason when it aborts; otherwise never settles. */
-function abortRejection(signal) {
-  return new Promise((_, reject) => {
-    if (signal.aborted) reject(signal.reason);
-    else {
-      signal.addEventListener('abort', () => reject(signal.reason), {
-        once: true,
-      });
-    }
-  });
-}
-
 /**
  * Read a bounded response's body under the SAME deadline that bounded its
  * headers.
@@ -121,10 +110,14 @@ function abortRejection(signal) {
  * body stream too, so `response.json()` should reject on its own; but that is
  * the runtime's promise to keep rather than this function's, and a stalled read
  * here is precisely what must not be left to good behaviour upstream.
+ *
+ * `raceAbort` lives in `_utils/abort.js` because /api/daily-warmup needs the
+ * same guard over its own `res.text()`, where an unbounded read is worse still:
+ * it hangs that route's `Promise.allSettled` and the cron dies with no verdict.
  */
 async function readJsonBounded(response, signal, label) {
   try {
-    return await Promise.race([response.json(), abortRejection(signal)]);
+    return await raceAbort(response.json(), signal);
   } catch (error) {
     throw labelTimeout(error, signal, label);
   }
@@ -307,15 +300,39 @@ function isoDate(offsetDays = 0, from = new Date()) {
  * the compare-and-set were both built to prevent, arriving through the one date
  * neither of them guards.
  *
- * Derived from a single `Date` so the window and the day cannot disagree: they
- * are facts of the invocation, not of when each caller happened to ask.
+ * ── `capturedAt` belongs to this read too, and that is the third correction ──
+ * It was defended twice as meaning "when the snapshot was ASSEMBLED", which is
+ * what the NAME says and not what the field DOES. Its job is to be the version
+ * `PUBLISH_LATEST_LUA` orders runs by, and a version has one requirement: it
+ * must sort the same way the thing it is ordering does. What the baseline is
+ * ordering is data recency, and data recency is fixed at THIS read — the window
+ * is chosen here and never changes afterwards.
  *
- * @returns {{today: string, window: {start: string, end: string}}} `today` keys
- *   the daily snapshot; `window` is the inclusive `YYYY-MM-DD` report range.
+ * Taken at assembly instead, the two orders come apart exactly at the boundary
+ * the script was written to guard. Two runs overlapping across midnight: A
+ * reads day 1 at 23:59:59 and finishes at 00:00:20; B reads day 2 at 00:00:02
+ * and finishes at 00:00:10. B publishes first, then A's LATER `capturedAt` beats
+ * it in the comparison, and `latest` ends up holding the OLDER day-1 window —
+ * the baseline rewind `PUBLISH_LATEST_LUA` exists to prevent, re-entered
+ * through the field it does the preventing with.
+ *
+ * From one instant the two orders cannot diverge: an older window implies an
+ * earlier read implies an older version, by construction. That is why the Lua
+ * still compares a single timestamp rather than needing the window in the
+ * guard as well.
+ *
+ * Derived from a single `Date` so the window, the day and the version cannot
+ * disagree: they are facts of the invocation, not of when each caller happened
+ * to ask.
+ *
+ * @returns {{capturedAt: string, today: string,
+ *   window: {start: string, end: string}}} `capturedAt` versions the snapshot,
+ *   `today` keys it, `window` is the inclusive `YYYY-MM-DD` report range.
  */
 function currentRunDates() {
   const now = new Date();
   return {
+    capturedAt: now.toISOString(),
     today: isoDate(0, now),
     window: {
       start: isoDate(WINDOW_START_OFFSET_DAYS, now),
@@ -707,9 +724,10 @@ export async function GET(request) {
     const token = await getAccessToken(credentials);
 
     // Read once, before any of it is sent, and then used everywhere: the three
-    // requests, the `window` recorded below, and the daily key this run claims.
-    // See `currentRunDates`.
-    const { today, window: reportWindow } = currentRunDates();
+    // requests, the `window` recorded below, the daily key this run claims, and
+    // the version the baseline compare-and-set orders runs by. See
+    // `currentRunDates`.
+    const { capturedAt, today, window: reportWindow } = currentRunDates();
 
     // Independent reads, and the route is on a cron budget.
     const [queryRows, pageRows, countryRows] = await Promise.all([
@@ -719,11 +737,11 @@ export async function GET(request) {
     ]);
 
     const snapshot = {
-      // Still read here, and deliberately: this is when the snapshot was
-      // assembled, not what it covers. It is also the version the baseline
-      // compare-and-set orders runs by, so moving it earlier would change which
-      // of two overlapping runs wins.
-      capturedAt: new Date().toISOString(),
+      // From the pre-flight read, NOT the clock as it reads here. It versions
+      // the snapshot for `PUBLISH_LATEST_LUA`, and a version has to sort the
+      // way the data does — see `currentRunDates` for the overlapping-runs case
+      // where assembly time and data recency disagree.
+      capturedAt,
       window: reportWindow,
       totals: queryRows.reduce(
         (acc, row) => ({
