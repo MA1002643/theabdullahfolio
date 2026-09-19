@@ -92,17 +92,59 @@ const CREDENTIAL_ENV_VARS = SECRET_ENV_VARS.filter(
   (name) => !Object.hasOwn(ADDRESS_VALUED, name),
 );
 
-// `process.env.SOMETHING = '…'` / `vi.stubEnv('SOMETHING', '…')` where SOMETHING
-// is one of those. Any quote style; a hit whose text interpolates is dropped in
-// code below, since that is the generated case this rule wants people to reach
-// for.
-const SECRET_ENV_ASSIGNMENT = () =>
-  new RegExp(
-    `(?:process\\.env\\.(?:${CREDENTIAL_ENV_VARS.join('|')})\\s*=\\s*|` +
-      `stubEnv\\(\\s*['"\`](?:${CREDENTIAL_ENV_VARS.join('|')})['"\`]\\s*,\\s*)` +
-      `(['"\`])([^'"\`\\n]*)\\1`,
+// `process.env.SOMETHING = '…'` / `process.env['SOMETHING'] = '…'` /
+// `vi.stubEnv('SOMETHING', '…')` where SOMETHING is one of those. Any quote
+// style; a hit whose text interpolates is dropped in code below, since that is
+// the generated case this rule wants people to reach for.
+//
+// The SUBSCRIPT form is not a hypothetical spelling this pattern is being
+// widened to cover on principle. `redactSecrets.test.js` already writes
+// `delete process.env[name]` two lines from where its cases set these
+// variables, and `redact.js` reads them the same way — so the notation is
+// house-idiomatic, and a dot-only rule was one loop refactor away from
+// silently covering nothing. A static subscript is the same assignment with
+// different punctuation, which is exactly what a scanner keyed on punctuation
+// cannot see.
+//
+// Named groups rather than indices: this is the second arm this pattern has
+// grown, and the body is read positionally by the caller. A future arm that
+// captures anything would renumber `hit[2]` and break the interpolation and
+// emptiness skips QUIETLY — the guard would keep matching and stop excusing.
+const SECRET_ENV_ASSIGNMENT = () => {
+  const names = CREDENTIAL_ENV_VARS.join('|');
+  return new RegExp(
+    `(?:process\\.env(?:\\.(?:${names})|\\[\\s*['"\`](?:${names})['"\`]\\s*\\])` +
+      `\\s*=\\s*|` +
+      `stubEnv\\(\\s*['"\`](?:${names})['"\`]\\s*,\\s*)` +
+      `(?<quote>['"\`])(?<value>[^'"\`\\n]*)\\k<quote>`,
     'g',
   );
+};
+
+/**
+ * The credential-variable assignments in `source` that write their value down.
+ *
+ * Exported shape rather than inlined in the sweep so the regression cases below
+ * can run it over fixtures. The rule above has now missed a live notation once;
+ * a detector exercised only by the tree that already passes it cannot tell you
+ * about the second one.
+ */
+export function writtenSecretEnv(source) {
+  const found = [];
+  for (const hit of source.matchAll(SECRET_ENV_ASSIGNMENT())) {
+    const { value } = hit.groups;
+    // A template that interpolates is the generated case — `${KV_TOKEN}` — and
+    // dropping it here is what leaves exactly one way to pass: not writing the
+    // value down.
+    if (value.includes('${')) continue;
+    // An EMPTY assignment is the absence of a credential, not one. Cases that
+    // pin "unset behaves as unconfigured" write it deliberately, and
+    // `redactSecrets` keys its own one hard skip off the same emptiness.
+    if (value.length === 0) continue;
+    found.push(hit[0].replace(/\s+/g, ' ').trim());
+  }
+  return found;
+}
 
 // Values that match a pattern above and are NOT credentials, each with the
 // reason. An allowlist rather than a looser regex: "that one is fine" is a
@@ -212,16 +254,8 @@ describe('no credential-shaped literal is committed under tests/', () => {
 
       const source = readFileSync(file, 'utf8');
       const relative = path.relative(process.cwd(), file);
-      for (const hit of source.matchAll(SECRET_ENV_ASSIGNMENT())) {
-        // A template that interpolates is the generated case — `${KV_TOKEN}` —
-        // and dropping it here is what leaves exactly one way to pass: not
-        // writing the value down.
-        if (hit[2].includes('${')) continue;
-        // An EMPTY assignment is the absence of a credential, not one. Cases
-        // that pin "unset behaves as unconfigured" write it deliberately, and
-        // `redactSecrets` keys its own one hard skip off the same emptiness.
-        if (hit[2].length === 0) continue;
-        found.push(`${relative}: ${hit[0].replace(/\s+/g, ' ').slice(0, 70)}`);
+      for (const hit of writtenSecretEnv(source)) {
+        found.push(`${relative}: ${hit.slice(0, 70)}`);
       }
     }
 
@@ -247,4 +281,48 @@ describe('no credential-shaped literal is committed under tests/', () => {
       expect(name).toMatch(/_URL$|EMAIL$/);
     }
   });
+});
+
+// ── The env rule's own detection, tested against what it used to miss ───────
+// The two rules above key off how a value LOOKS or what a local is NAMED, so
+// the env rule is the one carrying the plain string — and it was reading one
+// notation of the two this repository actually writes. Fixtures rather than the
+// tree, because the tree passing is the condition under which the miss shipped.
+describe('the env rule sees an assignment however it is spelled', () => {
+  const WRITTEN = [
+    ['dot notation', "process.env.GITHUB_TOKEN = 'notreal-value';"],
+    ['a quoted subscript', "process.env['GITHUB_TOKEN'] = 'notreal-value';"],
+    [
+      'a double-quoted subscript',
+      'process.env["KV_REST_API_TOKEN"] = "notreal-value";',
+    ],
+    ['a spaced subscript', "process.env[ 'GITHUB_TOKEN' ] = 'notreal-value';"],
+    ['a stubbed variable', "vi.stubEnv('GITHUB_TOKEN', 'notreal-value');"],
+  ];
+
+  for (const [label, fixture] of WRITTEN) {
+    it(`flags ${label}`, () => {
+      expect(writtenSecretEnv(fixture)).toHaveLength(1);
+    });
+  }
+
+  const PASSING = [
+    ['a minted value', "process.env['GITHUB_TOKEN'] = freshSecret();"],
+    ['an interpolated one', "process.env['GITHUB_TOKEN'] = `${githubPat}`;"],
+    ['a deliberate unset', "process.env['GITHUB_TOKEN'] = '';"],
+    // The carve-out has to survive the widening: a subscripted address is still
+    // an address, and `ADDRESS_VALUED` keeps it off the variable list entirely.
+    [
+      'an address-valued exemption',
+      "process.env['KV_REST_API_URL'] = 'https://kv.invalid';",
+    ],
+    ['a read rather than a write', "const t = process.env['GITHUB_TOKEN'];"],
+    ['a computed subscript', 'for (const n of VARS) delete process.env[n];'],
+  ];
+
+  for (const [label, fixture] of PASSING) {
+    it(`passes ${label}`, () => {
+      expect(writtenSecretEnv(fixture)).toEqual([]);
+    });
+  }
 });

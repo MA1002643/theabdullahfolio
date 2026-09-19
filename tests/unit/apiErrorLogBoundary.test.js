@@ -101,8 +101,60 @@ const UNSAFE_PROPERTY = /\.\s*(?:message|stack|cause|reason)\b/;
 // `result.failure.endpoint`, a label this repo wrote. Flagging those teaches
 // the next person to wrap a literal in `redactSecrets` to quiet a scanner,
 // which is how a guard turns into a ritual.
+// The prefix is optional, which is the whole of the plural fix: with it
+// mandatory the suffix group could never consume an entire identifier, so
+// `abstractErr` matched on the strength of `abstract` while bare `error` and
+// bare `errors` did not match at all. The GraphQL fixture below went green on
+// its `.message` read, never on the rule this comment describes.
 const ERROR_IDENTIFIER =
-  /\b[A-Za-z_$][\w$]*(?:[Ee]rr(?:ors?)?)\b|\berr\b|\brejections?\b/;
+  /\b(?:[A-Za-z_$][\w$]*)?(?:[Ee]rr(?:ors?)?)\b|\brejections?\b/;
+
+// ── Detection by BINDING, because the language already says which value it is ─
+// The rule above recognises the spellings this repository happens to use. It
+// cannot recognise one it has never seen, and `catch (exception)` or `catch (e)`
+// hands a caught error straight to a log while every pattern in this file stays
+// quiet — the `.reason` miss again, one layer up, and a guard that is silent on
+// the shapes nobody thought of is the guard we already know how to ship.
+//
+// Nothing about the spelling was ever the invariant. A `catch` clause and a
+// `.catch(…)` callback bind the rejected value by definition, so the names they
+// bind are read out of the file under inspection and treated as error
+// identifiers within it, whatever the author called them. A new route is covered
+// by writing a `catch`, which is not something its author can forget to do.
+//
+// File-wide rather than scope-aware, deliberately: a regex has no scopes, and
+// the direction to err in is flagging a shadowed name over missing a real one.
+// `ALLOWED` is where a genuine collision gets written down with its reason.
+const CATCH_CLAUSE =
+  /\bcatch\s*\(\s*([A-Za-z_$][\w$]*|\{[^}]*\}|\[[^\]]*\])\s*\)/g;
+const CATCH_CALLBACK =
+  /\.catch\(\s*(?:async\s+)?\(?\s*([A-Za-z_$][\w$]*)\s*\)?\s*=>/g;
+
+/** The names a binding BINDS — `{ message: msg }` binds `msg`, not `message`. */
+function boundNames(binding) {
+  return binding
+    .split(',')
+    .map((part) => part.split(':').pop())
+    .flatMap((part) => [...part.matchAll(/[A-Za-z_$][\w$]*/g)].map((m) => m[0]));
+}
+
+/**
+ * One pattern matching every name `source` binds to a caught error, or `null`
+ * when it catches nothing — a file with no `catch` gets no extra rule.
+ */
+function caughtIdentifier(source) {
+  const names = new Set();
+  for (const [, binding] of source.matchAll(CATCH_CLAUSE))
+    for (const name of boundNames(binding)) names.add(name);
+  for (const [, param] of source.matchAll(CATCH_CALLBACK)) names.add(param);
+  if (names.size === 0) return null;
+  // `$` is legal in an identifier and meaningful in a regex; the lookarounds
+  // stand in for `\b`, which does not hold beside a leading `$`.
+  const alternation = [...names]
+    .map((name) => name.replace(/\$/g, '\\$'))
+    .join('|');
+  return new RegExp(`(?<![\\w$])(?:${alternation})(?![\\w$])`);
+}
 
 // Calls whose match is not an error at all, each with the reason. `.reason`
 // earns its place in the property list because `allSettled` uses it, and this
@@ -179,12 +231,17 @@ function stripWrapped(args) {
  */
 export function unguardedCalls(source, relativeFile = '') {
   const found = [];
+  const caught = caughtIdentifier(source);
   for (const args of consoleCallArguments(source)) {
     const remainder = expressionsOnly(stripWrapped(args)).replace(
       SAFE_PROPERTY,
       '',
     );
-    if (!UNSAFE_PROPERTY.test(remainder) && !ERROR_IDENTIFIER.test(remainder))
+    if (
+      !UNSAFE_PROPERTY.test(remainder) &&
+      !ERROR_IDENTIFIER.test(remainder) &&
+      !caught?.test(remainder)
+    )
       continue;
     if (
       ALLOWED.some(
@@ -248,6 +305,24 @@ describe('the scanner sees an error however it is spelled', () => {
     ['a mapped error list', "console.warn('x:', json.errors.map((e) => e.message).join('; '));"],
     ['a bare caught error', "console.error('x:', err);"],
     ['a differently named one', "console.error('x:', abstractErr);"],
+    ['a bare singular', "console.error('x:', error);"],
+    ['a bare plural', "console.warn('x:', json.errors);"],
+    [
+      'a catch binding this file cannot spell',
+      "try { send(); } catch (exception) { console.error('x:', exception); }",
+    ],
+    [
+      'a one-letter catch binding',
+      "try { send(); } catch (e) { console.error('x:', e); }",
+    ],
+    [
+      'a destructured catch binding',
+      "try { send(); } catch ({ message: detail }) { console.error('x:', detail); }",
+    ],
+    [
+      'a rejection callback parameter',
+      "load().catch((oops) => console.warn('x:', oops));",
+    ],
     ['a cause chain', "console.error('x:', err.cause);"],
     ['a stack', "console.error('x:', failure.stack);"],
     [
@@ -268,6 +343,14 @@ describe('the scanner sees an error however it is spelled', () => {
     ['a name only', "console.error('x:', err?.name);"],
     ['a status only', "console.warn('x:', res.status, err?.statusCode);"],
     ['a fixed string', "console.error('seo-report: CRON_SECRET is not set');"],
+    [
+      'a catch binding read for its name alone',
+      "try { send(); } catch (e) { console.error('x:', e?.name); }",
+    ],
+    [
+      'a file that binds a name it never logs',
+      "try { send(); } catch (e) { report(e); }\nconsole.info('warmed');",
+    ],
   ];
 
   for (const [label, fixture] of ALLOWED_SHAPES) {
