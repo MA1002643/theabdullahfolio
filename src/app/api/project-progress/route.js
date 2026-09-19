@@ -5,7 +5,7 @@ import { projectsData } from "@/app/data";
 import { PROJECT_DATA_VERSION } from "@/lib/projectDataVersion";
 import { TRACKED_REPOS, nameWithOwnerOf } from "@/utils/workTrackedRepos";
 import { envPositiveMs } from "../_utils/env";
-import { describeError } from "../_utils/redact";
+import { describeError, redactSecrets } from "../_utils/redact";
 
 // Live per-project delivery telemetry for the about page's Project Progress
 // popup (issue #48). Counts come from each project's Projects v2 BOARD — the
@@ -270,7 +270,7 @@ async function fetchProjectProgress() {
       if (json.errors?.length) {
         console.warn(
           "Project progress: partial GraphQL errors:",
-          json.errors.map((e) => e.message).join(" | "),
+          redactSecrets(json.errors.map((e) => e.message).join(" | ")),
         );
       }
 

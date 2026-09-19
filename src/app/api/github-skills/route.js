@@ -153,7 +153,9 @@ async function githubGraphQL(query, variables, timeoutMs) {
     }
     if (json?.errors) {
       console.warn(
-        `github-skills: partial GraphQL response (${json.errors.length} field error(s)); first: ${json.errors[0]?.message}`,
+        redactSecrets(
+          `github-skills: partial GraphQL response (${json.errors.length} field error(s)); first: ${json.errors[0]?.message}`,
+        ),
       );
     }
     return json.data;

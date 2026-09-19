@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { describeError } from '../_utils/redact';
+import { describeError, redactSecrets } from '../_utils/redact';
 import {
   computePortfolioSignal,
   buildMessage,
@@ -584,7 +584,9 @@ async function fetchPortfolioActivity(repos) {
   if (Array.isArray(json.errors) && json.errors.length > 0) {
     console.warn(
       'work-status GraphQL partial errors:',
-      json.errors.map((e) => e?.message ?? 'unknown').join('; '),
+      // Downstream text, composed rather than thrown. It crosses the same
+      // boundary: GitHub quotes the query it was sent back at us.
+      redactSecrets(json.errors.map((e) => e?.message ?? 'unknown').join('; ')),
     );
   }
 

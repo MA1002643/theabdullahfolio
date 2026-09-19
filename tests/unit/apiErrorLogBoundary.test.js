@@ -72,11 +72,130 @@ function consoleCallArguments(source) {
 const SAFE_PROPERTY =
   /\b[A-Za-z_$][\w$]*\s*\??\.\s*(?:name|code|status|statusCode|responseCode)\b/g;
 
-// An identifier that holds a caught error. Deliberately broad — `err`, `error`,
-// `sendErr`, `abstractErr`, `storeErr`, `fetchError` — because the cost of a
-// false positive is one `describeError` call and the cost of a miss is a
-// credential in a drain.
-const ERROR_IDENTIFIER = /\b[A-Za-z_$][\w$]*(?:[Ee]rr(?:or)?)\b|\berr\b/;
+// ── Detection by PROPERTY, because spelling was never the invariant ─────────
+// The first cut recognised an error only by the identifier holding it, and a
+// value does not have to be called `err` to be one. Two shapes on this surface
+// proved it: `githubResult.reason?.message` — an `allSettled` rejection, which
+// is an error that `Promise` spells `.reason` — and `json.errors[0]?.message`,
+// GraphQL's own field, where the plural breaks the `\berror\b` boundary the
+// pattern relied on. Both reached `console.warn` unredacted while this file
+// asserted the surface was covered, which is worse than not having the guard.
+//
+// So the primary rule is now the PROPERTY read. `.message`, `.stack` and
+// `.cause` are where a library puts the text it quotes back at you, `.reason`
+// is where a settled rejection puts the error itself, and none of the four is
+// something a log line can hold verbatim.
+const UNSAFE_PROPERTY = /\.\s*(?:message|stack|cause|reason)\b/;
+
+// The identifier rule stays, for the bare `console.error('…', err)` case where
+// no property is read at all. Broadened to the plural — `errors` broke the old
+// `\berror\b` boundary, which is how GraphQL's field slipped past — and to
+// `rejection`, which is what a settled one gets called when it is lifted into a
+// local.
+//
+// NOT `reason` or `failure` on their own, and the difference is worth stating
+// because the first draft included both. As PROPERTIES they are error shapes
+// and stay in the list above. As bare identifiers they are, on this surface,
+// hand-authored verdicts: `/api/seo-report` composes a `reason` string naming
+// the variables an operator must set, and `/api/spotify` reads
+// `result.failure.endpoint`, a label this repo wrote. Flagging those teaches
+// the next person to wrap a literal in `redactSecrets` to quiet a scanner,
+// which is how a guard turns into a ritual.
+const ERROR_IDENTIFIER =
+  /\b[A-Za-z_$][\w$]*(?:[Ee]rr(?:ors?)?)\b|\berr\b|\brejections?\b/;
+
+// Calls whose match is not an error at all, each with the reason. `.reason`
+// earns its place in the property list because `allSettled` uses it, and this
+// is the other thing that word is used for on this surface — a verdict string
+// the route wrote itself. Exempted rather than unwrapped: wrapping it would
+// dress a hand-authored literal up as untrusted input, which is a different
+// lie from the one this file exists to stop.
+const ALLOWED = [
+  {
+    file: 'src/app/api/seo-report/route.js',
+    match: 'credential.reason',
+    reason:
+      "readCredentials() returns this route's own hand-written verdicts — the strings are in the file above it",
+  },
+];
+
+/**
+ * Reduce an argument list to the EXPRESSIONS in it — no comments, no prose.
+ *
+ * A scanner that reads raw source reads the words people write about errors as
+ * if they were errors. Both false positives on its first run were exactly that:
+ * a comment explaining that a settled rejection IS an error, and a log line
+ * whose literal text contains the word "failure". Neither can carry anything,
+ * because a string this repository typed is not what a library quoted back.
+ *
+ * Template literals keep their `${…}` interpolations — those are expressions,
+ * and `${err?.message}` inside a template is precisely the shape worth
+ * catching — while the fixed text around them goes.
+ */
+function expressionsOnly(args) {
+  return args
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/`(?:[^`\\$]|\\.|\$(?!\{))*`/g, ' ')
+    .replace(/`(?:[^`\\]|\\.)*?`/g, (literal) =>
+      [...literal.matchAll(/\$\{([^}]*)\}/g)].map((m) => m[1]).join(' '),
+    )
+    .replace(/'(?:[^'\\]|\\.)*'/g, ' ')
+    .replace(/"(?:[^"\\]|\\.)*"/g, ' ');
+}
+
+/**
+ * Remove the spans already inside the boundary, rather than skipping the call.
+ *
+ * `args.includes('describeError(')` was the earlier test, and it passes a call
+ * the moment ONE argument is wrapped — so `console.error(describeError(err),
+ * other.message)` read as covered. Cutting the wrapped spans out and inspecting
+ * what is left asks the question per value instead of per call.
+ */
+function stripWrapped(args) {
+  let out = args;
+  for (const wrapper of ['describeError(', 'redactSecrets(']) {
+    let at = out.indexOf(wrapper);
+    while (at !== -1) {
+      let depth = 1;
+      let index = at + wrapper.length;
+      for (; index < out.length && depth > 0; index += 1) {
+        if (out[index] === '(') depth += 1;
+        else if (out[index] === ')') depth -= 1;
+      }
+      out = out.slice(0, at) + out.slice(index);
+      at = out.indexOf(wrapper);
+    }
+  }
+  return out;
+}
+
+/**
+ * The console calls in `source` that hand something error-derived to a log.
+ *
+ * Exported shape rather than inlined in the sweep so the regression cases below
+ * can run it over fixtures — a scanner whose detection is only ever exercised
+ * by the code it passes on is a scanner nobody has tested.
+ */
+export function unguardedCalls(source, relativeFile = '') {
+  const found = [];
+  for (const args of consoleCallArguments(source)) {
+    const remainder = expressionsOnly(stripWrapped(args)).replace(
+      SAFE_PROPERTY,
+      '',
+    );
+    if (!UNSAFE_PROPERTY.test(remainder) && !ERROR_IDENTIFIER.test(remainder))
+      continue;
+    if (
+      ALLOWED.some(
+        (entry) => entry.file === relativeFile && args.includes(entry.match),
+      )
+    )
+      continue;
+    found.push(args.replace(/\s+/g, ' ').trim());
+  }
+  return found;
+}
 
 describe('the API surface logs no error it has not redacted', () => {
   const files = sourceFiles();
@@ -98,22 +217,9 @@ describe('the API surface logs no error it has not redacted', () => {
       // comments, which is the one place the words are not a call site.
       if (file.endsWith(path.join('_utils', 'redact.js'))) continue;
 
-      const source = readFileSync(file, 'utf8');
-      for (const args of consoleCallArguments(source)) {
-        // Anything already inside the boundary is accounted for — a call whose
-        // arguments pass through either helper is by construction redacted.
-        if (args.includes('describeError(') || args.includes('redactSecrets('))
-          continue;
-        // Safe reads removed first, so `err?.name` does not read as `err`.
-        const remainder = args.replace(SAFE_PROPERTY, '');
-        if (ERROR_IDENTIFIER.test(remainder)) {
-          unguarded.push(
-            `${path.relative(process.cwd(), file)}: console(${args
-              .replace(/\s+/g, ' ')
-              .trim()
-              .slice(0, 90)}…)`,
-          );
-        }
+      const relative = path.relative(process.cwd(), file);
+      for (const call of unguardedCalls(readFileSync(file, 'utf8'), relative)) {
+        unguarded.push(`${relative}: console(${call.slice(0, 90)}…)`);
       }
     }
 
@@ -127,4 +233,46 @@ describe('the API surface logs no error it has not redacted', () => {
         `a composed one-liner — from src/app/api/_utils/redact.js.`,
     ).toEqual([]);
   });
+});
+
+// ── The scanner's own detection, tested against what it used to miss ────────
+// A guard is only worth the shapes it can see, and this one shipped blind to
+// two that were live on the surface it claimed to cover. Asserting over
+// fixtures rather than over the repository is the difference between "nothing
+// is wrong today" and "this would notice".
+describe('the scanner sees an error however it is spelled', () => {
+  const CAUGHT = [
+    ["a settled rejection", "console.warn('x:', result.reason?.message);"],
+    ['the rejection itself', "console.warn('x:', settled.reason);"],
+    ['a plural GraphQL field', "console.warn(`x ${json.errors[0]?.message}`);"],
+    ['a mapped error list', "console.warn('x:', json.errors.map((e) => e.message).join('; '));"],
+    ['a bare caught error', "console.error('x:', err);"],
+    ['a differently named one', "console.error('x:', abstractErr);"],
+    ['a cause chain', "console.error('x:', err.cause);"],
+    ['a stack', "console.error('x:', failure.stack);"],
+    [
+      'one wrapped argument beside one that is not',
+      "console.error(describeError(err), other.message);",
+    ],
+  ];
+
+  for (const [label, fixture] of CAUGHT) {
+    it(`flags ${label}`, () => {
+      expect(unguardedCalls(fixture)).toHaveLength(1);
+    });
+  }
+
+  const ALLOWED_SHAPES = [
+    ['a wrapped error', "console.error('x:', describeError(err));"],
+    ['a wrapped composed line', "console.warn(redactSecrets(`x ${err?.message}`));"],
+    ['a name only', "console.error('x:', err?.name);"],
+    ['a status only', "console.warn('x:', res.status, err?.statusCode);"],
+    ['a fixed string', "console.error('seo-report: CRON_SECRET is not set');"],
+  ];
+
+  for (const [label, fixture] of ALLOWED_SHAPES) {
+    it(`passes ${label}`, () => {
+      expect(unguardedCalls(fixture)).toEqual([]);
+    });
+  }
 });

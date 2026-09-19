@@ -371,7 +371,10 @@ async function buildExperienceSummary(username) {
   } else if (githubResult.status === "rejected") {
     console.warn(
       "experience-summary: GitHub owned-repos lookup failed:",
-      githubResult.reason?.message ?? githubResult.reason,
+      // A settled REJECTION is an error like any other — `allSettled` just
+      // spells it `.reason`, which is the whole reason this one outlived the
+      // sweep of the raw `catch (err)` sites.
+      describeError(githubResult.reason),
     );
   }
 
