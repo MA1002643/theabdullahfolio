@@ -77,7 +77,32 @@ export const BOM_RULES = [
   },
   {
     label: 'Media',
-    match: [/^sharp$/, /^ffmpeg-static$/, /^@napi-rs\/canvas$/],
+    // `pdf-lib` sits with the other asset-processing tools rather than in
+    // Tooling (issue #32, W1b): like `sharp` and `ffmpeg-static` it is an
+    // offline media utility, used by scripts/seo-pdf-metadata.mjs to set the CV
+    // PDF's /Title and /Author so Google names the search result properly
+    // instead of falling back to the filename. Nothing under src/ imports it.
+    //
+    // `pdf-parse` is deliberately NOT listed here despite being the obvious
+    // neighbour: it is already claimed by "Data & services" above, and rules
+    // are first-match, so a second pattern for it would never fire. A dead
+    // pattern in a rules table is worse than no pattern — it tells the next
+    // reader this rule owns something it does not.
+    //
+    // `pdf-parse` — named again rather than carried as "it", because a pronoun
+    // here reads as the package the rule claims — became a devDependency on
+    // 2026-09-17, its only importer being `pdfExperienceParser` and its only
+    // importers the CV fixtures. `pdf-lib` is a devDependency too but for an
+    // unrelated reason, and the distinction is worth keeping straight: its
+    // importer is a maintenance COMMAND rather than a test, and it is the only
+    // thing that writes the tracked CV metadata.
+    //
+    // Neither move changes what the plate prints: classification is by
+    // NAME, the `total` counts dependencies and devDependencies together, and
+    // the two fallback labels apply only to packages no rule claims. Left in
+    // "Data & services" on purpose — regrouping it would be a display change,
+    // not a correction, and the rule that claims it is still first-match.
+    match: [/^sharp$/, /^ffmpeg-static$/, /^@napi-rs\/canvas$/, /^pdf-lib$/],
   },
   {
     label: 'Quality',

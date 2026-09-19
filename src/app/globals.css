@@ -7258,3 +7258,72 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 [data-motion='off'] .uses-anim-track {
   letter-spacing: inherit !important;
 }
+
+/* ── /projects/[id] sibling navigation, revealed on keyboard focus ──────────
+   Issue #32 (W2/F8), corrected after review. The nav is `sr-only` so it adds a
+   crawl path between the eleven project pages and gives a screen-reader user a
+   way off a route whose only other exit is one floating button — but `sr-only`
+   clips to a 1px box, and the three links inside it are FOCUSABLE.
+
+   That combination is a WCAG 2.4.7 (Focus Visible, AA) failure, and a nastier
+   one than a missing outline: a sighted keyboard user tabbing this page lands on
+   three controls that are invisible, cannot see which is focused or where it
+   goes, and — because the surrounding scene is a fixed full-screen canvas with
+   almost no other tab stops — has no way to tell the focus has not simply
+   vanished. Screen-reader users were served; keyboard-only users were not.
+
+   So the nav stays hidden until focus enters it, then becomes a real panel.
+   Every `sr-only` property is undone explicitly rather than relying on
+   `not-sr-only`, because this needs `position: fixed` (not `static`): the page's
+   content is a `position: fixed` full-screen scene later in the DOM, so a static
+   panel would paint UNDERNEATH it and still be invisible — the same bug in a
+   different costume.
+
+   TOP-RIGHT is the one free corner on this route: `ProjectsBtn` holds top-left
+   (fixed, z-50), `NowPlaying` holds bottom-left (fixed, z-50), and
+   `ProjectIntro` holds top-centre (z-20). `z-index: 60` clears all three, and
+   sits far below the intro loader's 9999 so it can never cover that. */
+.project-sibling-nav:focus-within {
+  /* Undoing sr-only, property for property. */
+  position: fixed;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  /* `sr-only` sets border-width: 0, and it is a utility so it beats
+     `custom-bg`'s border in the cascade. Restore it, or the panel arrives with
+     the surface but no edge. */
+  border-width: 1px;
+
+  top: 1rem;
+  right: 1rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  /* Long repository names ("muhammadabdullah-portfolio") would otherwise push
+     the panel across the viewport on a phone. */
+  max-width: min(18rem, calc(100vw - 2rem));
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #fff;
+}
+
+/* Which of the three is focused has to be legible too — revealing the panel
+   without distinguishing the focused link only moves the problem. Matches the
+   ember accent the rest of the site uses for focus. */
+.project-sibling-nav a:focus-visible {
+  outline: 2px solid #ff6d05;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+  color: #ff6d05;
+}
+
+/* The panel is an affordance, not decoration: it must appear under reduced
+   motion exactly as it does otherwise. Nothing here animates, so there is
+   nothing to suppress — noted so a future pass does not add a transition that
+   would delay a focus reveal. */

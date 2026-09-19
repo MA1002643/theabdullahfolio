@@ -343,8 +343,16 @@ export const BtnList = [
 // is the COMPLETE employment/education/volunteering record from the LinkedIn
 // profile, owner-supplied 2026-08-22, cross-checked against the CV at
 // public/Muhammad_Abdullah_CV.pdf — where the two disagreed, LinkedIn won
-// (BTEC is 2019–2021 with the OCNLR cert before it, not the CV's 2017 start;
-// Unisys is MAY 2023 — SEP 2024, not APR—JUL). Keep all three in step.
+// (BTEC is 2019–2021 with the OCNLR cert before it, not the CV's 2017 start).
+//
+// The Unisys range was the one exception, and it went the other way: this file
+// carried MAY 2023 — SEP 2024 against the CV's APR 2023 — JUL 2024, and the
+// owner confirmed on 2026-09-12 that the CV is correct. Corrected here, so the
+// two documents now agree — which matters because the CV is itself a
+// deliberately-indexed public surface (#32 W1b) and /about derives its
+// employment figure from this array. `tests/unit/cvJourneyConsistency.test.js`
+// compares the two and fails on any disagreement that is not written down.
+// Keep all three date fields in step.
 //
 // `start`/`end` are the machine form of `dateLabel` for the overlap atlas
 // (components/journey/TimelineAtlas): 'YYYY-MM', `end: null` = still running
@@ -444,13 +452,13 @@ export const journeyData = [
   {
     id: 'j-unisys',
     year: 2024,
-    dateLabel: 'MAY 2023 — SEP 2024',
-    start: '2023-05',
-    end: '2024-09',
+    dateLabel: 'APR 2023 — JUL 2024',
+    start: '2023-04',
+    end: '2024-07',
     org: 'Unisys',
     title: 'Software Engineer · Unisys',
     description:
-      '17-month industrial placement in Manchester: shipped full-stack C# / .NET (Blazor) features that lifted system efficiency ~20%, cut production issues 30% owning support triage, and stepped up to lead a project team to an on-time delivery that won follow-on client contracts.',
+      '16-month industrial placement in Manchester: shipped full-stack C# / .NET (Blazor) features that lifted system efficiency ~20%, cut production issues 30% owning support triage, and stepped up to lead a project team to an on-time delivery that won follow-on client contracts.',
     type: 'career',
     tags: ['C#', '.NET Blazor', 'SQL'],
     link: null,

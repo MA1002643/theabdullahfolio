@@ -10,8 +10,13 @@ import { accentFor } from './accents';
 
 // Tenure readout beside the date pill — the duration a recruiter would
 // otherwise compute in their head. Months are INCLUSIVE of both endpoints,
-// the LinkedIn/CV convention (Unisys MAY 2023 — SEP 2024 must read
-// "1 yr 5 mo", the 17 months its own description claims). Closed entries
+// the LinkedIn/CV convention (Unisys APR 2023 — JUL 2024 must read
+// "1 yr 4 mo", the 16 months its own description claims). Note this is a
+// DIFFERENT convention from `monthsBetween` in utils/experience, which is
+// exclusive and reads the same range as 15 — that one drives /about's
+// employment figure, where it has to agree with the personal-projects span
+// sitting beside it in the same bar. Both are right for where they are; do
+// not "fix" one to match the other. Closed entries
 // compute statically from `start`/`end` (SSR-deterministic); open entries
 // need the live clock, so their count renders only after mount — the same
 // hydration contract as the atlas's NOW machinery.

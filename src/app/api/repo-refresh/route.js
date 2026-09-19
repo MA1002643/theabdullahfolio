@@ -1,7 +1,9 @@
 import { revalidateTag } from "next/cache";
 
+import { raceAbort } from "../_utils/abort";
 import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
 import { envPositiveMs } from "../_utils/env";
+import { describeError } from "../_utils/redact";
 
 // Pin to the Node runtime so `node:crypto` (transitively used by
 // `safeBearerEqual` for constant-time bearer-token compare) stays
@@ -37,13 +39,108 @@ const CRON_WARM_TIMEOUT_MS = envPositiveMs(
 // the fetch rejects with an AbortError that the outer try/catch (for
 // github-stats) or the inner try/catch (for experience-summary) will
 // log and surface as a degraded cron result instead of a silent stall.
+//
+// ── The budget has to survive the headers ───────────────────────────────────
+// It used to end there. `clearTimeout` sat in a `finally` around the fetch, and
+// `fetch` settles the moment the response HEADERS arrive — so the timer was
+// disarmed while the body was still streaming, and the `await res.json()` at
+// the call site ran with no deadline AT ALL. Not a runtime-dependent one, as in
+// the two sibling routes that raced their reads: here the abort had been
+// explicitly cancelled, so nothing could ever fire.
+//
+// A downstream answering 200 and then stalling its body therefore held this
+// route open until the platform killed it, and the `aborted` flag this route
+// reports — the one distinction that tells an operator "tighten the budget"
+// from "fix the downstream" — could never be set for the failure most likely to
+// need it.
+//
+// So the reader is returned WITH the response and the timer outlives the
+// headers: the budget now covers the whole exchange, and `raceAbort` makes it
+// hold whether or not the runtime propagates the abort into the body stream.
+// `release` is for callers that never read a body (the experience-summary warm
+// reads only `ok`/`status`) — without it the timer would sit armed for the full
+// budget after the work was done.
+// How much of a downstream error body may reach the platform log.
+//
+// Enough to carry the diagnosis — a JSON error envelope, or the opening of an
+// HTML page down to its `<title>`, which is what tells "our own route returned
+// 500" apart from "something else answered `baseUrl`" — and no more.
+const LOG_EXCERPT_MAX_CHARS = 300;
+
+/**
+ * A downstream error body, reduced to something a log can hold.
+ *
+ * The body is UNTRUSTED. It is whatever answered `baseUrl` — a deployment-
+ * configurable origin — so it may be an intermediary's page rather than this
+ * app's own reply, and the platform log is a real sink: it persists, it can be
+ * forwarded to a drain, and it is read by anyone with project access. Handing
+ * it an arbitrary response verbatim is the same class of mistake as returning
+ * one, with a different audience.
+ *
+ * Two properties, and they are worth stating exactly because neither is the one
+ * it might be mistaken for:
+ *
+ *   · BOUNDED — a body cannot spend the log budget, or bury the run's other
+ *     lines under an HTML page.
+ *   · SINGLE-LINE — whitespace collapses, so a body cannot forge log lines with
+ *     newlines and make a page look like the route's own output.
+ *
+ * What it is NOT is a secret filter, and it must not be read as one: a
+ * credential inside the first 300 characters survives. The reason a credential
+ * is not expected here at all is one line up — the warm fetch sends NO
+ * `Authorization` header (github-stats is public), so there is nothing of this
+ * deployment's for an echoing proxy to reflect back. Truncation bounds what an
+ * unexpected body can cost; it does not license sending one a secret.
+ *
+ * @param {unknown} body The body as read, or null when it could not be.
+ * @returns {string|null} The excerpt, or null when there was nothing to log.
+ */
+function logExcerpt(body) {
+  if (typeof body !== "string") return null;
+  const oneLine = body.replace(/\s+/g, " ").trim();
+  if (oneLine.length === 0) return null;
+  return oneLine.length > LOG_EXCERPT_MAX_CHARS
+    ? `${oneLine.slice(0, LOG_EXCERPT_MAX_CHARS)}… [${oneLine.length} chars]`
+    : oneLine;
+}
+
 async function fetchWithTimeout(url, options, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
     clearTimeout(timer);
+  };
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    const bounded = (read) =>
+      raceAbort(read, controller.signal).finally(release);
+    return {
+      res,
+      readText: () => bounded(res.text()),
+      readJson: () => bounded(res.json()),
+      release,
+      // Whether the budget has fired, readable AFTER the fact.
+      //
+      // A caller that swallows a failed body read — the error-body path below
+      // does, deliberately, because the status is already the finding —
+      // swallows the budget breach along with it, and those are not the same
+      // event: `aborted` is the one flag that separates "tighten
+      // CRON_WARM_TIMEOUT_MS" from "fix the downstream", so losing it on the
+      // body read costs exactly the distinction this route exists to publish.
+      //
+      // The SIGNAL rather than the rejection's name, for the reason
+      // /api/seo-report's `labelTimeout` gives: an aborted body read surfaces
+      // differently across runtimes (`AbortError`, or a `TypeError` wrapping
+      // one), while the signal says what actually happened whichever shape
+      // arrived.
+      timedOut: () => controller.signal.aborted,
+    };
+  } catch (err) {
+    release();
+    throw err;
   }
 }
 
@@ -127,7 +224,7 @@ export async function GET(request) {
     let githubStats = { ok: false, attempted: true };
     let data = null;
     try {
-      const res = await fetchWithTimeout(
+      const { res, readText, readJson, timedOut } = await fetchWithTimeout(
         `${baseUrl}/api/github-stats?username=${encodeURIComponent(username)}&_=${cacheBust}`,
         {
           cache: "no-store",
@@ -141,23 +238,80 @@ export async function GET(request) {
         // failure mask the original HTTP error.
         let detail = null;
         try {
-          detail = await res.text();
+          // Through the bounded reader, so a downstream that fails AND stalls
+          // its error body cannot hold the cron open. A breach here is
+          // swallowed on purpose, exactly as an unreadable body always was:
+          // the status is already known and reported, and `detail` is context.
+          detail = await readText();
         } catch {
-          // ignore — body unreadable
+          // ignore — body unreadable, or the budget ran out reading it.
+          //
+          // Swallowing the REJECTION is right: the status is the finding and
+          // the body was only ever context. Swallowing the BUDGET BREACH with
+          // it was not, and that is what this branch used to do — a downstream
+          // that answered 500 and then stalled its error body came back as an
+          // ordinary warm failure, indistinguishable from one that answered
+          // promptly, on the very route whose `aborted` flag exists to tell an
+          // operator to tighten `CRON_WARM_TIMEOUT_MS` rather than go looking
+          // downstream. Read off the signal below, where the fact survives the
+          // rejection that carried it.
         }
+        // ── The body goes in the LOG, and only in the log ───────────────────
+        // It used to be returned as `detail` too, which is the same leak the
+        // catch below was corrected for — in the neighbouring branch of the
+        // same try. The reasoning is identical and worth not re-deriving: this
+        // response is read verbatim by /api/daily-warmup, which returns it as
+        // the `detail` of its own payload, so whatever lands here is handed to
+        // anyone holding CRON_SECRET. And it is an ERROR body, which is exactly
+        // the kind that carries what nobody chose to publish — an upstream
+        // error envelope, an intermediary's HTML page naming internal hosts, a
+        // framework page from whatever actually answered `baseUrl`. Sanitising
+        // the orchestrator while this route still supplied the string would
+        // have moved the leak one field over and looked fixed.
+        //
+        // `status` and `statusText` stay: they are HTTP metadata, they are the
+        // half an operator acts on, and they are already the shape the catch
+        // below settled on (a fixed verdict plus a flag). `detailLogged`
+        // replaces the body with the one bit of it that was diagnostic — is
+        // there anything in the log to go and read, or did the body never
+        // arrive? That distinction is what the bounded-read case pins, and it
+        // survives without carrying a byte of the response.
+        //
+        // ── And the log gets an EXCERPT, not the body ───────────────────────
+        // "Keep it in the log" answered the wrong half of the question. The log
+        // is a sink too — persisted, drainable, readable by anyone with project
+        // access — and this body is untrusted input from a deployment-
+        // configurable origin, so the volume it can spend and the lines it can
+        // forge both belong to whatever answered. `logExcerpt` bounds both; the
+        // diagnosis (which reply this was, from what) survives in 300
+        // characters, which is the only part anyone reads.
+        const excerpt = logExcerpt(detail);
         console.error(
           `repo-refresh: /api/github-stats returned ${res.status} ${res.statusText}`,
-          detail,
+          excerpt,
         );
         githubStats = {
           ok: false,
           attempted: true,
           status: res.status,
           statusText: res.statusText,
-          detail,
+          // Read off what was LOGGED rather than off what was read, so the flag
+          // cannot promise a log line that is not there: a whitespace-only body
+          // is something read and nothing recorded.
+          detailLogged: excerpt !== null,
+          // Same flag, same meaning, as the thrown-warm path below: the budget
+          // fired. It can only be true here alongside `detailLogged: false` —
+          // the read that was cut short is the reason there is nothing logged —
+          // and together they say which of the two silences this was.
+          ...(timedOut() && { aborted: true }),
         };
       } else {
-        data = await res.json();
+        // Bounded too, and this is the read that matters most: a 200 whose body
+        // never finishes is the stall that looked like success. An abort here
+        // rejects with the controller's reason and lands in the catch below,
+        // which reports it with `aborted: true` — the timeout contract this
+        // route advertises, now actually covering the whole exchange.
+        data = await readJson();
         if (data?._fallback) {
           // `_fallback: true` means /api/github-stats served the bundled
           // snapshot because the upstream GitHub fetch failed. The cache
@@ -180,12 +334,19 @@ export async function GET(request) {
     } catch (err) {
       console.warn(
         "repo-refresh: github-stats warm failed:",
-        err?.message ?? err,
+        describeError(err),
       );
+      // Fixed message, not `err.message`. A failed warm fetch rejects with
+      // transport internals — the resolved internal host and port behind
+      // `baseUrl`, DNS state, a TLS error — and this body is returned verbatim
+      // to /api/daily-warmup, which puts it in the `detail` field of the payload
+      // it answers with. Sanitising only the orchestrator while this one still
+      // carried the raw string would move the leak, not close it. `aborted`
+      // already carries the distinction that changes what an operator does.
       githubStats = {
         ok: false,
         attempted: true,
-        error: err?.message ?? String(err),
+        error: "github-stats warm failed",
         aborted: err?.name === "AbortError",
       };
     }
@@ -199,7 +360,7 @@ export async function GET(request) {
     // `cacheBust` so a single timestamp tags both warm fetches in logs.
     let experience = { ok: false, attempted: true };
     try {
-      const expRes = await fetchWithTimeout(
+      const { res: expRes, release } = await fetchWithTimeout(
         `${baseUrl}/api/experience-summary?username=${encodeURIComponent(username)}&_=${cacheBust}`,
         {
           cache: "no-store",
@@ -207,6 +368,10 @@ export async function GET(request) {
         },
         CRON_WARM_TIMEOUT_MS,
       );
+      // This warm reads no body — only `ok`/`status` — so nothing will consume
+      // the reader that would otherwise disarm the timer. Released explicitly,
+      // or it would sit armed for the rest of the budget after the work is done.
+      release();
       experience = { ok: expRes.ok, attempted: true, status: expRes.status };
       if (!expRes.ok) {
         console.warn(
@@ -216,12 +381,14 @@ export async function GET(request) {
     } catch (err) {
       console.warn(
         "repo-refresh: experience-summary warm failed:",
-        err?.message ?? err,
+        describeError(err),
       );
+      // Same reasoning as the github-stats warm above: a fixed message, with
+      // `aborted` carrying the only distinction the response needs to make.
       experience = {
         ok: false,
         attempted: true,
-        error: err?.message ?? String(err),
+        error: "experience-summary warm failed",
         aborted: err?.name === "AbortError",
       };
     }
@@ -231,6 +398,15 @@ export async function GET(request) {
     // and `_fallback` keeps its 503 distinction. An experience-summary
     // failure alone remains best-effort and returns 200 — consumers
     // should read `experience.ok` for that signal.
+    //
+    // "Consumers should read it" was doing more work than it could bear while
+    // the only consumer did not. `/api/daily-warmup` is now this route's sole
+    // caller (it owns the single cron entry), and it judged each step by HTTP
+    // status alone — so a failed experience warm produced an all-green cron
+    // verdict, which is the one thing that route exists to prevent. It now
+    // reads the `ok` below as well as the status, which is why this best-effort
+    // 200 can stay best-effort: the field is load-bearing, not advisory. Keep
+    // `ok` truthful if a third warm is ever added here.
     let status = 200;
     if (!githubStats.ok) {
       status = githubStats.reason === "upstream-fallback" ? 503 : 502;
@@ -247,7 +423,7 @@ export async function GET(request) {
       { status },
     );
   } catch (err) {
-    console.error("repo-refresh cron error:", err);
+    console.error("repo-refresh cron error:", describeError(err));
     return noStoreJson({ error: "Refresh failed" }, { status: 500 });
   }
 }

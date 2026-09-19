@@ -1,0 +1,153 @@
+// Real `lastModified` dates for the sitemap, from git (issue #32, P4).
+//
+// P4 says truthful data only, and `<lastmod>` is the field most often lied
+// about: the reflex implementation is `lastModified: new Date()`, which
+// re-stamps every URL on every deploy and claims the whole site changed
+// whenever a single typo was fixed. Search engines detect that pattern and
+// discount the field wholesale, so the lie does not even pay — and it is also
+// just a false statement published in a machine-readable format.
+//
+// So this module asks git what actually changed, and when git cannot answer it
+// returns `null` and the sitemap OMITS `<lastmod>` for that URL. `<lastmod>`
+// is optional in the sitemap protocol; an absent field is honest, where a
+// fabricated one is not.
+//
+// ── When git cannot answer ──────────────────────────────────────────────────
+// Vercel builds Git deployments from a source tarball, so the build container
+// generally has NO `.git` directory and every lookup here fails. That is a
+// known, accepted consequence, documented in docs/seo.md rather than papered
+// over: production sitemaps ship without `<lastmod>`, local and CI builds ship
+// with real dates. The alternative — committing a generated manifest — trades
+// a missing field for a stale one and breaks P1 (nothing hand-maintained).
+
+import { execFileSync } from 'node:child_process';
+
+// Memoised per module instance. `sitemap.js` asks for ~12 routes in one pass
+// and each answer costs a process spawn, so without this a build pays for a
+// dozen `git log` invocations. Keyed by the joined source list.
+const cache = new Map();
+
+// Latched after the first failure. Once we know there is no usable git in this
+// environment (the Vercel case, overwhelmingly the common one in production)
+// there is no reason to spawn 12 more processes to be told so 12 more times.
+let gitUnavailable = false;
+
+/**
+ * ISO-8601 commit date of the most recent commit touching any of `paths`.
+ *
+ * Uses `execFileSync` rather than `execSync` deliberately: the paths come from
+ * the route registry, which is source code rather than user input, but passing
+ * an argument VECTOR instead of a shell string means no value can ever be
+ * interpreted as shell syntax regardless of what a future registry entry
+ * contains. There is no shell in the picture at all.
+ *
+ * @param {string[]} paths Repo-relative paths (files or directories).
+ * @returns {string|null} ISO-8601 committer date, or null when unknowable.
+ */
+function gitLastCommitDate(paths) {
+  if (gitUnavailable || !Array.isArray(paths) || paths.length === 0)
+    return null;
+
+  try {
+    const out = execFileSync(
+      'git',
+      [
+        'log',
+        '-1',
+        // Committer date, strict ISO-8601. Author date would report when the
+        // change was WRITTEN, which for a rebased or cherry-picked commit can
+        // predate the version that actually shipped.
+        '--format=%cI',
+        // `--` terminates revision parsing, so a path that happens to look
+        // like a ref cannot be misread as one.
+        '--',
+        // `:(literal)` turns off pathspec PATTERN matching. A pathspec is a
+        // glob by default, and `src/app/(sub pages)/projects/[id]/page.js` —
+        // Next's dynamic-segment directory — carries a bracket expression in
+        // the middle of it. (Parentheses are not fnmatch metacharacters, so
+        // `(sub pages)` was never at risk; `[id]` is the only one in the whole
+        // registry, confirmed by scanning every `sources` entry for `*?[\`.)
+        //
+        // This is NOT about the path failing to match itself. Git compares the
+        // pathspec literally before it tries fnmatch, so `[id]/page.js` does
+        // find its own file and the dates were real — verified against this
+        // repository, where the glob and `:(literal)` forms return the same
+        // commit.
+        //
+        // The risk is the opposite one: a glob matches MORE than it names.
+        // `[id]` is a character class for a single `i` or `d`, so a sibling
+        // directory called `i` or `d` under `projects/` would be swept in too,
+        // and `git log -1` returns the newest commit across everything matched
+        // — silently dating these eleven URLs by a file that has nothing to do
+        // with them. Reproduced in a scratch repository: with `proj/[id]` and
+        // `proj/i` both present, the bare pathspec selected both and reported
+        // the decoy's date.
+        //
+        // Applied to every path rather than the one that needs it, because a
+        // rule with an exception is a rule someone forgets: any future source
+        // holding a glob character is literal by default. Directory pathspecs
+        // still match recursively under `:(literal)` — checked against a file,
+        // a directory, a route group and a dotted path.
+        ...paths.map((pathspec) => `:(literal)${pathspec}`),
+      ],
+      {
+        encoding: 'utf8',
+        // Inherit nothing: a git hook or pager writing to stderr would
+        // otherwise pollute the build log on every route.
+        stdio: ['ignore', 'pipe', 'ignore'],
+        // A git call that has not answered in two seconds is not going to.
+        // Without a bound, a repository in an odd state (an index lock, a
+        // filesystem stall) could hang the whole build on a decorative field.
+        timeout: 2000,
+      },
+    ).trim();
+
+    // Empty output is not an error: it means git ran fine and no commit has
+    // ever touched those paths (a brand-new, uncommitted route). Still null —
+    // we genuinely do not know a modification date.
+    return out === '' ? null : out;
+  } catch {
+    // Distinguishing "git missing" from "not a repository" from "path never
+    // committed" would change nothing about what we do, so it is one branch.
+    // Latch so the remaining routes skip the spawn entirely.
+    gitUnavailable = true;
+    return null;
+  }
+}
+
+/**
+ * `lastModified` for a route, as a Date, or undefined.
+ *
+ * Returns `undefined` (not null) on failure because that is what Next's
+ * sitemap serialiser treats as "omit this field"; a null would be rendered.
+ *
+ * @param {string[]} sources Repo-relative paths that define this route.
+ * @returns {Date|undefined} Real commit date, or undefined when unknowable.
+ */
+export function lastModifiedFor(sources) {
+  if (!Array.isArray(sources) || sources.length === 0) return undefined;
+
+  const key = sources.join('\u0000');
+  if (cache.has(key)) return cache.get(key);
+
+  const iso = gitLastCommitDate(sources);
+  // An unparseable date is treated exactly like an absent one — better to omit
+  // the field than to emit `Invalid Date`.
+  const date = iso ? new Date(iso) : undefined;
+  const value = date && !Number.isNaN(date.getTime()) ? date : undefined;
+
+  cache.set(key, value);
+  return value;
+}
+
+/**
+ * Whether git answered for at least one lookup in this process.
+ *
+ * Exported for the sitemap's own diagnostics and for tests — a test asserting
+ * "real dates, not build time" has to be able to tell the two apart, and in an
+ * environment with no git the correct assertion is "the field is absent"
+ * rather than "the field is today".
+ *
+ * @returns {boolean} True when git has not failed a lookup.
+ */
+export const gitAvailable = () => !gitUnavailable;

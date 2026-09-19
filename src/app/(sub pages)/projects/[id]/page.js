@@ -1,7 +1,11 @@
 import Image from "next/image"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { projectsData } from "@/app/data"
 import { sectionMetadata } from "@/lib/og/meta"
+import JsonLd from "@/components/seo/JsonLd"
+import { projectPage } from "@/lib/seo/schema"
+import { projectMetaDescription } from "@/lib/seo/projectMeta"
 import bg from "../../../../../public/background/home-bg.webp"
 import AuroraParallaxBackground from "@/components/project-detail/aurora-bg"
 import LanternSweep from "@/components/project-detail/lantern-sweep"
@@ -44,7 +48,14 @@ export function generateMetadata({ params }) {
     if (!project) return {}
     return sectionMetadata({
         title: project.name,
-        description: project.description,
+        // COMPOSED, not `project.description` (issue #32, W7). That field is a
+        // four-word card subtitle — ~36 characters — which as a SERP
+        // description is short enough that Google discards it and substitutes
+        // scraped page text instead. It also cannot simply be lengthened: it is
+        // the /projects card subtitle AND the ProjectIntro headline subtitle
+        // below, both sized around four words. So the meta description is built
+        // from the record's own facts instead. See src/lib/seo/projectMeta.js.
+        description: projectMetaDescription(project),
         path: `/projects/${project.id}`,
     })
 }
@@ -82,8 +93,92 @@ export default async function ProjectDetailPage({ params }) {
         notFound()
     }
 
+    // ── Sibling projects, for the crawl graph and for screen readers ────────
+    // Issue #32, F8: these eleven pages were reachable ONLY from the /projects
+    // listing. No sitemap, no cross-links, no breadcrumbs — so one crawl hiccup
+    // on the listing page left the entire project corpus undiscovered.
+    //
+    // The sitemap now declares all eleven, which fixes discovery. These links
+    // fix the other half: a crawl path BETWEEN siblings, and internal link
+    // equity flowing along it rather than dead-ending.
+    //
+    // Wrapped so the last project links to the first and vice versa. Modulo, not
+    // a clamp: a clamp would make projects 1 and 11 each have only one
+    // neighbour, and those two are precisely the pages a listing-page failure
+    // would strand.
+    const index = projectsData.findIndex((p) => p.id === project.id)
+    const previous =
+        projectsData[(index - 1 + projectsData.length) % projectsData.length]
+    const next = projectsData[(index + 1) % projectsData.length]
+
     return (
         <>
+            {/* ── SoftwareSourceCode + BreadcrumbList (issue #32, W2) ───────
+                `SoftwareSourceCode` rather than `SoftwareApplication`: these are
+                repositories, and `codeRepository` — the property carrying the
+                most weight here — belongs to that type. A private project
+                contributes no `codeRepository` at all rather than a URL that
+                answers 404 to every reader.
+
+                `programmingLanguage` is deliberately NOT passed. It would have
+                to come from /api/github-skills at build time, which needs a
+                token and a network call inside `next build`; see the note on
+                `knowsAboutFromStack` in src/lib/seo/site.js for why that trade
+                was refused. The property is omitted rather than guessed (P4) —
+                the builder accepts it the moment a build-safe source exists. */}
+            <JsonLd id="ld-project" data={projectPage(project)} />
+
+            {/* Crawlable sibling navigation. `sr-only`, for the same reason and
+                with the same justification as the homepage summary: this route
+                renders a fixed full-screen 3D scene whose only text is the
+                project name and subtitle, so a screen-reader user currently
+                reaches it and has no way to move to another project — the
+                floating ProjectsBtn is the single exit. This nav is a real
+                accessibility affordance that crawlers also read, which is the
+                opposite of cloaking (nothing here is hidden FROM users; it is
+                surfaced to users a visual control does not serve).
+
+                Plain `next/link`, not TransitionLink: these are out-of-view
+                links a keyboard or crawler follows directly, and the Sigil
+                Passage transition is choreography for a visible click.
+
+                `sr-only` ALONE WAS A BUG, caught in review. These three links
+                are focusable, so a sighted keyboard user could tab onto them
+                while they were clipped to a 1px box — no visible focus, no idea
+                which link or where it led, on a route whose scene offers almost
+                no other tab stops to orient against. That is a WCAG 2.4.7
+                failure: the screen-reader case was served and the keyboard-only
+                case was not.
+                `.project-sibling-nav` reveals the panel on `:focus-within` and
+                gives each link a visible focus ring — see the rule in
+                globals.css for why it must be `fixed` rather than `static`. */}
+            <nav
+                aria-label="Project navigation"
+                className="project-sibling-nav sr-only custom-bg"
+            >
+                {/* `prefetch={false}` on all three: this panel is `sr-only`
+                    until `:focus-within`, so it is in the viewport on every
+                    visit and reachable by no pointer. Next's default viewport
+                    prefetch therefore warmed the listing plus both sibling
+                    routes for EVERY visitor, to serve links only keyboard and
+                    AT users can reach — three extra RSC round-trips on a page
+                    that is already loading a 3D scene.
+                    It stays crawlable (the `href`s are server-rendered, which
+                    is the whole point of this nav) and stays fast for the
+                    people who use it: `prefetch={false}` only stands down the
+                    viewport prefetch, so hover and touch still warm the route
+                    on intent. Same call as HomeBtn/ProjectsBtn/ReturnPortal. */}
+                <Link href="/projects" prefetch={false}>
+                    All projects
+                </Link>
+                <Link href={`/projects/${previous.id}`} prefetch={false}>
+                    Previous project: {previous.name}
+                </Link>
+                <Link href={`/projects/${next.id}`} prefetch={false}>
+                    Next project: {next.name}
+                </Link>
+            </nav>
+
             {/* Your Original Background Image - Full Screen */}
             {/* alt="" — decorative: screen readers skip it entirely instead of
                 announcing "background, image" (matches the loading.js fallback) */}

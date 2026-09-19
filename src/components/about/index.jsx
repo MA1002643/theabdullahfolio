@@ -11,6 +11,12 @@ import { detectChanges } from "@/utils/diffChanges";
 import { computeRepoDiff, computeRepoChangedFields } from "@/utils/repoDiff";
 import { computeStatsDiff, statsIncreasedFields } from "@/utils/statsDiff";
 import { useExperienceSummary } from "@/hooks/useExperienceSummary";
+import {
+  buildExperienceCardLabel,
+  buildSplitBreakdownLabel,
+  experienceSourceAvailability,
+  experienceSummaryState,
+} from "@/utils/experience/experiencePresentation";
 import { useProjectCountSignal } from "@/hooks/useProjectCountSignal";
 import { useReliableInView } from "@/hooks/useReliableInView";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
@@ -483,44 +489,10 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
   );
 }
 
-// Spoken equivalent of the ExperienceSplitBar legend, for the years card's
-// accessible name. The card is a `role="button"` with an explicit
-// `aria-label`, which makes it a leaf for name computation — its descendant
-// text (the visual, aria-hidden legend included) is never announced. So the
-// Personal/Employment split, and crucially the "data unavailable" state,
-// have to be folded into the button's own label or screen-reader users hear
-// only the grand total. Mirrors the bar's denominator logic exactly: an
-// unavailable source is excluded (not counted as zero) and spoken as
-// "data unavailable", while a present-but-empty side speaks a genuine
-// "0 percent". Returns "" when there's nothing to split (no bar shown).
-function buildSplitBreakdownLabel(experienceData) {
-  // No payload yet (summary still loading) is not a failure — match the
-  // visual split bar's `!!experienceData` gate and say nothing, rather than
-  // announcing both sources as "data unavailable" before any request has
-  // resolved. Without this guard a null payload would fall through (both
-  // `*Available` false, so the both-loaded bail below never fires) and speak
-  // a spurious double "data unavailable".
-  if (!experienceData) return "";
-  const personalAvailable = experienceData?.personalProjects != null;
-  const employmentAvailable = experienceData?.employment != null;
-  const personalMonths = experienceData?.personalProjects?.months ?? 0;
-  const employmentMonths = experienceData?.employment?.months ?? 0;
-  const effectivePersonal = personalAvailable ? personalMonths : 0;
-  const effectiveEmployment = employmentAvailable ? employmentMonths : 0;
-  const total = effectivePersonal + effectiveEmployment;
-  // Nothing to announce only when both sources loaded and measured zero —
-  // same gate as ExperienceSplitBar. With a side unavailable we still speak
-  // the split so AT users hear the "data unavailable" distinction even when
-  // the measured side is itself zero.
-  if (personalAvailable && employmentAvailable && total === 0) return "";
-  const personalText = personalAvailable
-    ? `${total > 0 ? Math.round((effectivePersonal / total) * 100) : 0} percent`
-    : "data unavailable";
-  const employmentText = employmentAvailable
-    ? `${total > 0 ? Math.round((effectiveEmployment / total) * 100) : 0} percent`
-    : "data unavailable";
-  return `Experience split: personal projects ${personalText}, employment ${employmentText}.`;
-}
+// `buildSplitBreakdownLabel` and the card's three presentation states now live
+// in `@/utils/experience/experiencePresentation` (imported above). They moved
+// out of this file so they can be tested without mounting this component — see
+// that module's own note for why the three states exist at all.
 
 const AboutDetails = () => {
   // GitHub Username — override via NEXT_PUBLIC_GITHUB_USERNAME when forking.
@@ -642,7 +614,18 @@ const AboutDetails = () => {
     () => new Set(experienceAddedRoleKeys),
     [experienceAddedRoleKeys],
   );
-  const experienceTotalMonths = experienceData?.total?.months ?? 0;
+  // Three states, and the middle one is the fix. A payload with `partial: true`
+  // is a FINISHED request whose total was deliberately withheld (GitHub failed,
+  // or its pagination stopped short), so `total?.months ?? 0` turned a withheld
+  // figure into a measured zero — "0 months of experience", a count-up to 0, and
+  // an accessible name announcing it — while the employment half sat in the same
+  // payload. `!!experienceData` cannot tell that apart from a complete answer;
+  // `experienceSummaryState` can.
+  const experienceState = experienceSummaryState(experienceData);
+  const experienceIsReady = experienceState === "ready";
+  const experienceTotalMonths = experienceIsReady
+    ? (experienceData?.total?.months ?? 0)
+    : 0;
   // Display unit follows the spec: years when total >= 12 months, else
   // months. Both the numeric `to` and the trailing label switch
   // together so they can't drift out of sync.
@@ -657,6 +640,15 @@ const AboutDetails = () => {
   // labelled button, would never be announced on its own). Empty string when
   // there's no split to read.
   const experienceSplitLabel = buildSplitBreakdownLabel(experienceData);
+  // One label builder for all three states, so a degraded payload can never be
+  // announced with the `ready` sentence — which is exactly what it was being
+  // given, complete with a zero it had withheld.
+  const experienceCardLabel = buildExperienceCardLabel({
+    state: experienceState,
+    counterValue: experienceCounterValue,
+    counterUnit: experienceCounterUnit,
+    splitLabel: experienceSplitLabel,
+  });
 
   // Render the split bar when there's anything worth communicating: measured
   // experience to apportion, OR a source that failed to load (so its
@@ -664,9 +656,14 @@ const AboutDetails = () => {
   // > 0` would swallow the case where the measured side is genuinely zero but
   // the other source is unavailable — e.g. GitHub down while the resume
   // parsed to no roles. Matches ExperienceSplitBar's own bail condition.
-  const experiencePersonalAvailable =
-    experienceData?.personalProjects != null;
-  const experienceEmploymentAvailable = experienceData?.employment != null;
+  // Shared with the breakdown modal and the spoken split label, so the three
+  // cannot disagree about which half failed (`@/utils/experience/experiencePresentation`).
+  // Both reads below sit behind the `!!experienceData` gate, so this helper's
+  // "not loaded is not a failure" default changes nothing here.
+  const {
+    personalAvailable: experiencePersonalAvailable,
+    employmentAvailable: experienceEmploymentAvailable,
+  } = experienceSourceAvailability(experienceData);
   const showExperienceSplit =
     !!experienceData &&
     (experienceTotalMonths > 0 ||
@@ -1510,7 +1507,22 @@ const AboutDetails = () => {
                 digit; the label now matches the years card's `text-fire-amber`
                 "of experience" tone (was the golden text-shadow-neon-light-orange)
                 so the two cards' colour systems are identical. */}
-            <motion.h1
+            {/* `motion.div`, NOT `motion.h1` (issue #32, W5). This is a card
+                FIGURE — a count with a label — and it was marked up as a
+                page-level heading. The e2e SEO suite's "exactly one h1 per
+                route" check caught /about rendering THREE: the real one from
+                PageTitle ("ABOUT ME") plus this card and the years card below.
+                Three h1s tell a screen reader the page has three top-level
+                topics, so navigating by heading announced "11 completed
+                projects" as a peer of the page title, and they flatten the
+                document outline a crawler reads.
+
+                Purely a semantics change: nothing styles these by tag (only
+                `h1.home-title` exists in globals.css, and that is the
+                homepage), every rule here is a utility class or an inline
+                style, and both `h1` and `div` are block-level so `display:
+                flex` resolves identically. Zero visual difference. */}
+            <motion.div
               variants={childVariants}
               className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
               // Fluid figure: 3rem = the sm:text-5xl anchor; the 1.5rem floor
@@ -1525,7 +1537,7 @@ const AboutDetails = () => {
               >
                 completed projects
               </span>
-            </motion.h1>
+            </motion.div>
 
             {/* Two-segment category split bar (Web / System) — the "elite &
                 complex" counterpart to the years card's Personal/Employment
@@ -1565,32 +1577,39 @@ const AboutDetails = () => {
           revealWhen={revealed}
           revealOrder={2}
           tilt
-          // Button semantics are only attached once `experienceData`
-          // resolves. While loading, the card is a plain informational
-          // region with `aria-busy` — exposing role="button" + click
-          // handlers on a control that no-ops would mislead AT users in
-          // virtual-cursor mode (they'd hear "button", activate it, and
-          // get nothing). The trigger contract (role, tabIndex, ARIA
-          // popup state, click/keydown handlers) all attach atomically
-          // the moment the data lands.
-          {...(experienceData
+          // Button semantics are only attached once a payload has ARRIVED.
+          // While loading, the card is a plain informational region with
+          // `aria-busy` — exposing role="button" + click handlers on a control
+          // that no-ops would mislead AT users in virtual-cursor mode (they'd
+          // hear "button", activate it, and get nothing). The trigger contract
+          // (role, tabIndex, ARIA popup state, click/keydown handlers) all
+          // attach atomically the moment the data lands.
+          //
+          // A DEGRADED payload keeps the trigger, and deliberately: the
+          // breakdown holds real content in that state — every employment role,
+          // with the personal side rendered "Unavailable" rather than zeroed —
+          // so removing the way in would hide data the payload actually
+          // carries. What changes is the NAME: `buildExperienceCardLabel` says
+          // the total is unavailable and offers "the breakdown of what is
+          // available", where the old label announced a total of zero. And
+          // `aria-busy` stays off, because the request is not in flight; it
+          // finished, and this is its answer.
+          {...(experienceState === "loading"
             ? {
+                "aria-busy": true,
+                "aria-label": experienceCardLabel,
+              }
+            : {
                 role: "button",
                 tabIndex: 0,
                 "aria-haspopup": "dialog",
                 "aria-expanded": isExperienceModalOpen,
-                "aria-label": `${experienceCounterValue}+ ${experienceCounterUnit} of experience.${
-                  experienceSplitLabel ? ` ${experienceSplitLabel}` : ""
-                } Activate to open category breakdown.`,
+                "aria-label": experienceCardLabel,
                 onClick: openExperienceModal,
                 onKeyDown: handleExperienceTriggerKeyDown,
-              }
-            : {
-                "aria-busy": true,
-                "aria-label": "Loading experience summary",
               })}
           className={`group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent !p-0 ${
-            experienceData ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50" : "cursor-default"
+            experienceState === "loading" ? "cursor-default" : "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50"
           }`}
         >
           {/* Inner wrapper mirrors the "Most Active Repository" card's
@@ -1646,7 +1665,11 @@ const AboutDetails = () => {
               Years in the craft
             </motion.p>
 
-            <motion.h1
+            {/* `motion.div`, NOT `motion.h1` — see the note on the sibling
+                "completed projects" figure above. Same defect, same reason
+                (issue #32, W5: exactly one h1 per route), same zero-visual
+                change. */}
+            <motion.div
               variants={childVariants}
               // `items-center` (not `items-baseline`): the Counter renders a
               // flex <div>, which doesn't expose a reliable text baseline to
@@ -1660,7 +1683,7 @@ const AboutDetails = () => {
               // today's smallest rendering.
               style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(3, 1.5), gap: fluid(0.5) }}
             >
-              {experienceData ? (
+              {experienceIsReady ? (
                 <>
                   <Counter from={0} to={experienceCounterValue} inView={isExperienceCardInView}></Counter>
                   <span
@@ -1668,6 +1691,25 @@ const AboutDetails = () => {
                     style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
                   >
                     {experienceCounterUnit} of experience
+                  </span>
+                </>
+              ) : experienceState === "degraded" ? (
+                // The request finished and the total was withheld — GitHub
+                // failed, or its pagination stopped short, so the sum would be
+                // a definite undercount (see `total` in the route). Same
+                // em-dash slot as loading, so the layout does not move, but
+                // WITHOUT the pulse: a pulse says "still computing", and
+                // nothing is computing. The caption names the state in the
+                // figure's own line rather than leaving a bare dash, matching
+                // the "Unavailable" wording the split bar below already uses
+                // for the missing half.
+                <>
+                  <span aria-hidden="true">—</span>
+                  <span
+                    className="font-semibold text-base text-fire-amber"
+                    style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
+                  >
+                    experience unavailable
                   </span>
                 </>
               ) : (
@@ -1682,7 +1724,7 @@ const AboutDetails = () => {
                   —
                 </span>
               )}
-            </motion.h1>
+            </motion.div>
 
             {/* Two-segment split bar — Personal vs Employment as a share of
                 total. Renders when there's measured experience to split OR a

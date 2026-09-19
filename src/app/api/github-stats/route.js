@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
 import fallbackStats from "@/data/github-stats-fallback.json";
+import { describeError } from "../_utils/redact";
 import { envPositiveMs } from "../_utils/env";
 
 // Pin to Node so `node:async_hooks` (used by the shared-deadline
@@ -335,7 +336,10 @@ export async function GET(request) {
   } catch (error) {
     // Total upstream failure (rate limit, network, GraphQL error). Serve the
     // bundled snapshot so the about page never renders empty stat cards.
-    console.error("GitHub stats fetch failed, serving fallback:", error);
+    console.error(
+      "GitHub stats fetch failed, serving fallback:",
+      describeError(error),
+    );
     return NextResponse.json(
       { ...fallbackStats, _fallback: true },
       {

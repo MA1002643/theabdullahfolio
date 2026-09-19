@@ -26,6 +26,8 @@
 
 import { Redis } from '@upstash/redis';
 
+import { redactSecrets } from './redact';
+
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
@@ -156,7 +158,9 @@ export async function getAccessToken({ forceRefresh = false } = {}) {
     data = await res.json();
   } catch (err) {
     console.error(
-      `[api/spotify] token refresh threw: ${err?.name ?? 'Error'} ${err?.message ?? ''}`.trim(),
+      redactSecrets(
+        `[api/spotify] token refresh threw: ${err?.name ?? 'Error'} ${err?.message ?? ''}`.trim(),
+      ),
     );
     return null;
   }
