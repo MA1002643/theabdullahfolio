@@ -10,7 +10,7 @@ import {
   vi,
 } from 'vitest';
 
-import { freshCronSecret } from '../helpers/secrets.js';
+import { freshCronSecret, freshSecret } from '../helpers/secrets.js';
 
 // The snapshot baseline is the one part of /api/seo-report that CANNOT be
 // checked by reading a single response: it is a property of how three
@@ -244,8 +244,12 @@ beforeAll(async () => {
     const target = String(url);
     if (target.startsWith('https://oauth2.googleapis.com/token')) {
       // Unique per exchange, which is what lets the analytics stub below tell
-      // two concurrent invocations apart.
-      const token = `test-token-${(tokensIssued += 1)}`;
+      // two concurrent invocations apart. `freshSecret` rather than a counted
+      // literal: uniqueness is what this needs and high entropy gives it for
+      // free, without adding a token-shaped string to the repository — the same
+      // rule `freshCronSecret` above follows, for the same reason. The counter
+      // stays as the human-readable tag in a failure dump.
+      const token = freshSecret(`test-gsc-access-${(tokensIssued += 1)}`);
       if (raceRows.length > 0) rowsByToken.set(token, raceRows.shift());
       return {
         ok: true,

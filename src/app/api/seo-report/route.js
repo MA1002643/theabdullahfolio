@@ -114,6 +114,28 @@ const UPSTREAM_TIMEOUT_MS = Math.round(
   ),
 );
 
+// ── The phase the two bounds above do not cover ─────────────────────────────
+// Four Upstash calls — the baseline read, the `nx` claim, the read-back on a
+// rerun and the publish script — ran with NO deadline at all. The note on
+// `maxDuration` above says as much in passing ("the Upstash writes and the
+// response itself, which are not upstream calls and carry no bound of their
+// own") and treated it as slack rather than as the gap it is: a stalled REST
+// request holds this route open until the platform kills it, and a killed
+// function returns no 502 and no `timedOut` flag, so /api/daily-warmup — which
+// is what invokes this at 01:00 — loses the verdict for the whole fan-out. That
+// is the exact failure the upstream bounds exist to prevent, arriving through
+// the one phase they were never applied to.
+//
+// Sized as the quarter of the duration the upstream ceiling leaves behind
+// (0.75 + 0.25 = 1), and held under ONE PHASE's bound as well, so the knob that
+// already tunes this route tunes this too rather than needing a fourteenth env
+// var. With the defaults: two upstream phases at 10s, storage at 7.5s, 27.5s
+// against a declared 30s — and the remaining 2.5s is for `deriveFindings` and
+// serialisation, which are CPU over at most a thousand rows.
+const STORAGE_TIMEOUT_MS = Math.round(
+  Math.min(UPSTREAM_TIMEOUT_MS, maxDuration * 1000 * 0.25),
+);
+
 // ── Which errors may be QUOTED to a caller ──────────────────────────────────
 // The handler's `try` is one block around everything: the RS256 signing, four
 // bounded upstream calls, and four Upstash operations. Its catch used to answer
@@ -157,7 +179,7 @@ function reportable(message, extra) {
  * returned unmarked, so the handler answers it with a fixed string rather than
  * with undici's account of this deployment's network.
  */
-function labelTimeout(error, signal, label) {
+function labelTimeout(error, signal, label, budgetMs = UPSTREAM_TIMEOUT_MS) {
   const timedOut =
     error?.name === 'TimeoutError' ||
     (signal.aborted && signal.reason?.name === 'TimeoutError');
@@ -165,7 +187,12 @@ function labelTimeout(error, signal, label) {
     ? // A step name and a number: no host, no URL, no credential. This is the
       // message the whole opt-in exists to preserve, because "which of four
       // upstream calls stalled" is the diagnosis a fixed string would delete.
-      reportable(`${label} timed out after ${UPSTREAM_TIMEOUT_MS}ms`, {
+      //
+      // The budget is a parameter because there is now more than one. The
+      // storage phase below is bounded separately and by a different number, and
+      // a message naming the upstream budget for a storage stall would send an
+      // operator to tune the knob that was not involved.
+      reportable(`${label} timed out after ${budgetMs}ms`, {
         [TIMED_OUT]: true,
       })
     : error;
@@ -854,9 +881,35 @@ export async function GET(request) {
       })),
     };
 
+    // ── One deadline over the whole storage phase ───────────────────────────
+    // Shared rather than per-call, because the thing that has to be bounded is
+    // how long this route can sit in Upstash ALTOGETHER — four calls at their
+    // own bound each is four times the number the arithmetic above is written
+    // against. Started here rather than at the top of the handler for the same
+    // reason the upstream phases are bounded separately: the time Google took is
+    // already accounted for, and charging it to storage would abort a healthy
+    // write for a slow read that already succeeded.
+    //
+    // `raceAbort`, not a signal handed to the client: `@upstash/redis` accepts
+    // one only per CLIENT, and the client here is the shared driver every route
+    // uses. Racing bounds the WAIT rather than cancelling the request, which is
+    // the same guarantee — and the same helper — the bounded body reads use.
+    //
+    // What a raced-out write means, stated because it is the part that could
+    // look unsafe: a `set` this route stopped waiting for may still land. That
+    // leaves the daily key claimed with no `latest` published, which is exactly
+    // the half-completed run the publish is already designed to repair — see
+    // the note below on `latest` being rewritten on every run rather than
+    // skipped on a rerun. Nothing new has to be true for this to be safe.
+    const storageDeadline = AbortSignal.timeout(STORAGE_TIMEOUT_MS);
+    const bounded = (operation, step) =>
+      raceAbort(operation, storageDeadline).catch((error) => {
+        throw labelTimeout(error, storageDeadline, step, STORAGE_TIMEOUT_MS);
+      });
+
     // Read the previous snapshot BEFORE overwriting `latest`, or the comparison
     // is against this run rather than the last one and every finding is empty.
-    const previous = await redis.get(LATEST_KEY);
+    const previous = await bounded(redis.get(LATEST_KEY), 'storage read');
     const findings = deriveFindings(snapshot, previous);
 
     // `today` comes from the pre-flight read above, NOT from the clock as it
@@ -904,13 +957,18 @@ export async function GET(request) {
     // missed day (a deploy window, a cron that straddles midnight) would leave
     // that key absent, and an absent baseline makes `deriveFindings` report
     // every query as new. `latest` degrades to "the last day we did capture".
-    const claimedToday = await redis.set(todayKey, snapshot, {
-      ex: SNAPSHOT_TTL_SECONDS,
-      nx: true,
-    });
+    const claimedToday = await bounded(
+      redis.set(todayKey, snapshot, {
+        ex: SNAPSHOT_TTL_SECONDS,
+        nx: true,
+      }),
+      'storage claim',
+    );
     // `nx` answers 'OK' when it wrote and null when the key was already there.
     const isRerun = !claimedToday;
-    const canonical = isRerun ? await redis.get(todayKey) : snapshot;
+    const canonical = isRerun
+      ? await bounded(redis.get(todayKey), 'storage read-back')
+      : snapshot;
 
     // Guarded rather than written blind: if the daily key somehow went missing
     // between the rejected claim and this read, leaving `latest` alone keeps a
@@ -926,16 +984,19 @@ export async function GET(request) {
       // them, so writing the same string from Lua leaves a value `redis.get`
       // parses back identically. Passing the object would let the argument
       // encoding differ from what a plain `set` would have stored.
-      const wrote = await redis.eval(
-        PUBLISH_LATEST_LUA,
-        [LATEST_KEY],
-        [
-          JSON.stringify(canonical),
-          String(canonical.capturedAt ?? ''),
-          // The same retention window the daily key gets — see the note beside
-          // the script for why the pointer needs one at all.
-          String(SNAPSHOT_TTL_SECONDS),
-        ],
+      const wrote = await bounded(
+        redis.eval(
+          PUBLISH_LATEST_LUA,
+          [LATEST_KEY],
+          [
+            JSON.stringify(canonical),
+            String(canonical.capturedAt ?? ''),
+            // The same retention window the daily key gets — see the note
+            // beside the script for why the pointer needs one at all.
+            String(SNAPSHOT_TTL_SECONDS),
+          ],
+        ),
+        'storage publish',
       );
       baselinePublished = Number(wrote) === 1;
 

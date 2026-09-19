@@ -68,3 +68,32 @@ export function freshSecret(label = 'test') {
 export function freshCronSecret() {
   return freshSecret('test-cron');
 }
+
+/**
+ * A generated credential SHORTER than a real one, for the cases that need it.
+ *
+ * `freshSecret` carries a label and 32 bytes of hex, so it is long by
+ * construction — which is right for a stand-in and wrong for the one property
+ * some cases exist to test. `redactSecrets` treats length as a boundary: at or
+ * above eight characters a value is replaced wherever it appears, below it only
+ * where it stands as a whole token, and a weak credential (a short
+ * `CRON_SECRET`, an SMTP password someone chose by hand) is exactly the case
+ * that rule protects. Testing it needs a short value.
+ *
+ * What it must NOT need is a short LITERAL. A password-shaped string in a test
+ * file is still one committed to history, and the rule above draws no exception
+ * for a value that is only pretending — the objection is the artefact, not the
+ * entropy. So the shortness is a parameter and the value is still
+ * minted per run.
+ *
+ * Hex, so the alphabet cannot collide with the prose a case wraps around it.
+ *
+ * @param {number} [chars] Length in hex characters; default is under the
+ *   redaction module's 8-character unconditional-match threshold.
+ * @returns {string} A fresh, short stand-in for a weak credential.
+ */
+export function freshShortSecret(chars = 6) {
+  return randomBytes(Math.ceil(chars / 2))
+    .toString('hex')
+    .slice(0, chars);
+}

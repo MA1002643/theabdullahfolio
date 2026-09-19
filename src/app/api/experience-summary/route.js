@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { safeBearerEqual } from "../_utils/cronAuth";
 import { envPositiveMs } from "../_utils/env";
+import { describeError } from "../_utils/redact";
 import { journeyData } from "@/app/data";
 import { formatDuration, monthsBetween } from "@/utils/experience/dateMath";
 import { employmentFromJourney } from "@/utils/experience/journeyEmployment";
@@ -700,7 +701,7 @@ export async function GET(request) {
         : RESPONSE_CACHE_HEADERS,
     });
   } catch (error) {
-    console.error("experience-summary fetch failed:", error);
+    console.error("experience-summary fetch failed:", describeError(error));
     return NextResponse.json(
       { error: "Failed to build experience summary" },
       { status: 500, headers: { "Cache-Control": "no-store" } },

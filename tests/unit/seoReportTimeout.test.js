@@ -12,7 +12,7 @@ import {
   vi,
 } from 'vitest';
 
-import { freshCronSecret } from '../helpers/secrets.js';
+import { freshCronSecret, freshSecret } from '../helpers/secrets.js';
 
 // ── Why a stalled upstream is this route's problem and not only its own ─────
 // /api/seo-report runs as the third step of /api/daily-warmup's fan-out, and
@@ -31,26 +31,42 @@ import { freshCronSecret } from '../helpers/secrets.js';
 
 // Generated per run, never written down: see tests/helpers/secrets.js.
 const CRON_SECRET = freshCronSecret();
+const ACCESS_TOKEN = freshSecret('test-gsc-access');
+// The storage case below configures a KV token so the redaction has something
+// to match. Minted, not written down — the value is a credential stand-in and
+// the endpoint beside it is an address, which is why only one of the two is
+// generated.
+const KV_TOKEN = freshSecret('test-kv-token');
 const TIMEOUT_MS = 80;
 
 // `eval` runs the compare-and-set that publishes the baseline. Most cases in
 // this file fail upstream of it, so it only has to exist and succeed — but one
 // needs it to FAIL, because the storage calls sit inside the same try as the
 // upstream ones and their messages are the least safe thing in the block.
-const { redisStub } = vi.hoisted(() => ({ redisStub: { failWith: null } }));
+const { redisStub } = vi.hoisted(() => ({
+  redisStub: { failWith: null, stallOn: null },
+}));
 
 vi.mock('@/lib/guestbook/redisDriver', () => {
   const failIfAsked = () => {
     if (redisStub.failWith) throw new Error(redisStub.failWith);
   };
+  // A stalled Upstash REST call, which is the shape the storage bound exists
+  // for: the request is accepted and the answer never comes. Never settling is
+  // the honest model — `@upstash/redis` is handed no signal by this route (the
+  // client is the shared driver's), so nothing downstream will end this wait.
+  const stallIfAsked = (op) =>
+    redisStub.stallOn === op ? new Promise(() => {}) : null;
   return {
     redis: {
-      get: async () => {
+      get: (...args) => {
+        const stalled = stallIfAsked('get');
+        if (stalled) return stalled;
         failIfAsked();
-        return null;
+        return Promise.resolve(null);
       },
-      set: async () => 'OK',
-      eval: async () => 1,
+      set: (...args) => stallIfAsked('set') ?? Promise.resolve('OK'),
+      eval: (...args) => stallIfAsked('eval') ?? Promise.resolve(1),
     },
     redisAvailable: true,
   };
@@ -126,7 +142,10 @@ beforeAll(async () => {
     }
     if (isToken) {
       if (stalls) return stall(init.signal);
-      return okJson({ access_token: 'test' });
+      // Minted per run for the reason `freshCronSecret` above is: nothing here
+      // reads the value, so a literal was only ever a credential-shaped string
+      // committed to history.
+      return okJson({ access_token: ACCESS_TOKEN });
     }
     if (stalls) return stall(init.signal);
     return okJson({ rows: [] });
@@ -145,6 +164,7 @@ beforeEach(() => {
   throwInstead = null;
   seenSignals = [];
   redisStub.failWith = null;
+  redisStub.stallOn = null;
   // The redaction is keyed off CONFIGURED values, so the one case that needs
   // them sets them itself. Cleared here rather than left standing: a value that
   // outlives its case would scrub text in a later one and hide what that case
@@ -315,7 +335,7 @@ describe('seo-report bounds every upstream call', () => {
     // own table. Nothing in the old "overwhelmingly our own labels" reasoning
     // covered them.
     process.env.KV_REST_API_URL = 'https://eu2-notreal-12345.upstash.io';
-    process.env.KV_REST_API_TOKEN = 'AXY_notreal_token_value';
+    process.env.KV_REST_API_TOKEN = KV_TOKEN;
     redisStub.failWith =
       `fetch failed: ${process.env.KV_REST_API_URL} ` +
       `(token ${process.env.KV_REST_API_TOKEN})`;
@@ -326,7 +346,7 @@ describe('seo-report bounds every upstream call', () => {
 
     expect(response.status).toBe(502);
     const serialised = JSON.stringify(body);
-    for (const leak of ['upstash.io', 'eu2-notreal', 'AXY_notreal']) {
+    for (const leak of ['upstash.io', 'eu2-notreal', KV_TOKEN]) {
       expect(
         serialised,
         `The 502 body carries "${leak}" from the storage error.`,
@@ -342,7 +362,7 @@ describe('seo-report bounds every upstream call', () => {
     // access. Nobody chose to log the endpoint: `@upstash/redis` quoted the
     // configuration it was handed, and the raw object carried it through.
     const logged = loggedText(errorSpy);
-    for (const leak of ['upstash.io', 'eu2-notreal', 'AXY_notreal']) {
+    for (const leak of ['upstash.io', 'eu2-notreal', KV_TOKEN]) {
       expect(
         logged,
         `The platform log carries "${leak}" from the storage error.`,
@@ -353,6 +373,54 @@ describe('seo-report bounds every upstream call', () => {
     expect(logged).toContain('fetch failed');
     expect(logged).toContain('[KV_REST_API_URL]');
     expect(logged).toContain('[KV_REST_API_TOKEN]');
+  });
+
+  // ── The phase the upstream bounds never covered ────────────────────────────
+  // Four Upstash calls ran with no deadline at all, and the route's own
+  // `maxDuration` note treated that as slack. It is not: a stalled REST request
+  // holds the function until the platform kills it, and a killed function
+  // returns no 502 and no `timedOut` — so /api/daily-warmup, which is what
+  // invokes this at 01:00, loses the verdict for the whole fan-out. Exactly the
+  // failure the upstream bounds exist to prevent, through the one phase they
+  // were never applied to.
+  //
+  // One case per call because they fail at different points in the sequence:
+  // the baseline read is before anything was written, the claim is the atomic
+  // step that decides which run owns the day, and the publish is after the day
+  // is already claimed.
+  for (const [operation, step] of [
+    ['get', 'storage read'],
+    ['set', 'storage claim'],
+    ['eval', 'storage publish'],
+  ]) {
+    it(`answers 502 instead of hanging when the ${step} stalls`, async () => {
+      redisStub.stallOn = operation;
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const response = await call();
+      const body = await response.json();
+
+      expect(response.status).toBe(502);
+      // The two things daily-warmup reads: a verdict, and which knob to tune.
+      expect(body.timedOut).toBe(true);
+      expect(body.error).toContain(step);
+      expect(body.error).toContain('timed out after');
+      // The storage budget, not the upstream one — a message naming the wrong
+      // number sends an operator to a knob that was not involved. Both are
+      // TIMEOUT_MS here only because the storage bound is derived from it.
+      expect(errorSpy).toHaveBeenCalled();
+    });
+  }
+
+  it('does not charge the storage phase for the time Google took', async () => {
+    // The deadline starts when storage does. Sharing one signal with the
+    // upstream phases would abort a perfectly healthy write because a read that
+    // already succeeded was slow, which is a worse failure than the one being
+    // fixed — it would turn a slow night into a lost baseline.
+    stallTarget = null;
+    const response = await call();
+
+    expect(response.status).toBe(200);
   });
 
   it('still quotes the labels it wrote itself, and flags the timeout', async () => {

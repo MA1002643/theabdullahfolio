@@ -18,14 +18,32 @@
 /**
  * The variables whose VALUES may never appear in a log line.
  *
- * Mirrors the credential table in CLAUDE.md, plus the `UPSTASH_`-prefixed pair
- * that `redisDriver` accepts as an alternative to the `KV_` names — the driver
- * reads either, so redacting only one pair would leave a direct-Upstash
- * deployment unprotected while looking covered.
+ * The first cut copied the credential TABLE in CLAUDE.md, which is a summary
+ * written for a reader and not a manifest — it predates the Search Console work
+ * and the guestbook's sign-in, and CLAUDE.md's actual rule is the sentence above
+ * that table: every value in `.env.local` is a secret. Deriving the list from
+ * the summary meant the two routes this module was written FOR each had a
+ * credential it did not cover: `/api/seo-report` reads
+ * `GSC_SERVICE_ACCOUNT_KEY`, a base64 blob holding a PRIVATE KEY, and
+ * `/api/send-mail` puts `RECEIVER_EMAIL` in the envelope of the very send whose
+ * rejection it logs. A bounce quotes the recipient; a signing failure can quote
+ * the key it was handed. Both would have gone to the drain unchanged.
+ *
+ * `RECEIVER_EMAIL` is a secret by this repository's own construction rather than
+ * by entropy — `footer-data.js` says so in those words, and it exists as a
+ * separate variable from `NEXT_PUBLIC_CONTACT_EMAIL` precisely so the delivery
+ * inbox is not the published one. That the two point at the same address today
+ * is a choice, not a guarantee, and redacting a value that happens to also be
+ * public costs nothing: the placeholder still names the server-only variable.
+ *
+ * `tests/unit/redactSecrets.test.js` now holds this list against `.env.example`,
+ * so a variable added there has to be classified as secret or as public-by-
+ * design before CI goes green. That is the part that keeps this from going stale
+ * again — a list maintained by memory is the defect above, not a fix for it.
  *
  * Names, not values, obviously: this file is committed.
  */
-const SECRET_ENV_VARS = [
+export const SECRET_ENV_VARS = [
   'KV_REST_API_URL',
   'KV_REST_API_TOKEN',
   'UPSTASH_REDIS_REST_URL',
@@ -34,28 +52,74 @@ const SECRET_ENV_VARS = [
   'CRON_SECRET',
   'SMTP_USER',
   'SMTP_PASS',
+  // The delivery inbox: server-only by design, and the `to:` of the send whose
+  // failure /api/send-mail logs.
+  'RECEIVER_EMAIL',
   'ABSTRACT_API_KEY',
   'LOCATION_INGEST_TOKEN',
   'LOCATION_INGEST_QUERY_TOKEN',
   'SPOTIFY_CLIENT_ID',
   'SPOTIFY_CLIENT_SECRET',
   'SPOTIFY_REFRESH_TOKEN',
+  // Base64 JSON carrying the service account's RSA private key — the highest-
+  // value secret in the route this module's first caller lives in.
+  'GSC_SERVICE_ACCOUNT_KEY',
+  // Auth.js, mounted for the guestbook sign-in. Found by the same audit rather
+  // than named in the finding, and the same class: an OAuth client secret or the
+  // session signing key reaching a drain is the failure this file exists for.
+  // The client IDs travel in redirect URLs and are not really secret, but
+  // `SPOTIFY_CLIENT_ID` is on this list for the same reason — an ID beside its
+  // secret is half a credential, and the cost of redacting one is a placeholder.
+  'AUTH_SECRET',
+  'AUTH_GITHUB_ID',
+  'AUTH_GITHUB_SECRET',
+  'AUTH_GOOGLE_ID',
+  'AUTH_GOOGLE_SECRET',
 ];
 
-// Below this length a value is not redacted at all, and the reason is not
-// prudence about noise — it is correctness. A one- or two-character variable
-// (a stray `KV_REST_API_URL=x` in a preview) would match inside ordinary words
-// and turn the log into confetti, and an EMPTY one would match everywhere.
-// Eight is comfortably under every real credential's length and comfortably
-// over anything that could collide.
-const MIN_REDACTABLE_LENGTH = 8;
+// At or above this length a value is replaced wherever it appears. Below it,
+// only where it stands as a whole token.
+//
+// The first cut SKIPPED anything shorter, on the reasoning that a one- or
+// two-character value would match inside ordinary words and turn the log into
+// confetti. The confetti is real; the conclusion was an exemption, and this
+// module does not get to decide that a weak credential is not a credential. An
+// operator who sets a seven-character `CRON_SECRET`, or an SMTP account with a
+// short password, is exactly the deployment least able to afford the value in a
+// drain — and "too short to redact safely" would have been news to them.
+//
+// So the short case is matched with boundaries instead of dropped: `x` is
+// replaced where it is a word on its own, never inside `next` or `xyz`. That
+// can still be noisy in the pathological case, and noisy is now the direction
+// this errs in, because the alternative is a credential printed verbatim. Long
+// values keep the unconditional match, which is the stronger guarantee: a
+// high-entropy token embedded in a longer string is still redacted, where a
+// boundary rule would let it through.
+const UNCONDITIONAL_MATCH_LENGTH = 8;
 
-/** The host of a URL-shaped value, or null. */
-function hostOf(value) {
+/**
+ * The host forms of a URL-shaped value: hostname first, then host-with-port.
+ *
+ * `URL.host` alone was the bug. It carries the port when one is configured
+ * (`eu2-x.upstash.io:6379`), and a DNS failure names the HOSTNAME by itself —
+ * `getaddrinfo ENOTFOUND eu2-x.upstash.io`, no port, because the resolver never
+ * saw one. So for any deployment whose endpoint carries an explicit port, the
+ * needle could not match the error shape it exists to catch, and the endpoint
+ * went to the log exactly as before.
+ *
+ * Both are returned: the hostname covers DNS, and `host` covers the forms that
+ * do carry the port (a connection refusal, a proxy line) as one unit rather
+ * than leaving `:6379` stranded beside a placeholder.
+ */
+function hostsOf(value) {
   try {
-    return new URL(value).host || null;
+    const url = new URL(value);
+    if (!url.hostname) return [];
+    return url.host && url.host !== url.hostname
+      ? [url.hostname, url.host]
+      : [url.hostname];
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -83,11 +147,12 @@ function needles() {
   const found = [];
   for (const name of SECRET_ENV_VARS) {
     const value = (process.env[name] ?? '').trim();
-    if (value.length < MIN_REDACTABLE_LENGTH) continue;
+    // Empty is the one length that is skipped outright, and it has to be: a
+    // zero-length needle matches between every character, which would replace
+    // the whole line with placeholders rather than protect anything in it.
+    if (value.length === 0) continue;
     found.push({ needle: value, name });
-    const host = hostOf(value);
-    if (host && host.length >= MIN_REDACTABLE_LENGTH)
-      found.push({ needle: host, name });
+    for (const host of hostsOf(value)) found.push({ needle: host, name });
   }
   return found.sort((a, b) => b.needle.length - a.needle.length);
 }
@@ -110,7 +175,16 @@ function needles() {
 export function redactSecrets(text) {
   let out = String(text);
   for (const { needle, name } of needles()) {
-    out = out.replace(new RegExp(escapeRe(needle), 'gi'), `[${name}]`);
+    const escaped = escapeRe(needle);
+    // A short value is matched only where it stands alone — `(?<![\w-])` and
+    // `(?![\w-])` rather than `\b`, because `\b` is defined against word
+    // characters and a credential can end in punctuation, where it would then
+    // refuse to match at all.
+    const pattern =
+      needle.length >= UNCONDITIONAL_MATCH_LENGTH
+        ? escaped
+        : `(?<![\\w-])${escaped}(?![\\w-])`;
+    out = out.replace(new RegExp(pattern, 'gi'), `[${name}]`);
   }
   return out;
 }

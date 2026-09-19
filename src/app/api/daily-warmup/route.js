@@ -1,6 +1,7 @@
 import { raceAbort } from "../_utils/abort";
 import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
 import { envPositiveMs } from "../_utils/env";
+import { describeError } from "../_utils/redact";
 
 // Pinned to Node so `node:crypto` (transitively used by `safeBearerEqual`)
 // is available — same constraint as /api/repo-refresh and /api/work-status.
@@ -411,7 +412,7 @@ export async function GET(request) {
           ? `exceeded the ${RUN_BUDGET_MS}ms run budget`
           : "failed"
       }:`,
-      err,
+      describeError(err),
     );
     // The response carries a VERDICT; the log carries the diagnosis. `err.message`
     // on this path is always transport internals — a rejected `fetch` is a DNS

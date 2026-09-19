@@ -75,7 +75,11 @@ beforeAll(async () => {
       return {
         ok: true,
         status: 200,
-        json: async () => ({ access_token: 't' }),
+        // Generated, not spelled out: the route never inspects this value, so a
+        // literal bought nothing and left a credential-shaped string in the
+        // tree — which is the artefact `tests/helpers/secrets.js` exists to
+        // keep out, rather than to audit later.
+        json: async () => ({ access_token: freshSecret('test-gsc-access') }),
       };
     }
     return { ok: true, status: 200, json: async () => ({ rows: [] }) };

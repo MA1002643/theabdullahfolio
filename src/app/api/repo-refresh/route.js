@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { raceAbort } from "../_utils/abort";
 import { noStoreJson, safeBearerEqual } from "../_utils/cronAuth";
 import { envPositiveMs } from "../_utils/env";
+import { describeError } from "../_utils/redact";
 
 // Pin to the Node runtime so `node:crypto` (transitively used by
 // `safeBearerEqual` for constant-time bearer-token compare) stays
@@ -333,7 +334,7 @@ export async function GET(request) {
     } catch (err) {
       console.warn(
         "repo-refresh: github-stats warm failed:",
-        err?.message ?? err,
+        describeError(err),
       );
       // Fixed message, not `err.message`. A failed warm fetch rejects with
       // transport internals — the resolved internal host and port behind
@@ -380,7 +381,7 @@ export async function GET(request) {
     } catch (err) {
       console.warn(
         "repo-refresh: experience-summary warm failed:",
-        err?.message ?? err,
+        describeError(err),
       );
       // Same reasoning as the github-stats warm above: a fixed message, with
       // `aborted` carrying the only distinction the response needs to make.
@@ -422,7 +423,7 @@ export async function GET(request) {
       { status },
     );
   } catch (err) {
-    console.error("repo-refresh cron error:", err);
+    console.error("repo-refresh cron error:", describeError(err));
     return noStoreJson({ error: "Refresh failed" }, { status: 500 });
   }
 }

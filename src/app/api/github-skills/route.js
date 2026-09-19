@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { categorizeSkills, categorizeSkillsWithRepos } from "@/utils/skillsIconMap";
 import { MANIFESTS, parseManifest } from "@/utils/manifestParsers";
 import { envPositiveMs } from "../_utils/env";
+import { describeError, redactSecrets } from "../_utils/redact";
 
 // Record that `name` (a detected language / dependency) surfaced in `repo`.
 // `into` is a Map<detectedName, { repos: Set<nameWithOwner>, privateRepos:
@@ -387,7 +388,9 @@ async function crawlScope(username, privacy, into) {
     } catch (err) {
       if (err?.name === "AbortError") return; // budget exhausted; partial retained
       console.warn(
-        `github-skills: manifest fetch for ${repo.nameWithOwner} failed: ${err?.message ?? err}`,
+        redactSecrets(
+          `github-skills: manifest fetch for ${repo.nameWithOwner} failed: ${err?.message ?? err}`,
+        ),
       );
     }
   });
@@ -414,7 +417,11 @@ async function crawlSkillNames(username) {
       await crawlScope(username, privacy, skillRepos);
     } catch (err) {
       lastError = err;
-      console.warn(`github-skills: ${privacy} scope failed: ${err?.message ?? err}`);
+      console.warn(
+        redactSecrets(
+          `github-skills: ${privacy} scope failed: ${err?.message ?? err}`,
+        ),
+      );
     }
   }
 
@@ -515,7 +522,10 @@ export async function GET(request) {
     // curated floor there's nothing to substitute, so return empty categories —
     // the grid shows its "couldn't load" state rather than asserting a fake
     // hardcoded set. The 10-min TTL means the next visit retries.
-    console.error("github-skills crawl failed, returning empty payload:", error);
+    console.error(
+      "github-skills crawl failed, returning empty payload:",
+      describeError(error),
+    );
     return NextResponse.json(
       {
         categories: categorizeSkills([]),

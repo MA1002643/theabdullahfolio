@@ -331,14 +331,26 @@ describe('daily-warmup — the run budget', () => {
     }
 
     // The other half of the rule, and the reason flattening costs nothing: the
-    // diagnosis is still recorded, just not returned. Asserted on the logged
-    // ERROR OBJECT rather than the formatted string, since that is what carries
-    // the stack an operator actually needs.
-    const logged = errorSpy.mock.calls.flat();
-    expect(
-      logged.some((arg) => arg instanceof Error && arg.message === raw),
-      'The raw exception should still reach console.error.',
-    ).toBe(true);
+    // diagnosis is still recorded, just not returned.
+    //
+    // This used to require the logged argument to BE the Error — "the raw
+    // exception should still reach console.error" — which made the assertion a
+    // guarantee that nothing stood between a library's words and the platform
+    // log. That is the property `describeError` exists to remove: a log is a
+    // sink with its own audience, and the errors this catch receives are raised
+    // by libraries that quote the configuration they were handed. So the
+    // diagnosis is asserted on the TEXT now, which is what an operator reads,
+    // and what survives is everything except this deployment's own secrets —
+    // `10.1.2.3:3000` is not one, so it is still here in full.
+    const logged = errorSpy.mock.calls
+      .flat()
+      .map(String)
+      .join('\n');
+    expect(logged, 'The diagnosis no longer reaches console.error.').toContain(
+      raw,
+    );
+    // And the stack came with it, which is the half a fixed string would cost.
+    expect(logged).toMatch(/\n\s+at /);
   });
 
   it('rejects a non-positive budget rather than aborting instantly', async () => {

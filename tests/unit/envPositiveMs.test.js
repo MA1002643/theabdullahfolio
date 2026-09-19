@@ -92,6 +92,33 @@ describe('envPositiveMs — usable by a real timer', () => {
     expect(envPositiveMs(-1, 1e10)).toBe(MAX_TIMER_MS);
   });
 
+  it('refuses a fallback that is not a number at all', () => {
+    // The case the clamp above cannot reach. `Math.round(NaN)` is `NaN`, and
+    // `Math.min(Math.max(1, NaN), …)` is `NaN` all the way out — so the helper
+    // whose entire job is that no route builds a timer from a bad value
+    // returned one this file's own `isUsableDelay` rejects, and the caller
+    // handed it to `AbortSignal.timeout`, which throws.
+    //
+    // A THROW rather than a clamp, unlike every case above, and the asymmetry
+    // is deliberate: an env value is configuration that can be wrong on a
+    // Tuesday, while a fallback is a literal in this repository — all thirteen
+    // are constants. An invalid one is a bug, and the build or this suite is
+    // where a bug should surface, not a 01:00 cron. Clamping it to 1ms would
+    // bury it under instant aborts everywhere, which is the failure `Math.max(1,
+    // …)` exists to prevent.
+    for (const bad of [NaN, 'nonsense', undefined, null, Infinity, 0, -1, {}]) {
+      expect(
+        () => envPositiveMs('8000', bad),
+        `fallback ${String(bad)} was accepted`,
+      ).toThrow(TypeError);
+    }
+
+    // Including when the env value WOULD have been usable: a caller cannot be
+    // allowed to discover its fallback is broken only on the day the knob is
+    // unset, which is every deployment that left it alone.
+    expect(() => envPositiveMs(undefined, NaN)).toThrow(/finite positive/);
+  });
+
   it('answers something a timer accepts for every input above', () => {
     // The property the individual cases are instances of, asserted over the
     // whole set — including the fallback path, since that is what most

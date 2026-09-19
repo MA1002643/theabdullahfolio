@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { freshCronSecret } from '../helpers/secrets.js';
+import { freshCronSecret, freshSecret } from '../helpers/secrets.js';
 
 // ── What we actually send to Search Analytics ───────────────────────────────
 // Nothing pinned the OUTGOING request. Every other suite stubs `fetch` and
@@ -38,6 +38,11 @@ vi.mock('@/lib/guestbook/redisDriver', () => ({
 }));
 
 const CRON_SECRET = freshCronSecret();
+// The access token both stubs below hand back. Generated per run rather than
+// written out: nothing asserts on the value, so a literal was only ever a
+// credential-shaped string in the repository — the artefact
+// `tests/helpers/secrets.js` exists to prevent rather than to review.
+const ACCESS_TOKEN = freshSecret('test-gsc-access');
 
 /** Every Search Analytics request the route made: `{ url, body }`. */
 const analyticsCalls = [];
@@ -67,7 +72,7 @@ beforeAll(async () => {
       return {
         ok: true,
         status: 200,
-        json: async () => ({ access_token: 'test-token' }),
+        json: async () => ({ access_token: ACCESS_TOKEN }),
       };
     }
     if (target.includes('searchAnalytics/query')) {
@@ -236,7 +241,7 @@ describe('the Search Analytics request body', () => {
           return {
             ok: true,
             status: 200,
-            json: async () => ({ access_token: 'test-token' }),
+            json: async () => ({ access_token: ACCESS_TOKEN }),
           };
         }
         straddleCalls.push(JSON.parse(init.body));

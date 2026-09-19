@@ -54,11 +54,38 @@ const MAX_TIMER_MS = 2147483647;
  * all thirteen knobs, so nothing that currently calls `setTimeout` changes
  * behaviour.
  *
+ * ── The fallback is held to the same contract, and fails differently ────────
+ * The clamp was applied to the CHOSEN value and the fallback was trusted to be
+ * one. `Math.round(NaN)` is `NaN`, and `Math.min(Math.max(1, NaN), …)` is `NaN`
+ * all the way out — so `envPositiveMs(undefined, Number(process.env.X))`, or a
+ * fallback that is simply mistyped, returns a number this function's own
+ * signature says it cannot, and the caller hands it to
+ * `AbortSignal.timeout(NaN)`, which throws `ERR_INVALID_ARG_TYPE`. A helper
+ * whose purpose is that no route builds a timer out of a bad value would have
+ * been the one handing it over.
+ *
+ * It THROWS rather than clamping, and the asymmetry with the env value above is
+ * the point. An env value is configuration: it arrives from a dashboard, it can
+ * be wrong on a Tuesday, and a route that refuses to load over it is a worse
+ * outcome than one that ignores it — so it is clamped. A fallback is a LITERAL
+ * IN THIS REPOSITORY, written by whoever added the knob, and every one of the
+ * thirteen is a constant. An invalid one is not a deployment's mistake to
+ * absorb, it is a bug, and the honest place to find it is the build or the unit
+ * suite rather than a 01:00 cron. Clamping it to 1ms would bury the bug under
+ * the exact behaviour — instant aborts everywhere — that this function's
+ * `Math.max(1, …)` exists to prevent.
+ *
  * @param {string | number | undefined} envValue - raw env value, e.g. `process.env.X`
  * @param {number} fallback - default used when `envValue` isn't a finite positive number
  * @returns {number} a whole number of milliseconds in `[1, MAX_TIMER_MS]`
+ * @throws {TypeError} when `fallback` is not a finite positive number
  */
 export function envPositiveMs(envValue, fallback) {
+  if (!Number.isFinite(fallback) || fallback <= 0) {
+    throw new TypeError(
+      `envPositiveMs: fallback must be a finite positive number, got ${String(fallback)}`,
+    );
+  }
   const n = Number(envValue);
   const chosen = Number.isFinite(n) && n > 0 ? n : fallback;
   return Math.min(Math.max(1, Math.round(chosen)), MAX_TIMER_MS);

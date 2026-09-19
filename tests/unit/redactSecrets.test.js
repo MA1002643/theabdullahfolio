@@ -1,6 +1,15 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { describeError, redactSecrets } from '@/app/api/_utils/redact';
+import { freshSecret, freshShortSecret } from '../helpers/secrets.js';
+
+import {
+  SECRET_ENV_VARS,
+  describeError,
+  redactSecrets,
+} from '@/app/api/_utils/redact';
 
 // ── Keeping this deployment's configuration out of its own logs ─────────────
 // The response side of the leak is solved per route. The log side was left open
@@ -15,8 +24,13 @@ import { describeError, redactSecrets } from '@/app/api/_utils/redact';
 // these cases are written against the shapes those libraries actually produce
 // rather than against a tidy fixture.
 
+// The ENDPOINT stays a readable literal, deliberately: it is an address, not a
+// credential, and `tests/helpers/secrets.js` says so in as many words —
+// `KV_REST_API_URL` is pinned to a reserved-TLD placeholder precisely so it is
+// legible and unresolvable, and randomising it would cost that and protect
+// nothing. The TOKEN beside it is the opposite case and is minted per run.
 const URL_VALUE = 'https://eu2-notreal-12345.upstash.io';
-const TOKEN_VALUE = 'AXY_notreal_token_value_0123456789';
+const TOKEN_VALUE = freshSecret('test-kv-token');
 
 const SET_BY_CASES = [
   'KV_REST_API_URL',
@@ -24,6 +38,8 @@ const SET_BY_CASES = [
   'UPSTASH_REDIS_REST_URL',
   'GITHUB_TOKEN',
   'SMTP_USER',
+  'RECEIVER_EMAIL',
+  'GSC_SERVICE_ACCOUNT_KEY',
 ];
 
 beforeEach(() => {
@@ -32,6 +48,81 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const name of SET_BY_CASES) delete process.env[name];
+});
+
+// ── The list, held against the environment rather than against memory ───────
+// The allowlist was first written by copying the credential TABLE in CLAUDE.md,
+// which is a summary for a reader and not a manifest — so it missed
+// `GSC_SERVICE_ACCOUNT_KEY` and `RECEIVER_EMAIL`, one in each of the two routes
+// this module was written for. A list maintained by remembering to update it
+// fails the same way twice; this is the part that makes the next omission a red
+// build instead of a review finding.
+describe('the secret allowlist covers the environment it protects', () => {
+  /** Variable names declared in `.env.example`, which is the tracked manifest. */
+  const declaredEnvVars = () => {
+    const source = readFileSync(
+      path.join(process.cwd(), '.env.example'),
+      'utf8',
+    );
+    return [...source.matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*=/gm)].map(
+      (match) => match[1],
+    );
+  };
+
+  // Everything in `.env.example` that is NOT a credential, each with the reason
+  // it is safe in a log. Written out rather than pattern-matched, because
+  // "looks public" is exactly the judgement that produced the gap above.
+  const PUBLIC_BY_DESIGN = {
+    NEXT_PUBLIC_GITHUB_USERNAME:
+      'NEXT_PUBLIC_ — inlined into the client bundle at build, public by definition',
+    BASE_URL: 'the deployment’s own public origin',
+    SMTP_HOST: 'a mail provider’s public hostname',
+    SMTP_PORT: 'a port number',
+    GOOGLE_SITE_VERIFICATION:
+      'published verbatim in a <meta> tag on every page',
+    GUESTBOOK_ADMIN:
+      'a public GitHub numeric id — it names who may moderate, and holding it unlocks nothing without that account',
+  };
+
+  it('classifies every variable .env.example declares', () => {
+    const declared = declaredEnvVars();
+    // Guard on the guard: a parse that matched nothing would make this pass
+    // while checking no variable at all.
+    expect(declared.length).toBeGreaterThanOrEqual(15);
+
+    const unclassified = declared.filter(
+      (name) =>
+        !SECRET_ENV_VARS.includes(name) &&
+        !Object.hasOwn(PUBLIC_BY_DESIGN, name),
+    );
+
+    expect(
+      unclassified,
+      `.env.example declares these, and redact.js neither redacts them nor ` +
+        `this file records why they are safe in a log:\n  ` +
+        `${unclassified.join('\n  ')}\n\n` +
+        `Add each to SECRET_ENV_VARS, or to PUBLIC_BY_DESIGN here with the ` +
+        `reason it is public.`,
+    ).toEqual([]);
+  });
+
+  it('names the two the CLAUDE.md table omitted', () => {
+    // Pinned by name, not left to the sweep above: these are the ones that were
+    // actually missing, in the two routes `describeError` is called from.
+    expect(SECRET_ENV_VARS).toContain('GSC_SERVICE_ACCOUNT_KEY');
+    expect(SECRET_ENV_VARS).toContain('RECEIVER_EMAIL');
+  });
+
+  it('does not redact a variable recorded as public', () => {
+    // The other direction, and the one that keeps PUBLIC_BY_DESIGN honest: a
+    // name cannot sit in both lists and have the classification mean anything.
+    for (const name of Object.keys(PUBLIC_BY_DESIGN)) {
+      expect(
+        SECRET_ENV_VARS,
+        `${name} is recorded as public AND redacted.`,
+      ).not.toContain(name);
+    }
+  });
 });
 
 describe('redactSecrets', () => {
@@ -60,6 +151,53 @@ describe('redactSecrets', () => {
 
     expect(redacted).not.toContain('upstash.io');
     expect(redacted).toBe('Error: getaddrinfo ENOTFOUND [KV_REST_API_URL]');
+  });
+
+  it('redacts the service-account key a signing failure could quote', () => {
+    // The base64 blob holds an RSA private key, and it is read in the route
+    // whose catch calls `describeError`. `atob`/`JSON.parse`/`createSign` all
+    // throw with the input in scope, and a library that echoes what it was
+    // handed is the whole reason this module exists.
+    const key = Buffer.from(
+      JSON.stringify({ private_key: 'notreal', client_email: 'x@y.z' }),
+    ).toString('base64');
+    process.env.GSC_SERVICE_ACCOUNT_KEY = key;
+
+    const redacted = redactSecrets(`Error: bad key material: ${key}`);
+
+    expect(redacted).toBe('Error: bad key material: [GSC_SERVICE_ACCOUNT_KEY]');
+  });
+
+  it('redacts the delivery inbox a bounce would name', () => {
+    // A rejected recipient comes back with the envelope in it. `RECEIVER_EMAIL`
+    // is server-only by construction — it exists as a variable separate from
+    // `NEXT_PUBLIC_CONTACT_EMAIL` for exactly that reason — and /api/send-mail
+    // logs the rejection it appears in.
+    process.env.RECEIVER_EMAIL = 'inbox-notreal@example.com';
+
+    expect(
+      redactSecrets(
+        '550 5.1.1 <inbox-notreal@example.com>: recipient rejected',
+      ),
+    ).toBe('550 5.1.1 <[RECEIVER_EMAIL]>: recipient rejected');
+  });
+
+  it('redacts the hostname when the configured URL carries a port', () => {
+    // `URL.host` keeps the port, and a DNS failure names the hostname ALONE —
+    // the resolver never saw a port. So for any deployment whose endpoint is
+    // configured with one, the host needle could not match the error shape it
+    // exists to catch, and the endpoint reached the log exactly as before.
+    process.env.KV_REST_API_URL = 'https://eu2-notreal-12345.upstash.io:6379';
+
+    expect(
+      redactSecrets('Error: getaddrinfo ENOTFOUND eu2-notreal-12345.upstash.io'),
+    ).toBe('Error: getaddrinfo ENOTFOUND [KV_REST_API_URL]');
+
+    // And the form that DOES carry the port goes as one unit, rather than
+    // leaving `:6379` stranded beside a placeholder.
+    expect(
+      redactSecrets('connect ECONNREFUSED eu2-notreal-12345.upstash.io:6379'),
+    ).toBe('connect ECONNREFUSED [KV_REST_API_URL]');
   });
 
   it('matches whatever case the value comes back in', () => {
@@ -103,14 +241,52 @@ describe('redactSecrets', () => {
     expect(redactSecrets(text)).toBe(text);
   });
 
-  it('ignores a value too short to match safely', () => {
-    // A stray one-character value in a preview environment would otherwise
-    // match inside ordinary words and shred the line it was meant to protect.
-    process.env.GITHUB_TOKEN = 'a';
+  it('redacts a short value where it stands alone, not inside a word', () => {
+    // This case used to assert the opposite — that a value under eight
+    // characters was skipped entirely, on the reasoning that it would match
+    // inside ordinary words and shred the line. The noise was real and the
+    // conclusion was an exemption: an operator with a seven-character
+    // `CRON_SECRET` or a short SMTP password is the deployment least able to
+    // afford it in a drain, and this module does not get to decide their
+    // credential is not one. Bounded matching keeps the short case safe without
+    // the confetti.
+    // Short AND generated. `freshShortSecret` exists so the two are not a
+    // trade: a hand-written weak password here would be a credential-shaped
+    // string committed to history, and the repository's rule draws no
+    // exception for one that is only pretending.
+    const weak = freshShortSecret();
+    process.env.GITHUB_TOKEN = weak;
 
-    expect(redactSecrets('a failure that mentions a token')).toBe(
-      'a failure that mentions a token',
+    expect(redactSecrets(`rejected token ${weak} at 01:00`)).toBe(
+      'rejected token [GITHUB_TOKEN] at 01:00',
     );
+    // Not inside a longer word, which is what made the blanket skip tempting.
+    expect(redactSecrets(`the ${weak}000 build`)).toBe(`the ${weak}000 build`);
+    expect(redactSecrets(`pre${weak} and ${weak}x`)).toBe(
+      `pre${weak} and ${weak}x`,
+    );
+  });
+
+  it('still matches a long value embedded in a longer string', () => {
+    // The other half of the tier, and the reason it IS a tier: a boundary rule
+    // applied to everything would let a high-entropy token through whenever a
+    // library concatenated it into a longer word. Length is what makes that
+    // trade safe in one direction and not the other.
+    const token = freshSecret('test-github-token');
+    process.env.GITHUB_TOKEN = token;
+
+    expect(redactSecrets(`Authorization=Bearer${token}xyz`)).toBe(
+      'Authorization=Bearer[GITHUB_TOKEN]xyz',
+    );
+  });
+
+  it('skips an unset variable rather than matching between every character', () => {
+    // Empty is the one length with no safe treatment: a zero-length needle
+    // matches at every position, so this is the case that has to be a skip.
+    process.env.GITHUB_TOKEN = '';
+    const text = 'nothing secret here at all';
+
+    expect(redactSecrets(text)).toBe(text);
   });
 
   it('reads the environment per call, not once at import', () => {
@@ -157,7 +333,7 @@ describe('describeError', () => {
     expect(described).toContain('[KV_REST_API_URL]');
     expect(described).toContain('[KV_REST_API_TOKEN]');
     expect(described).not.toContain('upstash.io');
-    expect(described).not.toContain('AXY_notreal');
+    expect(described).not.toContain(TOKEN_VALUE);
   });
 
   it('keeps the stack, so the log still says where it came from', () => {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { freshCronSecret } from '../helpers/secrets.js';
+import { freshCronSecret, freshSecret } from '../helpers/secrets.js';
 
 // ── A warm failure reports a verdict, not the transport that produced it ────
 // Both warm fetches here target `baseUrl`, which is the deployment's own origin,
@@ -30,6 +30,12 @@ const ENDPOINT = 'https://ma.codes/api/repo-refresh';
 // Modelled on the real rejection shape rather than a bare word, so a partial fix
 // that trimmed the message instead of replacing it still fails.
 const RAW = 'connect ECONNREFUSED 10.1.2.3:3000';
+
+// A credential-shaped value for the error body to carry past the log cap.
+// Generated rather than spelled out: the case needs a string that MUST NOT
+// survive truncation, and a token literal in the tree is the artefact
+// `tests/helpers/secrets.js` exists to prevent, whatever it is standing in for.
+const BODY_TOKEN = freshSecret('test-github-token');
 
 /** How much of an error body the route lets into the log. Mirrors the route. */
 const LOG_EXCERPT_MAX_CHARS = 300;
@@ -195,7 +201,7 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
   // rather than closed. An error body is the worst one to forward, too: it is
   // the response nobody chose the contents of.
   it('returns no part of a failed warm’s error body', async () => {
-    const ERROR_BODY = `<html>\n<title>502</title>\n<body>upstream 502 from 10.1.2.3:3000</body>\n${'x'.repeat(LOG_EXCERPT_MAX_CHARS)}\ntoken ghp_notreal\n</html>`;
+    const ERROR_BODY = `<html>\n<title>502</title>\n<body>upstream 502 from 10.1.2.3:3000</body>\n${'x'.repeat(LOG_EXCERPT_MAX_CHARS)}\ntoken ${BODY_TOKEN}\n</html>`;
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url) => {
@@ -216,7 +222,7 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
     const body = await (await GET(authed())).json();
 
     const serialised = JSON.stringify(body);
-    for (const leak of ['10.1.2.3', 'ghp_notreal', 'upstream 502', '<html>']) {
+    for (const leak of ['10.1.2.3', BODY_TOKEN, 'upstream 502', '<html>']) {
       expect(
         serialised,
         `The response body carries "${leak}" from the downstream error body.`,
@@ -245,11 +251,11 @@ describe('repo-refresh — warm failures carry no transport detail', () => {
     // Single line — a body cannot forge log lines with newlines of its own.
     expect(logged).not.toMatch(/[\r\n]/);
     // And what sat beyond the cap did not travel. This is a VOLUME bound, not
-    // a secret filter, and the fixture says so by construction: `ghp_notreal`
-    // is dropped because it is past the cap, not because anything recognised
-    // it. The route sends no `Authorization` header on this warm, which is what
+    // a secret filter, and the fixture says so by construction: the token is
+    // dropped because it is past the cap, not because anything recognised it.
+    // The route sends no `Authorization` header on this warm, which is what
     // makes a reflected credential not the threat here in the first place.
-    expect(logged).not.toContain('ghp_notreal');
+    expect(logged).not.toContain(BODY_TOKEN);
   });
 
   // ── The premise the excerpt rests on, made executable ───────────────────────

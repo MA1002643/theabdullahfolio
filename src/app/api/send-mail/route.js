@@ -167,7 +167,10 @@ export async function POST(req) {
           console.warn('Abstract API non-ok:', abstractRes.status);
         }
       } catch (abstractErr) {
-        console.warn('Skipping Abstract email reputation check:', abstractErr);
+        console.warn(
+          'Skipping Abstract email reputation check:',
+          describeError(abstractErr),
+        );
       } finally {
         clearTimeout(timeoutId);
       }

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+
+import { describeError } from '../_utils/redact';
 import {
   computePortfolioSignal,
   buildMessage,
@@ -282,7 +284,7 @@ export async function GET(request) {
       fetchProjectActivity().catch((err) => {
         console.warn(
           'Project board unavailable, using fallback signal:',
-          err?.message ?? err,
+          describeError(err),
         );
         return null;
       }),
@@ -351,7 +353,7 @@ export async function GET(request) {
     cache.write(payload);
     return jsonResponse(payload, 'MISS', { bust });
   } catch (err) {
-    console.error('work-status error:', err);
+    console.error('work-status error:', describeError(err));
     // Serve stale cache if we have it — better than a broken header.
     const stale = cache.readStale();
     if (stale) {
@@ -816,7 +818,7 @@ async function fetchProjectActivity() {
           } catch (err) {
             console.warn(
               `work-status: board ${boardNumber} unavailable —`,
-              err?.message ?? err,
+              describeError(err),
             );
           }
         }
