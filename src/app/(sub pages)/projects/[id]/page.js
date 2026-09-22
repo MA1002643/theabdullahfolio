@@ -5,9 +5,9 @@ import { projectsData } from "@/app/data"
 import { sectionMetadata } from "@/lib/og/meta"
 import JsonLd from "@/components/seo/JsonLd"
 import { projectPage } from "@/lib/seo/schema"
+import { languagesFor } from "@/lib/seo/projectLanguages"
 import { projectMetaDescription } from "@/lib/seo/projectMeta"
 import bg from "../../../../../public/background/home-bg.webp"
-import AuroraParallaxBackground from "@/components/project-detail/aurora-bg"
 import LanternSweep from "@/components/project-detail/lantern-sweep"
 import ProjectIntro from "@/components/project-detail/project-intro"
 import SceneLoader from "@/components/project-detail/scene-loader"
@@ -17,7 +17,7 @@ import SceneLoader from "@/components/project-detail/scene-loader"
 // made the WebGL bundle part of the route's entry chunk: a click on
 // /projects couldn't commit the navigation until all of it had downloaded,
 // so the listing page just sat there frozen. Now the page is a server shell
-// (background, aurora, title) and the Canvas lives behind the dynamic
+// (background, lantern sweep, title) and the Canvas lives behind the dynamic
 // ssr:false boundary in scene-loader.jsx, so the shell paints immediately
 // and three.js streams in underneath. Keep any new heavy client imports on
 // that side of the boundary.
@@ -120,13 +120,21 @@ export default async function ProjectDetailPage({ params }) {
                 contributes no `codeRepository` at all rather than a URL that
                 answers 404 to every reader.
 
-                `programmingLanguage` is deliberately NOT passed. It would have
-                to come from /api/github-skills at build time, which needs a
-                token and a network call inside `next build`; see the note on
-                `knowsAboutFromStack` in src/lib/seo/site.js for why that trade
-                was refused. The property is omitted rather than guessed (P4) —
-                the builder accepts it the moment a build-safe source exists. */}
-            <JsonLd id="ld-project" data={projectPage(project)} />
+                `programmingLanguage` now comes from the committed map in
+                src/data/project-languages.json — the build-safe source the
+                original omission note said the builder would accept. It is
+                still NOT /api/github-skills: `next build` makes no network call
+                and reads no secret here, it opens a JSON file. The refresh is
+                an explicit script run whose diff is reviewed in a PR, so a
+                changed language list is visible rather than silently baked in.
+                Private projects and unrefreshed ones resolve to undefined and
+                the property is pruned, exactly as before (P4). */}
+            <JsonLd
+                id="ld-project"
+                data={projectPage(project, {
+                    programmingLanguage: languagesFor(project),
+                })}
+            />
 
             {/* Crawlable sibling navigation. `sr-only`, for the same reason and
                 with the same justification as the homepage summary: this route
@@ -200,11 +208,25 @@ export default async function ProjectDetailPage({ params }) {
                 }}
             >
 
-                {/* Aurora + Lantern placed BETWEEN background and canvas —
-                    stacked by DOM order (bg is -z-10, the canvas below has
-                    z-0, this stays z-auto in between). */}
+                {/* Lantern placed BETWEEN background and canvas — stacked by
+                    DOM order (bg is -z-10, the canvas below has z-0, this stays
+                    z-auto in between).
+
+                    `AuroraParallaxBackground` used to sit here and was removed:
+                    its three layers had no content but a background-image, and
+                    all three files (/aurora-band-1.png, /aurora-band-2.png,
+                    /fog.png) have never existed in this repository — no commit
+                    in the history ever added them. So it rendered three empty
+                    divs while costing three 404s per page view AND a
+                    `mousemove` listener that called setState on every pointer
+                    move across the viewport.
+
+                    Caught by the Lighthouse budget's `errors-in-console` audit
+                    (issue #32). If the aurora is ever wanted, it needs the three
+                    assets committed first — the component was deleted, not
+                    disabled, precisely so that restoring it cannot silently
+                    reproduce the invisible version. */}
                 <div className="absolute inset-0 pointer-events-none">
-                    <AuroraParallaxBackground />
                     <LanternSweep />
                 </div>
 

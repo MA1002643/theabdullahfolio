@@ -130,6 +130,13 @@ function discoverRoutes() {
  * @returns {string[]} Repo-relative module paths, extension as written.
  */
 function importsFrom(relativeFile) {
+  // A `.json` source is a LEAF: it is reachable and therefore watchable, but it
+  // has no imports of its own. Returning early is not merely an optimisation —
+  // the regex below is deliberately loose, and a data file containing the
+  // string `import "…"` inside a value would otherwise invent an edge out of a
+  // string literal.
+  if (relativeFile.endsWith('.json')) return [];
+
   const source = readFileSync(path.join(process.cwd(), relativeFile), 'utf8');
   const directory = path.posix.dirname(relativeFile);
 
@@ -160,6 +167,7 @@ function resolveModule(specifier) {
     specifier,
     `${specifier}.js`,
     `${specifier}.jsx`,
+    `${specifier}.json`,
     `${specifier}/index.js`,
     `${specifier}/index.jsx`,
   ];
@@ -168,7 +176,15 @@ function resolveModule(specifier) {
     // relative path, and that resolves to a real file whose bytes are not
     // JavaScript — following it would mean running the import regex over a
     // WebP.
-    if (!/\.jsx?$/.test(candidate)) continue;
+    //
+    // `.json` is admitted alongside them because a committed data file IS a
+    // published source: `src/data/project-languages.json` is imported by
+    // projectLanguages.js and its contents are serialised straight into every
+    // project page's JSON-LD, so a refresh of it changes eleven documents. It
+    // resolves as a LEAF — `importsFrom` returns nothing for it rather than
+    // running the import regex over JSON — so admitting it costs one `statSync`
+    // and buys the drift check a real edge it was otherwise blind to.
+    if (!/\.(jsx?|json)$/.test(candidate)) continue;
     try {
       if (statSync(path.join(process.cwd(), candidate)).isFile())
         return candidate;
@@ -463,10 +479,13 @@ describe('sitemap drift', () => {
 
   it('declares every page.js on disk in the registry or in EXCLUDED', () => {
     const declared = new Set(ROUTES.map((route) => route.path));
-    // The dynamic project route is declared by being GENERATED — sitemap.js
-    // expands it from `projectsData`. It is legitimately absent from the
-    // registry, which holds static patterns only.
+    // The two dynamic routes are declared by being GENERATED — sitemap.js
+    // expands `/projects/[id]` from `projectsData` and `/notes/[slug]` from
+    // `readNotes()`, each from the same source its own `generateStaticParams`
+    // enumerates. Both are legitimately absent from the registry, which holds
+    // static patterns only.
     declared.add('/projects/[id]');
+    declared.add('/notes/[slug]');
 
     const undeclared = discovered.filter(
       (route) => !declared.has(route) && !(route in EXCLUDED),
@@ -612,15 +631,21 @@ describe('sitemap contents', () => {
   // Keeping that off the module-load path means a failure there reports against
   // the test that caused it.
 
-  it('covers all 21 indexable URLs plus the CV', async () => {
+  it('covers every indexable route, project, note and the CV', async () => {
     const { default: sitemap } = await import('@/app/sitemap');
+    const { readNotes } = await import('@/lib/notes/readNotes');
     const entries = sitemap();
     const urls = entries.map((entry) => entry.url);
+    const notes = readNotes();
 
-    // 9 registry routes + 11 project pages + the CV = 21.
+    // 11 registry routes + 11 project pages + 1 note + the CV = 24.
+    // Computed from the same sources the sitemap reads rather than typed, for
+    // the reason the whole file exists: a hardcoded total is a second place to
+    // update, and the update that gets forgotten is the one that matters.
     const expectedCount =
       ROUTES.filter((route) => route.indexable).length +
       projectsData.length +
+      notes.length +
       1;
     expect(urls).toHaveLength(expectedCount);
 
@@ -634,6 +659,12 @@ describe('sitemap contents', () => {
     }
     for (const project of projectsData) {
       expect(urls).toContain(absoluteUrl(`/projects/${project.id}`));
+    }
+    // Vacuity guard: an empty corpus would satisfy the loop below while the
+    // count check above silently absorbed the difference.
+    expect(notes.length).toBeGreaterThan(0);
+    for (const note of notes) {
+      expect(urls).toContain(absoluteUrl(`/notes/${note.slug}`));
     }
     expect(urls).toContain(absoluteUrl(CV_ASSET.path));
   });
@@ -1327,15 +1358,18 @@ describe('narrowly shared sources', () => {
     const renders = (route) =>
       [...publishedFrom(renderedEntriesFor(route.path))].includes(PAGE_TITLE);
 
-    // Vacuity guard: eight of the nine render it (`/projects` through its
-    // listing component rather than its page file). A walk that found none
-    // would make every assertion below pass while proving nothing.
+    // Vacuity guard: nine of the ten render it (`/projects` through its
+    // listing component rather than its page file; `/` has its own hero
+    // headline instead). A walk that found none would make every assertion
+    // below pass while proving nothing.
     expect(ROUTES.filter(renders).map((route) => route.path).sort()).toEqual([
       '/about',
       '/contact',
+      '/cv',
       '/guestbook',
       '/journey',
       '/my-past',
+      '/notes',
       '/projects',
       '/qualifications',
       '/uses',
@@ -1533,9 +1567,14 @@ describe('shared data module as a source', () => {
     expect(barriered.length).toBeLessThan(unbarriered.length);
 
     // And name the split, so the intent is legible rather than only counted.
+    // `/cv` belongs here for the most direct reason of any route on the list:
+    // `buildCv()` reads `journeyData`, `usesData.stack` and `projectsData`
+    // outright, and the page is nothing but those three rendered — so a data.js
+    // edit genuinely does rewrite the document.
     expect(barriered.map((route) => route.path).sort()).toEqual([
       '/',
       '/about',
+      '/cv',
       '/journey',
       '/projects',
       '/qualifications',

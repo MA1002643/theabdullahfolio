@@ -109,6 +109,7 @@ const v = {
   ai: minorVersion(deps['ai']),
   upstashRedis: minorVersion(deps['@upstash/redis']),
   tzLookup: minorVersion(deps['tz-lookup']),
+  marked: minorVersion(deps['marked']),
   analytics: minorVersion(deps['@vercel/analytics']),
   speedInsights: minorVersion(deps['@vercel/speed-insights']),
 
@@ -180,6 +181,7 @@ const STACK_DATA = `| Technology | Version | Role |
 | [AI SDK (\`ai\`)](https://sdk.vercel.ai/) | \`^${v.ai}\` | \`streamText\` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
 | [@upstash/redis](https://upstash.com/docs/redis) | \`^${v.upstashRedis}\` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
 | [tz-lookup](https://github.com/darkskyapp/tz-lookup) | \`^${v.tzLookup}\` | Offline coordinates→IANA-timezone lookup for the footer's live-location clock |
+| [marked](https://marked.js.org/) | \`^${v.marked}\` | Markdown → HTML for the \`/notes\` decision records, at build time only — never in a client bundle |
 | [@vercel/analytics](https://vercel.com/analytics) | \`^${v.analytics}\` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | \`^${v.speedInsights}\` | Core Web Vitals tracking |`;
 

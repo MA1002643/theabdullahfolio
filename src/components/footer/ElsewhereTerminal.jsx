@@ -24,6 +24,7 @@
 // session when the footer reveals, so the type-out is actually seen.
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useReducedMotion } from 'framer-motion';
 import { useFooterReveal } from './useFooterReveal';
 import { cn } from '@/lib/utils';
@@ -37,8 +38,42 @@ const CHANNELS = socialLinks.map((s) => ({
   href: s.href,
   aria: s.aria,
   handle: s.handle,
+  // `external` used to be read by nothing here — every entry was hardcoded to
+  // open in a new tab, which was correct while every destination WAS external.
+  // The Résumé entry now points at /cv, an internal route, and a new-tab
+  // full-document load to a page on this same site is the wrong behaviour
+  // twice over: it drops the SPA navigation (and with it the page transition
+  // and the loader) and it leaves an orphaned tab behind. The flag was already
+  // in the data and documented as driving target/rel; this is the consumer
+  // finally honouring it.
+  external: s.external !== false,
   cmd: `open ${s.label.toLowerCase()}`,
 }));
+
+/**
+ * One terminal entry's clickable shell.
+ *
+ * External destinations keep the new-tab treatment they have always had —
+ * including `rel="noopener noreferrer"`, which is a security boundary and not a
+ * style choice. Internal ones route through `Link`, and deliberately take
+ * NEITHER `target` nor `rel`: a same-origin page in the same tab needs no
+ * opener protection, and `target="_blank"` on it would strand the reader in a
+ * second tab of the site they were already on.
+ */
+function LinkOrAnchor({ external, href, children, ...props }) {
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} {...props}>
+      {children}
+    </Link>
+  );
+}
 
 const FULL_TYPED = CHANNELS.map((c) => c.cmd);
 const EMPTY_TYPED = CHANNELS.map(() => '');
@@ -146,10 +181,14 @@ export default function ElsewhereTerminal() {
       <ul className="footer-term__body">
         {CHANNELS.map((c, i) => (
           <li key={c.label}>
-            <a
+            {/* `Link` for internal destinations so the navigation stays in the
+                SPA; a plain anchor for external ones, which Link would only
+                wrap without benefit. Both render an <a> with a real href, so
+                the crawl edge is identical either way — this is about what
+                happens in a browser, not what a crawler sees. */}
+            <LinkOrAnchor
+              external={c.external}
               href={c.href}
-              target="_blank"
-              rel="noopener noreferrer"
               aria-label={c.aria}
               className={cn('footer-term__entry', FOCUS_RING)}
             >
@@ -164,7 +203,7 @@ export default function ElsewhereTerminal() {
                 <span className="footer-term__branch">↳</span>
                 <span className="footer-term__handle">{c.handle}</span>
               </span>
-            </a>
+            </LinkOrAnchor>
           </li>
         ))}
 

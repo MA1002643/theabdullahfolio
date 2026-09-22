@@ -19,6 +19,8 @@ const FLUID_SCALE_PAGES = [
   '/about',
   '/journey',
   '/uses',
+  '/cv',
+  '/notes',
 ];
 
 export default function SubPagesLayout({ children }) {

@@ -60,6 +60,35 @@ export const IDENTITY = {
     'muhammad.abdullah33176444@gmail.com',
 };
 
+// ── Institution names, as an engine can match them ──────────────────────────
+// `journeyData` stores the SHORT organisation label — "MMU", "Bolton College" —
+// because that is what reads well on a timeline card where the row is already
+// three lines long. That label is the right one to SHOW and the wrong one to
+// PUBLISH: `alumniOf` exists so a consumer can resolve the institution against
+// one it already knows, and "MMU" resolves to nothing outside the north west of
+// England. §11's whole argument is that divergence is what stops an entity
+// merge, and an unresolvable alma mater is that failure in miniature.
+//
+// So this maps display label → the institution's own legal name, and is used
+// ONLY where the value is a machine claim (`cvPage`'s `alumniOf`). It is
+// deliberately not applied to the visible page: the timeline and the CV both
+// still read "MMU", because shortening there was a correct decision made for a
+// real reason.
+//
+// A label with no entry passes through UNCHANGED rather than failing. Adding an
+// institution to journeyData must not require editing this map first — an
+// unmapped name is exactly as good as today's behaviour, and pinned by
+// `tests/unit/schema.test.js` so the pass-through stays deliberate.
+export const ORG_LEGAL_NAMES = {
+  MMU: 'Manchester Metropolitan University',
+  'Bolton College': 'Bolton College',
+};
+
+/** The publishable name for an organisation label. */
+export function legalOrgName(label) {
+  return ORG_LEGAL_NAMES[label] ?? label;
+}
+
 // ── Counts in prose ─────────────────────────────────────────────────────────
 // A description that states a number is a description that goes stale: adding
 // a twelfth project would leave /projects telling Google there are eleven, and
@@ -230,6 +259,56 @@ const ROUTE_DEFINITIONS = [
       // which is the over-stamp `SHARED_ROUTE_SOURCES` is careful about, in the
       // opposite direction.
       'src/utils/experience/experiencePresentation.js',
+    ],
+  },
+  {
+    path: '/cv',
+    title: 'CV',
+    description:
+      'The full record — every role, qualification and shipped project, in HTML. Written from the same data the timeline renders, with the PDF one click away.',
+    // The array it derives from is hand-edited a few times a year, and each
+    // edit is a real change to the document — so this tracks `/journey` rather
+    // than the weekly cadence the live-data routes carry.
+    changeFrequency: 'monthly',
+    // Equal to /about and /projects, and above /journey. This is the page a
+    // recruiter searching a name plus a role should land on, and the only one
+    // on the site whose entire content is the answer to that query.
+    priority: 0.9,
+    indexable: true,
+    sources: [
+      'src/app/(sub pages)/cv',
+      'src/components/cv',
+      // The derivation, and the array it derives from. `buildCv` reads
+      // `journeyData` (every role and award), `usesData.stack` (the skills
+      // list, which is also what this page's `knowsAbout` claim is built from)
+      // and `projectsData` — so a data.js edit in any of those three rewrites
+      // this document even when nothing in the route's own directory moved.
+      'src/lib/cv/buildCv.js',
+      'src/app/data.js',
+      PAGE_TITLE_SOURCE,
+    ],
+  },
+  {
+    path: '/notes',
+    title: 'Notes',
+    description:
+      'Engineering decision records — why each choice on this site was made, which alternatives were rejected, and what each one cost.',
+    changeFrequency: 'monthly',
+    // Below the pages a recruiter is looking for and above /my-past. This is
+    // supporting evidence rather than a destination: valuable to the reader who
+    // goes looking, not the page anyone should land on first.
+    priority: 0.6,
+    indexable: true,
+    sources: [
+      'src/app/(sub pages)/notes',
+      'src/lib/notes/readNotes.js',
+      // The corpus itself. The index prints each document's title, summary and
+      // line count, all read from the files at build time — so editing a note
+      // changes this page even though nothing under the route moved. Watched as
+      // a DIRECTORY because adding a file changes the index too, which a
+      // per-file list could not express.
+      'docs',
+      PAGE_TITLE_SOURCE,
     ],
   },
   {

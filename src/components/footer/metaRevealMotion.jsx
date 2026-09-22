@@ -58,12 +58,33 @@ export function FlapItem({ children, className }) {
 // Render `text` as per-glyph flap ticks. Split into words so a line break only
 // ever falls BETWEEN words (glyphs within a word stay together); the breakable
 // space lives outside each nowrap word. The letters are aria-hidden and the
-// accessible name is restored on the wrapper, so screen readers announce the
-// word, never the individual letters.
+// real text is restored as visually-hidden content, so screen readers announce
+// the word, never the individual letters.
+//
+// ── Why `sr-only` text and not `aria-label` on the wrapper ──────────────────
+// The wrapper used to carry `aria-label={text}`, which reads as the obvious
+// solution and is invalid: ARIA PROHIBITS `aria-label` on elements whose role
+// is `generic` (a bare <span>) or `paragraph` (<p>) — the two tags this
+// component is ever rendered as. A prohibited label is not merely untidy; it is
+// permitted to be IGNORED, so the accessible name it was providing could
+// silently not exist, leaving a screen reader to announce the per-glyph spans
+// it was meant to replace.
+//
+// It was also the single thing capping this site's Lighthouse accessibility
+// score at 96 on EVERY page, because the footer renders on every page and
+// `aria-prohibited-attr` is scored all-or-nothing. Three instances — the sound
+// label, the hover instruction and the copyright line — one component.
+//
+// Visually-hidden real text has none of those problems: it is content rather
+// than an annotation, so no role permits or forbids it, every assistive
+// technology reads it, and it survives a future change of `as`.
 export function SplitFlapText({ text, as: Tag = 'span', className }) {
   const words = text.split(' ');
   return (
-    <Tag className={className} aria-label={text}>
+    <Tag className={className}>
+      {/* The accessible copy. `sr-only` keeps it out of the visual layout
+          entirely, so it cannot affect the flap cascade's metrics. */}
+      <span className="sr-only">{text}</span>
       {words.map((word, wi) => (
         <Fragment key={wi}>
           {wi > 0 ? ' ' : null}

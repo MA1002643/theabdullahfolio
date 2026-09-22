@@ -114,3 +114,48 @@ Order matters — treat the value as burned the instant it is pushed.
 
 Every commit includes a `CHANGELOG.md` entry, and updates `README.md` when the
 change touches something the README documents.
+
+### `docs/seo.md` is checked on every change
+
+`docs/seo.md` is the decision record — why each choice on this site was made,
+what was rejected, and what it cost. **Every change checks whether it needs
+updating, and the update lands in the same commit as the change.** It is not a
+file to revisit later: a decision record that trails the code by a few commits
+is a record of a system that no longer exists.
+
+This is now a public page, not an internal note. It is served at
+[`/notes/discoverability`](https://ma.codes/notes/discoverability), it carries a
+canonical and a sitemap entry, and it is prerendered from the file at build. A
+stale paragraph is published to readers, not just left in the tree.
+
+**Nothing enforces this.** The tests around the corpus are structural only —
+every slug resolves, exactly one `<h1>`, the sitemap and `generateStaticParams`
+agree, the line count is honest. None of them can tell whether the prose is
+still true, so the document can rot silently while CI stays green. The check is
+a habit, not a gate.
+
+#### What to update, and what to leave alone
+
+The file holds two kinds of content with opposite rules. Getting this backwards
+destroys the thing that makes it worth publishing.
+
+| | Rule |
+| --- | --- |
+| **Dated record** — the §1 baseline, `Decision (owner, YYYY-MM-DD)` entries, the `(tightened YYYY-MM-DD)` / `(fixed YYYY-MM-DD)` notes | **Leave it.** This is history: what was true, what was decided, and when. Add a new dated entry beside it; never rewrite it to match today. The §1 baseline is deliberately frozen — it is the "before" measurement. |
+| **Living description** — §10 Runbook above all, plus the sections describing analytics, the Search Console loop, Lighthouse CI thresholds and any live endpoint | **Update it.** These say how the system works *now*, and they name real file paths, env vars and commands someone will follow. |
+
+§10 is the section with the standing obligation: it is the one a person actually
+executes. If a change touches how routes are registered, how analytics or CI
+behave, or what any runbook step names, the runbook changes in that commit.
+
+#### Do not hand-copy figures into prose
+
+A count, size or measurement typed into a comment or a paragraph is stale the
+week after it is written, and nothing will flag it. Two live examples were found
+in a single sitting: `readNotes.js` said `docs/seo.md` "is 1,022 lines" when it
+had reached 1,257, and §16 of the document says "1,000-odd lines" about itself.
+
+Prefer a figure **derived at build** (`countLines()` is the pattern — the page's
+line count is computed from the file, so it cannot drift), or hedged prose that
+cannot go wrong ("well over a thousand lines"). If an exact figure genuinely has
+to be written down, date it so a reader knows how much to trust it.

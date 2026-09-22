@@ -35,34 +35,45 @@ function sourceFiles(dir = API_ROOT, found = []) {
 }
 
 /**
- * The argument text of every `console.<level>(…)` call in a source file.
+ * The text from `from` to the `)` matching the `(` that precedes it.
  *
- * Balanced-paren rather than a lazy regex, because these calls routinely wrap
- * another call — `describeError(err)`, a template with `${err?.message}` — and
- * `\(([^)]*)\)` stops at the first inner `)`, which would truncate exactly the
- * part that has to be inspected.
+ * Balanced and quote-aware rather than a lazy regex, because the spans this
+ * file reads routinely nest — a console call wraps `describeError(err)` or a
+ * template with `${err?.message}`, a catch clause destructures two levels down
+ * — and `\(([^)]*)\)` stops at the first inner `)`, truncating exactly the part
+ * that has to be inspected.
+ *
+ * Shared by both readers on purpose. The binding parse below originally used a
+ * `\{[^}]*\}` of its own and inherited precisely the defect this comment has
+ * described since the file was written: `catch ({ response: { data: detail } })`
+ * closed the class at the INNER brace, so the pattern then demanded `)`, found
+ * `}`, and matched nothing at all — a nested binding registered no name rather
+ * than a partial one, and `console.error(detail)` read as clean.
  */
+function balancedSpan(source, from) {
+  let depth = 1;
+  let quote = null;
+  let index = from;
+  for (; index < source.length && depth > 0; index += 1) {
+    const char = source[index];
+    if (quote) {
+      if (char === '\\') index += 1;
+      else if (char === quote) quote = null;
+      continue;
+    }
+    if (char === "'" || char === '"' || char === '`') quote = char;
+    else if (char === '(') depth += 1;
+    else if (char === ')') depth -= 1;
+  }
+  return source.slice(from, index - 1);
+}
+
+/** The argument text of every `console.<level>(…)` call in a source file. */
 function consoleCallArguments(source) {
   const calls = [];
   const callSite = /\bconsole\s*\.\s*(?:error|warn|log|info|debug)\s*\(/g;
-  for (const match of source.matchAll(callSite)) {
-    let depth = 1;
-    let quote = null;
-    let index = match.index + match[0].length;
-    const start = index;
-    for (; index < source.length && depth > 0; index += 1) {
-      const char = source[index];
-      if (quote) {
-        if (char === '\\') index += 1;
-        else if (char === quote) quote = null;
-        continue;
-      }
-      if (char === "'" || char === '"' || char === '`') quote = char;
-      else if (char === '(') depth += 1;
-      else if (char === ')') depth -= 1;
-    }
-    calls.push(source.slice(start, index - 1));
-  }
+  for (const match of source.matchAll(callSite))
+    calls.push(balancedSpan(source, match.index + match[0].length));
   return calls;
 }
 
@@ -125,17 +136,50 @@ const ERROR_IDENTIFIER =
 // File-wide rather than scope-aware, deliberately: a regex has no scopes, and
 // the direction to err in is flagging a shadowed name over missing a real one.
 // `ALLOWED` is where a genuine collision gets written down with its reason.
-const CATCH_CLAUSE =
-  /\bcatch\s*\(\s*([A-Za-z_$][\w$]*|\{[^}]*\}|\[[^\]]*\])\s*\)/g;
-const CATCH_CALLBACK =
-  /\.catch\(\s*(?:async\s+)?\(?\s*([A-Za-z_$][\w$]*)\s*\)?\s*=>/g;
+// Only the OPENING of each form is matched; `balancedSpan` reads the rest, so a
+// binding may nest as deeply as it likes. `(?<!\.)` keeps the statement rule off
+// `promise.catch(`, which the callback rule owns.
+const CATCH_CLAUSE = /(?<!\.)\bcatch\s*\(/g;
+const CATCH_CALLBACK = /\.catch\s*\(/g;
 
-/** The names a binding BINDS — `{ message: msg }` binds `msg`, not `message`. */
+// A binding is an identifier or a destructuring pattern, never prose — and a
+// balanced scan will run just as happily from a `catch (` inside a COMMENT.
+// `/api/repo-refresh` has one: "the outer try/catch (for github-stats)", which
+// would otherwise bind `for`, `github` and `stats` as names for errors in that
+// file. Checking the SHAPE of what came back rejects exactly that, and costs
+// nothing next to lexing the file to find out which parens were real.
+const BINDING_SHAPE = /^\s*(?:[A-Za-z_$][\w$]*|[{[][\s\S]*[\]}])\s*$/;
+
+/**
+ * The names a binding BINDS — `{ message: msg }` binds `msg`, not `message`,
+ * and `{ response: { data: detail } }` binds `detail` alone.
+ *
+ * Nesting needs no special case here: splitting on commas and taking what
+ * follows the LAST colon in each part walks to the innermost bound name, which
+ * is the one a log can hold. The nested shape was unreachable only because the
+ * pattern that fed this function could not match it.
+ */
 function boundNames(binding) {
+  if (!BINDING_SHAPE.test(binding)) return [];
   return binding
     .split(',')
     .map((part) => part.split(':').pop())
     .flatMap((part) => [...part.matchAll(/[A-Za-z_$][\w$]*/g)].map((m) => m[0]));
+}
+
+/**
+ * The pattern a `.catch(…)` callback binds, or `''` when it binds nothing.
+ *
+ * A callback is the span up to its arrow; `.catch(reportFailure)` has no arrow
+ * and binds no name here, so a function REFERENCE is not mistaken for one.
+ */
+function callbackParameter(span) {
+  const arrow = span.indexOf('=>');
+  if (arrow === -1) return '';
+  const parameter = span.slice(0, arrow).trim().replace(/^async\s+/, '');
+  return parameter.startsWith('(') && parameter.endsWith(')')
+    ? parameter.slice(1, -1)
+    : parameter;
 }
 
 /**
@@ -144,9 +188,14 @@ function boundNames(binding) {
  */
 function caughtIdentifier(source) {
   const names = new Set();
-  for (const [, binding] of source.matchAll(CATCH_CLAUSE))
-    for (const name of boundNames(binding)) names.add(name);
-  for (const [, param] of source.matchAll(CATCH_CALLBACK)) names.add(param);
+  for (const match of source.matchAll(CATCH_CLAUSE)) {
+    const span = balancedSpan(source, match.index + match[0].length);
+    for (const name of boundNames(span)) names.add(name);
+  }
+  for (const match of source.matchAll(CATCH_CALLBACK)) {
+    const span = balancedSpan(source, match.index + match[0].length);
+    for (const name of boundNames(callbackParameter(span))) names.add(name);
+  }
   if (names.size === 0) return null;
   // `$` is legal in an identifier and meaningful in a regex; the lookarounds
   // stand in for `\b`, which does not hold beside a leading `$`.
@@ -320,8 +369,20 @@ describe('the scanner sees an error however it is spelled', () => {
       "try { send(); } catch ({ message: detail }) { console.error('x:', detail); }",
     ],
     [
+      'a catch binding destructured two levels down',
+      "try { send(); } catch ({ response: { data: detail } }) { console.error('x:', detail); }",
+    ],
+    [
       'a rejection callback parameter',
       "load().catch((oops) => console.warn('x:', oops));",
+    ],
+    [
+      'a destructured rejection callback parameter',
+      "load().catch(({ message: detail }) => console.warn('x:', detail));",
+    ],
+    [
+      'a rejection callback destructured two levels down',
+      "load().catch(async ({ cause: { errno: why } }) => console.warn('x:', why));",
     ],
     ['a cause chain', "console.error('x:', err.cause);"],
     ['a stack', "console.error('x:', failure.stack);"],
@@ -350,6 +411,14 @@ describe('the scanner sees an error however it is spelled', () => {
     [
       'a file that binds a name it never logs',
       "try { send(); } catch (e) { report(e); }\nconsole.info('warmed');",
+    ],
+    [
+      'a rejection handler passed by reference',
+      "load().catch(reportFailure);\nconsole.info('warmed');",
+    ],
+    [
+      'prose that mentions a catch',
+      "// the outer try/catch (for github-stats) will\nconsole.info('stats warmed');",
     ],
   ];
 

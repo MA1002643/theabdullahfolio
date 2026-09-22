@@ -1,0 +1,102 @@
+name: Lighthouse
+
+# Per-route quality budgets (issue #32). docs/seo.md §12 recorded this as NOT
+# BUILT because per-route budgets need a measured baseline and none existed.
+# One exists now — accessibility, best-practices and SEO all measure 100 on the
+# four routes lighthouserc.json collects — so the thresholds here are recorded
+# facts rather than aspirations. The reasoning behind which of them fail the
+# build and which only warn lives in that file, next to the numbers.
+#
+# ── Why this is a SEPARATE workflow and not a job in ci.yml ─────────────────
+# Three reasons, in order:
+#
+#   • It is slow. Three runs across four routes, each with its own Chrome
+#     launch, is minutes — and ci.yml is the gate people wait on before merging.
+#   • It needs Chrome. ci.yml installs Chromium for Playwright already, but
+#     bundling the two would make a Lighthouse flake look like an e2e failure.
+#   • It is scoped differently. This is about the PUBLISHED surface, so it runs
+#     on pull requests and on main, not on every push to every feature branch.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  # Manual runs, so a baseline can be re-measured deliberately after a change
+  # to the routes collected or the preset used — without waiting for a PR.
+  workflow_dispatch:
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Budgets
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          # Matched to ci.yml, and for the same reason: `.npmrc` sets
+          # engine-strict and a transitive dependency requires >=22.
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          # The same non-secret stubs ci.yml's build step uses. None is a
+          # credential; they exist so module evaluation does not fail on an
+          # absent variable. Kept in step with ci.yml by hand — if that list
+          # changes, this one changes with it.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+          SMTP_HOST: smtp.example.com
+          SMTP_PORT: '587'
+          SMTP_USER: ci@example.com
+          SMTP_PASS: placeholder
+          RECEIVER_EMAIL: ci@example.com
+
+      # `autorun` performs collect → assert → upload in one pass, reading every
+      # setting from lighthouserc.json. It boots the production server itself
+      # via `startServerCommand`, so nothing here needs to manage a background
+      # process or poll a port.
+      - name: Lighthouse CI
+        id: lhci
+        run: npx --yes @lhci/cli@0.15.1 autorun
+        env:
+          NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+          SMTP_HOST: smtp.example.com
+          SMTP_PORT: '587'
+          SMTP_USER: ci@example.com
+          SMTP_PASS: placeholder
+          RECEIVER_EMAIL: ci@example.com
+          AUTH_GITHUB_ID: ci-placeholder
+          AUTH_GITHUB_SECRET: ci-placeholder
+          AUTH_GOOGLE_ID: ci-placeholder
+          AUTH_GOOGLE_SECRET: ci-placeholder
+          # Deliberately NOT set: NEXT_PUBLIC_GA_MEASUREMENT_ID. A CI audit must
+          # not report page views into the production analytics property, and
+          # leaving it unset is what makes GoogleAnalytics render nothing (see
+          # the component's unset-id path).
+
+      # `always()`: the reports are at their most useful on the run that FAILED,
+      # which is exactly the run a default `if: success()` would skip.
+      - name: Upload Lighthouse reports
+        if: ${{ always() && steps.lhci.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 14

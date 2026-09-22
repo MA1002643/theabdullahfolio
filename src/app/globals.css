@@ -7327,3 +7327,1146 @@ li:has(.journey-lift :focus-visible) .journey-connector {
    motion exactly as it does otherwise. Nothing here animates, so there is
    nothing to suppress — noted so a future pass does not add a transition that
    would delay a focus reveal. */
+
+/* ── Engineering notes prose (issue #32, W8) ────────────────────────────────
+   Styles the HTML `marked` produces from docs/*.md on /notes/[slug]. Written
+   as element selectors scoped to one class rather than as utility classes,
+   because the markup is generated — there is no JSX to hang Tailwind classes
+   on, and a rendered <h2> must be styled by what it IS.
+
+   Deliberately NOT @tailwindcss/typography: that plugin ships a full opinion
+   about a dozen elements in several sizes, most of which these documents never
+   use, and its defaults would have to be overridden back into this site's
+   palette anyway. This is the subset the corpus actually contains, verified
+   against docs/seo.md: headings to h4, paragraphs, lists, tables, inline code,
+   fenced code, links, blockquotes and horizontal rules.
+
+   Outside @layer so these win over Tailwind's preflight reset without needing
+   !important — preflight strips list markers and heading sizes, and a bare
+   element selector at the same specificity would otherwise lose to it on
+   source order. */
+/* ── Colour (owner-directed) ────────────────────────────────────────────────
+   The first cut used one voice in four weights — `#f4e3b8` headings,
+   `#d4af7a` h3, `#b8946a` h4, `foreground/0.78` body — so a 1,257-line
+   document offered a reader no ranking and no landmarks, and the two lowest
+   tiers sat at the bottom of the page's contrast range.
+
+   It now uses the index's three-tier system (see `.note-record__*`), with one
+   constraint that does not apply there: THIS IS LONG-FORM READING. 149
+   paragraphs' worth. So the loud tiers are spent on the furniture a reader
+   navigates by — headings, rules, table headers — while body copy stays
+   deliberately neutral, because warm body text over a thousand lines is
+   fatigue, not richness.
+
+   The two elements that actually carry this document's texture are `code`
+   (584 of them) and `strong` (149). Those are not edge cases to be tidied
+   last; they are what the page LOOKS like, which is why they get the gold
+   rather than the headings getting it all. */
+.note-prose {
+  /* Raised from 0.78. Body stays neutral, but not dim — this is the one
+     element a reader spends an hour inside. */
+  color: rgb(var(--foreground) / 0.84);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.note-prose h2,
+.note-prose h3,
+.note-prose h4 {
+  font-weight: 500;
+  line-height: 1.3;
+  scroll-margin-top: 6rem;
+}
+
+/* Section headings are the landmarks in a document this long, so they take the
+   molten treatment the index title wears — the same ramp, run horizontally.
+   The solid colour is declared FIRST as the fallback: an engine without
+   background-clip:text renders `-webkit-text-fill-color: transparent` as
+   invisible text, and a heading that vanishes is worse than one that is
+   merely plain. */
+.note-prose h2 {
+  position: relative;
+  margin-top: 3.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffc46b;
+  padding-bottom: 0.6rem;
+  border-bottom: 0;
+}
+
+/* The rule lives on a PSEUDO-ELEMENT, not on the heading's own background.
+   `background-clip: text` is one property governing the whole element, so a
+   rule painted as a second background layer would be clipped to the glyphs
+   along with the fill and simply vanish. `::after` is a separate box with its
+   own background, which the parent's clip never touches — so the gradient
+   survives, and it can fade out at the right-hand end rather than stopping
+   dead. That matters because the `hr`s are this page's real section breaks
+   (16 of them) and a full-width heading underline would compete with them. */
+.note-prose h2::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgb(255 109 5 / 0.85) 0%,
+    rgb(255 170 42 / 0.5) 40%,
+    transparent 92%
+  );
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .note-prose h2 {
+    background-image: linear-gradient(
+      100deg,
+      #ffd27d 0%,
+      #ffbb55 30%,
+      #ffaa2a 60%,
+      #ff8a1f 100%
+    );
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    /* A restrained halo. At 24px a glyph carries it without the counters
+       filling in — the size argument the /cv and index passes both record. */
+    filter: drop-shadow(0 0 10px rgb(255 109 5 / 0.25));
+  }
+}
+
+/* h3 carries an ember tick in the margin rather than a colour change alone —
+   34 of them, and at this size a marker is what makes the scan work. */
+.note-prose h3 {
+  position: relative;
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.1875rem;
+  color: #ffaa2a;
+  /* The tick is INSET, not hung in the margin. A negative offset would sit in
+     the page gutter, and on a phone the layout's inline padding shrinks with
+     the fluid scale to less than the tick's own offset — which is a
+     horizontal page scroll, on the one route that is pure reading. */
+  padding-left: 0.85rem;
+}
+
+.note-prose h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.32em;
+  width: 3px;
+  height: 0.85em;
+  border-radius: 2px;
+  background: #ff6d05;
+  box-shadow: 0 0 8px rgb(255 109 5 / 0.55);
+}
+
+.note-prose h4 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: #ffbb55;
+}
+
+.note-prose p {
+  margin-bottom: 1.125rem;
+}
+
+.note-prose a {
+  color: #ffaa2a;
+  text-decoration: underline;
+  text-decoration-color: rgb(255 170 42 / 0.4);
+  text-underline-offset: 4px;
+  transition: color 150ms ease;
+}
+
+.note-prose a:hover {
+  color: #ff6d05;
+}
+
+.note-prose ul,
+.note-prose ol {
+  margin-bottom: 1.125rem;
+  padding-left: 1.5rem;
+}
+
+.note-prose ul {
+  list-style: disc;
+}
+
+.note-prose ol {
+  list-style: decimal;
+}
+
+.note-prose li {
+  margin-bottom: 0.4rem;
+}
+
+.note-prose li::marker {
+  color: #ff8a1f;
+  font-weight: 600;
+}
+
+/* 149 of these, and the document leans on them to carry its argument — the
+   bolded clause is usually the finding. Gold, the bright end of the ramp, so
+   a skim down the page lands on them. */
+.note-prose strong {
+  color: #ffd27d;
+  font-weight: 600;
+}
+
+/* 584 of these. They are the page's texture more than any heading is, so the
+   tint is warm (ember at 12%, the index's source-chip fill) rather than the
+   neutral white/5 it was — but deliberately WITHOUT a border. A hairline on
+   584 chips is not detail, it is noise, and it would turn a paragraph with
+   six identifiers in it into a fence. */
+.note-prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  color: #ffc46b;
+  background: rgb(255 109 5 / 0.12);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  /* Long identifiers and file paths appear constantly in these documents and
+     must not push the page into a horizontal scroll on a phone. */
+  overflow-wrap: anywhere;
+}
+
+/* Inside a heading the chip would fight the heading's own fill, so it drops
+   its tint and simply inherits — `## 3. Why lastModified comes from git` reads
+   as one heading rather than a heading with a box dropped into it. */
+.note-prose h2 code,
+.note-prose h3 code,
+.note-prose h4 code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+  font-size: 0.9em;
+}
+
+.note-prose pre {
+  position: relative;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.45);
+  border: 1px solid rgb(255 170 42 / 0.18);
+  /* An ember edge marks the block's start without tinting the whole panel —
+     a code block must stay dark and calm to be read. Dim here; `::before`
+     draws the bright rail over it as the block arrives. */
+  border-left: 3px solid rgb(255 109 5 / 0.25);
+  /* A code block scrolls ITSELF rather than widening the page. */
+  overflow-x: auto;
+}
+
+.note-prose pre::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #ff6d05 0%, rgb(255 109 5 / 0.4) 100%);
+  transform-origin: 50% 0;
+  pointer-events: none;
+}
+
+.note-prose pre code {
+  background: none;
+  padding: 0;
+  /* Deliberately NOT the inline chip's amber: a whole block in ember is a
+     wall of orange. Inline code is a word inside a sentence and needs to
+     stand out from it; a block is already set apart by its panel. */
+  color: rgb(var(--foreground) / 0.88);
+  overflow-wrap: normal;
+}
+
+/* A pulled-aside note was the DIMMEST text on the page at 0.6 — but these
+   carry the caveats and the known consequences, which is the opposite of
+   incidental. Now a warm panel: full ember rail, a faint tint, and text at
+   the same weight as the body it interrupts. */
+.note-prose blockquote {
+  position: relative;
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  /* A DIM track, with the full-ember rail drawn over it by `::before` below.
+     Same arrangement as the /cv entry rail, and for the same reason: the
+     element keeps a visible left edge at every moment, including in an engine
+     that never runs the animation. */
+  border-left: 3px solid rgb(255 109 5 / 0.3);
+  border-radius: 0 6px 6px 0;
+  background: rgb(255 109 5 / 0.07);
+  color: rgb(var(--foreground) / 0.82);
+}
+
+.note-prose blockquote::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #ff6d05 0%, rgb(255 109 5 / 0.45) 100%);
+  transform-origin: 50% 0;
+  pointer-events: none;
+}
+
+.note-prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* The 16 section breaks. An ember rule fading to nothing at both ends reads
+   as a considered break rather than the flat white hairline it was — and it
+   is the same `.elite-divider` shape used elsewhere on the site, so the
+   document breaks the way the rest of the product does. */
+.note-prose hr {
+  margin: 3rem 0;
+  border: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 109 5 / 0.7) 22%,
+    rgb(255 170 42 / 0.7) 50%,
+    rgb(255 109 5 / 0.7) 78%,
+    transparent 100%
+  );
+}
+
+/* Tables carry several of the decision records outright, so they are a primary
+   element here rather than an edge case. The wrapper scrolls on a phone — a
+   four-column decision table cannot reflow to 380px without becoming
+   unreadable, and scrolling the table beats truncating it. */
+.note-prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.note-prose th,
+.note-prose td {
+  /* Warm-tinted gridlines rather than neutral white: across 11 tables the grid
+     is a large share of the page's line weight, and a cool grid under warm
+     type is what made the tables read as pasted in from somewhere else. */
+  border: 1px solid rgb(255 170 42 / 0.16);
+  padding: 0.55rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.note-prose th {
+  color: #ffbb55;
+  font-weight: 600;
+  background: rgb(255 109 5 / 0.14);
+}
+
+/* Zebra striping. Several of these tables ARE the decision records — four
+   columns and a dozen rows — and on a wide row a reader loses the line
+   without it. Barely-there (2%), because the point is to guide the eye across
+   a row, not to draw stripes. */
+/* Inside a cell, an identifier does NOT break mid-token. `overflow-wrap:
+   anywhere` is right in a paragraph — it is what stops a long path widening
+   the page — but a table here is `display: block` with `overflow-x: auto`, so
+   it already scrolls itself and breaking buys nothing. Left as-is it split
+   the route column into `/projects/[id` + `]` and `/qualificatio` + `ns`,
+   which reads as a rendering fault in a table whose entire content is exact
+   identifiers. */
+.note-prose th code,
+.note-prose td code {
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.note-prose tbody tr:nth-child(even) {
+  background: rgb(255 255 255 / 0.02);
+}
+
+.note-prose tbody tr:hover {
+  background: rgb(255 109 5 / 0.06);
+}
+
+/* Print: the h2 fill is a gradient clipped to the glyphs with the text fill
+   erased, so on paper — where the background image is dropped — every section
+   heading would come out as blank space. This is a decision record; it is a
+   document people save as a PDF. The same four-property reset the /cv name
+   and descriptions carry, and for the identical reason. */
+@media print {
+  .note-prose h2 {
+    background-image: none;
+    -webkit-background-clip: border-box;
+            background-clip: border-box;
+    -webkit-text-fill-color: #000;
+    color: #000;
+    filter: none;
+    border-bottom: 1px solid #999;
+  }
+  /* The ember rule is screen furniture; the border above replaces it on paper. */
+  .note-prose h2::after {
+    display: none;
+  }
+  .note-prose h3,
+  .note-prose h4,
+  .note-prose strong {
+    color: #000;
+  }
+  .note-prose h3::before {
+    background: #000;
+    box-shadow: none;
+  }
+  .note-prose code {
+    background: none;
+    color: #000;
+  }
+  .note-prose blockquote {
+    background: none;
+    border-left-color: #999;
+    color: #000;
+  }
+  .note-prose hr {
+    background: none;
+    border-top: 1px solid #999;
+  }
+}
+
+/* ══ /cv — scroll choreography, with no JavaScript ═════════════════════════
+   The /cv route is a server component that ships ZERO JavaScript, and that is
+   the property the whole route exists for (see the header of
+   src/components/cv/index.jsx). So the reveals here are CSS scroll-driven
+   animations — `animation-timeline: view()` — not an IntersectionObserver and
+   not Framer. Each element gets its OWN timeline from its own position in the
+   document, which means the stagger down the page is free: there is no
+   observer, no state, no hydration, and nothing to wire up per element. The
+   route's bundle is unchanged at 0 bytes.
+
+   WHERE THE HIDDEN STATE LIVES IS THE WHOLE SAFETY ARGUMENT. `opacity: 0`
+   appears ONLY inside @keyframes, never in a base rule. `animation-fill-mode:
+   both` applies that first frame only while the animation actually exists, and
+   the animation only exists inside the @supports + no-preference guards below.
+   A browser without scroll-timeline support (Safari before 26, Firefox) and a
+   reader with `prefers-reduced-motion` therefore get the finished page with
+   every word visible — not a page stuck at opacity 0, which is exactly what a
+   base-rule `opacity: 0` would have handed them on the one route that must
+   never fail to render its text.
+
+   docs/seo.md §5 already rules this pattern acceptable for crawlers ("the text
+   is in the DOM and not `hidden`"), and on this route the machine-readable
+   half is independent anyway: the ProfilePage/Person JSON-LD carries the same
+   history regardless of any CSS.
+
+   The DECORATIVE pieces below (the progress bar, the ember rail) invert the
+   rule on purpose — they DO carry their zero state in the base rule, because
+   for an ornament "never drawn" is the correct fallback rather than a defect.
+
+   Everything animated is `opacity` and `transform` only: both composite off
+   the main thread, so a long CV scrolls at frame rate on a phone. */
+
+@keyframes cv-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes cv-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes cv-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes cv-pop {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* The reading rail. A CV is a document people skim to the end of, so telling
+   them how much is left is genuinely useful rather than ornamental — and
+   `scroll(root block)` reads the document's own scroll position, so it costs
+   one element and no script. The ember→pink sweep is the page's own palette in
+   the order the page introduces it. */
+.cv-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 60;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #ff6d05 0%, #ffaa2a 55%, #fc83ff 100%);
+  pointer-events: none;
+}
+
+/* Driven by the DOCUMENT's scroll position rather than the bar's own position
+   in it, which is why this needs `scroll(root block)` and not the `view()`
+   the reveals below use — the bar is `position: fixed` and never moves, so a
+   view() timeline on it would sit at a constant progress forever.
+   Guarded separately from the view() block: `scroll()` and `view()` are the
+   same feature in every shipping engine, but declaring the dependency each
+   rule actually has keeps them independently removable.
+   NOTE the declaration order — the `animation` shorthand resets
+   `animation-timeline` to `auto`, so the timeline MUST come after it or the
+   bar silently falls back to a time-based animation that runs once on load. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cv-progress {
+      animation: cv-draw-x linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+/* The entry's ember rail, drawn over the static white/10 border the row
+   already has. `left: -1px` puts it exactly on that border, so the grey track
+   stays visible as the line it fills in. */
+.cv-entry::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, #ff6d05 0%, rgb(255 109 5 / 0.25) 100%);
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  pointer-events: none;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Ranges are expressed against `cover` rather than `entry`. `entry`
+       measures a range equal to the ELEMENT's own height, so a 20px date row
+       would complete its reveal in 20px of scrolling (a flicker) while a tall
+       block took hundreds. `cover` spans the element's whole passage across
+       the viewport, so a percentage of it is roughly the same scroll distance
+       for every element on the page — which is what makes the cascade down a
+       long CV read as one steady rhythm instead of a series of unrelated
+       speeds. */
+    .cv-reveal {
+      animation: cv-rise linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 30%;
+    }
+
+    /* The section rule draws out from the left, under the heading it belongs
+       to, a beat ahead of the rows beneath it. */
+    .cv-rule {
+      transform-origin: 0 50%;
+      animation: cv-draw-x linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 26%;
+    }
+
+    /* The rail draws DOWN at roughly reading pace — a slower range than the
+       text it sits beside, so the line appears to track the reader through the
+       entry rather than arriving with it. */
+    .cv-entry::before {
+      animation: cv-draw-y linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 42%;
+    }
+
+    .cv-marker {
+      animation: cv-pop linear both;
+      animation-timeline: view();
+      animation-range: cover 4% cover 24%;
+    }
+
+    /* Tag pills come in left to right. Each pill owns its own view() timeline,
+       so the offset is written as a later RANGE rather than a delay — a delay
+       is a time, and a scroll-driven animation has no time to delay by. */
+    .cv-tag {
+      animation: cv-rise linear both;
+      animation-timeline: view();
+      animation-range: cover 6% cover 26%;
+    }
+    .cv-tag:nth-child(2) {
+      animation-range: cover 8% cover 28%;
+    }
+    .cv-tag:nth-child(3) {
+      animation-range: cover 10% cover 30%;
+    }
+    .cv-tag:nth-child(4) {
+      animation-range: cover 12% cover 32%;
+    }
+    .cv-tag:nth-child(n + 5) {
+      animation-range: cover 14% cover 34%;
+    }
+  }
+}
+
+/* Print drops every ornament: a reading-progress bar and a decorative rail are
+   screen furniture, and the reveals must never reach paper as faded text. */
+@media print {
+  .cv-progress,
+  .cv-entry::before {
+    display: none;
+  }
+  .cv-reveal,
+  .cv-rule,
+  .cv-marker,
+  .cv-tag {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ══ /notes — the decision-record index ════════════════════════════════════
+   Issue #32 (W8), owner-directed colour pass. The index previously spoke in
+   one voice: `text-gold` (#f4e3b8) for the record title, `text-foreground/70`
+   for both the standfirst and the summary, `text-gold-soft` (#b8946a) for the
+   readout. The readout was the weakest contrast on the page while carrying
+   the one figure that makes the page's claim checkable, and a reader skimming
+   got no ranking at all from the colour.
+
+   It now speaks in THREE tiers, all inside the site's existing warm palette
+   (see the /cv pass above, which reached the same conclusion on the same
+   issue), ordered by luminance so the ranking is legible before a single word
+   is read. Contrast is against the page's near-black composite — the backdrop
+   still at opacity-50 under a bg-black/70 dimmer:
+
+     · TITLE     — the gold→ember ramp, run HORIZONTALLY. The standfirst above
+                   it already wears that ramp vertically and per-word, so the
+                   axis is what keeps the two from reading as the same object:
+                   one darkens down each glyph, the other across the line.
+                   ~12:1 at the bright end, ~7:1 at the ember end.
+     · SUMMARY   — flat #ffbb55, the ramp's midpoint, with a single soft halo
+                   rather than the title's pair. ~12.5:1.
+     · READOUT   — the Figure idiom the /uses plates established: the NUMBER
+                   wears the page title's ember #ff6d05 (~7.4:1) because it is
+                   the instrument's reading, the WORD beside it the amber label
+                   voice #ffaa2a (~11:1), and the source path sits in a tinted
+                   chip so "this is a file you can go and check" is a shape as
+                   well as a colour.
+
+   Nothing here carries a stroke, and only the title carries the double halo.
+   That is a size decision, not a taste one, and the same one /cv records: at
+   12px uppercase mono a glow fills the counters and costs legibility for
+   nothing visible, so the ember ships flat at the readout and haloed at the
+   title. */
+
+/* The static track the ember rail draws over — so an entry has a left edge
+   from the first paint, whatever the motion state, exactly as the /cv entry
+   rail sits over its own grey border. */
+.note-record__track,
+.note-record__rail {
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  bottom: 0;
+  width: 1px;
+  pointer-events: none;
+}
+
+.note-record__track {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.note-record__rail {
+  transform-origin: 50% 0;
+  background: linear-gradient(
+    180deg,
+    #ff6d05 0%,
+    rgb(255 109 5 / 0.55) 45%,
+    rgb(255 109 5 / 0.12) 100%
+  );
+  transition: filter 300ms ease;
+}
+
+/* The node at the head of the rail — the record's ignition point. `scale` is
+   animated by Framer; the bloom is CSS, so a hover can lift it without
+   fighting an inline transform. */
+.note-record__node {
+  position: absolute;
+  left: -2.5px;
+  top: calc(0.15em - 2.5px);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ff6d05;
+  box-shadow:
+    0 0 6px rgb(255 109 5 / 0.8),
+    0 0 14px rgb(255 73 0 / 0.45);
+  pointer-events: none;
+  transition: box-shadow 300ms ease;
+}
+
+.note-record__link {
+  text-decoration: none;
+  /* The clip-path wipe runs on a wrapper INSIDE this link, so the link box
+     itself must not introduce its own stacking surprises — it stays a plain
+     inline box and contributes only the focus ring and the hover trigger. */
+}
+
+.note-record__link:focus-visible {
+  outline: 2px solid #ffaa2a;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* Solid fallback FIRST: an engine without background-clip:text would render
+   `-webkit-text-fill-color: transparent` as invisible text, and this is the
+   only link on the page. The gradient is applied only where it can work. */
+.note-record__title {
+  color: #ffc46b;
+  font-weight: 500;
+  /* Long hyphenated record titles must not push a phone into a horizontal
+     scroll — these are headings made of prose, not single words. */
+  overflow-wrap: anywhere;
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .note-record__title {
+    background-image: linear-gradient(
+      100deg,
+      #ffd27d 0%,
+      #ffbb55 32%,
+      #ffaa2a 62%,
+      #ff8a1f 100%
+    );
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    /* The title's halo. Two layers, matching `.text-fire-amber` — at 22px a
+       glyph can carry it without the counters filling in. */
+    filter:
+      drop-shadow(0 0 4px rgb(255 178 60 / 0.5))
+      drop-shadow(0 0 14px rgb(255 73 0 / 0.3));
+    transition: filter 300ms ease;
+  }
+}
+
+.note-record__summary {
+  color: #ffbb55;
+  text-shadow: 0 0 10px rgb(255 150 40 / 0.3);
+}
+
+.note-record__figure {
+  color: #ff6d05;
+  font-weight: 600;
+  /* The figure is a measurement: tabular digits keep it reading as a readout
+     rather than as prose, and stop the column shifting if the count changes. */
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgb(255 109 5 / 0.45);
+}
+
+.note-record__label {
+  color: #ffaa2a;
+}
+
+.note-record__sep {
+  color: rgb(255 170 42 / 0.45);
+  margin-inline: 0.6em;
+}
+
+.note-record__source {
+  color: #ffcc8a;
+  background: rgb(255 109 5 / 0.1);
+  border: 1px solid rgb(255 170 42 / 0.22);
+  border-radius: 4px;
+  padding: 0.2em 0.5em;
+  /* File paths are the one thing on this line that must survive a narrow
+     viewport intact. */
+  overflow-wrap: anywhere;
+  transition:
+    border-color 300ms ease,
+    background-color 300ms ease,
+    color 300ms ease;
+}
+
+/* Hover lifts the record in LUMINANCE and nothing else — no movement, no
+   sheen, no second colour. The title brightens within its own gradient, the
+   rail and its node bloom, the source chip warms. */
+.note-record:hover .note-record__title {
+  filter:
+    brightness(1.12) drop-shadow(0 0 6px rgb(255 178 60 / 0.65))
+    drop-shadow(0 0 20px rgb(255 73 0 / 0.4));
+}
+
+.note-record:hover .note-record__rail {
+  filter: brightness(1.35);
+}
+
+.note-record:hover .note-record__node {
+  box-shadow:
+    0 0 9px rgb(255 109 5 / 0.95),
+    0 0 22px rgb(255 73 0 / 0.6);
+}
+
+.note-record:hover .note-record__source {
+  color: #ffdcae;
+  background: rgb(255 109 5 / 0.16);
+  border-color: rgb(255 170 42 / 0.45);
+}
+
+/* Reduced-motion FIRST-PAINT guard, the `.uses-anim` pattern (see the block
+   above it). The records hold their hidden pose until React has read the
+   media query; under the OS preference that is one frame of invisible
+   content, so the query pins every animated layer at rest before any script
+   runs. The palette's manual toggle exposes the same verdict through
+   data-motion. !important is load-bearing: Framer writes these as INLINE
+   styles, which nothing else outranks. The tracking guard names the readout's
+   rest value rather than `inherit`, because that value is the design — the
+   settle animates TO 0.14em, it does not return to an inherited tracking.
+
+   NOTE what `.note-anim` deliberately does NOT reset: `filter`. The
+   standfirst's only filter is its drop-shadow HALO — the colour, not the
+   motion — and a blanket `filter: none` here would strip the glow from the
+   one element on the page that is meant to carry it. The blur that IS motion
+   belongs to the per-word spans, which carry `.note-anim-word` and are pinned
+   separately. */
+@media (prefers-reduced-motion: reduce) {
+  .note-anim {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .note-anim-word {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .note-anim-clip {
+    clip-path: none !important;
+    transform: none !important;
+  }
+  .note-anim-track {
+    letter-spacing: 0.14em !important;
+  }
+}
+[data-motion='off'] .note-anim {
+  opacity: 1 !important;
+  transform: none !important;
+}
+[data-motion='off'] .note-anim-word {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+[data-motion='off'] .note-anim-clip {
+  clip-path: none !important;
+  transform: none !important;
+}
+[data-motion='off'] .note-anim-track {
+  letter-spacing: 0.14em !important;
+}
+
+/* ══ /notes/[slug] — scroll choreography for the rendered record ═══════════
+   Owner-directed: "none of the content in this file has scroll reveal
+   animation". It is a ~30,000px document — 33 viewports — so unlike the
+   /notes INDEX (whose entire content sits above the fold, which is why that
+   one is Framer gated on the loader) everything here is genuinely scrolled
+   to, and a scroll-driven reveal is seen exactly as intended.
+
+   WHY CSS AND NOT FRAMER — this is not a preference here, it is the only
+   clean option. The body is injected with `dangerouslySetInnerHTML` from
+   `marked`: the <h2>s, <table>s and <li>s do not exist as React elements, so
+   there is nothing to hang a ref or a <motion.*> wrapper on without
+   post-processing the HTML string. `animation-timeline: view()` binds BY
+   SELECTOR, so it applies to arbitrary injected markup — and it keeps this
+   route at zero JavaScript, the property /cv is built around and the reason
+   its own choreography is written the same way.
+
+   THE SAFETY ARGUMENT IS INHERITED FROM /cv AND MUST STAY TRUE.
+   `opacity: 0` appears ONLY inside @keyframes, never in a base rule.
+   `animation-fill-mode: both` applies that first frame only while the
+   animation exists, and the animation exists only inside the @supports +
+   no-preference guards. Firefox, Safari before 26, and any reader who asks
+   for reduced motion therefore get the finished document with every word
+   visible — which matters more here than anywhere else on the site, because
+   this route IS its text. Ornaments invert the rule deliberately: the reading
+   rail carries its zero state in the base rule, since "never drawn" is the
+   right fallback for an ornament. The heading rules and the blockquote /
+   code rails do NOT — they rest at full scale and animate FROM zero, because
+   a missing heading underline reads as a defect rather than an absent
+   flourish.
+
+   Only `opacity` and `transform` animate. Both composite off the main
+   thread, so ~440 bound animations cost no main-thread work per frame. */
+
+@keyframes note-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Headings arrive from slightly further and a touch to the left, so a section
+   opening reads as a distinct gesture from the paragraphs under it. */
+@keyframes note-rise-heading {
+  from {
+    opacity: 0;
+    transform: translate3d(-10px, 22px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes note-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes note-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes note-pop {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* A table row deals in from the left rather than rising: a row is a
+   horizontal object, and sliding it along its own axis is what makes a
+   decision table look like it is being filled in. */
+@keyframes note-deal {
+  from {
+    opacity: 0;
+    transform: translate3d(-14px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ── The reading rail ──────────────────────────────────────────────────────
+   Thirty-three viewports is precisely the length at which a reader wants to
+   know how much is left, so this earns its two pixels more here than on /cv.
+   Driven by `scroll(root block)` — the DOCUMENT's scroll position — not the
+   `view()` the reveals use: the bar is `position: fixed` and never moves, so
+   a view() timeline on it would sit at one progress forever. */
+.note-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 60;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #ff6d05 0%, #ffaa2a 55%, #fc83ff 100%);
+  pointer-events: none;
+}
+
+/* NOTE the declaration order here and in every rule below: the `animation`
+   shorthand RESETS `animation-timeline` to `auto`, so the timeline must be
+   declared AFTER it. Declared before, the rule silently degrades to a
+   time-based animation that runs once on load — a bug that shipped in the
+   first draft of the /cv pass and is recorded there. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .note-progress {
+      animation: note-draw-x linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Ranges are expressed against `cover`, never `entry`. `entry` measures a
+       range equal to the ELEMENT's own height, so a one-line paragraph would
+       complete its reveal in ~27px of scrolling (a flicker) while a tall
+       table took hundreds — on a document with 133 paragraphs of wildly
+       different heights that reads as 133 unrelated speeds. `cover` spans the
+       element's whole passage across the viewport, so a percentage of it is
+       roughly the same scroll distance for everything, which is what turns
+       the page into one steady rhythm. */
+
+    /* Body blocks. Direct children only: a paragraph inside a blockquote or a
+       table cell must not animate separately from the panel carrying it. */
+    .note-prose > p,
+    .note-prose > table,
+    .note-prose > pre {
+      animation: note-rise linear both;
+      animation-timeline: view();
+      animation-range: cover 2% cover 26%;
+    }
+
+    /* A section opens: the heading arrives first, then its rule draws out
+       from the left UNDER it at a slower range — so the underline appears to
+       be written as the reader settles on the heading, rather than arriving
+       stamped. */
+    .note-prose > h2 {
+      animation: note-rise-heading linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 22%;
+    }
+
+    .note-prose > h2::after {
+      transform-origin: 0 50%;
+      animation: note-draw-x linear both;
+      animation-timeline: view();
+      animation-range: cover 6% cover 40%;
+    }
+
+    .note-prose > h3,
+    .note-prose > h4 {
+      animation: note-rise-heading linear both;
+      animation-timeline: view();
+      animation-range: cover 2% cover 24%;
+    }
+
+    /* The ember tick pops as its heading lands. */
+    .note-prose > h3::before {
+      animation: note-pop linear both;
+      animation-timeline: view();
+      animation-range: cover 6% cover 26%;
+    }
+
+    /* Panels: the box arrives, then its rail draws DOWN at roughly reading
+       pace — a slower range than the text beside it, so the line appears to
+       track the reader through the quote rather than arriving with it. */
+    .note-prose > blockquote {
+      animation: note-rise linear both;
+      animation-timeline: view();
+      animation-range: cover 2% cover 26%;
+    }
+
+    .note-prose > blockquote::before,
+    .note-prose > pre::before {
+      animation: note-draw-y linear both;
+      animation-timeline: view();
+      animation-range: cover 4% cover 46%;
+    }
+
+    /* A section break opens from the centre outwards — the one gesture on the
+       page that is purely punctuation, and it should read as the document
+       drawing breath between sections. */
+    .note-prose > hr {
+      transform-origin: 50% 50%;
+      animation: note-draw-x linear both;
+      animation-timeline: view();
+      animation-range: cover 10% cover 42%;
+    }
+
+    /* List items cascade. Each owns its own view() timeline, so the offset is
+       a later RANGE rather than a delay — a delay is a time, and a
+       scroll-driven animation has no time to delay by. */
+    .note-prose li {
+      animation: note-rise linear both;
+      animation-timeline: view();
+      animation-range: cover 4% cover 24%;
+    }
+    .note-prose li:nth-child(2) {
+      animation-range: cover 6% cover 26%;
+    }
+    .note-prose li:nth-child(3) {
+      animation-range: cover 8% cover 28%;
+    }
+    .note-prose li:nth-child(4) {
+      animation-range: cover 10% cover 30%;
+    }
+    .note-prose li:nth-child(n + 5) {
+      animation-range: cover 12% cover 32%;
+    }
+
+    /* A decision table fills in row by row. The header sets first, then the
+       body rows deal from the left in sequence — the most elaborate gesture
+       on the page, spent on the element that most deserves it, because
+       several of these tables ARE the decision records. */
+    .note-prose thead th {
+      animation: note-rise linear both;
+      animation-timeline: view();
+      animation-range: cover 4% cover 22%;
+    }
+    .note-prose tbody tr {
+      animation: note-deal linear both;
+      animation-timeline: view();
+      animation-range: cover 6% cover 24%;
+    }
+    .note-prose tbody tr:nth-child(2) {
+      animation-range: cover 8% cover 26%;
+    }
+    .note-prose tbody tr:nth-child(3) {
+      animation-range: cover 10% cover 28%;
+    }
+    .note-prose tbody tr:nth-child(4) {
+      animation-range: cover 12% cover 30%;
+    }
+    .note-prose tbody tr:nth-child(5) {
+      animation-range: cover 14% cover 32%;
+    }
+    .note-prose tbody tr:nth-child(n + 6) {
+      animation-range: cover 16% cover 34%;
+    }
+  }
+}
+
+/* Print drops the ornament and pins every reveal at its finished state. A
+   decision record is a document people save as a PDF, and a reveal must never
+   reach paper as faded text. */
+@media print {
+  .note-progress {
+    display: none;
+  }
+  .note-prose > p,
+  .note-prose > h2,
+  .note-prose > h3,
+  .note-prose > h4,
+  .note-prose > table,
+  .note-prose > pre,
+  .note-prose > blockquote,
+  .note-prose > hr,
+  .note-prose li,
+  .note-prose thead th,
+  .note-prose tbody tr {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .note-prose > h2::after,
+  .note-prose > h3::before,
+  .note-prose > blockquote::before,
+  .note-prose > pre::before {
+    animation: none !important;
+    transform: none !important;
+  }
+}

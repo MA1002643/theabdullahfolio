@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import Link from 'next/link';
 import bg from '../../public/background/home-hero.webp';
 import laptop from '../../public/background/laptop.png';
 import Navigation from '@/components/navigation';
@@ -552,7 +553,21 @@ export default function Home() {
             from the registry would drag every route's metadata in with it.
 
             Out of flow (`sr-only` is `position: absolute`), so it cannot
-            affect the hero's layout or the ring measurement. */}
+            affect the hero's layout or the ring measurement.
+
+            THE TWO LINKS ARE LOAD-BEARING, not decoration. `/cv` and `/notes`
+            are the only routes not on the orbit ring — `BtnList` is capped at
+            eight by the sub-480px two-column layout that slices it 0-3 / 4-7,
+            so a ninth entry would break it — and the homepage renders no
+            footer, which is where every other page links them. Without these
+            two anchors both routes are reachable from every page EXCEPT the
+            one a crawler enters on: F1, reproduced by the fix for it. The e2e
+            suite's "every route is reachable from / in raw HTML" case is what
+            caught it, and is what keeps it caught.
+
+            They are also the affordance the sentence previously lacked: it
+            already told a screen-reader user the CV existed while giving them
+            no way to reach it. */}
         <p className="sr-only">
           Muhammad Abdullah is a software engineer based in Bolton, Greater
           Manchester, building fast, considered web applications with Next.js,
@@ -561,8 +576,10 @@ export default function Home() {
           systems, mobile and AI — each tracked live from its own GitHub board,
           alongside the degrees and roles behind them, a timeline of the route
           from college to production, and the tools the work is actually built
-          with. Every section is reachable from the ring below, and the full CV
-          is published as a PDF.
+          with. Every section is reachable from the ring below; the full
+          record is on the <Link href="/cv">CV page</Link> and as a PDF, and
+          the reasoning behind how this site is built is written up in the{' '}
+          <Link href="/notes">engineering notes</Link>.
         </p>
 
         {/* `hero-row` is only a hook for the `div.hero-row` block in

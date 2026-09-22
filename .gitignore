@@ -60,3 +60,8 @@ TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
 *.tmp.*
 .env*
 !.env.example
+
+# Lighthouse CI report output (.github/workflows/lighthouse.yml uploads these
+# as a build artifact instead — they are large, per-run, and regenerated every
+# time the audit runs).
+.lighthouseci/

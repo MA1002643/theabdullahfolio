@@ -11,6 +11,7 @@ import SoundProvider from '@/components/sound/SoundProvider';
 import FloatingSoundToggle from '@/components/sound/FloatingSoundToggle';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
+import GoogleAnalytics from '@/components/analytics/GoogleAnalytics';
 import JsonLd from '@/components/seo/JsonLd';
 import { alternatesFor } from '@/lib/seo/canonical';
 import { personGraph } from '@/lib/seo/schema';
@@ -221,8 +222,39 @@ export default function RootLayout({ children }) {
             Position in the document is irrelevant to every consumer that reads
             JSON-LD. */}
         <JsonLd id="ld-root" data={personGraph()} />
-        <SpeedInsights />
-        <Analytics />
+        {/* ── Vercel's two telemetry scripts, mounted ONLY on Vercel ────────
+            Both fetch from `/_vercel/...`, a path the PLATFORM serves — it does
+            not exist in the Next output. Anywhere else (a CI audit, a local
+            `next start`, a fork self-hosting this repo) those two requests 404
+            on every page load, which is two console errors per navigation and
+            two wasted round trips for a script that could not have worked.
+
+            It is also what capped Lighthouse's best-practices category at 0.96
+            in CI: `errors-in-console` is scored all-or-nothing and could never
+            pass off-platform. Skipping that audit was the alternative and is
+            strictly worse — it would have hidden real console errors to
+            accommodate two that were never real.
+
+            `process.env.VERCEL` is set during both the build and the runtime on
+            Vercel, and this is a server component, so the branch is resolved
+            when the page is prerendered. next.config.mjs already picks `distDir`
+            the same way, so the pattern is not new here. */}
+        {process.env.VERCEL ? (
+          <>
+            <SpeedInsights />
+            <Analytics />
+          </>
+        ) : null}
+        {/* GA4 under Consent Mode v2, storage denied (issue #32, W5). Mounted
+            beside Vercel Analytics rather than instead of it, and the two are
+            expected to DISAGREE permanently — §8 of docs/seo.md explains why
+            (different definitions of a visit, different bot filtering, and now
+            a third reason: this one has no stable identifier at all, so its
+            "users" figure is modelled where Vercel's is counted).
+
+            Renders null when NEXT_PUBLIC_GA_MEASUREMENT_ID is unset, which is
+            every preview, every fork and local development. */}
+        <GoogleAnalytics />
       </body>
     </html>
   );

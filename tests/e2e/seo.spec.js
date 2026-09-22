@@ -21,6 +21,13 @@ import { expect, test } from '@playwright/test';
 const ROUTES = [
   '/',
   '/about',
+  // The HTML CV and the decision-record index (issue #32, second pass). Listed
+  // here BY HAND, like every other route in this array and for the same reason
+  // the file's header gives: a spec that read `src/lib/seo/site.js` could only
+  // ever agree with the registry, and the registry being wrong is one of the
+  // things this suite exists to catch.
+  '/cv',
+  '/notes',
   '/projects',
   '/qualifications',
   '/journey',
@@ -84,8 +91,12 @@ test.describe('crawl control', () => {
     const body = await response.text();
     const urls = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 
-    // 9 routes + 11 projects + the CV.
-    expect(urls).toHaveLength(21);
+    // 11 registry routes + 11 project pages + 1 note + the CV = 24. Hardcoded
+    // on purpose, same argument as ROUTES above: this number is the independent
+    // check on the generator, so deriving it from the generator's own inputs
+    // would make the assertion vacuous. When it changes, it should be changed
+    // deliberately and the diff should say why.
+    expect(urls).toHaveLength(24);
     expect(new Set(urls).size).toBe(urls.length);
 
     // The acceptance criterion is "every URL in the sitemap returns 200,

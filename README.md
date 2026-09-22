@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.13-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--09--05-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-2026--09--19-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -121,6 +121,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
 | [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
 | [tz-lookup](https://github.com/darkskyapp/tz-lookup) | `^6.1` | Offline coordinates→IANA-timezone lookup for the footer's live-location clock |
+| [marked](https://marked.js.org/) | `^16.4` | Markdown → HTML for the `/notes` decision records, at build time only — never in a client bundle |
 | [@vercel/analytics](https://vercel.com/analytics) | `^2.0` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | `^2.0` | Core Web Vitals tracking |
 <!-- STACK-DATA:END -->
@@ -237,7 +238,7 @@ theabdullahfolio/
 ├── public/                     # Static assets — logo, backgrounds, résumé PDF
 ├── src/
 │   ├── app/                    # App Router — pages, layouts, API routes
-│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact · /journey · /uses · /guestbook · /my-past
+│   │   ├── (sub pages)/        # /about · /cv · /projects · /projects/[id] · /qualifications · /contact · /journey · /uses · /notes · /notes/[slug] · /guestbook · /my-past
 │   │   ├── api/                # 18 route handlers (see API surface below)
 │   │   ├── data.js             # Central project + navigation data store
 │   │   └── globals.css         # Theme tokens · keyframes · glow utilities
@@ -294,7 +295,7 @@ theabdullahfolio/
 | `/api/auth/[...nextauth]` | Auth.js OAuth route (GitHub · Google) that signs a visitor in for the guestbook — `GET` / `POST` handlers from `next-auth` |
 | `/api/daily-warmup` · `/api/repo-refresh` | Cron orchestrator + cache warmer (bearer-authenticated) |
 | `/api/seo-report` | Search Console feedback loop ([#32](https://github.com/MA1002643/theabdullahfolio/issues/32)) — pulls Search Analytics, stores a rolling 90-day snapshot in Upstash, and derives new queries, positions that dropped > 3, and pages earning impressions at CTR < 1%. Bearer-authenticated with the same `CRON_SECRET`, and invoked as a **third step in `/api/daily-warmup`'s fan-out** rather than a second `vercel.json` cron entry (Hobby caps cron count, so a standalone entry would silently never run). Signs its service-account JWT with `node:crypto` — no `googleapis` dependency. Answers `503` with a `skipped` reason when `GSC_SERVICE_ACCOUNT_KEY` is unset — the one answer `daily-warmup` does not count as a failed run, marking the step `notConfigured`. A credential that is **set but unusable** (undecodable, or decoding to an object without `client_email`/`private_key`) is not that answer: it is a `500` with an `error`, and fails the run. Neither is **missing Upstash storage** once the credential is configured — that guard runs after the credential checks, so reaching it means the integration is switched on, and one that cannot store a snapshot is broken rather than dormant (`500` + `error`, logged). Every finding is derived by comparing today against the *stored* previous run, so without storage the loop never starts at all. Once the credential is valid, a failure (expired key, revoked property, API or Upstash outage) answers 502 and **does** fail the run, so a report that stops arriving is surfaced to cron monitoring |
-| `/robots.txt` · `/sitemap.xml` · `/manifest.webmanifest` · `/llms.txt` | Generated crawl surface ([#32](https://github.com/MA1002643/theabdullahfolio/issues/32)) — all four read the route registry in `src/lib/seo/site.js`, so adding a page updates them by construction. The sitemap declares 21 URLs — 9 section routes, 11 project pages and the CV PDF — with `lastModified` from real git commit dates, never `new Date()`. `robots.txt` carries explicit AI-crawler stanzas; `llms.txt` is a curated brief for assistants |
+| `/robots.txt` · `/sitemap.xml` · `/manifest.webmanifest` · `/llms.txt` | Generated crawl surface ([#32](https://github.com/MA1002643/theabdullahfolio/issues/32)) — all four read the route registry in `src/lib/seo/site.js`, so adding a page updates them by construction. The sitemap declares 24 URLs — 11 section routes, 11 project pages, the `/notes` decision record and the CV PDF — with `lastModified` from real git commit dates, never `new Date()`. `robots.txt` carries explicit AI-crawler stanzas; `llms.txt` is a curated brief for assistants |
 
 ---
 
@@ -438,7 +439,7 @@ drift test makes no claim about them.
 
 What it covers:
 
-- **Canonicals** on all 10 routes and every project page, through
+- **Canonicals** on all 12 routes, every project page and every note, through
   `sectionMetadata()` — one change, because Next merges metadata shallowly and a
   page declaring its own `alternates` would replace the root's wholesale.
 - **`www` → apex 308** in `next.config.mjs`, not the Vercel dashboard: a config
@@ -468,8 +469,36 @@ What it covers:
   counted sentences, and `footer-data.js`, which the homepage states as the
   Person's `sameAs` while rendering no footer at all.
 
+- **An HTML CV at `/cv`**, derived from the same `journeyData` the timeline
+  renders, with the PDF one click away rather than forced as a download. A PDF
+  carries no JSON-LD, links nowhere, and is a fixed-width page on a phone — the
+  three things that matter most on the one document most likely to be shared.
+  It states no computed tenure (a statically-rendered figure would freeze at
+  build time) and makes no single-employer claim (`worksFor` takes one
+  organisation; the current state is two concurrent roles).
+- **The decision records themselves, at `/notes`.** `docs/*.md` is read at
+  build, rendered with `marked` and prerendered — the parser never reaches a
+  client bundle. Until this, the reasoning behind every choice on this site
+  lived only in the Git tree, which is this project's own failure mode applied
+  to its own documentation. The index's entrance is the one client-side piece,
+  and it hands the boundary **only the five display fields** — never the
+  document body, which would otherwise be serialised into the HTML of the page
+  that merely links to it.
+- **GA4 under Consent Mode v2, storage denied**, so no cookie is written and no
+  banner is required. The trade is stated rather than hidden: no stable
+  identifier, so *users* is modelled rather than counted. Vercel Analytics still
+  counts visits; the two are expected to disagree permanently.
+- **Lighthouse budgets in CI**, measured before they were enforced.
+  Accessibility, best practices and SEO are asserted at **100 and fail the
+  build**; performance is collected and warned until CI has its own history.
+  Measuring first found three real defects — an `aria-label` on `<span>`/`<p>`
+  that capped accessibility at 96 site-wide, three background textures that
+  have never existed in this repository, and Vercel's telemetry scripts 404ing
+  on every off-platform build.
+
 Full decision record, the measured baseline, and the runbook:
-**[`docs/seo.md`](docs/seo.md)**.
+**[`docs/seo.md`](docs/seo.md)** — also readable at
+[`/notes/discoverability`](https://ma.codes/notes/discoverability).
 
 ### Guestbook (`/guestbook`)
 

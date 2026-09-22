@@ -55,6 +55,12 @@ export const BOM_RULES = [
       /^tz-lookup$/,
       /^tldts$/,
       /^redis$/,
+      // `marked` (issue #32, W8) parses the markdown under docs/ into the HTML
+      // /notes/[slug] serves. Filed here with the other content-processing
+      // libraries — `pdf-parse` reads a file, this one transforms one — rather
+      // than in Interface: nothing it produces is a component, and it never
+      // reaches a client bundle. It runs once per note, during `next build`.
+      /^marked$/,
     ],
   },
   {

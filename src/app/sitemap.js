@@ -28,6 +28,7 @@
 // on disk with no registry entry fails CI.
 
 import { projectsData } from '@/app/data';
+import { readNotes } from '@/lib/notes/readNotes';
 import { absoluteUrl } from '@/lib/seo/canonical';
 import { lastModifiedFor } from '@/lib/seo/lastModified';
 import {
@@ -86,6 +87,15 @@ export const PROJECT_SOURCES = [
   // how that sentence is built rewrites the snippet a crawler displays for all
   // eleven URLs — and no other route calls it.
   'src/lib/seo/projectMeta.js',
+  // The `programmingLanguage` source and its reader. Detail-only for the same
+  // reason as projectMeta.js above — no other route publishes a language claim
+  // — and BOTH are listed because they fail differently: the JSON changes when
+  // a refresh finds new languages (a change to what is published), and the
+  // reader changes when the withholding rules change (also a change to what is
+  // published, for a different set of projects). Watching only the reader would
+  // leave a refreshed language list insisting the documents were unchanged.
+  'src/lib/seo/projectLanguages.js',
+  'src/data/project-languages.json',
   // The detail route's own card handlers. Listed as files for the same reason
   // the entry above names `page.js` rather than the directory — `[id]/` also
   // holds `loading.js`, which renders nothing a crawler reads — and they are
@@ -99,6 +109,18 @@ export const PROJECT_SOURCES = [
   // These eleven live inside the `(sub pages)` group too, so they render the
   // group layout, its footer and its two nav links, and take their metadata
   // through `sectionMetadata()` exactly as the eight section routes do.
+  ...SUB_PAGE_SHARED_SOURCES,
+];
+
+// What every note page renders from BESIDES its own markdown file: the route
+// template, the reader that parses it, and the shared sets every route carries.
+// Listed separately from the per-note source so `lastModifiedFor` can date each
+// document by its own history while still moving all of them when the template
+// or the parser changes — which genuinely does rewrite every note.
+export const NOTE_SHARED_SOURCES = [
+  'src/app/(sub pages)/notes/[slug]/page.js',
+  'src/lib/notes/readNotes.js',
+  ...SHARED_ROUTE_SOURCES,
   ...SUB_PAGE_SHARED_SOURCES,
 ];
 
@@ -126,6 +148,25 @@ export default function sitemap() {
     priority: 0.7,
   }));
 
+  // The engineering notes (W8), one URL per document in `docs/`. Generated from
+  // the SAME `readNotes()` call that `generateStaticParams()` enumerates in
+  // src/app/(sub pages)/notes/[slug]/page.js — the identical correctness
+  // requirement the project pages have, and for the identical reason: that
+  // route sets `dynamicParams = false`, so a sitemap entry for a slug the
+  // reader does not produce would declare a URL answering 404.
+  //
+  // `lastModified` is computed PER NOTE rather than once for the set. Unlike
+  // the eleven project pages — which share a template and a data file, so any
+  // edit genuinely does touch all of them — each note is its own document with
+  // its own history, and dating them together would restamp every note whenever
+  // one was edited.
+  const noteEntries = readNotes().map((note) => ({
+    url: absoluteUrl(`/notes/${note.slug}`),
+    lastModified: lastModifiedFor([note.source, ...NOTE_SHARED_SOURCES]),
+    changeFrequency: 'monthly',
+    priority: 0.5,
+  }));
+
   // The CV PDF (W1b). Declared because it is indexable BY DECISION — leaving a
   // deliberately-indexed document to be discovered through a footer link only
   // is exactly the accidental posture F6 was about.
@@ -136,5 +177,5 @@ export default function sitemap() {
     priority: CV_ASSET.priority,
   };
 
-  return [...routeEntries, ...projectEntries, cvEntry];
+  return [...routeEntries, ...projectEntries, ...noteEntries, cvEntry];
 }

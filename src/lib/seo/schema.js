@@ -42,7 +42,7 @@
 // already rendered on /uses, so the claim and the visible page cannot disagree.
 
 import { absoluteUrl } from './canonical';
-import { IDENTITY, ORIGIN } from './site';
+import { CV_ASSET, IDENTITY, ORIGIN, legalOrgName } from './site';
 import { linkedInUrl, profileGithubUrl } from '@/components/footer/footer-data';
 
 // ── Stable node ids ─────────────────────────────────────────────────────────
@@ -173,6 +173,89 @@ export function profilePage({ knowsAbout } = {}) {
     mainEntity: knowsAbout
       ? { '@type': 'Person', '@id': PERSON_ID, knowsAbout }
       : ref(PERSON_ID),
+  };
+}
+
+/**
+ * ProfilePage for /cv, carrying the employment and education history.
+ *
+ * ── Why this is a second ProfilePage and not a merge into /about ────────────
+ * Both pages are about the same Person, and both say so. That is not a
+ * duplicate-content problem: `ProfilePage` describes the PAGE, and two pages
+ * can legitimately profile one entity from different angles — /about is the
+ * narrative, /cv is the record. Each has its own `@id` (`#page` scoped to its
+ * own URL) and its own self-referential canonical, so nothing competes.
+ *
+ * The Person node is RESTATED rather than referenced, for the same reason
+ * `profilePage` restates it when it has `knowsAbout`: JSON-LD merges nodes
+ * sharing an `@id`, so a partial node ADDS properties to the one the root graph
+ * already defined. `hasOccupation` and `alumniOf` belong on the page that
+ * actually renders the evidence for them.
+ *
+ * ── What is deliberately NOT claimed ────────────────────────────────────────
+ * `worksFor` is absent. It takes a single Organization, and the current state
+ * is two concurrent roles (see journeyEmployment.js — concurrency is the normal
+ * case in this history, not an edge). Picking one would publish a false
+ * exclusive claim, and picking "the software one" would encode a preference as
+ * a fact. `hasOccupation` carries the roles without asserting a single employer.
+ *
+ * Salary, `estimatedSalary` and seniority are absent because journeyData holds
+ * none of them (P4).
+ *
+ * @param {{experience?: object[], education?: object[], knowsAbout?: string[]}}
+ *   [options] Derived CV sections. Each is pruned when empty.
+ * @returns {object} A JSON-LD ProfilePage document.
+ */
+export function cvPage({ experience = [], education = [], knowsAbout } = {}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': `${absoluteUrl('/cv')}#page`,
+    url: absoluteUrl('/cv'),
+    isPartOf: ref(WEBSITE_ID),
+    // The PDF the page links to, declared as the machine-readable form of the
+    // same document. This is the one place the two CVs are tied together for a
+    // consumer: without it they are two unrelated URLs making overlapping
+    // claims about one person, which is exactly the shape a de-duplicator
+    // treats as suspicious.
+    significantLink: absoluteUrl(CV_ASSET.path),
+    mainEntity: {
+      '@type': 'Person',
+      '@id': PERSON_ID,
+      knowsAbout,
+      // One Occupation per distinct ROLE TITLE, not per journeyData row. Two
+      // stints with the same title are one occupation held twice, and emitting
+      // the row twice would read to a consumer as two different occupations
+      // that happen to share a name.
+      hasOccupation: [
+        ...new Map(
+          experience
+            .filter((entry) => entry.role)
+            .map((entry) => [
+              entry.role,
+              {
+                '@type': 'Occupation',
+                name: entry.role,
+              },
+            ]),
+        ).values(),
+      ],
+      // Every institution that appears in the education history, deduplicated —
+      // two awards from one college is one alma mater. `EducationalOrganization`
+      // rather than the looser `Organization`: these are all schools, colleges
+      // or universities, and the narrower type is the one a consumer can act on.
+      // Deduplicated AFTER expansion, not before: two labels that expand to one
+      // institution are one alma mater, and deduplicating on the short label
+      // would only catch the cases that were already identical.
+      alumniOf: [
+        ...new Set(
+          education.map((entry) => legalOrgName(entry.org)).filter(Boolean),
+        ),
+      ].map((name) => ({
+        '@type': 'EducationalOrganization',
+        name,
+      })),
+    },
   };
 }
 
