@@ -120,6 +120,14 @@ export const PROJECT_SOURCES = [
 export const NOTE_SHARED_SOURCES = [
   'src/app/(sub pages)/notes/[slug]/page.js',
   'src/lib/notes/readNotes.js',
+  // The description composer and the window it measures against. `readNotes`
+  // attaches the finished string to every record, so a change to either one
+  // rewrites what EVERY note publishes as its meta description and as its
+  // `TechArticle` description — a change to the documents' metadata that the
+  // documents themselves cannot show, which is precisely the case `<lastmod>`
+  // is here to carry.
+  'src/lib/seo/noteMeta.js',
+  'src/lib/seo/descriptionWindow.js',
   // The detail route's own card handlers, listed for exactly the reason the
   // eleven project pages list theirs: a page does not import its
   // `opengraph-image.js` — Next composes the pair by convention — so no

@@ -1003,6 +1003,32 @@ Load JS unchanged at 191 kB.
 > would pull the registry — and everything it references — into a browser
 > bundle.
 
+### Adding a note
+
+Drop the markdown in `docs/`. There is no registry entry to write: the slug
+comes from the filename (override it in `SLUG_OVERRIDES` if the filename is not
+what a reader should see in a URL), and the sitemap, `generateStaticParams` and
+the share cards all expand the same `readNotes()` call.
+
+Two things are derived from the file and only one of them is bounded, so run
+`npx vitest run tests/unit/metadataContract.test.js tests/unit/notesCorpus.test.js`
+and read what it says:
+
+1. **The title** is the H1. It is subject to the same ≤60-rendered-character
+   rule as every other route, measured after the `%s · Muhammad Abdullah`
+   template.
+2. **The description** is composed by `src/lib/seo/noteMeta.js` and must land in
+   110–160. It prefers the document's opening paragraph, which is the outcome
+   to aim for — a note that introduces itself in one paragraph of the right
+   length needs nothing else. Where the opening paragraph is not a summary (a
+   reference line, a table, a heading), the test fails naming the document and
+   the length, and the fix is a curated entry in that file's `CURATED` map, not
+   a rewrite of the document's first line to suit a search engine.
+
+Do not add a curated entry pre-emptively for a document that does not need one:
+it is an override, and an override written beside a paragraph that already
+works is a second description that will silently stop matching the first.
+
 ### Replacing the CV
 
 ```bash
@@ -1455,3 +1481,48 @@ now composed by a `notePage()` builder in `src/lib/seo/schema.js`, beside every
 other page's, and `tests/unit/schema.test.js` asserts the shape rather than the
 `@type`: no `@context` or `@graph` inside the node, no surviving `WebPage`, and
 exactly one trail.
+
+### The description is composed, and measured (fixed 2026-09-24)
+
+A note's meta description was its first paragraph of prose, read by
+`summaryOf()`. That is the right default and needs no override for a document
+opening with an abstract — but it is a *derivation*, not a contract, and
+nothing was checking the result against one. This document opens by citing the
+issue it came from, so what shipped was a ten-character description:
+`Issue #32.`
+
+Below roughly 110 characters Google tends to discard the description and
+substitute its own scraped page text, so ten characters is not a short
+description; it is no description, plus a wasted slot. It is the same defect
+`projectMeta.js` exists for at the other end of the site, where the eleven
+project pages were using 36-character card subtitles — and §10 has required
+110–160 of every registry entry since it was written. The notes route was the
+one description surface with no case in `metadataContract.test.js`, and the
+only one derived from a file rather than written by hand.
+
+`src/lib/seo/noteMeta.js` now composes it from three sources: a curated string
+where one is written, the document's own opening paragraph when it already fits
+the window, and a composed sentence otherwise — so a note that opens with a
+heading, a table or a reference line can never publish an empty description.
+Nothing is truncated to fit: cutting prose mid-clause at 160 characters is the
+defect `summaryOf` was rewritten to stop committing, and doing it downstream
+would only move it. `metadataContract.test.js` measures every note in the
+corpus, and its failure tells the author to write a curated entry — which will
+always be a better description than a title and a line count.
+
+**It is computed once, on the record.** The string is published twice, as the
+route's `<meta name="description">` and as the `TechArticle`'s `description`,
+and those had *separate fallbacks*: a composed sentence in the head, the bare
+title in the graph. Two fallbacks for one fact is a note describing itself
+differently to a crawler reading the head and a crawler reading the graph.
+`readNotes()` attaches the finished value as `description` and both call sites
+read it, so there is no second place to fix.
+
+The window itself moved to `src/lib/seo/descriptionWindow.js` to make that
+possible. It had lived in `projectMeta.js`, which was correct while the only
+caller was a test; the first production caller outside `/projects/[id]` made
+every note page render from the project description composer, which
+`sitemapDrift.test.js` failed on. The repair it *offered* — move `projectMeta.js`
+to a shared source list — would have been the "too broad" error §10 records,
+re-stamping every URL on the site for a change only eleven can see. A window is
+not a project fact.

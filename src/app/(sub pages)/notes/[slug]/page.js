@@ -27,13 +27,12 @@ export function generateMetadata({ params }) {
   if (!note) return {};
   return sectionMetadata({
     title: note.title,
-    // The document's own opening paragraph where it has one. Falling back to a
-    // composed sentence rather than leaving the description empty — a note with
-    // no leading prose is an ordinary shape (one opening with a table), and an
-    // absent description is the one outcome that actively costs something.
-    description:
-      note.summary ??
-      `Engineering decision record — ${note.title}. ${note.lines} lines from the repository's own documentation.`,
+    // Composed in `src/lib/seo/noteMeta.js` and attached by `readNotes()`, so
+    // this and the JSON-LD below publish one string. The fallback that used to
+    // live here fired only when the summary was ABSENT, which missed the case
+    // that actually shipped: a summary that was present and ten characters
+    // long, because this document opens by citing its issue.
+    description: note.description,
     path: `/notes/${note.slug}`,
   });
 }
@@ -55,7 +54,11 @@ export default function NotePage({ params }) {
         data={notePage({
           slug: note.slug,
           title: note.title,
-          description: note.summary ?? note.title,
+          // The same string `generateMetadata` publishes. These had separate
+          // fallbacks — a composed sentence in the head, the bare title here —
+          // so a note could describe itself one way to a crawler reading the
+          // head and another to one reading the graph.
+          description: note.description,
         })}
       />
 

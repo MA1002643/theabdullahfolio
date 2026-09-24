@@ -21,7 +21,8 @@
 // The 110–160 character window is what tests/unit/metadataContract.test.js
 // enforces, and it is not arbitrary: Google truncates desktop descriptions
 // around 155–160 characters, and under about 110 it tends to substitute its own
-// text. `assertDescriptionFits` below is exercised for all eleven projects by
+// text. `assertDescriptionFits` — now in `src/lib/seo/descriptionWindow.js`, see
+// the note at the foot of this file — is exercised for all eleven projects by
 // that test, so a new project with an unusually long name cannot silently ship
 // a truncated description.
 
@@ -150,16 +151,9 @@ export function projectMetaDescription(project) {
   );
 }
 
-/**
- * Whether a description sits inside the window search engines render whole.
- *
- * Exported so the contract test can report WHICH project is out of bounds and
- * by how much, rather than just failing.
- *
- * @param {string} description The description to measure.
- * @returns {{ok: boolean, length: number}} Result and measured length.
- */
-export function assertDescriptionFits(description) {
-  const length = String(description ?? '').length;
-  return { ok: length >= 110 && length <= 160, length };
-}
+// `assertDescriptionFits` moved to `src/lib/seo/descriptionWindow.js` and is
+// deliberately NOT re-exported from here. A re-export would restore the import
+// edge the move exists to remove: `noteMeta.js` needs the window too, and
+// reaching it through this module would make every note page render from the
+// project description composer — which `sitemapDrift.test.js` fails on, because
+// it would re-stamp all twenty-odd URLs for a change only eleven can see.

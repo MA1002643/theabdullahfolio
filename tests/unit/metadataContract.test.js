@@ -9,12 +9,12 @@ vi.mock('next/font/google', () => {
   return { Inter: font, Montserrat: font, Varela_Round: font };
 });
 import { projectsData } from '@/app/data';
+import { readNotes } from '@/lib/notes/readNotes';
 import { absoluteUrl, alternatesFor } from '@/lib/seo/canonical';
 import { sectionMetadata } from '@/lib/og/meta';
-import {
-  assertDescriptionFits,
-  projectMetaDescription,
-} from '@/lib/seo/projectMeta';
+import { assertDescriptionFits } from '@/lib/seo/descriptionWindow';
+import { noteMetaDescription } from '@/lib/seo/noteMeta';
+import { projectMetaDescription } from '@/lib/seo/projectMeta';
 import { ORIGIN, ROUTES } from '@/lib/seo/site';
 
 // ── The metadata contract (issue #32, W5) ───────────────────────────────────
@@ -223,6 +223,103 @@ describe('metadata contract — project pages', () => {
         `wrong article for category "${project.category}"`,
       ).toContain(`${startsWithVowel ? 'An' : 'A'} ${project.category} build`);
     }
+  });
+});
+
+describe('metadata contract — note pages', () => {
+  it('composes a description inside the window for every note', () => {
+    // The third derived-description surface, and the one that had no case at
+    // all: this file measured the registry and the eleven projects, and
+    // `/notes/[slug]` — whose description is derived from a markdown file, so
+    // the LEAST predictable of the three — went unmeasured. `docs/seo.md` was
+    // publishing `Issue #32.`, ten characters, because `summaryOf` correctly
+    // read an opening paragraph that cites the issue rather than summarising
+    // the document. Nothing was wrong with the reader; nothing was checking
+    // the result against the window.
+    const notes = readNotes();
+
+    // Guard on the guard. Every assertion here is "everything in the corpus
+    // fits", which passes vacuously against an empty corpus — and `readNotes`
+    // returns `[]` rather than throwing when `docs/` is missing, so a wrong
+    // cwd would turn this green while measuring nothing.
+    expect(notes.length).toBeGreaterThanOrEqual(1);
+
+    const outOfBounds = notes
+      .map((note) => ({
+        slug: note.slug,
+        description: note.description,
+        ...assertDescriptionFits(note.description),
+      }))
+      .filter((entry) => !entry.ok);
+
+    expect(
+      outOfBounds,
+      `Note descriptions outside 110–160 characters:\n` +
+        outOfBounds
+          .map((e) => `  ${e.slug} → ${e.length}: ${e.description}`)
+          .join('\n') +
+        `\n\nAdd a curated entry to CURATED in src/lib/seo/noteMeta.js — the ` +
+        `composed fallback carries the title, so it cannot fit every one.`,
+    ).toEqual([]);
+  });
+
+  it('publishes one description to the head and the graph', () => {
+    // These drifted before `description` existed: `generateMetadata` fell back
+    // to a composed sentence and the `TechArticle` fell back to the bare title,
+    // so a note with no summary described itself two different ways to two
+    // crawlers reading the same page. One value on the record is what makes
+    // that unrepresentable rather than merely fixed.
+    for (const note of readNotes()) {
+      expect(note.description, `${note.slug} has no description`).toBeTruthy();
+      expect(
+        noteMetaDescription(note),
+        `${note.slug}'s description is not what the composer returns`,
+      ).toBe(note.description);
+    }
+  });
+
+  it('prefers a document that introduces itself over both fallbacks', () => {
+    // Constructed input, for the same reason `summaryOf` is tested on it: the
+    // corpus is one document and it takes the CURATED branch, so the other two
+    // ship untested against real data. This is the branch that should win most
+    // often as the corpus grows — a note opening with a proper abstract needs
+    // no entry in `CURATED`, and an override written for one would be a second
+    // description to keep in step with the document.
+    const abstract =
+      'A record of why the caching layer was built the way it was, which ' +
+      'alternatives were measured against it, and what each one actually cost.';
+    expect(assertDescriptionFits(abstract).ok).toBe(true);
+
+    expect(
+      noteMetaDescription({
+        slug: 'caching',
+        title: 'Caching',
+        lines: 400,
+        summary: abstract,
+      }),
+    ).toBe(abstract);
+  });
+
+  it('composes rather than publishing a summary that misses the window', () => {
+    // Both ends of it. Too short is what shipped; too long is the same defect
+    // with the tail cut off instead, and a summary is prose read out of a
+    // markdown file, so nothing bounds it. Neither is truncated to fit —
+    // cutting prose mid-clause at 160 characters is the defect `summaryOf` was
+    // rewritten to stop committing, and doing it here would only move it.
+    const composed = (summary) =>
+      noteMetaDescription({
+        slug: 'caching',
+        title: 'Caching',
+        lines: 400,
+        summary,
+      });
+
+    const fallback =
+      "Engineering decision record — Caching. 400 lines from this repository's own documentation.";
+
+    expect(composed('Issue #99.'), 'too short').toBe(fallback);
+    expect(composed('x'.repeat(200)), 'too long').toBe(fallback);
+    expect(composed(null), 'absent').toBe(fallback);
   });
 });
 

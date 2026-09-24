@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import { marked } from 'marked';
 
+import { noteMetaDescription } from '@/lib/seo/noteMeta';
+
 // The engineering notes (issue #32, W8) — `docs/*.md`, served as pages.
 //
 // ── Why this exists ─────────────────────────────────────────────────────────
@@ -182,7 +184,7 @@ export function readNotes(root = process.cwd()) {
     .map((file) => {
       const base = file.replace(/\.md$/, '');
       const markdown = readFileSync(path.join(root, DOCS_DIR, file), 'utf8');
-      return {
+      const record = {
         slug: SLUG_OVERRIDES[base] ?? base,
         source: `${DOCS_DIR}/${file}`,
         title: titleOf(markdown, base),
@@ -195,6 +197,12 @@ export function readNotes(root = process.cwd()) {
         lines: countLines(markdown),
         markdown,
       };
+
+      // Composed from the record above rather than inlined into it, because it
+      // reads four of its own fields. `description` is what the two machine
+      // surfaces publish — see `noteMeta.js` for why it is computed once here
+      // instead of falling back differently at each of them.
+      return { ...record, description: noteMetaDescription(record) };
     })
     // Longest first. With one document this is arbitrary; with several it puts
     // the most substantial record at the top, which is the right default for an
