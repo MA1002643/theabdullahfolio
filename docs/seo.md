@@ -308,6 +308,22 @@ Used in exactly two places, both genuine gaps:
 | `/` summary | The page's only prose. Previously 10 SSR words. |
 | `/projects/[id]` sibling nav | A fixed full-screen 3D scene whose only exit was one floating button; no way to reach another project. Also fixes F8's crawl path. |
 
+**What the summary CLAIMS has to be true, too** (fixed 2026-09-24). It said
+"every section is reachable from the ring below" and then linked the two
+sections that are not on it. `BtnList` is capped at eight by the sub-480px
+two-column layout that slices it 0–3 / 4–7, so `/cv` and `/notes` were never
+orbit entries — the code comment beside the paragraph says exactly that, and
+the prose beside it said the opposite.
+
+Worth recording as more than a typo, because of who pays for it. A sighted
+visitor never reads this sentence and can see the ring; a screen-reader user
+has only the sentence, is told the ring is the whole map, and has no way to
+notice the two routes named immediately afterwards are outside it. An
+accessibility fix that gives its reader a false model of the navigation is
+working against the thing it was added for. It now reads "apart from two", and
+nothing enforces that — no test can read a claim — so anything changing what
+`BtnList` holds changes this sentence with it.
+
 **Both carry `prefetch={false}` on every link inside them**, and for a reason
 particular to this technique: `sr-only` clips rather than unmounts, so the
 links are in the viewport on every visit while being reachable by no pointer.

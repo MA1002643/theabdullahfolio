@@ -567,7 +567,17 @@ export default function Home() {
 
             They are also the affordance the sentence previously lacked: it
             already told a screen-reader user the CV existed while giving them
-            no way to reach it. */}
+            no way to reach it.
+
+            AND THE SENTENCE NAMES THE EXCEPTION. It read "every section is
+            reachable from the ring below" — a universal claim this very
+            comment contradicts two paragraphs up, and the one kind of error
+            that costs the reader who can least afford it: someone navigating
+            by audio is told the ring is the whole map, and has no way to
+            notice that the two routes named right after it are not on it. The
+            clause is now "apart from two", so the prose and the ring agree.
+            Anything that changes what `BtnList` holds changes this sentence
+            too — nothing checks the claim, because no test can read it. */}
         {/* `home-intro-summary` is only a hook for the `:focus-within` block in
             globals.css. The two links below are focusable, and `sr-only` clips
             to a 1px box — so without it a sighted keyboard user's first two tab
@@ -589,8 +599,8 @@ export default function Home() {
           systems, mobile and AI — each tracked live from its own GitHub board,
           alongside the degrees and roles behind them, a timeline of the route
           from college to production, and the tools the work is actually built
-          with. Every section is reachable from the ring below; the full
-          record is on the{' '}
+          with. Every section is reachable from the ring below apart from two:
+          the full record is on the{' '}
           <Link href="/cv" prefetch={false}>
             CV page
           </Link>{' '}
