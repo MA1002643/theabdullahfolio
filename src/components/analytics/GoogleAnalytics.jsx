@@ -17,10 +17,16 @@ import Script from 'next/script';
 // switched on in one line later.
 //
 // ── Why Consent Mode v2 is the shape, even behind a gate ────────────────────
-// docs/seo.md §8 recorded GA4 as hard-blocked on consent gating. What PECR and
-// the GDPR prohibit is the STORAGE — reading or writing information on
-// someone's terminal equipment — and GA4's default behaviour writes a `_ga`
-// cookie, which is exactly that.
+// docs/seo.md §8 recorded GA4 as hard-blocked on consent gating. What PECR
+// governs is the STORAGE — reading or writing information on someone's
+// terminal equipment — and GA4's default behaviour writes a `_ga` cookie,
+// which is exactly that.
+//
+// PECR alone, deliberately: this comment named the UK GDPR alongside it once,
+// and that is a different instrument answering a different question. The GDPR
+// governs the PROCESSING of personal data whether or not anything touches the
+// device, so it is not disposed of by removing a cookie — see the correction in
+// docs/seo.md §14. The distinction is the whole reason this file is unmounted.
 //
 // Consent Mode v2 with `analytics_storage: 'denied'` is the configuration where
 // GA4 writes nothing. No cookie is set, no identifier is stored or read, and
@@ -77,18 +83,19 @@ const MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
  * that default has changed before. Naming each one means a future change to
  * Google's defaults cannot silently start storing something here.
  *
- * `ads_data_redaction` strips ad identifiers from any request made while
- * `ad_storage` is denied — belt and braces, since nothing on this site loads an
- * ads tag at all.
+ * Four signals and nothing else. `ads_data_redaction` was here once and did
+ * nothing: it is NOT a Consent Mode parameter, it is a gtag SETTING, and the
+ * `consent` command ignores keys it does not recognise rather than rejecting
+ * them. So the object read as though it carried a fifth protection, the test
+ * below asserted that protection was present by reading the literal, and no
+ * part of the stack could report that the value never reached gtag.js. It is
+ * issued as its own `set` command in the script body instead.
  */
 const CONSENT_DEFAULTS = {
   ad_storage: 'denied',
   ad_user_data: 'denied',
   ad_personalization: 'denied',
   analytics_storage: 'denied',
-  // Not a consent signal — a GA4 setting that keeps the cookieless ping from
-  // carrying a client identifier in the URL as a fallback.
-  ads_data_redaction: true,
 };
 
 export default function GoogleAnalytics() {
@@ -108,7 +115,16 @@ export default function GoogleAnalytics() {
           processes it — not before the library downloads — so ordering here is
           sufficient without reaching for `beforeInteractive` (which would put
           a blocking script in the document head on every route for a
-          measurement concern). */}
+          measurement concern).
+
+          `ads_data_redaction` rides along for the same reason, and is a
+          `set` command rather than a member of the consent object: it is a
+          gtag setting, not a Consent Mode signal, and the `consent` command
+          drops unrecognised keys silently — so written the other way it was
+          decoration that looked like a control. It strips ad identifiers from
+          requests made while `ad_storage` is denied, which is permanently,
+          and must be set before the library reads the queue to apply to the
+          first ping as well as the rest. */}
       <Script
         id="ga-consent-default"
         strategy="afterInteractive"
@@ -117,6 +133,7 @@ export default function GoogleAnalytics() {
 window.dataLayer = window.dataLayer || [];
 window.gtag = function gtag(){window.dataLayer.push(arguments);};
 gtag('consent', 'default', ${JSON.stringify(CONSENT_DEFAULTS)});
+gtag('set', 'ads_data_redaction', true);
 `.trim(),
         }}
       />
@@ -134,7 +151,6 @@ gtag('consent', 'default', ${JSON.stringify(CONSENT_DEFAULTS)});
           __html: `
 gtag('js', new Date());
 gtag('config', ${JSON.stringify(MEASUREMENT_ID)}, {
-  anonymize_ip: true,
   transport_type: 'beacon'
 });
 `.trim(),

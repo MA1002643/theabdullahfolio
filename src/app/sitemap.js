@@ -120,6 +120,18 @@ export const PROJECT_SOURCES = [
 export const NOTE_SHARED_SOURCES = [
   'src/app/(sub pages)/notes/[slug]/page.js',
   'src/lib/notes/readNotes.js',
+  // The detail route's own card handlers, listed for exactly the reason the
+  // eleven project pages list theirs: a page does not import its
+  // `opengraph-image.js` — Next composes the pair by convention — so no
+  // dependency walk can reach them, and the omission is invisible in review
+  // because nothing looks wrong at either end.
+  //
+  // These two draw the preview for EVERY note URL. Redraw one and what every
+  // crawler and unfurler DISPLAYS for the document changes, while the markup
+  // does not move (the `<meta>` tag keeps the same URL), so `<lastmod>` is the
+  // only signal there is — and it was swearing the documents were unchanged.
+  'src/app/(sub pages)/notes/[slug]/opengraph-image.js',
+  'src/app/(sub pages)/notes/[slug]/twitter-image.js',
   ...SHARED_ROUTE_SOURCES,
   ...SUB_PAGE_SHARED_SOURCES,
 ];

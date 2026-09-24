@@ -97,12 +97,43 @@ function titleOf(markdown, fallback) {
  * line that is ordinary text. Returns null rather than a guess when the
  * document opens with something that is not a paragraph (a table, a list) —
  * the index renders nothing in that case instead of an accidental fragment.
+ *
+ * ── Why this reads a PARAGRAPH and not a line ───────────────────────────────
+ * It returned the first physical line once, which is a different thing. These
+ * documents are hard-wrapped at ~80 columns for editing — `renderNote` says so,
+ * and sets `breaks: false` precisely because a source wrap is not a line break
+ * — so "the first line" is a sentence cut at whatever column the author's
+ * editor happened to reach. That string is published in three places: the
+ * `/notes/[slug]` meta description, the `TechArticle` description and the
+ * summary on `/notes`. A description truncated mid-clause is the one kind of
+ * metadata error a search engine renders verbatim.
+ *
+ * Joining also fixes the link strip. `[text](url)` is removed by a regex that
+ * cannot match across a newline, so a link that happened to wrap survived into
+ * the output as raw markdown syntax.
+ *
+ * Exported for the same reason `countLines` is: the shipping corpus is one
+ * document whose opening paragraph is a single line, so it cannot exercise the
+ * wrap, the abutting-block terminator or the split link. Constructed input can.
  */
-function summaryOf(markdown) {
+export function summaryOf(markdown) {
   const lines = markdown.split('\n');
   let seenHeading = false;
+  const paragraph = [];
+
   for (const raw of lines) {
     const line = raw.trim();
+
+    // Already inside the paragraph: keep taking wrapped lines until the block
+    // ends. A blank line ends it, and so does the start of any other block —
+    // a heading, table, quote, list or fence — which a paragraph may abut
+    // without a blank line between them.
+    if (paragraph.length > 0) {
+      if (!line || /^(#|[|>`]|[-*+]\s|\d+\.)/.test(line)) break;
+      paragraph.push(line);
+      continue;
+    }
+
     if (!line) continue;
     if (line.startsWith('#')) {
       seenHeading = true;
@@ -111,12 +142,19 @@ function summaryOf(markdown) {
     if (!seenHeading) continue;
     // Not prose: a table, list, quote, rule or code fence.
     if (/^[|>\-*+`]|^\d+\./.test(line)) return null;
-    // Strip inline markdown that would render as syntax in a plain-text slot.
-    return line
-      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-      .replace(/[*_`]/g, '');
+    paragraph.push(line);
   }
-  return null;
+
+  if (paragraph.length === 0) return null;
+
+  // A single space at each wrap, matching how `marked` renders the same source
+  // with `breaks: false` — so the summary reads as the paragraph on the page
+  // reads, not as the file is stored.
+  return paragraph
+    .join(' ')
+    // Strip inline markdown that would render as syntax in a plain-text slot.
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`]/g, '');
 }
 
 /** Every note, newest-first by nothing in particular — see the sort below. */

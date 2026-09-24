@@ -300,7 +300,21 @@ const ROUTE_DEFINITIONS = [
     priority: 0.6,
     indexable: true,
     sources: [
-      'src/app/(sub pages)/notes',
+      // Named as FILES rather than as `src/app/(sub pages)/notes`, for the
+      // reason the `/projects` entry above gives: the note detail routes live
+      // under this directory, so watching it would re-stamp THIS page every
+      // time `[slug]/page.js` or either of its card handlers changed — a date
+      // asserting a change that did not happen to this document, which is the
+      // same fabrication `new Date()` would commit, arrived at by aliasing.
+      // The index's own two handlers are named here because narrowing is what
+      // put them outside every list (again, exactly as on `/projects`).
+      'src/app/(sub pages)/notes/page.js',
+      'src/app/(sub pages)/notes/opengraph-image.js',
+      'src/app/(sub pages)/notes/twitter-image.js',
+      // The index itself — the titles, summaries and line counts a crawler
+      // reads on this URL are rendered here, not in page.js, which only reads
+      // the corpus and hands it over.
+      'src/components/notes',
       'src/lib/notes/readNotes.js',
       // The corpus itself. The index prints each document's title, summary and
       // line count, all read from the files at build time — so editing a note

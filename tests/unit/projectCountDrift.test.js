@@ -33,10 +33,17 @@ const COUNT_WORDS =
  */
 function homeSummarySource() {
   const source = readFileSync(HOME_PAGE_PATH, 'utf8');
-  const match = source.match(/<p className="sr-only">([\s\S]*?)<\/p>/);
+  // Anchored on the `sr-only` class rather than on the whole attribute: the
+  // paragraph also carries `home-intro-summary`, the hook for the
+  // `:focus-within` reveal that keeps its two links from being invisible
+  // keyboard stops. Pinning the exact string made a presentational class
+  // addition fail a test about project counts, which points at the test.
+  const match = source.match(
+    /<p className="[^"]*\bsr-only\b[^"]*">([\s\S]*?)<\/p>/,
+  );
   expect(
     match,
-    `no <p className="sr-only"> found in ${HOME_PAGE}; if the summary moved, ` +
+    `no sr-only <p> found in ${HOME_PAGE}; if the summary moved, ` +
       'point this guard at its new home rather than deleting it',
   ).not.toBe(null);
   return match[1];

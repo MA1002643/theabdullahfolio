@@ -5,6 +5,7 @@ import {
   PERSON_ID,
   WEBSITE_ID,
   breadcrumbList,
+  notePage,
   personGraph,
   profilePage,
   projectId,
@@ -334,6 +335,72 @@ describe('per-surface documents', () => {
     expect(page.isPartOf['@id']).toBe(WEBSITE_ID);
     expect(page.about['@id']).toBe(PERSON_ID);
     expectNoNullish(doc);
+  });
+
+  it('a note is a TechArticle node, not a document wearing the label', () => {
+    // Regression test for a shipped defect nothing caught. The route built this
+    // graph by SPREADING `sectionPage(...)` — a whole document — into a node
+    // position and setting `'@type': 'TechArticle'` beside it. The literal read
+    // correctly, the JSON parsed, every existing assertion stayed green, and
+    // what was published was a node with a nested `@context` and `@graph`, no
+    // `url`/`headline`/`description` of its own, and a second breadcrumb trail
+    // disagreeing with the real one.
+    //
+    // So the assertions are about SHAPE first, which is the part a `@type`
+    // check alone cannot see.
+    const doc = pruneEmpty(
+      notePage({
+        slug: 'discoverability',
+        title: 'Discoverability — decisions, rationale, runbook',
+        description: 'x'.repeat(120),
+      }),
+    );
+
+    const article = doc['@graph'].find(
+      (node) => node['@type'] === 'TechArticle',
+    );
+    expect(article).toBeDefined();
+
+    // No document nested inside a node. Either key appearing here is the exact
+    // defect returning, whatever the `@type` says.
+    expect(article['@context']).toBeUndefined();
+    expect(article['@graph']).toBeUndefined();
+    // No WebPage survives anywhere: the old shape left one, still typed
+    // `WebPage`, holding every property the article was supposed to own.
+    expect(
+      doc['@graph'].some((node) => node['@type'] === 'WebPage'),
+    ).toBe(false);
+
+    // The properties that were missing, stated on the article itself.
+    expect(article['@id']).toBe(`${ORIGIN}/notes/discoverability#article`);
+    expect(article.url).toBe(`${ORIGIN}/notes/discoverability`);
+    expect(article.headline).toBe(
+      'Discoverability — decisions, rationale, runbook',
+    );
+    expect(article.author['@id']).toBe(PERSON_ID);
+    expect(article.isPartOf['@id']).toBe(WEBSITE_ID);
+
+    // Exactly ONE trail, and the three-crumb one. Two BreadcrumbLists on a page
+    // is what the old shape published, and a consumer reading them has no rule
+    // for deciding which hierarchy is true.
+    const trails = doc['@graph'].filter(
+      (node) => node['@type'] === 'BreadcrumbList',
+    );
+    expect(trails).toHaveLength(1);
+    expect(trails[0].itemListElement).toHaveLength(3);
+
+    expectNoNullish(doc);
+  });
+
+  it('claims no publication date it cannot evidence', () => {
+    // P4. These documents are revised continuously and carry no date of their
+    // own, so a `datePublished` here could only be invented — and an invented
+    // date is the one schema error that looks perfectly valid to every
+    // validator. Freshness is the sitemap's `lastmod`, from real git history.
+    const doc = notePage({ slug: 'discoverability', title: 'D', description: 'x' });
+    const article = doc['@graph'][0];
+    expect(article.datePublished).toBeUndefined();
+    expect(article.dateModified).toBeUndefined();
   });
 
   it('breadcrumbList terminates on any trail length', () => {

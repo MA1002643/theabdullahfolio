@@ -8,7 +8,7 @@ import PageTitle from '@/components/PageTitle';
 import JsonLd from '@/components/seo/JsonLd';
 import { readNote, readNotes, renderNote } from '@/lib/notes/readNotes';
 import { sectionMetadata } from '@/lib/og/meta';
-import { breadcrumbList, sectionPage } from '@/lib/seo/schema';
+import { notePage } from '@/lib/seo/schema';
 
 // Prerender one page per document. The corpus is a directory of committed
 // files, so it is fully knowable at build time — same shape as the project
@@ -46,32 +46,17 @@ export default function NotePage({ params }) {
 
   return (
     <>
+      {/* The article node and its trail, composed in src/lib/seo/schema.js —
+          see `notePage` there for why the type, the ids and the absent dates
+          are what they are, and for the document-spread-into-a-node defect
+          this call site used to carry. */}
       <JsonLd
         id="ld-note"
-        data={{
-          '@context': 'https://schema.org',
-          '@graph': [
-            // `TechArticle`, not `Article` or `BlogPosting`: these are technical
-            // documentation about how a system works, which is precisely what
-            // that type is for. `BlogPosting` would imply a dated editorial
-            // post and invite a `datePublished` this document does not have —
-            // it is revised continuously, and a made-up publication date is the
-            // exact fabrication P4 rules out.
-            {
-              ...sectionPage({
-                path: `/notes/${note.slug}`,
-                name: note.title,
-                description: note.summary ?? note.title,
-              }),
-              '@type': 'TechArticle',
-            },
-            breadcrumbList([
-              { name: 'Home', path: '/' },
-              { name: 'Notes', path: '/notes' },
-              { name: note.title, path: `/notes/${note.slug}` },
-            ]),
-          ],
-        }}
+        data={notePage({
+          slug: note.slug,
+          title: note.title,
+          description: note.summary ?? note.title,
+        })}
       />
 
       {/* The same backdrop trio as every other sub-page. It was briefly omitted

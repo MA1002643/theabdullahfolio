@@ -36,11 +36,27 @@ jobs:
   audit:
     name: Budgets
     runs-on: ubuntu-latest
+    # Least privilege, declared rather than inherited. Without this block the
+    # job receives whatever the repository's default token scope happens to be
+    # — a setting that lives in the GitHub UI, applies to every workflow at
+    # once, and can be widened by someone who never reads this file. This job
+    # reads the tree, builds it and uploads an artifact; it writes nothing back.
+    # `contents: read` is also all the build step's `secrets.GITHUB_TOKEN`
+    # needs, since the repo/stats reads it performs are of public data.
+    permissions:
+      contents: read
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # `actions/checkout` writes the job token into `.git/config` by
+          # default, where it stays readable on disk for the remainder of the
+          # job — across `npm ci` and `next build`, both of which execute a
+          # large tree of third-party code. Nothing here pushes, tags or opens
+          # a PR, so the credential has no reason to outlive the clone.
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v6

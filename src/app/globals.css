@@ -7323,6 +7323,62 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   color: #ff6d05;
 }
 
+/* ── The homepage's crawlable summary, same defect and same remedy ──────────
+   Issue #32 (F1). The `sr-only` paragraph in src/app/page.js gained two real
+   links — `/cv` and `/notes`, the only two routes not on the orbit ring and so
+   the only two a crawler entering on `/` could not otherwise reach. That fixed
+   the crawl path and reintroduced the WCAG 2.4.7 failure the sibling nav above
+   was corrected for: the paragraph is clipped to a 1px box and the links inside
+   it are FOCUSABLE, so a sighted keyboard user tabbing `/` lands on two
+   invisible stops with no indication of where either goes.
+
+   It is a worse landing than the project pages', not a milder one. The
+   homepage's own controls are the orbit ring, which is mid-page and animated in
+   over ~2.4s, so the two invisible stops come FIRST — the very beginning of the
+   tab order is two controls that cannot be seen.
+
+   Same remedy, and the same reason it is written here rather than as
+   `not-sr-only` utilities: this needs `position: fixed`, and `not-sr-only` sets
+   `position: static`. The revealed panel would otherwise resolve inside the
+   hero's own stacking context and paint under the backdrop layers.
+
+   TOP-LEFT is both the conventional skip-link position and the one that matches
+   reading order, since this paragraph is the first thing in <main>. `z-index:
+   60` clears the page header (z-50) and still sits far below the intro loader's
+   9999, so it can never cover that. */
+.home-intro-summary:focus-within {
+  /* Undoing sr-only, property for property — see the note above. */
+  position: fixed;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+
+  top: 1rem;
+  left: 1rem;
+  z-index: 60;
+  /* The paragraph is ~90 words. It is revealed whole rather than trimmed to the
+     links because the sentence is what gives the two destinations their
+     context, and a keyboard user arriving here has had none. */
+  max-width: min(32rem, calc(100vw - 2rem));
+  padding: 0.875rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 0.92);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #fff;
+}
+
+.home-intro-summary a:focus-visible {
+  outline: 2px solid #ff6d05;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+  color: #ff6d05;
+}
+
 /* The panel is an affordance, not decoration: it must appear under reduced
    motion exactly as it does otherwise. Nothing here animates, so there is
    nothing to suppress — noted so a future pass does not add a transition that

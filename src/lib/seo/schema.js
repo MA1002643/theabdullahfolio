@@ -361,6 +361,82 @@ export function projectPage(project, { programmingLanguage } = {}) {
 }
 
 /**
+ * TechArticle + breadcrumb for one `/notes/[slug]` document.
+ *
+ * ── Why this is a builder and not `sectionPage()` with the type swapped ─────
+ * Because that is what it was, and the result was not a TechArticle at all.
+ * The call site spread `sectionPage({...})` into a node position and set
+ * `'@type': 'TechArticle'` beside it — but `sectionPage` returns a whole
+ * DOCUMENT, `{'@context', '@graph': [WebPage, BreadcrumbList]}`, so what
+ * reached the page was a node carrying a nested `@context` and a nested
+ * `@graph`. Four things followed from that one line:
+ *
+ *   • The article had no `url`, `name`, `headline` or `description` of its own
+ *     — those belonged to the WebPage buried inside the nested graph.
+ *   • That WebPage was still typed `WebPage`, so the page never actually
+ *     declared itself a TechArticle despite the literal saying so.
+ *   • A `@graph` sat inside a node, which is not a shape the vocabulary has.
+ *   • The page published TWO breadcrumb trails: the nested two-crumb
+ *     Home › title one and the real three-crumb one beside it.
+ *
+ * The document/node distinction is invisible at a call site — both are plain
+ * objects and spreading either one is valid JavaScript — which is exactly why
+ * composing a note's graph now happens HERE, beside the builders it composes,
+ * rather than in the route. Every other page in this file returns a finished
+ * document for the same reason.
+ *
+ * `TechArticle`, not `Article` or `BlogPosting`: these are technical
+ * documentation about how a system works, which is what that type is for.
+ * `BlogPosting` would imply a dated editorial post and invite a
+ * `datePublished` these documents do not have — they are revised continuously,
+ * and a made-up publication date is precisely the fabrication P4 rules out.
+ * `dateModified` is absent for the same reason and is not a gap: the sitemap
+ * already carries freshness as `lastmod`, derived from the file's real git
+ * history rather than from a literal typed in here.
+ *
+ * @param {{slug: string, title: string, description?: string}} note A record
+ *   from `readNotes()` — `description` is its opening paragraph, and is pruned
+ *   when the document has none.
+ * @returns {object} A JSON-LD document containing the article and its trail.
+ */
+export function notePage({ slug, title, description }) {
+  const path = `/notes/${slug}`;
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'TechArticle',
+        // `#article`, matching `#project`'s precedent: the fragment names what
+        // the node IS, so a consumer holding the id can tell an article from
+        // the page that renders it without dereferencing anything.
+        '@id': `${absoluteUrl(path)}#article`,
+        url: absoluteUrl(path),
+        // Both, and deliberately the same string. `headline` is the property
+        // Google reads for an article; `name` is the one a generic CreativeWork
+        // consumer reads. There is one title, so stating it twice states no
+        // second fact — where omitting either loses one of those two readers.
+        headline: title,
+        name: title,
+        description,
+        // POINTERS, as everywhere else in this file. Note the absence of
+        // `about`: `sectionPage` claims the person as its subject because those
+        // pages ARE about him, and these documents are not — they are about
+        // how the site works. Authorship is the true claim; subject is not.
+        author: ref(PERSON_ID),
+        isPartOf: ref(WEBSITE_ID),
+        inLanguage: 'en-GB',
+      },
+      breadcrumbList([
+        { name: 'Home', path: '/' },
+        { name: 'Notes', path: '/notes' },
+        { name: title, path },
+      ]),
+    ],
+  };
+}
+
+/**
  * A BreadcrumbList node.
  *
  * Fixes half of F8: the project pages had no trail at all, so a crawler that

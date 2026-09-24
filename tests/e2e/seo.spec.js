@@ -252,6 +252,61 @@ test.describe('answer-engine readiness (W3)', () => {
     expect(styles.visibility).not.toBe('hidden');
   });
 
+  test('the homepage summary reveals itself when a keyboard reaches its links', async ({
+    page,
+  }) => {
+    // The same WCAG 2.4.7 failure the project sibling nav was corrected for,
+    // and worse here: the two links this paragraph carries (`/cv` and
+    // `/notes` — the only routes not on the orbit ring) are the FIRST tab stops
+    // on the page, because the ring itself is mid-page and animates in over
+    // ~2.4s. Clipped to a 1px box, they are two invisible controls at the very
+    // start of the tab order.
+    await page.goto('/');
+
+    const summary = page.locator('main p.sr-only').first();
+
+    // Clipped by default — the crawl and screen-reader benefit is the resting
+    // state, and this is what stops the fix becoming visible furniture.
+    const clipped = await summary.evaluate((el) => {
+      const { width, height } = el.getBoundingClientRect();
+      return width <= 2 && height <= 2;
+    });
+    expect(clipped, 'the summary should be clipped until focused').toBe(true);
+
+    // Focused the way a keyboard user arrives, not by clicking.
+    await summary.locator('a[href="/cv"]').focus();
+
+    const revealed = await summary.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const computed = getComputedStyle(el);
+      return {
+        width: rect.width,
+        height: rect.height,
+        position: computed.position,
+        zIndex: Number(computed.zIndex),
+        inViewport:
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          rect.bottom <= window.innerHeight &&
+          rect.right <= window.innerWidth,
+      };
+    });
+
+    // A readable panel now, not a 1px box.
+    expect(revealed.width).toBeGreaterThan(80);
+    expect(revealed.height).toBeGreaterThan(20);
+    // `position: fixed` specifically. `not-sr-only` would restore `static`, and
+    // a static panel resolves inside the hero's stacking context — revealed in
+    // the DOM and still painted under the backdrop layers, which is the same
+    // defect wearing a different costume.
+    expect(revealed.position).toBe('fixed');
+    // Above the page header (z-50) and far below the intro loader (9999).
+    expect(revealed.zIndex).toBeGreaterThan(50);
+    expect(revealed.zIndex).toBeLessThan(9999);
+    // On screen, not merely un-clipped somewhere off the viewport.
+    expect(revealed.inViewport).toBe(true);
+  });
+
   test('the orbit links exist in the DOM before the reveal finishes', async ({
     page,
   }) => {

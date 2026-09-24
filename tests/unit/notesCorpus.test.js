@@ -2,7 +2,13 @@ import { readFileSync, readdirSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { countLines, readNote, readNotes, renderNote } from '@/lib/notes/readNotes';
+import {
+  countLines,
+  readNote,
+  readNotes,
+  renderNote,
+  summaryOf,
+} from '@/lib/notes/readNotes';
 
 // ── Why this file exists ────────────────────────────────────────────────────
 // /notes publishes the repository's own decision records as indexable pages,
@@ -80,6 +86,51 @@ describe('the corpus', () => {
     expect(countLines('a')).toBe(1);
     // An empty file has no lines, where the naive form claims one.
     expect(countLines('')).toBe(0);
+  });
+
+  it('summarises the whole opening paragraph, not its first physical line', () => {
+    // The summary is published as the /notes/[slug] meta description, the
+    // TechArticle description and the index entry. These documents are
+    // hard-wrapped at ~80 columns — `renderNote` sets `breaks: false` for
+    // exactly that reason — so reading one physical line cut the description at
+    // whatever column the author's editor reached. Constructed input, because
+    // the one shipping document opens with a single-line paragraph and so
+    // cannot exercise this.
+    const summary = summaryOf(
+      ['# Title', '', 'A sentence that the author', 'wrapped at a column.', ''].join(
+        '\n',
+      ),
+    );
+    expect(summary).toBe('A sentence that the author wrapped at a column.');
+  });
+
+  it('strips a link that wraps across the join', () => {
+    // The `[text](url)` regex cannot match across a newline, so before the
+    // lines were joined a wrapped link survived into the description as raw
+    // markdown syntax — visible in a search result, as punctuation.
+    expect(
+      summaryOf(['# T', '', 'See [the', 'runbook](/notes/x) for more.'].join('\n')),
+    ).toBe('See the runbook for more.');
+  });
+
+  it('stops at the end of the paragraph rather than eating the document', () => {
+    // A blank line ends it, and so does a block that abuts it with no blank
+    // line between — a heading, table, list, quote or fence. Without the second
+    // rule the "summary" would run on into the next section.
+    const md = ['# T', '', 'First paragraph.', '', 'Second paragraph.'].join('\n');
+    expect(summaryOf(md)).toBe('First paragraph.');
+
+    const abutting = ['# T', '', 'Lead in:', '| a | b |', '| - | - |'].join('\n');
+    expect(summaryOf(abutting)).toBe('Lead in:');
+  });
+
+  it('returns null when the document does not open with prose', () => {
+    // A guess is worse than nothing here: the index renders no summary at all
+    // rather than an accidental fragment of a table.
+    expect(summaryOf(['# T', '', '| a | b |'].join('\n'))).toBeNull();
+    expect(summaryOf(['# T', '', '- one', '- two'].join('\n'))).toBeNull();
+    // No heading at all — nothing is treated as the body.
+    expect(summaryOf('just text, no heading')).toBeNull();
   });
 
   it('resolves each slug back to its note', () => {

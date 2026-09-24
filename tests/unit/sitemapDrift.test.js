@@ -575,23 +575,46 @@ describe('sitemap drift', () => {
       }
     }
 
-    // The eleven project pages are not in `ROUTES` — `sitemap.js` generates
-    // them from `projectsData` against `PROJECT_SOURCES` — so a loop over the
-    // registry alone would leave the route with the MOST URLs behind exactly
-    // this kind of handler unchecked. Found the first time this case was
-    // mutation-tested, by the mutation that was supposed to prove it.
-    const { PROJECT_SOURCES } = await import('@/app/sitemap');
-    const detailCards = [
-      'src/app/(sub pages)/projects/[id]/opengraph-image.js',
-      'src/app/(sub pages)/projects/[id]/twitter-image.js',
-    ];
-    for (const handler of detailCards) {
+    // The dynamic routes are not in `ROUTES` — `sitemap.js` expands them from
+    // `projectsData` and from `readNotes()` against their own source lists — so
+    // a loop over the registry alone leaves the routes carrying the MOST URLs
+    // behind exactly this kind of handler unchecked. Found the first time this
+    // case was mutation-tested, by the mutation that was supposed to prove it.
+    //
+    // KEYED AND CROSS-CHECKED AGAINST THE WALK, because the first cut hardcoded
+    // the project pair — and `/notes/[slug]` then shipped with neither of its
+    // handlers watched, since nothing here was looking for a second dynamic
+    // route. A hardcoded list cannot fail for a route it does not mention; the
+    // assertion below is what makes a THIRD one fail this case on the day it
+    // appears rather than silently inherit the same gap.
+    const { PROJECT_SOURCES, NOTE_SHARED_SOURCES } = await import(
+      '@/app/sitemap'
+    );
+    const dynamicSources = {
+      '/projects/[id]': PROJECT_SOURCES,
+      '/notes/[slug]': NOTE_SHARED_SOURCES,
+    };
+
+    expect(
+      Object.keys(dynamicSources).sort(),
+      'A dynamic route exists on disk that this case cannot date — add it to ' +
+        '`dynamicSources` with the list sitemap.js expands it against, or its ' +
+        'share cards go unwatched the way /notes/[slug] did.',
+    ).toEqual(discovered.filter((route) => route.includes('[')).sort());
+
+    for (const [route, sources] of Object.entries(dynamicSources)) {
+      const handlers = imageHandlersFor(route);
+      // Vacuity guard, per route: a pair that stops existing must be noticed
+      // here rather than turning this half of the case into a no-op.
       expect(
-        statSync(path.join(process.cwd(), handler)).isFile(),
-        `${handler} no longer exists — update this case rather than deleting it.`,
-      ).toBe(true);
-      if (!PROJECT_SOURCES.some((source) => covers(source, handler)))
-        unwatched.push(`/projects/[id] does not watch ${handler}`);
+        handlers,
+        `${route} publishes no card handler on disk — update this case rather ` +
+          `than letting it pass on an empty list.`,
+      ).toHaveLength(2);
+      for (const handler of handlers) {
+        if (!sources.some((source) => covers(source, handler)))
+          unwatched.push(`${route} does not watch ${handler}`);
+      }
     }
 
     // Guard on the guard: if `imageHandlersFor` ever stops finding anything,

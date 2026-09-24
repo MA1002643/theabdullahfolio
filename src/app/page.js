@@ -568,7 +568,12 @@ export default function Home() {
             They are also the affordance the sentence previously lacked: it
             already told a screen-reader user the CV existed while giving them
             no way to reach it. */}
-        <p className="sr-only">
+        {/* `home-intro-summary` is only a hook for the `:focus-within` block in
+            globals.css. The two links below are focusable, and `sr-only` clips
+            to a 1px box — so without it a sighted keyboard user's first two tab
+            stops on this page are invisible (WCAG 2.4.7). See that rule for why
+            it is CSS rather than `not-sr-only` utilities. */}
+        <p className="home-intro-summary sr-only">
           Muhammad Abdullah is a software engineer based in Bolton, Greater
           Manchester, building fast, considered web applications with Next.js,
           React, TypeScript and Node.js. This site collects{' '}

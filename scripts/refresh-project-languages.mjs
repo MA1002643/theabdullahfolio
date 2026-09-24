@@ -33,7 +33,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
@@ -56,9 +56,17 @@ function resolveToken() {
   }
 }
 
-/** The project records, parsed out of data.js without importing the module. */
+/**
+ * The project records, imported from data.js.
+ *
+ * `pathToFileURL`, not the bare path `resolve()` returns. A POSIX path is a
+ * usable `import()` specifier by accident — it begins with `/` — but a Windows
+ * one is not: `C:\…` is read by the ESM resolver as a URL whose scheme is `c`,
+ * and the documented invocation at the top of this file fails there with
+ * `ERR_UNSUPPORTED_ESM_URL_SCHEME`. A file URL is unambiguous on both.
+ */
 async function readProjects() {
-  const mod = await import(resolve(ROOT, 'src/app/data.js'));
+  const mod = await import(pathToFileURL(resolve(ROOT, 'src/app/data.js')).href);
   return mod.projectsData;
 }
 

@@ -680,7 +680,13 @@ neither value, and then prints the `client_email` — which is not a secret and 
 the address that has to be added as a user on the property.
 
 > **The service-account key is a real secret.** Name in `.env.example`, value in
-> Vercel only. See `CLAUDE.md` §1.
+> Vercel only. See `CLAUDE.md` §1. It belongs **outside** this tree; the command
+> above names a path in the repository root only because that is where someone
+> will put the file they just downloaded. `service-account-key*.json` and
+> `*-service-account*.json` are gitignored (added 2026-09-24) so the obvious way
+> to run this cannot leave a live RSA private key one `git add -A` from a public
+> repo. That is a net, not a plan: a key committed under any other name is still
+> a rotate-first incident, and rotation comes before any history rewrite.
 >
 > Environment variables are baked into a deployment when it is **created**, not
 > read per request, so production must be redeployed before either takes
@@ -796,6 +802,30 @@ goes stale when the route changes *and* moves when something unrelated does. Onl
 the project route's list is pinned against its imports on disk (the `project
 detail sources` cases in `sitemapDrift.test.js`); for a new route, read the
 `page.js` import block.
+
+**An entry with routes beneath it names FILES, and must name its two card
+handlers among them.** `opengraph-image.js` and `twitter-image.js` are siblings
+of a `page.js` that nothing imports — Next composes the pair by convention — so
+a directory entry covers them for free and a file list silently does not. Both
+errors cost a wrong date and neither looks wrong at either end:
+
+- *Too broad.* `/notes` watched `src/app/(sub pages)/notes`, which holds
+  `[slug]/` — so editing a note's TEMPLATE re-stamped the index, a date
+  asserting a change that did not happen to that document. `/projects` was
+  narrowed to files for this reason on the day it was written; `/notes` was not
+  (fixed 2026-09-24).
+- *Too narrow.* Narrowing is what puts the handlers outside every list.
+  `NOTE_SHARED_SOURCES` named `page.js` and the reader and stopped, so redrawing
+  a note's share card changed what every crawler and unfurler displays for all
+  of them while `<lastmod>` swore the documents had not moved (same fix).
+
+The four lists that must name handlers today are `/projects` and `/notes` in
+the registry, and `PROJECT_SOURCES` and `NOTE_SHARED_SOURCES` in `sitemap.js`.
+The drift test's *watches the card renderer of every route that publishes one*
+case now derives the dynamic routes from disk and **fails on any it cannot
+date**, so a third dynamic route cannot quietly inherit this gap the way the
+second did — it was a hardcoded list of the project pair, and a hardcoded list
+cannot fail for a route it does not mention.
 
 **You do not add `src/lib/seo/site.js` yourself** — `SHARED_ROUTE_SOURCES` is
 appended to every entry when `ROUTES` is built. It is there because the registry
@@ -1185,6 +1215,25 @@ v2 with `analytics_storage: 'denied'` writes nothing: no cookie, no identifier
 stored or read, and what leaves the browser is a cookieless ping. There is no
 storage to consent to, so no banner is required for it.
 
+**Correction (owner, 2026-09-24): the terminal-equipment rule is PECR's alone,
+and it settles less than the paragraph above claims.** The record stays as
+written — it is what was argued — but it names the wrong pair of instruments and
+this is a published page now, not a private note. PECR is what governs reading
+or writing information on someone's device, and it is the rule a cookieless,
+storage-denied GA4 genuinely has nothing to bite on. The UK GDPR is a *separate*
+question that the storage argument never reaches: it governs the **processing of
+personal data** whether or not anything is stored on the device, and the
+cookieless ping still carries page path, referrer and coarse geography. If that
+payload is personal data, a lawful basis and transparency are owed regardless of
+what the device stores. So "no banner is required" answers the PECR question
+only; the GDPR one needs its own assessment and never received one here.
+
+This does not change the outcome — it sharpens why the outcome was right. A
+narrow claim about *storage* was being used to settle a broad question about
+*collection*, which is the same overreach the decision at the top of this
+section reverted the mount for. #141's gate answers both questions at once, by
+sending nothing at all before a decision.
+
 The trade is real and the numbers will look wrong to anyone expecting ordinary
 GA4:
 
@@ -1358,3 +1407,23 @@ about how a system works, which is what that type is for; `BlogPosting` would
 imply a dated editorial post and invite a `datePublished` these documents do
 not have — they are revised continuously, and a made-up publication date is
 precisely the fabrication P4 rules out.
+
+**For a while the page said that without emitting it** (fixed 2026-09-24). The
+route built its graph by spreading `sectionPage({…})` into a node position and
+setting `'@type': 'TechArticle'` beside it. `sectionPage` returns a whole
+*document* — `{'@context', '@graph': [WebPage, BreadcrumbList]}` — not a node,
+so what shipped was a node containing a nested `@context` and a nested `@graph`.
+The article had no `url`, `name`, `headline` or `description` of its own; the
+`WebPage` holding them was still typed `WebPage`, so the page never declared
+itself a `TechArticle` at all; and it published **two** breadcrumb trails, the
+nested two-crumb one and the real three-crumb one, with nothing to tell a
+consumer which hierarchy was true.
+
+Worth recording because of how invisible it was. Both a document and a node are
+plain objects, spreading either is valid JavaScript, the JSON parsed, and the
+e2e check that every route emits *parseable* JSON-LD passed throughout — it
+asserts the block is valid, not that it says what the file claims. The graph is
+now composed by a `notePage()` builder in `src/lib/seo/schema.js`, beside every
+other page's, and `tests/unit/schema.test.js` asserts the shape rather than the
+`@type`: no `@context` or `@graph` inside the node, no surviving `WebPage`, and
+exactly one trail.

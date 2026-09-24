@@ -18,8 +18,12 @@
 // ── What it does NOT do ─────────────────────────────────────────────────────
 // It never prints either value, never writes them to a file, and never commits
 // anything (CLAUDE.md §1). The key file it reads should live OUTSIDE this
-// repository; if it must sit inside temporarily, delete it afterwards — `.env*`
-// is gitignored but a stray `service-account-key.json` is not.
+// repository; if it must sit inside temporarily, delete it afterwards.
+// `service-account-key*.json` and `*-service-account*.json` are gitignored as a
+// backstop — the usage line above names a path in the repository root, so the
+// obvious way to run this leaves a live private key where `git add -A` would
+// sweep it into a public repo. Ignoring the filename is the net, not the plan:
+// a key committed under any other name is still a rotate-first incident.
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';

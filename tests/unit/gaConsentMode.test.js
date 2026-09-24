@@ -68,8 +68,36 @@ describe('Consent Mode v2 defaults', () => {
     expect(defaults.ad_personalization).toBe('denied');
   });
 
-  it('redacts ad identifiers from the cookieless ping', () => {
-    expect(defaults.ads_data_redaction).toBe(true);
+  it('redacts ad identifiers with the command that actually applies it', () => {
+    // This assertion used to read `defaults.ads_data_redaction === true`, and
+    // it passed for a value that never reached gtag.js. `ads_data_redaction`
+    // is not a Consent Mode parameter — it is a gtag SETTING, issued as
+    // `gtag('set', …)` — and the `consent` command ignores keys it does not
+    // recognise rather than rejecting them. So the literal carried a fifth
+    // protection, the test confirmed the literal, and nothing anywhere could
+    // observe that the setting was inert. A test that reads the source has to
+    // assert the CALL, not the shape of an object the call never receives.
+    expect(SOURCE).toMatch(/gtag\('set', 'ads_data_redaction', true\)/);
+    expect(defaults.ads_data_redaction).toBeUndefined();
+  });
+
+  it('sets the redaction before the library is loaded', () => {
+    // Same window as the consent default below: a setting applied after
+    // gtag.js has processed the queue does not apply to the pings already sent.
+    expect(SOURCE.indexOf("gtag('set', 'ads_data_redaction'")).toBeLessThan(
+      SOURCE.indexOf('googletagmanager.com/gtag/js'),
+    );
+  });
+
+  it('claims no protection GA4 does not honour', () => {
+    // `anonymize_ip` was passed to `gtag('config', …)` and did nothing: it is a
+    // Universal Analytics parameter, and GA4 anonymises IP addresses
+    // unconditionally with no way to turn it off. Harmless as code and
+    // actively misleading as documentation — in a file whose whole job is to
+    // make the privacy posture legible, a line that reads as a safeguard while
+    // being a no-op is worse than its absence. The protection is real; this was
+    // not the thing providing it.
+    expect(codeOnly(SOURCE)).not.toContain('anonymize_ip');
   });
 
   it('grants nothing, anywhere in the module', () => {
