@@ -308,6 +308,18 @@ Used in exactly two places, both genuine gaps:
 | `/` summary | The page's only prose. Previously 10 SSR words. |
 | `/projects/[id]` sibling nav | A fixed full-screen 3D scene whose only exit was one floating button; no way to reach another project. Also fixes F8's crawl path. |
 
+**Both carry `prefetch={false}` on every link inside them**, and for a reason
+particular to this technique: `sr-only` clips rather than unmounts, so the
+links are in the viewport on every visit while being reachable by no pointer.
+Next's default viewport prefetch cannot tell the difference and warms each
+destination for **every** visitor — on `/` that was `/cv` and the `/notes`
+listing, two RSC round-trips on top of the eight the orbit ring already makes,
+to serve links only keyboard and AT users can reach (the sibling nav's three
+were stood down when it was written; `/` followed 2026-09-24). The `href`s stay
+server-rendered, which is the entire point of both blocks, and hover and touch
+still warm the route on intent — `prefetch={false}` stands down only the
+viewport pass.
+
 **It is not a general pattern.** Reaching for `sr-only` to add keyword text
 would be the abuse this reasoning does not license.
 
@@ -826,6 +838,22 @@ case now derives the dynamic routes from disk and **fails on any it cannot
 date**, so a third dynamic route cannot quietly inherit this gap the way the
 second did — it was a hardcoded list of the project pair, and a hardcoded list
 cannot fail for a route it does not mention.
+
+**On a DYNAMIC route the same non-inheritance costs a second thing: the card
+handlers must restate `generateStaticParams` *and* `dynamicParams = false`.**
+Independent composition means the pair inherits neither from the `page.js` next
+door, and the two exports do different jobs — `generateStaticParams` says
+"prerender at least these", `dynamicParams = false` is what closes the set.
+Restating only the first leaves the route prerendering the real slugs while
+still answering *any* other slug on demand with whatever the handler's fallback
+draws, so `/notes/anything-at-all/opengraph-image` returns a 200 and a generic
+card instead of a 404. Nothing about the build output says so — the route
+prints as `●` either way, because the enumerated params did prerender; the
+difference only appears when you request a slug that is not one of them. Both
+dynamic routes export the pair from their `opengraph-image.js`, and each
+`twitter-image.js` re-exports **both** alongside `default`/`alt`/`size`/
+`contentType` — it is a separate module again, so closing the set next door
+does nothing for it (fixed 2026-09-24; `/notes` had shipped with neither).
 
 **You do not add `src/lib/seo/site.js` yourself** — `SHARED_ROUTE_SOURCES` is
 appended to every entry when `ROUTES` is built. It is there because the registry

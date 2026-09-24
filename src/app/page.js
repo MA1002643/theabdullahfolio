@@ -573,6 +573,14 @@ export default function Home() {
             to a 1px box — so without it a sighted keyboard user's first two tab
             stops on this page are invisible (WCAG 2.4.7). See that rule for why
             it is CSS rather than `not-sr-only` utilities. */}
+        {/* `prefetch={false}` on both: this paragraph is always mounted and
+            `sr-only` clips it to a 1px box rather than unmounting it, so Next's
+            default viewport prefetch counts both links as in view and warms
+            `/cv` and the `/notes` listing — the larger of the two RSC payloads
+            — for EVERY homepage visitor, to serve links only a keyboard or AT
+            user can reach. The hrefs stay server-rendered, so the crawlability
+            this paragraph exists for is untouched, and hover/touch still warm
+            the route on intent. Same call as the project sibling nav. */}
         <p className="home-intro-summary sr-only">
           Muhammad Abdullah is a software engineer based in Bolton, Greater
           Manchester, building fast, considered web applications with Next.js,
@@ -582,9 +590,16 @@ export default function Home() {
           alongside the degrees and roles behind them, a timeline of the route
           from college to production, and the tools the work is actually built
           with. Every section is reachable from the ring below; the full
-          record is on the <Link href="/cv">CV page</Link> and as a PDF, and
-          the reasoning behind how this site is built is written up in the{' '}
-          <Link href="/notes">engineering notes</Link>.
+          record is on the{' '}
+          <Link href="/cv" prefetch={false}>
+            CV page
+          </Link>{' '}
+          and as a PDF, and the reasoning behind how this site is built is
+          written up in the{' '}
+          <Link href="/notes" prefetch={false}>
+            engineering notes
+          </Link>
+          .
         </p>
 
         {/* `hero-row` is only a hook for the `div.hero-row` block in

@@ -122,6 +122,34 @@ describe('the corpus', () => {
 
     const abutting = ['# T', '', 'Lead in:', '| a | b |', '| - | - |'].join('\n');
     expect(summaryOf(abutting)).toBe('Lead in:');
+
+    // Both fence spellings. CommonMark opens a code block with 3+ backticks or
+    // 3+ tildes and `marked` honours both, but only the backtick form was
+    // recognised — so a paragraph abutting `~~~js` published the code as the
+    // meta description. Latent in the shipping corpus, which fences with
+    // backticks throughout, which is exactly why it needs constructed input.
+    for (const fence of ['```js', '~~~js', '~~~', '````']) {
+      const abuttingFence = ['# T', '', 'Lead in:', fence, 'const x = 1;'].join(
+        '\n',
+      );
+      expect(summaryOf(abuttingFence), `fence: ${fence}`).toBe('Lead in:');
+    }
+  });
+
+  it('does not mistake strikethrough for a tilde fence', () => {
+    // The guard on the fix above: a fence is 3+ tildes, so matching a lone `~`
+    // would cut the paragraph at any line opening with `~~struck~~` — which is
+    // ordinary prose, and the reason the tilde branch is not spelled the loose
+    // way the backtick branch is.
+    //
+    // The tildes survive into the output because the inline strip is `[*_`]`
+    // and does not include them. That is asserted as it stands rather than
+    // quietly fixed: it is a separate defect from the fence boundary, of the
+    // same family as the wrapped link, and pinning current behaviour is what
+    // makes a later fix a visible change rather than a silent one.
+    expect(
+      summaryOf(['# T', '', 'A sentence that', '~~struck~~ text follows.'].join('\n')),
+    ).toBe('A sentence that ~~struck~~ text follows.');
   });
 
   it('returns null when the document does not open with prose', () => {
@@ -129,6 +157,9 @@ describe('the corpus', () => {
     // rather than an accidental fragment of a table.
     expect(summaryOf(['# T', '', '| a | b |'].join('\n'))).toBeNull();
     expect(summaryOf(['# T', '', '- one', '- two'].join('\n'))).toBeNull();
+    // A document opening on either fence spelling, for the same reason.
+    expect(summaryOf(['# T', '', '```js', 'const x = 1;'].join('\n'))).toBeNull();
+    expect(summaryOf(['# T', '', '~~~js', 'const x = 1;'].join('\n'))).toBeNull();
     // No heading at all — nothing is treated as the body.
     expect(summaryOf('just text, no heading')).toBeNull();
   });

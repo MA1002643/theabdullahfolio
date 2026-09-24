@@ -12,6 +12,14 @@ export function generateStaticParams() {
   return readNotes().map((note) => ({ slug: note.slug }));
 }
 
+// And `dynamicParams` has to be restated for the same reason. On its own
+// `generateStaticParams` only means "prerender at least these" — an unknown
+// slug still falls through to an on-demand render, which would serve the
+// generic fallback card below under any URL and leave these cards merely
+// mostly-static. `false` closes the set to the notes corpus, exactly as the
+// project poster does (`projects/[id]/opengraph-image.js`).
+export const dynamicParams = false;
+
 export const alt =
   'Engineering note · Muhammad Abdullah — dark ember card with the Muhammad Abdullah seal.';
 export const size = { width: 1200, height: 630 };
@@ -25,9 +33,9 @@ export default async function Image({ params }) {
       label: 'Note',
       // The document's own title, so a shared link unfurls as the thing it is
       // rather than as a generic section card. A missing note cannot reach here
-      // (`dynamicParams = false` on the page, and these params come from the
-      // same source), but the fallback keeps the handler total rather than
-      // throwing inside an image render.
+      // (`dynamicParams = false` above, and these params come from the same
+      // source as the page's), but the fallback keeps the handler total rather
+      // than throwing inside an image render.
       tagline: note?.title ?? 'Engineering decision records.',
     }),
     { ...size, fonts: await ogFonts() },

@@ -128,8 +128,16 @@ export function summaryOf(markdown) {
     // ends. A blank line ends it, and so does the start of any other block —
     // a heading, table, quote, list or fence — which a paragraph may abut
     // without a blank line between them.
+    //
+    // A fence has TWO spellings and this knew only one: CommonMark opens a code
+    // block with 3+ backticks or 3+ tildes, and `marked` honours both. A
+    // paragraph followed immediately by `~~~js` therefore ran straight on into
+    // the code, publishing it as the description. The tilde form must match the
+    // full `~~~` rather than a lone `~` the way the backtick branch does —
+    // `~~struck~~` is strikethrough, which is prose, and one tilde would cut
+    // any paragraph line that opened with it.
     if (paragraph.length > 0) {
-      if (!line || /^(#|[|>`]|[-*+]\s|\d+\.)/.test(line)) break;
+      if (!line || /^(#|[|>`]|~~~|[-*+]\s|\d+\.)/.test(line)) break;
       paragraph.push(line);
       continue;
     }
@@ -141,7 +149,7 @@ export function summaryOf(markdown) {
     }
     if (!seenHeading) continue;
     // Not prose: a table, list, quote, rule or code fence.
-    if (/^[|>\-*+`]|^\d+\./.test(line)) return null;
+    if (/^[|>\-*+`]|^~~~|^\d+\./.test(line)) return null;
     paragraph.push(line);
   }
 
