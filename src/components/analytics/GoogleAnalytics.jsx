@@ -4,18 +4,36 @@ import Script from 'next/script';
 
 // GA4 under Consent Mode v2, denied by default (issue #32, W5 / #141).
 //
-// ── Why this mounts without a cookie banner ─────────────────────────────────
-// docs/seo.md §8 recorded GA4 as hard-blocked on consent gating, and it was:
-// GA4's default behaviour writes `_ga` cookies, and writing an analytics cookie
-// to a UK/EU visitor's device before they agree is the thing PECR and the GDPR
-// actually prohibit. What is prohibited is the STORAGE — reading or writing
-// information on someone's terminal equipment — not the measurement.
+// ── NOTHING MOUNTS THIS YET, AND THAT IS THE POINT ──────────────────────────
+// src/app/layout.js does not render this component; the mount is #141's, inside
+// the `<ConsentedAnalytics />` boundary that issue specifies, beside the two
+// Vercel scripts. `tests/unit/gaConsentMode.test.js` pins the absence, so a
+// mount cannot reappear by accident.
+//
+// It ships ahead of the gate because the tag is the quick half. The CSP
+// allowance for the tag manager, the EVENTS map in src/lib/seo/analytics.js and
+// the consent defaults below are the parts worth reviewing, and none of them
+// can be reviewed while the component they configure is a TODO. Written now,
+// switched on in one line later.
+//
+// ── Why Consent Mode v2 is the shape, even behind a gate ────────────────────
+// docs/seo.md §8 recorded GA4 as hard-blocked on consent gating. What PECR and
+// the GDPR prohibit is the STORAGE — reading or writing information on
+// someone's terminal equipment — and GA4's default behaviour writes a `_ga`
+// cookie, which is exactly that.
 //
 // Consent Mode v2 with `analytics_storage: 'denied'` is the configuration where
 // GA4 writes nothing. No cookie is set, no identifier is stored or read, and
 // what leaves the browser is a cookieless ping: page path, referrer, coarse
-// geography and device class, with no key tying two of them to one person. That
-// carries no storage to consent to, so no banner is required for it.
+// geography and device class, with no key tying two of them to one person.
+//
+// That is a narrower argument than it first looks, and the distinction is why
+// this file is not mounted on the strength of it: it says the DENIED state
+// needs no storage consent, not that an undecided visitor should be pinged.
+// #141 asks for no analytics request at all before a decision, and a cookieless
+// ping is still a request. So the denied defaults are what the gate opens
+// FROM — the state a visitor who declines stays in permanently — rather than a
+// licence to skip the gate.
 //
 // The trade is real and worth stating plainly, because the numbers will look
 // wrong to anyone expecting normal GA4:
@@ -32,14 +50,15 @@ import Script from 'next/script';
 // Analytics already counts visits; the point of GA4 here is the referrer and
 // landing-page breakdown alongside Search Console's query data (§8).
 //
-// ── If a banner is ever wanted ──────────────────────────────────────────────
-// This is the shape that makes one a small change rather than a rewrite: the
-// defaults below are the DENIED state, and granting consent is a single
-// `gtag('consent', 'update', { analytics_storage: 'granted' })` from wherever
-// the accept button lives. Nothing else in this file moves, and no call site of
-// `trackEvent` is affected. That call is deliberately absent today — there is
-// no UI that could produce consent, so a granting path with no way to reach it
-// would be dead code asserting a capability the site does not have.
+// ── What #141 has to do here ────────────────────────────────────────────────
+// Render this component inside the consent boundary, and on a grant make one
+// call: `gtag('consent', 'update', { analytics_storage: 'granted' })` from
+// wherever the accept button lives. Nothing else in this file moves and no call
+// site of `trackEvent` is affected. That call is deliberately absent today —
+// there is no UI that could produce consent, so a granting path with no way to
+// reach it would be dead code asserting a capability the site does not have,
+// and `tests/unit/gaConsentMode.test.js` fails on a `granted` literal appearing
+// in this module before then.
 //
 // ── Why the events still work ───────────────────────────────────────────────
 // `trackEvent` (src/lib/seo/analytics.js) calls `window.gtag` and no-ops when it

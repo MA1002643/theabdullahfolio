@@ -8211,9 +8211,45 @@ li:has(.journey-lift :focus-visible) .journey-connector {
    Only `opacity` and `transform` animate. Both composite off the main
    thread, so ~440 bound animations cost no main-thread work per frame. */
 
+/* ── THE 0.7 FLOOR, AND WHY IT IS NOT A ROUNDED-UP ZERO ─────────────────────
+   Every keyframe below that moves TEXT starts at 0.7, not at 0. A reveal that
+   fades text up from nothing is unreadable for the part of its range that is
+   already on screen, and at one scroll position that is not hypothetical: the
+   element straddling the viewport's bottom edge sits at ~2% progress, which is
+   a heading rendered at 1.03:1 against the page. Lighthouse caught exactly that
+   on /notes/discoverability — `color-contrast`, the one h3 at the fold,
+   accessibility 0.96 against a 1.0 assertion, reproducible on every run.
+
+   No `animation-range` value fixes it. At the fold the progress IS zero, so
+   whatever the first keyframe says is what a reader sees there; the only lever
+   is the value itself. 0.7 is the measured one — the dimmest text on the page
+   (body at `--foreground`/0.84, and the gold h3/links at #ffaa2a) lands at
+   5.5:1 and 5.2:1 there, comfortably over the 4.5:1 floor, where 0.65 is the
+   bare minimum and leaves nothing for a future colour to spend.
+
+   The rise does the work it always did — 16px for a paragraph, 22px and a
+   10px drift for a heading — and the fade is now a lift rather than an
+   appearance. ORNAMENTS ARE EXEMPT and still start at 0: `note-pop` (the h3
+   ember tick) and the two `note-draw-*` scale animations carry no text, so
+   nothing can be unreadable while they run.
+
+   AND A CONTAINER THAT HOLDS TEXT MUST NOT FADE AT ALL. `opacity` multiplies
+   down the tree and the text in here already carries its own alpha — the body
+   colour is `--foreground`/0.84 — so a fading ancestor dims something that is
+   not at full strength to begin with. The first attempt at this floor left
+   `> table` fading, and the same audit failed again on different nodes: cells
+   at **4.1:1** and **3.37:1**, and the `code` inside them at 3.41:1. The
+   measured lesson is blunter than the arithmetic predicts, so take it as
+   measured — a block that fades may not contain text that a reader has to
+   read through it.
+
+   Hence `note-lift` below: the table rises with no opacity in it. List items
+   are matched as direct children of a top-level list for the same reason, so a
+   nested item cannot sit under its parent item's fade as well as its own. */
+
 @keyframes note-rise {
   from {
-    opacity: 0;
+    opacity: 0.7;
     transform: translate3d(0, 16px, 0);
   }
   to {
@@ -8226,11 +8262,24 @@ li:has(.journey-lift :focus-visible) .journey-connector {
    opening reads as a distinct gesture from the paragraphs under it. */
 @keyframes note-rise-heading {
   from {
-    opacity: 0;
+    opacity: 0.7;
     transform: translate3d(-10px, 22px, 0);
   }
   to {
     opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* A table's own arrival, with no opacity in it — a table is a box full of text
+   a reader reads through, and the note above is about exactly this case. The
+   box rising into place is also the truer gesture: the grid is the thing being
+   set down. */
+@keyframes note-lift {
+  from {
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
     transform: translate3d(0, 0, 0);
   }
 }
@@ -8267,9 +8316,27 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 /* A table row deals in from the left rather than rising: a row is a
    horizontal object, and sliding it along its own axis is what makes a
    decision table look like it is being filled in. */
+/* ── INERT TODAY, AND KEPT HONEST RATHER THAN DELETED ───────────────────────
+   Bound to `.note-prose tbody tr`, which never runs it: `table` below is
+   `display: block; overflow-x: auto` so a phone can scroll a wide decision
+   table sideways, which makes the TABLE the nearest scrollport for its own
+   rows. A `view()` timeline resolved against a scrollport that does not scroll
+   in the block axis is degenerate, so every row sits at progress 1 — measured
+   across all eight tables on /notes/discoverability: `progress: 1`,
+   `playState: "finished"`, opacity 1, no offset. The rows have never dealt in.
+
+   This is the same trap the `.note-progress` note records for `scroll()` — a
+   subject whose timeline cannot move sits at one progress forever — and the
+   fix is not a keyframe change: the scroll container has to move off the table
+   onto a wrapper, which means a `marked` renderer override in readNotes.js,
+   since nothing wraps a generated table today. Left in place, with its floor
+   correct, so that whoever does that gets a working animation rather than a
+   silent contrast regression. */
 @keyframes note-deal {
   from {
-    opacity: 0;
+    /* Text — the 0.7 floor above applies. A table row is the densest text on
+       the page and the most expensive one to render unreadable. */
+    opacity: 0.7;
     transform: translate3d(-14px, 0, 0);
   }
   to {
@@ -8323,9 +8390,17 @@ li:has(.journey-lift :focus-visible) .journey-connector {
     /* Body blocks. Direct children only: a paragraph inside a blockquote or a
        table cell must not animate separately from the panel carrying it. */
     .note-prose > p,
-    .note-prose > table,
     .note-prose > pre {
       animation: note-rise linear both;
+      animation-timeline: view();
+      animation-range: cover 2% cover 26%;
+    }
+
+    /* The table rises but does not fade — its rows do, and stacking the two
+       opacities put every cell at 0.49. Same range as the blocks above, so it
+       still arrives with them. */
+    .note-prose > table {
+      animation: note-lift linear both;
       animation-timeline: view();
       animation-range: cover 2% cover 26%;
     }
@@ -8389,22 +8464,34 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 
     /* List items cascade. Each owns its own view() timeline, so the offset is
        a later RANGE rather than a delay — a delay is a time, and a
-       scroll-driven animation has no time to delay by. */
-    .note-prose li {
+       scroll-driven animation has no time to delay by.
+
+       Matched as direct children of a TOP-LEVEL list. `.note-prose li` matched
+       every depth, so a nested item animated under its parent item's opacity
+       as well as its own — 0.49, under the contrast floor — and so did a list
+       inside a blockquote. A sub-list now rides its parent's reveal, which is
+       also the better gesture: an indented item is part of the point above it,
+       not a separate arrival. */
+    .note-prose > ul > li,
+    .note-prose > ol > li {
       animation: note-rise linear both;
       animation-timeline: view();
       animation-range: cover 4% cover 24%;
     }
-    .note-prose li:nth-child(2) {
+    .note-prose > ul > li:nth-child(2),
+    .note-prose > ol > li:nth-child(2) {
       animation-range: cover 6% cover 26%;
     }
-    .note-prose li:nth-child(3) {
+    .note-prose > ul > li:nth-child(3),
+    .note-prose > ol > li:nth-child(3) {
       animation-range: cover 8% cover 28%;
     }
-    .note-prose li:nth-child(4) {
+    .note-prose > ul > li:nth-child(4),
+    .note-prose > ol > li:nth-child(4) {
       animation-range: cover 10% cover 30%;
     }
-    .note-prose li:nth-child(n + 5) {
+    .note-prose > ul > li:nth-child(n + 5),
+    .note-prose > ol > li:nth-child(n + 5) {
       animation-range: cover 12% cover 32%;
     }
 

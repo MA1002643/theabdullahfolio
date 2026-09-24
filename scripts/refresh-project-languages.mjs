@@ -97,10 +97,16 @@ const publicProjects = projects.filter((project) => !project.private);
 
 const languages = {};
 const failures = [];
+// Repositories GitHub ANSWERED for, whatever it answered. A successful `{}` —
+// a docs-only or empty repository — is a real result that has to be able to
+// clear a stale entry, and it is indistinguishable from a failure by the
+// absence of a `languages` key alone. See the merge below.
+const answered = new Set();
 
 for (const project of publicProjects) {
   try {
     const breakdown = await fetchLanguages(project.repo, token);
+    answered.add(project.repo);
     // Ordered by bytes, descending — GitHub returns an object whose key order
     // is not guaranteed, and the first entry is the one a reader treats as the
     // primary language. Byte counts themselves are dropped: schema.org's
@@ -134,6 +140,19 @@ if (failures.length > 0) {
 }
 
 const merged = { ...previous, ...languages };
+
+// A repository that ANSWERED with no languages loses its entry. Retaining the
+// previous list is correct for a failure — a 404 or a rate-limit says nothing
+// about the repository, so the last known answer is still the best one — but it
+// is wrong for a success, where GitHub has positively reported that there is no
+// detectable code. Merging on the presence of a `languages` key alone cannot
+// tell those two apart, and collapsing them means a project that becomes
+// docs-only, or is emptied and rewritten, keeps publishing a
+// `programmingLanguage` claim its own repository contradicts — and no number of
+// refreshes ever clears it, because every run reproduces the same empty result.
+for (const repo of answered) {
+  if (!languages[repo]) delete merged[repo];
+}
 
 // Entries for repositories no longer in projectsData are pruned: leaving them
 // would let the file accumulate claims about projects the site no longer shows.

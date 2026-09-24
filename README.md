@@ -484,17 +484,27 @@ What it covers:
   and it hands the boundary **only the five display fields** — never the
   document body, which would otherwise be serialised into the HTML of the page
   that merely links to it.
-- **GA4 under Consent Mode v2, storage denied**, so no cookie is written and no
-  banner is required. The trade is stated rather than hidden: no stable
-  identifier, so *users* is modelled rather than counted. Vercel Analytics still
-  counts visits; the two are expected to disagree permanently.
+- **A GA4 component under Consent Mode v2, written but not mounted.** The
+  defaults deny all four consent signals, so the tag writes no cookie and
+  stores no identifier — but nothing renders it, because
+  [#141](https://github.com/MA1002643/theabdullahfolio/issues/141) requires that
+  a visitor who has not decided issues no analytics request at all, and a
+  cookieless ping is still a request. The CSP allowance, the event map and the
+  tests ship with it, so switching it on is a mount inside that issue's consent
+  boundary. The trade, when it is switched on, is stated rather than hidden: no
+  stable identifier, so *users* is modelled rather than counted, and Vercel
+  Analytics — which counts visits — will disagree with it permanently.
 - **Lighthouse budgets in CI**, measured before they were enforced.
   Accessibility, best practices and SEO are asserted at **100 and fail the
   build**; performance is collected and warned until CI has its own history.
   Measuring first found three real defects — an `aria-label` on `<span>`/`<p>`
   that capped accessibility at 96 site-wide, three background textures that
   have never existed in this repository, and Vercel's telemetry scripts 404ing
-  on every off-platform build.
+  on every off-platform build. CI then found a fourth the local run had missed:
+  a scroll reveal that fades text up from `opacity: 0` leaves whichever element
+  straddles the viewport's bottom edge unreadable *while it is on screen*, so
+  every keyframe that moves text now starts at a measured 0.7 floor
+  (`docs/seo.md` §15).
 
 Full decision record, the measured baseline, and the runbook:
 **[`docs/seo.md`](docs/seo.md)** — also readable at

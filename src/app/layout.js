@@ -11,7 +11,6 @@ import SoundProvider from '@/components/sound/SoundProvider';
 import FloatingSoundToggle from '@/components/sound/FloatingSoundToggle';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
-import GoogleAnalytics from '@/components/analytics/GoogleAnalytics';
 import JsonLd from '@/components/seo/JsonLd';
 import { alternatesFor } from '@/lib/seo/canonical';
 import { personGraph } from '@/lib/seo/schema';
@@ -245,16 +244,23 @@ export default function RootLayout({ children }) {
             <Analytics />
           </>
         ) : null}
-        {/* GA4 under Consent Mode v2, storage denied (issue #32, W5). Mounted
-            beside Vercel Analytics rather than instead of it, and the two are
-            expected to DISAGREE permanently — §8 of docs/seo.md explains why
-            (different definitions of a visit, different bot filtering, and now
-            a third reason: this one has no stable identifier at all, so its
-            "users" figure is modelled where Vercel's is counted).
+        {/* GA4 IS NOT MOUNTED HERE, DELIBERATELY — see docs/seo.md §8 and §14.
+            `src/components/analytics/GoogleAnalytics.jsx` is written, tested and
+            allowed through the CSP, and it is the LAST thing #141 has to wire:
+            drop it inside that issue's `<ConsentedAnalytics />` boundary, beside
+            the two Vercel scripts above, and it starts on consent.
 
-            Renders null when NEXT_PUBLIC_GA_MEASUREMENT_ID is unset, which is
-            every preview, every fork and local development. */}
-        <GoogleAnalytics />
+            It was briefly mounted here on the argument the component's own
+            header still makes — Consent Mode v2 with `analytics_storage:
+            'denied'` writes no cookie, so there is no STORAGE to consent to and
+            PECR has nothing to bite on. That argument is sound about storage and
+            beside the point about this issue: #141's acceptance criterion is
+            that a visitor who has not decided issues no analytics request at
+            all, and a cookieless ping is still a request carrying page path,
+            referrer and coarse geography. Mounting it before the notice exists
+            would also have made three documents false in the same commit (the
+            PR description, .env.example and README all state GA4 is not
+            mounted), which is how a decision record stops being one. */}
       </body>
     </html>
   );

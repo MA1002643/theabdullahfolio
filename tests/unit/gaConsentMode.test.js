@@ -3,12 +3,16 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 // ── Why this file exists ────────────────────────────────────────────────────
-// GA4 is mounted here with NO cookie banner, and the entire legal basis for
-// that is one configuration value: `analytics_storage: 'denied'`, which stops
-// GA4 writing the `_ga` cookie. Flip it — or add a signal and forget to deny it
-// — and the site starts storing an identifier on a UK/EU visitor's device with
-// no consent in sight, which is a compliance failure that looks like nothing at
-// all in the browser.
+// GA4 is NOT mounted (see the last describe, which pins that) — the component
+// is written and waiting for #141's consent gate. These assertions are about
+// the state it will be switched on IN, and they are worth having now for the
+// same reason the component is worth having now: the defaults are the part
+// nobody looks at again once the tag starts reporting.
+//
+// `analytics_storage: 'denied'` is what stops GA4 writing the `_ga` cookie.
+// Flip it — or add a signal and forget to deny it — and the site starts storing
+// an identifier on a UK/EU visitor's device with no consent in sight, which is
+// a compliance failure that looks like nothing at all in the browser.
 //
 // That makes these defaults the highest-consequence four lines in the repo and
 // the least visible. They are asserted against the SOURCE TEXT rather than by
@@ -106,23 +110,31 @@ describe('the unset-measurement-id path', () => {
   });
 });
 
-describe('the mount', () => {
-  const layout = readFileSync(
-    new URL('../../src/app/layout.js', import.meta.url),
-    'utf8',
+describe('the mount, which deliberately does not exist yet', () => {
+  const layout = codeOnly(
+    readFileSync(new URL('../../src/app/layout.js', import.meta.url), 'utf8'),
   );
 
-  it('is in the root layout, so every route is measured', () => {
-    expect(layout).toContain('<GoogleAnalytics />');
-    expect(layout).toContain(
-      "import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'",
-    );
+  it('is absent from the root layout until the consent gate lands (#141)', () => {
+    // The component is finished and the CSP already allows the tag — what is
+    // missing is the only thing that may switch it on. #141's acceptance
+    // criterion is that a visitor who has not decided issues NO analytics
+    // request, and the denied defaults above suppress STORAGE, not the
+    // cookieless ping: a mounted GA4 still sends page path, referrer and coarse
+    // geography for an undecided visitor.
+    //
+    // Asserted against the layout SOURCE, with comments stripped, because this
+    // is a claim about what ships rather than about what renders — and because
+    // an accidental mount is the failure that looks like nothing at all in a
+    // browser, which is the same reason the defaults above are pinned.
+    expect(layout).not.toContain('<GoogleAnalytics />');
+    expect(layout).not.toContain('@/components/analytics/GoogleAnalytics');
   });
 
-  it('does not replace Vercel Analytics', () => {
-    // The two answer different questions and are expected to disagree (§8).
-    // Dropping the cookieless, already-working counter in favour of a modelled
-    // one would be a straight downgrade.
+  it('leaves Vercel Analytics where it is', () => {
+    // Unchanged by the above, and not an endorsement: it is mounted on Vercel
+    // only, and #141 gates all three together. Named here so that removing it
+    // is a deliberate act rather than a side effect of this file.
     expect(layout).toContain('<Analytics />');
   });
 });
