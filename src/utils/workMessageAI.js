@@ -4,6 +4,8 @@
 // (missing key, timeout, malformed response) falls back to the
 // deterministic message the caller passes in.
 
+import { describeError } from '@/app/api/_utils/redact';
+
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 const REQUEST_TIMEOUT_MS = 4000;
 const MAX_OUTPUT_CHARS = 220;
@@ -22,7 +24,18 @@ export async function refineMessageWithAI({ signal, fallback }) {
     if (!trimmed || trimmed.length > MAX_OUTPUT_CHARS) return fallback;
     return trimmed;
   } catch (err) {
-    console.warn('AI message refinement failed, using fallback:', err?.message);
+    // Through the redaction boundary, and the cause chain kept (2026-09-25).
+    // This module sends OPENAI_API_KEY as a bearer header, so a client or proxy
+    // that quotes the request it rejected quotes the key — and `err?.message`
+    // both carried that verbatim and threw away the half of a `fetch failed`
+    // that says anything, which undici puts in `cause`. It sat outside
+    // `tests/unit/apiErrorLogBoundary.test.js`'s surface because the surface was
+    // `src/app/api` and this is a helper a route imports; that test now follows
+    // the imports.
+    console.warn(
+      'AI message refinement failed, using fallback:',
+      describeError(err),
+    );
     return fallback;
   }
 }

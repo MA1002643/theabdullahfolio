@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -57,71 +57,222 @@ afterEach(() => {
 // this module was written for. A list maintained by remembering to update it
 // fails the same way twice; this is the part that makes the next omission a red
 // build instead of a review finding.
+//
+// It then failed the same way a THIRD time (2026-09-25), because the replacement
+// was held against `.env.example` — which is also a document a person has to
+// remember to update. `GITHUB_PROJECT_TOKEN` (sent as the Authorization
+// credential on `/api/work-status`'s board query, in a route that logs
+// `describeError`), `GITHUB_WEBHOOK_SECRET`, `OPENAI_API_KEY`,
+// `AI_GATEWAY_API_KEY` and the platform-injected `VERCEL_OIDC_TOKEN` were all
+// read from `process.env` by shipped code and declared in no env file, so the
+// sweep classified 100% of what it could see and saw none of them. Three were
+// documented in `README.md`, which is how they were eventually found: by a
+// person reading a table, the method this file exists to retire.
+//
+// So the authority is now the CODE. Every `process.env.NAME` read under `src/`
+// has to be classified, whatever any document says, alongside everything
+// `.env.example` declares — the two directions catch different mistakes: a
+// credential used and never documented, and one documented and not yet used.
 describe('the secret allowlist covers the environment it protects', () => {
-  /** Variable names declared in `.env.example`, which is the tracked manifest. */
+  const SRC_ROOT = path.join(process.cwd(), 'src');
+
+  /** Every source file under `src/`, recursively. */
+  function sourceFiles(dir = SRC_ROOT, found = []) {
+    for (const entry of readdirSync(dir)) {
+      const full = path.join(dir, entry);
+      if (statSync(full).isDirectory()) sourceFiles(full, found);
+      else if (/\.(?:js|jsx|mjs)$/.test(full)) found.push(full);
+    }
+    return found;
+  }
+
+  /**
+   * Every variable name the shipped code reads, in both notations it uses.
+   *
+   * COMMENTS ARE READ TOO, deliberately, and that is not laziness about lexing
+   * JavaScript — it is the direction to fail in. Stripping them means a comment
+   * can blind the sweep (a `//` inside a string, a block that swallows a read),
+   * and a scanner that silently covers less than it claims is the defect this
+   * file has now recorded four times. Over-collecting costs one entry in the
+   * table below, written down with its reason, which is cheap and visible.
+   */
+  const envVarsReadInCode = () => {
+    const found = new Set();
+    for (const file of sourceFiles()) {
+      const source = readFileSync(file, 'utf8');
+      for (const match of source.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g))
+        found.add(match[1]);
+      // `redact.js` and several suites read `process.env[name]` — a static
+      // subscript is the same read with different punctuation, and the sweep in
+      // `testCredentialShapes.test.js` was already caught out by exactly this.
+      for (const match of source.matchAll(
+        /process\.env\[\s*['"`]([A-Z][A-Z0-9_]*)['"`]\s*\]/g,
+      ))
+        found.add(match[1]);
+    }
+    return [...found];
+  };
+
+  /**
+   * Variable names declared in `.env.example`, the tracked manifest.
+   *
+   * COMMENTED declarations count. Most optional variables in that file ship
+   * commented out with a placeholder (`# ABSTRACT_API_KEY=…`), so a rule that
+   * read only live lines would have excused the majority of the credentials in
+   * it — and "is this line commented" has nothing to do with whether the value
+   * is a secret.
+   */
   const declaredEnvVars = () => {
     const source = readFileSync(
       path.join(process.cwd(), '.env.example'),
       'utf8',
     );
-    return [...source.matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*=/gm)].map(
+    return [...source.matchAll(/^\s*#?\s*([A-Z][A-Z0-9_]*)\s*=/gm)].map(
       (match) => match[1],
     );
   };
 
-  // Everything in `.env.example` that is NOT a credential, each with the reason
+  // Everything in either source that is NOT a credential, each with the reason
   // it is safe in a log. Written out rather than pattern-matched, because
-  // "looks public" is exactly the judgement that produced the gap above.
-  const PUBLIC_BY_DESIGN = {
+  // "looks public" is exactly the judgement that produced the gap above — and a
+  // rule like "*_MS is a number" is one typo away from excusing a token.
+  const NOT_A_CREDENTIAL = {
+    // Public by construction.
     NEXT_PUBLIC_GITHUB_USERNAME:
       'NEXT_PUBLIC_ — inlined into the client bundle at build, public by definition',
-    BASE_URL: 'the deployment’s own public origin',
-    SMTP_HOST: 'a mail provider’s public hostname',
-    SMTP_PORT: 'a port number',
+    NEXT_PUBLIC_PROJECT_REPO: 'NEXT_PUBLIC_ — a repository name, in the bundle',
+    NEXT_PUBLIC_CONTACT_EMAIL:
+      'NEXT_PUBLIC_ — the DISPLAYED address; the server-only delivery inbox is RECEIVER_EMAIL, which is redacted',
+    NEXT_PUBLIC_SITE_ORIGIN: 'NEXT_PUBLIC_ — the site’s own canonical origin',
+    NEXT_PUBLIC_GA_MEASUREMENT_ID:
+      'NEXT_PUBLIC_ — a GA4 measurement id is published in the tag itself',
     GOOGLE_SITE_VERIFICATION:
       'published verbatim in a <meta> tag on every page',
     GUESTBOOK_ADMIN:
       'a public GitHub numeric id — it names who may moderate, and holding it unlocks nothing without that account',
+
+    // Addresses and paths.
+    BASE_URL: 'the deployment’s own public origin',
+    SMTP_HOST: 'a mail provider’s public hostname',
+    SMTP_PORT: 'a port number',
+    SMTP_SECURE: 'a boolean TLS switch',
+    SPOTIFY_REDIRECT_URI:
+      'an OAuth redirect URI — registered with the provider and visible in the flow',
+    GSC_SITE_URL: 'the Search Console property identifier, i.e. the site’s own URL',
+    GUESTBOOK_JSON_PATH: 'a filesystem path for the local-dev file store',
+    PORT: 'the port the dev server binds',
+    VERCEL_URL: 'the deployment’s own hostname, assigned by the platform',
+
+    // Switches: they select behaviour, and holding one authenticates nothing.
+    MULTI_REPO_HEADER: 'a rollout kill-switch',
+    WORK_STATUS_AI_ENABLED: 'an on/off flag for the AI rewrite',
+    REFINE_MODEL: 'a model identifier',
+    SPOTIFY_DEMO: 'forces the bundled demo track on',
+    SPOTIFY_AUTH_ALLOW_REMOTE:
+      'allows the one-time token helper off loopback — dangerous to SET, but its value is a boolean',
+    GUESTBOOK_DRIVER: 'names a storage driver',
+    GUESTBOOK_ALLOW_JSON_IN_PRODUCTION:
+      'an e2e hatch whose value is the fixed string e2e-non-durable, published in .env.example and in the store’s own error text',
+    NODE_ENV: 'the build mode',
+    NEXT_PHASE: 'the Next.js lifecycle phase',
+    VERCEL: 'set to 1 on the platform; a presence flag',
+
+    // Millisecond budgets. Each is a number an operator may tune, and a log line
+    // quoting one leaks the timeout it already prints in its own error text.
+    CRON_RUN_BUDGET_MS: 'a millisecond budget',
+    CRON_WARM_TIMEOUT_MS: 'a millisecond budget',
+    GITHUB_TIMEOUT_MS: 'a millisecond budget',
+    GITHUB_OVERALL_TIMEOUT_MS: 'a millisecond budget',
+    GITHUB_OVERALL_BUDGET_MS: 'a millisecond budget',
+    SEO_REPORT_TIMEOUT_MS: 'a millisecond budget',
+
+    // Not a variable at all: the placeholder name in `env.js`'s doc comment
+    // (`Number(process.env.X)`). It is here rather than filtered out because the
+    // sweep reads comments ON PURPOSE — see `envVarsReadInCode` — and this entry
+    // is the whole visible cost of that choice.
+    X: 'not a variable — the placeholder in src/app/api/_utils/env.js’s JSDoc',
   };
 
-  it('classifies every variable .env.example declares', () => {
+  it('classifies every variable the code reads or .env.example declares', () => {
+    const read = envVarsReadInCode();
     const declared = declaredEnvVars();
-    // Guard on the guard: a parse that matched nothing would make this pass
-    // while checking no variable at all.
-    expect(declared.length).toBeGreaterThanOrEqual(15);
 
-    const unclassified = declared.filter(
-      (name) =>
-        !SECRET_ENV_VARS.includes(name) &&
-        !Object.hasOwn(PUBLIC_BY_DESIGN, name),
-    );
+    // Guard on the guard: a walk or a parse that matched nothing would make this
+    // pass while checking no variable at all. Sentinels as well as counts,
+    // because a count can be satisfied by the wrong names.
+    expect(read.length).toBeGreaterThanOrEqual(40);
+    expect(declared.length).toBeGreaterThanOrEqual(35);
+    expect(read).toContain('GITHUB_PROJECT_TOKEN');
+    expect(declared).toContain('GSC_SERVICE_ACCOUNT_KEY');
+
+    const unclassified = [...new Set([...read, ...declared])]
+      .filter(
+        (name) =>
+          !SECRET_ENV_VARS.includes(name) &&
+          !Object.hasOwn(NOT_A_CREDENTIAL, name),
+      )
+      .sort();
 
     expect(
       unclassified,
-      `.env.example declares these, and redact.js neither redacts them nor ` +
-        `this file records why they are safe in a log:\n  ` +
-        `${unclassified.join('\n  ')}\n\n` +
-        `Add each to SECRET_ENV_VARS, or to PUBLIC_BY_DESIGN here with the ` +
-        `reason it is public.`,
+      `These are read under src/ or declared in .env.example, and redact.js ` +
+        `neither redacts them nor does this file record why they are safe in a ` +
+        `log:\n  ${unclassified.join('\n  ')}\n\n` +
+        `Add each to SECRET_ENV_VARS in src/app/api/_utils/redact.js, or to ` +
+        `NOT_A_CREDENTIAL here with the reason it carries no credential.`,
     ).toEqual([]);
   });
 
-  it('names the two the CLAUDE.md table omitted', () => {
+  it('names the ones each earlier derivation omitted', () => {
     // Pinned by name, not left to the sweep above: these are the ones that were
-    // actually missing, in the two routes `describeError` is called from.
+    // actually missing, and a sweep can only prove that today's sources agree
+    // with today's list. The first two came from copying CLAUDE.md's table — one
+    // in each of the two routes `describeError` was written for. The rest came
+    // from deriving the list from `.env.example`, which did not declare them.
     expect(SECRET_ENV_VARS).toContain('GSC_SERVICE_ACCOUNT_KEY');
     expect(SECRET_ENV_VARS).toContain('RECEIVER_EMAIL');
+    expect(SECRET_ENV_VARS).toContain('GITHUB_PROJECT_TOKEN');
+    expect(SECRET_ENV_VARS).toContain('GITHUB_WEBHOOK_SECRET');
+    expect(SECRET_ENV_VARS).toContain('OPENAI_API_KEY');
+    expect(SECRET_ENV_VARS).toContain('AI_GATEWAY_API_KEY');
+    expect(SECRET_ENV_VARS).toContain('VERCEL_OIDC_TOKEN');
   });
 
-  it('does not redact a variable recorded as public', () => {
-    // The other direction, and the one that keeps PUBLIC_BY_DESIGN honest: a
+  it('does not redact a variable recorded as carrying no credential', () => {
+    // The other direction, and the one that keeps NOT_A_CREDENTIAL honest: a
     // name cannot sit in both lists and have the classification mean anything.
-    for (const name of Object.keys(PUBLIC_BY_DESIGN)) {
+    for (const name of Object.keys(NOT_A_CREDENTIAL)) {
       expect(
         SECRET_ENV_VARS,
-        `${name} is recorded as public AND redacted.`,
+        `${name} is recorded as carrying no credential AND redacted.`,
       ).not.toContain(name);
     }
+  });
+
+  it('declares every credential it redacts in .env.example', () => {
+    // CLAUDE.md §1: a new credential's NAME and a placeholder go in
+    // `.env.example` in the same commit as the code that reads it. That rule is
+    // what broke — the five names above were live in `process.env` and in no env
+    // file — so it is asserted here rather than left as a sentence, and the
+    // sweep above stops being derivable from a document that omits things.
+    const declared = new Set(declaredEnvVars());
+
+    // Minted by the platform, never set by hand. A placeholder for it would be
+    // an invitation to paste a real OIDC token into a tracked file.
+    const PLATFORM_INJECTED = new Set(['VERCEL_OIDC_TOKEN']);
+
+    const undocumented = SECRET_ENV_VARS.filter(
+      (name) => !declared.has(name) && !PLATFORM_INJECTED.has(name),
+    );
+
+    expect(
+      undocumented,
+      `redact.js redacts these and .env.example declares none of them, so the ` +
+        `sweep above could not have caught them:\n  ` +
+        `${undocumented.join('\n  ')}\n\n` +
+        `Add NAME=placeholder to .env.example (commented out is fine — the ` +
+        `parse counts it), never a real value.`,
+    ).toEqual([]);
   });
 });
 

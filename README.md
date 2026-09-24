@@ -666,6 +666,36 @@ upgrade-insecure-requests   # production only — real WebKit honours it even on
 </details>
 
 <details>
+<summary><strong>Credentials are stripped from server logs</strong> — and adding one is gated by CI</summary>
+<br />
+
+Library errors quote the configuration they were handed: `@upstash/redis` names
+the REST endpoint it could not reach, undici reports a DNS failure as
+`getaddrinfo ENOTFOUND <host>`, and a provider SDK can echo the request it
+rejected — bearer header included. A log is a sink that persists, can be
+forwarded to a drain, and is readable by anyone with project access, so
+`src/app/api/_utils/redact.js` replaces every configured credential **value**
+with the **name** of its variable (`[KV_REST_API_URL]`) on its way to `console`.
+`describeError(err)` is the wrapper to use: it keeps the stack and walks the
+`cause` chain, which is where a bare `fetch failed` hides the actual diagnosis.
+
+Two tests hold this, and both fail the build rather than a review:
+
+| Test | What it refuses |
+|---|---|
+| `tests/unit/redactSecrets.test.js` | An env var read anywhere under `src/`, or declared in `.env.example`, that is neither on the redaction list nor recorded there as carrying no credential — plus any redacted credential with no `NAME=placeholder` line in `.env.example` (CLAUDE.md §1) |
+| `tests/unit/apiErrorLogBoundary.test.js` | Anything derived from a caught error handed to `console` from `src/app/api`, `src/lib` or `src/utils` without passing through `describeError` / `redactSecrets` |
+
+**So adding an environment variable is a two-file change.** Declare its name and
+a placeholder in `.env.example`, then classify it in `redact.js` — a credential
+goes in `SECRET_ENV_VARS`, anything else goes in the test's `NOT_A_CREDENTIAL`
+table with the reason it is safe in a log. Skipping either turns CI red, which is
+deliberate: this list had previously been derived from CLAUDE.md's summary table
+and then from `.env.example`, and both times it silently missed live credentials.
+
+</details>
+
+<details>
 <summary><strong>Performance Optimisations</strong></summary>
 <br />
 

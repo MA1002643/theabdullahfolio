@@ -21,15 +21,35 @@ import { describe, expect, it } from 'vitest';
 // whole error, redacted, cause chain kept) or `redactSecrets` (for the sites
 // that deliberately compose one compact line). A new route inherits the rule by
 // failing this test rather than by its author remembering it.
+//
+// ── The surface was a DIRECTORY, and a route is not one file ────────────────
+// Extended 2026-09-25, from `src/app/api` to the helper trees a route imports
+// from. `src/utils/workMessageAI.js` sends `OPENAI_API_KEY` as a bearer header
+// and logged `err?.message` raw — reached from `/api/work-status`, on the same
+// request, into the same log, and outside the walk that claimed to cover it.
+// That is this file's own opening paragraph a second time: the rule was applied
+// where someone looked, and "where someone looked" was `src/app/api`.
+//
+// The two trees rather than a resolved import graph: `@/lib/**` and `@/utils/**`
+// are where every local module an API route imports lives, and walking `from`
+// specifiers instead would mean a specifier this file failed to resolve silently
+// drops a file from the surface — the fail-OPEN direction, which is how the
+// scanner below has already shipped blind twice. Coverage that is slightly wider
+// than the request path costs nothing here: a browser-side console line carries
+// no server credential, and every such site in these trees logs a literal it
+// wrote itself, so none of them is asked to wrap anything.
+const SURFACE_ROOTS = ['src/app/api', 'src/lib', 'src/utils'].map((relative) =>
+  path.join(process.cwd(), relative),
+);
 
-const API_ROOT = path.join(process.cwd(), 'src/app/api');
-
-/** Every `.js` file under `src/app/api`, recursively. */
-function sourceFiles(dir = API_ROOT, found = []) {
-  for (const entry of readdirSync(dir)) {
-    const full = path.join(dir, entry);
-    if (statSync(full).isDirectory()) sourceFiles(full, found);
-    else if (full.endsWith('.js')) found.push(full);
+/** Every `.js` file under the surface roots, recursively. */
+function sourceFiles(dirs = SURFACE_ROOTS, found = []) {
+  for (const dir of [dirs].flat()) {
+    for (const entry of readdirSync(dir)) {
+      const full = path.join(dir, entry);
+      if (statSync(full).isDirectory()) sourceFiles(full, found);
+      else if (full.endsWith('.js')) found.push(full);
+    }
   }
   return found;
 }
@@ -312,6 +332,17 @@ describe('the API surface logs no error it has not redacted', () => {
     expect(files.length).toBeGreaterThanOrEqual(10);
     expect(
       files.some((file) => file.endsWith(path.join('send-mail', 'route.js'))),
+    ).toBe(true);
+    // And the extension itself, pinned: the helper a route imports, which is
+    // where the gap this walk was widened for actually was. A future narrowing
+    // of SURFACE_ROOTS fails here rather than quietly covering less.
+    expect(
+      files.some((file) => file.endsWith(path.join('utils', 'workMessageAI.js'))),
+    ).toBe(true);
+    expect(
+      files.some((file) =>
+        file.endsWith(path.join('lib', 'guestbook', 'store.js')),
+      ),
     ).toBe(true);
   });
 

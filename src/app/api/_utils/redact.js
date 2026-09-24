@@ -41,6 +41,20 @@
  * design before CI goes green. That is the part that keeps this from going stale
  * again — a list maintained by memory is the defect above, not a fix for it.
  *
+ * Except that `.env.example` is ALSO a document someone has to remember to
+ * update (corrected 2026-09-25). The sweep above was written to replace a list
+ * derived from a summary, and it derived the list from a second summary: five
+ * credentials this code reads from `process.env` had never been declared in
+ * `.env.example`, so the test that exists to turn an omission into a red build
+ * could not see them, and reported the list complete. `README.md` documented
+ * three of the five in a table, which is how they were found — by reading, which
+ * is the method this whole apparatus replaces.
+ *
+ * The sweep is now held against the CODE's own `process.env` reads as well, so
+ * the authority is what the deployment actually consults rather than what any
+ * document says it consults. A variable cannot be read anywhere under `src/`
+ * without being classified.
+ *
  * Names, not values, obviously: this file is committed.
  */
 export const SECRET_ENV_VARS = [
@@ -49,6 +63,20 @@ export const SECRET_ENV_VARS = [
   'UPSTASH_REDIS_REST_URL',
   'UPSTASH_REDIS_REST_TOKEN',
   'GITHUB_TOKEN',
+  // The SECOND GitHub PAT. `/api/work-status` sends it as the `Authorization`
+  // credential on the Projects v2 query and logs `describeError(err)` when that
+  // query fails, so it is on the exact path this module was written for — and a
+  // classic PAT with `read:project` + `public_repo` is the broader of the two
+  // tokens, not the narrower one. Missing until 2026-09-25 because it is
+  // documented in `README.md` and was never declared in `.env.example`.
+  'GITHUB_PROJECT_TOKEN',
+  // The HMAC key `/api/github-webhook` validates `X-Hub-Signature-256` against.
+  // That route logs nothing today, which makes this the one addition with no
+  // demonstrated path to a log line — and it is listed anyway: the question this
+  // list answers is "what must never appear in a log", not "what currently
+  // reaches one", and a signing key is unrecoverable from its signatures only
+  // for as long as it stays out of sinks.
+  'GITHUB_WEBHOOK_SECRET',
   'CRON_SECRET',
   'SMTP_USER',
   'SMTP_PASS',
@@ -75,6 +103,19 @@ export const SECRET_ENV_VARS = [
   'AUTH_GITHUB_SECRET',
   'AUTH_GOOGLE_ID',
   'AUTH_GOOGLE_SECRET',
+  // The two model credentials, on the two routes that call a model. `OPENAI_API_KEY`
+  // goes out as `Authorization: Bearer …` from `src/utils/workMessageAI.js`,
+  // reached from `/api/work-status`; `AI_GATEWAY_API_KEY` is the Vercel AI Gateway
+  // key `/api/refine-message` resolves. Both are provider keys whose rejections
+  // are quoted by an SDK that saw the request.
+  'OPENAI_API_KEY',
+  'AI_GATEWAY_API_KEY',
+  // The Gateway's other credential: a signed OIDC JWT the platform injects, which
+  // `/api/refine-message` falls back to when no Gateway key is set. Nobody types
+  // this one into a dashboard, which is precisely why it was easy to miss — an
+  // auto-injected bearer token is still a bearer token, and on Vercel it is the
+  // form the credential USUALLY takes.
+  'VERCEL_OIDC_TOKEN',
 ];
 
 // At or above this length a value is replaced wherever it appears. Below it,
