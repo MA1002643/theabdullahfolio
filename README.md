@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.13-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--09--05-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-2026--09--19-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -59,7 +59,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Live Skills Grid** | About-page icon grid built **entirely from a live GitHub crawl** — repo languages plus dependency manifests across 7 ecosystems — resolved to skillicons.dev / Simple Icons icons, with a per-skill "used in repositories" popover (hover / keyboard / tap), a per-device skills-change banner, and an owner-only, private-name-safe crawl |
 | **Uses / Setup** | `/uses` — an instrument panel whose claims are verified, not asserted (issue [#37](https://github.com/MA1002643/theabdullahfolio/issues/37)): six editorial plates each carrying a provenance line. A **build-time bill of materials** and spec counts read from the repository by a server-only reader (`package.json` versions, `.nvmrc`, every GitHub Actions workflow's `name:`, unit / e2e suites **and cases**, API route handlers, the `vercel.json` cron — a missing file yields nothing, never a fake zero); a **live stack** crawled from the owner's repositories with per-tool repo counts (`used in 7 public repos · +2 private`), a `● live · verified 3m ago` token that only ever appears on a real payload, and a ranked **stack ledger** (plain-English category headings and straplines, a one-sentence lay description per tool, and a sixteen-segment usage meter per card — public repositories in ember, private in amber, sized against the most-used tool; the per-repository breakdown stays on the About page, once); a **live pipeline schematic** (GitHub → Actions → Vercel build → Fluid compute, then a service bus to Upstash Redis · AI Gateway · GitHub GraphQL · Spotify · SMTP, with the daily cron dropping in) laid out from its own labels so nothing clips, labelled from the repository (one CI lane per workflow file, the Node major Vercel resolves from `engines`, the cron's Hobby firing window), drawn with `pathLength`, raked once, and then run as a loop — a commit packet rides the rail, the lanes fill, the deploy lands, requests fan out and return, the cron warms GraphQL — on a single `requestAnimationFrame` clock that only runs while the plate is on screen; a **DOM-built editor frame** in the real theme whose sanitised `settings.json` lines are exactly what the ⌘K "Copy my editor settings" action copies; an engraved hardware nameplate whose Phone row links to the footer's live-location plate it feeds; and the page's own ⌘K action set over a shared route registry. Zero new dependencies |
 | **Completed Projects Breakdown** | "Projects shipped" card with an animated per-category proportional bar (derived from the project data), a `\|`-separated count legend that wraps stacked→side-by-side responsively, count-ups that replay on every viewport entry — and the whole card is a click-to-open trigger for the **Project Progress popup**: live per-project completion percentages derived from each repo's GitHub issue board (one batched GraphQL call, 12 h multi-layer cache, ≥2 syncs/day), a portfolio-wide completion donut, category bars, expandable per-project issue pipelines (closed / in-progress / backlog) with issue-board links, a live "last sync" age, and a full dialog a11y baseline (focus trap, Escape/backdrop close, focus restoration, iOS-safe scroll lock) |
-| **Years in the Craft** | Experience figure derived live from the earliest GitHub repo **and** software roles parsed from the résumé PDF, with a Personal vs Employment split bar and a click-to-open category breakdown modal |
+| **Years in the Craft** | Experience figure derived live from the earliest GitHub repo **and** the software roles in `journeyData` — the same array `/journey` renders — combined as a **union** of overlapping periods rather than a sum, with a Personal vs Employment split bar and a click-to-open category breakdown modal. Employment used to be parsed out of the résumé PDF at runtime; it is not, and the CV is checked against `journeyData` at test time instead (`tests/unit/cvJourneyConsistency.test.js`), so the document cannot drift from the site without CI saying so |
 | **Current Streak** | Server-accurate streak from the GitHub contribution calendar (future-day-padding aware, "Present"-stable across midnight), shown in a git-commit-node progress ring with a staggered card entrance and a per-device change banner that fires only on real movement |
 | **Elite Contact Form** | Molten submit-CTA state machine (idle → sending → sent/held), a sliced-letter magnetic "SEND MESSAGE!" label, fire-gradient fields, a streaming AI **"Refine my message"** rewrite, an offline send queue with auto-retry, draft autosave/restore, and an idempotent Nodemailer + Upstash-Redis send path |
 | **Route-wide Colophon** | An editorial footer on every sub-page — a "Wet Ink" signature identity block, a split-flap *departures board* route index, a live-terminal links column, a **live-location** plate (real town + local time, coordinates never exposed), a self-drawing git-graph "view this project" CTA, and a giant guitar-string wordmark that plays an original melody as you strum it |
@@ -121,6 +121,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
 | [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
 | [tz-lookup](https://github.com/darkskyapp/tz-lookup) | `^6.1` | Offline coordinates→IANA-timezone lookup for the footer's live-location clock |
+| [marked](https://marked.js.org/) | `^16.4` | Markdown → HTML for the `/notes` decision records, at build time only — never in a client bundle |
 | [@vercel/analytics](https://vercel.com/analytics) | `^2.0` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | `^2.0` | Core Web Vitals tracking |
 <!-- STACK-DATA:END -->
@@ -237,7 +238,7 @@ theabdullahfolio/
 ├── public/                     # Static assets — logo, backgrounds, résumé PDF
 ├── src/
 │   ├── app/                    # App Router — pages, layouts, API routes
-│   │   ├── (sub pages)/        # /about · /projects · /projects/[id] · /qualifications · /contact · /journey · /uses · /guestbook · /my-past
+│   │   ├── (sub pages)/        # /about · /cv · /projects · /projects/[id] · /qualifications · /contact · /journey · /uses · /notes · /notes/[slug] · /guestbook · /my-past
 │   │   ├── api/                # 18 route handlers (see API surface below)
 │   │   ├── data.js             # Central project + navigation data store
 │   │   └── globals.css         # Theme tokens · keyframes · glow utilities
@@ -284,15 +285,17 @@ theabdullahfolio/
 | `/api/location` | Live-location signal for the footer — `POST` ingests a GPS fix (dual-token auth), `GET` returns `{ town, tz, live }` only (never coordinates) |
 | `/api/spotify` | Now Playing data for the floating widget — server-side refresh-token exchange → display-only fields (never a token); edge-cached, fails soft to `{ isPlaying: false }`. A cached access token that Spotify rejects (`401`) is refreshed and the read replayed once, so a token revoked mid-life can't wedge the widget until its KV entry expires; upstream failures are logged with the endpoint and status behind the `502` |
 | `/api/spotify/auth` | **Dev-only**, loopback-gated one-time helper that mints the Spotify refresh token — hard-`404`s in production/preview |
-| `/api/experience-summary` | Résumé-PDF parse → years-in-the-craft + Personal/Employment split |
+| `/api/experience-summary` | GitHub repos + `journeyData` → years-in-the-craft + Personal/Employment split |
 | `/api/work-status` | Live maintenance-header state (repo activity + Projects v2 board) |
-| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]`, `/journey`, `/uses` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead. The 404 deliberately declares neither — metadata merges shallowly, so any `openGraph` block of its own would replace the root layout's and drop this pair, and inheriting it whole is what lets a dead link still unfurl as the brand card |
+| `/og/home` · `/og/home-square` | The homepage's share card, rendered on demand ([#88](https://github.com/MA1002643/theabdullahfolio/issues/88)) — live signals (build focus, contributions, town) typeset into a dark ember card; CDN-cached 1 h + SWR, fails soft to the pure identity composition. Sections, `/projects/[id]`, `/notes/[slug]`, `/journey`, `/uses` and `/my-past` ship build-time cards via `opengraph-image.js` file conventions instead — each dynamic route's pair restates `generateStaticParams` **and** `dynamicParams = false`, since a metadata image route is composed independently of its `page.js` and inherits neither. The 404 deliberately declares neither — metadata merges shallowly, so any `openGraph` block of its own would replace the root layout's and drop this pair, and inheriting it whole is what lets a dead link still unfurl as the brand card |
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
 | `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
 | `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway (contact + guestbook editorial modes) |
 | `/api/guestbook` | Guestbook wall — `GET` serves one cursor-paged, newest-first page (`?limit=` ≤ 50, `?cursor=`) plus the wall's separately-counted total; `POST` / `DELETE` are session-gated, identity from the OAuth session only (`/reactions`, `/presence` alongside); a message `id` not shaped like a minted one (`src/lib/guestbook/messageId.js`) is a `400` on `DELETE` and `/reactions` before any rate-limit or storage work |
 | `/api/auth/[...nextauth]` | Auth.js OAuth route (GitHub · Google) that signs a visitor in for the guestbook — `GET` / `POST` handlers from `next-auth` |
 | `/api/daily-warmup` · `/api/repo-refresh` | Cron orchestrator + cache warmer (bearer-authenticated) |
+| `/api/seo-report` | Search Console feedback loop ([#32](https://github.com/MA1002643/theabdullahfolio/issues/32)) — pulls Search Analytics, stores a rolling 90-day snapshot in Upstash, and derives new queries, positions that dropped > 3, and pages earning impressions at CTR < 1%. Bearer-authenticated with the same `CRON_SECRET`, and invoked as a **third step in `/api/daily-warmup`'s fan-out** rather than a second `vercel.json` cron entry (Hobby caps cron count, so a standalone entry would silently never run). Signs its service-account JWT with `node:crypto` — no `googleapis` dependency. Answers `503` with a `skipped` reason when `GSC_SERVICE_ACCOUNT_KEY` is unset — the one answer `daily-warmup` does not count as a failed run, marking the step `notConfigured`. A credential that is **set but unusable** (undecodable, or decoding to an object without `client_email`/`private_key`) is not that answer: it is a `500` with an `error`, and fails the run. Neither is **missing Upstash storage** once the credential is configured — that guard runs after the credential checks, so reaching it means the integration is switched on, and one that cannot store a snapshot is broken rather than dormant (`500` + `error`, logged). Every finding is derived by comparing today against the *stored* previous run, so without storage the loop never starts at all. Once the credential is valid, a failure (expired key, revoked property, API or Upstash outage) answers 502 and **does** fail the run, so a report that stops arriving is surfaced to cron monitoring |
+| `/robots.txt` · `/sitemap.xml` · `/manifest.webmanifest` · `/llms.txt` | Generated crawl surface ([#32](https://github.com/MA1002643/theabdullahfolio/issues/32)) — all four read the route registry in `src/lib/seo/site.js`, so adding a page updates them by construction. The sitemap declares 24 URLs — 11 section routes, 11 project pages, the `/notes` decision record and the CV PDF — with `lastModified` from real git commit dates, never `new Date()`. `robots.txt` carries explicit AI-crawler stanzas; `llms.txt` is a curated brief for assistants |
 
 ---
 
@@ -398,7 +401,114 @@ RECEIVER_EMAIL=recipient@example.com
 # id>, never a username — allowed to DELETE any message.
 # GUESTBOOK_DRIVER=redis
 # GUESTBOOK_ADMIN=github:your-numeric-github-user-id
+
+# Discoverability (issue #32) — see docs/seo.md for the full rationale
+# Canonical origin override. Only for a fork, or a preview that should carry
+# self-referential canonicals. Deliberately NOT wired to VERCEL_URL.
+# NEXT_PUBLIC_SITE_ORIGIN=https://ma.codes
+# Search Console ownership token. Unset = the verification meta tag is omitted.
+GOOGLE_SITE_VERIFICATION=your-search-console-verification-token
+# REAL SECRET — value in Vercel only. Service-account JSON key for the Search
+# Console API, BASE64-ENCODED (`base64 -i key.json`): the raw key contains
+# newlines inside private_key that env-var UIs mangle. Unset is supported —
+# /api/seo-report answers 503 and daily-warmup does not fail the run.
+GSC_SERVICE_ACCOUNT_KEY=your-base64-encoded-service-account-json
+# Only if the GSC property is URL-prefix rather than Domain (the default).
+# GSC_SITE_URL=https://ma.codes/
+# NOT YET USED — GA4 is blocked on the consent gating in #141.
+# NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
+
+### Discoverability (`robots` · `sitemap` · schema · `llms.txt`)
+
+Issue [#32](https://github.com/MA1002643/theabdullahfolio/issues/32). Everything
+crawl-related is **generated from one registry** —
+[`src/lib/seo/site.js`](src/lib/seo/site.js). Its **route list** is read by
+`sitemap.js`, `llms.txt`, the canonical builder and the JSON-LD builders, so a
+route can only be missing from one of them if it is missing from all, and
+`tests/unit/sitemapDrift.test.js` **fails CI** when a `page.js` exists on disk
+with no registry entry. Adding a page updates the sitemap by construction.
+
+`robots.js` and `manifest.js` read the registry too, but for its **identity and
+policy exports rather than its routes** — `ORIGIN`, `IDENTITY`,
+`DISALLOWED_PATHS`, `AI_CRAWLERS` — and neither output enumerates pages at all
+(the manifest is a name, an icon set and a start URL; robots.txt is a set of
+path rules plus the sitemap link). They are one source of truth for the site's
+identity, not for its page list: adding a page changes neither file, and the
+drift test makes no claim about them.
+
+What it covers:
+
+- **Canonicals** on all 12 routes, every project page and every note, through
+  `sectionMetadata()` — one change, because Next merges metadata shallowly and a
+  page declaring its own `alternates` would replace the root's wholesale.
+- **`www` → apex 308** in `next.config.mjs`, not the Vercel dashboard: a config
+  redirect is reviewable in a diff, testable, and survives a fork.
+- **A connected entity graph**, not per-page blobs. Stable `@id`s
+  (`/#person`, `/#website`, `/projects/{id}#project`) cross-reference each other,
+  so "who wrote culina" and "who owns ma.codes" resolve to the *same* node —
+  verified at 22 nodes with zero dangling references. The serialiser escapes
+  `<`/`>`/`&` as `\uXXXX` (lossless, unlike HTML entities) because the guestbook
+  puts user-authored content on this origin.
+- **Answer-engine readiness.** The homepage server-rendered **10 words and zero
+  internal links** — to a crawler that does not run JavaScript the site was a
+  name, a job title and the string `0 %`. It now renders **106 words and 8
+  links**, with an explicit AI-crawler policy and a curated `/llms.txt`.
+- **`lastModified` from real git commit dates**, never `new Date()`; the field is
+  *omitted* where git cannot answer rather than fabricated. Each route watches its
+  own files *plus* two shared crawl surfaces, so a commit that changes what a
+  crawler reads always moves the date that invites it back to read it:
+  `SHARED_ROUTE_SOURCES` (the **root layout**, the registry, and the canonical +
+  JSON-LD builders — what every URL publishes) and `SUB_PAGE_SHARED_SOURCES` (the `(sub pages)`
+  group layout, its footer and nav links, and `sectionMetadata()` — the nineteen
+  non-home URLs only, since `/` renders none of it). The split is what keeps a
+  footer edit from re-stamping the homepage. Three inputs stay deliberately
+  *narrow* rather than shared, because the set of URLs publishing each is
+  neither of those two: the shared `PageTitle` headline (the eight section
+  routes — not `/`, not the project pages), the number-word table behind the two
+  counted sentences, and `footer-data.js`, which the homepage states as the
+  Person's `sameAs` while rendering no footer at all.
+
+- **An HTML CV at `/cv`**, derived from the same `journeyData` the timeline
+  renders, with the PDF one click away rather than forced as a download. A PDF
+  carries no JSON-LD, links nowhere, and is a fixed-width page on a phone — the
+  three things that matter most on the one document most likely to be shared.
+  It states no computed tenure (a statically-rendered figure would freeze at
+  build time) and makes no single-employer claim (`worksFor` takes one
+  organisation; the current state is two concurrent roles).
+- **The decision records themselves, at `/notes`.** `docs/*.md` is read at
+  build, rendered with `marked` and prerendered — the parser never reaches a
+  client bundle. Until this, the reasoning behind every choice on this site
+  lived only in the Git tree, which is this project's own failure mode applied
+  to its own documentation. The index's entrance is the one client-side piece,
+  and it hands the boundary **only the five display fields** — never the
+  document body, which would otherwise be serialised into the HTML of the page
+  that merely links to it.
+- **A GA4 component under Consent Mode v2, written but not mounted.** The
+  defaults deny all four consent signals, so the tag writes no cookie and
+  stores no identifier — but nothing renders it, because
+  [#141](https://github.com/MA1002643/theabdullahfolio/issues/141) requires that
+  a visitor who has not decided issues no analytics request at all, and a
+  cookieless ping is still a request. The CSP allowance, the event map and the
+  tests ship with it, so switching it on is a mount inside that issue's consent
+  boundary. The trade, when it is switched on, is stated rather than hidden: no
+  stable identifier, so *users* is modelled rather than counted, and Vercel
+  Analytics — which counts visits — will disagree with it permanently.
+- **Lighthouse budgets in CI**, measured before they were enforced.
+  Accessibility, best practices and SEO are asserted at **100 and fail the
+  build**; performance is collected and warned until CI has its own history.
+  Measuring first found three real defects — an `aria-label` on `<span>`/`<p>`
+  that capped accessibility at 96 site-wide, three background textures that
+  have never existed in this repository, and Vercel's telemetry scripts 404ing
+  on every off-platform build. CI then found a fourth the local run had missed:
+  a scroll reveal that fades text up from `opacity: 0` leaves whichever element
+  straddles the viewport's bottom edge unreadable *while it is on screen*, so
+  every keyframe that moves text now starts at a measured 0.7 floor
+  (`docs/seo.md` §15).
+
+Full decision record, the measured baseline, and the runbook:
+**[`docs/seo.md`](docs/seo.md)** — also readable at
+[`/notes/discoverability`](https://ma.codes/notes/discoverability).
 
 ### Guestbook (`/guestbook`)
 
@@ -413,7 +523,7 @@ An interactive neon message wall (issue #40): visitors sign in with **GitHub or 
 
 **Reading the wall** — `GET /api/guestbook` is cursor-paged: it returns one newest-first page (`?limit=`, default 8, hard-capped at 50), the wall's total `count` (an O(1) `ZCARD`, read separately so nothing has to load the wall to size it) and an opaque `nextCursor` (`null` on the last page; a *malformed* cursor is a `400` — cursors are validated for **shape only**, not authenticated: a cursor is an unsigned position into public data, so a hand-built one reaches nothing that paging would not, and no secret is needed to mint or verify one). Reactions are fetched for the page's ids only. Every write answers with `count` as well — `POST` 201 is the public message plus the wall's size read just after the store, `DELETE` 200 is `{ ok, count }` — so the client settles its total from the write itself instead of guessing whether a page fetched in flight already included the change (a newest page would list a new mark; an older page can only count it). A cursor is the *position* of a page's last message (`createdAt` ms + id, the order a Redis ZSET walks in `REV` mode — ties broken by id, so a same-millisecond pair of posts is never skipped at a page edge), not an offset, so it stays exact as new marks land and old ones are deleted — and when a delete lands between the index read and the row fetch, the read scans on through the index (from the deleted id's own position, by score) rather than reporting a false end, so a short page always means the wall is exhausted. The client holds a newest-first *prefix* of the wall, never the whole thing: the first fetch is two leaves, each page flip extends the prefix (plus one leaf ahead, so *next* is instant), the 30-second live poll re-reads the newest page and merges it — reading on down, page by page, when more than a page has landed since the last poll, until the new pages reach the prefix (bounded at five), and past that bound restarting the prefix from the top with the contiguous run it fetched, so a burst can never leave a hole the continuation cursor would skip forever (arrivals glow, a card deleted elsewhere leaves, reaction counts refresh), and a `#msg_…` deep link walks older pages until its mark appears (bounded at ten requests) — only for a fragment shaped like a minted id (`msg_<epoch ms>_<8 hex>`, `src/lib/guestbook/messageId.js`, which the API mints from and the link validates against), so the page's own anchors such as `#guestbook` never start that walk. The page rail always shows the whole wall from the server's count, loaded or not — and is itself a constant five DOM nodes at any count, its graduations a repeated CSS tile that thins to every k-th page past 28 gaps — so payload, Redis commands, polling cost and the control's own DOM are flat in the wall's size (`src/lib/guestbook/paging.js`, `cursor.js`, `src/hooks/useGuestbookMessages.js`).
 
-**Tests** — `npm test` (vitest: timeAgo, the signature-path grammar, the signature field's keyboard-operable preset marks, the rate limiter, the driver contract including paging, the paging order + cursor codec + poll merge, and the paged `GET` route driven end-to-end over the json driver) and `npm run test:e2e` (Playwright smoke: read-only view renders, sign-in CTA visible, unauthenticated POST → 401, and — against a stubbed list route that honours `limit`/`cursor` — the page-at-a-time fetch and the deep-link walk; builds first — the config boots a production server on port 3100 with the Redis credential variables explicitly emptied so no heartbeat or limiter write can reach the live store and an `AUTH_SECRET` minted fresh per run — random bytes at config load, never a committed value; the specs stub the session endpoint and never sign in, so only its presence matters — with the json file store unlocked for that disposable server through the e2e-only `GUESTBOOK_ALLOW_JSON_IN_PRODUCTION=e2e-non-durable` hatch (a served production refuses the file store without it), and refuses to adopt a server already on that port unless `E2E_REUSE_SERVER=1` is set, the opt-in for iterating on specs against one you started yourself with the same env). Both suites gate every push and pull request in CI (`.github/workflows/ci.yml`: lint → unit → build → Playwright against the job's own build output, with Chromium installed in the job and the HTML report uploaded as an artifact on failure).
+**Tests** — `npm test` (vitest: timeAgo, the signature-path grammar, the signature field's keyboard-operable preset marks, the rate limiter, the driver contract including paging, the paging order + cursor codec + poll merge, and the paged `GET` route driven end-to-end over the json driver) and `npm run test:e2e` (Playwright smoke: read-only view renders, sign-in CTA visible, unauthenticated POST → 401, and — against a stubbed list route that honours `limit`/`cursor` — the page-at-a-time fetch and the deep-link walk; builds first — the config boots a production server on port 3100 with the Redis credential variables explicitly emptied so no heartbeat or limiter write can reach the live store and an `AUTH_SECRET` minted fresh per run — random bytes at config load, never a committed value; the specs stub the session endpoint and never sign in, so only its presence matters — with the json file store unlocked for that disposable server through the e2e-only `GUESTBOOK_ALLOW_JSON_IN_PRODUCTION=e2e-non-durable` hatch (a served production refuses the file store without it), and refuses to adopt a server already on that port unless `E2E_REUSE_SERVER=1` is set, the opt-in for iterating on specs against one you started yourself with the same env). **No test credential is a committed value on either side**: alongside that per-run `AUTH_SECRET`, every unit suite needing one mints it from `tests/helpers/secrets.js` — `freshCronSecret()` for the cron-protected routes' `CRON_SECRET`, `freshSecret()` for the redis driver's `KV_REST_API_TOKEN` — each returning fresh random bytes per suite, safe as a *distinct* value per suite because vitest runs each test file in its own forked process, so no suite can clobber another's `process.env`. Non-secret placeholders stay pinned and readable (`KV_REST_API_URL` is `https://unit-test.invalid`, unresolvable by RFC 2606). Both suites gate every push and pull request in CI (`.github/workflows/ci.yml`: lint → unit → build → Playwright against the job's own build output, with Chromium installed in the job and the HTML report uploaded as an artifact on failure).
 
 ### GitHub Stats Integration
 
@@ -447,7 +557,7 @@ python3 -m json.tool /tmp/fallback.json > src/data/github-stats-fallback.json
 rm /tmp/fallback.json
 ```
 
-**Invalidation & cron** — both cache layers expire on their own; force a refresh via `revalidateTag("github-stats")` / `revalidateTag("most-active-repo")`, a redeploy, or the daily `/api/daily-warmup` cron (`vercel.json`, `0 1 * * *` UTC) — a thin orchestrator that calls `/api/repo-refresh` and `/api/work-status?bust=1`. Consolidated into one cron because Hobby plans cap cron count; both stay individually invokable. All warm-up routes authenticate against `Authorization: Bearer ${CRON_SECRET}` (Vercel attaches it automatically), and the optional server-only `BASE_URL` overrides the warm-up fetch target.
+**Invalidation & cron** — both cache layers expire on their own; force a refresh via `revalidateTag("github-stats")` / `revalidateTag("most-active-repo")`, a redeploy, or the daily `/api/daily-warmup` cron (`vercel.json`, `0 1 * * *` UTC) — a thin orchestrator that calls `/api/repo-refresh`, `/api/work-status?bust=1` and `/api/seo-report`. Consolidated into one cron because Hobby plans cap cron count; all three stay individually invokable. The three run **concurrently under one shared deadline** (`CRON_RUN_BUDGET_MS`, default 45 s): their own budgets sum to roughly the platform function limit, so awaiting them in series risked the run being killed before it could report what it had collected — and since this is the site's only cron, a killed run reports nothing at all. All warm-up routes authenticate against `Authorization: Bearer ${CRON_SECRET}` (Vercel attaches it automatically), and the optional server-only `BASE_URL` overrides the warm-up fetch target.
 
 **Live diffing & change banners** — on each 10-min poll, `statsDiff.js` / `streakDiff.js` / `skillsDiff.js` / `languageDiff.js` compare snapshots and, on real movement, surface a signed-delta banner (e.g. `Total Stars +5 | Total Commits +50`) that auto-hides (~4.5s) and is gated on viewport visibility. Messages reconcile every poll so a non-stat change never replays a stale delta. All fingerprints are computed **client-side** so they keep working on fallback data and can't drift from the server. A **"Live GitHub Metrics"** / **"· live from GitHub"** label appears only when data is genuinely live, hiding on fallback/stale data.
 
@@ -556,6 +666,36 @@ upgrade-insecure-requests   # production only — real WebKit honours it even on
 </details>
 
 <details>
+<summary><strong>Credentials are stripped from server logs</strong> — and adding one is gated by CI</summary>
+<br />
+
+Library errors quote the configuration they were handed: `@upstash/redis` names
+the REST endpoint it could not reach, undici reports a DNS failure as
+`getaddrinfo ENOTFOUND <host>`, and a provider SDK can echo the request it
+rejected — bearer header included. A log is a sink that persists, can be
+forwarded to a drain, and is readable by anyone with project access, so
+`src/app/api/_utils/redact.js` replaces every configured credential **value**
+with the **name** of its variable (`[KV_REST_API_URL]`) on its way to `console`.
+`describeError(err)` is the wrapper to use: it keeps the stack and walks the
+`cause` chain, which is where a bare `fetch failed` hides the actual diagnosis.
+
+Two tests hold this, and both fail the build rather than a review:
+
+| Test | What it refuses |
+|---|---|
+| `tests/unit/redactSecrets.test.js` | An env var read anywhere under `src/`, or declared in `.env.example`, that is neither on the redaction list nor recorded there as carrying no credential — plus any redacted credential with no `NAME=placeholder` line in `.env.example` (CLAUDE.md §1) |
+| `tests/unit/apiErrorLogBoundary.test.js` | Anything derived from a caught error handed to `console` from `src/app/api`, `src/lib` or `src/utils` without passing through `describeError` / `redactSecrets` |
+
+**So adding an environment variable is a two-file change.** Declare its name and
+a placeholder in `.env.example`, then classify it in `redact.js` — a credential
+goes in `SECRET_ENV_VARS`, anything else goes in the test's `NOT_A_CREDENTIAL`
+table with the reason it is safe in a log. Skipping either turns CI red, which is
+deliberate: this list had previously been derived from CLAUDE.md's summary table
+and then from `.env.example`, and both times it silently missed live credentials.
+
+</details>
+
+<details>
 <summary><strong>Performance Optimisations</strong></summary>
 <br />
 
@@ -564,7 +704,7 @@ upgrade-insecure-requests   # production only — real WebKit honours it even on
 | **Image pipeline** | Sharp — automatic WebP / AVIF conversion |
 | **Font loading** | `next/font` self-hosted Inter (body) + Varela Round + Montserrat (loader emblem), zero layout shift |
 | **Code splitting** | Route-based automatic splitting; Three.js loads on `/projects/[id]`, and lazily via client-only `next/dynamic` for the Contact / About aurora so it never enters the critical bundle |
-| **API caching** | `/api/github-stats` wrapped in two `unstable_cache` layers — 24-hr for the most-active-repo selection, 10-min for the display-data refresh; both invalidated by tag on demand via the daily `/api/repo-refresh` cron. CDN response is also `s-maxage=10min` / `stale-while-revalidate=5min` / `stale-if-error=24hr`, with a bundled JSON snapshot served on total upstream failure. `/api/github-skills` adds its own 10-min `unstable_cache` (key `github-skills-v3`) behind the same CDN policy, with a budget-bounded crawl that retains partial results under a shared wall-clock deadline |
+| **API caching** | `/api/github-stats` wrapped in two `unstable_cache` layers — 24-hr for the most-active-repo selection, 10-min for the display-data refresh; both invalidated by tag on demand via the daily `/api/repo-refresh` cron. CDN response is also `s-maxage=10min` / `stale-while-revalidate=5min` / `stale-if-error=24hr`, with a bundled JSON snapshot served on total upstream failure. `/api/github-skills` adds its own 10-min `unstable_cache` (key `github-skills-v3`) behind the same CDN policy, with a budget-bounded crawl that retains partial results under a shared wall-clock deadline. `/api/experience-summary` caches a **complete** answer for 10 min and gives a **degraded** one (GitHub failed, or pagination stopped short) a **60-second** cadence, through a second `unstable_cache` entry keyed by the degraded payload it replaces — so an outage recovers within a minute instead of being held for the full window, while every request inside that minute shares one GitHub fan-out. That entry is held for the *primary's* window, not the retry's: a recovery has to outlive the partial that is still being served, or it is re-fetched every minute for the rest of it. Further attempts come from the key instead — a replacement that is itself an expired partial is what the next one replaces — bounded at **3** per degraded payload, because a rate limit is the likeliest cause of a partial and the one failure a retry loop deepens. Response headers already kept a partial answer `no-store`; this is what bounds the *server-side* hold `Cache-Control` cannot reach |
 | **Analytics** | Vercel Speed Insights + Web Analytics for real-user Core Web Vitals |
 
 </details>
@@ -680,19 +820,29 @@ Or connect the GitHub repository to [vercel.com](https://vercel.com) for automat
 
 > **Required:** Set all environment variables in the Vercel dashboard under **Settings → Environment Variables** before your first production deploy.
 
-### Function bundling notes — `/api/experience-summary`
+### `/api/experience-summary` — where employment comes from
 
-The Experience Summary route parses the résumé PDF (`public/Muhammad_Abdullah_CV.pdf`) with `pdf-parse` / `pdfjs-dist`. It runs fine locally, but three Vercel-specific bundling gotchas must stay handled — otherwise the deployed function silently returns `employment: null` and the Years-in-the-Craft / Career Snapshot panels render `0+ months`.
+Employment is derived from **`journeyData`** (`src/app/data.js`), the same array `/journey` renders, via `src/utils/experience/journeyEmployment.js`. One source feeds both pages, so they cannot state different histories for the same job.
+
+The headline is a **union of the role intervals, not a sum**: the roles overlap (Lidl GB spans SEP 2021 – APR 2025, straddling the Unisys placement), and adding durations would claim more months of employment than have actually elapsed. Per-role durations are still reported for the breakdown modal's bars, which is why those bars can total more than the headline — that is what concurrent employment looks like, not an arithmetic error. Months are exclusive of the end month (`monthsBetween`), matching the personal-projects span drawn beside it; `/journey`'s per-card tenure readout uses the **inclusive** count instead, because that is the convention a CV prints.
+
+The union bounds the figure by elapsed time only for spans that have actually happened, so **both ends are closed on the clock**: an entry starting in the future is skipped entirely, and a finite end past today is capped to today — the same treatment an open-ended role (`end: null`) already got. The role row still shows its declared end while `months` counts only what has elapsed. Without this, adding one signed-but-not-started contract to `journeyData` took the headline from 90 months to 114 against 90 months of elapsed time, with nothing to object to: a forward-dated range is perfectly well-formed.
 
 <details>
-<summary><strong>The three bundling gotchas &amp; how they're solved</strong></summary>
+<summary><strong>It used to parse the CV PDF at runtime — why that ended, and what to restore if it returns</strong></summary>
 <br />
 
-1. **Static asset under `public/`** — Vercel ships `public/` to the static layer, *not* the function filesystem. `next.config.mjs` lists the PDF in `experimental.outputFileTracingIncludes["/api/experience-summary"]` so `@vercel/nft` copies it into the bundle; the route reads it via `process.cwd()`-relative `fs.readFile`.
-2. **`pdfjs-dist` fake worker** — `pdfjs-dist` dynamically imports its worker bundle at runtime, which `@vercel/nft` can't statically trace (→ `Cannot find module …/pdf.worker.mjs`). `pdf-parse` v2 loads the **legacy** build, so `outputFileTracingIncludes` also traces `pdfjs-dist/legacy/build/pdf.worker.mjs` + `.min.mjs`.
-3. **Pure-JS `DOMMatrix` polyfill** — `pdfjs-dist` would otherwise `require("@napi-rs/canvas")`, whose native `.node` binary can't be traced (→ "DOMMatrix is not defined"). Instead the parser installs a **pure-JS `DOMMatrix`** on `globalThis` before `pdfjs` loads (`src/utils/experience/domMatrixPolyfill.js`); the canvas require then fails as a harmless warning. `pdf-parse` is marked in `serverComponentsExternalPackages` so Next leaves it as a runtime `require` rather than mangling its ESM globals.
+The route read `public/Muhammad_Abdullah_CV.pdf` with `pdf-parse` / `pdfjs-dist` on every cache miss. It was replaced because the CV and `journeyData` are separate documents that drifted (Unisys read APR–JUL on one and MAY–SEP on the other), so `/about` and `/journey` disagreed with nothing to catch it — and because the CV lists only the software roles, making the figure mean "employment as presented on a CV" while sitting beside a broader total.
 
-**Health check** — a healthy deploy returns `employment: { months, display, roles }` with `pdfStatus: null`. `pdfStatus: { message: "DOMMatrix is not defined" }` means the polyfill isn't installing before `pdfjs`; `Cannot find module …/pdf.worker.mjs` means the traced worker path drifted with a `pdfjs-dist` bump — extend `outputFileTracingIncludes` and redeploy.
+Three Vercel-specific bundling gotchas were solved for that path. All were removed with it; restore them **together** if a runtime parse ever comes back, because each cost a production-only failure to find:
+
+1. **Static asset under `public/`** — Vercel ships `public/` to the static layer, *not* the function filesystem, so `fs.readFile` worked locally and failed on Vercel. Fixed by listing the PDF in `experimental.outputFileTracingIncludes["/api/experience-summary"]`.
+2. **`pdfjs-dist` fake worker** — `pdfjs-dist` dynamically imports its worker bundle at runtime, which `@vercel/nft` can't statically trace (→ `Cannot find module …/pdf.worker.mjs`). `pdf-parse` v2 loads the **legacy** build, so the trace list also needed `pdfjs-dist/legacy/build/pdf.worker.mjs` + `.min.mjs`.
+3. **Pure-JS `DOMMatrix` polyfill** — `pdfjs-dist` would otherwise `require("@napi-rs/canvas")`, whose native `.node` binary can't be traced (→ "DOMMatrix is not defined"). The parser installs a pure-JS `DOMMatrix` on `globalThis` before `pdfjs` loads (`src/utils/experience/domMatrixPolyfill.js`). `pdf-parse` was also marked in `serverComponentsExternalPackages` so Next left it as a runtime `require` rather than mangling its ESM globals.
+
+The parser and the polyfill still exist and are still exercised by the test suite: `tests/unit/pdfExperienceFixture.test.js` pins what the binary contains, and `tests/unit/cvJourneyConsistency.test.js` compares those contents against `journeyData` and fails on any disagreement that is not written down — which is what keeps the published CV and the site in step now that the site no longer reads it.
+
+Because those two fixtures are its only remaining importers, **`pdf-parse` is a `devDependency`** (moved 2026-09-17). Deleting the `experimental` block in `next.config.mjs` stopped the PDF and two pdfjs worker builds being traced into the function bundle, but the package itself stayed in `dependencies`, so every production install still fetched it and `pdfjs-dist` regardless. `npm ci --omit=dev` now leaves that whole subtree out — 25 packages marked `dev` in the lockfile — and `/uses` is unaffected: its bill of materials classifies by package name and counts dependencies and devDependencies together.
 
 </details>
 

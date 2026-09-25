@@ -25,6 +25,14 @@ export const dynamic = 'force-dynamic';
 // appended both and clients were served the immutable year alongside
 // this. Matching Next's casing is what makes the override take.
 const CACHE = 'public, s-maxage=3600, stale-while-revalidate=86400';
+// Fetchable, but not listable. `/og/` used to sit in `DISALLOWED_PATHS`, which
+// told the very unfurlers this card is FOR — they read robots.txt before
+// fetching — not to fetch the image the root layout had just advertised in
+// `openGraph.images`. The intent behind that rule (a share card is not a useful
+// image-search entrance) is a noindex concern rather than a disallow one:
+// disallow prevents the fetch, noindex prevents the listing. This is the half
+// that was actually wanted. Lowercase key for the same reason as `CACHE` above.
+const ROBOTS = 'noindex';
 
 export async function GET() {
   // fetchLiveSignals is internally fail-soft; the belt-and-braces catch
@@ -41,6 +49,6 @@ export async function GET() {
     width: 1200,
     height: 630,
     fonts: await ogFonts(),
-    headers: { 'cache-control': CACHE },
+    headers: { 'cache-control': CACHE, 'x-robots-tag': ROBOTS },
   });
 }

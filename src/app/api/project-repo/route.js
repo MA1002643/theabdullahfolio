@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { envPositiveMs } from "../_utils/env";
+import { describeError } from "../_utils/redact";
 
 // Live metadata for the ONE repository this site is built from — the footer's
 // "View this project on GitHub" CTA renders a tiny git graph and an honest
@@ -127,7 +128,10 @@ export async function GET() {
     const data = await getCachedProjectRepo();
     return NextResponse.json(data, { headers: CACHE_HEADERS });
   } catch (error) {
-    console.error("project-repo fetch failed, serving fallback:", error);
+    console.error(
+      "project-repo fetch failed, serving fallback:",
+      describeError(error),
+    );
     return NextResponse.json(FALLBACK, {
       headers: { ...CACHE_HEADERS, "X-Cache-Status": "FALLBACK" },
     });

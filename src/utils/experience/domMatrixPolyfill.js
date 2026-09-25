@@ -23,6 +23,15 @@
 // with the native binary, and never touches `ImageData`/`Path2D` (those are
 // only needed for actual rendering, which text extraction doesn't do).
 //
+// WHERE THIS RUNS, since the failure above was a production one and no longer
+// can be: the parser that needs this polyfill is no longer on any request path.
+// /api/experience-summary derives employment from `journeyData` (see
+// ./journeyEmployment.js), and `parseExperienceFromPdf` is called only by
+// tests/unit/pdfExperienceFixture.test.js and tests/unit/cvJourneyConsistency.test.js.
+// This file therefore serves the test suite, which is not a reason to delete it:
+// those two tests are what keep the indexed CV PDF and the site's HTML record in
+// step, and they cannot read the binary without it.
+//
 // Only the 2D affine surface pdfjs's text path composes is implemented:
 // construction from a [a,b,c,d,e,f] array / matrix-like object / nothing,
 // plus multiplySelf, preMultiplySelf, translate, scale, and invertSelf.

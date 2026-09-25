@@ -177,23 +177,93 @@ function pickContent(payload) {
   return rest;
 }
 
+// Schema stamp on the stored entry, and the reason this starts at 2.
+//
+// `storageKey` has never changed, so a returning visitor's browser still holds
+// whatever the PREVIOUS writer put there — and that writer stored every
+// successful response, including the degraded ones. It predates `partial`
+// entirely: the route it talked to answered a GitHub failure with
+// `personalProjects: null` and no flag of any kind, so such an entry is
+// indistinguishable on disk from a genuine "owns nothing yet" baseline.
+//
+// Read as a baseline it is not merely stale, it is actively wrong. The next
+// COMPLETE response diffs against a zeroed personal side, so `buildChangeMessage`
+// announces "N new repositories detected on GitHub", `changedExperienceCategories`
+// pulses Personal, and `addedExperienceItems` lights EVERY repo row in the
+// breakdown modal as just-added — for a visitor whose repos did not change. The
+// same entry hydrates the instant paint, so the visit opens on a zeroed years
+// card before the network answers. Recovery is not growth, which is the rule the
+// partial branch in `fetchOnce` already enforces for the live path; storage is
+// the other way the same false claim gets made, one visit later.
+//
+// So an unstamped entry is not read. The cost is one visit's instant paint and
+// one diff — no baseline means no message, by design — against announcing a
+// change that never happened. Bump this whenever a previously written entry
+// stops being trustworthy for a new reason.
+const STORED_SCHEMA = 2;
+
+/**
+ * Drop a stored entry this version has decided not to trust.
+ *
+ * Deleted rather than skipped, so it cannot resurface on the next poll or
+ * outlive the reason it was rejected — the same rule `useProjectProgress`
+ * applies to a version-mismatched snapshot.
+ */
+function discardStoredPayload(username) {
+  try {
+    window.localStorage.removeItem(storageKey(username));
+  } catch {
+    // Storage access blocked — there is nothing to clean up in a store we
+    // cannot reach, and the read that called this already returned null.
+  }
+}
+
 function readStoredPayload(username) {
   if (typeof window === "undefined") return null;
+  let entry;
   try {
     const raw = window.localStorage.getItem(storageKey(username));
     if (!raw) return null;
-    return JSON.parse(raw);
+    entry = JSON.parse(raw);
   } catch {
     // Corrupt entry or storage access blocked — treat as no prior
     // baseline so the banner stays silent on the next compare.
     return null;
   }
+
+  // Everything below is one rule: a baseline is trusted because of who WROTE
+  // it, never because of what it looks like. The absence of a `partial` flag
+  // used to be read as evidence of completeness, and that inference is what
+  // this guard exists to stop making.
+  if (entry?.schemaVersion !== STORED_SCHEMA || !entry.content) {
+    discardStoredPayload(username);
+    return null;
+  }
+
+  // A partial is never written (see the early return in `fetchOnce`), so this
+  // is belt-and-braces — and it belongs here, at the single point where a
+  // baseline is handed out, rather than at each of the two call sites. A
+  // half-answer that ever reached storage would announce its own recovery as
+  // growth, which is precisely what the write is skipped to prevent.
+  if (entry.content.partial === true) {
+    discardStoredPayload(username);
+    return null;
+  }
+
+  return entry.content;
 }
 
 function writeStoredPayload(username, content) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(storageKey(username), JSON.stringify(content));
+    // Wrapped rather than stamped onto the content: the stored object is the
+    // DIFF BASELINE, and `pickContent` above strips fields for exactly this
+    // reason — housekeeping that rides along inside it would be one more thing
+    // a future object-level comparison could trip on.
+    window.localStorage.setItem(
+      storageKey(username),
+      JSON.stringify({ schemaVersion: STORED_SCHEMA, content }),
+    );
   } catch {
     // QuotaExceededError, private-mode blocks, etc. The hook still
     // returns the live data; we just lose the next-visit diff.
@@ -291,6 +361,24 @@ export function useExperienceSummary(username) {
     // in dev, and StrictMode isn't active in production.
     let cancelled = false;
 
+    /**
+     * Reset every "what changed this poll" indicator to its initial value.
+     *
+     * One step rather than four call sites' worth of setters, so a future
+     * early return clears the whole set or none of it. The normal path does
+     * NOT use this — it has real comparison results to write, and writing them
+     * unconditionally (including the empty ones) is what keeps it honest.
+     *
+     * Declared inside the effect so it closes over nothing but the setters,
+     * which React guarantees are stable — no dependency to thread.
+     */
+    const clearChangeIndicators = () => {
+      setChangeMessage(null);
+      setChangedCategories([]);
+      setAddedRepoNames([]);
+      setAddedRoleKeys([]);
+    };
+
     const fetchOnce = async () => {
       try {
         const res = await fetch(
@@ -303,6 +391,64 @@ export function useExperienceSummary(username) {
         }
         const payload = await res.json();
         if (cancelled) return;
+
+        // A partial payload means GitHub failed and the route returned the
+        // half it could still vouch for (see the note beside `partial` in
+        // route.js). It is worth showing when there is nothing better, and it
+        // must not be allowed to displace something better.
+        //
+        // Storage is skipped because this store is the INSTANT-PAINT source
+        // above, not only the diff baseline: writing a half-answer here would
+        // make the next visit — on a perfectly healthy page load — paint
+        // "Unavailable" and a zeroed years card out of localStorage, long
+        // after GitHub recovered. Diffing is skipped for the same reason it
+        // must not be stored: the personal side vanishing and returning is not
+        // a change worth announcing, and it would report the recovery as
+        // growth.
+        //
+        // Held state is kept only when it is BETTER, which is not the same as
+        // "kept when it exists". The first cut read `current ?? payload`, so
+        // anything already in state survived — including an earlier PARTIAL
+        // answer, which made the first degraded response a cold client happened
+        // to receive permanent for the rest of the visit. During a prolonged
+        // outage the later polls are the better ones: pagination that timed out
+        // on page one can reach page three on the next attempt, so a newer
+        // partial routinely carries more repos and a longer span than the one
+        // being clung to, and the client would show the worse of the two until
+        // the page was reloaded.
+        //
+        // So: a complete answer is kept, a partial one is replaced by this
+        // payload, and a client with nothing adopts it. An entry hydrated from
+        // storage counts as complete despite carrying no flag — not because a
+        // missing flag implies anything, but because `readStoredPayload` hands
+        // out only entries stamped by a writer that stores complete answers
+        // alone. The earlier version of this note reasoned from the absence of
+        // the field instead, which was wrong in the one case it was meant to
+        // cover: the writer that predates `partial` stored degraded answers too.
+        //
+        // "Newest wins" is decided by arrival, not by comparing `generatedAt`:
+        // a stored entry has no such stamp (`pickContent` strips it), and two
+        // degraded answers seconds apart are not worth ordering.
+        // The four change indicators are CLEARED rather than left alone. They
+        // describe what the LAST comparison found, so carrying them past a poll
+        // that made no comparison attributes a change to an observation that
+        // did not happen — and they are not momentary: polling is ten minutes
+        // apart, and the per-row heartbeat is armed by set membership and fired
+        // when the section scrolls into view, so a stale set can light rows up
+        // as "newly added" on a modal opened much later.
+        //
+        // Same failure the normal path below already had once and fixed, in the
+        // note about "only set when truthy" leaving a stale sentence on screen.
+        // Cleared through one named step because the way this goes wrong is an
+        // early return updating some of the four and not the rest.
+        if (payload?.partial) {
+          setData((current) =>
+            current == null || current.partial === true ? payload : current,
+          );
+          setError(null);
+          clearChangeIndicators();
+          return;
+        }
 
         // Diff against stored baseline before updating storage —
         // otherwise the comparison would always see itself and never
@@ -334,6 +480,20 @@ export function useExperienceSummary(username) {
         // Log but don't throw — the about page should still render with
         // its other cards even when this endpoint is degraded.
         console.warn("useExperienceSummary fetch failed:", err);
+        // The other early exit, and the same reasoning as the partial branch
+        // above: a poll that THREW made no comparison either, so the four
+        // indicators still describe the last poll that did. `data` is left
+        // alone deliberately — the last good answer is still the best thing to
+        // render — but a sentence reading "Years of experience updated: 4+ → 5+"
+        // standing beside it, or a modal row lit as newly added, credits a
+        // change to an observation that never got an answer.
+        //
+        // Not a flicker, for the same two reasons it was not one there: polls
+        // are ten minutes apart, and the per-row heartbeat is armed by set
+        // MEMBERSHIP and fired when the section scrolls into view, so a stale
+        // set can light rows up in a modal opened long afterwards. Clearing
+        // both exits through the one named step is the point of having it.
+        clearChangeIndicators();
         setError(err);
       } finally {
         if (!cancelled) setIsLoading(false);

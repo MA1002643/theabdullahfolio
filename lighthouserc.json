@@ -1,0 +1,125 @@
+{
+  "$comment": [
+    "Lighthouse CI budgets (issue #32). docs/seo.md §12 recorded this as NOT BUILT,",
+    "on the grounds that per-route budgets need a measured baseline that did not",
+    "exist — and that 'a budget nobody can pass gets disabled within a week, which",
+    "is worse than no budget'. That reasoning is why the numbers below are split",
+    "into two kinds rather than set uniformly.",
+    "",
+    "MEASURED, THEREFORE ENFORCED: accessibility, best-practices and SEO are all",
+    "100 on all five routes, measured 2026-09-19 against a production build over",
+    "three runs each (medians):",
+    "",
+    "    /                        perf  94   a11y 100   bp 100   seo 100",
+    "    /cv                      perf  99   a11y 100   bp 100   seo 100",
+    "    /about                   perf  91   a11y 100   bp 100   seo 100",
+    "    /projects/1              perf  94   a11y 100   bp 100   seo 100",
+    "    /notes/discoverability   perf 100   a11y 100   bp 100   seo 100",
+    "",
+    "The three enforced categories are deterministic — they inspect the DOM and",
+    "the response, not the clock — so a CI runner under load returns the same",
+    "score as a laptop. A regression in one is a real defect, so these fail the",
+    "build.",
+    "",
+    "Three fixes were needed to make 100 reachable rather than aspirational, and",
+    "all three were real defects rather than concessions to the tooling:",
+    "",
+    "  1. The footer's split-flap text carried `aria-label` on <span>/<p>, where",
+    "     ARIA prohibits it — capping accessibility at 96 on EVERY page, since",
+    "     the footer is site-wide.",
+    "  2. The project pages requested three background textures that have never",
+    "     existed in this repository, so every view logged three 404s.",
+    "  3. Vercel's two telemetry scripts 404 anywhere but Vercel, which is every",
+    "     CI run. The root layout now mounts them only when VERCEL is set.",
+    "",
+    "A fourth was caught and reverted rather than fixed: /notes/[slug] shipped",
+    "without the shared backdrop, and the PageTitle subtitle then composited",
+    "against the bare body colour at 2.9:1 — just under the 3:1 floor for large",
+    "text. Restoring the backdrop restored both the score and the consistency.",
+    "",
+    "NOT YET MEASURED IN CI, THEREFORE WARNED: performance. It is timing-dependent",
+    "and a shared GitHub runner is both slower and far noisier than any developer",
+    "machine, so a threshold picked from local numbers would fail on green builds.",
+    "It is collected and reported on every run; once a few weeks of CI numbers",
+    "exist, the floor can be set from THEM and promoted to an error. Until then a",
+    "warning is honest and a hard failure would be theatre."
+  ],
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm start",
+      "startServerReadyPattern": "Ready in|started server on",
+      "startServerReadyTimeout": 120000,
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/cv",
+        "http://localhost:3000/about",
+        "http://localhost:3000/projects/1",
+        "http://localhost:3000/notes/discoverability"
+      ],
+      "$comment-url": [
+        "Five routes, chosen to cover the distinct rendering shapes rather than to",
+        "be exhaustive: the homepage (the WebGL hero and the orbital nav), /cv (a",
+        "pure static document with no client JS of its own), /about (the heaviest",
+        "page — live GitHub telemetry and the most client components), one project",
+        "detail page (the three.js scene behind a dynamic boundary) and one note",
+        "(the longest single document on the site, ~240KB of generated HTML — the",
+        "only page whose weight comes from prose rather than from scripts).",
+        "Adding every route would multiply the runtime to re-measure the same",
+        "templates."
+      ],
+      "numberOfRuns": 3,
+      "$comment-runs": [
+        "Three runs, median reported. A single run on a shared runner is noisy",
+        "enough that an unlucky one would fail an otherwise green build — the",
+        "exact 'cries wolf' failure the deleted-then-ignored budget was about."
+      ],
+      "settings": {
+        "preset": "desktop",
+        "$comment-preset": [
+          "Desktop, matching the device the baseline above was measured on. Mobile",
+          "throttling would be the more demanding target and is the right one to",
+          "add LATER, as a second collect block, once the desktop numbers have a",
+          "CI history. Changing the preset now would invalidate the baseline in",
+          "the same commit that introduces it."
+        ],
+        "skipAudits": ["uses-http2"],
+        "$comment-skip": [
+          "uses-http2 is decided by Vercel's edge, not by anything in this",
+          "repository, and always fails against a local `next start`.",
+          "",
+          "`canonical` is deliberately NOT skipped, although the obvious",
+          "prediction is that it would fail: every page served from localhost",
+          "declares a canonical on https://ma.codes. It was measured instead of",
+          "assumed, and it passes — Lighthouse reports a cross-origin canonical",
+          "rather than failing one. Skipping it would have dropped a real SEO",
+          "audit to avoid a problem that does not exist.",
+          "",
+          "`errors-in-console` is also NOT skipped, for a stronger reason: it",
+          "used to fail off-platform because Vercel's two telemetry scripts 404",
+          "anywhere but Vercel. That was fixed at the source — the root layout",
+          "only mounts them when `process.env.VERCEL` is set — rather than by",
+          "silencing the audit, which would have hidden every real console error",
+          "along with the two fake ones."
+        ]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:accessibility": ["error", { "minScore": 1 }],
+        "categories:best-practices": ["error", { "minScore": 1 }],
+        "categories:seo": ["error", { "minScore": 1 }],
+        "categories:performance": ["warn", { "minScore": 0.5 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": ".lighthouseci",
+      "$comment-upload": [
+        "Filesystem, not temporary-public-storage. The reports are uploaded as a",
+        "workflow artifact instead, which keeps them inside the repository's own",
+        "access controls — `temporary-public-storage` publishes a full report,",
+        "including every request URL, to a public bucket."
+      ]
+    }
+  }
+}

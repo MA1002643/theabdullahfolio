@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import Link from 'next/link';
 import bg from '../../public/background/home-hero.webp';
 import laptop from '../../public/background/laptop.png';
 import Navigation from '@/components/navigation';
@@ -8,6 +9,12 @@ import LiveMaintenanceHeader from '@/components/home/LiveMaintenanceHeader';
 import HomeSceneWater from '@/components/home/HomeSceneWater';
 import HomeSceneGlow from '@/components/home/HomeSceneGlow';
 import HomeRoleLatent from '@/components/home/HomeRoleLatent';
+// Both feed the `sr-only` summary's project count. `@/app/data` is already in
+// this route's bundle (Navigation reads `BtnList` from it), and
+// `@/lib/numberWords` is a bare lookup table — see the comment above that
+// paragraph for why the count is derived rather than typed.
+import { projectsData } from '@/app/data';
+import { countWord } from '@/lib/numberWords';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Where the laptop's BASE sits inside its own image box, as a fraction of that
@@ -67,7 +74,9 @@ const rippleBottomExtent = (boxHeight) => {
 const rippleBoxForExtent = (extent) => {
   const c = RIPPLE_MAX_SCALE / 2;
   const denom =
-    c * (Math.cos(RIPPLE_TILT) + (extent * Math.sin(RIPPLE_TILT)) / RIPPLE_PERSPECTIVE);
+    c *
+    (Math.cos(RIPPLE_TILT) +
+      (extent * Math.sin(RIPPLE_TILT)) / RIPPLE_PERSPECTIVE);
   return denom <= 0 ? 0 : extent / denom;
 };
 
@@ -498,6 +507,111 @@ export default function Home() {
           </HomeRoleLatent>
         </div>
 
+        {/* ── The page's only prose, and the text an assistant will quote ────
+            Issue #32, W3. This homepage is a visual composition: a name, a
+            role, and eight icon buttons on an orbital ring. Measured against
+            the deployed site it server-rendered TEN WORDS — "Muhammad
+            Abdullah / Muhammad Abdullah / Software Engineer / MUHAMMAD
+            ABDULLAH / 0 %" — which is the entire corpus a crawler that does
+            not execute JavaScript had to answer "who is this person" from.
+            Sub-pages were fine (598–1,718 words); the front door was not.
+
+            WHY IT IS `sr-only` AND WHY THAT IS NOT CLOAKING. Two constraints
+            met each other here: W3 requires real prose in the server HTML,
+            and P7 plus the acceptance criteria require NO visual diff on this
+            route — no SEO copy block under the hero, which would wreck a
+            composition the rest of the issue is at pains to protect. The only
+            honest way to satisfy both is text that is present in the markup
+            and not painted.
+
+            `sr-only` is the right tool because this is a genuine
+            accessibility fix, which is also why it survives the cloaking
+            test. Tailwind's `sr-only` clips to a 1px box; it is NOT
+            `display: none` and NOT `visibility: hidden`, so screen readers
+            announce every word. A non-sighted visitor previously reached this
+            page and got a name, a job title, and eight unlabelled orbit
+            buttons — no statement of what the site is or what it holds. This
+            paragraph is written for that visitor first. The crawler benefit
+            is the same text serving a second reader, which is the opposite of
+            cloaking: cloaking is showing crawlers something users cannot get.
+
+            It is deliberately NOT keyword-stuffed and NOT a list. Every claim
+            is true and checkable elsewhere on the site, the stack names are
+            the ones /uses verifies against the repositories, and the project
+            count is READ FROM `projectsData` rather than typed — a twelfth
+            project would otherwise leave this paragraph telling every crawler
+            and screen reader there are eleven, and nothing would fail. It
+            reads as English because the thing most likely to quote it will
+            quote it verbatim.
+
+            Costing nothing is what makes that derivation the right call here
+            even though this module is `'use client'`: `Navigation` already
+            imports `BtnList` from the same `@/app/data` module, so the array
+            is in this route's bundle either way (`.length` cannot be
+            tree-shaken away from the array it belongs to). `countWord` comes
+            from `@/lib/numberWords`, NOT from `@/lib/seo/site` — importing it
+            from the registry would drag every route's metadata in with it.
+
+            Out of flow (`sr-only` is `position: absolute`), so it cannot
+            affect the hero's layout or the ring measurement.
+
+            THE TWO LINKS ARE LOAD-BEARING, not decoration. `/cv` and `/notes`
+            are the only routes not on the orbit ring — `BtnList` is capped at
+            eight by the sub-480px two-column layout that slices it 0-3 / 4-7,
+            so a ninth entry would break it — and the homepage renders no
+            footer, which is where every other page links them. Without these
+            two anchors both routes are reachable from every page EXCEPT the
+            one a crawler enters on: F1, reproduced by the fix for it. The e2e
+            suite's "every route is reachable from / in raw HTML" case is what
+            caught it, and is what keeps it caught.
+
+            They are also the affordance the sentence previously lacked: it
+            already told a screen-reader user the CV existed while giving them
+            no way to reach it.
+
+            AND THE SENTENCE NAMES THE EXCEPTION. It read "every section is
+            reachable from the ring below" — a universal claim this very
+            comment contradicts two paragraphs up, and the one kind of error
+            that costs the reader who can least afford it: someone navigating
+            by audio is told the ring is the whole map, and has no way to
+            notice that the two routes named right after it are not on it. The
+            clause is now "apart from two", so the prose and the ring agree.
+            Anything that changes what `BtnList` holds changes this sentence
+            too — nothing checks the claim, because no test can read it. */}
+        {/* `home-intro-summary` is only a hook for the `:focus-within` block in
+            globals.css. The two links below are focusable, and `sr-only` clips
+            to a 1px box — so without it a sighted keyboard user's first two tab
+            stops on this page are invisible (WCAG 2.4.7). See that rule for why
+            it is CSS rather than `not-sr-only` utilities. */}
+        {/* `prefetch={false}` on both: this paragraph is always mounted and
+            `sr-only` clips it to a 1px box rather than unmounting it, so Next's
+            default viewport prefetch counts both links as in view and warms
+            `/cv` and the `/notes` listing — the larger of the two RSC payloads
+            — for EVERY homepage visitor, to serve links only a keyboard or AT
+            user can reach. The hrefs stay server-rendered, so the crawlability
+            this paragraph exists for is untouched, and hover/touch still warm
+            the route on intent. Same call as the project sibling nav. */}
+        <p className="home-intro-summary sr-only">
+          Muhammad Abdullah is a software engineer based in Bolton, Greater
+          Manchester, building fast, considered web applications with Next.js,
+          React, TypeScript and Node.js. This site collects{' '}
+          {countWord(projectsData.length).toLowerCase()} projects — web,
+          systems, mobile and AI — each tracked live from its own GitHub board,
+          alongside the degrees and roles behind them, a timeline of the route
+          from college to production, and the tools the work is actually built
+          with. Every section is reachable from the ring below apart from two:
+          the full record is on the{' '}
+          <Link href="/cv" prefetch={false}>
+            CV page
+          </Link>{' '}
+          and as a PDF, and the reasoning behind how this site is built is
+          written up in the{' '}
+          <Link href="/notes" prefetch={false}>
+            engineering notes
+          </Link>
+          .
+        </p>
+
         {/* `hero-row` is only a hook for the `div.hero-row` block in
             globals.css, which replaces `flex-1`'s `min-height: auto` with an
             explicit `min-height: var(--nav-min-h)` at every height. Under
@@ -543,7 +657,19 @@ export default function Home() {
               ref={laptopRef}
               priority
               src={laptop}
-              alt="laptop"
+              // `alt=""` — decorative (issue #32, W7's alt-text audit). It was
+              // `alt="laptop"`, which is the definition of an unhelpful alt: it
+              // names the object in the picture and says nothing a reader
+              // needs. The laptop carries no information — the page's content
+              // is the headline, the role line and the orbit's links — so the
+              // correct treatment is to mark it decorative and let screen
+              // readers skip it, exactly as the backdrop above already does.
+              //
+              // It is not made unreachable by this: the laptop doubles as the
+              // orbit's hover/drag scrubber, but that gesture is pointer-only
+              // and the ring is independently keyboard-navigable through the
+              // buttons themselves (onRingKeyDown, navigation/index.jsx).
+              alt=""
               // The laptop doubles as the orbit's scrubber (hover or touch
               // drag, navigation/index.jsx) — a mouse drag on a bare <img>
               // starts a NATIVE image drag whose ghost would ride the pointer

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+
+import { describeError, redactSecrets } from '../_utils/redact';
 import {
   computePortfolioSignal,
   buildMessage,
@@ -282,7 +284,7 @@ export async function GET(request) {
       fetchProjectActivity().catch((err) => {
         console.warn(
           'Project board unavailable, using fallback signal:',
-          err?.message ?? err,
+          describeError(err),
         );
         return null;
       }),
@@ -351,7 +353,7 @@ export async function GET(request) {
     cache.write(payload);
     return jsonResponse(payload, 'MISS', { bust });
   } catch (err) {
-    console.error('work-status error:', err);
+    console.error('work-status error:', describeError(err));
     // Serve stale cache if we have it — better than a broken header.
     const stale = cache.readStale();
     if (stale) {
@@ -582,7 +584,9 @@ async function fetchPortfolioActivity(repos) {
   if (Array.isArray(json.errors) && json.errors.length > 0) {
     console.warn(
       'work-status GraphQL partial errors:',
-      json.errors.map((e) => e?.message ?? 'unknown').join('; '),
+      // Downstream text, composed rather than thrown. It crosses the same
+      // boundary: GitHub quotes the query it was sent back at us.
+      redactSecrets(json.errors.map((e) => e?.message ?? 'unknown').join('; ')),
     );
   }
 
@@ -816,7 +820,7 @@ async function fetchProjectActivity() {
           } catch (err) {
             console.warn(
               `work-status: board ${boardNumber} unavailable —`,
-              err?.message ?? err,
+              describeError(err),
             );
           }
         }

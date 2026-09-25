@@ -24,8 +24,22 @@ export const projectGithubUrl = `https://github.com/${githubUsername}/${projectR
 // Personal / professional destinations.
 export const profileGithubUrl = 'https://github.com/MA1002643';
 export const linkedInUrl = 'https://www.linkedin.com/in/muhammad-abdullah227/';
-// Served from /public — opens the CV PDF directly.
+// Served from /public — opens the CV PDF directly. Still the canonical
+// downloadable artifact, and still what /journey's download button and the
+// command palette reach for.
 export const resumeUrl = '/Muhammad_Abdullah_CV.pdf';
+
+// The HTML CV (issue #32, W1c). This is what the FOOTER links, in place of the
+// PDF it used to point at, for three reasons:
+//
+//   • A crawler following the footer now reaches a document it can read.
+//     Pointing the site's only CV affordance at a PDF meant /cv would have been
+//     an orphan the moment it shipped — the F1 failure, reintroduced.
+//   • A phone reader no longer has to commit to a download before seeing a
+//     word. The PDF is offered prominently ON that page instead.
+//   • It is an internal link, so it participates in the site's own graph
+//     rather than terminating it.
+export const cvUrl = '/cv';
 
 // Contact micro-block. `email` is the PUBLIC contact/reply-to address shown in
 // the footer — env-overridable with the literal below as its default (same
@@ -57,11 +71,20 @@ export const quickLinks = [
   { label: 'About', href: '/about', desc: 'Who I am' },
   { label: 'Journey', href: '/journey', desc: 'The road so far' },
   { label: 'Qualifications', href: '/qualifications', desc: 'Credentials' },
+  // The record, sitting with the other credentials rather than with the work
+  // (issue #32). It is also linked from the Elsewhere terminal's Résumé row —
+  // two entries, deliberately: that row is "where else to find me", this one is
+  // the site index, and a page missing from the index reads as a page that does
+  // not exist.
+  { label: 'CV', href: '/cv', desc: 'The full record' },
   { label: 'Projects', href: '/projects', desc: 'Selected work' },
-  // After the work, the tools it was built with (issue #37). Seven links put
-  // the two-column Manifest board at 4 / 3 — the asymmetry is accepted (the
-  // masthead is asymmetric by design), verified at 1440 and 390.
+  // After the work, the tools it was built with (issue #37), then the reasoning
+  // behind them (issue #32). Nine links put the two-column Manifest board at
+  // 5 / 4 — the asymmetry is accepted (the masthead is asymmetric by design),
+  // and the board derives its row count from this array's length rather than
+  // hardcoding one, so nothing else moves when a link is added.
   { label: 'Uses', href: '/uses', desc: 'What I build with' },
+  { label: 'Notes', href: '/notes', desc: 'Why it is built this way' },
   { label: 'Contact', href: '/contact', desc: 'Say hello' },
   // Last on purpose — the IA arc ends "reach out, then sign the wall". Also
   // feeds the Manifest departures board, which maps this list with no
@@ -107,11 +130,17 @@ export const socialLinks = [
   },
   {
     label: 'Résumé',
-    handle: 'Muhammad_Abdullah_CV.pdf',
-    href: resumeUrl,
+    // The handle now names the ROUTE rather than the file. It is the honest
+    // label for where the link goes, and it is what tells a reader the
+    // destination is a page rather than a download — which is the whole
+    // behavioural change here.
+    handle: 'ma.codes/cv',
+    href: cvUrl,
     icon: 'resume',
-    external: true,
-    aria: 'Download résumé PDF (opens in a new tab)',
+    // Internal now, so it opens in the same tab and takes no `noopener`
+    // treatment. The PDF is still one click further on, and still external.
+    external: false,
+    aria: 'Read the full CV',
   },
 ];
 

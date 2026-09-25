@@ -6,6 +6,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { roleKey } from "@/hooks/useExperienceSummary";
+import { experienceSourceAvailability } from "@/utils/experience/experiencePresentation";
 
 // ── Scroll-reveal cascade — the SAME entrance the Repository Breakdown / Used in
 // Repositories popovers use (sections slide up, list rows slide in from the left,
@@ -190,10 +191,34 @@ function CategoryCount({ months, unavailable = false }) {
 // by the first arc's sweep so they meet at the seam. Center reads the
 // grand total — same value the years card on the about page shows, so
 // opening the modal feels like a zoom-in rather than a new metric.
-function ExperienceDonut({ personalMonths, employmentMonths }) {
+//
+// `unavailable` is set when a SOURCE FAILED, and it has to be, because this
+// component derives the total from the two halves (`personalMonths +
+// employmentMonths`) rather than reading the payload's `total`. On a degraded
+// payload the failed half arrives as 0, so the arithmetic quietly recomputes
+// exactly the figure the route withheld — the employment-only sum, printed
+// under the word "total" — and the single full-circle arc it draws reads as
+// "100% employment". Both are claims the payload was written not to make, and
+// they are the same defect the years card had, one click further in: fixing the
+// headline and leaving this would have moved the false number rather than
+// removing it.
+function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false }) {
   const prefersReducedMotion = useReducedMotion();
   const total = personalMonths + employmentMonths;
-  if (total === 0) return null;
+  // Rendering nothing is the EMPTY answer — "there is no experience to draw" —
+  // and it has to stay behind `!unavailable`, because a zero sum does not
+  // retract the other claim. With a source failed the surviving half can
+  // legitimately be 0 (GitHub down while the resume parses to no roles), and
+  // this return fired first: the arcs, the em-dash and "total unavailable" all
+  // disappeared together, leaving the category rows saying "Unavailable" beside
+  // a hole where the total belongs. A missing donut reads as "nothing to show",
+  // which is the one thing a degraded payload is not allowed to imply.
+  //
+  // The loading state is unaffected, and by design rather than by luck:
+  // `experienceSourceAvailability` reports both halves AVAILABLE until a
+  // payload arrives (its `!loaded ||`), so a pending request is `total === 0`
+  // with `unavailable` false and still renders nothing.
+  if (total === 0 && !unavailable) return null;
 
   const personalPct = personalMonths / total;
   const employmentPct = employmentMonths / total;
@@ -217,6 +242,47 @@ function ExperienceDonut({ personalMonths, employmentMonths }) {
   const arcAnimateBase = prefersReducedMotion
     ? {}
     : { strokeDashoffset: 0 };
+
+  if (unavailable) {
+    // Track only, and an em-dash where the number goes. The ring keeps the
+    // hero's shape and rhythm (the two category blocks sit beside it and
+    // already tell the honest story: a real count on one side, "Unavailable" on
+    // the other), while neither the arcs nor the centre states a total that
+    // cannot be computed from half the data.
+    return (
+      <div className="relative mx-auto w-36 h-36 sm:w-44 sm:h-44">
+        <svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 180 180"
+          className="-rotate-90 block"
+          aria-hidden="true"
+        >
+          <circle
+            cx="90"
+            cy="90"
+            r={radius}
+            fill="none"
+            stroke="rgba(244, 227, 184, 0.06)"
+            strokeWidth={strokeWidth}
+          />
+        </svg>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <span
+            aria-hidden="true"
+            className="text-3xl sm:text-4xl font-semibold"
+            style={{ color: "#ff6d05", textShadow: "none" }}
+          >
+            —
+          </span>
+          <span className="text-[10px] uppercase tracking-[0.18em] text-fire-amber mt-1">
+            total unavailable
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative mx-auto w-36 h-36 sm:w-44 sm:h-44">
@@ -681,7 +747,7 @@ export function ExperienceBreakdownModal({
   const employmentMonths = data?.employment?.months ?? 0;
   // `data` is null while the summary request is still in flight — which is
   // NOT a source failure. Only mark a source unavailable once a payload has
-  // actually arrived (`summaryLoaded`) and that source came back null;
+  // actually arrived (`loaded` inside the helper) and that source came back null;
   // otherwise a render mid-fetch would show "Unavailable" counts + failure
   // copy for a merely pending request. (Today the card only opens the modal
   // once data exists and the body renders only while `open`, so this is
@@ -690,9 +756,12 @@ export function ExperienceBreakdownModal({
   // gate.) Once loaded, a `null` side means its source failed (GitHub down
   // for personal; resume parse failure for employment) — distinct from a
   // present-but-empty `{ months: 0 }`, which still reads as a genuine 0.
-  const summaryLoaded = data != null;
-  const personalAvailable = !summaryLoaded || data.personalProjects != null;
-  const employmentAvailable = !summaryLoaded || data.employment != null;
+  //
+  // Derived by the shared helper rather than re-spelled here, so this modal,
+  // the years card and the spoken split label cannot drift apart about which
+  // half failed — `totalComputable` is what the donut's centre turns on.
+  const { personalAvailable, employmentAvailable, totalComputable } =
+    experienceSourceAvailability(data);
   const roles = data?.employment?.roles ?? [];
   const repos = data?.personalProjects?.repos ?? [];
   const maxRoleMonths = roles.reduce((m, r) => Math.max(m, r.months), 0);
@@ -864,6 +933,9 @@ export function ExperienceBreakdownModal({
               <ExperienceDonut
                 personalMonths={personalMonths}
                 employmentMonths={employmentMonths}
+                // Either side missing makes the grand total uncomputable, and
+                // the donut derives its own — see the note on the component.
+                unavailable={!totalComputable}
               />
               {/* Phone: the two category blocks sit SIDE BY SIDE split by the
                   vertical divider (stacked under the donut they read as a tall

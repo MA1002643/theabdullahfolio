@@ -1,31 +1,67 @@
 import crypto from "node:crypto";
-import { promises as fs } from "node:fs";
-import path from "node:path";
 
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { safeBearerEqual } from "../_utils/cronAuth";
 import { envPositiveMs } from "../_utils/env";
+import { describeError } from "../_utils/redact";
+import { journeyData } from "@/app/data";
 import { formatDuration, monthsBetween } from "@/utils/experience/dateMath";
-import { parseExperienceFromPdf } from "@/utils/experience/pdfExperienceParser";
+import { employmentFromJourney } from "@/utils/experience/journeyEmployment";
 
-// Node runtime required: `node:fs` for the PDF read, pdf-parse's CJS
-// build for parsing. Same pin convention as every other crypto/fs route
-// in this repo — explicit so a stray move to Edge can't silently break
-// bundling.
+// Node runtime required: `node:crypto` for the payload fingerprint. Same pin
+// convention as every other crypto route in this repo — explicit so a stray
+// move to Edge can't silently break bundling.
 export const runtime = "nodejs";
 
-// Cache the combined GitHub + PDF payload for 10 minutes. Originally
-// 24h because the inputs change monthly at most, but the modal now
-// renders a live list of owned repos (rename/create/delete) so the
-// TTL has to be short enough that those operations propagate to the
-// UI within minutes. 10 min matches /api/github-stats and keeps the
-// daily fetch volume per visitor in line with the other endpoint.
-// PDF parse is still cheap relative to the GraphQL fan-out, so the
-// shorter TTL doesn't meaningfully increase server cost.
+// Cache the payload for 10 minutes. Originally 24h because the inputs change
+// monthly at most, but the modal now renders a live list of owned repos
+// (rename/create/delete) so the TTL has to be short enough that those
+// operations propagate to the UI within minutes. 10 min matches
+// /api/github-stats and keeps the daily fetch volume per visitor in line with
+// the other endpoint. The GraphQL fan-out is now the only cost behind a miss —
+// the employment half is a derivation over a static import.
 const EXPERIENCE_REVALIDATE_SECONDS = 10 * 60;
 const EXPERIENCE_CACHE_TAG = "experience-summary";
+
+// How long a DEGRADED answer may be reused before this route asks GitHub again.
+//
+// The ten minutes above is the freshness contract a COMPLETE answer earns, and
+// a partial one used to inherit it: `unstable_cache` memoises whatever
+// `buildExperienceSummary` returns, so one rate-limited GitHub call parked
+// "Unavailable" in the server-side cache for the full window. The response
+// headers cannot reach that — `no-store` in GET keeps a partial out of the CDN
+// and the browser, and says nothing about the memoised value behind them, so
+// the next request read the same degraded payload straight back out.
+//
+// A minute is the shortest window that still BOUNDS the retries. Simply not
+// caching a partial answer would mean one GitHub fan-out per request on a
+// public endpoint, each with a 9 s wall-clock budget behind it. Here the cost
+// is one attempt per degraded answer — the retry entry below is keyed by the
+// payload it replaces, so the attempt's result is reused rather than recomputed.
+// Recovery lands inside a minute instead of ten.
+//
+// This is a CADENCE, not a cache lifetime, and the distinction is what the
+// note on the retry entry is about: it says how long any degraded answer may
+// stand before another attempt is earned, and `isExpiredPartial` is the only
+// thing that reads it.
+const EXPERIENCE_PARTIAL_RETRY_SECONDS = 60;
+
+// How many replacement attempts ONE degraded primary payload earns before this
+// route waits for the primary entry to roll on its own.
+//
+// Retrying every minute for the whole ten-minute window is the wrong shape for
+// the failure that actually produces a partial. A rate limit is the common
+// cause, and it is the one thing that a retry loop makes WORSE — nine more
+// paginated fan-outs into a 403 is how an account stays limited. Three
+// attempts, spread across the first few minutes, catch the transient case the
+// retry exists for (a blip, a single dropped page) and then back off.
+//
+// It also bounds the chain walk in GET: each attempt's answer is cached under
+// the answer it replaced, so a request during a long outage reads one entry per
+// attempt already made. Three is a walk of three, not of ten.
+const MAX_PARTIAL_RETRIES = 3;
 
 // Hard cap on owned-repo pagination. GitHub returns 100 per page, so
 // 10 pages covers up to 1,000 owned non-fork repos — comfortably above
@@ -36,7 +72,7 @@ const MAX_OWNED_REPO_PAGES = 10;
 // Edge / CDN cache window. Mirrors the github-stats route's headers so
 // the about page can request both endpoints on mount and have them
 // share TTL semantics. `stale-if-error` gives a full day of grace if
-// the upstream chain (GitHub + PDF parse) starts failing.
+// GitHub starts failing.
 const RESPONSE_CACHE_HEADERS = {
   "Cache-Control":
     "public, s-maxage=600, stale-while-revalidate=300, stale-if-error=86400",
@@ -71,109 +107,20 @@ const ALLOWED_USERNAME = (
   process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643"
 ).toLowerCase();
 
-// Resolve `public/<file>` to a path the function can read at runtime.
-// On Vercel, `public/` is bundled into the deployment under the
-// project root *when* `outputFileTracingIncludes` lists the file in
-// `next.config.mjs`. `process.cwd()` is normally the right anchor —
-// but on some deployment shapes Next stages traced files under a
-// nested directory and `process.cwd()` doesn't always point at it,
-// so we try a handful of candidate paths in order and surface the
-// one that worked (or the full failure list) in production logs.
-const RESUME_PDF_FILENAME = "Muhammad_Abdullah_CV.pdf";
-const RESUME_PDF_CANDIDATES = [
-  // 1. Standard: <function-root>/public/<file>. Works locally and on
-  //    Vercel when outputFileTracingIncludes has staged the file at
-  //    the expected location.
-  path.join(process.cwd(), "public", RESUME_PDF_FILENAME),
-  // 2. Some Next/Vercel builds end up with cwd one level up from the
-  //    traced project root; try the project subdirectory.
-  path.join(process.cwd(), "theabdullahfolio", "public", RESUME_PDF_FILENAME),
-  // 3. Bare filename in cwd — last-resort if Vercel places traced
-  //    assets flat in the function root rather than under `public/`.
-  path.join(process.cwd(), RESUME_PDF_FILENAME),
-];
-
-// Read the resume PDF by walking the candidate list in order. Logs
-// `process.cwd()` and every probed path on first call so production
-// logs make it obvious which path was used (or which were attempted)
-// when the bundle layout differs from the local one. The error thrown
-// on total failure carries the full attempt list so the caller can
-// surface it in the response payload for remote diagnosis without
-// needing Vercel CLI access.
-async function readResumePdfBuffer() {
-  const attempts = [];
-  for (const candidate of RESUME_PDF_CANDIDATES) {
-    try {
-      const buf = await fs.readFile(candidate);
-      console.log(
-        `experience-summary: resume PDF found at "${candidate}" (${buf.length} bytes, cwd=${process.cwd()})`,
-      );
-      return buf;
-    } catch (err) {
-      attempts.push(`${candidate} -> ${err?.code ?? err?.message ?? "unknown"}`);
-    }
-  }
-  // Detailed cwd + attempts go on properties, NOT in the public message
-  // string — see the diagnostic gating below for why. The server-side
-  // console.warn in buildExperienceSummary picks them up via those props.
-  const error = new Error("Resume PDF not readable");
-  error.code = "RESUME_PDF_NOT_FOUND";
-  error.attempts = attempts;
-  throw error;
-}
-
-// Wall-clock cap on the PDF read + parse path. pdfjs-dist's first
-// initialization on a cold function instance can be slow (a few
-// hundred ms easily), and parse work on top of it. Without a cap, a
-// pathological slow parse could push the function past its platform
-// timeout and fail the whole request — taking the GitHub side down
-// with it. 4 s is generous against observed local timings.
-const PDF_PARSE_TIMEOUT_MS = envPositiveMs(
-  process.env.PDF_PARSE_TIMEOUT_MS,
-  4000,
-);
-
-// Read the resume PDF and parse it, bounded by PDF_PARSE_TIMEOUT_MS.
-// The timeout side of the race rejects with code "PDF_PARSE_TIMEOUT"
-// so the caller's diagnostic code can distinguish "file missing" from
-// "parse took too long".
+// Employment used to come from a runtime parse of the CV PDF, which is why
+// this file once carried a candidate-path walk, a pdfjs parse, and a 4 s
+// timeout wrapped around them. It is now derived from `journeyData` — the same
+// array /journey renders — by `employmentFromJourney`, which documents the
+// reasoning: one source for both pages, and a UNION of overlapping roles
+// rather than a sum. All three PDF helpers went with it. They existed only to
+// feed this figure, and keeping them would have paid a pdfjs cold start on
+// every cache miss for a value nothing reads.
 //
-// The timer handle is cleared in `finally` once the race settles — same
-// discipline as the sibling `/api/github-stats` route's
-// AbortController + setTimeout pattern. Without it, on the common path
-// where the parse wins the `setTimeout` stays pending for the full
-// PDF_PARSE_TIMEOUT_MS, keeping the serverless instance's event loop
-// alive (or delaying freeze) for up to 4 s after every successful
-// request. `Promise.race` doesn't cancel the loser, so clearing the
-// timer is the only thing that stops the dangling timer.
-async function readAndParseResumeWithTimeout() {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(
-      () =>
-        reject(
-          Object.assign(
-            new Error(
-              `Resume PDF parse exceeded ${PDF_PARSE_TIMEOUT_MS}ms budget`,
-            ),
-            { code: "PDF_PARSE_TIMEOUT" },
-          ),
-        ),
-      PDF_PARSE_TIMEOUT_MS,
-    );
-  });
-  try {
-    return await Promise.race([
-      (async () => {
-        const buf = await readResumePdfBuffer();
-        return parseExperienceFromPdf(buf);
-      })(),
-      timeout,
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
+// The CV has not stopped mattering — it is a deliberately-indexed public
+// document (#32 W1b). It is just checked in the right place now:
+// tests/unit/cvJourneyConsistency.test.js parses it at test time and fails if
+// it disagrees with this array, so the document cannot drift away from the
+// site without CI saying so.
 
 // Stable JSON serializer: sorts object keys recursively so two
 // structurally equal payloads always hash to the same digest. Arrays
@@ -197,17 +144,10 @@ function stableStringify(value) {
 // (time-based, would change every call) and `changeFingerprint` itself
 // (would otherwise depend on its own output).
 function buildFingerprint(payload) {
-  // `pdfStatus` and `_pdfDiagnosticInternal` are excluded too —
-  // they're diagnostic noise, and including them would let a
-  // flapping PDF error flip the fingerprint on every poll and
-  // trigger the client's change banner spuriously.
-  const {
-    generatedAt,
-    changeFingerprint,
-    pdfStatus,
-    _pdfDiagnosticInternal,
-    ...content
-  } = payload;
+  // `pdfStatus` / `_pdfDiagnosticInternal` were excluded here too, so a
+  // flapping PDF error could not flip the fingerprint on every poll and trip
+  // the client's change banner spuriously. Neither field exists any more.
+  const { generatedAt, changeFingerprint, ...content } = payload;
   const hex = crypto
     .createHash("sha256")
     .update(stableStringify(content))
@@ -264,9 +204,15 @@ async function githubGraphQL(query, variables, timeoutMs = GITHUB_TIMEOUT_MS) {
 // Fetch every owned, non-fork repository the account has, paginated and
 // ordered newest-first. `ownerAffiliations: OWNER` excludes contributor
 // / member repos; `isFork: false` excludes forks (those weren't created
-// by this account). Returns `{ name, createdAt, url }` records in DESC
-// order so the modal can render newest-first; the earliest createdAt is
-// always the last element.
+// by this account).
+//
+// Returns `{ repos, complete }` — NOT a bare array, and the second field is
+// the point. `repos` holds `{ name, createdAt, url }` records in DESC order so
+// the modal can render newest-first, which also means the earliest createdAt
+// is the LAST element, on the LAST page. `complete` says whether we got to
+// that page: a caller reading `repos[repos.length - 1]` off a short list is
+// reading the oldest repo it managed to fetch, not the oldest one that exists,
+// and the two are indistinguishable without this flag.
 //
 // Two safety nets:
 //   - `MAX_OWNED_REPO_PAGES` — hard page ceiling so a malformed
@@ -278,6 +224,13 @@ async function githubGraphQL(query, variables, timeoutMs = GITHUB_TIMEOUT_MS) {
 //     better than a thrown error: the catch in `buildExperienceSummary`
 //     would drop the entire personal-projects panel, and the 10-min
 //     `unstable_cache` would lock that state in until the next TTL.
+//
+// That last trade is still the right one, but it was being made silently.
+// Returning a short list as an ordinary success meant the caller published a
+// `total` anchored on the newest-of-the-old repos with `partial: false` beside
+// it — a definite undercount asserting it was complete. `complete` is what
+// keeps the trade honest: the repos are still shown, and the figures derived
+// from them are held back until the list is known to be whole.
 async function fetchOwnedRepos(username) {
   const query = `
     query OwnedRepos($username: String!, $after: String) {
@@ -303,6 +256,13 @@ async function fetchOwnedRepos(username) {
   const deadline = Date.now() + GITHUB_OVERALL_BUDGET_MS;
   const repos = [];
   let cursor = null;
+  // Set ONLY by GitHub telling us there is no next page. Every other way out of
+  // this loop — budget exhausted, a page aborted, a malformed response, the
+  // MAX_OWNED_REPO_PAGES ceiling — leaves it false, because every one of them
+  // means there may be repos we never saw. Default-false and one place to set
+  // it, so a new `break` added later is incomplete until someone decides
+  // otherwise, rather than silently claiming completeness.
+  let complete = false;
   for (let page = 0; page < MAX_OWNED_REPO_PAGES; page++) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
@@ -331,7 +291,10 @@ async function fetchOwnedRepos(username) {
           url: node.url ?? null,
         });
       }
-      if (!conn.pageInfo?.hasNextPage) break;
+      if (!conn.pageInfo?.hasNextPage) {
+        complete = true;
+        break;
+      }
       cursor = conn.pageInfo.endCursor;
     } catch (err) {
       // Timeout / abort mid-pagination — keep what we have, log, and
@@ -348,26 +311,17 @@ async function fetchOwnedRepos(username) {
       throw err;
     }
   }
-  return repos;
+  return { repos, complete };
 }
 
-// Per-side error tolerance: if GitHub fails we still return employment;
-// if the PDF fails we still return personal projects. Only when both
-// fail do we surface a 500 to the caller. Each side logs its own
-// failure so on-call doesn't have to correlate timestamps.
+// GitHub is now the ONLY fallible source. Employment comes from a static
+// import, so the two-sided error tolerance this function used to carry —
+// either source may fail, only a double failure is a 500 — collapsed to one
+// side. There is no longer a failure mode that empties the employment half.
 async function buildExperienceSummary(username) {
   const now = new Date();
 
-  // Run both fetches in parallel — they're independent and each has
-  // its own timeout, so the slower one bounds wall-clock. PDF side is
-  // routed through `readAndParseResumeWithTimeout` so a slow pdfjs
-  // init or a missing file produces a typed error (code
-  // RESUME_PDF_NOT_FOUND / PDF_PARSE_TIMEOUT) instead of hanging the
-  // function past its platform timeout and dropping the GitHub side.
-  const [githubResult, pdfResult] = await Promise.allSettled([
-    fetchOwnedRepos(username),
-    readAndParseResumeWithTimeout(),
-  ]);
+  const [githubResult] = await Promise.allSettled([fetchOwnedRepos(username)]);
 
   // `personalProjects` is reserved as `null` for exactly one meaning: the
   // GitHub source FAILED (rejected). A successful response with an empty
@@ -385,7 +339,7 @@ async function buildExperienceSummary(username) {
     // the response also folds rename/create/delete events into the
     // payload's `changeFingerprint` (so Phase 5's banner will announce
     // a "new repo detected" change naturally without bespoke wiring).
-    const repos = githubResult.value ?? [];
+    const { repos = [], complete = false } = githubResult.value ?? {};
     if (repos.length > 0) {
       const earliest = new Date(repos[repos.length - 1].createdAt);
       const months = Math.max(0, monthsBetween(earliest, now));
@@ -394,6 +348,13 @@ async function buildExperienceSummary(username) {
         months,
         display: formatDuration(months),
         repos,
+        // Whether `repos` is ALL of them. This is not decoration: pagination
+        // runs newest-first, so the oldest repositories are on the LAST pages,
+        // and `firstRepoDate` above is read off the last element. A page that
+        // timed out therefore drops exactly the repos that anchor the span —
+        // the undercount is systematic and always in the same direction, never
+        // a random sample. `months` is a FLOOR when this is false.
+        complete,
       };
     } else {
       personalProjects = {
@@ -401,87 +362,87 @@ async function buildExperienceSummary(username) {
         months: 0,
         display: formatDuration(0),
         repos: [],
+        // An empty list is only an honest "owns nothing yet" if we actually
+        // reached the end. Aborting on the first page reaches here too, and
+        // that is not the same statement.
+        complete,
       };
     }
   } else if (githubResult.status === "rejected") {
     console.warn(
       "experience-summary: GitHub owned-repos lookup failed:",
-      githubResult.reason?.message ?? githubResult.reason,
+      // A settled REJECTION is an error like any other — `allSettled` just
+      // spells it `.reason`, which is the whole reason this one outlived the
+      // sweep of the raw `catch (err)` sites.
+      describeError(githubResult.reason),
     );
   }
 
-  let employment = null;
-  // Split the PDF failure into two shapes:
-  //   - `pdfStatus`: safe to expose publicly. Just the short error
-  //     message and a coarse code like "RESUME_PDF_NOT_FOUND" /
-  //     "PDF_PARSE_TIMEOUT". Carries enough signal to know which
-  //     failure mode we hit without leaking the filesystem layout.
-  //   - `pdfDiagnosticInternal`: full detail including cwd and the
-  //     per-candidate attempt list. Logged to console.warn (visible
-  //     in Vercel logs) and only echoed back to the caller when the
-  //     request presents a bearer matching CRON_SECRET — same secret
-  //     the cron / repo-refresh use, so the deployment owner can
-  //     remotely diagnose without Vercel CLI but no public visitor
-  //     ever sees the paths.
-  let pdfStatus = null;
-  let pdfDiagnosticInternal = null;
-  if (pdfResult.status === "fulfilled") {
-    const roles = pdfResult.value?.roles ?? [];
-    const months = roles.reduce((sum, r) => sum + r.months, 0);
-    employment = {
-      months,
-      display: formatDuration(months),
-      roles,
-    };
-  } else {
-    const reason = pdfResult.reason;
-    pdfStatus = {
-      message: reason?.message ?? String(reason),
-      code: reason?.code ?? null,
-    };
-    pdfDiagnosticInternal = {
-      ...pdfStatus,
-      attempts: reason?.attempts ?? null,
-      cwd: process.cwd(),
-    };
-    console.warn(
-      "experience-summary: resume PDF parse failed:",
-      pdfDiagnosticInternal,
-    );
-  }
+  // A pure derivation over a static import, so unlike the GitHub side it
+  // cannot fail and `employment` is never null. The client's "Unavailable"
+  // branch keys off null and is now unreachable for this half — left in place
+  // deliberately rather than deleted, since it costs nothing and is the
+  // correct rendering if this ever becomes fallible again.
+  //
+  // `now` is threaded in rather than read inside, so the employment span and
+  // the personal-projects span are measured against the SAME instant and the
+  // two halves of the bar cannot straddle a month boundary and disagree.
+  const employment = employmentFromJourney(journeyData, now);
 
-  if (!personalProjects && !employment) {
-    // Both sides failed — let the caller serve an error rather than
-    // synthesise a misleading "0 months" total.
-    throw new Error("Both GitHub and PDF sources failed");
-  }
+  // GitHub is the only fallible half now, and it used to throw here — which
+  // turned a partial failure into a total one: the handler answered 500 and
+  // discarded an `employment` figure that was already computed and correct.
+  // The client renders the two halves independently and has carried an
+  // "Unavailable" branch for a null `personalProjects` all along
+  // (ExperienceBreakdownModal), so there was a good answer to give and nothing
+  // to stop us giving it.
+  //
+  // The response says it is partial rather than leaving the caller to infer it
+  // from a null field. Three things key off this flag, and each of them is a
+  // way the naive "just delete the throw" version goes wrong:
+  //   · `total` below, which must not be a number (see there);
+  //   · the response's cache headers in GET, so a transient blip is not held
+  //     at the CDN for the full ten-minute window a good answer earns;
+  //   · the client's localStorage write, which is its instant-paint source on
+  //     the NEXT visit — storing a half-answer would make a later, perfectly
+  //     healthy page load paint "Unavailable" out of storage.
+  // Two ways to be partial, and the second is the quieter one. The GitHub half
+  // can FAIL outright (null above), or it can SUCCEED INCOMPLETELY — pagination
+  // stopping early on a timeout, the wall-clock budget, or the page ceiling
+  // returns a fulfilled array that simply is not all of them.
+  //
+  // Only the first used to count. A fulfilled-but-short array published
+  // `partial: false` and a `total` anchored on the oldest repo it happened to
+  // see, which is a definite understatement asserting it is complete — worse
+  // than the outright failure, because nothing about it looks wrong.
+  const partial = personalProjects == null || personalProjects.complete !== true;
 
   const totalMonths =
     (personalProjects?.months ?? 0) + (employment?.months ?? 0);
 
   const payload = {
     generatedAt: now.toISOString(),
+    partial,
     personalProjects,
     employment,
-    total: {
-      months: totalMonths,
-      display: formatDuration(totalMonths),
-    },
-    // Public-safe PDF failure signal. Just `{ message, code }` — no
-    // filesystem paths, no cwd. Knowing which failure mode hit
-    // ("RESUME_PDF_NOT_FOUND" vs "PDF_PARSE_TIMEOUT") is enough for a
-    // visitor to interpret the empty employment side without exposing
-    // server runtime layout. Excluded from `changeFingerprint` so a
-    // flapping error can't churn the fingerprint and trip the client
-    // banner.
-    pdfStatus,
-    // Full diagnostic (cwd + per-candidate attempts). Held in the
-    // cached payload so an authenticated caller can read it
-    // consistently, BUT stripped out of the response for any caller
-    // without the CRON_SECRET bearer (see GET handler below). Leading
-    // underscore is the convention for "do not expose without
-    // gating" in this file.
-    _pdfDiagnosticInternal: pdfDiagnosticInternal,
+    // NULL when partial, deliberately, rather than the employment half alone.
+    // This exact field is what the /about years card counts up to
+    // (`experienceData?.total?.months ?? 0`), so a sum missing the personal
+    // side is not a smaller number — it is a WRONG number wearing the
+    // headline's clothes, published with no sign that anything is missing.
+    // Null lands the card on the same value it shows before the fetch
+    // resolves, which reads as "not in yet" instead of as a claim.
+    total: partial
+      ? null
+      : {
+          months: totalMonths,
+          display: formatDuration(totalMonths),
+        },
+    // `pdfStatus` and `_pdfDiagnosticInternal` used to sit here, carrying the
+    // PDF read/parse failure: a publicly-safe `{ message, code }` and a
+    // CRON_SECRET-gated detail with cwd and the probed paths. Both went with
+    // the PDF read itself — there is no longer a filesystem access on this
+    // path to diagnose.
   };
   payload.changeFingerprint = buildFingerprint(payload);
   return payload;
@@ -499,6 +460,134 @@ const getCachedExperienceSummary = unstable_cache(
     tags: [EXPERIENCE_CACHE_TAG],
   },
 );
+
+// The RETRY entry, read only when the entry above holds a degraded answer that
+// has outlived `EXPERIENCE_PARTIAL_RETRY_SECONDS`.
+//
+// A SECOND cache rather than an invalidation of the first, and the reason is
+// worth stating because `revalidateTag` looks like the obvious tool for this.
+// Tag revalidation cannot be relied on to make the very next read miss: when
+// `unstable_cache` finds an entry it considers stale it returns the stale value
+// and rebuilds in the BACKGROUND, so a retry built that way would hand this
+// request the same partial payload it had just judged too old, and the fix
+// would depend on which incremental-cache handler is installed. A second key
+// needs no such guarantee — a key with no entry can only be a miss.
+//
+// ── What the key is, and why it is not a clock ──────────────────────────────
+// It is the STALE PAYLOAD'S OWN IDENTITY (`generatedAt`), so this entry answers
+// one question: "what should replace that particular degraded answer?"
+//
+// The first cut keyed it by a wall-clock bucket — `floor(now / 60s)` — which
+// bounded retries at one a minute and then threw the result away: every new
+// minute was a new key and therefore a new miss, so a RECOVERY was re-fetched
+// from GitHub on the minute for the rest of the primary entry's ten-minute
+// window. Up to nine wasted paginated fan-outs, each one arriving at the same
+// complete answer the last had already computed, and the bound was hiding it —
+// one per minute looks cheap until you notice none of them was needed.
+//
+// Keyed by the payload it replaces, the recovery is computed ONCE and every
+// later request reads it back. The key changes only when the thing it describes
+// does: the primary entry's TTL expires, it rebuilds, and a new degraded answer
+// (new `generatedAt`) earns exactly one fresh attempt.
+//
+// ── The TTL is the PRIMARY's, and that is the whole fix ─────────────────────
+// This entry used to hold `revalidate: EXPERIENCE_PARTIAL_RETRY_SECONDS`, on
+// the reasoning that a continuing outage should be retried by the entry's own
+// staleness: after 60 seconds `unstable_cache` serves what it holds and rebuilds
+// behind it, so the retry loop never blocked a request on GitHub twice.
+//
+// That reasoning only ever looked at the outage. Once this entry holds a
+// COMPLETE recovery, the primary is still handing out its partial — for up to
+// ten minutes — so `isExpiredPartial` keeps routing every request here, every
+// read past the first minute finds a stale entry, and each one kicks off
+// another full paginated fan-out that arrives at the answer already cached.
+// Up to nine of them, and all nine are invisible: the served payload is correct
+// throughout, so nothing looks wrong. On the failure that most often produces a
+// partial in the first place — a rate limit — it is nine more calls into the
+// limit that caused it.
+//
+// A TTL cannot tell those apart, because `unstable_cache` fixes `revalidate`
+// per FUNCTION and cannot vary it by result, while the two results want
+// opposite lifetimes: a recovery should be kept, a partial must not be. The KEY
+// is the only lever that sees the result, and this entry already uses it — so
+// the fix is to let it carry the whole job. The entry answers "what replaced
+// payload X?", which is an immutable fact about X, and it is cached for as long
+// as X itself can be served (`EXPERIENCE_REVALIDATE_SECONDS`, the primary's own
+// window). A recovery is therefore computed once and read back for the rest of
+// that window, with nothing left stale to rebuild.
+//
+// Retries during a continuing outage come from the KEY instead, by applying the
+// route's existing rule one more time: if the answer here is itself a degraded
+// payload that has outlived `EXPERIENCE_PARTIAL_RETRY_SECONDS`, then IT is what
+// the next attempt replaces, and its stamp is the next key. GET walks that
+// chain, `MAX_PARTIAL_RETRIES` bounds it.
+//
+// The cost of moving the cadence off `revalidate` is stated rather than hidden:
+// a new link is a cache MISS, and a miss blocks the request that finds it,
+// where a stale read did not. It falls on at most one request per minute, up to
+// three times per window, and only ever on a request that would otherwise have
+// been handed a degraded answer anyway — which is the trade this route should
+// want. Nothing blocks on the recovery path, which is the common one.
+//
+// Both entries carry `EXPERIENCE_CACHE_TAG`, so `/api/repo-refresh` still drops
+// the whole route's memoised state with the one `revalidateTag` call it already
+// makes.
+const getRetriedExperienceSummary = unstable_cache(
+  async (username, replacing) => {
+    // `replacing` is unread ON PURPOSE, and not forwarded to the builder either
+    // — it would be a phantom second parameter there. `unstable_cache` keys by
+    // this function's arguments, so RECEIVING it is the entire mechanism: it
+    // ties one cache entry to one degraded answer, and the build has no use for
+    // the value.
+    void replacing;
+    return buildExperienceSummary(username);
+  },
+  ["experience-summary-retry"],
+  {
+    // The primary's window, deliberately — see above. A recovery has to outlive
+    // the degraded payload it replaces, or it is re-fetched for the rest of
+    // that payload's life.
+    revalidate: EXPERIENCE_REVALIDATE_SECONDS,
+    tags: [EXPERIENCE_CACHE_TAG],
+  },
+);
+
+/**
+ * The retry cache key for a degraded payload: the payload's own stamp.
+ *
+ * `generatedAt` is set once per build, so it names this exact degraded answer
+ * and nothing else. A payload with no usable stamp still gets a stable key
+ * rather than a per-request one — it must not become a cache-key generator.
+ *
+ * @param {object|null|undefined} payload The degraded payload being replaced.
+ * @returns {string} A key stable for as long as that payload is cached.
+ */
+const partialRetryKey = (payload) => String(payload?.generatedAt ?? "unstamped");
+
+/**
+ * Whether a cached payload is a degraded answer that has outlived the short
+ * window a degraded answer gets.
+ *
+ * Read off the payload's own `generatedAt` rather than tracked beside the
+ * cache, because that stamp is the only age signal that survives the thing
+ * holding it: the cache is shared across instances and outlives any of them, so
+ * a module-level "when did we last see a partial" would reset on every cold
+ * start and disagree between two warm instances.
+ *
+ * @param {object|null|undefined} payload A payload from either cache entry.
+ * @param {number} [now] Epoch milliseconds; defaults to the clock.
+ * @returns {boolean} True when the answer is partial AND past the window.
+ */
+function isExpiredPartial(payload, now = Date.now()) {
+  if (payload?.partial !== true) return false;
+  const generatedAt = Date.parse(payload.generatedAt ?? "");
+  // A missing or unparseable stamp counts as EXPIRED, not as fresh. The bucket
+  // bounds the cost of being wrong in this direction at one GitHub call per
+  // window; being wrong in the other direction pins a degraded answer for the
+  // full ten minutes on a malformed field.
+  if (Number.isNaN(generatedAt)) return true;
+  return now - generatedAt >= EXPERIENCE_PARTIAL_RETRY_SECONDS * 1000;
+}
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -518,15 +607,63 @@ export async function GET(request) {
   }
 
   try {
-    const data = await getCachedExperienceSummary(ALLOWED_USERNAME);
-    // Internal-only diagnostic field. Allow it through to the response
-    // ONLY when the caller presents a bearer matching CRON_SECRET (the
-    // same secret already used by `/api/repo-refresh`). Anyone else
-    // gets the field stripped. The response is also marked `no-store`
-    // in the authenticated branch so the CDN never caches an
-    // internal-detail payload and hands it to a later anonymous
-    // visitor.
-    const { _pdfDiagnosticInternal, ...publicData } = data;
+    let data = await getCachedExperienceSummary(ALLOWED_USERNAME);
+    // A degraded answer does not get to hold the ten-minute window a good one
+    // earns. Past `EXPERIENCE_PARTIAL_RETRY_SECONDS` we ask GitHub again
+    // through the retry entry — keyed by the degraded payload being replaced,
+    // so one attempt is made per degraded answer and its result (a recovery, or
+    // a fresher partial while GitHub is still failing) is what every later
+    // request in that window reads.
+    //
+    // The primary entry keeps its degraded payload until its own TTL expires,
+    // so requests for the rest of that window pay a cache read per attempt
+    // already made and are served the last answer in the chain. That is the
+    // whole residual now, and it is cheap: reads, no second fan-out. Promoting
+    // the recovery into the primary entry would need a `revalidateTag` and a
+    // rebuild — one more GitHub fan-out to save one cache read, on the tag
+    // semantics this design deliberately does not depend on.
+    //
+    // A LOOP rather than a single read, because the same rule applies to the
+    // answer as to the question. If the replacement is itself a degraded
+    // payload that has outlived its minute, it is what the next attempt
+    // replaces — so the walk follows the chain of "what replaced what" until it
+    // reaches an answer that is complete, or one still inside its minute, or
+    // the attempt bound. Each link is cached under the payload it replaced, so
+    // every link but the last is a hit; only the frontier can be a miss, and it
+    // can only be a miss once.
+    for (let attempt = 0; attempt < MAX_PARTIAL_RETRIES; attempt += 1) {
+      if (!isExpiredPartial(data)) break;
+      const replacing = partialRetryKey(data);
+      const replacement = await getRetriedExperienceSummary(
+        ALLOWED_USERNAME,
+        replacing,
+      );
+      // No progress: the replacement carries the same identity as the payload
+      // it replaced, so asking again would read the same entry back forever.
+      // Only reachable through the unstamped key (`partialRetryKey`'s fallback,
+      // which is deliberately shared rather than per-request), and the bound
+      // above would catch it anyway — but stopping on the condition itself says
+      // why the walk terminates instead of leaving it to the counter.
+      if (partialRetryKey(replacement) === replacing) break;
+      data = replacement;
+    }
+    // Internal-only fields reach the response ONLY when the caller presents a
+    // bearer matching CRON_SECRET (the same secret `/api/repo-refresh` uses).
+    // Anyone else gets them stripped, and the authenticated branch is
+    // `no-store` so the CDN never caches an internal-detail payload and hands
+    // it to a later anonymous visitor.
+    //
+    // There are none today — `_pdfDiagnosticInternal` went with the PDF read
+    // it described. The gate is kept: it is the seam any future internal field
+    // slots into, and removing a security control for tidiness is a bad trade.
+    // It now strips every `_`-prefixed key rather than one named field, so a
+    // field added later is gated by default instead of by remembering to.
+    const publicData = Object.fromEntries(
+      Object.entries(data).filter(([key]) => !key.startsWith("_")),
+    );
+    const internalOnly = Object.fromEntries(
+      Object.entries(data).filter(([key]) => key.startsWith("_")),
+    );
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = request.headers.get("authorization");
     const isAuthorizedDebug =
@@ -534,13 +671,40 @@ export async function GET(request) {
 
     if (isAuthorizedDebug) {
       return NextResponse.json(
-        { ...publicData, _pdfDiagnosticInternal },
+        { ...publicData, ...internalOnly },
         { headers: { "Cache-Control": "no-store" } },
       );
     }
-    return NextResponse.json(publicData, { headers: RESPONSE_CACHE_HEADERS });
+    // A partial answer is not cacheable on the terms a complete one is. The
+    // normal headers would park it at the CDN for `s-maxage=600` plus five
+    // minutes of `stale-while-revalidate`, so one rate-limited GitHub call
+    // would show "Unavailable" to every visitor for a quarter of an hour after
+    // GitHub had recovered. `no-store` keeps it out of shared caches, and the
+    // next request re-attempts.
+    //
+    // It also protects the `stale-if-error=86400` below, which is doing real
+    // work today: while this route answered 500, a warm edge went on serving
+    // the last GOOD payload for up to a day. Returning 200 here makes that
+    // directive inapplicable — so a partial answer must not be storable, or it
+    // would evict a complete one that was still being served.
+    //
+    // These headers only ever governed the CDN and the browser, and for a while
+    // that left the real hold-time unaddressed: `buildExperienceSummary` is
+    // memoised by `unstable_cache`, so a partial payload sat in the server-side
+    // cache for the same ten minutes a good answer gets, and every request in
+    // that window read it back out no matter what `Cache-Control` said. The
+    // server side is now bounded on its own terms — a degraded answer is
+    // retried after `EXPERIENCE_PARTIAL_RETRY_SECONDS` through the second cache
+    // entry above — so the two halves of the contract finally agree: a partial
+    // answer is short-lived everywhere, and a complete one is cacheable for the
+    // full window in both places.
+    return NextResponse.json(publicData, {
+      headers: publicData.partial
+        ? { "Cache-Control": "no-store" }
+        : RESPONSE_CACHE_HEADERS,
+    });
   } catch (error) {
-    console.error("experience-summary fetch failed:", error);
+    console.error("experience-summary fetch failed:", describeError(error));
     return NextResponse.json(
       { error: "Failed to build experience summary" },
       { status: 500, headers: { "Cache-Control": "no-store" } },

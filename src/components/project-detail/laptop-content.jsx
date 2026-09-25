@@ -132,7 +132,18 @@ function ImageSlider({ images }) {
                 <Image
                     key={index}
                     src={src}
-                    alt={`slide-${index}`}
+                    // `alt=""` — decorative (issue #32, W7's alt-text audit).
+                    // It was `alt={`slide-${index}`}`, which announced
+                    // "slide-0, image" and told a reader nothing.
+                    //
+                    // Decorative is the right call rather than a written
+                    // description: these are generic inline photographs baked
+                    // into the laptop model as screen CONTENT — they are not
+                    // screenshots of the project, so there is no project fact
+                    // to describe. Describing the photograph itself would add
+                    // noise to a reader who already has the project's name and
+                    // description from ProjectIntro.
+                    alt=""
                     fill
                     className={`h-full object-cover transition-opacity duration-700 ${index === current ? "opacity-100" : "opacity-0"
                         }`}

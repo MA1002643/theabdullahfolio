@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+
+import { redactSecrets } from '../_utils/redact';
 import {
   spotifyConfigured,
   demoEnabled,
@@ -192,7 +194,9 @@ export async function GET() {
     // it, and signal non-2xx so the client preserves the previous track. An
     // AbortError here means a player call passed its 5s budget.
     console.error(
-      `[api/spotify] request failed: ${err?.name ?? 'Error'} ${err?.message ?? ''}`.trim(),
+      redactSecrets(
+        `[api/spotify] request failed: ${err?.name ?? 'Error'} ${err?.message ?? ''}`.trim(),
+      ),
     );
     return NextResponse.json(EMPTY, { status: 502, headers: ERROR_CACHE });
   }

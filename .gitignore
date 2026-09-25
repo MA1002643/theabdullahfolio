@@ -60,3 +60,18 @@ TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
 *.tmp.*
 .env*
 !.env.example
+
+# Lighthouse CI report output (.github/workflows/lighthouse.yml uploads these
+# as a build artifact instead — they are large, per-run, and regenerated every
+# time the audit runs).
+.lighthouseci/
+
+# Google service-account keys. scripts/set-gsc-credentials.mjs documents
+# passing one as `--key ./service-account-key.json`, i.e. from the repository
+# root, so the obvious way to run it leaves a live RSA private key one
+# `git add -A` away from a public repository — a rotate-immediately incident
+# under CLAUDE.md §1, not a revertable commit. Ignored by name rather than left
+# to whoever is staging that day. The key still belongs OUTSIDE the tree; this
+# is the net, not the plan.
+service-account-key*.json
+*-service-account*.json

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { freshSecret } from '../helpers/secrets.js';
+
 // The redis driver's write plumbing, against a recording stand-in for
 // @upstash/redis. There is no Redis here — the contract suite (store.test.js)
 // proves the behaviour on the json driver and the deployed API exercises this
@@ -14,10 +16,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 //   · listMessages pages by score-bounded index walks and, when a delete
 //     lands between the index read and the row fetch, scans on through the
 //     index instead of reporting a false end of the wall.
-// These values are placeholders so the driver believes Redis is configured —
-// nothing is contacted.
+// These values exist only so the driver believes Redis is configured — the
+// client below is a recording stand-in, so nothing is contacted. The host is
+// pinned and unresolvable (RFC 2606 reserves `.invalid`); the TOKEN is minted
+// per run rather than written down, because Upstash presents it as a bearer
+// credential and a committed one is a reusable credential in history, test-only
+// or not — see tests/helpers/secrets.js.
 process.env.KV_REST_API_URL = 'https://unit-test.invalid';
-process.env.KV_REST_API_TOKEN = 'not-a-real-token';
+process.env.KV_REST_API_TOKEN = freshSecret('test-upstash');
 process.env.GUESTBOOK_DRIVER = 'redis';
 
 const state = {

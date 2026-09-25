@@ -5,6 +5,7 @@ import { projectsData } from "@/app/data";
 import { PROJECT_DATA_VERSION } from "@/lib/projectDataVersion";
 import { TRACKED_REPOS, nameWithOwnerOf } from "@/utils/workTrackedRepos";
 import { envPositiveMs } from "../_utils/env";
+import { describeError, redactSecrets } from "../_utils/redact";
 
 // Live per-project delivery telemetry for the about page's Project Progress
 // popup (issue #48). Counts come from each project's Projects v2 BOARD — the
@@ -269,7 +270,7 @@ async function fetchProjectProgress() {
       if (json.errors?.length) {
         console.warn(
           "Project progress: partial GraphQL errors:",
-          json.errors.map((e) => e.message).join(" | "),
+          redactSecrets(json.errors.map((e) => e.message).join(" | ")),
         );
       }
 
@@ -408,7 +409,10 @@ export async function GET() {
     // still opens with real structure, shows "sync unavailable" per project,
     // and the client's last-good cache (which `_fallback` tells it to
     // prefer) fills in percentages where a previous visit had them.
-    console.error("Project progress fetch failed, serving static fallback:", error);
+    console.error(
+      "Project progress fetch failed, serving static fallback:",
+      describeError(error),
+    );
     return NextResponse.json(buildFallbackPayload(), {
       headers: { ...CACHE_HEADERS, "X-Cache-Status": "FALLBACK" },
     });
