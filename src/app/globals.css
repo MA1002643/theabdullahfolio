@@ -35,31 +35,41 @@
     font-feature-settings: 'tnum';
   }
 
-  .custom-bg-abt {
+  /* The About card's FRAME — gold hairline, orangered rest glow, brighter on
+     hover. Shared with `.abt-frame`, which carries the frame without the
+     slate interior: the /privacy preference centre wears it so its border is
+     the Delivery-telemetry popup's exactly, by construction rather than by a
+     copied colour. Change the frame here and both follow. */
+  .custom-bg-abt,
+  .abt-frame {
     @apply border border-solid;
     border-color: #ffcd5bcc;
-    /* Slate-and-gold interior — was a flat `#00000020`; lifted up
-       from the former `.elite-card` modifier so every card on the
-       about page shares the same rich background instead of the
-       years card being the lone richly-toned outlier. The warm gold
-       neon border + glow below sit on top of this surface. */
-    background:
-      radial-gradient(circle at 30% 0%, rgba(244, 227, 184, 0.06), transparent 55%),
-      linear-gradient(135deg, rgba(8, 11, 22, 0.92), rgba(2, 6, 23, 0.88));
-    backdrop-filter: blur(12px);
     box-shadow:
       0 0 0px #ff8400,
       0 0 0px #ffaa2a,
       0 0 6px orangered;
-    /* neon shadows */
     transition: box-shadow 0.3s ease-in-out;
   }
 
-  .custom-bg-abt:hover {
+  .custom-bg-abt:hover,
+  .abt-frame:hover {
     box-shadow:
       0 0 1px #ff8400,
       0 0 2px #ffaa2a,
       0 0 8px orangered;
+  }
+
+  .custom-bg-abt {
+    /* Slate-and-gold interior — was a flat `#00000020`; lifted up
+       from the former `.elite-card` modifier so every card on the
+       about page shares the same rich background instead of the
+       years card being the lone richly-toned outlier. The warm gold
+       neon border + glow (the shared frame rule above) sit on top of
+       this surface. */
+    background:
+      radial-gradient(circle at 30% 0%, rgba(244, 227, 184, 0.06), transparent 55%),
+      linear-gradient(135deg, rgba(8, 11, 22, 0.92), rgba(2, 6, 23, 0.88));
+    backdrop-filter: blur(12px);
   }
 
   .text-gold {
@@ -8369,38 +8379,6 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   }
 }
 
-/* A table row deals in from the left rather than rising: a row is a
-   horizontal object, and sliding it along its own axis is what makes a
-   decision table look like it is being filled in. */
-/* ── INERT TODAY, AND KEPT HONEST RATHER THAN DELETED ───────────────────────
-   Bound to `.note-prose tbody tr`, which never runs it: `table` below is
-   `display: block; overflow-x: auto` so a phone can scroll a wide decision
-   table sideways, which makes the TABLE the nearest scrollport for its own
-   rows. A `view()` timeline resolved against a scrollport that does not scroll
-   in the block axis is degenerate, so every row sits at progress 1 — measured
-   across all eight tables on /notes/discoverability: `progress: 1`,
-   `playState: "finished"`, opacity 1, no offset. The rows have never dealt in.
-
-   This is the same trap the `.note-progress` note records for `scroll()` — a
-   subject whose timeline cannot move sits at one progress forever — and the
-   fix is not a keyframe change: the scroll container has to move off the table
-   onto a wrapper, which means a `marked` renderer override in readNotes.js,
-   since nothing wraps a generated table today. Left in place, with its floor
-   correct, so that whoever does that gets a working animation rather than a
-   silent contrast regression. */
-@keyframes note-deal {
-  from {
-    /* Text — the 0.7 floor above applies. A table row is the densest text on
-       the page and the most expensive one to render unreadable. */
-    opacity: 0.7;
-    transform: translate3d(-14px, 0, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
 /* ── The reading rail ──────────────────────────────────────────────────────
    Thirty-three viewports is precisely the length at which a reader wants to
    know how much is left, so this earns its two pixels more here than on /cv.
@@ -8452,9 +8430,9 @@ li:has(.journey-lift :focus-visible) .journey-connector {
       animation-range: cover 2% cover 26%;
     }
 
-    /* The table rises but does not fade — its rows do, and stacking the two
-       opacities put every cell at 0.49. Same range as the blocks above, so it
-       still arrives with them. */
+    /* The table rises but does not fade — a block a reader reads through must
+       not fade (cells are already at 0.84 before any animation touches them).
+       Same range as the blocks above, so it still arrives with them. */
     .note-prose > table {
       animation: note-lift linear both;
       animation-timeline: view();
@@ -8551,35 +8529,13 @@ li:has(.journey-lift :focus-visible) .journey-connector {
       animation-range: cover 12% cover 32%;
     }
 
-    /* A decision table fills in row by row. The header sets first, then the
-       body rows deal from the left in sequence — the most elaborate gesture
-       on the page, spent on the element that most deserves it, because
-       several of these tables ARE the decision records. */
-    .note-prose thead th {
-      animation: note-rise linear both;
-      animation-timeline: view();
-      animation-range: cover 4% cover 22%;
-    }
-    .note-prose tbody tr {
-      animation: note-deal linear both;
-      animation-timeline: view();
-      animation-range: cover 6% cover 24%;
-    }
-    .note-prose tbody tr:nth-child(2) {
-      animation-range: cover 8% cover 26%;
-    }
-    .note-prose tbody tr:nth-child(3) {
-      animation-range: cover 10% cover 28%;
-    }
-    .note-prose tbody tr:nth-child(4) {
-      animation-range: cover 12% cover 30%;
-    }
-    .note-prose tbody tr:nth-child(5) {
-      animation-range: cover 14% cover 32%;
-    }
-    .note-prose tbody tr:nth-child(n + 6) {
-      animation-range: cover 16% cover 34%;
-    }
+    /* Rows and cells deliberately do NOT animate — the table moves as one
+       piece (`.note-prose > table` above). Under `border-collapse: collapse`
+       the gridlines belong to the TABLE, not the row, so a transform on a
+       `tr` or `th` slides its text off its own cell borders. The row deal
+       that used to live here did exactly that: every row still inside its
+       range — the last few of every table, the ones at the bottom of the
+       viewport — sat up to 14px left of the column it belongs to. */
   }
 }
 
@@ -8598,9 +8554,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   .note-prose > pre,
   .note-prose > blockquote,
   .note-prose > hr,
-  .note-prose li,
-  .note-prose thead th,
-  .note-prose tbody tr {
+  .note-prose li {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
@@ -8611,5 +8565,463 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   .note-prose > pre::before {
     animation: none !important;
     transform: none !important;
+  }
+}
+
+/* ══ Bottom-corner widget anchor, liftable by the privacy notice (#141) ══════
+   NowPlaying (bottom-left) and FloatingSoundToggle (bottom-right) are both
+   position:fixed on every route, and the #141 privacy notice is a full-width
+   bottom sheet — so on a first visit it lands directly on top of both.
+
+   The fix is declarative in ONE direction only, which is the point. The notice
+   measures itself and publishes `--consent-lift` on <html>; these two widgets
+   add it to their own bottom offset. Neither widget imports anything from the
+   privacy code, neither knows the notice exists, and a third bottom-corner
+   widget joins in by adopting this class. The alternative — the notice holding
+   a list of what to move — would have been a list that rots the first time
+   somebody adds a fourth thing to a corner.
+
+   `--floating-bottom-gap` is each widget's own resting gap (NowPlaying sits at
+   1.25rem, the sound toggle at 1.5rem), so the shared rule does not flatten a
+   difference the two were designed with.
+
+   The transition is on `bottom`, not `transform`, and that is forced rather
+   than chosen: both widgets are framer-motion elements whose entrance already
+   animates `y`, so a CSS transform here would be overwritten by framer's
+   inline one on the next frame. Animating `bottom` costs a layout pass, which
+   for two 44px fixed elements moving once is not worth avoiding at the price
+   of the lift silently not happening.
+
+   `env()` needs the `0px` fallback: it resolves to nothing at all — not zero —
+   on browsers without safe-area support, which invalidates the whole calc()
+   and drops the element to `bottom: auto`. */
+.floating-bottom-anchor {
+  bottom: calc(
+    env(safe-area-inset-bottom, 0px) + var(--floating-bottom-gap, 1.5rem) +
+      var(--consent-lift, 0px)
+  );
+  transition: bottom 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The widget still moves out of the way — it must, or it stays covered — it
+     just arrives there without the slide. */
+  .floating-bottom-anchor {
+    transition: none;
+  }
+}
+
+/* ══ /privacy — declassification ═══════════════════════════════════════════
+   The privacy page's scroll choreography. The document reads as if it is being
+   declassified while you scroll it:
+   • each section's rule is drawn across by a small gold spark;
+   • each heading PULLS FOCUS: it arrives widely tracked and out of focus, then
+     tightens and sharpens into place like a lens finding its subject, while
+     the section number slides in beside it and a fine amber underline draws
+     out beneath (chosen by the owner from four rendered candidates; it
+     replaced a redaction-bar sweep);
+   • ledes resolve out of a soft blur;
+   • record cards settle from a slight tilt while a gold margin bar inks down
+     beside them;
+   • rows deal in one after another.
+
+   Same mechanism as /cv and /notes, for the same reason: PrivacyPolicy.jsx is a
+   server component so the policy is readable with JavaScript off, so these are
+   CSS scroll-driven animations (`view()`), not Framer. No hidden state lives in
+   a base rule. Without support, or under reduced motion, the page is complete.
+
+   ── Contrast floors, which set the choreography ─────────────────────────────
+   /privacy is in Lighthouse CI at accessibility 1.0, and an element at the
+   fold is sampled at ~0% progress. So:
+   • text never starts below 0.7 (headings) or 0.8 (body) opacity;
+   • anything that WRAPS text (`.pv-record`) moves with transform only and never
+     fades — stacking a card fade over a row fade is how /notes failed at 4.1:1;
+   • the ember ordinal cannot fade at all (#ff6d05 at 0.8 is 4.35:1), so it
+     arrives by blur and slide alone, with its opacity left at 1.
+   The warm ink on this page was chosen with that margin in mind — see the
+   header of PrivacyPolicy.jsx.
+
+   NOTE the declaration order in every rule: the `animation` shorthand resets
+   `animation-timeline` AND `animation-range`, so both come after it. */
+
+@keyframes pv-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes pv-ink-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* The spark's carriage. The run is full-width with the spark pinned to its
+   right edge, so translating the run from -100% to 0 carries the spark from
+   the left end of the rule to the right in step with the line's scaleX. Both
+   are transforms, so both stay on the compositor. */
+@keyframes pv-run {
+  from {
+    transform: translate3d(-100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Decorative, so this one may go to zero: it lights, travels, and burns out as
+   the line fades into the far end. */
+@keyframes pv-spark {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── Focus pull ──────────────────────────────────────────────────────────────
+   Each keyframe set has only a `from`. The `to` is implicit: the element's own
+   computed style. That is what lets one keyframe serve headings with
+   different resting tracking (.14em on the sections, .16em on the panel
+   eyebrows): each one settles on its own value, never on a restated copy.
+
+   The heading holds the 0.7 opacity floor (see header). The blur does not
+   touch contrast: Lighthouse measures colours, not focus. */
+@keyframes pv-focus {
+  from {
+    opacity: 0.7;
+    filter: blur(6px);
+  }
+}
+
+/* The wide-tracking variant. `letter-spacing` is the one property here that
+   changes LAYOUT, so it only runs where every heading on the page provably
+   fits on one line at the widest spacing (see the media query below).
+   Anywhere narrower, a heading could wrap to a second line mid-animation and
+   push the text beneath it down and back: visible jank, and real layout
+   shift. 0.4em rather than the prototype's 0.62em for the same reason. The
+   longest title fits the 768px column at 0.4em with room to spare, and 0.62em
+   did not. */
+@keyframes pv-focus-track {
+  from {
+    opacity: 0.7;
+    filter: blur(6px);
+    letter-spacing: 0.4em;
+  }
+}
+
+/* The ordinal is ember, so it may not fade (see header). Blur and slide only. */
+@keyframes pv-focus-ord {
+  from {
+    filter: blur(5px);
+    transform: translate3d(-10px, 0, 0);
+  }
+}
+
+@keyframes pv-resolve {
+  from {
+    opacity: 0.8;
+    transform: translate3d(0, 14px, 0);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+/* Transform only: a card wraps text and must never fade (see header). */
+@keyframes pv-settle {
+  from {
+    transform: perspective(1100px) translate3d(0, 28px, 0) rotateX(8deg)
+      scale(0.985);
+  }
+  to {
+    transform: perspective(1100px) translate3d(0, 0, 0) rotateX(0deg) scale(1);
+  }
+}
+
+@keyframes pv-deal {
+  from {
+    opacity: 0.8;
+    transform: translate3d(-12px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pv-pop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pv-chip {
+  from {
+    transform: translate3d(10px, 0, 0) scale(0.92);
+  }
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* ── Base rules: what every browser gets ──────────────────────────────────── */
+
+/* The reading rail. Ember → gold → orchid: the page's three voices in the
+   order it introduces them. */
+.pv-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 60;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #ff6d05 0%, #ffcd5b 55%, #fc83ff 100%);
+  pointer-events: none;
+}
+
+/* The rule sits over the section's own border-top. 5px tall so the spark fits;
+   the line itself is the 1px in the middle. `overflow: hidden` clips the run
+   while it is parked off the left edge. */
+.pv-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -3px;
+  height: 5px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Drawn in full in the base rule. For an ornament, a finished line is the
+   right fallback. */
+.pv-rule-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  height: 1px;
+  transform-origin: 0 50%;
+  background: linear-gradient(
+    90deg,
+    #ff6d05 0%,
+    #ffaa2a 40%,
+    rgb(255 205 91 / 0.45) 75%,
+    rgb(255 205 91 / 0) 100%
+  );
+}
+
+.pv-rule-run {
+  position: absolute;
+  inset: 0;
+}
+
+.pv-rule-spark {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: #ffd27d;
+  opacity: 0;
+}
+
+/* The ordinal needs a box for its transform; it is a flex item, but the span
+   also sits in the panel eyebrows' inline flow. */
+.pv-focus-ord {
+  display: inline-block;
+}
+
+/* The fine amber underline that draws out beneath a section heading once it
+   has pulled focus. Drawn in full in the base rule: for an ornament, a
+   finished line is the right fallback. Decorative, and aria-hidden in markup. */
+.pv-under {
+  display: block;
+  height: 1px;
+  margin-top: 0.65rem;
+  background: linear-gradient(
+    90deg,
+    rgb(255 170 42 / 0.9) 0%,
+    rgb(255 170 42 / 0.35) 55%,
+    rgb(255 170 42 / 0) 100%
+  );
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+/* The ledger margin: a gold bar down each record's left edge, on its border.
+   Visible in the base rule too, because it is part of the card's design and
+   not just part of the animation. */
+.pv-record::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    #ffcd5b 0%,
+    #ff6d05 55%,
+    rgb(255 109 5 / 0) 100%
+  );
+  transform-origin: 50% 0;
+  pointer-events: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .pv-progress {
+      animation: pv-draw-x linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Ranges are against `cover`, never `entry` — see the /cv block for why.
+       The rule and its spark share one range so the spark rides the head of
+       the line exactly. */
+    .pv-rule-line {
+      animation: pv-draw-x linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 30%;
+    }
+    .pv-rule-run {
+      animation: pv-run linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 30%;
+    }
+    .pv-rule-spark {
+      animation: pv-spark linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 30%;
+    }
+
+    /* Focus pull. An expo-out curve rather than `linear`: most of the
+       tightening happens early in the range and the last few percent settle
+       slowly, which is what makes it read as a lens FINDING focus rather than
+       text sliding at a constant rate. The number moves a beat ahead of the
+       title, and the underline draws after it, so the three read as one
+       sequence. */
+    .pv-focus-ord {
+      animation: pv-focus-ord cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 22%;
+    }
+    .pv-focus {
+      animation: pv-focus cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-timeline: view();
+      animation-range: cover 2% cover 30%;
+    }
+    .pv-under {
+      animation: pv-draw-x cubic-bezier(0.65, 0, 0.35, 1) both;
+      animation-timeline: view();
+      animation-range: cover 10% cover 40%;
+    }
+
+    /* The tracking only runs where it cannot change the line count — see
+       `pv-focus-track`. The 768px column (max-w-3xl) is reached at this
+       width, and the longest title fits it on one line at 0.4em. */
+    @media (min-width: 900px) {
+      .pv-focus {
+        animation-name: pv-focus-track;
+      }
+    }
+
+    .pv-lede {
+      animation: pv-resolve linear both;
+      animation-timeline: view();
+      animation-range: cover 2% cover 26%;
+    }
+
+    /* The card settles first, then its margin bar inks down at a slower range,
+       so the bar appears to follow the reader down the entry. */
+    .pv-record {
+      animation: pv-settle linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 24%;
+    }
+    .pv-record::before {
+      animation: pv-ink-y linear both;
+      animation-timeline: view();
+      animation-range: cover 4% cover 40%;
+    }
+
+    /* Each row has its own timeline, so rows already arrive in reading order.
+       The ranges below also offset siblings, so rows that sit side by side
+       still land one after another. */
+    .pv-row {
+      animation: pv-deal linear both;
+      animation-timeline: view();
+      animation-range: cover 2% cover 22%;
+    }
+    .pv-row:nth-child(2) {
+      animation-range: cover 4% cover 24%;
+    }
+    .pv-row:nth-child(3) {
+      animation-range: cover 6% cover 26%;
+    }
+    .pv-row:nth-child(n + 4) {
+      animation-range: cover 8% cover 28%;
+    }
+
+    .pv-dot {
+      animation: pv-pop linear both;
+      animation-timeline: view();
+      animation-range: cover 6% cover 24%;
+    }
+
+    .pv-chip {
+      animation: pv-chip linear both;
+      animation-timeline: view();
+      animation-range: cover 6% cover 26%;
+    }
+  }
+}
+
+/* Print shows the finished document: no rail, no spark, no card mid-tilt. */
+@media print {
+  .pv-progress,
+  .pv-rule-spark {
+    display: none;
+  }
+  .pv-rule-line,
+  .pv-rule-run,
+  .pv-focus-ord,
+  .pv-focus,
+  .pv-under,
+  .pv-lede,
+  .pv-record,
+  .pv-record::before,
+  .pv-row,
+  .pv-dot,
+  .pv-chip {
+    animation: none;
   }
 }

@@ -4,8 +4,8 @@ import { expect, test } from '@playwright/test';
 // Runs against a PRODUCTION server (`next start`, see playwright.config.mjs),
 // which is the only place several of these can be checked at all:
 //
-//   • Response HEADERS. The CV's X-Robots-Tag is config, so a unit test can
-//     assert it is DECLARED — only a real request proves it is SERVED.
+//   • Response HEADERS. The CV's canonical `Link` header is config, so a unit
+//     test can assert it is DECLARED — only a real request proves it is SERVED.
 //   • The generated files. `/robots.txt`, `/sitemap.xml` and
 //     `/manifest.webmanifest` are route handlers; "does it return 200" is not a
 //     question a unit test can answer.
@@ -35,6 +35,12 @@ const ROUTES = [
   '/contact',
   '/my-past',
   '/guestbook',
+  // The privacy policy (#141). Listed here for the same reason as the rest, and
+  // with one of its own: this is the page whose whole value is being checkable
+  // independently of the site that wrote it, so it has to serve real, crawlable
+  // HTML with no JavaScript involved. `request` rather than `page` is exactly
+  // the audit that proves it does.
+  '/privacy',
 ];
 
 /** Strip tags and script/style bodies, the way the audit in the issue did. */
@@ -91,12 +97,17 @@ test.describe('crawl control', () => {
     const body = await response.text();
     const urls = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 
-    // 11 registry routes + 11 project pages + 1 note + the CV = 24. Hardcoded
+    // 12 registry routes + 11 project pages + 1 note + the CV = 25. Hardcoded
     // on purpose, same argument as ROUTES above: this number is the independent
     // check on the generator, so deriving it from the generator's own inputs
     // would make the assertion vacuous. When it changes, it should be changed
     // deliberately and the diff should say why.
-    expect(urls).toHaveLength(24);
+    //
+    // 24 → 25 on 2026-09-25: `/privacy` joined the registry (#141). It is
+    // indexable by decision rather than by omission — a privacy policy a search
+    // engine will not show is one a reader cannot verify independently of the
+    // site that wrote it, and being checkable is most of what it is for.
+    expect(urls).toHaveLength(25);
     expect(new Set(urls).size).toBe(urls.length);
 
     // The acceptance criterion is "every URL in the sitemap returns 200,
@@ -498,18 +509,18 @@ test.describe('structured data', () => {
   });
 });
 
-test.describe('the CV PDF as a deliberate landing page (W1b)', () => {
-  test('serves inline, with an explicit X-Robots-Tag', async ({ request }) => {
+test.describe('the CV PDF, canonicalised to /cv', () => {
+  test('serves inline, declaring /cv as its canonical', async ({ request }) => {
     const response = await request.get('/Muhammad_Abdullah_CV.pdf');
     expect(response.status()).toBe(200);
 
     const headers = response.headers();
     expect(headers['content-type']).toContain('application/pdf');
-    // Indexing is the default, so this header changes nothing technically — its
-    // value is that the decision (F6) is written where an auditor will read it.
-    expect(headers['x-robots-tag']).toContain('index');
-    expect(headers['x-robots-tag']).toContain('max-image-preview:large');
-    expect(headers['x-robots-tag']).not.toContain('noindex');
+    // A PDF cannot carry <link rel="canonical">, so the Link header is the only
+    // place the declaration can live. Without it, Search Console reports the PDF
+    // as "Duplicate without user-selected canonical" of /cv (2026-09-26).
+    expect(headers.link).toBe('<https://ma.codes/cv>; rel="canonical"');
+    expect(headers['x-robots-tag'] ?? '').not.toContain('noindex');
   });
 
   test('carries the /Title that names the search result', async ({ request }) => {

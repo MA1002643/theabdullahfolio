@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 // ── Why this file exists ────────────────────────────────────────────────────
-// GA4 is NOT mounted (see the last describe, which pins that) — the component
-// is written and waiting for #141's consent gate. These assertions are about
-// the state it will be switched on IN, and they are worth having now for the
-// same reason the component is worth having now: the defaults are the part
-// nobody looks at again once the tag starts reporting.
+// GA4 is mounted now — only ever inside #141's consent gate, which the last
+// describe pins from both ends. These assertions are about the state it reports
+// IN, and they matter more since the gate landed rather than less: the defaults
+// are the part nobody looks at again once the tag starts reporting, and there is
+// now a live path by which a tag can actually run.
 //
 // `analytics_storage: 'denied'` is what stops GA4 writing the `_ga` cookie.
 // Flip it — or add a signal and forget to deny it — and the site starts storing
@@ -54,7 +54,13 @@ function consentDefaults() {
 describe('Consent Mode v2 defaults', () => {
   const defaults = consentDefaults();
 
-  it('denies analytics storage — the whole basis for having no banner', () => {
+  it('denies analytics storage, permanently and in both consent states', () => {
+    // This used to be titled "the whole basis for having no banner". There is a
+    // notice now, and the assertion survives it unchanged — because #141
+    // deliberately did NOT flip this on accept. Consent decides whether the tag
+    // loads; storage stays denied either way, so no `_ga` cookie is ever written
+    // for anyone. /privacy says exactly that, and this is the line that makes it
+    // true.
     expect(defaults.analytics_storage).toBe('denied');
   });
 
@@ -101,9 +107,13 @@ describe('Consent Mode v2 defaults', () => {
   });
 
   it('grants nothing, anywhere in the module', () => {
-    // There is no UI on this site that could produce consent, so a `granted`
-    // literal here could only be an unconditional grant — the exact bug this
-    // whole arrangement exists to make impossible.
+    // The original reason was that no UI existed which could produce consent, so
+    // a `granted` literal here could only be an unconditional grant. #141 built
+    // that UI and the assertion got STRONGER rather than obsolete: this component
+    // has no access to consent state, so a `granted` here is still necessarily
+    // unconditional — and it would now be a storage grant on a live tag rather
+    // than dead code. The grant that does exist is "render this component at
+    // all", and it lives in ConsentedAnalytics.
     //
     // Checked against the CODE with comments stripped. The module's header
     // deliberately quotes the `gtag('consent','update',{…:'granted'})` call a
@@ -138,31 +148,120 @@ describe('the unset-measurement-id path', () => {
   });
 });
 
-describe('the mount, which deliberately does not exist yet', () => {
+// ── The gate, pinned from both ends ─────────────────────────────────────────
+// This describe used to be called "the mount, which deliberately does not exist
+// yet" and asserted that `layout.js` contained neither `<GoogleAnalytics />` nor
+// an import of it. #141 shipped, so half of that is now the wrong question — but
+// only half. The absence from `layout.js` is still exactly the right assertion,
+// because a mount THERE would bypass the consent gate entirely while looking
+// completely ordinary in review. What changed is that the mount has to exist
+// somewhere, and that somewhere has to be behind the gate.
+//
+// So: read both files, and check the relationship between them. Asserted against
+// SOURCE TEXT rather than by rendering, for the reason the defaults above are:
+// this is a claim about what ships, and the failure it guards against — a script
+// loading for somebody who never agreed — looks like nothing at all in a browser.
+describe('the consent gate around the mount', () => {
   const layout = codeOnly(
     readFileSync(new URL('../../src/app/layout.js', import.meta.url), 'utf8'),
   );
+  const gateSource = readFileSync(
+    new URL('../../src/components/privacy/ConsentedAnalytics.jsx', import.meta.url),
+    'utf8',
+  );
+  const gate = codeOnly(gateSource);
 
-  it('is absent from the root layout until the consent gate lands (#141)', () => {
-    // The component is finished and the CSP already allows the tag — what is
-    // missing is the only thing that may switch it on. #141's acceptance
-    // criterion is that a visitor who has not decided issues NO analytics
-    // request, and the denied defaults above suppress STORAGE, not the
-    // cookieless ping: a mounted GA4 still sends page path, referrer and coarse
-    // geography for an undecided visitor.
-    //
-    // Asserted against the layout SOURCE, with comments stripped, because this
-    // is a claim about what ships rather than about what renders — and because
-    // an accidental mount is the failure that looks like nothing at all in a
-    // browser, which is the same reason the defaults above are pinned.
-    expect(layout).not.toContain('<GoogleAnalytics />');
+  it('keeps GA4 out of the root layout, which would bypass the gate', () => {
+    // Unchanged from before #141, and deliberately so. The root layout is a
+    // Server Component with no access to consent state, so anything mounted
+    // there runs for every visitor on the first paint — which is the one
+    // outcome this whole arrangement exists to prevent.
+    expect(layout).not.toContain('<GoogleAnalytics');
     expect(layout).not.toContain('@/components/analytics/GoogleAnalytics');
   });
 
-  it('leaves Vercel Analytics where it is', () => {
-    // Unchanged by the above, and not an endorsement: it is mounted on Vercel
-    // only, and #141 gates all three together. Named here so that removing it
-    // is a deliberate act rather than a side effect of this file.
-    expect(layout).toContain('<Analytics />');
+  it('keeps Vercel Analytics and Speed Insights out of the root layout too', () => {
+    // These two WERE in the layout, behind `process.env.VERCEL`, and that
+    // condition is not a consent gate — it only asks whether the platform can
+    // serve the script, never whether the visitor agreed to it. Both moved
+    // behind ConsentedAnalytics; an import reappearing here is the same bypass
+    // as the GA4 one above.
+    expect(layout).not.toContain('@vercel/analytics');
+    expect(layout).not.toContain('@vercel/speed-insights');
+  });
+
+  it('mounts all three inside the consent boundary', () => {
+    expect(gate).toContain('@/components/analytics/GoogleAnalytics');
+    expect(gate).toContain('@vercel/analytics/next');
+    expect(gate).toContain('@vercel/speed-insights/next');
+    expect(gate).toContain('<GoogleAnalytics');
+    expect(gate).toContain('<Analytics />');
+    expect(gate).toContain('<SpeedInsights />');
+  });
+
+  it('puts the gate ABOVE every mount, not a flag inside one', () => {
+    // The distinction the issue was explicit about: mounting a script and
+    // telling it not to report still downloads the script and still sends the
+    // first beacon. Only an early return can produce "no network request".
+    //
+    // Checked by POSITION, which is the only property that expresses it: the
+    // `return null` must come before the first tag in the file. A test that
+    // merely asserted the guard exists would pass on a guard placed after the
+    // markup it is supposed to protect.
+    const guard = gate.indexOf('if (!analytics) return null;');
+    expect(
+      guard,
+      'ConsentedAnalytics must early-return when analytics are not granted.',
+    ).toBeGreaterThan(-1);
+
+    for (const tag of ['<SpeedInsights />', '<Analytics />', '<GoogleAnalytics']) {
+      expect(
+        gate.indexOf(tag),
+        `${tag} is rendered before the consent guard, so it would load for a ` +
+          `visitor who has not agreed.`,
+      ).toBeGreaterThan(guard);
+    }
+  });
+
+  it('never grants analytics storage, from anywhere', () => {
+    // The `'granted'` assertion above covers GoogleAnalytics.jsx. This covers
+    // the gate, which is the file that would plausibly have issued
+    // `gtag('consent', 'update', { analytics_storage: 'granted' })` — both the
+    // issue and the component's own header specified exactly that, and the
+    // implementation deliberately departed from it. Consent decides whether GA4
+    // LOADS; Consent Mode stays denied permanently, so no `_ga` cookie is ever
+    // written for anyone. /privacy states that without a caveat, and this is
+    // what keeps the statement true.
+    expect(gate).not.toContain('analytics_storage');
+    expect(gate).not.toMatch(/'granted'/);
+  });
+
+  it('resolves the Vercel-platform flag on the server, not in the client', () => {
+    // `process.env.VERCEL` is not a `NEXT_PUBLIC_` variable, so a client
+    // component reading it gets `undefined` inlined at build — and both Vercel
+    // scripts then silently never load in production. A failure with no symptom
+    // anywhere, which is why it is pinned in both directions: resolved in the
+    // Server Component, never read inside the boundary.
+    expect(layout).toContain('<ConsentedAnalytics vercel={Boolean(process.env.VERCEL)} />');
+    expect(gate).not.toContain('process.env.VERCEL');
+  });
+
+  it('gives the GA4 tags an id that changes per grant', () => {
+    // Next caches an inline <Script> by `id` for the life of the document, so
+    // re-granting after a revoke would render three inert tags and leave
+    // `window.gtag` deleted — analytics silently off while the UI says on.
+    // Pinned because it is invisible: the bug needs the sequence
+    // grant → revoke → grant to appear at all.
+    const component = readFileSync(
+      new URL('../../src/components/analytics/GoogleAnalytics.jsx', import.meta.url),
+      'utf8',
+    );
+    for (const id of ['ga-consent-default', 'ga-lib', 'ga-init']) {
+      expect(
+        component,
+        `The ${id} script must carry the grant epoch in its id.`,
+      ).toContain(`id={\`${id}-\${epoch}\`}`);
+    }
+    expect(gate).toContain('epoch={grantEpoch}');
   });
 });

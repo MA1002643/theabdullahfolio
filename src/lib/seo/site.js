@@ -499,6 +499,57 @@ const ROUTE_DEFINITIONS = [
       PAGE_TITLE_SOURCE,
     ],
   },
+  {
+    path: '/privacy',
+    title: 'Privacy',
+    // Written to be read in a SERP by someone deciding whether this developer
+    // is careful, because that is who reads a privacy description on a
+    // portfolio. "Audited, not templated" is the claim the page then has to
+    // earn, and `src/lib/privacy/inventory.js` plus its drift test are what
+    // earn it.
+    description:
+      'Every cookie, storage key and third party this site touches, why each ' +
+      'exists, and how to turn the optional ones off. Audited, not templated.',
+    changeFrequency: 'yearly',
+    // The lowest priority in the registry, below /guestbook's 0.4. It is
+    // small print and should be findable rather than promoted — but it is
+    // deliberately INDEXABLE, not noindexed: a privacy policy a search engine
+    // will not show is one a reader cannot verify independently of the site
+    // that wrote it, and being checkable is most of its value.
+    priority: 0.3,
+    indexable: true,
+    sources: [
+      // The directory, which also covers both card handlers. Safe to watch
+      // whole, unlike /notes and /projects: nothing nests under this route, so
+      // there is no child page whose commits could re-stamp this one.
+      'src/app/(sub pages)/privacy',
+      // The inventory IS the page. Every table, every disclosure and every
+      // retention statement is rendered from this module, so a commit to it
+      // rewrites the published document even though nothing under the route
+      // moved — the same relationship `docs` has with /notes.
+      'src/lib/privacy',
+      // The renderer, and the notice/preference components alongside it.
+      //
+      // Watched HERE rather than in `SHARED_ROUTE_SOURCES`, although
+      // `PrivacyGate` renders on all 20 URLs through the root layout. That
+      // looks like the omission SHARED_ROUTE_SOURCES exists to prevent and is
+      // the opposite: the notice server-renders an EMPTY `aria-live` span and
+      // nothing else, because its `open` gate requires client hydration. So a
+      // commit to the notice's copy changes no crawler-visible text at any
+      // other URL, and listing it shared would re-stamp every page on the site
+      // for a change none of their HTML saw — the over-stamp the note on
+      // SHARED_ROUTE_SOURCES is careful about. The policy prose is published at
+      // exactly one URL, and this is it.
+      'src/components/privacy',
+      // The word table, watched here for the reason `/` and `/projects` watch
+      // it. Three of the policy's section ledes state HOW MANY rows follow and
+      // spell it through `countWord()`, so an edit to that table rewrites three
+      // published sentences at this URL without touching a file under the route
+      // or inside the inventory.
+      'src/lib/numberWords.js',
+      PAGE_TITLE_SOURCE,
+    ],
+  },
 ];
 
 // ── Sources every indexable URL shares ──────────────────────────────────────
@@ -721,20 +772,20 @@ export const ROUTES = ROUTE_DEFINITIONS.map((route) => ({
 }));
 
 // ── The CV PDF ──────────────────────────────────────────────────────────────
-// Indexable BY DECISION, not by accident (F6, owner call 2026-09-11). It is a
-// first-class landing page for name queries, so it is declared here, given a
-// real /Title and /Author (scripts/seo-pdf-metadata.mjs), served with an
-// explicit X-Robots-Tag (next.config.mjs) and listed in the sitemap.
+// Canonicalised to /cv (owner call 2026-09-26, superseding F6's 2026-09-11
+// "indexable by decision"). Search Console flagged the PDF as "Duplicate
+// without user-selected canonical" — /cv renders the same record in HTML — so
+// the PDF now sends `Link: <…/cv>; rel="canonical"` (next.config.mjs) and is
+// NOT in the sitemap. It keeps its real /Title and /Author
+// (scripts/seo-pdf-metadata.mjs): the file is still linked, downloaded and read.
 //
 // It is NOT a member of ROUTES: it is not an app-router page, so the drift
-// test must not expect a `page.js` for it, and it carries no canonical or
-// JSON-LD (a PDF can carry neither).
+// test must not expect a `page.js` for it, and it carries no JSON-LD (a PDF
+// cannot). Only its path is published — by llms.txt and the Person graph's
+// `significantLink`, both of which link to the file rather than ask for it to
+// be indexed.
 export const CV_ASSET = {
   path: '/Muhammad_Abdullah_CV.pdf',
-  changeFrequency: 'monthly',
-  priority: 0.6,
-  // The binary itself is the only source that matters for its lastModified.
-  sources: ['public/Muhammad_Abdullah_CV.pdf'],
 };
 
 // ── Crawl policy ────────────────────────────────────────────────────────────

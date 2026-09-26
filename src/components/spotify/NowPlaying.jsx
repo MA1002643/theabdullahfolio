@@ -219,9 +219,16 @@ export default function NowPlaying() {
 
   return (
     <motion.div
-      className="fixed bottom-6 left-6 z-50"
+      // `floating-bottom-anchor` owns the BOTTOM offset (globals.css): it folds
+      // in the safe-area inset and `--consent-lift`, so the card steps up out
+      // of the way of the #141 privacy notice on a first visit and back down
+      // once it is answered. The Tailwind `bottom-6` that used to be here is
+      // gone rather than overridden — a utility class and the anchor class have
+      // equal specificity, so which one won would have depended on stylesheet
+      // order. `left` stays inline; nothing moves it.
+      className="floating-bottom-anchor fixed left-6 z-50"
       style={{
-        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.25rem)',
+        '--floating-bottom-gap': '1.25rem',
         left: 'calc(env(safe-area-inset-left, 0px) + 1.25rem)',
       }}
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}

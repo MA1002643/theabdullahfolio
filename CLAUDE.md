@@ -159,3 +159,53 @@ Prefer a figure **derived at build** (`countLines()` is the pattern — the page
 line count is computed from the file, so it cannot drift), or hedged prose that
 cannot go wrong ("well over a thousand lines"). If an exact figure genuinely has
 to be written down, date it so a reader knows how much to trust it.
+
+### `/privacy` is checked on every commit
+
+[`/privacy`](https://ma.codes/privacy) tells every visitor what this site
+collects. If it is out of date, it is not just old documentation: it is a
+false statement published to every reader. **Before every commit, check whether
+the change alters what the site collects, stores, sends or keeps. If it does,
+update the policy in the same commit**, without being asked. An agent does the
+update itself and then reports what it changed.
+
+#### Where the policy lives
+
+`src/lib/privacy/inventory.js` is the only source. `/privacy`, the preference
+centre and the notice all render from it. Edit the inventory, not the prose in
+`src/components/privacy/PrivacyPolicy.jsx`. Counts on the page are interpolated
+from the lists, so do not type one by hand.
+
+#### What triggers an update
+
+| If the change… | Update in `inventory.js` |
+| --- | --- |
+| Adds, renames or removes a `localStorage` / `sessionStorage` key | `STORAGE_KEYS` (and `STORAGE_GROUPS` if it needs a new group) |
+| Sets or stops setting a cookie, including one set by a third-party script | `COOKIES` |
+| Adds a third-party service, script, SDK, API or host that receives visitor data (a new env-var credential, a new CSP `connect-src`/`script-src` host, a new `fetch` to an outside origin) | `PROCESSORS`, and `ANALYTICS_SURFACES` if it measures visitors |
+| Stores something server-side: a KV key, a log, an email, a guestbook field, a new form field | `SERVER_DATA`, with its retention period |
+| Changes a retention period, what a form collects, or where a message is delivered | the matching entry's `detail` / retention |
+| Changes consent behaviour or the analytics gate | `CATEGORIES` / `ANALYTICS_SURFACES` |
+| Changes how a visitor can exercise a right (contact route, deletion) | `RIGHTS` |
+| Stops collecting something | remove the entry — a stale entry is also false |
+
+Changes that only affect styling, copy, animation or layout don't need an
+update. Neither does anything that never touches visitor data.
+
+#### The two dates and the version
+
+- **`POLICY_UPDATED`**: bump it to the commit date when the substance of the
+  policy changes. Leave it alone when a sentence is only reworded.
+- **`CONSENT_KEY` / `CONSENT_VERSION`**: bumping these wipes every stored
+  consent decision and asks every visitor again. Only do it when what the
+  visitor agreed to has materially changed, and **ask the owner first**.
+
+#### What CI catches, and what it does not
+
+`tests/unit/privacyInventory.test.js` walks `src/` and fails when a
+browser-storage key is not disclosed. **That is the only part enforced.**
+Nothing enforces cookies, processors, server-side data, retention or rights,
+so those can go stale while CI stays green. Run `npx vitest run
+tests/unit/privacyInventory.test.js` after editing the inventory. Record the
+policy change in the commit's `CHANGELOG.md` entry, or state there that the
+privacy check found nothing to change.

@@ -21,6 +21,11 @@ const FLUID_SCALE_PAGES = [
   '/uses',
   '/cv',
   '/notes',
+  // #141. Adopted from the first commit rather than retrofitted: the policy is
+  // a dense text document, and the fluid factor is what keeps its measure
+  // comfortable from a 320px phone to an ultrawide without a breakpoint jump
+  // mid-table.
+  '/privacy',
 ];
 
 export default function SubPagesLayout({ children }) {

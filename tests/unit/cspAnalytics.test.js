@@ -128,7 +128,7 @@ describe('CSP ↔ analytics contract', () => {
 });
 
 describe('CV PDF crawl directives', () => {
-  it('serves an explicit X-Robots-Tag on the CV (W1b)', async () => {
+  it('declares /cv as the PDF canonical (owner call 2026-09-26)', async () => {
     const { default: config } = await import('../../next.config.mjs');
     const headerGroups = await config.headers();
 
@@ -137,19 +137,18 @@ describe('CV PDF crawl directives', () => {
     );
     expect(
       group,
-      'no header group for the CV PDF — W1b requires its indexing intent to be ' +
-        'written down where the next person to audit this file will read it.',
+      'no header group for the CV PDF — without its canonical, Search Console ' +
+        'reports it as "Duplicate without user-selected canonical" of /cv.',
     ).toBeTruthy();
 
-    const tag = group.headers.find((entry) => entry.key === 'X-Robots-Tag');
-    expect(tag).toBeTruthy();
-    // Indexing is the default, so this header changes nothing technically. Its
-    // value is that the DECISION (F6, owner call 2026-09-11) is now explicit
-    // rather than being the absence of a contrary instruction.
-    expect(tag.value).toContain('index');
-    expect(tag.value).toContain('follow');
-    expect(tag.value).toContain('max-image-preview:large');
-    expect(tag.value).not.toContain('noindex');
+    const link = group.headers.find((entry) => entry.key === 'Link');
+    expect(link).toBeTruthy();
+    expect(link.value).toBe('<https://ma.codes/cv>; rel="canonical"');
+
+    // noindex beside a canonical is a conflicting signal; the canonical alone
+    // is what consolidates the PDF onto /cv.
+    const robots = group.headers.find((entry) => entry.key === 'X-Robots-Tag');
+    expect(robots?.value ?? '').not.toContain('noindex');
   });
 });
 
