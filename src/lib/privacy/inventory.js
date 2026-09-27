@@ -288,6 +288,24 @@ export const PROCESSORS = [
     initiated: 'Only when you press Send',
     source: 'src/app/api/send-mail/route.js',
   },
+  {
+    // Conditional on `ABSTRACT_API_KEY`, and disclosed regardless: a policy
+    // that lists a processor only when the deploy happens to configure it
+    // cannot be read by someone who cannot see the deploy's settings.
+    name: 'Abstract API',
+    role: 'Contact address check',
+    detail:
+      'Before a contact message is accepted, the email address you entered is ' +
+      'sent to Abstract’s Email Reputation service, which answers whether it ' +
+      'can receive mail and whether it is a disposable address. Only the ' +
+      'address goes, not your name or message, and the request is made by my ' +
+      'server rather than your browser. The answer decides whether the form ' +
+      'goes through, and nothing from it is kept. The check runs only while ' +
+      'the site is configured with an Abstract key; without one, your address ' +
+      'is not sent anywhere for this.',
+    initiated: 'Only when you press Send, and only if the check is enabled',
+    source: 'src/app/api/send-mail/route.js',
+  },
 ];
 
 // ── Data held server-side ───────────────────────────────────────────────────
