@@ -335,13 +335,34 @@ export default function PrivacyPolicy() {
           className={`mt-3 space-y-2 ${INK.body}`}
           style={{ fontSize: fluidText(0.97, 0.88), lineHeight: 1.6 }}
         >
+          {/* Each line has to be true on its own: a visitor may read nothing
+              else. So the last two split what stays on the device from what
+              the visitor chooses to send, and the send line points at the
+              section that says what is kept and for how long. */}
           {[
-            'I sell nothing, share nothing with advertisers, and run no third-party profiling of any kind.',
-            'Analytics are off until you switch them on, and nothing is even downloaded before you do.',
-            'The only cookies here are the guestbook sign-in, set if you choose to sign in and not otherwise.',
-            'Everything else is kept on your own device, for your benefit. The one exception is a contact message you send while offline: it waits on your device, then reaches me once you are back online.',
-          ].map((line) => (
-            <li key={line} className="pv-row flex gap-3">
+            ['sell', 'I sell nothing, share nothing with advertisers, and run no third-party profiling of any kind.'],
+            ['analytics', 'Analytics are off until you switch them on, and nothing is even downloaded before you do.'],
+            ['cookies', 'The only cookies here are the guestbook sign-in, set if you choose to sign in and not otherwise.'],
+            ['device', 'Your settings, drafts and dismissed hints stay on your own device and are never sent to me.'],
+            [
+              'sent',
+              <>
+                What you choose to send leaves your device: a guestbook entry is
+                stored, and a contact message is delivered to my inbox (one
+                written offline waits on your device until you are back
+                online). The guestbook page also sends a random per-tab ID to
+                count who is here now.{' '}
+                <a
+                  href="#server"
+                  className="rounded-sm text-[#ff8a1e] underline decoration-[#ff8a1e]/40 underline-offset-[3px] hover:decoration-[#ff6d05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05] focus-visible:ring-offset-2 focus-visible:ring-offset-night-950"
+                >
+                  What is kept, and for how long
+                </a>
+                .
+              </>,
+            ],
+          ].map(([key, line]) => (
+            <li key={key} className="pv-row flex gap-3">
               <span
                 aria-hidden="true"
                 className="pv-dot mt-[0.6em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff6d05]"
@@ -410,10 +431,13 @@ export default function PrivacyPolicy() {
         ordinal="03"
         id="device"
         title="Kept on your device"
-        lede="Written to your browser's own storage and read back by your browser.
-        None of it reaches me, and none of it identifies you — it is how the site
-        remembers that you have been here before. Named individually rather than
-        summarised, so you can match any of them against your own devtools."
+        lede="Written to your browser's own storage and read back by your browser,
+        and none of it identifies you — it is how the site remembers that you
+        have been here before. Two items do leave it: a contact message sent
+        while offline, delivered once the network returns, and the guestbook
+        page's random per-tab ID, sent to count who is here now. Both are in
+        section 05. Named individually rather than summarised, so you can match
+        any of them against your own devtools."
       >
         <div className="space-y-5">
           {grouped.map((group) => (

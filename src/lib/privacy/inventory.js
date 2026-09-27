@@ -84,10 +84,12 @@ export const CATEGORIES = [
       'used before — a half-typed message survives a refresh, the intro plays ' +
       'once, a dismissed hint stays dismissed. That is written to your own ' +
       'browser and read back by your own browser, and none of it is used to ' +
-      'recognise you. One item leaves your device, and only because you asked ' +
-      'it to: a contact message you send while offline is held here until the ' +
-      'network returns, then delivered to me like any other message. Drafts ' +
-      'you have not sent are never transmitted.',
+      'recognise you. Two items leave your device. A contact message you send ' +
+      'while offline is held here until the network returns, then delivered ' +
+      'to me like any other message. On the guestbook page, a random per-tab ' +
+      'ID is sent to count who is here now; it is not linked to you, and the ' +
+      'server forgets it within minutes. Drafts you have not sent are never ' +
+      'transmitted.',
   },
   {
     id: 'analytics',
