@@ -56,7 +56,7 @@ const ConsentContext = createContext(null);
  *   analytics: boolean,      // false until hydrated, always
  *   decidedAt: string|null,
  *   hydrated: boolean,
- *   grantEpoch: number,      // increments per grant; see ConsentedAnalytics
+ *   grantEpoch: number,      // increments on each move INTO granted; see ConsentedAnalytics
  *   prefsOpen: boolean,
  *   triggerRef: React.RefObject<Element|null>, // what to hand focus back to
  *   grant: () => void,
@@ -90,16 +90,41 @@ export default function ConsentProvider({ children }) {
   const [hydrated, setHydrated] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
 
-  // Counts grants, and only grants. It is appended to the GA4 script ids so a
+  // Counts transitions INTO granted, and nothing else. It is appended to the GA4 script ids so a
   // re-grant after a revoke actually re-executes the inline tags: Next caches
   // inline `<Script>` by `id` for the life of the document, so remounting the
   // same ids is a no-op and `window.gtag` — deleted on revoke — would never come
   // back. See ConsentedAnalytics for the teardown this pairs with.
   const [grantEpoch, setGrantEpoch] = useState(0);
 
+  // The status currently applied, mirrored in a ref so `apply` can compare the
+  // incoming decision against it without reading state inside an updater —
+  // StrictMode may run an updater twice, and a bump there would double-count.
+  const statusRef = useRef(STATUS.UNDECIDED);
+
+  // Every decision change goes through here, so the epoch rule lives in one
+  // place: bump only on a TRANSITION into granted. Re-writing a record that is
+  // already granted — Accept pressed again, or another tab re-accepting, which
+  // changes nothing but `decidedAt` — must not bump, or GA4 remounts under new
+  // ids and runs its inline config a second time for the same page.
+  const apply = useCallback((next) => {
+    const wasGranted = statusRef.current === STATUS.GRANTED;
+    statusRef.current = next.status;
+    setDecision(next);
+    if (next.status === STATUS.GRANTED && !wasGranted) {
+      setGrantEpoch((n) => n + 1);
+    }
+  }, []);
+
   // Rule 1: the read happens here, never in render.
+  //
+  // Sets the ref directly rather than via `apply`: a grant found on load is the
+  // FIRST mount, and epoch 0's ids have never been used, so there is nothing to
+  // re-execute.
   useEffect(() => {
-    setDecision(readConsent());
+    const stored = readConsent();
+    statusRef.current = stored.status;
+    setDecision(stored);
     setHydrated(true);
   }, []);
 
@@ -111,26 +136,23 @@ export default function ConsentProvider({ children }) {
       // doing and whose `newValue` is null anyway, so it would parse to
       // `undecided` and silently re-prompt.
       if (event.key !== CONSENT_KEY) return;
-      const next = parseConsent(event.newValue);
-      setDecision(next);
       // A grant arriving from another tab has to bump the epoch here too, or
       // this tab mounts GA4 with an id it has already used and the inline tag
-      // never runs.
-      if (next.status === STATUS.GRANTED) setGrantEpoch((n) => n + 1);
+      // never runs — `apply` does that, and only when this tab was not
+      // already granted.
+      apply(parseConsent(event.newValue));
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [apply]);
 
   const set = useCallback((allow) => {
-    const next = writeConsent(allow);
-    setDecision(next);
-    if (next.analytics) setGrantEpoch((n) => n + 1);
+    apply(writeConsent(allow));
     // Closing the preference centre on a decision is the right default: the
     // dialog exists to make a choice and the choice has been made. Leaving it
     // open would make the visitor dismiss the same surface twice.
     setPrefsOpen(false);
-  }, []);
+  }, [apply]);
 
   const grant = useCallback(() => set(true), [set]);
   const deny = useCallback(() => set(false), [set]);

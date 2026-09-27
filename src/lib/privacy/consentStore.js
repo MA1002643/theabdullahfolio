@@ -112,7 +112,15 @@ export function parseConsent(raw) {
     // decided. Never load-bearing, so a missing or malformed value degrades to
     // null instead of invalidating an otherwise valid decision: the visitor's
     // answer is the part that matters and the timestamp is a courtesy.
-    decidedAt: typeof parsed.decidedAt === 'string' ? parsed.decidedAt : null,
+    //
+    // "Malformed" includes a string that is not a date: `typeof` alone let
+    // `"not-a-date"` through, and ConsentStatusPanel then printed "Invalid
+    // Date" on /privacy.
+    decidedAt:
+      typeof parsed.decidedAt === 'string' &&
+      !Number.isNaN(Date.parse(parsed.decidedAt))
+        ? parsed.decidedAt
+        : null,
   };
 }
 

@@ -1,3 +1,4 @@
+import { loadEnvConfig } from '@next/env';
 import { expect, test } from '@playwright/test';
 
 // ── SEO end-to-end suite (issue #32, W5) ────────────────────────────────────
@@ -17,6 +18,18 @@ import { expect, test } from '@playwright/test';
 // `request` (the APIRequestContext) is used rather than `page` for most of it,
 // deliberately. `page.goto()` runs the client bundle, so a link that only exists
 // after hydration would pass — which is precisely the bug F1 was.
+
+// The origin the served build was configured with. `NEXT_PUBLIC_SITE_ORIGIN`
+// is a supported override (src/lib/seo/site.js — forks and self-referential
+// previews), so hardcoding `https://ma.codes` here would fail a correctly
+// configured fork on every origin assertion. Resolved exactly as the build
+// resolves it: `loadEnvConfig` reads the `.env*` files `next build` read, then
+// the same fallback and trailing-slash strip `ORIGIN` applies. Not imported
+// from site.js, whose `@/` aliases Playwright's loader does not resolve.
+loadEnvConfig(process.cwd());
+const SITE_ORIGIN = (
+  process.env.NEXT_PUBLIC_SITE_ORIGIN || 'https://ma.codes'
+).replace(/\/+$/, '');
 
 const ROUTES = [
   '/',
@@ -72,12 +85,12 @@ test.describe('crawl control', () => {
     const body = await response.text();
     // Absolute, per the sitemap protocol — a relative Sitemap directive is
     // invalid and silently ignored by every consumer.
-    expect(body).toContain('Sitemap: https://ma.codes/sitemap.xml');
+    expect(body).toContain(`Sitemap: ${SITE_ORIGIN}/sitemap.xml`);
     // Host is the opposite: the directive takes a HOSTNAME, and a consumer
     // that is handed an absolute URL ignores the line. Asserted with the
     // trailing newline, so the line has to END at the apex — a substring
     // match alone would also pass on `Host: ma.codes.example`.
-    expect(body).toContain('Host: ma.codes\n');
+    expect(body).toContain(`Host: ${new URL(SITE_ORIGIN).hostname}\n`);
     expect(body).toMatch(/User-Agent: \*/);
     // F7: the AI-crawler posture is stated rather than inherited. A named
     // stanza is what makes the allow a policy instead of an accident.
@@ -97,7 +110,7 @@ test.describe('crawl control', () => {
     const body = await response.text();
     const urls = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 
-    // 12 registry routes + 11 project pages + 1 note + the CV = 25. Hardcoded
+    // 12 registry routes + 11 project pages + 1 note = 24. Hardcoded
     // on purpose, same argument as ROUTES above: this number is the independent
     // check on the generator, so deriving it from the generator's own inputs
     // would make the assertion vacuous. When it changes, it should be changed
@@ -107,7 +120,11 @@ test.describe('crawl control', () => {
     // indexable by decision rather than by omission — a privacy policy a search
     // engine will not show is one a reader cannot verify independently of the
     // site that wrote it, and being checkable is most of what it is for.
-    expect(urls).toHaveLength(25);
+    //
+    // 25 → 24 on 2026-09-26: the CV PDF left the sitemap. It now declares /cv
+    // as its canonical (Link header, next.config.mjs), and a sitemap lists
+    // only canonical URLs — see the note at the end of src/app/sitemap.js.
+    expect(urls).toHaveLength(24);
     expect(new Set(urls).size).toBe(urls.length);
 
     // The acceptance criterion is "every URL in the sitemap returns 200,
@@ -154,7 +171,7 @@ test.describe('crawl control', () => {
     expect(body).toContain('## Projects');
     for (const route of ROUTES) {
       if (route === '/') continue;
-      expect(body).toContain(`https://ma.codes${route}`);
+      expect(body).toContain(`${SITE_ORIGIN}${route}`);
     }
     // Private repositories are named but carry no repo URL — publishing a link
     // that 404s for every reader is worse than omitting it.
@@ -173,7 +190,7 @@ test.describe('canonical & indexability', () => {
       expect(canonical, `${route} has no canonical`).toBeTruthy();
       // The root canonical is the bare origin; everything else is origin+path.
       const expected =
-        route === '/' ? 'https://ma.codes' : `https://ma.codes${route}`;
+        route === '/' ? SITE_ORIGIN : `${SITE_ORIGIN}${route}`;
       expect(canonical).toBe(expected);
     });
   }
@@ -362,7 +379,7 @@ test.describe('structured data', () => {
     const graph = JSON.parse(block);
 
     const person = graph['@graph'].find((node) => node['@type'] === 'Person');
-    expect(person['@id']).toBe('https://ma.codes/#person');
+    expect(person['@id']).toBe(`${SITE_ORIGIN}/#person`);
     expect(person.jobTitle).toBe('Software Engineer');
     expect(person.sameAs.join(' ')).toContain('github.com');
   });
@@ -380,7 +397,7 @@ test.describe('structured data', () => {
       (node) => node['@type'] === 'SoftwareSourceCode',
     );
     expect(code.codeRepository).toContain('github.com/MA1002643/');
-    expect(code.author['@id']).toBe('https://ma.codes/#person');
+    expect(code.author['@id']).toBe(`${SITE_ORIGIN}/#person`);
 
     const trail = doc['@graph'].find(
       (node) => node['@type'] === 'BreadcrumbList',
@@ -519,7 +536,7 @@ test.describe('the CV PDF, canonicalised to /cv', () => {
     // A PDF cannot carry <link rel="canonical">, so the Link header is the only
     // place the declaration can live. Without it, Search Console reports the PDF
     // as "Duplicate without user-selected canonical" of /cv (2026-09-26).
-    expect(headers.link).toBe('<https://ma.codes/cv>; rel="canonical"');
+    expect(headers.link).toBe(`<${SITE_ORIGIN}/cv>; rel="canonical"`);
     expect(headers['x-robots-tag'] ?? '').not.toContain('noindex');
   });
 
