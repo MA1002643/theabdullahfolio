@@ -555,15 +555,21 @@ export default function Home() {
             Out of flow (`sr-only` is `position: absolute`), so it cannot
             affect the hero's layout or the ring measurement.
 
-            THE TWO LINKS ARE LOAD-BEARING, not decoration. `/cv` and `/notes`
-            are the only routes not on the orbit ring — `BtnList` is capped at
-            eight by the sub-480px two-column layout that slices it 0-3 / 4-7,
-            so a ninth entry would break it — and the homepage renders no
-            footer, which is where every other page links them. Without these
-            two anchors both routes are reachable from every page EXCEPT the
-            one a crawler enters on: F1, reproduced by the fix for it. The e2e
-            suite's "every route is reachable from / in raw HTML" case is what
-            caught it, and is what keeps it caught.
+            THE THREE LINKS ARE LOAD-BEARING, not decoration. `/cv`, `/notes`
+            and `/privacy` are the only routes not on the orbit ring —
+            `BtnList` is capped at eight by the sub-480px two-column layout
+            that slices it 0-3 / 4-7, so a ninth entry would break it — and the
+            homepage renders no footer, which is where every other page links
+            them. Without these anchors all three routes are reachable from
+            every page EXCEPT the one a crawler enters on: F1, reproduced by
+            the fix for it. The e2e suite's "every route is reachable from / in
+            raw HTML" case is what caught it, and is what keeps it caught.
+
+            `/privacy` (#141) is the third, and it arrived the same way: the
+            route shipped, the footer linked it, and that e2e case failed on
+            the homepage the same afternoon. Which is the argument for the case
+            existing — the footer link felt like enough, and on nine pages out
+            of ten it is.
 
             They are also the affordance the sentence previously lacked: it
             already told a screen-reader user the CV existed while giving them
@@ -599,15 +605,20 @@ export default function Home() {
           systems, mobile and AI — each tracked live from its own GitHub board,
           alongside the degrees and roles behind them, a timeline of the route
           from college to production, and the tools the work is actually built
-          with. Every section is reachable from the ring below apart from two:
-          the full record is on the{' '}
+          with. Every section is reachable from the ring below apart from
+          three: the full record is on the{' '}
           <Link href="/cv" prefetch={false}>
             CV page
           </Link>{' '}
-          and as a PDF, and the reasoning behind how this site is built is
-          written up in the{' '}
+          and as a PDF, the reasoning behind how this site is built is written
+          up in the{' '}
           <Link href="/notes" prefetch={false}>
             engineering notes
+          </Link>
+          , and what this site collects — with the switch that turns the
+          optional part off — is set out on the{' '}
+          <Link href="/privacy" prefetch={false}>
+            privacy page
           </Link>
           .
         </p>

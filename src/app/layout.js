@@ -9,8 +9,9 @@ import ProjectFilterHandoffGuard from '@/components/projects/ProjectFilterHandof
 import NowPlaying from '@/components/spotify/NowPlaying';
 import SoundProvider from '@/components/sound/SoundProvider';
 import FloatingSoundToggle from '@/components/sound/FloatingSoundToggle';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Analytics } from '@vercel/analytics/next';
+import ConsentProvider from '@/components/privacy/ConsentProvider';
+import ConsentedAnalytics from '@/components/privacy/ConsentedAnalytics';
+import PrivacyGate from '@/components/privacy/PrivacyGate';
 import JsonLd from '@/components/seo/JsonLd';
 import { alternatesFor } from '@/lib/seo/canonical';
 import { personGraph } from '@/lib/seo/schema';
@@ -179,88 +180,100 @@ export default function RootLayout({ children }) {
           'bg-background text-foreground',
         )}
       >
-        {/* Owns the footer guitar track's <audio> element + on/off state. MUST
-            sit in the root layout: the (sub pages) layout that renders <Footer />
-            is unmounted when you navigate to `/`, which previously destroyed the
-            audio node mid-play and cut the music off (see SoundProvider).
+        {/* Consent wraps EVERYTHING below, because two widely separated
+            subtrees read it: <PrivacyGate /> inside the transition provider,
+            and <ConsentedAnalytics /> at the end of <body>. The nearest common
+            ancestor of those two is this element. It renders no DOM node of its
+            own — see ConsentProvider — so nothing about the page's layout
+            changes by its being here. */}
+        <ConsentProvider>
+          {/* Owns the footer guitar track's <audio> element + on/off state. MUST
+              sit in the root layout: the (sub pages) layout that renders <Footer />
+              is unmounted when you navigate to `/`, which previously destroyed the
+              audio node mid-play and cut the music off (see SoundProvider).
 
-            Scoped to just its context consumers — the page subtree (its Footer
-            calls useSound) and FloatingSoundToggle. The purely-visual overlays
-            (NowPlaying, GlobalToaster, CustomCursor) don't consume the context,
-            so they render OUTSIDE it. Because RootLayout is a Server Component
-            they wouldn't re-render on toggle even inside (their `children`
-            reference is stable → React bails out of that subtree), but keeping
-            them out makes that independence explicit and stays true even if this
-            layout ever becomes a Client Component. */}
-        <SoundProvider>
-          <LoaderWrapper>
-            <PageTransitionProvider>{children}</PageTransitionProvider>
-          </LoaderWrapper>
-          {/* Stop control for routes with no footer (the homepage), so the
-              persisting track is always silenceable. Renders null elsewhere. */}
-          <FloatingSoundToggle />
-        </SoundProvider>
-        {/* Live music presence — floats bottom-left on every page (issue #42).
-            Renders null until data arrives, so no SSR/hydration mismatch. */}
-        <NowPlaying />
-        {/* Expires the /projects filter handoff on any route outside the
-            projects area. Renders null; lives at the ROOT (not in the
-            (sub pages) layout) so it also observes the homepage. */}
-        <ProjectFilterHandoffGuard />
-        <GlobalToaster />
-        <CustomCursor />
-        {/* The entity graph's root — `Person` + `WebSite`, one connected
-            `@graph` (issue #32, W2). Lives in the ROOT layout, not per page,
-            for the reason the `@id` scheme exists: every page must be able to
-            reference `#person` and have the reference resolve in the same
-            document. A per-page copy would be ten competing definitions of one
-            person, which is precisely what P3 forbids.
+              Scoped to just its context consumers — the page subtree (its Footer
+              calls useSound) and FloatingSoundToggle. The purely-visual overlays
+              (NowPlaying, GlobalToaster, CustomCursor) don't consume the context,
+              so they render OUTSIDE it. Because RootLayout is a Server Component
+              they wouldn't re-render on toggle even inside (their `children`
+              reference is stable → React bails out of that subtree), but keeping
+              them out makes that independence explicit and stays true even if this
+              layout ever becomes a Client Component. */}
+          <SoundProvider>
+            <LoaderWrapper>
+              <PageTransitionProvider>
+                {children}
+                {/* The privacy notice + preference centre live INSIDE the
+                    transition provider, not beside it, for one reason: the
+                    notice links to /privacy with <TransitionLink>, which falls
+                    back to a plain navigation when no provider is above it. That
+                    fallback works, and it would make this the one internal link
+                    on the site that skips the Ember Passage — a visible
+                    inconsistency on the surface whose whole job is to look
+                    considered. LoaderWrapper renders `children` plainly, so
+                    being inside it costs nothing; the notice waits for
+                    `useLoaderRevealed()` regardless. */}
+                <PrivacyGate />
+              </PageTransitionProvider>
+            </LoaderWrapper>
+            {/* Stop control for routes with no footer (the homepage), so the
+                persisting track is always silenceable. Renders null elsewhere. */}
+            <FloatingSoundToggle />
+          </SoundProvider>
+          {/* Live music presence — floats bottom-left on every page (issue #42).
+              Renders null until data arrives, so no SSR/hydration mismatch. */}
+          <NowPlaying />
+          {/* Expires the /projects filter handoff on any route outside the
+              projects area. Renders null; lives at the ROOT (not in the
+              (sub pages) layout) so it also observes the homepage. */}
+          <ProjectFilterHandoffGuard />
+          <GlobalToaster />
+          <CustomCursor />
+          {/* The entity graph's root — `Person` + `WebSite`, one connected
+              `@graph` (issue #32, W2). Lives in the ROOT layout, not per page,
+              for the reason the `@id` scheme exists: every page must be able to
+              reference `#person` and have the reference resolve in the same
+              document. A per-page copy would be ten competing definitions of one
+              person, which is precisely what P3 forbids.
 
-            Rendered as the last element in <body> deliberately: it is data, not
-            content, so it should never delay the paint of anything above it.
-            Position in the document is irrelevant to every consumer that reads
-            JSON-LD. */}
-        <JsonLd id="ld-root" data={personGraph()} />
-        {/* ── Vercel's two telemetry scripts, mounted ONLY on Vercel ────────
-            Both fetch from `/_vercel/...`, a path the PLATFORM serves — it does
-            not exist in the Next output. Anywhere else (a CI audit, a local
-            `next start`, a fork self-hosting this repo) those two requests 404
-            on every page load, which is two console errors per navigation and
-            two wasted round trips for a script that could not have worked.
+              Rendered as the last element in <body> deliberately: it is data, not
+              content, so it should never delay the paint of anything above it.
+              Position in the document is irrelevant to every consumer that reads
+              JSON-LD. */}
+          <JsonLd id="ld-root" data={personGraph()} />
+          {/* ── Every measurement script on this site, behind one gate ────
+              #141. All three — Vercel Web Analytics, Speed Insights and GA4 —
+              render inside `<ConsentedAnalytics />`, below its
+              `if (!analytics) return null`. Nothing is mounted for a visitor who
+              has not agreed, which is precisely the acceptance criterion: not
+              mounted-and-told-to-stay-quiet, NOT MOUNTED. GA4 in particular must
+              never be imported into this file again —
+              `tests/unit/gaConsentMode.test.js` fails on that, because a mount
+              here would bypass the gate entirely while looking completely
+              ordinary in review.
 
-            It is also what capped Lighthouse's best-practices category at 0.96
-            in CI: `errors-in-console` is scored all-or-nothing and could never
-            pass off-platform. Skipping that audit was the alternative and is
-            strictly worse — it would have hidden real console errors to
-            accommodate two that were never real.
+              `vercel` is resolved HERE rather than inside the boundary, and it
+              has to be. `process.env.VERCEL` is not a `NEXT_PUBLIC_` variable, so
+              a client component reading it inlines `undefined` — and both Vercel
+              scripts would then silently never load in production, which is a
+              failure with no symptom anywhere. This is a Server Component, so the
+              branch resolves at prerender; next.config.mjs already picks
+              `distDir` the same way.
 
-            `process.env.VERCEL` is set during both the build and the runtime on
-            Vercel, and this is a server component, so the branch is resolved
-            when the page is prerendered. next.config.mjs already picks `distDir`
-            the same way, so the pattern is not new here. */}
-        {process.env.VERCEL ? (
-          <>
-            <SpeedInsights />
-            <Analytics />
-          </>
-        ) : null}
-        {/* GA4 IS NOT MOUNTED HERE, DELIBERATELY — see docs/seo.md §8 and §14.
-            `src/components/analytics/GoogleAnalytics.jsx` is written, tested and
-            allowed through the CSP, and it is the LAST thing #141 has to wire:
-            drop it inside that issue's `<ConsentedAnalytics />` boundary, beside
-            the two Vercel scripts above, and it starts on consent.
-
-            It was briefly mounted here on the argument the component's own
-            header still makes — Consent Mode v2 with `analytics_storage:
-            'denied'` writes no cookie, so there is no STORAGE to consent to and
-            PECR has nothing to bite on. That argument is sound about storage and
-            beside the point about this issue: #141's acceptance criterion is
-            that a visitor who has not decided issues no analytics request at
-            all, and a cookieless ping is still a request carrying page path,
-            referrer and coarse geography. Mounting it before the notice exists
-            would also have made three documents false in the same commit (the
-            PR description, .env.example and README all state GA4 is not
-            mounted), which is how a decision record stops being one. */}
+              The condition itself predates #141 and its reasoning is unchanged:
+              both scripts fetch from `/_vercel/...`, a path only the PLATFORM
+              serves. Anywhere else — a CI audit, a local `next start`, a fork
+              self-hosting this repo — those requests 404 on every page load,
+              which is two console errors per navigation and two wasted round
+              trips for a script that could not have worked. It is also what
+              capped Lighthouse’s best-practices category at 0.96 in CI:
+              `errors-in-console` is scored all-or-nothing and could never pass
+              off-platform. Skipping that audit was the alternative and is
+              strictly worse — it would have hidden real console errors to
+              accommodate two that were never real. */}
+          <ConsentedAnalytics vercel={Boolean(process.env.VERCEL)} />
+        </ConsentProvider>
       </body>
     </html>
   );

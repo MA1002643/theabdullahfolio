@@ -4,17 +4,28 @@ import Script from 'next/script';
 
 // GA4 under Consent Mode v2, denied by default (issue #32, W5 / #141).
 //
-// ── NOTHING MOUNTS THIS YET, AND THAT IS THE POINT ──────────────────────────
-// src/app/layout.js does not render this component; the mount is #141's, inside
-// the `<ConsentedAnalytics />` boundary that issue specifies, beside the two
-// Vercel scripts. `tests/unit/gaConsentMode.test.js` pins the absence, so a
-// mount cannot reappear by accident.
+// ── MOUNTED ONLY BY THE CONSENT GATE ────────────────────────────────────────
+// #141 shipped, so the "nothing mounts this yet" note that stood here is gone.
+// The single mount is inside `src/components/privacy/ConsentedAnalytics.jsx`,
+// below that component's `if (!analytics) return null`, beside the two Vercel
+// scripts. `src/app/layout.js` still does not render this component and must
+// not: `tests/unit/gaConsentMode.test.js` fails on an import of it appearing
+// there, so the gate cannot be bypassed by accident.
 //
-// It ships ahead of the gate because the tag is the quick half. The CSP
+// It shipped ahead of the gate because the tag was the quick half. The CSP
 // allowance for the tag manager, the EVENTS map in src/lib/seo/analytics.js and
-// the consent defaults below are the parts worth reviewing, and none of them
-// can be reviewed while the component they configure is a TODO. Written now,
-// switched on in one line later.
+// the consent defaults below were the parts worth reviewing, and none of them
+// could be reviewed while the component they configure was a TODO.
+//
+// ── The gate loads it; it never grants storage ───────────────────────────────
+// The "what #141 has to do here" section below said the grant would be one
+// `gtag('consent', 'update', { analytics_storage: 'granted' })`. It is not, and
+// the departure is deliberate — see the reasoning in ConsentedAnalytics.jsx.
+// What a visitor consents to is whether this component RENDERS AT ALL. The four
+// signals below stay denied permanently, in both states, so no `_ga` cookie is
+// ever written for anyone and /privacy can say so without a caveat. Everything
+// §14 of docs/seo.md accepted about the cookieless trade still holds; nothing
+// the measurement needed depended on storage.
 //
 // ── Why Consent Mode v2 is the shape, even behind a gate ────────────────────
 // docs/seo.md §8 recorded GA4 as hard-blocked on consent gating. What PECR
@@ -26,7 +37,8 @@ import Script from 'next/script';
 // and that is a different instrument answering a different question. The GDPR
 // governs the PROCESSING of personal data whether or not anything touches the
 // device, so it is not disposed of by removing a cookie — see the correction in
-// docs/seo.md §14. The distinction is the whole reason this file is unmounted.
+// docs/seo.md §14. The distinction is the whole reason this file spent a
+// fortnight unmounted, and the reason the gate above it now exists.
 //
 // Consent Mode v2 with `analytics_storage: 'denied'` is the configuration where
 // GA4 writes nothing. No cookie is set, no identifier is stored or read, and
@@ -34,7 +46,7 @@ import Script from 'next/script';
 // geography and device class, with no key tying two of them to one person.
 //
 // That is a narrower argument than it first looks, and the distinction is why
-// this file is not mounted on the strength of it: it says the DENIED state
+// this file was never mounted on the strength of it: it says the DENIED state
 // needs no storage consent, not that an undecided visitor should be pinged.
 // #141 asks for no analytics request at all before a decision, and a cookieless
 // ping is still a request. So the denied defaults are what the gate opens
@@ -56,15 +68,13 @@ import Script from 'next/script';
 // Analytics already counts visits; the point of GA4 here is the referrer and
 // landing-page breakdown alongside Search Console's query data (§8).
 //
-// ── What #141 has to do here ────────────────────────────────────────────────
-// Render this component inside the consent boundary, and on a grant make one
-// call: `gtag('consent', 'update', { analytics_storage: 'granted' })` from
-// wherever the accept button lives. Nothing else in this file moves and no call
-// site of `trackEvent` is affected. That call is deliberately absent today —
-// there is no UI that could produce consent, so a granting path with no way to
-// reach it would be dead code asserting a capability the site does not have,
-// and `tests/unit/gaConsentMode.test.js` fails on a `granted` literal appearing
-// in this module before then.
+// ── What #141 actually did here ─────────────────────────────────────────────
+// Rendered this component inside the consent boundary, and added the `epoch`
+// prop below. No grant call, for the reason above, so
+// `tests/unit/gaConsentMode.test.js`'s assertion that the literal `'granted'`
+// appears nowhere in this module's code still holds — and is still worth
+// holding: with a consent UI now in existence, a stray `'granted'` here would be
+// a storage grant nobody asked for rather than merely dead code.
 //
 // ── Why the events still work ───────────────────────────────────────────────
 // `trackEvent` (src/lib/seo/analytics.js) calls `window.gtag` and no-ops when it
@@ -73,6 +83,13 @@ import Script from 'next/script';
 // bargain for a portfolio and the one this file implements.
 
 const MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
+/**
+ * Whether this build renders a tag at all. Exported so ConsentedAnalytics can
+ * tell "a grant loaded GA4" from "a grant loaded nothing" without reading the
+ * variable a second time. Without an ID the component below returns null.
+ */
+export const GA_CONFIGURED = Boolean(MEASUREMENT_ID);
 
 /**
  * The consent defaults, as a `dataLayer` command.
@@ -98,7 +115,24 @@ const CONSENT_DEFAULTS = {
   analytics_storage: 'denied',
 };
 
-export default function GoogleAnalytics() {
+/**
+ * @param {object} props
+ * @param {number} [props.epoch] Bumped once per grant by ConsentProvider, and
+ *   woven into all three script ids.
+ *
+ *   It exists because Next caches an inline `<Script>` by `id` for the lifetime
+ *   of the document: remounting with an id it has already executed does nothing
+ *   at all. That is the right default — it stops a re-render re-running a tag —
+ *   and it is exactly wrong for a consent gate, where the sequence
+ *   grant → revoke → grant has to put `window.gtag` back after the revoke
+ *   deleted it. With a fixed id the second grant renders three inert tags and
+ *   every `trackEvent` no-ops for the rest of the session, which is a failure
+ *   with no symptom: the UI says analytics are on and nothing is recorded.
+ *
+ *   The default of 0 keeps the ids stable for a single-grant session and for any
+ *   caller that does not pass one.
+ */
+export default function GoogleAnalytics({ epoch = 0 }) {
   // Unset is a SUPPORTED state, not a misconfiguration: local development,
   // every preview deployment and any fork runs without a measurement ID, and
   // none of them should be reporting into the production property. Rendering
@@ -126,7 +160,7 @@ export default function GoogleAnalytics() {
           and must be set before the library reads the queue to apply to the
           first ping as well as the rest. */}
       <Script
-        id="ga-consent-default"
+        id={`ga-consent-default-${epoch}`}
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
@@ -139,13 +173,13 @@ gtag('set', 'ads_data_redaction', true);
       />
 
       <Script
-        id="ga-lib"
+        id={`ga-lib-${epoch}`}
         strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`}
       />
 
       <Script
-        id="ga-init"
+        id={`ga-init-${epoch}`}
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `

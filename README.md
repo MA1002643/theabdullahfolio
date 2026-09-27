@@ -415,7 +415,9 @@ GOOGLE_SITE_VERIFICATION=your-search-console-verification-token
 GSC_SERVICE_ACCOUNT_KEY=your-base64-encoded-service-account-json
 # Only if the GSC property is URL-prefix rather than Domain (the default).
 # GSC_SITE_URL=https://ma.codes/
-# NOT YET USED — GA4 is blocked on the consent gating in #141.
+# GA4 measurement ID. Safe to set: the tag renders only inside the consent gate,
+# so this makes it available to load for a visitor who has agreed, not for anyone
+# else. Unset is supported (local, previews, forks). Not a secret.
 # NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
@@ -475,7 +477,9 @@ What it covers:
   three things that matter most on the one document most likely to be shared.
   It states no computed tenure (a statically-rendered figure would freeze at
   build time) and makes no single-employer claim (`worksFor` takes one
-  organisation; the current state is two concurrent roles).
+  organisation; the current state is two concurrent roles). The PDF sends
+  `Link: <…/cv>; rel="canonical"` and is kept out of the sitemap, so Google
+  indexes `/cv` rather than reporting the two as unresolved duplicates.
 - **The decision records themselves, at `/notes`.** `docs/*.md` is read at
   build, rendered with `marked` and prerendered — the parser never reaches a
   client bundle. Until this, the reasoning behind every choice on this site
@@ -484,16 +488,32 @@ What it covers:
   and it hands the boundary **only the five display fields** — never the
   document body, which would otherwise be serialised into the HTML of the page
   that merely links to it.
-- **A GA4 component under Consent Mode v2, written but not mounted.** The
-  defaults deny all four consent signals, so the tag writes no cookie and
-  stores no identifier — but nothing renders it, because
-  [#141](https://github.com/MA1002643/theabdullahfolio/issues/141) requires that
-  a visitor who has not decided issues no analytics request at all, and a
-  cookieless ping is still a request. The CSP allowance, the event map and the
-  tests ship with it, so switching it on is a mount inside that issue's consent
-  boundary. The trade, when it is switched on, is stated rather than hidden: no
-  stable identifier, so *users* is modelled rather than counted, and Vercel
-  Analytics — which counts visits — will disagree with it permanently.
+- **Every measurement script behind one consent gate**
+  ([#141](https://github.com/MA1002643/theabdullahfolio/issues/141)). GA4,
+  Vercel Web Analytics and Speed Insights all render inside
+  `<ConsentedAnalytics />`, below an early `return null` — so a visitor who has
+  not agreed issues **no analytics request at all**, verified in a browser
+  against a build with the measurement ID actually set, rather than inferred
+  from the React tree. Consent decides whether the tag *loads*; Consent Mode v2
+  stays denied on all four signals permanently, so **no `_ga` cookie is ever
+  written, for anyone**. Revoking reloads the page, because unmounting removes
+  the tag and not the listeners it already attached — and the preference centre
+  says so next to the switch. The trade is stated rather than hidden: no stable
+  identifier, so *users* is modelled rather than counted.
+- **A privacy policy that cannot go stale.** `/privacy` is rendered from
+  [`src/lib/privacy/inventory.js`](src/lib/privacy/inventory.js) — every cookie,
+  storage key, processor and retention period as data, each citing the file it
+  came from. `tests/unit/privacyInventory.test.js` walks `src/`, resolves every
+  `localStorage` / `sessionStorage` call to the key it writes, and **fails CI on
+  one the policy does not disclose** (it found three the hand audit had missed).
+  It is a module rather than `docs/privacy.md` for a specific reason: that
+  directory auto-publishes at `/notes/<slug>`, so markdown would have shipped a
+  duplicate URL. The **framing prose is held to the same rule**, which it was
+  not at first: three section ledes state how many rows follow, and §6 said "all
+  three" while the array held four. All three now interpolate `countWord()` over
+  the list they describe, because a stale figure sitting above a generated table
+  is worse than one sitting beside no table at all — the checked list underneath
+  lends it credibility it has not earned.
 - **Lighthouse budgets in CI**, measured before they were enforced.
   Accessibility, best practices and SEO are asserted at **100 and fail the
   build**; performance is collected and warned until CI has its own history.

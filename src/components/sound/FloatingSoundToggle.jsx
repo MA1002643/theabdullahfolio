@@ -62,7 +62,12 @@ export default function FloatingSoundToggle() {
           // orange when live, a dimmed neutral chip when off.
           className={cn(
             'fixed right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md',
-            'bottom-[calc(env(safe-area-inset-bottom)+1.5rem)]',
+            // The bottom offset moved into `.floating-bottom-anchor`
+            // (globals.css), which folds the safe-area inset together with
+            // `--consent-lift` — so this control steps up out of the way of the
+            // #141 privacy notice instead of being buried under it, and back
+            // down when the notice is answered.
+            'floating-bottom-anchor',
             'transition-colors duration-300',
             soundOn
               ? 'border-[#ff6d05]/60 bg-[#ff6d05]/[0.16] text-[#ff8a1e] shadow-[0_0_20px_-5px_rgba(255,109,5,0.75)]'

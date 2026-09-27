@@ -125,30 +125,32 @@ const nextConfig = {
   async headers() {
     return [
       {
-        // ── The CV PDF's crawl directives (issue #32, W1b) ─────────────────
-        // The CV is indexable BY DECISION (F6, owner call 2026-09-11), not by
-        // accident. Indexing is already the default, so this header changes
-        // NOTHING technically — and that is precisely why it is here. The
-        // intent was previously unwritten anywhere, which meant the only
-        // difference between "deliberately published" and "nobody noticed it
-        // was crawlable" was a conversation. Now it is a line of config that
-        // the next person to audit this file will read.
+        // ── The CV PDF canonicalises to /cv (owner call 2026-09-26) ────────
+        // This header used to be `X-Robots-Tag: index, follow, …` — the CV was
+        // indexable by decision (F6, 2026-09-11). Search Console then reported
+        // the PDF as "Duplicate without user-selected canonical": /cv renders
+        // the same record in HTML, Google clustered the two, and the PDF was
+        // the only member of the cluster that said nothing about which copy
+        // was the original. F6 was superseded rather than patched with a
+        // self-canonical, which Google would likely have overruled anyway.
         //
-        // `max-snippet:-1` lifts the snippet-length cap so a result can quote
-        // enough of the document to be useful, and `max-image-preview:large`
-        // matches the site-wide policy in the root layout's `robots` key.
+        // A PDF cannot carry `<link rel="canonical">`, so the declaration goes
+        // in the HTTP `Link` header — the form Google documents for non-HTML
+        // files. /cv is the page with the share card, the JSON-LD and the
+        // footer, and the PDF stays one click away from it. The PDF is also out
+        // of the sitemap (src/app/sitemap.js): listing a URL whose canonical
+        // points elsewhere is a contradiction Search Console reports.
         //
-        // Listed BEFORE the catch-all below: Next applies every matching
-        // header rule, so both apply to this path and the order is only about
-        // readability. `Content-Disposition: inline` is deliberately NOT set
-        // here — Vercel already serves it inline, which is the right setting
-        // for a document meant to be read in-browser straight from a search
-        // result rather than downloaded.
+        // NOT noindex: noindex plus a canonical are conflicting signals, and
+        // the canonical alone is what consolidates the PDF's links onto /cv.
+        //
+        // Absolute URL, derived the same way as `ORIGIN` in src/lib/seo/site.js
+        // (this file cannot import through the `@/` alias).
         source: '/Muhammad_Abdullah_CV.pdf',
         headers: [
           {
-            key: 'X-Robots-Tag',
-            value: 'index, follow, max-snippet:-1, max-image-preview:large',
+            key: 'Link',
+            value: `<${(process.env.NEXT_PUBLIC_SITE_ORIGIN || 'https://ma.codes').replace(/\/+$/, '')}/cv>; rel="canonical"`,
           },
         ],
       },

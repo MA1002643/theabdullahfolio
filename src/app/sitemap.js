@@ -32,7 +32,6 @@ import { readNotes } from '@/lib/notes/readNotes';
 import { absoluteUrl } from '@/lib/seo/canonical';
 import { lastModifiedFor } from '@/lib/seo/lastModified';
 import {
-  CV_ASSET,
   ROUTES,
   SHARED_ROUTE_SOURCES,
   SUB_PAGE_SHARED_SOURCES,
@@ -187,15 +186,10 @@ export default function sitemap() {
     priority: 0.5,
   }));
 
-  // The CV PDF (W1b). Declared because it is indexable BY DECISION — leaving a
-  // deliberately-indexed document to be discovered through a footer link only
-  // is exactly the accidental posture F6 was about.
-  const cvEntry = {
-    url: absoluteUrl(CV_ASSET.path),
-    lastModified: lastModifiedFor(CV_ASSET.sources),
-    changeFrequency: CV_ASSET.changeFrequency,
-    priority: CV_ASSET.priority,
-  };
-
-  return [...routeEntries, ...projectEntries, ...noteEntries, cvEntry];
+  // The CV PDF is deliberately ABSENT (owner call 2026-09-26). It was listed
+  // here while it was indexable by decision (F6); it now declares /cv as its
+  // canonical via a `Link` header (next.config.mjs), and a sitemap must list
+  // only canonical URLs — an entry whose canonical points elsewhere is a
+  // mixed signal Search Console reports.
+  return [...routeEntries, ...projectEntries, ...noteEntries];
 }

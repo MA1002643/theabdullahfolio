@@ -21,6 +21,7 @@ import { motion } from 'framer-motion';
 import { useFooterReveal } from './useFooterReveal';
 import { cn } from '@/lib/utils';
 import SoundControl from './SoundControl';
+import FooterPrivacyLinks from './FooterPrivacyLinks';
 import { flapParent, FLAP_EASE, SplitFlapText } from './metaRevealMotion';
 
 // Centred on a phone (per the mobile brief), left-aligned from `sm` up.
@@ -83,11 +84,20 @@ export default function FooterMetaReveal({
         canHover={canHover}
         revealMode={!reduced}
       />
-      {reduced ? (
-        <p className={COPY_CLASS}>{copyright}</p>
-      ) : (
-        <SplitFlapText as="p" text={copyright} className={COPY_CLASS} />
-      )}
+      {/* Small print, stacked (issue #141). The privacy pair sits ABOVE the
+          copyright rather than beside it, so the meta row keeps its two-column
+          balance — sound control on one side, colophon on the other — instead
+          of becoming an awkward three-up. Right-aligned from `sm` to match the
+          copyright it belongs with; centred on a phone, like everything else in
+          this row. */}
+      <div className="flex flex-col items-center gap-2 sm:items-end">
+        <FooterPrivacyLinks revealMode={!reduced} />
+        {reduced ? (
+          <p className={COPY_CLASS}>{copyright}</p>
+        ) : (
+          <SplitFlapText as="p" text={copyright} className={COPY_CLASS} />
+        )}
+      </div>
     </motion.div>
   );
 }

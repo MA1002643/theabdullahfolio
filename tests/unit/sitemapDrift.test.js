@@ -654,22 +654,21 @@ describe('sitemap contents', () => {
   // Keeping that off the module-load path means a failure there reports against
   // the test that caused it.
 
-  it('covers every indexable route, project, note and the CV', async () => {
+  it('covers every indexable route, project and note — and not the CV PDF', async () => {
     const { default: sitemap } = await import('@/app/sitemap');
     const { readNotes } = await import('@/lib/notes/readNotes');
     const entries = sitemap();
     const urls = entries.map((entry) => entry.url);
     const notes = readNotes();
 
-    // 11 registry routes + 11 project pages + 1 note + the CV = 24.
+    // Registry routes + project pages + notes.
     // Computed from the same sources the sitemap reads rather than typed, for
     // the reason the whole file exists: a hardcoded total is a second place to
     // update, and the update that gets forgotten is the one that matters.
     const expectedCount =
       ROUTES.filter((route) => route.indexable).length +
       projectsData.length +
-      notes.length +
-      1;
+      notes.length;
     expect(urls).toHaveLength(expectedCount);
 
     // No duplicates. Two entries for one URL is not an error a validator
@@ -689,7 +688,9 @@ describe('sitemap contents', () => {
     for (const note of notes) {
       expect(urls).toContain(absoluteUrl(`/notes/${note.slug}`));
     }
-    expect(urls).toContain(absoluteUrl(CV_ASSET.path));
+    // The PDF canonicalises to /cv (next.config.mjs), and a sitemap lists only
+    // canonical URLs — this entry is what Search Console flagged 2026-09-26.
+    expect(urls).not.toContain(absoluteUrl(CV_ASSET.path));
   });
 
   it('emits absolute URLs on the canonical origin, with no trailing slashes', async () => {
@@ -730,9 +731,6 @@ describe('sitemap contents', () => {
       const entry = byUrl.get(absoluteUrl(route.path));
       expect(entry.lastModified).toBe(lastModifiedFor(route.sources));
     }
-    expect(byUrl.get(absoluteUrl(CV_ASSET.path)).lastModified).toBe(
-      lastModifiedFor(CV_ASSET.sources),
-    );
 
     // All eleven project pages share ONE lookup by design (they are one
     // template over one data file), so they must also share one value —
@@ -1381,7 +1379,7 @@ describe('narrowly shared sources', () => {
     const renders = (route) =>
       [...publishedFrom(renderedEntriesFor(route.path))].includes(PAGE_TITLE);
 
-    // Vacuity guard: nine of the ten render it (`/projects` through its
+    // Vacuity guard: ten of the eleven render it (`/projects` through its
     // listing component rather than its page file; `/` has its own hero
     // headline instead). A walk that found none would make every assertion
     // below pass while proving nothing.
@@ -1393,6 +1391,10 @@ describe('narrowly shared sources', () => {
       '/journey',
       '/my-past',
       '/notes',
+      // #141. Listed here the day the route shipped, which is the point of
+      // spelling the set out rather than counting it: a new PageTitle route
+      // that forgot the matching `sources` entry fails this case by name.
+      '/privacy',
       '/projects',
       '/qualifications',
       '/uses',
@@ -1463,9 +1465,16 @@ describe('narrowly shared sources', () => {
       .filter((entry) => entry.path && entry.counted)
       .map((entry) => entry.path);
 
-    // Vacuity guards on both halves: the homepage counts projects in its
-    // `sr-only` summary, and the `/projects` description interpolates the word.
-    expect(ROUTES.filter(firstHand).map((route) => route.path)).toEqual(['/']);
+    // Vacuity guards on both halves. FIRST-HAND: the homepage counts projects
+    // in its `sr-only` summary, and /privacy counts three of its own tables in
+    // the ledes above them — the policy page joined this list when those counts
+    // stopped being typed out, which is the event this assertion exists to make
+    // someone notice. THROUGH THE REGISTRY: the `/projects` description
+    // interpolates the word.
+    expect(ROUTES.filter(firstHand).map((route) => route.path)).toEqual([
+      '/',
+      '/privacy',
+    ]);
     expect(countedCopy).toContain('/projects');
 
     const wrong = [];

@@ -1,15 +1,22 @@
 // GA4 event taxonomy and a typed emitter (issue #32, W4).
 //
-// ── READ THIS FIRST: GA4 IS NOT MOUNTED ─────────────────────────────────────
-// No tag is loaded anywhere in this codebase, and `trackEvent` below is a
-// deliberate no-op until one is. That is not an oversight — it is a hard
-// dependency on #141 (privacy notice & consent gating), which is still open.
-// Analytics must not fire before consent exists, and inventing a consent
-// primitive here would build a throwaway surface on that issue's turf and risk
-// getting the gate wrong.
+// ── READ THIS FIRST: GA4 LOADS ONLY BEHIND THE CONSENT GATE ─────────────────
+// This header said "GA4 IS NOT MOUNTED" until #141 shipped. It is mounted now,
+// in exactly one place — `src/components/privacy/ConsentedAnalytics.jsx`, below
+// that component's `if (!analytics) return null` — so no tag exists on the page
+// until a visitor has agreed, and `trackEvent` below is still a no-op for
+// everybody who has not.
 //
-// What lands now is the half of W4 that is safe and that #141 should not have to
-// re-derive:
+// The gate it hangs on is STRUCTURAL rather than a flag this module reads: the
+// only thing `trackEvent` checks is whether `window.gtag` is a function, and
+// that function only comes into existence when the boundary renders the tag.
+// There is no second condition here that could disagree with the first. It is
+// also what makes a revocation complete — the boundary deletes `window.gtag`,
+// and every call site in the codebase stops at once without knowing anything
+// about consent.
+//
+// What landed BEFORE the gate, deliberately, so #141 did not have to re-derive
+// it:
 //
 //   1. `https://www.googletagmanager.com` in `script-src` (next.config.mjs).
 //      This is F4, the issue's most dangerous finding: without it, dropping in
@@ -19,15 +26,17 @@
 //      than accreted as string literals across twelve call sites.
 //   3. `trackEvent`, so no call site ever passes a free-form string.
 //
-// ── What #141 has to do to switch this on ───────────────────────────────────
-// Exactly two things, both outside this file:
-//   • Mount GA4 (`@next/third-parties/google`) only AFTER consent is granted,
-//     with Consent Mode v2 defaults (`analytics_storage: 'denied'`,
-//     `ad_storage: 'denied'`) set BEFORE any tag loads, and
-//     `gtag('consent', 'update', …)` on grant.
-//   • Set `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
-// Nothing in this module changes. `trackEvent` starts working the moment a
-// `gtag` exists on `window`, because that is the only thing it checks.
+// ── What #141 actually did, and the one place it departed ───────────────────
+// It mounted the component inside the consent boundary and set
+// `NEXT_PUBLIC_GA_MEASUREMENT_ID`. Nothing in this module changed.
+//
+// It did NOT issue `gtag('consent', 'update', { analytics_storage: 'granted' })`
+// on grant, which this header and the component both specified. Consent decides
+// whether GA4 LOADS; Consent Mode stays denied on all four signals permanently,
+// so no `_ga` cookie is ever written for anyone and /privacy can say so flatly.
+// §14 had already accepted every cost of the cookieless mode, so the grant bought
+// nothing the measurement needed. See ConsentedAnalytics.jsx for the full
+// reasoning.
 //
 // ── Why a frozen map instead of string literals ─────────────────────────────
 // GA4 creates an event the first time it sees its name. There is no schema and

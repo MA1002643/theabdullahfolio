@@ -270,9 +270,13 @@ Indexing it deliberately means that mobile number is crawlable by scrapers as
 well as by recruiters. That is accepted as the cost of the CV being a real
 landing page.
 
-**This needs a row in [#141](https://github.com/MA1002643/theabdullahfolio/issues/141)'s
-disclosure inventory** — the privacy page must state that the CV is published
-and indexed, and what it contains.
+**Done (2026-09-25, #141).** The privacy page states it: `NOT_VISITOR_DATA` in
+[`src/lib/privacy/inventory.js`](../src/lib/privacy/inventory.js) carries a "My
+CV, deliberately indexed" row naming the email address and the mobile number,
+and [`/privacy`](https://ma.codes/privacy) §6 renders it. It sits among the
+"things that look like tracking and are not" rows because it is *my* data rather
+than a visitor's — a privacy page that lists only what a site takes from you,
+and never what it publishes about its author, is careful in one direction only.
 
 ### Flagged, not decided: an HTML `/cv` route
 
@@ -281,6 +285,41 @@ crawlers, and could carry `Person` + `Occupation` schema — but duplicates
 content `/about`, `/journey` and `/qualifications` already carry. The issue
 flagged this as "a bigger scope call than this issue should make on its own",
 and it was **not** built.
+
+### Decision (owner, 2026-09-26): the PDF canonicalises to `/cv`
+
+**This supersedes the 2026-09-11 decision above.** The entries above are
+kept as the record of what was decided and why.
+
+`/cv` was built later (§13) and renders the same record in HTML. Search Console
+then reported the PDF under **"Duplicate without user-selected canonical"**. It
+had clustered the two documents, and the PDF was the only member of the cluster
+that said nothing about which copy was the original. In the same email, the
+http→https and www→apex redirects (§2) appeared under "Page with redirect".
+Those are intended, and §9 now lists them as expected.
+
+Two fixes were considered:
+
+- **Self-canonical on the PDF** keeps F6, but it only labels the duplicate.
+  With the text this close to `/cv`, Google would likely overrule it and report
+  "Google chose different canonical than user".
+- **Canonical to `/cv`** (chosen). `/cv` is the better result: it carries the
+  share card, the JSON-LD and links back into the site, and it reads properly
+  on a phone. The PDF is one click away from it.
+
+| | Before | After |
+|---|---|---|
+| PDF header | `X-Robots-Tag: index, follow, max-snippet:-1, max-image-preview:large` | `Link: <https://ma.codes/cv>; rel="canonical"` |
+| Sitemap | PDF listed | PDF **not** listed. A sitemap lists only canonical URLs. |
+| `CV_ASSET` | path, changefreq, priority, sources | path only (still used by `llms.txt` and `significantLink`) |
+
+A PDF cannot carry `<link rel="canonical">`, so the `Link` HTTP header is the
+only form available. It is **not** `noindex`: noindex beside a canonical is a
+conflicting signal, and the canonical alone is what consolidates the PDF's
+links onto `/cv`. The `/Title` metadata stays, because the file is still
+opened and shared directly. The privacy row requested in the phone-number note
+above was reworded to match: only `/cv` is indexed now, but the PDF is still
+public, so the cost it discloses stands.
 
 ---
 
@@ -456,16 +495,23 @@ results rather than trusting the composer.
 
 ---
 
-## 8. Analytics — GA4 vs Vercel, and why GA4 is not mounted
+## 8. Analytics — GA4 vs Vercel, and the consent gate over both
 
-### GA4 is not mounted yet
+### GA4 is mounted, behind the gate (shipped 2026-09-25, #141)
 
-Hard-blocked on [#141](https://github.com/MA1002643/theabdullahfolio/issues/141)
-(privacy notice & consent gating), which is open. Analytics must not fire before
-consent exists, and inventing a consent primitive here would build a throwaway
-surface on that issue's turf and risk getting the gate wrong.
+**Decision (owner, 2026-09-25): all three measurement scripts now load only
+after a visitor has agreed.** This section previously recorded GA4 as hard-blocked
+on [#141](https://github.com/MA1002643/theabdullahfolio/issues/141); that issue
+shipped, and §17 is the record of how. The history below stands as written.
 
-**What did land**, so #141 does not have to re-derive it:
+The single mount is inside
+[`ConsentedAnalytics.jsx`](../src/components/privacy/ConsentedAnalytics.jsx),
+below its `if (!analytics) return null`. Vercel Web Analytics and Speed Insights
+moved behind the same boundary — their old `process.env.VERCEL` condition was
+never a consent gate, only a "can the platform serve this" gate, and it is
+preserved *inside* the boundary for that original reason.
+
+**What had landed earlier**, so #141 did not have to re-derive it:
 
 1. `https://www.googletagmanager.com` in `script-src`. This is **F4**, the
    issue's most dangerous finding: without it, dropping in `<GoogleAnalytics />`
@@ -478,11 +524,20 @@ surface on that issue's turf and risk getting the gate wrong.
    directions** — every host the stack needs must be present, and no host beyond
    the declared set may be. Verified to fail when the GTM host is removed.
 
-**To switch it on**, #141 needs exactly two things, both outside
-`analytics.js`: mount GA4 after consent with Consent Mode v2 defaults
-(`analytics_storage: 'denied'`, `ad_storage: 'denied'`) set *before* any tag
-loads, and set `NEXT_PUBLIC_GA_MEASUREMENT_ID`. `trackEvent` starts working the
-moment `window.gtag` exists, because that is the only thing it checks.
+**What switching it on actually took**: the mount inside the boundary, and
+`NEXT_PUBLIC_GA_MEASUREMENT_ID`. Nothing in `analytics.js` changed — `trackEvent`
+started working the moment `window.gtag` came into existence, because that is the
+only thing it checks.
+
+**One documented departure.** §14 and the component's own header both specified
+`gtag('consent', 'update', { analytics_storage: 'granted' })` on accept. It is
+not issued. What a visitor consents to is whether the tag **loads**; Consent Mode
+stays denied on all four signals permanently, so **no `_ga` cookie is ever
+written, for anyone, in either state**. §14 had already accepted every cost of
+the cookieless mode, so granting storage bought nothing the measurement needed —
+and `tests/unit/gaConsentMode.test.js`'s assertion that `'granted'` appears
+nowhere in that module survives untouched rather than being weakened to
+accommodate the change. See §17.
 
 ### The two will disagree, permanently and by design
 
@@ -721,6 +776,26 @@ the address that has to be added as a user on the property.
 > effect. The same property means a variable deleted after a deploy keeps
 > working until the next one — which is how the contact form's SMTP credentials
 > were absent from the project for nine days without anything failing.
+
+### Reading the Page indexing report
+
+Some "not indexed" rows are the site working as designed. Before fixing
+anything, match the URL against this list:
+
+| Reason | URL | Why it is correct |
+|---|---|---|
+| Page with redirect | `http://ma.codes/…` | Vercel 308s every `http://` request to `https://`. |
+| Page with redirect | `www.ma.codes/…` | `next.config.mjs` `redirects()` 308s the www host to the apex (§2). |
+| Alternate page with proper canonical tag | `/Muhammad_Abdullah_CV.pdf` | Its `Link` header names `/cv` as the canonical (§4, 2026-09-26). |
+| Alternate page with proper canonical tag | any `?utm_…` or other query-string variant | Every page's canonical drops the query. |
+| Not found (404) / Excluded by `noindex` | a URL that never existed | The 404 page is `noindex` on purpose. |
+
+Anything **outside** that list is a real finding. Two in particular mean
+something regressed: an HTML route under "Duplicate without user-selected
+canonical" (the route has lost its canonical, so check `sectionMetadata()`),
+or a sitemap URL under "Page with redirect" (the sitemap is emitting a
+non-canonical form). After a fix, use **Validate fix** in the report. Search
+Console re-crawls the affected URLs over the next few days to weeks.
 
 ### Report lag
 
@@ -1057,11 +1132,104 @@ Run both, and in that order — the second can only compare while the parser the
 first pins still works.
 
 Neither one is guarding a live page: `/about` derives employment from
-`journeyData`, not from this file. What they guard is the **indexed PDF agreeing
-with the HTML record**. See §4 for which failure means what, and note that a
+`journeyData`, not from this file. What they guard is the **published PDF
+agreeing with the HTML record**. The PDF's canonical is `/cv` (§4, 2026-09-26),
+so a replacement needs no sitemap or header change. See §4 for which failure means what, and note that a
 genuine CV edit is expected to fail the consistency test — that is the check
 doing its job, and the fix is to reconcile `journeyData` or declare the
 divergence, not to loosen the test.
+
+### Touching browser storage, or anything a visitor sends
+
+The privacy page is **generated from a module, and the module is enforced**, so
+this is a two-line job rather than a documentation exercise — but skipping it
+fails CI rather than going quietly.
+
+1. Add the key to `STORAGE_KEYS` in
+   [`src/lib/privacy/inventory.js`](../src/lib/privacy/inventory.js) with its
+   `kind` (`localStorage` / `sessionStorage`), a `group` that exists in
+   `STORAGE_GROUPS`, and a `purpose` written **for a reader** — it is published
+   verbatim on [`/privacy`](https://ma.codes/privacy).
+2. `npx vitest run tests/unit/privacyInventory.test.js`
+
+```bash
+npx vitest run tests/unit/privacyInventory.test.js tests/unit/consentStore.test.js
+```
+
+The drift test walks every `.js`/`.jsx` under `src/`, finds each
+`localStorage` / `sessionStorage` call, resolves the key expression to the literal
+it stores under, and fails on any key the inventory does not disclose. Verified
+to fail by adding a throwaway key and watching it name the file and the line.
+
+It checks four things, and the last two are the ones that catch a *stale*
+document rather than an incomplete one:
+
+- Every resolvable key is disclosed.
+- Every expression it **cannot** resolve is declared in that test's
+  `DYNAMIC_KEYS` map, naming the pattern it produces, with a written reason.
+  A key built by a function or a template literal does not get to be invisible.
+- The declared `kind` matches how the key is actually used. `/privacy` prints
+  "this tab only" or "until you clear it" from that field, so getting it
+  backwards is a small, specific lie about how long something is kept.
+- Nothing is disclosed that the site no longer stores.
+
+It found three key families the hand audit had missed when it was first written
+— `github-stats:lastGood:<username>`,
+`experience-summary:last-payload:<username>` and the retired `projects-category`
+the handoff module still deletes — which is the argument for having it.
+
+**A new third party, a new cookie, or a new thing kept server-side** goes in the
+matching array in the same file (`PROCESSORS`, `COOKIES`, `SERVER_DATA`). Each
+row names the source file it came from and the test asserts that file still
+exists, because the page's standfirst invites the reader to check any claim
+against the code and a citation pointing at a moved file turns that invitation
+into an embarrassment.
+
+#### The counts in the page's prose recount themselves
+
+Three ledes on `/privacy` say how many of something the section beneath them
+lists. All three interpolate `countWord()` over the array rather than spelling
+the number out, so adding a row is still the two-line job above — the sentence
+follows on its own.
+
+| Lede | How the count is stated |
+| --- | --- |
+| §1 Analytics | `` `${countWord(ANALYTICS_SURFACES.length)} scripts` `` |
+| §2 Cookies | `` `${countWord(COOKIE_COUNT)}, all from the guestbook sign-in` `` |
+| §6 Not tracking | `` `all ${countWord(NOT_VISITOR_DATA.length).toLowerCase()}` `` |
+
+`COOKIE_COUNT` is deliberately **not** `COOKIES.length`. The PKCE pair shares one
+row because it shares one purpose and one lifetime, so four rows describe five
+cookies — and what the page states is the number of *cookies*, which is what a
+reader can check in their own devtools. Deriving a count is only safe when it
+derives the thing actually being claimed.
+
+`tests/unit/privacyInventory.test.js` fails if any of the three goes back to a
+typed word, and separately if `COOKIE_COUNT` collapses into a row count. Same
+mechanism as `projectCountDrift.test.js` (§ Adding a project), pointed at the
+page that can least afford a wrong number.
+
+**Why it exists (fixed 2026-09-25).** §6 was written as "all three are data about
+me" and was wrong by the end of the same sitting: the CV row §4 of this document
+asked for by name became the fourth, and nothing counted. A stale figure one
+layer above a generated table is the worst version of this defect, because the
+machine-checked list underneath it lends the sentence a credibility it has not
+earned — and CLAUDE.md's rule against hand-copied figures applies to the framing
+prose around generated data, not just to the data.
+
+**A new analytics or measurement script** goes inside
+[`ConsentedAnalytics.jsx`](../src/components/privacy/ConsentedAnalytics.jsx),
+below its `if (!analytics) return null`, and into `ANALYTICS_SURFACES` so the
+preference centre names it. Never in `src/app/layout.js` —
+`tests/unit/gaConsentMode.test.js` fails on that, because a mount there bypasses
+the gate entirely while looking completely ordinary in review.
+
+**If what a visitor is agreeing to materially changes**, bump `CONSENT_VERSION`
+(and the `v1` in `CONSENT_KEY` with it — the test pins that they agree). Every
+stored decision then reads as `undecided` and everyone is asked again. That is
+the only safe direction, and it is deliberately the *only* thing a bump can do:
+it can neither silently grant nor silently deny. Reword a sentence without
+bumping it; change the bargain and bump.
 
 ### Weekly
 
@@ -1115,10 +1283,24 @@ divergence, not to loosen the test.
 
 ```bash
 npm run build
-npx playwright test tests/e2e/seo.spec.js     # 27 tests, incl. every sitemap URL → 200
+npx playwright test tests/e2e/seo.spec.js     # incl. every sitemap URL → 200
 npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js \
-              tests/unit/schema.test.js tests/unit/cspAnalytics.test.js
+              tests/unit/schema.test.js tests/unit/cspAnalytics.test.js \
+              tests/unit/gaConsentMode.test.js tests/unit/privacyInventory.test.js \
+              tests/unit/consentStore.test.js
 ```
+
+The last three are #141's and belong in this list for the reason the others do:
+they guard claims that are **published** and that nothing else can check. The
+consent gate is the only thing standing between an undecided visitor and three
+measurement scripts, and `/privacy` is a document that is legally required to be
+true and structurally guaranteed to go stale.
+
+The e2e suite asserts origins against `NEXT_PUBLIC_SITE_ORIGIN` when it is set,
+reading the same `.env*` files the build read, and `https://ma.codes`
+otherwise. A fork that sets the variable before `npm run build` runs the suite
+unchanged. It must be the same value at build and at test time: the `Link`
+header and the canonicals are fixed when the site is built.
 
 ---
 
@@ -1150,7 +1332,7 @@ Recorded so they read as decisions rather than omissions.
 | `Person.knowsAbout` from live `/api/github-skills` | Derived from `usesData.stack` | The claim must be in server HTML to matter, so it would have to be fetched at **build** — making `next build` depend on a secret and a network call, failing or silently emptying when the token is absent or rate-limited. And a build-time fetch is a *snapshot*, which rots exactly like a curated list while being invisible to review. `usesData.stack` is the reviewed mirror of that same crawl, already rendered on `/uses`, so schema and page cannot disagree. |
 | `programmingLanguage` on each project | ~~Omitted~~ → **now published**, from a committed map | The original objection was to the SOURCE, not the property: `/api/github-skills` would have made `next build` depend on a secret and a network call. `src/data/project-languages.json`, regenerated by an explicit script run and reviewed as a diff, has neither problem. See §13. |
 | `EducationalOccupationalCredential[]` from the qualifications carousel | Derived from `journeyData`, **awarded entries only** | The carousel's `CARDS` array is inside a `'use client'` module, is not exported, and carries only title/category/image — **no issuer and no date**, which is the half that makes a credential checkable. `journeyData` has both, and is already cross-checked against the CV. Entries still in progress (`end: null`) are filtered out: `hasCredential` means "awarded to", so the in-flight BSc would be a claim to hold a degree not yet conferred — see the note below. |
-| GA4 mounted | CSP + event map + component + tests only — **the mount stays with #141** (mounted 2026-09-22, reverted 2026-09-24) | Consent Mode v2 with `analytics_storage: 'denied'` writes no cookie, which answers the *storage* question and not the one #141 asks: an undecided visitor must issue no analytics request, and a cookieless ping is still a request. See §14. |
+| GA4 mounted | CSP + event map + component + tests only — **the mount stayed with #141** (mounted 2026-09-22, reverted 2026-09-24, shipped behind the consent gate 2026-09-25 — see §17) | Consent Mode v2 with `analytics_storage: 'denied'` writes no cookie, which answers the *storage* question and not the one #141 asks: an undecided visitor must issue no analytics request, and a cookieless ping is still a request. See §14. |
 | PDF accessibility tagging | `/Lang` only | Needs the LaTeX source. See §4. |
 | Lighthouse CI in GitHub Actions | ~~Not built~~ → **built**, budgets measured first | The objection was to unmeasured budgets, and it was right: measuring first found three real defects that would have made a 100 floor unpassable. See §15. |
 | `www` → apex at the Vercel domain level | Done in `next.config.mjs` | Reviewable, testable, survives a fork. See §2. |
@@ -1254,7 +1436,17 @@ every rerun kept the stale list. The script now records which repositories
 
 ---
 
-## 14. GA4 — written, not mounted
+## 14. GA4 — written, then mounted behind a gate
+
+**Decision (owner, 2026-09-25): superseded by §17.** #141 shipped and GA4 now
+mounts inside `<ConsentedAnalytics />`. The two dated decisions below are kept
+exactly as written — they are the record of what was argued and when, and the
+2026-09-24 revert is precisely what made the gate the right answer rather than a
+formality. One thing in them is now out of date and worth naming here rather
+than editing in place: the closing line offers "granting is one
+`gtag('consent', 'update', …)` from wherever the accept button lives", and the
+implementation deliberately did not do that. Consent gates the LOAD; storage
+stays denied in both states. §17 has the reasoning.
 
 **Decision (owner, 2026-09-24): the mount is reverted; §8 stands.** This
 section was written when the component was rendered from `RootLayout`, and the
@@ -1406,6 +1598,13 @@ Three notes for whoever measures next.
   `readNotes.js`, since nothing wraps a generated table today. The keyframe is
   left in place with its floor correct so that change lands on a working
   animation rather than a new contrast regression.
+  *(Fixed 2026-09-26, by removal.)* The measurement above no longer held: the
+  rows were resolving against the page's scroll and dealing in — and that was
+  the defect. Under `border-collapse: collapse` the gridlines belong to the
+  table, not the row, so a translated `tr` moves its text but not its borders.
+  Every row still inside its range — the last few of each table, the ones at
+  the bottom of the viewport — sat up to 14px left of its own column. Rows and
+  header cells no longer animate; the table lifts as one piece.
 - `/cv` uses the same reveal system with `opacity: 0` first keyframes. It passes
   today because no text element happens to straddle the fold at load, which is
   luck rather than a property — if it starts failing, this is the entry to read.
@@ -1442,8 +1641,12 @@ measured instead of assumed and it passes.
 
 ## 16. `/notes` — publishing the reasoning
 
-This document is 1,000-odd lines recording why each decision on this site was
-taken. Until `/notes` it lived only in the GitHub tree, where nobody arriving
+This document is well over a thousand lines recording why each decision on this
+site was taken. (Hedged rather than counted, on purpose: it said "1,000-odd
+lines" while standing at 1,741, which is the exact drift CLAUDE.md warns about
+and which `readNotes.js` had already been caught by once. The figure the PAGE
+prints is derived from the file at build — `countLines()` — and is the only
+version of this number worth trusting.) Until `/notes` it lived only in the GitHub tree, where nobody arriving
 at the site would ever find it.
 
 That is a discoverability failure of exactly the kind this issue is about,
@@ -1542,3 +1745,129 @@ every note page render from the project description composer, which
 to a shared source list — would have been the "too broad" error §10 records,
 re-stamping every URL on the site for a change only eleven can see. A window is
 not a project fact.
+
+---
+
+## 17. The consent gate, and the privacy page that had to be true
+
+[#141](https://github.com/MA1002643/theabdullahfolio/issues/141), shipped
+2026-09-25. §8 and §14 record the argument that led here; this is what was built
+and the three decisions worth disagreeing with.
+
+### The issue was re-audited before it was built, and had gone stale
+
+It was written before the guestbook (#40), `/uses` (#37), `/cv` and most of #32
+landed, and **three of its conclusions were no longer true** — one of them
+load-bearing enough to have shipped a falsehood to visitors.
+
+| The issue said | Actually |
+|---|---|
+| "This site sets **zero cookies**", and proposed notice copy reading *"No cookies"* | Auth.js v5 sets four `authjs.*` cookies at guestbook sign-in. All strictly necessary, none needing consent — so the *consent* conclusion survived and the blanket denial did not. |
+| `<Analytics />` / `<SpeedInsights />` "mount **unconditionally** … at `layout.js:84-85`" | Already conditional on `process.env.VERCEL` (they 404 off-platform, which capped Lighthouse best-practices at 0.96 — §15). Preserved inside the new boundary rather than replaced. |
+| Two surfaces to gate | **Three.** GA4 did not exist when the issue was written. |
+
+The corrected inventory is the issue body, re-audited in place with a "what
+changed" section rather than silently edited.
+
+### Decision: consent gates the LOAD; Consent Mode stays denied
+
+Both the issue and `GoogleAnalytics.jsx`'s own header specified
+`gtag('consent', 'update', { analytics_storage: 'granted' })` on accept. It is
+not issued, and will not be.
+
+What a visitor agrees to is whether the tag **loads at all**. All four Consent
+Mode signals stay denied permanently, so **no `_ga` cookie is ever written, for
+anyone, in either state** — which /privacy can state flatly instead of hedging.
+§14 had already accepted every cost of the cookieless mode (users modelled
+rather than counted, no cross-session attribution), so granting storage bought
+nothing the measurement needed. It also leaves
+`tests/unit/gaConsentMode.test.js`'s assertion that `'granted'` appears nowhere
+in that module **intact rather than weakened** — a gate that required loosening
+the test guarding it is a worse gate.
+
+### Decision: revoking reloads the page, and says so first
+
+Unmounting is not unloading, and treating it as such would have been the same
+category of error as the one above. Unmounting removes the tags and stops
+everything React drives, but Vercel's insights script has already attached its
+own history listeners inside its own closure and **nothing reachable from the
+app can detach them** — so an unmount-only revocation keeps sending a pageview
+per SPA navigation, silently, to somebody who has just refused.
+
+The only mechanism that genuinely unloads an executed script is discarding the
+document. So a revocation that follows a real load reloads the page, the
+preference centre states that **next to the switch that causes it**, and the
+reload is skipped on the paths where nothing was loaded (declining from the
+notice, or revoking in a tab that opened already denied).
+
+*(Tightened 2026-09-27.)* "Nothing was loaded" now also covers a grant that
+rendered nothing: with `VERCEL` and `NEXT_PUBLIC_GA_MEASUREMENT_ID` both unset
+(local dev, previews, forks), `ConsentedAnalytics` records no load, so a revoke
+does not reload. The preference centre's warning still shows in that case. It
+is accurate everywhere the site is public, because production always has
+`VERCEL` set. A cross-tab revocation now also includes `localStorage.clear()`:
+its `key: null` event removes the record, so a granted tab moves to undecided
+and tears down instead of staying granted against empty storage.
+
+### Decision: the policy is a module with a drift test, not prose
+
+A privacy policy is the one document on a site that is legally required to be
+true and structurally guaranteed to go stale: it describes behaviour spread
+across dozens of files, is written once, and nothing ordinary notices when the
+behaviour moves. The failure is silent *and* published.
+
+That is the same class of defect the sitemap registry exists for (P1/P2), so it
+got the same treatment.
+[`src/lib/privacy/inventory.js`](../src/lib/privacy/inventory.js) is the source;
+`/privacy` renders it; the preference centre reads its categories; and
+`tests/unit/privacyInventory.test.js` walks `src/` and fails CI on an
+undisclosed key. **It found three key families the hand audit had missed** —
+`github-stats:lastGood:<username>`, `experience-summary:last-payload:<username>`
+and the retired `projects-category` — before it had finished being written.
+
+It is deliberately **not** `docs/privacy.md`: `readNotes()` publishes every
+`docs/*.md` at `/notes/<slug>`, so a markdown policy would have shipped a second
+indexable copy at `/notes/privacy` competing with this URL — §2's
+duplicate-URL defect, arrived at by accident through a convenience.
+
+### What is measured, and what it cost
+
+- **Zero analytics requests before a decision**, verified in a real browser
+  against a build with `NEXT_PUBLIC_GA_MEASUREMENT_ID` and `VERCEL` set, so the
+  assertion could not pass for the wrong reason. 48 acceptance checks.
+- **Lighthouse accessibility 1.0 on all six CI routes**, `/privacy` added to the
+  list. The first draft scored **0.97** — eleven real `color-contrast`
+  failures from `#7a7a7a` / `#6f6f6f` body copy and a `text-[#ff6d05]/70`
+  ordinal at 3.59:1. The measured floor for 4.5:1 on this site's grounds is
+  `#838383` (page), `#7d7d7d` (key chips) and `#777777` (the dialog plate), so
+  `#8a8a8a` is the one value to remember. `aria-hidden` bought no exemption,
+  correctly: contrast is about being seen.
+- **No hydration warning added.** The four reduced-motion React #418/#423 errors
+  on this site are pre-existing and unchanged — measured identically with the
+  notice rendering and suppressed, and zero under normal motion.
+- **Orchid & ember and a scroll reveal (added 2026-09-26).** The neutral greys
+  were replaced with ember titles, violet-white reading copy and lilac small
+  print, with `#c8a6ee` as the quietest step (about 8.4:1 on the page plate),
+  and the page gained a CSS `view()` reveal. The
+  reveal is CSS rather than JavaScript so the policy stays a server component.
+  It follows the rules from the `/notes` fix above: text floors at 0.7 for
+  headings and 0.8 for body copy; cards move by transform only; and the ember
+  ordinal moves by blur and slide instead of fading, because `#ff6d05` at 0.8
+  is 4.35:1. The headings' focus pull animates `letter-spacing`, the one
+  property on the page that changes layout, so it runs only at 900px and
+  wider. At those widths every heading was measured at the same height with
+  its widest tracking as at rest; below 900px a heading could wrap mid-reveal
+  and shift the text under it. The audit caught one case the arithmetic missed: an ember **link**
+  inside a fading lede measured **4.33:1**. The two links inside ledes now use
+  `#ff8a1e`. The general lesson is that a floor chosen for the body colour
+  says nothing about an inline element of a different colour inside it. The
+  one remaining dev-server failure, the intro loader's `loader-percent`
+  sampled mid-fade, reproduces identically on the untouched `/contact`, so it
+  was not introduced here.
+
+### Out of scope, and still open
+
+Global Privacy Control / Do Not Track. Honouring a browser-level signal needs
+its own decision about precedence over a stored choice — specifically whether a
+GPC header should override an explicit grant the same visitor gave — and that is
+a policy question, not a wiring one.

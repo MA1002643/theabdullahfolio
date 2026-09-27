@@ -1,11 +1,12 @@
+import { loadEnvConfig } from '@next/env';
 import { expect, test } from '@playwright/test';
 
 // ── SEO end-to-end suite (issue #32, W5) ────────────────────────────────────
 // Runs against a PRODUCTION server (`next start`, see playwright.config.mjs),
 // which is the only place several of these can be checked at all:
 //
-//   • Response HEADERS. The CV's X-Robots-Tag is config, so a unit test can
-//     assert it is DECLARED — only a real request proves it is SERVED.
+//   • Response HEADERS. The CV's canonical `Link` header is config, so a unit
+//     test can assert it is DECLARED — only a real request proves it is SERVED.
 //   • The generated files. `/robots.txt`, `/sitemap.xml` and
 //     `/manifest.webmanifest` are route handlers; "does it return 200" is not a
 //     question a unit test can answer.
@@ -17,6 +18,18 @@ import { expect, test } from '@playwright/test';
 // `request` (the APIRequestContext) is used rather than `page` for most of it,
 // deliberately. `page.goto()` runs the client bundle, so a link that only exists
 // after hydration would pass — which is precisely the bug F1 was.
+
+// The origin the served build was configured with. `NEXT_PUBLIC_SITE_ORIGIN`
+// is a supported override (src/lib/seo/site.js — forks and self-referential
+// previews), so hardcoding `https://ma.codes` here would fail a correctly
+// configured fork on every origin assertion. Resolved exactly as the build
+// resolves it: `loadEnvConfig` reads the `.env*` files `next build` read, then
+// the same fallback and trailing-slash strip `ORIGIN` applies. Not imported
+// from site.js, whose `@/` aliases Playwright's loader does not resolve.
+loadEnvConfig(process.cwd());
+const SITE_ORIGIN = (
+  process.env.NEXT_PUBLIC_SITE_ORIGIN || 'https://ma.codes'
+).replace(/\/+$/, '');
 
 const ROUTES = [
   '/',
@@ -35,6 +48,12 @@ const ROUTES = [
   '/contact',
   '/my-past',
   '/guestbook',
+  // The privacy policy (#141). Listed here for the same reason as the rest, and
+  // with one of its own: this is the page whose whole value is being checkable
+  // independently of the site that wrote it, so it has to serve real, crawlable
+  // HTML with no JavaScript involved. `request` rather than `page` is exactly
+  // the audit that proves it does.
+  '/privacy',
 ];
 
 /** Strip tags and script/style bodies, the way the audit in the issue did. */
@@ -66,12 +85,12 @@ test.describe('crawl control', () => {
     const body = await response.text();
     // Absolute, per the sitemap protocol — a relative Sitemap directive is
     // invalid and silently ignored by every consumer.
-    expect(body).toContain('Sitemap: https://ma.codes/sitemap.xml');
+    expect(body).toContain(`Sitemap: ${SITE_ORIGIN}/sitemap.xml`);
     // Host is the opposite: the directive takes a HOSTNAME, and a consumer
     // that is handed an absolute URL ignores the line. Asserted with the
     // trailing newline, so the line has to END at the apex — a substring
     // match alone would also pass on `Host: ma.codes.example`.
-    expect(body).toContain('Host: ma.codes\n');
+    expect(body).toContain(`Host: ${new URL(SITE_ORIGIN).hostname}\n`);
     expect(body).toMatch(/User-Agent: \*/);
     // F7: the AI-crawler posture is stated rather than inherited. A named
     // stanza is what makes the allow a policy instead of an accident.
@@ -91,11 +110,20 @@ test.describe('crawl control', () => {
     const body = await response.text();
     const urls = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 
-    // 11 registry routes + 11 project pages + 1 note + the CV = 24. Hardcoded
+    // 12 registry routes + 11 project pages + 1 note = 24. Hardcoded
     // on purpose, same argument as ROUTES above: this number is the independent
     // check on the generator, so deriving it from the generator's own inputs
     // would make the assertion vacuous. When it changes, it should be changed
     // deliberately and the diff should say why.
+    //
+    // 24 → 25 on 2026-09-25: `/privacy` joined the registry (#141). It is
+    // indexable by decision rather than by omission — a privacy policy a search
+    // engine will not show is one a reader cannot verify independently of the
+    // site that wrote it, and being checkable is most of what it is for.
+    //
+    // 25 → 24 on 2026-09-26: the CV PDF left the sitemap. It now declares /cv
+    // as its canonical (Link header, next.config.mjs), and a sitemap lists
+    // only canonical URLs — see the note at the end of src/app/sitemap.js.
     expect(urls).toHaveLength(24);
     expect(new Set(urls).size).toBe(urls.length);
 
@@ -143,7 +171,7 @@ test.describe('crawl control', () => {
     expect(body).toContain('## Projects');
     for (const route of ROUTES) {
       if (route === '/') continue;
-      expect(body).toContain(`https://ma.codes${route}`);
+      expect(body).toContain(`${SITE_ORIGIN}${route}`);
     }
     // Private repositories are named but carry no repo URL — publishing a link
     // that 404s for every reader is worse than omitting it.
@@ -162,7 +190,7 @@ test.describe('canonical & indexability', () => {
       expect(canonical, `${route} has no canonical`).toBeTruthy();
       // The root canonical is the bare origin; everything else is origin+path.
       const expected =
-        route === '/' ? 'https://ma.codes' : `https://ma.codes${route}`;
+        route === '/' ? SITE_ORIGIN : `${SITE_ORIGIN}${route}`;
       expect(canonical).toBe(expected);
     });
   }
@@ -186,18 +214,37 @@ test.describe('canonical & indexability', () => {
     expect(html).toContain('max-snippet:-1');
   });
 
-  test('exactly one h1 per route', async ({ page }) => {
-    // The one check that legitimately needs a browser: `page` is used here
-    // because a duplicate h1 introduced by a client component would be missed
-    // by a raw-HTML scan.
-    for (const route of ROUTES) {
-      await page.goto(route);
+  // The one check that legitimately needs a browser: `page` is used here
+  // because a duplicate h1 introduced by a client component would be missed by
+  // a raw-HTML scan.
+  //
+  // One test per route, and it waits for HYDRATION, not for `load`. This was a
+  // single test looping every route through `page.goto()`, which waits for
+  // `load`: every image and the /qualifications scene video, none of which can
+  // change the heading count. On CI runners that is seconds per route, so the
+  // loop grew from 33.7s to 44.2s when /privacy joined and then passed the 60s
+  // limit on 2026-09-27, timing out on /qualifications while its DOM was
+  // complete and correct. The question here is "what did React render", so the
+  // wait is for React to own the h1: it attaches `__reactFiber$…` keys to every
+  // node it hydrates, so a duplicate rendered by a client component is in the
+  // DOM by then. (One added later by an effect was never guaranteed to be
+  // caught, under `load` either.)
+  for (const route of ROUTES) {
+    test(`${route} has exactly one h1 once hydrated`, async ({ page }) => {
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => {
+        const h1 = document.querySelector('h1');
+        return (
+          h1 !== null &&
+          Object.keys(h1).some((key) => key.startsWith('__reactFiber$'))
+        );
+      });
       await expect(
         page.locator('h1'),
         `${route} does not have exactly one h1`,
       ).toHaveCount(1);
-    }
-  });
+    });
+  }
 });
 
 test.describe('answer-engine readiness (W3)', () => {
@@ -351,7 +398,7 @@ test.describe('structured data', () => {
     const graph = JSON.parse(block);
 
     const person = graph['@graph'].find((node) => node['@type'] === 'Person');
-    expect(person['@id']).toBe('https://ma.codes/#person');
+    expect(person['@id']).toBe(`${SITE_ORIGIN}/#person`);
     expect(person.jobTitle).toBe('Software Engineer');
     expect(person.sameAs.join(' ')).toContain('github.com');
   });
@@ -369,7 +416,7 @@ test.describe('structured data', () => {
       (node) => node['@type'] === 'SoftwareSourceCode',
     );
     expect(code.codeRepository).toContain('github.com/MA1002643/');
-    expect(code.author['@id']).toBe('https://ma.codes/#person');
+    expect(code.author['@id']).toBe(`${SITE_ORIGIN}/#person`);
 
     const trail = doc['@graph'].find(
       (node) => node['@type'] === 'BreadcrumbList',
@@ -498,18 +545,18 @@ test.describe('structured data', () => {
   });
 });
 
-test.describe('the CV PDF as a deliberate landing page (W1b)', () => {
-  test('serves inline, with an explicit X-Robots-Tag', async ({ request }) => {
+test.describe('the CV PDF, canonicalised to /cv', () => {
+  test('serves inline, declaring /cv as its canonical', async ({ request }) => {
     const response = await request.get('/Muhammad_Abdullah_CV.pdf');
     expect(response.status()).toBe(200);
 
     const headers = response.headers();
     expect(headers['content-type']).toContain('application/pdf');
-    // Indexing is the default, so this header changes nothing technically — its
-    // value is that the decision (F6) is written where an auditor will read it.
-    expect(headers['x-robots-tag']).toContain('index');
-    expect(headers['x-robots-tag']).toContain('max-image-preview:large');
-    expect(headers['x-robots-tag']).not.toContain('noindex');
+    // A PDF cannot carry <link rel="canonical">, so the Link header is the only
+    // place the declaration can live. Without it, Search Console reports the PDF
+    // as "Duplicate without user-selected canonical" of /cv (2026-09-26).
+    expect(headers.link).toBe(`<${SITE_ORIGIN}/cv>; rel="canonical"`);
+    expect(headers['x-robots-tag'] ?? '').not.toContain('noindex');
   });
 
   test('carries the /Title that names the search result', async ({ request }) => {

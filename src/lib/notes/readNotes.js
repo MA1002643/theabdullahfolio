@@ -68,7 +68,9 @@ const SLUG_OVERRIDES = {
  * file conventionally ENDS with a newline, and that final newline TERMINATES
  * the last line rather than starting an empty one — so splitting yields a
  * trailing `''` element that is not a line. The index published 1,258 for a
- * file that `wc -l` reports as 1,257.
+ * file that `wc -l` reported as 1,257. (Past tense: the document has grown
+ * since, which is the whole reason neither number is written down anywhere a
+ * reader could mistake it for the current one.)
  *
  * That off-by-one matters more here than it would elsewhere, because the whole
  * justification for printing a line count (rather than a reading-time estimate)
