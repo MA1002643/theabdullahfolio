@@ -339,7 +339,7 @@ export default function PrivacyPolicy() {
             'I sell nothing, share nothing with advertisers, and run no third-party profiling of any kind.',
             'Analytics are off until you switch them on, and nothing is even downloaded before you do.',
             'The only cookies here are the guestbook sign-in, set if you choose to sign in and not otherwise.',
-            'Everything else is kept on your own device, for your benefit, and never sent to me.',
+            'Everything else is kept on your own device, for your benefit. The one exception is a contact message you send while offline: it waits on your device, then reaches me once you are back online.',
           ].map((line) => (
             <li key={line} className="pv-row flex gap-3">
               <span

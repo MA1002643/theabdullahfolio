@@ -139,7 +139,10 @@ export default function PrivacyNotice() {
   // Reduced motion gets opacity only — no translate. The entrance is short
   // either way; this element should arrive, not perform.
   const variants = reduced
-    ? { hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.2 } } }
+    ? {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { duration: 0.2 } },
+      }
     : {
         hidden: { opacity: 0, y: 24 },
         show: {
@@ -149,138 +152,147 @@ export default function PrivacyNotice() {
         },
       };
 
-  if (!open) {
-    // The live region stays mounted and empty so that when the notice does
-    // arrive, assistive technology sees a TEXT CHANGE inside an existing live
-    // region — which is what gets announced. A live region inserted with its
-    // text already in place is frequently not announced at all, which is the
-    // usual reason this pattern is implemented and still does not work.
-    return <span className="sr-only" role="status" aria-live="polite" />;
-  }
-
   return (
     <>
+      {/* ONE live region, mounted whether or not the notice is open, so that
+          when it arrives assistive technology sees a TEXT CHANGE inside an
+          existing live region — which is what gets announced. A live region
+          inserted with its text already in place is frequently not announced at
+          all. This used to be two early-returned trees, whose differing roots
+          made React remount the span with its text in it, which is exactly that
+          failure. Keep the span at this position and only swap its text. */}
       <span className="sr-only" role="status" aria-live="polite">
-        A privacy notice has appeared at the bottom of the page. You can accept
-        or decline analytics, or open preferences.
+        {open
+          ? 'A privacy notice has appeared at the bottom of the page. You can accept or decline analytics, or open preferences.'
+          : null}
       </span>
 
-      <motion.section
-        ref={panelRef}
-        // A region, NOT a dialog: no `aria-modal`, no focus trap, and the page
-        // behind it stays operable. Labelled so it is reachable as a landmark
-        // rather than being an unnamed box at the end of the document.
-        role="region"
-        aria-label="Privacy notice"
-        variants={variants}
-        initial="hidden"
-        animate="show"
-        onKeyDown={(event) => {
-          if (event.key !== 'Escape') return;
-          // Scoped to the region on purpose — see the header. Stopped here so it
-          // cannot bubble to a document-level handler and be read twice.
-          event.stopPropagation();
-          deny();
-        }}
-        // z-[60]: above the two corner widgets and the toaster (z-50), below the
-        // intro loader (z-9999) and the page-transition overlay, neither of which
-        // this may ever cover.
-        //
-        // `fluid-scale` is on this element so `fluid()` below resolves against a
-        // real factor — the notice lives in the ROOT layout, outside the
-        // `(sub pages)` <main> that normally carries the scope. `--fluid-min` is
-        // raised from the sitewide 0.6 because this panel is READ rather than
-        // admired: at 0.6 the body copy on a small phone is smaller than the
-        // legibility floor the rest of the system tolerates for decoration.
-        style={{ '--fluid-min': 0.85 }}
-        className={cn(
-          'fluid-scale fixed inset-x-0 bottom-0 z-[60]',
-          'border-t border-[#ff6d05]/25 bg-night-950/95 backdrop-blur-xl',
-          // No neon bloom, by instruction: a single hairline rule in the site's
-          // ember, and a plain shadow to lift the plate off the page. This
-          // element should recede.
-          'shadow-[0_-12px_40px_rgba(0,0,0,0.55)]',
-        )}
-      >
-        <div
-          className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8"
-          style={{ padding: `${fluid(1.1)} ${fluid(1.25)}` }}
+      {open ? (
+        <motion.section
+          ref={panelRef}
+          // A region, NOT a dialog: no `aria-modal`, no focus trap, and the page
+          // behind it stays operable. Labelled so it is reachable as a landmark
+          // rather than being an unnamed box at the end of the document.
+          role="region"
+          aria-label="Privacy notice"
+          variants={variants}
+          initial="hidden"
+          animate="show"
+          onKeyDown={(event) => {
+            if (event.key !== 'Escape') return;
+            // Scoped to the region on purpose — see the header. Stopped here so it
+            // cannot bubble to a document-level handler and be read twice.
+            event.stopPropagation();
+            deny();
+          }}
+          // z-[60]: above the two corner widgets and the toaster (z-50), below the
+          // intro loader (z-9999) and the page-transition overlay, neither of which
+          // this may ever cover.
+          //
+          // `fluid-scale` is on this element so `fluid()` below resolves against a
+          // real factor — the notice lives in the ROOT layout, outside the
+          // `(sub pages)` <main> that normally carries the scope. `--fluid-min` is
+          // raised from the sitewide 0.6 because this panel is READ rather than
+          // admired: at 0.6 the body copy on a small phone is smaller than the
+          // legibility floor the rest of the system tolerates for decoration.
+          style={{ '--fluid-min': 0.85 }}
+          className={cn(
+            'fluid-scale fixed inset-x-0 bottom-0 z-[60]',
+            'border-t border-[#ff6d05]/25 bg-night-950/95 backdrop-blur-xl',
+            // No neon bloom, by instruction: a single hairline rule in the site's
+            // ember, and a plain shadow to lift the plate off the page. This
+            // element should recede.
+            'shadow-[0_-12px_40px_rgba(0,0,0,0.55)]',
+          )}
         >
-          <div className="min-w-0">
-            <h2
-              className="mb-1.5 font-semibold uppercase tracking-[0.18em] text-[#ffaa2a]"
-              style={{ fontSize: fluidText(0.72, 0.68) }}
-            >
-              Privacy
-            </h2>
-            {/* The copy. Every clause is checkable against the inventory —
+          <div
+            className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8"
+            style={{ padding: `${fluid(1.1)} ${fluid(1.25)}` }}
+          >
+            <div className="min-w-0">
+              <h2
+                className="mb-1.5 font-semibold uppercase tracking-[0.18em] text-[#ffaa2a]"
+                style={{ fontSize: fluidText(0.72, 0.68) }}
+              >
+                Privacy
+              </h2>
+              {/* The copy. Every clause is checkable against the inventory —
                 which is the point of writing it from an audit rather than from
                 a template. It does NOT say "no cookies": the guestbook sign-in
                 sets four, and #141's original copy would have shipped that as a
                 falsehood. It says what is actually true and says it more
                 specifically. */}
-            {/* Set in the Architect of Enchantment's fire (About): the gold→ember
+              {/* Set in the Architect of Enchantment's fire (About): the gold→ember
                 ramp, darkening in reading order, under the same two-layer halo.
                 The clip is PER WORD via `wordFill`, never on this <p>: the panel
                 is backdrop-blurred and so GPU-promoted, which is exactly where a
                 parent `background-clip:text` rasterises wrongly (see
                 src/lib/fireRamp.js). The halo is a filter, which composites
                 correctly, so it stays on the parent. */}
-            <p
-              className="max-w-[62ch]"
-              style={{
-                fontSize: fluidText(0.92, 0.84),
-                lineHeight: 1.55,
-                filter:
-                  'drop-shadow(0 0 4px rgba(255, 178, 60, 0.55)) drop-shadow(0 0 12px rgba(255, 73, 0, 0.35))',
-              }}
-            >
-              {NOTICE_WORDS.map((word, i) => (
-                <span key={i} style={wordFill(i, NOTICE_WORDS.length)}>
-                  {word}{' '}
-                </span>
-              ))}
-              <TransitionLink
-                href="/privacy"
-                transitionLabel="Privacy"
-                className={cn(
-                  'rounded-sm font-medium text-[#ff6d05] underline decoration-[#ff6d05]/40 underline-offset-[3px] transition-colors hover:decoration-[#ff6d05]',
-                  FOCUS_RING,
-                )}
+              <p
+                className="max-w-[62ch]"
+                style={{
+                  fontSize: fluidText(0.92, 0.84),
+                  lineHeight: 1.55,
+                  filter:
+                    'drop-shadow(0 0 4px rgba(255, 178, 60, 0.55)) drop-shadow(0 0 12px rgba(255, 73, 0, 0.35))',
+                }}
               >
-                Read what that means
-              </TransitionLink>
-              .
-            </p>
-          </div>
+                {NOTICE_WORDS.map((word, i) => (
+                  <span key={i} style={wordFill(i, NOTICE_WORDS.length)}>
+                    {word}{' '}
+                  </span>
+                ))}
+                <TransitionLink
+                  href="/privacy"
+                  transitionLabel="Privacy"
+                  className={cn(
+                    'rounded-sm font-medium text-[#ff6d05] underline decoration-[#ff6d05]/40 underline-offset-[3px] transition-colors hover:decoration-[#ff6d05]',
+                    FOCUS_RING,
+                  )}
+                >
+                  Read what that means
+                </TransitionLink>
+                .
+              </p>
+            </div>
 
-          {/* Accept and Decline are the same element with a different tint.
+            {/* Accept and Decline are the same element with a different tint.
               Written as one shared class string plus a two-line difference so
               that "equal weight" is true by CONSTRUCTION rather than by two
               lists of classes happening to match today. */}
-          <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row sm:items-center">
-            <div className="flex gap-2.5">
-              <NoticeButton tone="affirm" onClick={grant} style={{ fontSize: fluidText(0.88, 0.82) }}>
-                Accept
-              </NoticeButton>
-              <NoticeButton tone="neutral" onClick={deny} style={{ fontSize: fluidText(0.88, 0.82) }}>
-                Decline
-              </NoticeButton>
+            <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row sm:items-center">
+              <div className="flex gap-2.5">
+                <NoticeButton
+                  tone="affirm"
+                  onClick={grant}
+                  style={{ fontSize: fluidText(0.88, 0.82) }}
+                >
+                  Accept
+                </NoticeButton>
+                <NoticeButton
+                  tone="neutral"
+                  onClick={deny}
+                  style={{ fontSize: fluidText(0.88, 0.82) }}
+                >
+                  Decline
+                </NoticeButton>
+              </div>
+              <button
+                type="button"
+                onClick={reopen}
+                className={cn(
+                  'rounded-sm text-left text-[#8f8f8f] underline decoration-[#8f8f8f]/35 underline-offset-[3px] transition-colors hover:text-[#d4d4d4] hover:decoration-[#d4d4d4] sm:ml-1 sm:text-center',
+                  FOCUS_RING,
+                )}
+                style={{ fontSize: fluidText(0.82, 0.76) }}
+              >
+                Preferences
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={reopen}
-              className={cn(
-                'rounded-sm text-left text-[#8f8f8f] underline decoration-[#8f8f8f]/35 underline-offset-[3px] transition-colors hover:text-[#d4d4d4] hover:decoration-[#d4d4d4] sm:ml-1 sm:text-center',
-                FOCUS_RING,
-              )}
-              style={{ fontSize: fluidText(0.82, 0.76) }}
-            >
-              Preferences
-            </button>
           </div>
-        </div>
-      </motion.section>
+        </motion.section>
+      ) : null}
     </>
   );
 }

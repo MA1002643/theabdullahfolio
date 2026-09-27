@@ -85,6 +85,13 @@ import Script from 'next/script';
 const MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 /**
+ * Whether this build renders a tag at all. Exported so ConsentedAnalytics can
+ * tell "a grant loaded GA4" from "a grant loaded nothing" without reading the
+ * variable a second time. Without an ID the component below returns null.
+ */
+export const GA_CONFIGURED = Boolean(MEASUREMENT_ID);
+
+/**
  * The consent defaults, as a `dataLayer` command.
  *
  * All four Consent Mode v2 signals are named explicitly rather than relying on

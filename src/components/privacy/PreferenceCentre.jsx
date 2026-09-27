@@ -286,7 +286,9 @@ export default function PreferenceCentre() {
                     Rendered as a locked statement rather than a disabled toggle.
                     A greyed-out switch says "this is a choice you are not allowed
                     to make", which is both untrue (there is no choice to make —
-                    it never leaves the browser) and the single most patronising
+                    it is local state, and the one item that is ever sent, an
+                    offline contact message, is sent because the visitor pressed
+                    Send) and the single most patronising
                     element in the genre. */}
                 <section className="rounded-lg border border-[#ffcd5b]/[0.12] bg-white/[0.02] p-4">
                   <div className="flex items-center justify-between gap-3">

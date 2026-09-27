@@ -130,6 +130,10 @@ describe('parseConsent — anything that is not a real grant is undecided', () =
       '{"version":1,"analytics":true}',
       '{"version":1,"analytics":true,"decidedAt":null}',
       '{"version":1,"analytics":true,"decidedAt":12345}',
+      // A string, but not a date. `typeof` alone let this through, and
+      // ConsentStatusPanel printed "Invalid Date" on /privacy.
+      '{"version":1,"analytics":true,"decidedAt":"not-a-date"}',
+      '{"version":1,"analytics":true,"decidedAt":""}',
     ]) {
       const result = parseConsent(raw);
       expect(result.status).toBe(STATUS.GRANTED);

@@ -48,6 +48,16 @@ import {
 
 const ConsentContext = createContext(null);
 
+// Wrapped because reading `window.localStorage` throws where storage is blocked.
+// No storage events arrive there anyway, so the answer does not matter.
+function isLocalStorage(area) {
+  try {
+    return area === window.localStorage;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Consent state and the four things you can do to it.
  *
@@ -131,11 +141,16 @@ export default function ConsentProvider({ children }) {
   // Rule 3: follow the decision across tabs.
   useEffect(() => {
     const onStorage = (event) => {
-      // Ignore every other key on the origin, and ignore the `key: null` event
-      // browsers fire for `localStorage.clear()` — which is not this module's
-      // doing and whose `newValue` is null anyway, so it would parse to
-      // `undecided` and silently re-prompt.
-      if (event.key !== CONSENT_KEY) return;
+      // Ignore every other key on the origin, but NOT `key: null`. That is the
+      // event `localStorage.clear()` fires, and a clear removes the consent
+      // record along with everything else. Ignoring it would leave this tab
+      // granted, with its scripts still mounted, while storage — and any tab
+      // opened after — says undecided. Its `newValue` is null, which parses to
+      // `undecided`: the notice returns, and a mounted tab tears down.
+      if (event.key !== null && event.key !== CONSENT_KEY) return;
+      // A null key only means "cleared" for localStorage; `sessionStorage`
+      // clears fire the same shape and never touched the record.
+      if (event.key === null && !isLocalStorage(event.storageArea)) return;
       // A grant arriving from another tab has to bump the epoch here too, or
       // this tab mounts GA4 with an id it has already used and the inline tag
       // never runs — `apply` does that, and only when this tab was not

@@ -214,18 +214,37 @@ test.describe('canonical & indexability', () => {
     expect(html).toContain('max-snippet:-1');
   });
 
-  test('exactly one h1 per route', async ({ page }) => {
-    // The one check that legitimately needs a browser: `page` is used here
-    // because a duplicate h1 introduced by a client component would be missed
-    // by a raw-HTML scan.
-    for (const route of ROUTES) {
-      await page.goto(route);
+  // The one check that legitimately needs a browser: `page` is used here
+  // because a duplicate h1 introduced by a client component would be missed by
+  // a raw-HTML scan.
+  //
+  // One test per route, and it waits for HYDRATION, not for `load`. This was a
+  // single test looping every route through `page.goto()`, which waits for
+  // `load`: every image and the /qualifications scene video, none of which can
+  // change the heading count. On CI runners that is seconds per route, so the
+  // loop grew from 33.7s to 44.2s when /privacy joined and then passed the 60s
+  // limit on 2026-09-27, timing out on /qualifications while its DOM was
+  // complete and correct. The question here is "what did React render", so the
+  // wait is for React to own the h1: it attaches `__reactFiber$…` keys to every
+  // node it hydrates, so a duplicate rendered by a client component is in the
+  // DOM by then. (One added later by an effect was never guaranteed to be
+  // caught, under `load` either.)
+  for (const route of ROUTES) {
+    test(`${route} has exactly one h1 once hydrated`, async ({ page }) => {
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => {
+        const h1 = document.querySelector('h1');
+        return (
+          h1 !== null &&
+          Object.keys(h1).some((key) => key.startsWith('__reactFiber$'))
+        );
+      });
       await expect(
         page.locator('h1'),
         `${route} does not have exactly one h1`,
       ).toHaveCount(1);
-    }
-  });
+    });
+  }
 });
 
 test.describe('answer-engine readiness (W3)', () => {

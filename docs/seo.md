@@ -1283,7 +1283,7 @@ bumping it; change the bargain and bump.
 
 ```bash
 npm run build
-npx playwright test tests/e2e/seo.spec.js     # 27 tests, incl. every sitemap URL → 200
+npx playwright test tests/e2e/seo.spec.js     # incl. every sitemap URL → 200
 npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js \
               tests/unit/schema.test.js tests/unit/cspAnalytics.test.js \
               tests/unit/gaConsentMode.test.js tests/unit/privacyInventory.test.js \
@@ -1295,6 +1295,12 @@ they guard claims that are **published** and that nothing else can check. The
 consent gate is the only thing standing between an undecided visitor and three
 measurement scripts, and `/privacy` is a document that is legally required to be
 true and structurally guaranteed to go stale.
+
+The e2e suite asserts origins against `NEXT_PUBLIC_SITE_ORIGIN` when it is set,
+reading the same `.env*` files the build read, and `https://ma.codes`
+otherwise. A fork that sets the variable before `npm run build` runs the suite
+unchanged. It must be the same value at build and at test time: the `Link`
+header and the canonicals are fixed when the site is built.
 
 ---
 
@@ -1793,6 +1799,15 @@ document. So a revocation that follows a real load reloads the page, the
 preference centre states that **next to the switch that causes it**, and the
 reload is skipped on the paths where nothing was loaded (declining from the
 notice, or revoking in a tab that opened already denied).
+
+*(Tightened 2026-09-27.)* "Nothing was loaded" now also covers a grant that
+rendered nothing: with `VERCEL` and `NEXT_PUBLIC_GA_MEASUREMENT_ID` both unset
+(local dev, previews, forks), `ConsentedAnalytics` records no load, so a revoke
+does not reload. The preference centre's warning still shows in that case. It
+is accurate everywhere the site is public, because production always has
+`VERCEL` set. A cross-tab revocation now also includes `localStorage.clear()`:
+its `key: null` event removes the record, so a granted tab moves to undecided
+and tears down instead of staying granted against empty storage.
 
 ### Decision: the policy is a module with a drift test, not prose
 

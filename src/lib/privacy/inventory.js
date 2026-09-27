@@ -77,13 +77,17 @@ export const CATEGORIES = [
     id: 'essential',
     name: 'Essential',
     gated: false,
-    summary: 'Always on. Kept on your device, and never sent anywhere.',
+    summary:
+      'Always on. Kept on your device, and used only to make the site work for you.',
     detail:
       'The site remembers a few things locally so it behaves like a site you have ' +
-      'used before — an unsent message survives a refresh, the intro plays once, ' +
-      'a dismissed hint stays dismissed. All of it is written to your own ' +
-      'browser and read back by your own browser. None of it is transmitted to ' +
-      'me, and none of it is used to recognise you.',
+      'used before — a half-typed message survives a refresh, the intro plays ' +
+      'once, a dismissed hint stays dismissed. That is written to your own ' +
+      'browser and read back by your own browser, and none of it is used to ' +
+      'recognise you. One item leaves your device, and only because you asked ' +
+      'it to: a contact message you send while offline is held here until the ' +
+      'network returns, then delivered to me like any other message. Drafts ' +
+      'you have not sent are never transmitted.',
   },
   {
     id: 'analytics',
@@ -675,4 +679,4 @@ export const RIGHTS = [
  *
  * Bump it when the substance changes. Leave it alone for a reworded sentence.
  */
-export const POLICY_UPDATED = '2026-09-25';
+export const POLICY_UPDATED = '2026-09-27';

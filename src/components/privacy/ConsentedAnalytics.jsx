@@ -60,7 +60,9 @@ import { useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-import GoogleAnalytics from '@/components/analytics/GoogleAnalytics';
+import GoogleAnalytics, {
+  GA_CONFIGURED,
+} from '@/components/analytics/GoogleAnalytics';
 import { useConsent } from './ConsentProvider';
 
 /**
@@ -83,9 +85,14 @@ export default function ConsentedAnalytics({ vercel = false }) {
   // `analytics: false` and nothing loaded, and must not reload on a no-op.
   const loadedRef = useRef(false);
 
+  // Nor from the grant alone. With `VERCEL` and the GA4 ID both unset (local
+  // dev, previews, forks — all supported) a grant renders nothing, and a
+  // revoke after it must not reload a page that has nothing to unload.
+  const hasSurface = vercel || GA_CONFIGURED;
+
   useEffect(() => {
     if (analytics) {
-      loadedRef.current = true;
+      if (hasSurface) loadedRef.current = true;
       return;
     }
     if (!loadedRef.current) return;
@@ -104,7 +111,7 @@ export default function ConsentedAnalytics({ vercel = false }) {
     }
 
     window.location.reload();
-  }, [analytics]);
+  }, [analytics, hasSurface]);
 
   // THE GATE. Everything above this line is teardown; nothing above it renders.
   if (!analytics) return null;
