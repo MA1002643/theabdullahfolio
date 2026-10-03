@@ -15,6 +15,20 @@
 // POSITION. { t: createdAt in ms, id }. The route encodes one as the opaque
 // `nextCursor` a client hands back (cursor.js); the drivers consume it as the
 // `after` argument to listMessages.
+//
+// PRECONDITION: a new message sorts ABOVE every message already on the wall,
+// i.e. createdAt never goes backwards in posting order. The server stamps it at
+// write time and the per-user rate limit spaces posts out, so this holds, but
+// the client algebra below DEPENDS on it and says so here (issue #92). The
+// model-based suite (tests/property/guestbookPaging.property.test.js) found
+// the boundary: if a page's worth of messages ever sorted BELOW a card the
+// client already holds, pageReachesPrefix would accept a page that shares only
+// that top card, the merge would keep the old tail, and the messages in
+// between would be neither on screen nor reachable from the cursor. Under the
+// precondition, 20,000 generated histories of posts, deletes, polls and
+// load-older keep every message reachable. Anything that could stamp createdAt
+// out of order (a backfill, an import, a client-supplied time) must re-read the
+// wall from the top instead of merging.
 
 // Cards the wall renders per leaf — also the size of the poll's "newest page".
 export const PAGE_SIZE = 8;

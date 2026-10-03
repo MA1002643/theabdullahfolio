@@ -9,7 +9,8 @@
 // Presentational + controlled: the parent owns `soundOn` and the toggle (which
 // also unlocks the AudioContext from the click gesture); see index.jsx.
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SplitFlapText, FlapItem } from './metaRevealMotion';

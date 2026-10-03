@@ -8,9 +8,9 @@ import {
   useMotionTemplate,
   useMotionValue,
   useMotionValueEvent,
-  useReducedMotion,
   useTransform,
 } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import EmblemSeal from './EmblemSeal';
 import {
   BUILD_DURATION_MS,
@@ -179,13 +179,25 @@ export default function LoaderWrapper({ children }) {
     ? { maskImage, WebkitMaskImage: maskImage }
     : null;
 
+  // The page is INERT while the overlay hides it (issue #92): unfocusable,
+  // unclickable and out of the accessibility tree. Without this a keyboard
+  // user who pressed Tab during the ~3 s intro moved focus through links they
+  // could not see, and a screen reader read a page that was not there yet
+  // (tests/a11y/keyboard.spec.js, WCAG 2.4.11). Released the moment the reveal
+  // begins, the same instant useLoaderRevealed() flips.
+  const covered = showLoader && phase !== 'reveal' && phase !== 'done';
+
   return (
     <>
       {/* Page mounts behind the loader from the first render. The overlay
           (z-9999) covers it during the build, and the radial wipe genuinely
           reveals the real page underneath — heavy work like Three.js init can
-          also warm up while the seal plays. */}
-      {children}
+          also warm up while the seal plays. `display: contents` so the wrapper
+          adds no box and changes no layout. React 18 has no boolean `inert`,
+          hence the empty-string attribute. */}
+      <div style={{ display: 'contents' }} inert={covered ? '' : undefined}>
+        {children}
+      </div>
 
       <AnimatePresence>
         {showLoader && (

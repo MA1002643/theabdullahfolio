@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Briefcase, GraduationCap, History, Phone, Route, User, Wrench } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';

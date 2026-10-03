@@ -17,6 +17,10 @@ const withBundleAnalyzer =
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // No `X-Powered-By: Next.js` (issue #92, found by tests/security/headers.spec.js).
+  // Advertising the framework hands a scanner the exact exploit list to try
+  // and tells a visitor nothing.
+  poweredByHeader: false,
   // This repo lives under ~/Desktop, which iCloud Drive syncs. iCloud's
   // file provider churns build artifacts mid-write (random ENOENT, silent
   // dev-server exits — see scripts/dev.mjs for the full failure story).
@@ -157,6 +161,27 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
+          // ── Baseline hardening (issue #92) ──────────────────────────────
+          // Found missing by tests/security/headers.spec.js, which asserts
+          // what the production server SENDS: until then the CSP below was
+          // the only security header on the site.
+          //
+          // nosniff: a response is only ever run as the type it declares, so
+          // a mis-typed or user-influenced file is never executed as script
+          // because a browser guessed.
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Cross-origin requests carry the origin only, never the full URL
+          // (a guestbook deep link, a query string). Same-origin keeps the
+          // path, which the site's own analytics need.
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // Powerful features the site never uses, switched off for every
+          // frame, so an injected script cannot prompt for them either. The
+          // live-location line is SERVER-side (OwnTracks ingest), never the
+          // browser's geolocation API, so `geolocation=()` costs nothing.
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()',
+          },
           {
             key: 'Content-Security-Policy',
             // https://va.vercel-scripts.com — required by @vercel/analytics

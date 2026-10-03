@@ -1,6 +1,7 @@
 "use client";
 
-import { animate, motion, useReducedMotion } from "framer-motion";
+import { animate, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import React, {
   useCallback,
   useEffect,
@@ -232,7 +233,11 @@ export default function LanguagesCard({ data, isLive = false }) {
   const keyboardModalityRef = useRef(false);
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Tab") keyboardModalityRef.current = true;
+      // Enter / Space too: they reopen a row's popover (the row's onKeyDown),
+      // and a row focused by a click then activated from the keyboard is still
+      // keyboard-driven. This capture listener runs before that handler.
+      if (e.key === "Tab" || e.key === "Enter" || e.key === " ")
+        keyboardModalityRef.current = true;
     };
     const onPointer = () => {
       keyboardModalityRef.current = false;
@@ -846,8 +851,21 @@ function AnimatedLangLabel({
           onRepoClose?.();
         }}
         onClick={(e) => onRepoTap?.(e.currentTarget)}
+        // Keyboard parity (issue #92, found by jsx-a11y/recommended). Focus
+        // opens the popover, but Escape closes it WITHOUT moving focus, and
+        // with no key handler the only way back was to Tab away and return.
+        // Enter / Space now reopen it in place, the way they would on a
+        // native button — which is also why the row announces as one.
+        onKeyDown={(e) => {
+          if (!hasRepos || (e.key !== "Enter" && e.key !== " ")) return;
+          e.preventDefault();
+          onActivate();
+          onRepoFocus?.(e.currentTarget);
+        }}
+        role="button"
+        aria-disabled={hasRepos ? undefined : "true"}
         aria-haspopup={hasRepos ? "true" : undefined}
-        className={`group flex items-center gap-2 min-w-0 rounded-md outline-none transition-[opacity,transform] duration-200 ${
+        className={`group flex items-center gap-2 min-w-0 rounded-md outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[rgba(255,170,42,0.8)] transition-[opacity,transform] duration-200 ${
           hasRepos ? "cursor-pointer" : ""
         }`}
         style={{

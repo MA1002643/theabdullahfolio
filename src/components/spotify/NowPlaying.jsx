@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Music } from 'lucide-react';
 import { SiSpotify } from 'react-icons/si';
 import { useNowPlaying } from './useNowPlaying';

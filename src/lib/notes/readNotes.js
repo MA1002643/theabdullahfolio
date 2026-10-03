@@ -227,7 +227,7 @@ export function readNote(slug, root = process.cwd()) {
  */
 export function renderNote(markdown) {
   const withoutTitle = markdown.replace(/^#\s+.+?\n/, '');
-  return marked.parse(withoutTitle, {
+  return makeScrollersFocusable(marked.parse(withoutTitle, {
     // GitHub-flavoured tables and strikethrough, which docs/seo.md uses
     // throughout — several of its decision records ARE tables.
     gfm: true,
@@ -236,5 +236,19 @@ export function renderNote(markdown) {
     // readability in an editor, and treating those wraps as line breaks would
     // render every paragraph as a ragged column.
     breaks: false,
-  });
+  }));
+}
+
+/**
+ * Code blocks and tables scroll sideways on a phone, and a scrolling region a
+ * keyboard cannot reach is unreadable without a mouse or touch (WCAG 2.1.1;
+ * axe `scrollable-region-focusable`, found on /notes/discoverability at 390px
+ * by tests/a11y/axe.spec.js, issue #92). Each one becomes a Tab stop.
+ *
+ * A plain string rewrite is safe here: marked escapes `<` inside code and
+ * text, so a literal `<pre>` or `<table>` tag in its output can only be the
+ * real element, never document content.
+ */
+export function makeScrollersFocusable(html) {
+  return html.replace(/<(pre|table)>/g, '<$1 tabindex="0">');
 }

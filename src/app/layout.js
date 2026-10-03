@@ -3,6 +3,7 @@ import './globals.css';
 import clsx from 'clsx';
 import CustomCursor from '@/components/CustomCursor';
 import LoaderWrapper from '@/components/loaderWrapper';
+import MotionPreferences from '@/components/MotionPreferences';
 import PageTransitionProvider from '@/components/pageTransition/PageTransitionProvider';
 import GlobalToaster from '@/components/GlobalToaster';
 import ProjectFilterHandoffGuard from '@/components/projects/ProjectFilterHandoffGuard';
@@ -201,22 +202,24 @@ export default function RootLayout({ children }) {
               them out makes that independence explicit and stays true even if this
               layout ever becomes a Client Component. */}
           <SoundProvider>
-            <LoaderWrapper>
-              <PageTransitionProvider>
-                {children}
-                {/* The privacy notice + preference centre live INSIDE the
-                    transition provider, not beside it, for one reason: the
-                    notice links to /privacy with <TransitionLink>, which falls
-                    back to a plain navigation when no provider is above it. That
-                    fallback works, and it would make this the one internal link
-                    on the site that skips the Ember Passage — a visible
-                    inconsistency on the surface whose whole job is to look
-                    considered. LoaderWrapper renders `children` plainly, so
-                    being inside it costs nothing; the notice waits for
-                    `useLoaderRevealed()` regardless. */}
-                <PrivacyGate />
-              </PageTransitionProvider>
-            </LoaderWrapper>
+            <MotionPreferences>
+              <LoaderWrapper>
+                <PageTransitionProvider>
+                  {children}
+                  {/* The privacy notice + preference centre live INSIDE the
+                      transition provider, not beside it, for one reason: the
+                      notice links to /privacy with <TransitionLink>, which falls
+                      back to a plain navigation when no provider is above it. That
+                      fallback works, and it would make this the one internal link
+                      on the site that skips the Ember Passage — a visible
+                      inconsistency on the surface whose whole job is to look
+                      considered. LoaderWrapper renders `children` plainly, so
+                      being inside it costs nothing; the notice waits for
+                      `useLoaderRevealed()` regardless. */}
+                  <PrivacyGate />
+                </PageTransitionProvider>
+              </LoaderWrapper>
+            </MotionPreferences>
             {/* Stop control for routes with no footer (the homepage), so the
                 persisting track is always silenceable. Renders null elsewhere. */}
             <FloatingSoundToggle />

@@ -9,7 +9,7 @@ import { fluid } from '@/lib/fluidScale';
 import Plate, { Figure } from './Plate';
 import { riseProps, staged, useStagedReveal } from './useStagedReveal';
 
-// 04 · THE INSTRUMENTS — three meter tiles: unit suites, e2e suites, API
+// 04 · THE INSTRUMENTS — three meter tiles: Vitest suites, browser suites, API
 // routes. Every figure AND every sub-line is COUNTED at build
 // (buildFacts.js), never typed — the case counts the way the runner counts
 // them (each-tables expanded), the routes' handlers per HTTP verb — and each
@@ -208,16 +208,19 @@ export default function InstrumentsPlate({ facts }) {
     unit && {
       slug: 'unit',
       figure: unit.suites,
-      label: unit.suites === 1 ? 'unit suite' : 'unit suites',
+      // Every Vitest layer since issue #92 (unit, property, fitness,
+      // component, api), so "unit" alone would under-describe the figure.
+      label: unit.suites === 1 ? 'Vitest suite' : 'Vitest suites',
       sub: `${unit.cases} test cases · Vitest`,
-      href: `${projectGithubUrl}/tree/main/tests/unit`,
+      href: `${projectGithubUrl}/tree/main/tests`,
     },
     e2e && {
       slug: 'e2e',
       figure: e2e.suites,
-      label: e2e.suites === 1 ? 'e2e suite' : 'e2e suites',
+      // e2e, a11y, visual, security and perf all run in a real browser.
+      label: e2e.suites === 1 ? 'browser suite' : 'browser suites',
       sub: `${e2e.cases} scenarios · Playwright`,
-      href: `${projectGithubUrl}/tree/main/tests/e2e`,
+      href: `${projectGithubUrl}/tree/main/tests`,
     },
     apiRoutes != null && {
       slug: 'api',

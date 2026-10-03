@@ -93,6 +93,8 @@ test('signed-in composer: counter, AI refine affordance, draft autosave + restor
   );
 
   await page.goto('/guestbook');
+  // The intro loader holds the page inert until it reveals (issue #92).
+  await page.waitForFunction(() => window.__loaderDone === true);
 
   const input = page.locator('#guestbook-message');
   await expect(input).toBeVisible({ timeout: 20_000 });

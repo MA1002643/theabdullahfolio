@@ -2,7 +2,8 @@
 
 import { Fragment } from "react";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fluidText } from "@/lib/fluidScale";
 
 // Visual variants. Each variant ships every token needed by the full

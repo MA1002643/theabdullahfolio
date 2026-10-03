@@ -1,6 +1,7 @@
 "use client";
 
-import { animate, motion, useReducedMotion } from "framer-motion";
+import { animate, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SkillIcon, SkillRepoPopover } from "./SkillIcon";
@@ -436,6 +437,7 @@ function SkillsStage({
   );
   const iconHandlers = { onIconEnter, onIconLeave, onIconFocus, onIconBlur, onIconTap, onIconActivate };
 
+
   // A tap (touch) popover is sticky: a pointerdown outside it + outside any icon
   // dismisses it.
   useEffect(() => {
@@ -479,6 +481,32 @@ function SkillsStage({
   const activeRef = useRef(-1);
   const [active, setActive] = useState(0);
   const [layout, setLayout] = useState({ starts: [], overflows: [], total: 0 });
+
+  // Focus drives the scrub (issue #92, WCAG 2.4.11). The scrub is a pure
+  // function of the scroller's scrollTop (see the apply() effect below), so it
+  // can be INVERTED: for the icon that just took focus, find its category's
+  // segment and the progress at which its cell sits fully inside the stage,
+  // then set scrollTop there and let the scroll handler do the rest (switch
+  // category, translate, reveal). Before this, Tab walked through icons that
+  // had not slid in yet, and through every inactive category's row, all of
+  // them invisible. Deferred one frame so it overrides the browser's own
+  // focus-scroll of this nested scroller rather than racing it.
+  const revealFocusedIcon = useCallback(
+    (event) => {
+      const sc = scrollerRef.current;
+      const cell = event.target?.closest?.("[data-slug]");
+      if (!sc || !cell || !layout.starts.length) return;
+      const i = rowRefs.current.findIndex((row) => row && row.contains(cell));
+      if (i < 0) return;
+      requestAnimationFrame(() => {
+        const o = layout.overflows[i] || 0;
+        const need = cell.offsetLeft + cell.offsetWidth + REVEAL_DIST - sc.clientWidth;
+        const prog = o > 0 ? Math.min(1, Math.max(0, need / o)) : 0;
+        sc.scrollTop = layout.starts[i] + prog * o;
+      });
+    },
+    [layout],
+  );
 
   // Heartbeat (item 4): which icon slugs / category indices are currently
   // pulsing, plus per-slug dedupe so each added icon pulses only the first time.
@@ -870,9 +898,12 @@ function SkillsStage({
         />
       )}
       {/* Vertical scroller = the scroll INPUT. Scrollbar hidden (the horizontal
-          movement IS the feedback); overflow-x clipped so rows never widen it. */}
+          movement IS the feedback); overflow-x clipped so rows never widen it.
+          onFocusCapture: keyboard focus drives the scrub (issue #92, see
+          revealFocusedIcon), so a tabbed-to icon is always on screen. */}
       <div
         ref={scrollerRef}
+        onFocusCapture={revealFocusedIcon}
         className="relative overflow-y-auto overflow-x-hidden h-[7.5rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {/* Tall track gives the scroll budget: one viewport + the summed segments. */}

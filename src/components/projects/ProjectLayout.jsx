@@ -1,6 +1,7 @@
 "use client"
 
-import { motion, useReducedMotion } from "framer-motion"
+import { motion } from "framer-motion"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { useRouter } from "next/navigation"
 import TransitionLink from "@/components/pageTransition/TransitionLink"
 import { warmProjectScene } from "@/components/project-detail/scene-loader"

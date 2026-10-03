@@ -1,0 +1,100 @@
+name: Visual baselines
+
+# Renders every visual-regression screenshot on each push and commits the
+# images back to the branch (issue #92, L7), so the latest render of every
+# view is always in the repository to look at.
+#
+# Two directories, on purpose:
+#
+#   tests/visual/__latest__/       re-rendered and committed on EVERY push,
+#                                  with a README.md gallery noting which views
+#                                  differ from their baseline. Always current.
+#   tests/visual/__screenshots__/  the REVIEWED baselines CI compares against.
+#                                  Seeded automatically when missing (the first
+#                                  run arms the layer); after that, changed only
+#                                  deliberately: run this workflow by hand with
+#                                  `promote: true`, or commit the PNGs in a PR.
+#
+# Why not overwrite the baselines on every push: a baseline that silently
+# becomes whatever the code renders today cannot catch a regression, ever.
+# __latest__ shows the current truth; __screenshots__ holds the agreed truth,
+# and the diff between them is the review.
+#
+# Rendered on ubuntu-latest with the SAME Chromium install the CI comparison job
+# uses (ci.yml, `quality`), not in a container, so a baseline rendered here and
+# a screenshot taken there come from the identical rasteriser. (Docker on Apple
+# silicon cannot run Chromium under amd64 emulation, which is why this lives in
+# CI rather than on a laptop.)
+#
+# Loop-safe: commits made with the job's GITHUB_TOKEN do not trigger workflows,
+# so the image commit does not re-run this.
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore:
+      - 'tests/visual/__latest__/**'
+      - 'tests/visual/__screenshots__/**'
+  workflow_dispatch:
+    inputs:
+      promote:
+        description: 'Also copy the fresh render over the reviewed baselines'
+        type: boolean
+        default: false
+
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+  SMTP_HOST: smtp.example.com
+  SMTP_PORT: '587'
+  SMTP_USER: ci@example.com
+  SMTP_PASS: placeholder
+  RECEIVER_EMAIL: ci@example.com
+  AUTH_GITHUB_ID: ci-placeholder
+  AUTH_GITHUB_SECRET: ci-placeholder
+  AUTH_GOOGLE_ID: ci-placeholder
+  AUTH_GOOGLE_SECRET: ci-placeholder
+
+jobs:
+  render:
+    name: Render and commit screenshots
+    runs-on: ubuntu-latest
+    # Never on a bot's own commit, and never for Dependabot (no write token).
+    if: ${{ github.actor != 'github-actions[bot]' && github.actor != 'dependabot[bot]' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install Playwright Chromium (as ci.yml does)
+        run: npx playwright install --with-deps chromium
+      - name: Render every view
+        run: node scripts/render-visual-latest.mjs
+        env:
+          VISUAL: '1'
+          PROMOTE: ${{ inputs.promote && '1' || '' }}
+      - name: Commit the images (if anything changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/__latest__ tests/visual/__screenshots__
+          if git diff --cached --quiet; then
+            echo "Screenshots unchanged." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git commit -m "test(visual): render screenshots for ${GITHUB_SHA::7}" -m "Automated by .github/workflows/visual-baselines.yml (issue #92)."
+          git push
+      - name: Summary
+        if: always()
+        run: cat tests/visual/__latest__/README.md >> "$GITHUB_STEP_SUMMARY" || true

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { useMotionValue, useSpring } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { onMediaChange } from "@/lib/mediaQuery";
 
 // Pointer-reactive parallax for the intro emblem seal — the third sibling of

@@ -1,0 +1,33 @@
+# Dependency updates (issue #92, L9). Weekly and GROUPED, so the PR queue is a
+# handful of reviewable batches rather than a daily drip of one-line bumps that
+# train everyone to merge without reading.
+#
+# Majors are left out of the groups on purpose: Next 14 → 15, nodemailer 7 → 10
+# and the like are migrations with their own issues (see
+# .github/audit-allowlist.json), not something to rubber-stamp in a batch.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies]
+    groups:
+      production-minor-and-patch:
+        dependency-type: production
+        update-types: [minor, patch]
+      development-minor-and-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, area:ci]
+    groups:
+      actions:
+        patterns: ['*']

@@ -16,7 +16,7 @@ import * as THREE from "three"
 import RealisticTree from "@/components/project-detail/tree-stump"
 import LaptopModel from "@/components/project-detail/laptop-model"
 
-function Scene() {
+function Scene({ links }) {
     const cameraRef = useRef(null)
 
     useEffect(() => {
@@ -38,11 +38,17 @@ function Scene() {
             {/* Fog for depth */}
             {/* <fog attach="fog" args={["#1a0d00", 8, 25]} /> */}
 
-            <Environment preset="night" />
+            {/* Self-hosted (issue #92). `preset="night"` made every visitor's
+                browser fetch this file from raw.githack.com, a free dev CDN:
+                an undisclosed third party receiving each visitor's IP, and a
+                single point of failure for the scene. Found by the e2e suite's
+                hermetic network, which blocks every foreign origin. Same file,
+                byte for byte: drei-assets@456060a, hdri/dikhololo_night_1k.hdr. */}
+            <Environment files="/hdri/dikhololo_night_1k.hdr" />
 
             {/* Models */}
             <RealisticTree position={[0, -2.5, 0]} />
-            <LaptopModel position={[0, -1.1, 0]} />
+            <LaptopModel position={[0, -1.1, 0]} links={links} />
 
             {/* OrbitControls - Never go below floor */}
             <OrbitControls
@@ -68,7 +74,7 @@ function Scene() {
     )
 }
 
-export default function ProjectScene() {
+export default function ProjectScene({ links }) {
     return (
         <Canvas
             shadows
@@ -79,7 +85,7 @@ export default function ProjectScene() {
             }}
             className="absolute inset-0 w-full h-full overflow-hidden z-[0]"
         >
-            <Scene />
+            <Scene links={links} />
         </Canvas>
     )
 }

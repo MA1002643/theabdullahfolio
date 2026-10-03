@@ -28,12 +28,17 @@
 //   2. DISMISSAL IS NOT CONSENT. There is no scroll-to-accept, no
 //      continue-to-browse-means-yes, no timeout that decides for you. The notice
 //      has exactly three exits and all three are something the visitor pressed.
-//   3. ESCAPE MEANS DECLINE, never accept. Bound on the region rather than on
-//      `document`, deliberately: a global handler would fire while the ⌘K
-//      command palette is open and steal its own dismissal key, and a privacy
-//      notice hijacking a shortcut belonging to another component is its own
-//      small dark pattern. So Escape works for the keyboard user who has
-//      actually reached the notice, which is who it is for.
+//   3. ESCAPE MEANS DECLINE, never accept. First bound on the region alone, so
+//      a global handler could not steal the ⌘K palette's dismissal key. That
+//      left a WCAG 2.4.11 gap (issue #92, keyboard suite finding K1): on the
+//      homepage, which does not scroll, the notice can sit over the orbit
+//      buttons a keyboard user is tabbing through, and they could not get it
+//      out of the way without first moving focus INTO it. WCAG's own guidance
+//      for 2.4.11 is exactly this: obscuring content passes only if it can be
+//      dismissed without moving focus. So Escape now also works page-wide, but
+//      as the LAST resort, yielding to every other owner of the key: it does
+//      nothing if a handler already took it (the palette prevents default), if
+//      a modal dialog is open, or if the visitor is typing in a field.
 //
 // ── Why it waits ────────────────────────────────────────────────────────────
 // LoaderWrapper covers the page with a z-9999 overlay for ~3.3s from the first
@@ -44,7 +49,8 @@
 // question is asked.
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
@@ -135,6 +141,27 @@ export default function PrivacyNotice() {
       root.style.removeProperty('--consent-lift');
     };
   }, [open]);
+
+  // Page-wide Escape (point 3 above). Bubble phase on `document`, which runs
+  // AFTER React's own handlers (they are delegated to the root container, below
+  // document), so `defaultPrevented` is a reliable "someone else used this".
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
+      ) {
+        return;
+      }
+      deny();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open, deny]);
 
   // Reduced motion gets opacity only — no translate. The entrance is short
   // either way; this element should arrive, not perform.

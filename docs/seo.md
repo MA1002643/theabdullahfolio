@@ -1639,6 +1639,14 @@ measured instead of assumed and it passes.
 
 ---
 
+**Beyond the six routes (2026-09-28, [#92](https://github.com/MA1002643/theabdullahfolio/issues/92)).**
+Lighthouse runs a subset of axe on the six routes above. The browser a11y
+suite now runs the full WCAG 2.2 AA axe rule set on **every** route at 1440 px
+and 390 px, and on its first run it found what the six-route budget could not:
+four sub-4.5:1 colours on `/uses` (not one of the six) and the unreachable
+scrollers noted in §16. Both are fixed; the Lighthouse budget above is
+unchanged and still enforced at 100.
+
 ## 16. `/notes` — publishing the reasoning
 
 This document is well over a thousand lines recording why each decision on this
@@ -1747,6 +1755,18 @@ re-stamping every URL on the site for a change only eleven can see. A window is
 not a project fact.
 
 ---
+
+**A second document, and scrollers a keyboard can reach (2026-09-28, [#92](https://github.com/MA1002643/theabdullahfolio/issues/92)).**
+`docs/testing.md`, the testing strategy and runbook, now publishes at
+`/notes/testing` by the rule above, with no code change: a second
+`TechArticle`, a second sitemap entry, and its own share cards. It is written
+for the same reader as this one (someone who wants to know *why*, not just
+*what*), and the structural suite (`notesCorpus.test.js`) covers it
+automatically. The same issue's axe pass found that at 390 px this document's
+code blocks and wide tables scroll sideways but could not be reached by
+keyboard (`scrollable-region-focusable`), so `renderNote()` now gives every
+rendered `<pre>` and `<table>` a `tabindex="0"`
+(`makeScrollersFocusable()`, pinned by `notesScrollersFocusable.test.js`).
 
 ## 17. The consent gate, and the privacy page that had to be true
 

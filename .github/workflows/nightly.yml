@@ -1,0 +1,138 @@
+name: Nightly
+
+# The depth that does not fit a PR's ten-minute budget (issue #92):
+#
+#   engines    the @cross-browser suite on WebKit, Firefox and an iPhone 14,
+#              the three projects the PR gate leaves out
+#   mutation   Stryker over the critical pure modules: it changes the code
+#              (flips a comparison, deletes a branch) and checks some test
+#              notices. Coverage says a line RAN; the mutation score says the
+#              assertions would catch it being WRONG
+#   soak       the property suites at 50× their PR run count, so a
+#              one-in-ten-thousand counterexample still turns up
+#
+# A red nightly does not block anyone; it is read the next morning.
+
+on:
+  schedule:
+    - cron: '23 2 * * *' # 02:23 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+  NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+  SMTP_HOST: smtp.example.com
+  SMTP_PORT: '587'
+  SMTP_USER: ci@example.com
+  SMTP_PASS: placeholder
+  RECEIVER_EMAIL: ci@example.com
+  AUTH_GITHUB_ID: ci-placeholder
+  AUTH_GITHUB_SECRET: ci-placeholder
+  AUTH_GOOGLE_ID: ci-placeholder
+  AUTH_GOOGLE_SECRET: ci-placeholder
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: |
+            .next.nosync
+            !.next.nosync/cache
+          include-hidden-files: true
+          retention-days: 1
+
+  engines:
+    name: E2E (${{ matrix.project }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: webkit
+            browser: webkit
+          - project: firefox
+            browser: firefox
+          - project: mobile-safari
+            browser: webkit
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next.nosync
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npx playwright test --project=${{ matrix.project }}
+      - if: always()
+        run: node scripts/test-summary.mjs playwright "Nightly E2E · ${{ matrix.project }}"
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  mutation:
+    name: Mutation testing (Stryker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # Thresholds (and the `break` score that fails this job) live in
+      # stryker.config.mjs beside the list of mutated modules.
+      - run: npm run test:mutation
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          retention-days: 14
+
+  soak:
+    name: Property soak (20,000 runs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run --project property
+        env:
+          FC_RUNS: '20000'

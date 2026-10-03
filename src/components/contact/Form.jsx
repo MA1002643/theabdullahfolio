@@ -13,9 +13,9 @@ import {
   animate,
   motion,
   useMotionValue,
-  useReducedMotion,
   useTransform,
 } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import FireInput from './FireInput';
 import FireTextarea from './FireTextarea';
@@ -26,6 +26,7 @@ import { useFormDraft } from '../../hooks/useFormDraft';
 import { useOfflineQueue } from '../../hooks/useOfflineQueue';
 import { DRAFT_FIELDS, newIdempotencyKey, postContactMessage, setNativeValue } from '../../lib/contact';
 import { fluid, fluidText } from '../../lib/fluidScale';
+import { CONTACT_CLIENT_LIMITS as LIMITS } from '../../lib/contactLimits';
 
 const container = {
   hidden: { opacity: 0 },
@@ -726,12 +727,12 @@ function FormContent({ onReset, queue }) {
               {...register('name', {
                 required: 'Full Name is required!',
                 minLength: {
-                  value: 3,
-                  message: 'Name should be at least 3 characters long.',
+                  value: LIMITS.name.min,
+                  message: `Name should be at least ${LIMITS.name.min} characters long.`,
                 },
                 maxLength: {
-                  value: 100,
-                  message: 'Name should be at most 100 characters long.',
+                  value: LIMITS.name.max,
+                  message: `Name should be at most ${LIMITS.name.max} characters long.`,
                 },
               })}
               className="custom-bg-2 w-full rounded-md p-2 shadow-lg hover:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(192,132,252,0.5),0_0_22px_rgba(124,58,237,0.42),inset_0_0_10px_rgba(192,132,252,0.1)] focus:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_10px_rgba(216,180,254,0.65),0_0_24px_rgba(168,85,247,0.5),inset_0_0_12px_rgba(192,132,252,0.14)] focus:outline-none"
@@ -811,9 +812,9 @@ function FormContent({ onReset, queue }) {
               {...register('subject', {
                 required: 'Subject is required!',
                 maxLength: {
-                  // Keep in sync with maxRawSubjectLength in api/send-mail/route.js
-                  value: 175,
-                  message: 'Subject should be at most 175 characters long.',
+                  // Shared with the send-mail route via lib/contactLimits.js.
+                  value: LIMITS.subject.max,
+                  message: `Subject should be at most ${LIMITS.subject.max} characters long.`,
                 },
               })}
               className="custom-bg-2 w-full rounded-md p-2 shadow-lg hover:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(192,132,252,0.5),0_0_22px_rgba(124,58,237,0.42),inset_0_0_10px_rgba(192,132,252,0.1)] focus:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_10px_rgba(216,180,254,0.65),0_0_24px_rgba(168,85,247,0.5),inset_0_0_12px_rgba(192,132,252,0.14)] focus:outline-none"
@@ -853,12 +854,12 @@ function FormContent({ onReset, queue }) {
               {...register('message', {
                 required: 'Message is required!',
                 maxLength: {
-                  value: 500,
-                  message: 'Message should be less than 500 characters',
+                  value: LIMITS.message.max,
+                  message: `Message should be less than ${LIMITS.message.max} characters`,
                 },
                 minLength: {
-                  value: 50,
-                  message: 'Message should be more than 50 characters',
+                  value: LIMITS.message.min,
+                  message: `Message should be more than ${LIMITS.message.min} characters`,
                 },
               })}
               className="custom-bg-2 w-full resize-y rounded-md p-2 shadow-lg hover:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(192,132,252,0.5),0_0_22px_rgba(124,58,237,0.42),inset_0_0_10px_rgba(192,132,252,0.1)] focus:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_10px_rgba(216,180,254,0.65),0_0_24px_rgba(168,85,247,0.5),inset_0_0_12px_rgba(192,132,252,0.14)] focus:outline-none"

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { describeError, redactSecrets } from '../_utils/redact';
+import { safeBearerEqual } from '../_utils/cronAuth';
 import {
   computePortfolioSignal,
   buildMessage,
@@ -219,10 +220,15 @@ export async function GET(request) {
   // Vercel Cron Jobs automatically include `Authorization: Bearer
   // ${CRON_SECRET}` on the request, so the scheduled cron in vercel.json
   // still works once CRON_SECRET is set in the project's env vars.
+  //
+  // Compared in constant time through the shared cronAuth helper, like every
+  // other CRON_SECRET reader. This was a plain `===` until 2026-09-28, which
+  // returns at the first differing byte and so leaks how much of a guess was
+  // right to anyone timing the 401 (tests/fitness/apiSurface.test.js).
   const cronSecret = process.env.CRON_SECRET;
-  const authHeader = request.headers.get('authorization') ?? '';
+  const authHeader = request.headers.get('authorization');
   const bustAuthorized =
-    Boolean(cronSecret) && authHeader === `Bearer ${cronSecret}`;
+    Boolean(cronSecret) && safeBearerEqual(authHeader, cronSecret);
 
   if (bustRequested && !bustAuthorized) {
     return NextResponse.json(

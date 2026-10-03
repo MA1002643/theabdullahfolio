@@ -3,7 +3,7 @@
 import { BtnList } from '@/app/data';
 import NavButton from './NavButton';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { usePointerCapability } from '@/hooks/usePointerCapability';
 
 // ─── Orbit geometry ────────────────────────────────────────────────────────
@@ -1055,6 +1055,7 @@ const Navigation = ({
     // row (`relative z-10`), which is the real stacking context here. That row
     // is a SIBLING of the live maintenance header (`z-50`) under <main>, so the
     // header still paints over the ring whatever the buttons ask for.
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- delegated arrow-key handler; the focusable targets are the buttons inside
     <div
       ref={ringRef}
       onKeyDown={onRingKeyDown}

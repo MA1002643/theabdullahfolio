@@ -1,3 +1,9 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": ["next/core-web-vitals", "plugin:jsx-a11y/recommended"],
+  "rules": {
+    "jsx-a11y/no-redundant-roles": [
+      "error",
+      { "ul": ["list"], "ol": ["list"] }
+    ]
+  }
 }

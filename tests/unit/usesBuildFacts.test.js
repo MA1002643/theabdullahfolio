@@ -227,6 +227,19 @@ describe('readBuildFacts — a full fixture repository', () => {
     expect(facts.instruments.apiMethods).toEqual({ GET: 3, POST: 1, DELETE: 1 });
   });
 
+  it('sums every Vitest and Playwright layer directory, .jsx suites included (issue #92)', () => {
+    const root = makeRoot();
+    seedFullRepo(root);
+    write(root, 'tests/component/Form.test.jsx', "it('renders', () => {});\nit('submits', () => {});");
+    write(root, 'tests/property/rank.test.js', "test('is bounded', () => {});");
+    write(root, 'tests/a11y/axe.spec.js', "test('no violations', async () => {});");
+    const facts = readBuildFacts(root, FIXED_NOW);
+    // The seeded 2 unit suites / 5 cases, plus 2 suites / 3 cases above.
+    expect(facts.instruments.unit).toEqual({ suites: 4, cases: 8 });
+    // The seeded e2e suite (2 cases) plus the a11y one.
+    expect(facts.instruments.e2e).toEqual({ suites: 2, cases: 3 });
+  });
+
   it('stamps builtAt as ISO with a fixed en-GB UTC label', () => {
     const root = makeRoot();
     seedFullRepo(root);

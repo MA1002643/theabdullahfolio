@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { X } from 'lucide-react';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { usePointerCapability } from '@/hooks/usePointerCapability';

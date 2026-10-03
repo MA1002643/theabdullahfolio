@@ -1,6 +1,7 @@
 "use client";
 
-import { animate, AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { animate, AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChevronDown, Lock, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 

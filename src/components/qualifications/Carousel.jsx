@@ -7,7 +7,7 @@ import React, {
   useRef,
 } from 'react';
 import Image from 'next/image';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { toast } from 'sonner';
 import ScrollHijackCategories from '@/components/shared/ScrollHijackCategories';
 import DIMS from './_dimensions.json';
@@ -1056,12 +1056,21 @@ const Carousel3D = () => {
                       borderRadius: fluid(0.5),
                     }}
                   >
+                    {/* Only the CENTRED card's link is live (issue #92). A side
+                        card sits behind its neighbour, so its link was a 4-10 px
+                        sliver that opened a certificate by accident, and a
+                        keyboard focus ring drawn behind the front card (axe
+                        target-size, WCAG 2.5.8 / 2.4.11). Prev / Next bring any
+                        card to the centre, where its link is whole. */}
                     <a
                       href={card.img}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`Open ${card.title} in a new tab`}
+                      tabIndex={absOffset === 0 ? undefined : -1}
+                      aria-hidden={absOffset === 0 ? undefined : true}
                       className="relative block h-full w-full cursor-pointer"
+                      style={absOffset === 0 ? undefined : { pointerEvents: 'none', cursor: 'default' }}
                     >
                       <Image
                         src={card.img}

@@ -1,7 +1,8 @@
 'use client';
 
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import MetricPopover from './MetricPopover';
 import HoverHint from './HoverHint';
 import { useNow } from './useNow';

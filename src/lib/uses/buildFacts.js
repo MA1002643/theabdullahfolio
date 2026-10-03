@@ -114,6 +114,13 @@ export const BOM_RULES = [
     label: 'Quality',
     match: [
       /^vitest$/,
+      // The issue #92 layers: coverage, property-based and mutation testing,
+      // network mocking and in-browser axe. All test-only, so all Quality.
+      /^@vitest\//,
+      /^fast-check$/,
+      /^msw$/,
+      /^@axe-core\//,
+      /^@stryker-mutator\//,
       /^@playwright\//,
       /^@testing-library\//,
       /^eslint/,
@@ -310,6 +317,38 @@ function countSuite(root, dir, filePattern) {
   );
   return { suites: files.length, cases };
 }
+
+// The same count summed over several directories (issue #92 split the suites
+// by layer: unit/property/fitness/component/api under Vitest, e2e/a11y/visual/
+// security/perf under Playwright). A directory that does not exist contributes
+// nothing; if NONE exists the throw propagates, so `safe` reports null exactly
+// as a missing single directory did before.
+function countSuites(root, dirs, filePattern) {
+  const present = dirs.filter((dir) => fs.existsSync(path.join(root, dir)));
+  if (present.length === 0) throw new Error(`none of ${dirs.join(', ')} exists`);
+  return present
+    .map((dir) => countSuite(root, dir, filePattern))
+    .reduce((a, b) => ({ suites: a.suites + b.suites, cases: a.cases + b.cases }));
+}
+
+// Where each runner's suites live. Kept here, beside the counter, rather than
+// read from vitest.config.mjs / playwright.config.mjs: this module runs inside
+// `next build`, and importing a test-runner config there would drag the runner
+// into the build graph for the sake of five directory names.
+export const VITEST_DIRS = [
+  'tests/unit',
+  'tests/property',
+  'tests/fitness',
+  'tests/component',
+  'tests/api',
+];
+export const PLAYWRIGHT_DIRS = [
+  'tests/e2e',
+  'tests/a11y',
+  'tests/visual',
+  'tests/security',
+  'tests/perf',
+];
 
 // ── Route handlers ─────────────────────────────────────────────────────
 //
@@ -593,8 +632,8 @@ export function readBuildFacts(root = process.cwd(), now = new Date()) {
       crons,
     },
     instruments: {
-      unit: safe(() => countSuite(root, 'tests/unit', /\.test\.js$/)),
-      e2e: safe(() => countSuite(root, 'tests/e2e', /\.spec\.js$/)),
+      unit: safe(() => countSuites(root, VITEST_DIRS, /\.test\.jsx?$/)),
+      e2e: safe(() => countSuites(root, PLAYWRIGHT_DIRS, /\.spec\.js$/)),
       apiRoutes: safe(() => countRoutes(root, 'src/app/api')),
       apiMethods: safe(() => countMethods(root, 'src/app/api')),
     },

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 // Long track / artist names get the premium treatment: instead of a hard "…"
 // cut, the text slides gently to reveal its tail and eases back — the way a

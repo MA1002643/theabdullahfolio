@@ -448,6 +448,7 @@ const TimelineAtlas = ({
         ref={scrollerRef}
         role="region"
         aria-label="Overlap atlas: every role and course as parallel bars on one time axis"
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be keyboard-focusable (axe scrollable-region-focusable)
         tabIndex={0}
         className="ja-scroller mt-6 overflow-x-auto pb-1.5"
       >

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 // Character pool the digits cycle through during a scramble.
 // Mostly digits so the field still reads as "numeric data

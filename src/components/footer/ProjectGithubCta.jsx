@@ -24,7 +24,8 @@
 // a calm, static etched plate with nothing missing.
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ArrowUpRight, Github } from 'lucide-react';
 import { useMagneticPull } from '@/hooks/useMagneticPull';
 import { useFooterReveal } from './useFooterReveal';

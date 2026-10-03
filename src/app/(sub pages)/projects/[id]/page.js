@@ -106,6 +106,16 @@ export default async function ProjectDetailPage({ params }) {
     // a clamp: a clamp would make projects 1 and 11 each have only one
     // neighbour, and those two are precisely the pages a listing-page failure
     // would strand.
+    // The project's two outbound links (issue #92). `demoLink` falls back to
+    // the repository for projects with no live site, so a "Live demo" that is
+    // only the repo again is dropped rather than shown twice under two names.
+    const source = project.repo ? `https://github.com/${project.repo}` : null
+    const links = {
+        name: project.name,
+        source,
+        demo: project.demoLink && project.demoLink !== source ? project.demoLink : null,
+    }
+
     const index = projectsData.findIndex((p) => p.id === project.id)
     const previous =
         projectsData[(index - 1 + projectsData.length) % projectsData.length]
@@ -231,10 +241,10 @@ export default async function ProjectDetailPage({ params }) {
                 </div>
 
                 {/* 3D Canvas — streams in via the dynamic ssr:false chunk */}
-                <SceneLoader />
+                <SceneLoader links={links} />
 
                 {/* Overlay UI */}
-                <ProjectIntro name={project.name} description={project.description} />
+                <ProjectIntro name={project.name} description={project.description} links={links} />
             </div>
 
         </>

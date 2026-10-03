@@ -165,6 +165,12 @@ function Schematic({ facts, revealed, reduceMotion }) {
     <div>
       <div
         ref={wrapRef}
+        // Scrolls sideways on a phone, so it must be keyboard-reachable
+        // (axe scrollable-region-focusable, issue #92).
+        role="region"
+        aria-label="Build pipeline diagram"
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be keyboard-focusable (axe scrollable-region-focusable)
+        tabIndex={0}
         className="uses-pipeline custom-bg-abt relative overflow-x-auto rounded-xl"
         style={{ padding: fluid(1) }}
       >

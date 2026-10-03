@@ -20,7 +20,8 @@
 // Positioned bottom-RIGHT to mirror the NowPlaying widget's bottom-left anchor
 // (both z-50), so the two never collide.
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { usePathname } from 'next/navigation';
 import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';

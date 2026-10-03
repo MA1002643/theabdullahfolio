@@ -11,9 +11,9 @@ import {
   animate,
   motion,
   useMotionValue,
-  useReducedMotion,
   useTransform,
 } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { onMediaChange } from '@/lib/mediaQuery';
 
 // SliceLabel — the button's "sliced" hover label, re-built so the cutting line
