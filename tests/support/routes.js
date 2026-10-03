@@ -23,8 +23,13 @@ export const STATIC_ROUTES = [
   '/privacy',
 ];
 
-/** One representative of each dynamic template. */
-export const DYNAMIC_SAMPLES = ['/projects/1', '/notes/discoverability'];
+/**
+ * One representative of each dynamic template, plus `/notes/testing`. That is
+ * the same template as the note before it, but its content is not: it is the
+ * page most of its readers arrive at from outside, and its wide tables and code
+ * blocks are exactly what the axe and keyboard layers check on a phone.
+ */
+export const DYNAMIC_SAMPLES = ['/projects/1', '/notes/discoverability', '/notes/testing'];
 
 export const ALL_ROUTES = [...STATIC_ROUTES, ...DYNAMIC_SAMPLES];
 

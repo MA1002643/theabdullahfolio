@@ -53,7 +53,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Orbital Navigation** | Trigonometric button ring on one viewport-derived ellipse — a fixed `0.204` tilt at every width, sized so the outermost button always clears the screen edge, anchored to the laptop's **measured base** and raised 15% of the laptop's own height above it (`ORBIT_RAISE`) so it circles the artwork's lower body at the same pose on every viewport, and depth-sorted per frame so the ring passes *behind* the laptop on the far half of each lap and in front of it on the near half; staggered reveal, two-column fallback below 480px. **The ring is an instrument, not just an ornament** (issue #105): wheel/touchpad over the ring or the laptop spins it, the ring band takes an angular touch-drag, the laptop doubles as a vertical scrubber — hover-driven on any hover-capable pointer (a desktop mouse, or an iPad the moment a trackpad/Magic Keyboard attaches, via a live `(hover: hover) and (pointer: fine)` query), drag-driven on touch — and `←` / `→` from any focused button turns it exactly one button slot. **The ring has real physics**: release a drag while still moving and it coasts on momentum with exponential friction (launch speed = an EMA of the hand's own deg/s at release; a held release never flicks), stopping dead the moment a button is hovered; touch drags tick a haptic detent at every 45° slot crossing where the hardware supports it. The ambient spin pauses while the visitor is engaged and eases back in after a 1.5s quiet period. The gesture is signposted twice over: the site cursor grows breathing ↑ ↓ chevrons over the laptop (`data-cursor="scrub"`, with a native `ns-resize` fallback for reduced-motion users), and a one-time dismissible tip (`localStorage`-remembered, auto-dismissed on first interaction, `role="status"`) leads with the laptop gesture in plain words beside an animated cursor-over-laptop pictogram — worded per capability, so a touch-only tablet is told to slide and drag, never to hover — and not rendered at all below 480px, where the two-column layout has no orbit to teach (nor does a column tap burn the remembered dismissal) |
 | **3D Project Viewer** | Interactive Three.js scene — procedural laptop model with canvas-generated keyboard texture, 40+ mesh objects, auto-rotate orbit controls |
 | **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
-| **Eleven-layer test system** | Static and fitness rules, property-based and model-based tests, component, API, cross-browser E2E, axe + keyboard + motion accessibility, visual, performance, security and mutation testing, all gating CI. See [Testing](#testing). |
+| **Eleven-layer test system** | Static and fitness rules, property-based and model-based tests, component, API, cross-browser E2E, axe + keyboard + motion accessibility, visual, performance, security and mutation testing, all gating CI, and each layer had to catch a real defect before it counted. See [Testing & Quality](#-testing--quality). |
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
 | **Animated GitHub Stats** | Live GraphQL API → fast-start/slow-finish count-ups, a breathing SVG rank arc, hover-spotlight metric rows, and a per-stat change banner (e.g. "Total Stars +5 \| Total Commits +50"); a "Live GitHub Metrics" label that hides on stale/fallback data; diff-based change detection with 10-min polling |
 | **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up; responsive list: top 5 in a single column (mobile → `lg`), up to 10 in two columns at `xl`+ |
@@ -227,6 +227,55 @@ graph TD
 | **Data** | GitHub GraphQL (live, multi-layer cached) · Spotify Web API (now-playing, server-side token exchange) · Nodemailer SMTP · Upstash Redis (send idempotency + live-location fix) · AI Gateway (message refine) · `tz-lookup` (offline timezone) · `localStorage` (draft · queue · loader gate) |
 | **Performance** | Route-based code splitting · `next/dynamic` for Three.js · Sharp image pipeline · `unstable_cache` + CDN `s-maxage` / `stale-while-revalidate` |
 | **Security** | Full CSP · `frame-ancestors 'none'` · `upgrade-insecure-requests` (prod only) · server-only tokens · username allowlist · HMAC-verified webhooks |
+
+---
+
+## 🧪 Testing & Quality
+
+An eleven-layer quality system ([#92](https://github.com/MA1002643/theabdullahfolio/issues/92)), built on one rule: **a layer only counts once it has caught a real defect in this codebase.** Every layer answers a question the others cannot, and every command below is the one CI runs. The full strategy, the debugging runbook and the complete defects table are in [`docs/testing.md`](docs/testing.md), published on the site at [**ma.codes/notes/testing**](https://ma.codes/notes/testing).
+
+**At a glance** (as of 2026-10-03; the live figures are in each CI run's summary):
+
+| | |
+|---|---|
+| Vitest tests (unit, property, fitness, component, API) | **1,242** across 110 files |
+| Browser engines and devices | Chromium, WebKit, Firefox, Pixel 7, iPhone 14 |
+| Mutation score (Stryker, eight critical modules) | **87.2%** (79.6% on the first run) |
+| Real defects the layers found, all fixed | **20** |
+
+```mermaid
+%%{init: {"theme":"dark","themeVariables":{"fontFamily":"ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif","lineColor":"#9a7a42"}}}%%
+flowchart LR
+  S["Static + fitness<br/>(ms)"] --> V["Unit · property ·<br/>component · API<br/>(seconds)"]
+  V --> B["Production build<br/>bundle scan · budgets"]
+  B --> P["Browser: E2E · a11y ·<br/>visual · perf · security<br/>(minutes)"]
+  V -.-> M["Tests that test the tests<br/>coverage · mutation · flake burn-in"]
+  P -.-> M
+  B -.-> L["Supply chain<br/>CodeQL · OSV · Gitleaks · audit gate"]
+```
+
+| Layer | What it proves | Command |
+|---|---|---|
+| Static + fitness | ESLint with full `jsx-a11y`; architecture rules read from the source (env hygiene, API surface, contract parity, no skipped tests) | `npm run lint` · `npm run test:fitness` |
+| Unit + property | Well over a thousand unit tests; fast-check invariants, including a model-based test of the guestbook's paging | `npm run test:unit` · `npm run test:property` |
+| Component | The contact form and ⌘K palette, driven by label and keyboard in jsdom, network via MSW | `npm run test:component` |
+| API | Route handlers against MSW and a stateful fake Redis, including a ten-request idempotency race | `npm run test:api` |
+| E2E | Every route, the contact journey (offline → reconnect → delivered), chaos on every data API, on Chromium, WebKit, Firefox, Pixel 7 and iPhone 14 | `npm run test:e2e` |
+| Accessibility | axe WCAG 2.2 AA on every route at two widths, measured keyboard focus, reduced-motion audit | `npm run test:a11y` |
+| Visual | Screenshots re-rendered on every push and committed to [`tests/visual/__latest__/`](tests/visual/__latest__/) (always current); reviewed baselines CI compares against | `npm run test:visual` · `npm run test:visual:update` |
+| Performance | CLS through load and full scroll; first-load JS budget per route; Lighthouse CI | `npm run test:perf` · `npm run test:bundle` |
+| Security | Served headers, hostile API requests, client-bundle secret scan, CodeQL, OSV, Gitleaks, an audit gate with expiring waivers | `npm run test:security` · `npm run test:audit` |
+| Meta | Ratcheted V8 coverage, Stryker mutation testing (nightly), flake burn-in of changed specs | `npm run test:coverage` · `npm run test:mutation` |
+
+**What it caught** (a selection; the full table is on [/notes/testing](https://ma.codes/notes/testing)):
+
+- **"Live Demo" and "GitHub" did nothing on every project page.** The button component accepted a link and ignored it. Found by the keyboard layer; they are now real links.
+- **Hydration errors on every page for visitors who prefer reduced motion.** Found by the browser error sentinel; fixed at the root in one shared hook, with a fitness test that bans the broken import.
+- **A failed 3D chunk download blanked whole pages** with Next's "Application error". Found by E2E chaos tests; a decorative chunk that fails now renders nothing.
+- **A timing side channel on a cron secret** (`===` instead of a constant-time compare), and **an unbounded public POST body**. Found by fitness and API tests.
+- **An undisclosed third-party request** for a 3D lighting map on every project page. Found by the hermetic network; the file is now self-hosted.
+
+`npm run test:all` runs the whole PR gate locally. Browser specs need a production build (`npm run build`) and run against a sandboxed `next start` on port 3100 that cannot reach the internet. Debug a failed browser test with `npx playwright show-report` or `npx playwright show-trace test-results/<test>/trace.zip`.
 
 ---
 
@@ -597,29 +646,12 @@ npm run dev      # Dev server → http://localhost:3000
 npm run build    # Production build
 npm run start    # Serve production build locally
 npm run lint     # ESLint check
-npm test         # every Vitest layer (see Testing below)
+npm test         # every Vitest layer (see Testing & Quality above)
 ```
 
 All four go through a launcher rather than calling `next` directly, because `engine-strict` only enforces `engines.node` at **install** time — nothing stopped an already-installed repo from being *run* on an unsupported Node. Each command re-execs Next under the newest nvm-installed 22.x/24.x when the invoking runtime is outside the range (`scripts/supported-node.mjs`), which matters most for `build`: it drives the same webpack cache serialization that the Node 25 V8 bug corrupts. On Vercel and CI the platform already honours `engines`, so the check is a no-op and nothing is re-execed. `dev` additionally owns the single-server port gate (`scripts/dev.mjs`) and is the only one that refuses to start when no supported Node exists — `build`/`start`/`lint` warn and continue, so a machine without nvm still behaves as it always did.
 
-### Testing
-
-An eleven-layer quality system ([#92](https://github.com/MA1002643/theabdullahfolio/issues/92)). Every layer answers a question the others cannot, every command is the one CI runs, and the full strategy and debugging runbook is [`docs/testing.md`](docs/testing.md) (published at [`/notes/testing`](https://ma.codes/notes/testing)).
-
-| Layer | What it proves | Command |
-|---|---|---|
-| Static + fitness | ESLint with full `jsx-a11y`; architecture rules read from the source (env hygiene, API surface, contract parity, no skipped tests) | `npm run lint` · `npm run test:fitness` |
-| Unit + property | ~1,100 unit tests; fast-check invariants, including a model-based test of the guestbook's paging | `npm run test:unit` · `npm run test:property` |
-| Component | The contact form and ⌘K palette, driven by label and keyboard in jsdom, network via MSW | `npm run test:component` |
-| API | Route handlers against MSW and a stateful fake Redis, including a ten-request idempotency race | `npm run test:api` |
-| E2E | Every route, the contact journey (offline → reconnect → delivered), chaos on every data API, on Chromium, WebKit, Firefox, Pixel 7 and iPhone 14 | `npm run test:e2e` |
-| Accessibility | axe WCAG 2.2 AA on every route at two widths, measured keyboard focus, reduced-motion audit | `npm run test:a11y` |
-| Visual | Screenshots re-rendered on every push and committed to [`tests/visual/__latest__/`](tests/visual/__latest__/) (always current); reviewed baselines CI compares against | `npm run test:visual` · `npm run test:visual:update` |
-| Performance | CLS through load and full scroll; first-load JS budget per route; Lighthouse CI | `npm run test:perf` · `npm run test:bundle` |
-| Security | Served headers, hostile API requests, client-bundle secret scan, CodeQL, OSV, Gitleaks, an audit gate with expiring waivers | `npm run test:security` · `npm run test:audit` |
-| Meta | Ratcheted V8 coverage, Stryker mutation testing (nightly), flake burn-in of changed specs | `npm run test:coverage` · `npm run test:mutation` |
-
-`npm run test:all` runs the whole PR gate locally. Browser specs need a production build (`npm run build`) and run against a sandboxed `next start` on port 3100 that cannot reach the internet. Debug a failed browser test with `npx playwright show-report` or `npx playwright show-trace test-results/<test>/trace.zip`.
+Testing has its own section: [Testing & Quality](#-testing--quality) lists every layer and the command that runs it.
 
 **Scene asset scripts** (`scripts/scene/`) are deliberately *not* npm scripts — they are one-off tools that generate, bake and audit the backdrops in `public/background/`, run by hand and never at build time. Run them from the repo root (`node scripts/scene/detect-lights.mjs`); they stage intermediates in a gitignored `./.scene-work` (override with `SCRATCH=`), resolve ffmpeg from the `ffmpeg-static` devDependency (override with `FFMPEG=`), and read ungraded artwork from `assets/source/`. See [`scripts/scene/README.md`](scripts/scene/README.md) for the full index.
 

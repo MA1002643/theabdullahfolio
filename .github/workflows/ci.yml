@@ -26,6 +26,10 @@ on:
   pull_request:
     branches:
       - main
+  # Raised by visual-baselines.yml after it commits screenshots: that commit is
+  # pushed with GITHUB_TOKEN, which starts no push run, and would otherwise
+  # head the branch with no checks.
+  workflow_dispatch:
 
 # Cancel in-progress runs on the same branch when a new push arrives
 concurrency:

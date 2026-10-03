@@ -19,9 +19,13 @@ describe('route registry ⇄ browser-suite route list', () => {
   });
 
   it('samples a dynamic route that genuinely exists', () => {
-    const [project, note] = DYNAMIC_SAMPLES;
+    const [project, ...notes] = DYNAMIC_SAMPLES;
     const projectId = Number(project.split('/').pop());
     expect(projectsData.map((p) => p.id)).toContain(projectId);
-    expect(readNotes().map((n) => n.slug)).toContain(note.split('/').pop());
+    const slugs = readNotes().map((n) => n.slug);
+    for (const note of notes) {
+      expect(note).toMatch(/^\/notes\//);
+      expect(slugs).toContain(note.split('/').pop());
+    }
   });
 });

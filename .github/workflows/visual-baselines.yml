@@ -28,6 +28,16 @@ name: Visual baselines
 #
 # Loop-safe: commits made with the job's GITHUB_TOKEN do not trigger workflows,
 # so the image commit does not re-run this.
+#
+# That same rule used to leave the image commit with NO checks at all. It
+# becomes the branch's head, so a PR's required checks would wait on it forever.
+# `workflow_dispatch` is the one event a GITHUB_TOKEN may still raise, so after
+# pushing, this job dispatches CI, Security and Lighthouse on the branch, and
+# their check runs land on the image commit. (CI's concurrency group then
+# cancels the now-superseded run on the commit before it.)
+#
+# Never on the default branch: `main` only changes through a PR, so a direct
+# push would be refused, and the merged PR already carried its latest render.
 
 on:
   push:
@@ -48,6 +58,8 @@ concurrency:
 
 permissions:
   contents: write
+  # Dispatching the checks onto the image commit (see the header).
+  actions: write
 
 env:
   NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
@@ -85,6 +97,8 @@ jobs:
           VISUAL: '1'
           PROMOTE: ${{ inputs.promote && '1' || '' }}
       - name: Commit the images (if anything changed)
+        id: commit
+        if: ${{ github.ref_name != github.event.repository.default_branch }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -95,6 +109,16 @@ jobs:
           fi
           git commit -m "test(visual): render screenshots for ${GITHUB_SHA::7}" -m "Automated by .github/workflows/visual-baselines.yml (issue #92)."
           git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      - name: Run the checks on the image commit
+        if: ${{ steps.commit.outputs.pushed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for workflow in ci.yml security.yml lighthouse.yml; do
+            gh workflow run "$workflow" --ref "$GITHUB_REF_NAME"
+          done
+          echo "Dispatched CI, Security and Lighthouse onto the image commit." >> "$GITHUB_STEP_SUMMARY"
       - name: Summary
         if: always()
         run: cat tests/visual/__latest__/README.md >> "$GITHUB_STEP_SUMMARY" || true

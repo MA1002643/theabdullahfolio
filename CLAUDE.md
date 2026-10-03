@@ -8,9 +8,17 @@ loads this file automatically at the start of every session.
 ## 1. Never commit or push secrets
 
 **No API token, key, password, or other credential may ever enter a commit, a
-branch, or a push to GitHub.** This repository is public: anything that lands in
-a commit is world-readable the moment it is pushed, and stays readable in forks,
-clones, and the GitHub events API even after the commit is deleted.
+branch, or a push to GitHub.** This repository is currently private, but write
+every commit as if it were public: a private repository can be made public, and
+anything that lands in a commit stays in every clone, in forks, and in the
+history that would go public with it, even after the commit is deleted.
+
+Because the repository is private on a personal account, GitHub's secret
+scanning and push protection are not available (the API answers "Secret
+scanning is not available for this repository"). Nothing on GitHub blocks a
+secret at push time. The only automated check is the `Gitleaks (full history)`
+job in `.github/workflows/security.yml`, and it runs *after* the push. The
+pre-commit diff check below is the real guard.
 
 This rule is absolute. It is not relaxed for "just a test key", "it's already
 revoked", "only on a feature branch", "it's in a comment", or "I'll remove it in

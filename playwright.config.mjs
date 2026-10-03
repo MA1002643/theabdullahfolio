@@ -73,10 +73,21 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'chromium', testDir: 'tests/e2e', use: { ...devices['Desktop Chrome'] } },
+    // Image-cache warm-ups (tests/warmup/images.setup.js says why). Each one
+    // matches its dependant's viewport and pixel ratio, so it requests the same
+    // image widths; `--project=chromium` runs its warm-up first automatically.
+    { name: 'warm-desktop', testDir: 'tests/warmup', testMatch: '*.setup.js', use: { ...devices['Desktop Chrome'] } },
+    { name: 'warm-mobile', testDir: 'tests/warmup', testMatch: '*.setup.js', use: { ...devices['Pixel 7'] } },
+    { name: 'chromium', testDir: 'tests/e2e', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
     { name: 'webkit', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['Desktop Safari'] } },
     { name: 'firefox', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['Desktop Firefox'] } },
-    { name: 'mobile-chrome', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['Pixel 7'] } },
+    {
+      name: 'mobile-chrome',
+      testDir: 'tests/e2e',
+      grep: CROSS_BROWSER,
+      dependencies: ['warm-mobile'],
+      use: { ...devices['Pixel 7'] },
+    },
     { name: 'mobile-safari', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['iPhone 14'] } },
     { name: 'a11y', testDir: 'tests/a11y', use: { ...devices['Desktop Chrome'] } },
     { name: 'security', testDir: 'tests/security', use: { ...devices['Desktop Chrome'] } },

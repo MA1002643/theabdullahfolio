@@ -1,12 +1,14 @@
-# Testing
+# How this site is tested
 
-How this repository is tested, why each layer exists, and how to run, debug
-and maintain every one of them. Issue
-[#92](https://github.com/MA1002643/theabdullahfolio/issues/92) is the plan
-this implements.
+Every layer of testing behind this site, from static analysis to mutation
+testing: the question each answers, why it exists, and how to run and debug it.
 
-Every layer answers a question the others cannot. Every command below is the
-one CI runs, so if it passes locally it passes in CI.
+Every layer answers a question the others cannot, and each one had to earn its
+place the same way: by catching a real defect in this codebase before it
+counted as done. Those defects, and what fixed each one, are listed at the end
+of this document. Every command below is the one CI runs, so if it passes
+locally it passes in CI. The plan this implements is issue #92 in the
+repository.
 
 ## The layers
 
@@ -30,7 +32,7 @@ with coverage, a production build, the bundle checks, then the browser layers.
 
 ## Principles
 
-1. **The pyramid is honoured.** About 1,200 fast Vitest tests, fewer DOM
+1. **The pyramid is honoured.** Well over a thousand fast Vitest tests, fewer DOM
    tests, a few browser journeys, a handful of screenshots.
 2. **Determinism beats coverage.** The network is sealed at every layer (MSW
    fails on any unhandled request; the Playwright server runs inside a fetch
@@ -120,6 +122,18 @@ Tags: `@cross-browser` specs run on every engine and device; everything else
 runs on Chromium. PRs run `chromium` and `mobile-chrome`; the nightly run adds
 `webkit`, `firefox` and `mobile-safari`.
 
+**The image warm-up.** `chromium` and `mobile-chrome` each depend on a warm-up
+project (`tests/warmup/images.setup.js`) that visits every route once, with the
+same viewport and pixel ratio, before any spec runs. The test server is a
+fresh `next start`, so `/_next/image` encodes each image width on its first
+request, and AVIF encoding is slow: on a 2-vCPU runner a Pixel 7's first visit
+to `/qualifications` queued fifteen encodes at 11 to 43 seconds each, and the
+page's `load` event missed the 60-second test limit. The retry passed against
+the now-warm cache, so it looked like a flaky page when it was really a cold
+cache. Production has no such queue (Vercel's image cache is shared and
+persistent), so the fix warms the cache instead of loosening the specs. The
+warm-up asserts nothing and never fails.
+
 **Debugging a failure.** CI uploads `playwright-report/` and `test-results/`
 on failure. Retries record a trace:
 
@@ -166,6 +180,15 @@ There are two directories, and the difference matters:
 Baselines are not overwritten on every push because a baseline that silently
 becomes whatever today's code renders could never catch a regression. The
 gallery shows what changed; promoting it is the review.
+
+**The image commit gets its own checks.** A commit pushed with the workflow's
+`GITHUB_TOKEN` starts no workflows, so the image commit used to head the
+branch with no CI at all, and a PR's required checks would wait on it forever.
+`workflow_dispatch` is the one event that token may still raise, so after
+pushing, the workflow dispatches `ci.yml`, `security.yml` and `lighthouse.yml`
+on the branch, and their checks land on the image commit. It never commits to
+`main`: `main` only changes through a pull request, and the merged PR already
+carried its latest render.
 
 Never on a Mac: macOS rasterises glyphs differently, and Docker on Apple
 silicon cannot run Chromium under amd64 emulation, which is why rendering lives
@@ -231,11 +254,11 @@ the advisory.
 
 | Workflow | When | What |
 |---|---|---|
-| `ci.yml` | every push and PR | lint · Vitest + coverage · build → bundle scan + budget · E2E (chromium, mobile-chrome) · browser quality (a11y, security, perf, visual) · burn-in |
+| `ci.yml` | every push and PR, and dispatched onto each screenshot commit | lint · Vitest + coverage · build → bundle scan + budget · E2E (chromium, mobile-chrome) · browser quality (a11y, security, perf, visual) · burn-in |
 | `security.yml` | PRs, `main`, weekly | CodeQL · OSV · Gitleaks · audit gate |
 | `nightly.yml` | daily | WebKit, Firefox, iPhone 14 · mutation testing · 20,000-run property soak |
 | `lighthouse.yml` | PRs, `main` | Lighthouse CI budgets |
-| `visual-baselines.yml` | every push (and manual, with `promote`) | render every view, commit `tests/visual/__latest__/` (and seed or promote the baselines) |
+| `visual-baselines.yml` | every push (and manual, with `promote`) | render every view, commit `tests/visual/__latest__/` (and seed or promote the baselines) on any branch but `main`, then dispatch the three workflows above onto that commit |
 
 Each job writes a Markdown section to the run summary
 (`scripts/test-summary.mjs`).
