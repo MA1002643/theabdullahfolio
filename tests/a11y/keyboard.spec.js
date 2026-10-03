@@ -40,12 +40,10 @@ const KNOWN = [
  * focus did not move, and the element is no longer covered.
  */
 function noticeDismissedInPlace(beforeId) {
-  const el = document.activeElement;
-  const noticeGone = !document.querySelector('section[aria-label="Privacy notice"]');
-  const r = el?.getBoundingClientRect();
-  const top = r ? document.elementFromPoint(r.left + r.width / 2, Math.min(r.top + r.height / 2, innerHeight - 1)) : null;
-  const visible = !!top && (top === el || el.contains(top) || top.contains(el));
-  return { noticeGone, focusKept: el?.dataset?.kbProbe === beforeId, visible };
+  return {
+    noticeGone: !document.querySelector('section[aria-label="Privacy notice"]'),
+    focusKept: document.activeElement?.dataset?.kbProbe === beforeId,
+  };
 }
 
 /** Resolve once the focused element's box is unchanged for three frames. */
@@ -170,6 +168,12 @@ for (const path of ALL_ROUTES) {
           after = await page.evaluate(noticeDismissedInPlace, probe);
           if (after.noticeGone) break;
         }
+        // Visible by the SAME rule as every other stop (2.4.11 Minimum: not
+        // ENTIRELY hidden), not a stricter centre-point test: on the homepage
+        // the laptop art overlaps the edge of the lower orbit buttons.
+        await page.evaluate(settleFocusBox);
+        const recheck = await page.evaluate(inspectFocus);
+        after.visible = !!recheck && recheck.onScreen && !recheck.obscured;
         if (!(after.noticeGone && after.focusKept && after.visible)) {
           problems.push(`${hidden} — and Escape did not clear it in place (${JSON.stringify(after)})`);
         }
