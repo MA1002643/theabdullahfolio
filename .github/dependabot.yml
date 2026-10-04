@@ -29,5 +29,8 @@ updates:
       day: monday
     labels: [dependencies, area:ci]
     groups:
-      actions:
+      # Minor and patch only, as for npm above: a major action release (a new
+      # Node runtime, renamed inputs) arrives as its own PR, not in the batch.
+      actions-minor-and-patch:
         patterns: ['*']
+        update-types: [minor, patch]

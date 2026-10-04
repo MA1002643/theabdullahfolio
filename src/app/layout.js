@@ -193,14 +193,14 @@ export default function RootLayout({ children }) {
               is unmounted when you navigate to `/`, which previously destroyed the
               audio node mid-play and cut the music off (see SoundProvider).
 
-              Scoped to just its context consumers — the page subtree (its Footer
-              calls useSound) and FloatingSoundToggle. The purely-visual overlays
-              (NowPlaying, GlobalToaster, CustomCursor) don't consume the context,
-              so they render OUTSIDE it. Because RootLayout is a Server Component
-              they wouldn't re-render on toggle even inside (their `children`
-              reference is stable → React bails out of that subtree), but keeping
-              them out makes that independence explicit and stays true even if this
-              layout ever becomes a Client Component. */}
+              Scoped to its context consumers — the page subtree (its Footer
+              calls useSound) and FloatingSoundToggle — plus NowPlaying, which
+              does not consume it but must sit under LoaderWrapper's `inert`
+              boundary (see below). The purely-visual overlays (GlobalToaster,
+              CustomCursor) don't consume the context, so they render OUTSIDE it.
+              Because RootLayout is a Server Component nothing here re-renders on
+              toggle anyway (each `children` reference is stable → React bails
+              out of that subtree). */}
           <SoundProvider>
             <MotionPreferences>
               <LoaderWrapper>
@@ -218,15 +218,26 @@ export default function RootLayout({ children }) {
                       `useLoaderRevealed()` regardless. */}
                   <PrivacyGate />
                 </PageTransitionProvider>
+                {/* The two floating CONTROLS live inside LoaderWrapper too, for
+                    its `inert` boundary: while the opaque intro loader covers
+                    the page, nothing beneath it may take focus (WCAG 2.4.11).
+                    They sat outside it once, so on a touch device the sound
+                    button could be tabbed to under the loader (#92 review).
+                    Both are position: fixed, and the boundary is
+                    `display: contents`, so their placement is unchanged.
+                    NowPlaying does not read the sound context, but sitting
+                    inside its provider costs nothing: this is a Server
+                    Component, so a toggle cannot re-render it. The purely
+                    visual overlays below (toaster, cursor) stay outside. */}
+                {/* Stop control for routes with no footer (the homepage), so the
+                    persisting track is always silenceable. Renders null elsewhere. */}
+                <FloatingSoundToggle />
+                {/* Live music presence — floats bottom-left on every page (issue #42).
+                    Renders null until data arrives, so no SSR/hydration mismatch. */}
+                <NowPlaying />
               </LoaderWrapper>
             </MotionPreferences>
-            {/* Stop control for routes with no footer (the homepage), so the
-                persisting track is always silenceable. Renders null elsewhere. */}
-            <FloatingSoundToggle />
           </SoundProvider>
-          {/* Live music presence — floats bottom-left on every page (issue #42).
-              Renders null until data arrives, so no SSR/hydration mismatch. */}
-          <NowPlaying />
           {/* Expires the /projects filter handoff on any route outside the
               projects area. Renders null; lives at the ROOT (not in the
               (sub pages) layout) so it also observes the homepage. */}

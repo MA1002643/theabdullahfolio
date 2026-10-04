@@ -8,8 +8,11 @@ name: Nightly
 #              (flips a comparison, deletes a branch) and checks some test
 #              notices. Coverage says a line RAN; the mutation score says the
 #              assertions would catch it being WRONG
-#   soak       the property suites at 50× their PR run count, so a
+#   soak       every property suite at no fewer than 20,000 runs (FC_RUNS,
+#              a floor applied by tests/support/fastCheckRuns.js), so a
 #              one-in-ten-thousand counterexample still turns up
+#   quarantine the browser tests tagged @quarantine, which every other run
+#              leaves out
 #
 # A red nightly does not block anyone; it is read the next morning.
 
@@ -94,6 +97,44 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # The include path for `@quarantine` (playwright.config.mjs leaves tagged
+  # tests out of every other run). Runs ONLY the tagged tests, on the PR gate's
+  # projects, so a parked test keeps running every night until it is fixed and
+  # untagged; it cannot block a merge, but its failure here is visible.
+  quarantine:
+    name: Quarantined tests (@quarantine)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next.nosync
+      - run: npx playwright install --with-deps chromium
+      - run: >-
+          npx playwright test --grep @quarantine --pass-with-no-tests
+          --project=chromium --project=mobile-chrome --project=a11y --project=security --project=perf
+        env:
+          PW_INCLUDE_QUARANTINE: '1'
+      - if: always()
+        run: node scripts/test-summary.mjs playwright "Nightly · quarantined tests"
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quarantine
           path: |
             playwright-report/
             test-results/

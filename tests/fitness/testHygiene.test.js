@@ -38,6 +38,19 @@ describe('test hygiene', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('lets FC_RUNS reach every property: no hard-coded numRuns', () => {
+    // A literal count opts a property out of the nightly soak without anyone
+    // noticing; `runs(n)` keeps n as the everyday count and still soaks it.
+    const offenders = TEST_FILES.filter((file) => file.startsWith('tests/property/')).flatMap((file) =>
+      codeOf(file)
+        .split('\n')
+        .map((line, i) => ({ line, n: i + 1 }))
+        .filter(({ line }) => /numRuns\s*:(?!\s*runs\()/.test(line))
+        .map(({ n }) => `${file}:${n}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it('links every quarantined test to an issue', () => {
     // This file names the tag in its own matcher, so it is the one exemption.
     const policed = TEST_FILES.filter((file) => file !== 'tests/fitness/testHygiene.test.js');

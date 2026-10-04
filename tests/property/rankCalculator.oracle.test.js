@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import { calculateRank } from '@/utils/rankCalculator';
 
+import { runs } from '../support/fastCheckRuns.js';
+
 // Differential testing of the GitHub rank (issue #92, L2 × L10).
 //
 // Why this file exists: the first Stryker run scored rankCalculator.js at
@@ -75,7 +77,7 @@ describe('calculateRank — differential against an independent oracle', () => {
         // than 0.005, so the only tolerance needed is the rounding itself.
         expect(Math.abs(got - referencePercentile(input))).toBeLessThanOrEqual(0.006);
       }),
-      { numRuns: 2000 },
+      { numRuns: runs(2000) },
     );
   });
 

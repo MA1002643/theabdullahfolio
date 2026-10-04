@@ -109,11 +109,18 @@ export default async function ProjectDetailPage({ params }) {
     // The project's two outbound links (issue #92). `demoLink` falls back to
     // the repository for projects with no live site, so a "Live demo" that is
     // only the repo again is dropped rather than shown twice under two names.
-    const source = project.repo ? `https://github.com/${project.repo}` : null
+    //
+    // A `private: true` record keeps `repo` for internal tracking (the progress
+    // popup, the language data), but that URL answers 404 to every visitor, so
+    // it is never published as "Source on GitHub", in the intro or on the
+    // laptop. The demo is compared against the repo URL, not against `source`,
+    // so a private repo cannot come back in as a "Live demo" either.
+    const repoUrl = project.repo ? `https://github.com/${project.repo}` : null
+    const source = project.private ? null : repoUrl
     const links = {
         name: project.name,
         source,
-        demo: project.demoLink && project.demoLink !== source ? project.demoLink : null,
+        demo: project.demoLink && project.demoLink !== repoUrl ? project.demoLink : null,
     }
 
     const index = projectsData.findIndex((p) => p.id === project.id)

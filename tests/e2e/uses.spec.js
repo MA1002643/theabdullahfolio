@@ -78,6 +78,13 @@ test('/uses answers 200 with the sitewide title and all six plates', async ({ pa
 test('the pipeline schematic clips no label and runs its flow once drawn', async ({ page }) => {
   await stubSkills(page, LIVE_PAYLOAD);
   await page.goto('/uses');
+  // The live ledger renders in the plate directly ABOVE this one when the
+  // stubbed payload lands. If that happens after the scroll below, the plate
+  // is pushed off screen, its loop pauses (it runs only while 20% is in view)
+  // and the packet freezes mid-flight: CI failed this test three times in one
+  // run that way, frozen at a different x each time (#160). Let the layout
+  // settle first.
+  await expect(page.locator('#uses-stack .uses-tool[data-slug="javascript"]')).toHaveCount(1, { timeout: 20_000 });
   await page.locator('#uses-pipeline').scrollIntoViewIfNeeded();
   await expect(page.locator('#uses-pipeline')).toHaveAttribute('data-revealed', 'true');
   // Every label measured against its box, in the SVG's own units.
@@ -106,9 +113,12 @@ test('the pipeline schematic clips no label and runs its flow once drawn', async
     { timeout: 15000 },
   );
   const at = async () => (await comets.evaluateAll((els) => els.map((c) => `${c.getAttribute('cx')},${c.getAttribute('cy')}`))).join('|');
+  // Still on screen (the loop's own condition), then the packet must move.
+  // Polled rather than one fixed 400 ms gap, so a loaded runner's slow frames
+  // do not read as a stopped loop; a genuinely stopped one still fails.
+  await page.locator('#uses-pipeline').scrollIntoViewIfNeeded();
   const a = await at();
-  await page.waitForTimeout(400);
-  expect(await at()).not.toBe(a);
+  await expect.poll(at, { timeout: 5_000 }).not.toBe(a);
 });
 
 test('a live payload renders the ledger: cards with meters and figures, and the LIVE token', async ({

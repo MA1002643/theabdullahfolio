@@ -57,12 +57,13 @@
         "GHSA-cc9r-2j5m-2m83",
         "GHSA-p6gq-j5cr-w38f",
         "GHSA-r7g4-qg5f-qqm2",
+        "GHSA-v53p-9fqp-m79j",
         "GHSA-vvjj-xcjg-gr5g",
         "GHSA-wmmp-3585-3rmp",
         "GHSA-wqvq-jvpq-h66f"
       ],
       "expires": "2026-10-12",
-      "reason": "Fix is nodemailer 10 (major). The send route builds messages from validated strings only: no envelope/raw/jsonTransport/List-* options and no OAuth2, which is where most of these live. addressparser DoS (GHSA-2x7j-588g-ccc2) is reachable via the reply-to address and is bounded by the 16 KB body ceiling added in #92."
+      "reason": "Fix is nodemailer 10 (major), and next-auth 5 / @auth/core declare nodemailer ^7.0.7 || ^8.0.5, so the upgrade waits on them. The send route builds messages from validated strings only: no envelope/raw/jsonTransport/List-* options and no OAuth2, which is where most of these live. The two addressparser DoS advisories (GHSA-2x7j-588g-ccc2; GHSA-v53p-9fqp-m79j, quadratic backtracking in the free-text fallback, added 2026-10-04) are reachable only through the visitor's address, passed as the reply-to. Its length is now capped at 254 characters on both client and server (src/lib/contactLimits.js, pinned by tests/api/send-mail.route.test.js), down from the 16 KB body ceiling, so the quadratic cost is bounded by a real address's maximum length."
     },
     {
       "package": "postcss",

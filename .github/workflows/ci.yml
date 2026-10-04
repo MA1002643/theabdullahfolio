@@ -77,6 +77,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      # /uses publishes the browser-test count from tests/browser-cases.json
+      # (Playwright's own collected list; the spec text undercounts generated
+      # tests). This fails a PR that adds or removes browser tests without
+      # regenerating it: run `npm run test:count` and commit the file. Listing
+      # starts no browser and no server, so the lint job can do it.
+      - name: Browser-test count is current
+        run: node scripts/count-browser-cases.mjs --check
 
   vitest:
     name: Vitest (unit · property · fitness · component · api)
@@ -217,17 +224,31 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run a11y, security and perf
+        id: quality
         run: npx playwright test --project=a11y --project=security --project=perf
       # Visual regression compares against baselines rendered on this same
       # runner type by the "Visual baselines" workflow. The project arms itself
       # only once they are committed (playwright.config.mjs), so this step runs
       # only then; before that it is skipped, visibly, in the job's step list.
+      #
+      # A second Playwright run here would overwrite the first one's JUnit file,
+      # HTML report and test-results/ (Playwright empties its output directory
+      # at start), so the summary reported only the visual tests and a failed
+      # a11y run lost its traces. The visual run gets its own of all three, and
+      # `always()` so a failed a11y run still gets its visual comparison.
       - name: Run visual regression
-        if: ${{ hashFiles('tests/visual/__screenshots__/**/*.png') != '' }}
-        run: npx playwright test --project=visual
-      - name: Summarise
-        if: always()
-        run: node scripts/test-summary.mjs playwright "Browser quality"
+        id: visual
+        if: ${{ always() && hashFiles('tests/visual/__screenshots__/**/*.png') != '' }}
+        run: npx playwright test --project=visual --output=test-results-visual
+        env:
+          PLAYWRIGHT_JUNIT_FILE: test-results-visual/playwright-junit.xml
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-visual
+      - name: Summarise a11y, security and perf
+        if: ${{ always() && steps.quality.outcome != 'skipped' }}
+        run: node scripts/test-summary.mjs playwright "Browser quality · a11y, security, perf"
+      - name: Summarise visual regression
+        if: ${{ always() && steps.visual.outcome != 'skipped' }}
+        run: node scripts/test-summary.mjs playwright "Browser quality · visual" test-results-visual/playwright-junit.xml
       - name: Upload report, traces and visual diffs
         if: failure()
         uses: actions/upload-artifact@v4
@@ -236,6 +257,8 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            playwright-report-visual/
+            test-results-visual/
           retention-days: 7
 
   burn-in:

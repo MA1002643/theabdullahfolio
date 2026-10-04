@@ -12,7 +12,7 @@ import { read, stripComments } from '../support/source.js';
 // error toast; for a message parked in the offline queue it is worse, because
 // the queue retries a request that can never succeed.
 
-const FIELDS = ['name', 'subject', 'message'];
+const FIELDS = ['name', 'email', 'subject', 'message'];
 
 describe('contact contract — client limits never looser than the server', () => {
   it.each(FIELDS)('%s: client max ≤ server max', (field) => {

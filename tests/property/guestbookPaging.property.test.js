@@ -2,6 +2,8 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
 import { decodeCursor, encodeCursor } from '@/lib/guestbook/cursor';
+
+import { runs } from '../support/fastCheckRuns.js';
 import {
   PAGE_SIZE,
   appendOlder,
@@ -188,7 +190,7 @@ describe('guestbook paging — model-based', () => {
         },
       ),
       // FC_RUNS=20000 for a deep local soak; CI's 400 keeps it under a second.
-      { numRuns: Number(process.env.FC_RUNS) || 400 },
+      { numRuns: runs(400) },
     );
   }, 300_000);
 

@@ -60,11 +60,25 @@ export default defineConfig({
   // instead of hidden. Locally a failure should fail, loudly, the first time.
   retries: CI ? 2 : 0,
   forbidOnly: CI,
+  // Quarantine (docs/testing.md, Maintenance): a test tagged `@quarantine`,
+  // with its issue linked (tests/fitness/testHygiene.test.js), is left out of
+  // every run, so it is not a merge gate, unless PW_INCLUDE_QUARANTINE=1. The
+  // nightly `quarantine` job sets it and runs ONLY the tagged tests, so a
+  // parked test keeps running, visibly, until it is fixed. Every project
+  // inherits this; none sets its own `grepInvert`.
+  grepInvert: process.env.PW_INCLUDE_QUARANTINE === '1' ? undefined : /@quarantine/,
   // One server, shared; parallel workers against it are fine (every spec is
   // read-only or stubs its writes), but CI runners are 4-core.
   workers: CI ? 2 : undefined,
   reporter: CI
-    ? [['list'], ['github'], ['html', { open: 'never' }], ['junit', { outputFile: 'test-results/playwright-junit.xml' }]]
+    ? [
+        ['list'],
+        ['github'],
+        ['html', { open: 'never' }],
+        // Overridable so a job that runs Playwright twice (ci.yml `quality`)
+        // keeps both reports: each run otherwise rewrites this one file.
+        ['junit', { outputFile: process.env.PLAYWRIGHT_JUNIT_FILE || 'test-results/playwright-junit.xml' }],
+      ]
     : [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://localhost:3100',
@@ -89,9 +103,13 @@ export default defineConfig({
       use: { ...devices['Pixel 7'] },
     },
     { name: 'mobile-safari', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['iPhone 14'] } },
-    { name: 'a11y', testDir: 'tests/a11y', use: { ...devices['Desktop Chrome'] } },
-    { name: 'security', testDir: 'tests/security', use: { ...devices['Desktop Chrome'] } },
-    { name: 'perf', testDir: 'tests/perf', use: { ...devices['Desktop Chrome'] } },
+    // The three Desktop Chrome quality projects visit every route cold too, so
+    // they share the desktop warm-up. Without it, PR #160's burn-in ran axe on
+    // /qualifications while the warm-up encoded the same images, and the page
+    // missed the 60 s limit with retries off.
+    { name: 'a11y', testDir: 'tests/a11y', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
+    { name: 'security', testDir: 'tests/security', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
+    { name: 'perf', testDir: 'tests/perf', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
     ...(RUN_VISUAL
       ? [
           {

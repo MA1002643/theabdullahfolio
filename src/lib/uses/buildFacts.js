@@ -342,13 +342,25 @@ export const VITEST_DIRS = [
   'tests/component',
   'tests/api',
 ];
-export const PLAYWRIGHT_DIRS = [
-  'tests/e2e',
-  'tests/a11y',
-  'tests/visual',
-  'tests/security',
-  'tests/perf',
-];
+
+// The browser count is NOT read from the spec files. Most browser tests are
+// generated in loops (one per route, per width, per fixture), which the
+// lexical counter above cannot expand: `axe.spec.js` read as 2 tests of its 32,
+// `navigation.spec.js` as 5 of 33, so /uses published a fraction of the real
+// figure (#92 review). The count-browser-cases script in scripts/ asks
+// Playwright for its collected list and writes the totals to this file; CI's
+// `--check` fails any PR whose browser tests no longer match it, so the file
+// cannot go stale. (Named in prose, not as a path: the sitemap drift suite
+// reads every quoted path in this module as one it opens.)
+export const BROWSER_CASES_FILE = 'tests/browser-cases.json';
+
+function readBrowserCases(root) {
+  const { suites, cases } = JSON.parse(readText(root, BROWSER_CASES_FILE));
+  if (!Number.isInteger(suites) || !Number.isInteger(cases)) {
+    throw new Error(`${BROWSER_CASES_FILE} holds no counts`);
+  }
+  return { suites, cases };
+}
 
 // ── Route handlers ─────────────────────────────────────────────────────
 //
@@ -633,7 +645,7 @@ export function readBuildFacts(root = process.cwd(), now = new Date()) {
     },
     instruments: {
       unit: safe(() => countSuites(root, VITEST_DIRS, /\.test\.jsx?$/)),
-      e2e: safe(() => countSuites(root, PLAYWRIGHT_DIRS, /\.spec\.js$/)),
+      e2e: safe(() => readBrowserCases(root)),
       apiRoutes: safe(() => countRoutes(root, 'src/app/api')),
       apiMethods: safe(() => countMethods(root, 'src/app/api')),
     },

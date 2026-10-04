@@ -81,11 +81,23 @@ It runs random histories of posts, deletes, polls and "load older" (bursts
 larger than a page, same-millisecond ties) against a model server that uses
 the real paging helpers and the real cursor codec. After every step it
 asserts the wall never shows a duplicate, never breaks order, and never loses
-a message. Soak it deeper with:
+a message.
+
+**Soaking.** `FC_RUNS` raises every property in the layer to at least that
+many runs, never fewer than its everyday count:
 
 ```bash
 FC_RUNS=20000 npm run test:property
 ```
+
+It reaches every suite because none of them names a raw count:
+`tests/support/setup-property.js` sets fast-check's global default, and a
+suite that needs more than the default uses `runs(n)` from
+`tests/support/fastCheckRuns.js`. A literal `numRuns: 5000` would opt that
+property out of the soak silently, so `testHygiene` fails on one. (Until
+2026-10-04 only the paging test read `FC_RUNS`, so the nightly "soak" deepened
+one file. The first real soak of all of them found a test bug within seconds:
+see the defects table.)
 
 ### L3 · Component tests
 
@@ -122,7 +134,8 @@ Tags: `@cross-browser` specs run on every engine and device; everything else
 runs on Chromium. PRs run `chromium` and `mobile-chrome`; the nightly run adds
 `webkit`, `firefox` and `mobile-safari`.
 
-**The image warm-up.** `chromium` and `mobile-chrome` each depend on a warm-up
+**The image warm-up.** `chromium`, `mobile-chrome`, `a11y`, `security` and
+`perf` each depend on a warm-up
 project (`tests/warmup/images.setup.js`) that visits every route once, with the
 same viewport and pixel ratio, before any spec runs. The test server is a
 fresh `next start`, so `/_next/image` encodes each image width on its first
@@ -224,6 +237,15 @@ snapshot.
   in public source (the contact address) is reported as public by design.
 - `security.yml`: CodeQL `security-extended`, OSV-Scanner (informational),
   Gitleaks over full history, and `scripts/audit-gate.mjs`.
+- **On a private repository.** GitHub code scanning is not available on a
+  private personal repository, so CodeQL cannot upload alerts there. The
+  workflow skips the upload while the repository is private and judges the
+  SARIF itself instead: any finding with a security severity of 7.0 or more
+  (high or critical) fails the job, and every finding is listed in the run
+  summary. Made public, the results upload as code-scanning alerts as well.
+- **Gitleaks false positives** are recorded in `.gitleaksignore`, one
+  fingerprint (commit, file, rule, line) per reviewed finding, never a path or
+  a rule. A real secret added to the same file later is still caught.
 
 **The audit gate.** `npm audit` on `main` reports advisories whose fixes are
 all major upgrades (Next 14 → 15, nodemailer 7 → 10, sharp 0.34 → 0.35). A
@@ -249,19 +271,34 @@ the advisory.
 - **Flake burn-in**: on every PR, each *changed* browser spec runs five times
   with retries off. Elsewhere CI retries twice and reports tests that passed
   on retry as flaky in the run summary.
+- **Quarantine**: a browser test tagged `@quarantine` (with its issue linked,
+  enforced) is left out of every run by `grepInvert` in
+  `playwright.config.mjs`, so it no longer gates a merge. The nightly
+  `quarantine` job sets `PW_INCLUDE_QUARANTINE=1` and runs only the tagged
+  tests, so a parked test still runs every night until it is fixed.
 
 ## CI
 
 | Workflow | When | What |
 |---|---|---|
-| `ci.yml` | every push and PR, and dispatched onto each screenshot commit | lint · Vitest + coverage · build → bundle scan + budget · E2E (chromium, mobile-chrome) · browser quality (a11y, security, perf, visual) · burn-in |
+| `ci.yml` | every push and PR, and dispatched onto each screenshot commit | lint + the browser-test count check · Vitest + coverage · build → bundle scan + budget · E2E (chromium, mobile-chrome) · browser quality (a11y, security, perf, then visual, each with its own report and summary) · burn-in |
 | `security.yml` | PRs, `main`, weekly | CodeQL · OSV · Gitleaks · audit gate |
-| `nightly.yml` | daily | WebKit, Firefox, iPhone 14 · mutation testing · 20,000-run property soak |
+| `nightly.yml` | daily | WebKit, Firefox, iPhone 14 · quarantined tests · mutation testing · every property at ≥ 20,000 runs |
 | `lighthouse.yml` | PRs, `main` | Lighthouse CI budgets |
 | `visual-baselines.yml` | every push (and manual, with `promote`) | render every view, commit `tests/visual/__latest__/` (and seed or promote the baselines) on any branch but `main`, then dispatch the three workflows above onto that commit |
 
 Each job writes a Markdown section to the run summary
-(`scripts/test-summary.mjs`).
+(`scripts/test-summary.mjs`). A job that runs Playwright twice gives the second
+run its own JUnit file, HTML report and output directory
+(`PLAYWRIGHT_JUNIT_FILE`, `PLAYWRIGHT_HTML_OUTPUT_DIR`, `--output`): Playwright
+empties its output directory when it starts, so sharing one meant the visual
+run replaced the a11y/security/perf report and discarded its traces.
+
+**The browser-test count `/uses` publishes** comes from Playwright's own
+collected list (`npm run test:count` writes `tests/browser-cases.json`), not
+from reading the spec files: most browser tests are generated in loops, which
+a text count cannot expand. The lint job fails a PR that changes the browser
+tests without regenerating the file.
 
 ## Known defects
 
@@ -293,9 +330,22 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Keyboard (K2) | Tab reached `/about` skill icons that had not scrolled into the strip, and every inactive category's icons. | Focus drives the scrub: the scroll position that reveals the focused icon is computed from the scrub's own geometry. |
 | Keyboard (K3) | "Live Demo" and "GitHub" on every project page did nothing: `GlowButton` was a `<button>` that ignored `href`. The 3D-projected copies also sat where they were not painted. | Real links from each project's `demoLink`/`repo`; the in-scene copies pointer-only and `aria-hidden`; an accessible pair in the page intro. |
 | Keyboard | On every project page the footer started ~160 px down and covered the 3D scene, because `<main>` held only fixed-position content. | `<main>` takes a full viewport on project pages. |
+| Audit gate | A new high-severity nodemailer advisory (GHSA-v53p-9fqp-m79j, quadratic backtracking in its address parser) was reachable through the contact form's email field, which had no length limit beyond the 16 KB body ceiling. The patched nodemailer is a major version next-auth does not yet allow. | The address is capped at 254 characters (the RFC 5321 maximum) on both client and server, from the shared limits module; the waiver records why the remaining cost is bounded. |
+| Review (E2E) | Projects 8–11 are `private: true`, but the links fix above derived "Source on GitHub" from every `repo`, so their pages linked to repositories that answer 404. | `source` is withheld for private records, and a demo equal to the repo URL is dropped too; the e2e fixture now includes a private project and asserts no link anywhere on its page points at the repo. |
+| Review (keyboard) | `FloatingSoundToggle` and `NowPlaying` rendered beside the intro loader's `inert` boundary, not inside it, so the sound button could take focus under the opaque loader on a touch device. | Both moved inside `LoaderWrapper`. `loaderInertBoundary` (fitness) pins the layout, because the hermetic server renders neither control; `loader-inert.spec.js` checks in the browser that nothing outside the loader is focusable while it covers the page. |
+| Review (`/uses`) | The browser-test figure `/uses` publishes was counted from the spec text, which cannot expand generated tests: `axe.spec.js` counted 2 of its 32. | The figure comes from Playwright's own collected list (`tests/browser-cases.json`), checked in CI. |
+| Review (sitemap) | The project pages' scene loads its environment map by URL, which no import walk reaches, so replacing it would not move the eleven pages' `lastModified`. | Listed in `PROJECT_SOURCES`; the drift test now recognises public assets loaded by URL. |
+| Property soak (the test) | The first real 20,000-run soak drew the secret "SWo" and failed redaction, but the redaction was correct: the test searched the whole output for the secret, and "password" contains "swo". | The check now compares whole tokens. A defect in the test, recorded because the soak that found it had never actually run. |
 
 ## Maintenance
 
+- **Every new issue re-considers this plan.** This document has to cover what
+  the project is now, not what it was when #92 closed. Each issue checks,
+  while planning and again before its commit, which layer each new page,
+  route, interaction, journey, animation, piece of logic or outside host
+  belongs to, and lands those tests and any update here in the same commit.
+  The checklist is §3 of the repository's `CLAUDE.md`. Much of it is not
+  enforced by CI, so it is a habit, not a gate.
 - **Flake:** fix it or quarantine it with `@quarantine` and an issue link
   (enforced). Never `.skip` it.
 - **Snapshots:** reviewed, never rubber-stamped.

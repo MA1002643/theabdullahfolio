@@ -443,18 +443,16 @@ const ROUTE_DEFINITIONS = [
       '.nvmrc',
       'vercel.json',
       '.github/workflows',
-      // Every suite directory the instruments plate counts (issue #92 split
-      // them by layer; VITEST_DIRS / PLAYWRIGHT_DIRS in buildFacts.js).
+      // Every Vitest suite directory the instruments plate counts (issue #92
+      // split them by layer; VITEST_DIRS in buildFacts.js), and the browser
+      // count, which comes from Playwright's own list rather than the spec
+      // files (BROWSER_CASES_FILE there; #92 review).
       'tests/unit',
       'tests/property',
       'tests/fitness',
       'tests/component',
       'tests/api',
-      'tests/e2e',
-      'tests/a11y',
-      'tests/visual',
-      'tests/security',
-      'tests/perf',
+      'tests/browser-cases.json',
       'src/app/api',
       PAGE_TITLE_SOURCE,
     ],

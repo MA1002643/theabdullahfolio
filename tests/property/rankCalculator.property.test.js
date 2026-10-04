@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import { calculateRank } from '@/utils/rankCalculator';
 
+import { runs } from '../support/fastCheckRuns.js';
+
 // The GitHub rank on the About page's stats card, as invariants (issue #92, L2).
 //
 // `calculateRank` is a weighted blend of exponential and log-normal CDFs, the
@@ -62,7 +64,7 @@ describe('calculateRank — properties', () => {
         const expected = LEVELS[THRESHOLDS.findIndex((t) => Number(percentile) <= t)] ?? 'C';
         expect(level).toBe(expected);
       }),
-      { numRuns: 5000 },
+      { numRuns: runs(5000) },
     );
   });
 

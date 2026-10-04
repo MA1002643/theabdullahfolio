@@ -77,6 +77,9 @@ function seedFullRepo(root) {
   write(root, 'tests/unit/b.test.js', "describe('x', () => {\n  it('five', () => {});\n});\n");
   write(root, 'tests/unit/helper.js', "it('not a suite file', () => {});\n");
   write(root, 'tests/e2e/smoke.spec.js', "test('boots', async () => {});\ntest('renders', async () => {});\n");
+  // The browser count comes from Playwright's own list, written by
+  // scripts/count-browser-cases.mjs, never from the spec text above.
+  write(root, 'tests/browser-cases.json', JSON.stringify({ suites: 1, cases: 2, byDir: { 'tests/e2e': 2 } }));
   write(root, 'src/app/api/one/route.js', 'export function GET() {}');
   write(
     root,
@@ -227,17 +230,35 @@ describe('readBuildFacts — a full fixture repository', () => {
     expect(facts.instruments.apiMethods).toEqual({ GET: 3, POST: 1, DELETE: 1 });
   });
 
-  it('sums every Vitest and Playwright layer directory, .jsx suites included (issue #92)', () => {
+  it('sums every Vitest layer directory, .jsx suites included (issue #92)', () => {
     const root = makeRoot();
     seedFullRepo(root);
     write(root, 'tests/component/Form.test.jsx', "it('renders', () => {});\nit('submits', () => {});");
     write(root, 'tests/property/rank.test.js', "test('is bounded', () => {});");
-    write(root, 'tests/a11y/axe.spec.js', "test('no violations', async () => {});");
     const facts = readBuildFacts(root, FIXED_NOW);
     // The seeded 2 unit suites / 5 cases, plus 2 suites / 3 cases above.
     expect(facts.instruments.unit).toEqual({ suites: 4, cases: 8 });
-    // The seeded e2e suite (2 cases) plus the a11y one.
-    expect(facts.instruments.e2e).toEqual({ suites: 2, cases: 3 });
+  });
+
+  it('takes the browser count from Playwright’s collected list, not the spec text (#92 review)', () => {
+    const root = makeRoot();
+    seedFullRepo(root);
+    // One lexical `test(...)` that registers 32 tests: the shape that made the
+    // text counter publish 2 for axe.spec.js instead of 32.
+    write(
+      root,
+      'tests/a11y/axe.spec.js',
+      "for (const w of [1440, 390]) for (const r of ROUTES) test(`${r} at ${w}`, async () => {});\n",
+    );
+    write(root, 'tests/browser-cases.json', JSON.stringify({ suites: 2, cases: 34 }));
+    expect(readBuildFacts(root, FIXED_NOW).instruments.e2e).toEqual({ suites: 2, cases: 34 });
+  });
+
+  it('publishes no browser count rather than a wrong one when the list is malformed', () => {
+    const root = makeRoot();
+    seedFullRepo(root);
+    write(root, 'tests/browser-cases.json', JSON.stringify({ suites: '17', cases: null }));
+    expect(readBuildFacts(root, FIXED_NOW).instruments.e2e).toBeNull();
   });
 
   it('stamps builtAt as ISO with a fixed en-GB UTC label', () => {

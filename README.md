@@ -234,14 +234,14 @@ graph TD
 
 An eleven-layer quality system ([#92](https://github.com/MA1002643/theabdullahfolio/issues/92)), built on one rule: **a layer only counts once it has caught a real defect in this codebase.** Every layer answers a question the others cannot, and every command below is the one CI runs. The full strategy, the debugging runbook and the complete defects table are in [`docs/testing.md`](docs/testing.md), published on the site at [**ma.codes/notes/testing**](https://ma.codes/notes/testing).
 
-**At a glance** (as of 2026-10-03; the live figures are in each CI run's summary):
+**At a glance** (as of 2026-10-04; the live figures are in each CI run's summary):
 
 | | |
 |---|---|
-| Vitest tests (unit, property, fitness, component, API) | **1,242** across 110 files |
+| Vitest tests (unit, property, fitness, component, API) | **1,257** across 112 files |
 | Browser engines and devices | Chromium, WebKit, Firefox, Pixel 7, iPhone 14 |
 | Mutation score (Stryker, eight critical modules) | **87.2%** (79.6% on the first run) |
-| Real defects the layers found, all fixed | **20** |
+| Real defects the layers found, all fixed | **25** |
 
 ```mermaid
 %%{init: {"theme":"dark","themeVariables":{"fontFamily":"ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif","lineColor":"#9a7a42"}}}%%

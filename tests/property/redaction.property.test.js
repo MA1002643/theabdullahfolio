@@ -68,8 +68,14 @@ describe('redactSecrets — properties', () => {
       fc.property(secretArb(3, 7), (secret) => {
         fc.pre(/^[\w-]+$/.test(secret));
         process.env.CRON_SECRET = secret;
-        // Standing alone: gone.
-        expect(contains(redactSecrets(`password is ${secret} here`), secret)).toBe(false);
+        // Standing alone: gone. Judged token by token, not by substring: a
+        // 3–7 character secret can occur inside the fixed words around it or
+        // the placeholder that replaces it. The first 20,000-run soak
+        // (2026-10-04) drew "SWo", which "password" contains, and failed a
+        // redaction that had worked.
+        const tokens = redactSecrets(`password is ${secret} here`).split(/\s+/);
+        expect(tokens).not.toContain(secret);
+        expect(tokens).toHaveLength(4);
         // Inside a longer word: left alone, or every "id" in a log would vanish.
         expect(redactSecrets(`x${secret}y`)).toBe(`x${secret}y`);
       }),

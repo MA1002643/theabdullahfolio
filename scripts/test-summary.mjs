@@ -5,6 +5,11 @@
  *   node scripts/test-summary.mjs vitest                 JUnit + coverage table
  *   node scripts/test-summary.mjs playwright "<title>"   JUnit table, flaky tests named
  *
+ * A third argument names a different JUnit file. A job that runs Playwright
+ * twice gives the second run its own (PLAYWRIGHT_JUNIT_FILE, read by
+ * playwright.config.mjs) and summarises each, so neither report replaces the
+ * other.
+ *
  * A green tick on a job says the suite passed; it does not say what ran. This
  * writes the numbers where a reviewer looks first: how many tests per suite,
  * how long they took, which were retried into passing (flaky: reported, never
@@ -13,8 +18,9 @@
  */
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 
-const [kind = 'vitest', title] = process.argv.slice(2);
-const junitFile = kind === 'vitest' ? 'test-results/vitest-junit.xml' : 'test-results/playwright-junit.xml';
+const [kind = 'vitest', title, junitArg] = process.argv.slice(2);
+const junitFile =
+  junitArg ?? (kind === 'vitest' ? 'test-results/vitest-junit.xml' : 'test-results/playwright-junit.xml');
 
 /** Minimal JUnit reader: per-suite counts and time, plus retried test names. */
 function readJunit(file) {

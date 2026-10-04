@@ -24,7 +24,13 @@ const VIEWS = [
 ];
 
 // Content that legitimately differs between runs.
-const MASKS = ['time', '[data-live]', '[aria-live]', 'canvas', 'video'];
+//
+// `.note-record__figure` is the line count on /notes, computed from each
+// document at build. Every edit to docs/*.md changes it, and CLAUDE.md §3 makes
+// editing docs/testing.md part of every issue, so unmasked it failed this
+// layer on a pure text change (2026-10-04). The titles and summaries beside it
+// stay compared: those changing is a real visual change worth a review.
+const MASKS = ['time', '[data-live]', '[aria-live]', 'canvas', 'video', '.note-record__figure'];
 
 for (const { name, path } of VIEWS) {
   test(`${name} matches its baseline`, async ({ page }) => {

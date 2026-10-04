@@ -14,14 +14,23 @@
 // characters of message to discourage empty pings; the server only requires
 // "present"), which is why these are two objects rather than one.
 
+//
+// `email` is 254 on both sides: the longest address SMTP can carry (RFC 5321).
+// It had no cap at all, only the route's 16 KB body ceiling, and the address
+// reaches nodemailer's address parser as the reply-to, where GHSA-v53p-9fqp-m79j
+// (2026-09-29) is a quadratic backtrack. The cap bounds that cost while the
+// patched nodemailer (10.x) waits on next-auth allowing it.
+
 export const CONTACT_CLIENT_LIMITS = Object.freeze({
   name: { min: 3, max: 100 },
+  email: { max: 254 },
   subject: { max: 175 },
   message: { min: 50, max: 500 },
 });
 
 export const CONTACT_SERVER_LIMITS = Object.freeze({
   name: { max: 100 },
+  email: { max: 254 },
   subject: { max: 175 },
   message: { max: 2000 },
 });

@@ -374,6 +374,35 @@ function onDiskReadPathsIn(relativeFile) {
   return paths;
 }
 
+/**
+ * The `public/` files a module loads by URL: a quoted, root-relative string
+ * such as `<Environment files="/hdri/dikhololo_night_1k.hdr" />`.
+ *
+ * Neither an import nor a read reaches these, because the browser fetches them,
+ * yet replacing one changes what every page using it shows. Matched only as a
+ * whole quoted string that starts with `/` and names an extension, and kept
+ * only when `public/<url>` exists, so a route path such as `'/projects'` or a
+ * URL built at runtime is never mistaken for one.
+ */
+function publicAssetPathsIn(relativeFile) {
+  let source;
+  try {
+    source = readFileSync(path.join(process.cwd(), relativeFile), 'utf8');
+  } catch {
+    return [];
+  }
+  const paths = [];
+  for (const [, url] of source.matchAll(/['"](\/[\w./-]+\.\w+)['"]/g)) {
+    const asset = path.join('public', url);
+    try {
+      if (statSync(path.join(process.cwd(), asset)).isFile()) paths.push(asset);
+    } catch {
+      // Not a file under public/.
+    }
+  }
+  return paths;
+}
+
 const covers = (source, specifier) =>
   specifier === source ||
   specifier.startsWith(`${source}/`) ||
@@ -864,9 +893,13 @@ describe('project detail sources', () => {
         SUB_PAGE_LAYOUT,
       ]),
     ];
-    // Reads as well as imports — the typefaces are `readFile`d, not imported.
+    // Reads as well as imports — the typefaces are `readFile`d, not imported —
+    // and public assets loaded by URL, such as the scene's environment map.
     published.push(
-      ...published.flatMap((module) => onDiskReadPathsIn(module)),
+      ...published.flatMap((module) => [
+        ...onDiskReadPathsIn(module),
+        ...publicAssetPathsIn(module),
+      ]),
     );
 
     // Guard on the guard, in the dimension this check actually depends on: a

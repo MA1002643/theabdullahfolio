@@ -124,6 +124,20 @@ describe('ContactForm — client validation', () => {
     await visible(screen.getByText(`Message should be more than ${CONTACT_CLIENT_LIMITS.message.min} characters`));
   });
 
+  it('refuses an address longer than the shared limit before it is sent', async () => {
+    // The server refuses it too (tests/api/send-mail.route.test.js); a form
+    // looser than the server would park the message in the offline queue to be
+    // retried forever.
+    const { user, field, submit } = setup();
+    await user.click(field('Email'));
+    await user.paste(`${'a'.repeat(CONTACT_CLIENT_LIMITS.email.max)}@example.com`);
+    await submit();
+    const error = await screen.findByText(`Email should be at most ${CONTACT_CLIENT_LIMITS.email.max} characters long.`);
+    await visible(error);
+    expect(field('Email')).toHaveAttribute('aria-invalid', 'true');
+    expect(field('Email')).toHaveAttribute('aria-describedby', error.id);
+  });
+
   it('clears an error once the field is corrected and resubmitted', async () => {
     const { submit, fill } = setup();
     server.use(sendMailHandler());

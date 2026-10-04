@@ -9,7 +9,20 @@ import { expect, settle, test } from '../support/test.js';
 // screen, and an accessible pair in normal flow (the intro), because a link
 // projected with CSS 3D transforms is not where its layout box says it is.
 
-for (const { id, name, demo, source } of projectsLinksFixture()) {
+for (const { id, name, demo, source, privateRepo } of projectsLinksFixture()) {
+  if (!source) {
+    // A private project: its repository answers 404 to visitors, so no link
+    // to it may render, neither in the intro nor on the laptop screen.
+    test(`/projects/${id} publishes no link to its private repository`, { tag: '@cross-browser' }, async ({ page }) => {
+      await page.goto(`/projects/${id}`);
+      await settle(page);
+      await page.waitForTimeout(3000); // the laptop boot sequence, then its buttons
+      await expect(page.getByRole('navigation', { name: `${name} links` })).toHaveCount(0);
+      await expect(page.locator(`a[href^="${privateRepo}"]`)).toHaveCount(0);
+    });
+    continue;
+  }
+
   test(`/projects/${id} links to its real ${demo ? 'demo and ' : ''}source`, { tag: '@cross-browser' }, async ({ page }) => {
     await page.goto(`/projects/${id}`);
     await settle(page);

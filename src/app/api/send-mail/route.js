@@ -145,6 +145,13 @@ export async function POST(req) {
       validationErrors.push(
         `Full Name exceeds maximum allowed length (${LIMITS.name.max} characters).`,
       );
+    // Before the format check and the reputation lookup, and well before
+    // nodemailer parses it as the reply-to (see lib/contactLimits.js).
+    const emailTooLong = email.length > LIMITS.email.max;
+    if (emailTooLong)
+      validationErrors.push(
+        `Email exceeds maximum allowed length (${LIMITS.email.max} characters).`,
+      );
     if (subject.length > maxRawSubjectLength)
       validationErrors.push(
         `Subject exceeds maximum allowed length (${maxRawSubjectLength} characters).`,
@@ -167,7 +174,7 @@ export async function POST(req) {
 
     // Verify email deliverability via Abstract Email Reputation API
     // Runs alongside other checks so all errors are collected together
-    if (process.env.ABSTRACT_API_KEY && emailRegex.test(email)) {
+    if (process.env.ABSTRACT_API_KEY && !emailTooLong && emailRegex.test(email)) {
       const controller = new AbortController();
       const timeoutMs = 5000;
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);

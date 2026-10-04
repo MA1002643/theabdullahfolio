@@ -35,8 +35,12 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
+    # `actions: read` is required on a private repository (the action reads
+    # its own workflow run). `security-events: write` is only used when the
+    # results are uploaded, which is only possible on a public one (below).
     permissions:
       contents: read
+      actions: read
       security-events: write
     steps:
       - uses: actions/checkout@v6
@@ -46,9 +50,49 @@ jobs:
         with:
           languages: javascript-typescript
           queries: security-extended
+      # GitHub code scanning is not available on a private personal repository
+      # ("Code scanning is not enabled", 2026-10-04), so the upload is skipped
+      # while the repository is private and the gate below judges the SARIF
+      # itself. Made public, the results also upload as code-scanning alerts.
       - uses: github/codeql-action/analyze@v3
         with:
           category: /language:javascript-typescript
+          upload: ${{ github.event.repository.private && 'never' || 'always' }}
+          output: codeql-results
+      - name: Fail on high or critical findings
+        run: |
+          node --input-type=module <<'EOF'
+          import { readdirSync, readFileSync, appendFileSync } from 'node:fs';
+          const findings = [];
+          for (const file of readdirSync('codeql-results').filter((f) => f.endsWith('.sarif'))) {
+            const sarif = JSON.parse(readFileSync(`codeql-results/${file}`, 'utf8'));
+            for (const run of sarif.runs) {
+              const rules = new Map(run.tool.driver.rules?.map((r) => [r.id, r]) ?? []);
+              for (const result of run.results ?? []) {
+                const rule = rules.get(result.ruleId);
+                const severity = Number(rule?.properties?.['security-severity'] ?? 0);
+                const where = result.locations?.[0]?.physicalLocation;
+                findings.push({
+                  severity,
+                  rule: result.ruleId,
+                  at: `${where?.artifactLocation?.uri}:${where?.region?.startLine}`,
+                });
+              }
+            }
+          }
+          // "No critical/high CodeQL alerts" (issue #92): CVSS-style security
+          // severity 7.0 and up. Everything else is listed but does not fail.
+          const blocking = findings.filter((f) => f.severity >= 7);
+          const lines = [
+            `### CodeQL: ${findings.length} finding(s), ${blocking.length} high or critical`,
+            ...findings
+              .sort((a, b) => b.severity - a.severity)
+              .map((f) => `- ${f.severity >= 7 ? '❌' : '•'} ${f.severity || 'n/a'} \`${f.rule}\` at \`${f.at}\``),
+          ];
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          console.log(lines.join('\n'));
+          if (blocking.length) process.exit(1);
+          EOF
 
   osv:
     name: OSV-Scanner (informational)

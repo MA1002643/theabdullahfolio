@@ -107,11 +107,34 @@ describe('validation', () => {
     ['name', 101, 'Full Name exceeds maximum allowed length (100 characters).'],
     ['subject', 176, 'Subject exceeds maximum allowed length (175 characters).'],
     ['message', 2001, 'Message exceeds maximum allowed length (2000 characters).'],
+    ['email', 255, 'Email exceeds maximum allowed length (254 characters).'],
   ])('rejects a %s over its limit (%i chars)', async (field, length, error) => {
     const { POST } = await loadRoute();
     const { status, body } = await json(await POST(post(validContactMessage({ [field]: 'x'.repeat(length) }))));
     expect(status).toBe(400);
     expect(body.errors).toContain(error);
+  });
+
+  it('never hands an over-long address to nodemailer, even a well-formed one', async () => {
+    // GHSA-v53p-9fqp-m79j (2026-09-29): nodemailer's address parser backtracks
+    // quadratically on crafted text, and the patch is in a major version
+    // next-auth does not yet allow. The address reaches that parser as the
+    // reply-to, so its length is what bounds the cost: 254 is the most a real
+    // address can be (RFC 5321), where the body ceiling alone allowed ~16 KB.
+    const { POST } = await loadRoute();
+    const email = `${'a'.repeat(243)}@example.com`; // 255 chars, passes the format check
+    const { status, body } = await json(await POST(post(validContactMessage({ email }))));
+    expect(status).toBe(400);
+    expect(body.errors).toEqual(['Email exceeds maximum allowed length (254 characters).']);
+    expect(sendMail).not.toHaveBeenCalled();
+  });
+
+  it('accepts an address of exactly the limit', async () => {
+    const { POST } = await loadRoute();
+    const email = `${'a'.repeat(242)}@example.com`; // 254 chars
+    const res = await POST(post(validContactMessage({ email })));
+    expect(res.status).toBe(200);
+    expect(sendMail).toHaveBeenCalledTimes(1);
   });
 
   it.each([['name'], ['subject']])('refuses CR/LF in %s (email header injection)', async (field) => {

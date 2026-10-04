@@ -60,7 +60,12 @@ export default defineConfig({
   test: {
     projects: [
       project('unit'),
-      project('property'),
+      project('property', {
+        setupFiles: ['tests/support/setup-property.js'],
+        // A soak (FC_RUNS=20000, nightly.yml) runs each property up to 200×
+        // longer than the 5 s default allows for one test.
+        ...(process.env.FC_RUNS ? { testTimeout: 10 * 60 * 1000 } : {}),
+      }),
       project('fitness'),
       project('component', {
         environment: 'jsdom',
