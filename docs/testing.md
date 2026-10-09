@@ -145,7 +145,10 @@ page's `load` event missed the 60-second test limit. The retry passed against
 the now-warm cache, so it looked like a flaky page when it was really a cold
 cache. Production has no such queue (Vercel's image cache is shared and
 persistent), so the fix warms the cache instead of loosening the specs. The
-warm-up asserts nothing and never fails.
+warm-up asserts nothing about the page (an HTTP error still fires `load`, and
+the real specs report it), but it does require `load` to arrive: a timed-out
+visit is retried once, and a second timeout fails the setup, so no suite runs
+against a cache known to be cold.
 
 **Debugging a failure.** CI uploads `playwright-report/` and `test-results/`
 on failure. Retries record a trace:
@@ -213,7 +216,9 @@ snapshot.
 ### L8 · Performance
 
 - `web-vitals.spec.js` measures CLS through load **and a full scroll** on
-  every route, enforced at 0.1. LCP is recorded as an annotation only, because
+  every route, enforced at 0.1. It is scored as Core Web Vitals scores it:
+  the largest session window (shifts under 1 s apart, at most 5 s long), not
+  the sum of every shift in the page's life. LCP is recorded as an annotation only, because
   runner timing is noise.
 - `scripts/check-bundle-budget.mjs` computes first-load JS per route (gzip)
   from the build manifest, against `bundle-budget.json` (measured + 10%).
@@ -237,6 +242,14 @@ snapshot.
   in public source (the contact address) is reported as public by design.
 - `security.yml`: CodeQL `security-extended`, OSV-Scanner (informational),
   Gitleaks over full history, and `scripts/audit-gate.mjs`.
+- **OSV is informational, and looks it.** It reads the whole lockfile, dev
+  tooling included, so it always lists the advisories the audit gate already
+  waives. Its scan step may fail without failing the job; a notice and the run
+  summary say findings exist. The audit job is the gate.
+- **Gitleaks runs the CLI, not the action.** The pinned release binary
+  (checksum-verified) scans every commit on every event. The marketplace
+  action needed a token to list a PR's commits, then scanned only those, so on
+  a pull request it was neither working nor "full history".
 - **On a private repository.** GitHub code scanning is not available on a
   private personal repository, so CodeQL cannot upload alerts there. The
   workflow skips the upload while the repository is private and judges the
@@ -335,6 +348,11 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (keyboard) | `FloatingSoundToggle` and `NowPlaying` rendered beside the intro loader's `inert` boundary, not inside it, so the sound button could take focus under the opaque loader on a touch device. | Both moved inside `LoaderWrapper`. `loaderInertBoundary` (fitness) pins the layout, because the hermetic server renders neither control; `loader-inert.spec.js` checks in the browser that nothing outside the loader is focusable while it covers the page. |
 | Review (`/uses`) | The browser-test figure `/uses` publishes was counted from the spec text, which cannot expand generated tests: `axe.spec.js` counted 2 of its 32. | The figure comes from Playwright's own collected list (`tests/browser-cases.json`), checked in CI. |
 | Review (sitemap) | The project pages' scene loads its environment map by URL, which no import walk reaches, so replacing it would not move the eleven pages' `lastModified`. | Listed in `PROJECT_SOURCES`; the drift test now recognises public assets loaded by URL. |
+| Review (chaos, the test) | The lazy-chunk test armed its fault after `settle()`, which waits for the intro loader, and the aurora and project-scene chunks start loading on that signal or earlier. It passed while aborting nothing. | The fault is armed by a `load` listener registered before navigation, any chunk carrying three.js is aborted whenever it is requested (found by its body, since the names are hashed), and the test fails if nothing was aborted. |
+| Review (perf, the test) | `web-vitals.spec.js` summed every layout shift across a multi-second scroll, so a long page could fail the 0.1 budget while its real CLS passed. | Session windows, maximum kept. |
+| CI (`security.yml`) | Gitleaks failed every pull request with a 403 (the action lists the PR's commits through the API, which this workflow's token may not), and on a PR it would have scanned only the PR's commits anyway. | The pinned gitleaks CLI over the full history, no token. Verified locally: 385 commits, no leaks, `.gitleaksignore` honoured. |
+| CI (`security.yml`) | OSV-Scanner, meant to be informational, showed as a failed check on every PR: `continue-on-error` on the job keeps the workflow green but not the job. | Moved to the step, with a notice when findings exist. |
+| Review (warm-up, the test) | The image warm-up swallowed its own timeout and reported success, sending the dependent suites into the cold-cache state it exists to prevent. | One bounded retry, then the setup fails. |
 | Property soak (the test) | The first real 20,000-run soak drew the secret "SWo" and failed redaction, but the redaction was correct: the test searched the whole output for the secret, and "password" contains "swo". | The check now compares whole tokens. A defect in the test, recorded because the soak that found it had never actually run. |
 
 ## Maintenance

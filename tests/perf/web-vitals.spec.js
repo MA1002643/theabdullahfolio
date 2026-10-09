@@ -10,7 +10,12 @@ import { expect, settle, test } from '../support/test.js';
 //
 //   CLS  ENFORCED at 0.1, Google's "good" threshold. Layout shift is a property
 //        of the page, not of the machine, so a slow CI runner scores the same
-//        as a laptop and a regression is real.
+//        as a laptop and a regression is real. Scored the way Core Web Vitals
+//        scores it: shifts are grouped into session windows (each shift less
+//        than 1 s after the previous one, the window at most 5 s long) and CLS
+//        is the LARGEST window, not the sum over the page's life. Summing made
+//        a long page's multi-second scroll fail a budget its real CLS passes
+//        (code review).
 //   LCP  RECORDED, not enforced: it is timing, and a shared runner's timing is
 //        noise. Each run attaches it as an annotation for trend-reading, the
 //        same honesty lighthouserc.json applies to its performance category.
@@ -20,10 +25,21 @@ const CLS_BUDGET = 0.1;
 async function observe(page) {
   await page.addInitScript(() => {
     window.__vitals = { cls: 0, lcp: 0, shifts: [] };
+    let windowValue = 0;
+    let windowStart = 0;
+    let lastShift = 0;
     new PerformanceObserver((list) => {
       for (const e of list.getEntries()) {
         if (e.hadRecentInput) continue; // shifts caused by the user do not count
-        window.__vitals.cls += e.value;
+        const continues = windowValue > 0 && e.startTime - lastShift < 1000 && e.startTime - windowStart < 5000;
+        if (continues) {
+          windowValue += e.value;
+        } else {
+          windowValue = e.value;
+          windowStart = e.startTime;
+        }
+        lastShift = e.startTime;
+        window.__vitals.cls = Math.max(window.__vitals.cls, windowValue);
         if (e.value > 0.01) {
           const node = e.sources?.[0]?.node;
           window.__vitals.shifts.push(

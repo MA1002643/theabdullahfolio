@@ -18,20 +18,36 @@ import { ALL_ROUTES } from '../support/routes.js';
 // site. Each warm project uses the SAME viewport and pixel ratio as the project
 // that depends on it, because those decide which widths get requested.
 //
-// Warming asserts nothing and never fails: a route that is genuinely broken is
-// the real specs' business, and they still run against it.
+// Warming asserts nothing about the page: an HTTP error does not stop `load`,
+// so a route that renders a broken page still warms, and the real specs report
+// it. What warming DOES require is that `load` arrives, because that is the
+// cache being warm. It used to swallow a timeout and report success, which
+// sent the dependent suites into exactly the cold-cache flake this exists to
+// prevent, behind a green setup step (code review). Now a timed-out visit is
+// retried once (the encodes it queued keep running, so the second visit meets
+// a warmer cache), and a second timeout fails the setup so nothing downstream
+// runs against a cache that is known to be cold.
 
 const WARM_TIMEOUT = 150_000;
+const WARM_ATTEMPTS = 2;
 
 for (const path of ALL_ROUTES) {
   setup(`warm ${path}`, async ({ page }) => {
-    setup.setTimeout(WARM_TIMEOUT + 10_000);
-    const started = Date.now();
-    try {
-      await page.goto(path, { waitUntil: 'load', timeout: WARM_TIMEOUT });
-      console.log(`warmed ${path} in ${((Date.now() - started) / 1000).toFixed(1)} s`);
-    } catch (error) {
-      console.log(`warm-up of ${path} gave up after ${WARM_TIMEOUT / 1000} s: ${error.message.split('\n')[0]}`);
+    setup.setTimeout(WARM_TIMEOUT * WARM_ATTEMPTS + 10_000);
+    for (let attempt = 1; ; attempt++) {
+      const started = Date.now();
+      try {
+        await page.goto(path, { waitUntil: 'load', timeout: WARM_TIMEOUT });
+        console.log(`warmed ${path} in ${((Date.now() - started) / 1000).toFixed(1)} s (attempt ${attempt})`);
+        return;
+      } catch (error) {
+        if (attempt >= WARM_ATTEMPTS) {
+          throw new Error(`could not warm ${path}: no load event in ${WARM_ATTEMPTS} attempts of ${WARM_TIMEOUT / 1000} s`, {
+            cause: error,
+          });
+        }
+        console.log(`warm-up of ${path} timed out (attempt ${attempt}), retrying: ${error.message.split('\n')[0]}`);
+      }
     }
   });
 }

@@ -123,6 +123,19 @@ Order matters — treat the value as burned the instant it is pushed.
 Every commit includes a `CHANGELOG.md` entry, and updates `README.md` when the
 change touches something the README documents.
 
+**The one exemption: the automated screenshot commits.** The
+`test(visual): render screenshots for <sha>` commits pushed by
+`github-actions[bot]` from `.github/workflows/visual-baselines.yml` carry no
+`CHANGELOG.md` entry, no test-plan record (§3) and no privacy check, by design.
+They are generated output, not a change: they touch only
+`tests/visual/__latest__/` (and `tests/visual/__screenshots__/` on a seeding or
+`promote: true` run), they render the commit named in their subject, and that
+commit already carried the entry and the checks. A changelog line per push
+would be noise that conflicts on every rebase. The exemption covers that bot,
+that workflow and those two directories only. A person or agent promoting
+baselines by hand, or a bot commit that touches anything else, follows the
+normal rules.
+
 ### `docs/seo.md` is checked on every change
 
 `docs/seo.md` is the decision record — why each choice on this site was made,

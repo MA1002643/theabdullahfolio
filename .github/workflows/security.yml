@@ -101,28 +101,54 @@ jobs:
     # dependencies included, so it reports the same known advisories the
     # expiring allowlist already accepts plus test-only tooling; the audit job
     # below is the blocking check. Findings still show in the run.
-    continue-on-error: true
+    #
+    # continue-on-error sits on the STEP, not the job: on the job it kept the
+    # workflow green but still drew a red ✘ in the PR's checks list, so an
+    # informational scan read as a failure (PR #160, 2026-10-04).
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Scan the lockfile
+        id: scan
+        continue-on-error: true
         uses: google/osv-scanner-action/osv-scanner-action@v2.2.2
         with:
           scan-args: |-
             --lockfile=package-lock.json
+      - name: Note findings (informational)
+        if: ${{ steps.scan.outcome == 'failure' }}
+        run: |
+          echo "::notice title=OSV-Scanner::Known advisories found (see the scan step). Not a gate: the npm audit job decides."
+          echo "OSV-Scanner reported known advisories; see the **Scan the lockfile** step. Informational only, the \`audit\` job is the gate." >> "$GITHUB_STEP_SUMMARY"
 
+  # The gitleaks CLI, not gitleaks/gitleaks-action. On a pull_request the action
+  # lists the PR's commits through the API (403 "Resource not accessible by
+  # integration" without `pull-requests: read`, PR #160, 2026-10-04) and then
+  # scans ONLY those commits, so the job's name was false on every PR. The CLI
+  # needs no token and scans every commit on every event. Pinned and checked
+  # against the release's published SHA-256; `.gitleaksignore` at the root is
+  # read automatically, and --redact keeps any match out of the log.
   gitleaks:
     name: Gitleaks (full history)
     runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.24.3
+      GITLEAKS_SHA256: 9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install gitleaks (pinned, checksum-verified)
+        run: |
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
+          echo "${GITLEAKS_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "$tarball" -C "$RUNNER_TEMP" gitleaks
+      - name: Scan every commit
+        run: |
+          "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --verbose
 
   audit:
     name: npm audit (production, expiring allowlist)
