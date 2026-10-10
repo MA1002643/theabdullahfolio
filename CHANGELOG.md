@@ -1499,6 +1499,36 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### Burn-in: a cold image cache for the axe scan, and two limits too tight for the longest page · 2026-10-10
+
+| | |
+|:--|:--|
+| **What was wrong** | The PR flake burn-in failed five more times, every one a timeout and none an assertion. (1) The first desktop axe scan of `/qualifications` ran out of time, and the four repeats after it took about 11 s. axe scans "desktop" at 1440×900, where the certificate cards ask the image optimiser for `w=640`, but the warm-up ran at Desktop Chrome's 1280×720, where they ask for `w=384`. So none of the warmed images matched the scan, and its first visit queued the AVIF encodes itself. (2) `/notes/discoverability` is the longest page: 60 Tab stops and about 75 scroll steps. Its keyboard walk takes 55 s and its CLS scroll 37 s when they run alone, at the end of the quality job. In burn-in they run beside other keyboard and axe tests: every keyboard repeat took the full 180 s and one went over, and the CLS test went past 60 s three times out of five. (3) The burn-in job uploaded nothing on failure, so only log lines were left to investigate with. |
+| **Fix** | A new `warm-axe-desktop` warm-up project with axe's exact context (1440×900, reduced motion), which `a11y` now depends on beside `warm-desktop`. The keyboard limit is now per stop (`MAX_STOPS × 5 s`), and the CLS test's limit is 120 s. Both tests measure properties of the page that do not depend on the runner's speed, so the limits only need to catch a hang. The burn-in job uploads `playwright-report/` and `test-results/` on failure. It still records no traces, because recording all ~1,200 runs would add load to the job that measures flakiness under load. |
+| **Tests** | Test-plan check: these changes are to the tests themselves. Two rows are added to the defects table in `docs/testing.md`, and its warm-up and debugging paragraphs now describe the new project and the burn-in upload. |
+| **Privacy check** | Nothing to change: test and CI configuration only. |
+| **Files** | `playwright.config.mjs`, `tests/a11y/keyboard.spec.js`, `tests/perf/web-vitals.spec.js`, `.github/workflows/ci.yml`, `docs/testing.md` |
+
+#### E2E: the ⌘K palette test timed out behind a software-rendered Ember Passage · 2026-10-10
+
+| | |
+|:--|:--|
+| **What was wrong** | `navigation.spec.js` › "the ⌘K palette navigates, and history goes back and forward" failed all three attempts in one CI run, and in the burn-in, and passed in another run of the same commit. The trace shows the palette works: "About" is filtered and Enter runs it. But the CI runner draws the Ember Passage's WebGL swarm in software ("GPU stall due to ReadPixels"), which starves the main thread. The router push landed 3 s after Enter (it should take 440 ms), the `/about` chunks loaded 9 s after it, and the page committed about 18 s after it, past the test's 15 s URL limit. |
+| **Fix** | The test now runs under `reducedMotion: 'reduce'` (in `contextOptions`), so the passage takes its static branch. The test covers the palette and browser history, not the passage. It moved into its own `the ⌘K palette` describe so the option does not reach the internal-links test. |
+| **Tests** | Passed 5 of 5 locally with `--repeat-each=5 --retries=0`. A row is added to the defects table in `docs/testing.md`. Test-plan check: nothing else to add. |
+| **Privacy check** | Nothing to change: test-only. |
+| **Files** | `tests/e2e/navigation.spec.js`, `docs/testing.md` |
+
+#### Browser test scripts, flaky-test reporting and the contact form's length messages · 2026-10-09
+
+| | |
+|:--|:--|
+| **What was wrong** | Three review findings. (1) `npm run test:a11y`, `test:security`, `test:perf`, `test:visual` and `test:e2e:ui` start `next start` but never built, unlike `test:e2e`. On a fresh checkout they failed before collecting a test, because `.next.nosync` did not exist. (2) CI retries browser tests and `scripts/test-summary.mjs` promises to name every test that passed only on retry. Playwright's JUnit reporter leaves retried attempts out unless `includeRetries` is on, so the summary could never name one. (3) The message field accepts exactly 500 characters, but its error said "less than 500". The minimum had the same off-by-one: it accepts exactly 50, but said "more than 50". |
+| **Fix** | Each of the five scripts now runs `npm run build` first. CI is unaffected, because it calls `npx playwright test` after its own build step. The CI JUnit reporter sets `includeRetries: true`, which writes each failed attempt as a `<flakyFailure>` / `<flakyError>` child, the text the summary matches. The form now says "at most 500 characters long." and "at least 50 characters long.", matching the name and email fields. |
+| **Tests** | New `tests/fitness/browserScripts.test.js` fails if a `package.json` script runs `playwright test` without building first, or if the JUnit reporter loses `includeRetries`. Both cases fail without the fix. `ContactForm.test.jsx` asserts the corrected minimum message. A row is added to the defects table in `docs/testing.md`. |
+| **Privacy check** | Nothing to change: no data collected, stored or sent is affected. |
+| **Files** | `package.json`, `playwright.config.mjs`, `scripts/test-summary.mjs`, `src/components/contact/Form.jsx`, `tests/component/ContactForm.test.jsx`, `tests/fitness/browserScripts.test.js`, `docs/testing.md` |
+
 #### `/notes/discoverability`: table rows sat out of line with their columns · 2026-09-26
 
 | | |

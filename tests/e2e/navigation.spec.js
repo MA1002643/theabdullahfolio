@@ -44,8 +44,17 @@ test.describe('unknown routes', { tag: '@cross-browser' }, () => {
   });
 });
 
-test.describe('moving around', () => {
-  test('the ⌘K palette navigates, and history goes back and forward', async ({ page, browserName }) => {
+test.describe('the ⌘K palette', () => {
+  // Under reduced motion the Ember Passage takes its static branch. With full
+  // motion, a CI runner draws the WebGL swarm in software ("GPU stall due to
+  // ReadPixels"), and that starves the main thread: in the failing trace the
+  // push landed 3 s after Enter and /about committed ~18 s after it, past the
+  // 15 s limit, on all three attempts. This test covers the palette and
+  // history, not the passage, so the static branch is the right one here.
+  // Inside contextOptions: a top-level `reducedMotion` is silently ignored.
+  test.use({ contextOptions: { reducedMotion: 'reduce' } });
+
+  test('navigates, and history goes back and forward', async ({ page, browserName }) => {
     await page.goto('/uses');
     await settle(page);
     await page.keyboard.press(browserName === 'webkit' ? 'Meta+k' : 'Control+k');
@@ -60,7 +69,9 @@ test.describe('moving around', () => {
     await page.goForward();
     await expect(page).toHaveURL(/\/about$/);
   });
+});
 
+test.describe('moving around', () => {
   test('every internal link in the served HTML resolves', async ({ page, request }) => {
     const seen = new Set();
     for (const path of ALL_ROUTES) {

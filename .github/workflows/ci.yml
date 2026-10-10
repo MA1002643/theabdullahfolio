@@ -297,3 +297,16 @@ jobs:
       - name: Burn in
         if: ${{ steps.changed.outputs.specs != '' }}
         run: npx playwright test ${{ steps.changed.outputs.specs }} --project=chromium --project=a11y --project=security --project=perf --repeat-each=5 --retries=0
+      # No traces: with retries off, `trace: on-first-retry` never records, and
+      # recording all ~1,200 runs would load the very job that measures flake
+      # under load. The screenshot, video and error context still say where a
+      # failure stopped, which the log alone does not.
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-burn-in
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

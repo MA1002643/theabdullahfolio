@@ -57,6 +57,12 @@ async function observe(page) {
 
 for (const path of ALL_ROUTES) {
   test(`${path} — CLS ≤ ${CLS_BUDGET} through load and a full scroll`, async ({ page }, testInfo) => {
+    // The scroll is ~75 viewport steps on /notes/discoverability, and each one
+    // repaints a very long document. Alone, that page takes 37 s. Run beside
+    // its own keyboard walk in PR burn-in, it went past the 60 s default three
+    // times out of five. CLS is a property of the page, not of the runner's
+    // speed (see the top of this file), so the limit only has to catch a hang.
+    test.setTimeout(120_000);
     await observe(page);
     await page.goto(path);
     await settle(page);

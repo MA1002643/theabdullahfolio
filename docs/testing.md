@@ -69,6 +69,7 @@ unit test would think to check:
 | `contactContract` | The contact form's client limits are never looser than the server's, and both read `src/lib/contactLimits.js`. |
 | `routeRegistry` | The browser suites' route list equals the sitemap registry. |
 | `testHygiene` | No focused or skipped tests; every `@quarantine` links an issue. |
+| `browserScripts` | Every `npm run` script that runs `playwright test` builds first; the CI JUnit reporter keeps `includeRetries`, so the run summary can name flaky tests. |
 
 ### L2 · Unit and property-based tests
 
@@ -137,7 +138,11 @@ runs on Chromium. PRs run `chromium` and `mobile-chrome`; the nightly run adds
 **The image warm-up.** `chromium`, `mobile-chrome`, `a11y`, `security` and
 `perf` each depend on a warm-up
 project (`tests/warmup/images.setup.js`) that visits every route once, with the
-same viewport and pixel ratio, before any spec runs. The test server is a
+same viewport and pixel ratio, before any spec runs. `a11y` has two:
+`warm-desktop` for the keyboard and motion specs, and `warm-axe-desktop` at
+axe's 1440×900 with reduced motion, because the viewport decides which image
+width the browser asks for (`/qualifications`' cards want `w=384` at 1280 px
+and `w=640` at 1440 px). The test server is a
 fresh `next start`, so `/_next/image` encodes each image width on its first
 request, and AVIF encoding is slow: on a 2-vCPU runner a Pixel 7's first visit
 to `/qualifications` queued fifteen encodes at 11 to 43 seconds each, and the
@@ -151,7 +156,8 @@ visit is retried once, and a second timeout fails the setup, so no suite runs
 against a cache known to be cold.
 
 **Debugging a failure.** CI uploads `playwright-report/` and `test-results/`
-on failure. Retries record a trace:
+on failure, from the burn-in job too. Retries record a trace, so the burn-in
+(retries off) has screenshots, video and error context but no trace:
 
 ```bash
 npx playwright show-report                                      # the HTML report
@@ -354,6 +360,12 @@ future finding that genuinely needs its owner; anything not on it fails.
 | CI (`security.yml`) | OSV-Scanner, meant to be informational, showed as a failed check on every PR: `continue-on-error` on the job keeps the workflow green but not the job. | Moved to the step, with a notice when findings exist. |
 | Review (warm-up, the test) | The image warm-up swallowed its own timeout and reported success, sending the dependent suites into the cold-cache state it exists to prevent. | One bounded retry, then the setup fails. |
 | Property soak (the test) | The first real 20,000-run soak drew the secret "SWo" and failed redaction, but the redaction was correct: the test searched the whole output for the secret, and "password" contains "swo". | The check now compares whole tokens. A defect in the test, recorded because the soak that found it had never actually run. |
+| Review (scripts) | `npm run test:a11y`, `test:security`, `test:perf`, `test:visual` and `test:e2e:ui` start `next start` without building, so on a fresh checkout they failed before collecting a test. | Each builds first. `browserScripts.test.js` fails on any script that runs `playwright test` unbuilt. |
+| Review (CI summary) | The JUnit reporter's `includeRetries` defaults to off, so a test that passed on retry left no trace in the XML and the run summary's flaky list was always empty. | Turned on for the CI reporter, and pinned by `browserScripts.test.js`. |
+| Review (contact form) | The message field accepts exactly 500 and exactly 50 characters, but its errors said "less than 500" and "more than 50". | "At most" and "at least", matching the other fields. |
+| Burn-in (warm-up) | The first desktop axe scan of `/qualifications` timed out: axe scans at 1440 px, where the cards ask for `w=640`, but the warm-up ran at 1280 px, which asks for `w=384`. So the scan met a cold cache (35 s in the quality job, over 60 s in burn-in; about 11 s once warm). | A `warm-axe-desktop` project at axe's exact viewport and motion setting, which `a11y` depends on. |
+| Burn-in (the tests) | `/notes/discoverability`, the longest page, outran two flat limits when other tests ran beside it: the keyboard walk took the full 180 s on all five repeats and failed once, and the CLS scroll failed three times out of five at 60 s. Alone they take 55 s and 37 s. | The keyboard limit is now 5 s per stop (`MAX_STOPS × 5 s`), and the CLS test's limit is 120 s. Neither measures speed, so the limits only have to catch a hang. |
+| E2E (the test) | The ⌘K palette test failed whenever the CI runner was under load. The runner draws the Ember Passage's WebGL swarm in software, and `/about` committed about 18 s after Enter, past the 15 s limit. | The test runs under reduced motion, so the passage takes its static branch. The test covers the palette and history, not the passage. |
 
 ## Maintenance
 

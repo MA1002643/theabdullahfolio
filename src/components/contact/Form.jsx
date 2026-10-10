@@ -861,11 +861,11 @@ function FormContent({ onReset, queue }) {
                 required: 'Message is required!',
                 maxLength: {
                   value: LIMITS.message.max,
-                  message: `Message should be less than ${LIMITS.message.max} characters`,
+                  message: `Message should be at most ${LIMITS.message.max} characters long.`,
                 },
                 minLength: {
                   value: LIMITS.message.min,
-                  message: `Message should be more than ${LIMITS.message.min} characters`,
+                  message: `Message should be at least ${LIMITS.message.min} characters long.`,
                 },
               })}
               className="custom-bg-2 w-full resize-y rounded-md p-2 shadow-lg hover:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(192,132,252,0.5),0_0_22px_rgba(124,58,237,0.42),inset_0_0_10px_rgba(192,132,252,0.1)] focus:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_10px_rgba(216,180,254,0.65),0_0_24px_rgba(168,85,247,0.5),inset_0_0_12px_rgba(192,132,252,0.14)] focus:outline-none"

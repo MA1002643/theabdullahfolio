@@ -121,7 +121,7 @@ describe('ContactForm — client validation', () => {
     await user.paste('y'.repeat(CONTACT_CLIENT_LIMITS.message.min - 1));
     await submit();
     await visible(screen.findByText(`Name should be at least ${CONTACT_CLIENT_LIMITS.name.min} characters long.`));
-    await visible(screen.getByText(`Message should be more than ${CONTACT_CLIENT_LIMITS.message.min} characters`));
+    await visible(screen.getByText(`Message should be at least ${CONTACT_CLIENT_LIMITS.message.min} characters long.`));
   });
 
   it('refuses an address longer than the shared limit before it is sent', async () => {

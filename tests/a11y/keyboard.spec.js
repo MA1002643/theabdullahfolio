@@ -121,9 +121,14 @@ function inspectFocus() {
 
 for (const path of ALL_ROUTES) {
   test(`${path} — every Tab stop is visible, unobscured and escapable`, async ({ page }) => {
-    // Up to MAX_STOPS presses, each waiting ≤1.5 s for the focus box to settle:
-    // well past the 60 s default on a loaded runner (seen at 2.7× slow).
-    test.setTimeout(180_000);
+    // Up to MAX_STOPS presses, each waiting ≤1.5 s for the focus box to settle,
+    // so the budget is per stop rather than one flat figure. /notes/discoverability
+    // is the one page that uses all 60. It walks in 55 s when it runs nearly
+    // alone, but in PR burn-in, beside other keyboard and axe tests, every
+    // repeat took the full 3 s a stop the old 180 s limit allowed, and one ran
+    // out. This guards against a hang, not against slowness: a focus-visibility
+    // finding does not depend on how fast the runner is.
+    test.setTimeout(MAX_STOPS * 5_000);
     await page.goto(path);
     await settle(page);
     const problems = [];

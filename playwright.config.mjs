@@ -77,7 +77,16 @@ export default defineConfig({
         ['html', { open: 'never' }],
         // Overridable so a job that runs Playwright twice (ci.yml `quality`)
         // keeps both reports: each run otherwise rewrites this one file.
-        ['junit', { outputFile: process.env.PLAYWRIGHT_JUNIT_FILE || 'test-results/playwright-junit.xml' }],
+        // `includeRetries` writes each failed attempt as <flakyFailure> /
+        // <rerunFailure>; without it (the default) a retried pass is a bare
+        // passing <testcase> and scripts/test-summary.mjs can never name it.
+        [
+          'junit',
+          {
+            outputFile: process.env.PLAYWRIGHT_JUNIT_FILE || 'test-results/playwright-junit.xml',
+            includeRetries: true,
+          },
+        ],
       ]
     : [['list'], ['html', { open: 'never' }]],
   use: {
@@ -92,6 +101,20 @@ export default defineConfig({
     // image widths; `--project=chromium` runs its warm-up first automatically.
     { name: 'warm-desktop', testDir: 'tests/warmup', testMatch: '*.setup.js', use: { ...devices['Desktop Chrome'] } },
     { name: 'warm-mobile', testDir: 'tests/warmup', testMatch: '*.setup.js', use: { ...devices['Pixel 7'] } },
+    // axe.spec.js scans "desktop" at 1440×900 with reduced motion, not at
+    // Desktop Chrome's 1280×720, and the width changes the image sizes the
+    // browser picks: /qualifications' certificate cards ask for w=384 at 1280
+    // but w=640 at 1440. So warm-desktop did not cover that scan. Its first visit
+    // queued every w=640 encode itself (35 s in the quality job; over 60 s, a
+    // timeout, in PR burn-in), and each later visit took about 11 s.
+    // Match axe's exact context, reduced motion included: it decides which
+    // lazy images load at all.
+    {
+      name: 'warm-axe-desktop',
+      testDir: 'tests/warmup',
+      testMatch: '*.setup.js',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, contextOptions: { reducedMotion: 'reduce' } },
+    },
     { name: 'chromium', testDir: 'tests/e2e', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
     { name: 'webkit', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['Desktop Safari'] } },
     { name: 'firefox', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['Desktop Firefox'] } },
@@ -107,7 +130,12 @@ export default defineConfig({
     // they share the desktop warm-up. Without it, PR #160's burn-in ran axe on
     // /qualifications while the warm-up encoded the same images, and the page
     // missed the 60 s limit with retries off.
-    { name: 'a11y', testDir: 'tests/a11y', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'a11y',
+      testDir: 'tests/a11y',
+      dependencies: ['warm-desktop', 'warm-axe-desktop'],
+      use: { ...devices['Desktop Chrome'] },
+    },
     { name: 'security', testDir: 'tests/security', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
     { name: 'perf', testDir: 'tests/perf', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
     ...(RUN_VISUAL

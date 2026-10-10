@@ -34,8 +34,9 @@ function readJunit(file) {
     skipped: attr(tag, 'skipped'),
     time: attr(tag, 'time'),
   }));
-  // Playwright marks a test that failed and then passed on retry with a
-  // <system-out>/<properties> "flaky" note; name them so they get fixed.
+  // A test that failed and then passed on retry carries a <flakyFailure> or
+  // <flakyError> child (playwright.config.mjs turns on the junit reporter's
+  // `includeRetries`, which is off by default); name them so they get fixed.
   const flaky = [...xml.matchAll(/<testcase name="([^"]+)"[^>]*>(?:(?!<\/testcase>)[\s\S])*?flaky/g)].map((m) => m[1]);
   return { suites, flaky };
 }
