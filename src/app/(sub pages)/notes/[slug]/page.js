@@ -22,8 +22,10 @@ export function generateStaticParams() {
 // project detail route's arrangement.
 export const dynamicParams = false;
 
-export function generateMetadata({ params }) {
-  const note = readNote(params.slug);
+// `params` is a Promise from Next 15; synchronous access is deprecated.
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const note = readNote(slug);
   if (!note) return {};
   return sectionMetadata({
     title: note.title,
@@ -37,8 +39,9 @@ export function generateMetadata({ params }) {
   });
 }
 
-export default function NotePage({ params }) {
-  const note = readNote(params.slug);
+export default async function NotePage({ params }) {
+  const { slug } = await params;
+  const note = readNote(slug);
   if (!note) notFound();
 
   const html = renderNote(note.markdown);

@@ -196,9 +196,10 @@ export default function LoaderWrapper({ children }) {
           (z-9999) covers it during the build, and the radial wipe genuinely
           reveals the real page underneath — heavy work like Three.js init can
           also warm up while the seal plays. `display: contents` so the wrapper
-          adds no box and changes no layout. React 18 has no boolean `inert`,
-          hence the empty-string attribute. */}
-      <div style={{ display: 'contents' }} inert={covered ? '' : undefined}>
+          adds no box and changes no layout. `inert` is a boolean prop from
+          React 19. The empty-string form React 18 needed is FALSE in 19, so
+          it would silently drop the attribute and un-inert the page. */}
+      <div style={{ display: 'contents' }} inert={covered}>
         {children}
       </div>
 

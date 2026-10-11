@@ -5,8 +5,8 @@
  *
  * Why this exists at all: Homebrew's `node` is v25 (odd-numbered, non-LTS,
  * auto-bumped by brew) and crashes Next 14 with silent exits via a V8 bug in
- * webpack's cache serialization. The repo declares `engines: ^22.13.0 ||
- * ^24.0.0` and `.npmrc` sets engine-strict, but that pair only guards INSTALL
+ * webpack's cache serialization. The repo declares `engines: ^22.18.0 ||
+ * ^24.11.0` and `.npmrc` sets engine-strict, but that pair only guards INSTALL
  * time — nothing stops an already-installed repo from being LAUNCHED on v25.
  * dev.mjs closed that for `next dev`; this module lets `next build` / `start`
  * / `lint` close it too, since a build runs the very cache serialization the
@@ -17,22 +17,20 @@ import { homedir } from "node:os";
 import path from "node:path";
 
 // A runtime is supported when it's one of the LTS majors that don't crash Next
-// on this machine (22, 24) AND clears the 22.13.0 floor — the same range
-// package.json declares. The floor is the lockfile's, not a preference: the
-// unit-test stack (vitest → Vite 8, jsdom 29) declares `^22.13.0` within the
-// 22 line, and `.npmrc`'s engine-strict makes `npm ci` refuse anything below
-// it — so advertising a lower floor here would only promise an install that
-// fails. Keep ENGINE_FLOOR in sync with `engines.node`.
-const ENGINE_FLOOR = [22, 13, 0];
+// on this machine (22, 24) AND clears that major's floor — the same range
+// package.json declares. The floors are the lockfile's, not a preference:
+// Babel 8 (via Stryker's instrumenter) declares `^22.18.0 || >=24.11.0`, and
+// `.npmrc`'s engine-strict makes `npm ci` refuse anything below it — so
+// advertising a lower floor here would only promise an install that fails.
+// Keep ENGINE_FLOORS in sync with `engines.node`
+// (tests/unit/supportedNode.test.js checks they agree).
+export const ENGINE_FLOORS = { 22: [22, 18, 0], 24: [24, 11, 0] };
 
 export const isSupportedNode = (version) => {
   const [major, minor = 0, patch = 0] = version.split(".").map(Number);
-  if (major !== 22 && major !== 24) return false;
-  return (
-    (major - ENGINE_FLOOR[0] ||
-      minor - ENGINE_FLOOR[1] ||
-      patch - ENGINE_FLOOR[2]) >= 0
-  );
+  const floor = ENGINE_FLOORS[major];
+  if (!floor) return false;
+  return (minor - floor[1] || patch - floor[2]) >= 0;
 };
 
 /**
@@ -72,7 +70,7 @@ export function resolveSupportedNodeBin({ tag, what, required }) {
   if (!best) {
     const detail =
       `node ${current} is outside the supported range for this repo's ${what}` +
-      ` (LTS 22.x >= 22.13.0, or 24.x), and no usable build was found in ${nvmDir}.`;
+      ` (LTS 22.x >= 22.18.0, or 24.x >= 24.11.0), and no usable build was found in ${nvmDir}.`;
     if (required) {
       console.error(`[${tag}] ${detail}`);
       console.error(`[${tag}] install one with: nvm install 22`);

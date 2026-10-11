@@ -43,8 +43,9 @@ export const dynamicParams = false
 // this file. Same shallow-merge rule as the section pages: openGraph is
 // restated wholesale via the shared helper so siteName/type/locale
 // survive the page-level override.
-export function generateMetadata({ params }) {
-    const project = projectsData.find((p) => String(p.id) === String(params.id))
+export async function generateMetadata({ params }) {
+    const { id } = await params
+    const project = projectsData.find((p) => String(p.id) === String(id))
     if (!project) return {}
     return sectionMetadata({
         title: project.name,
@@ -61,8 +62,7 @@ export function generateMetadata({ params }) {
 }
 
 export default async function ProjectDetailPage({ params }) {
-    // Next 14 passes params as a plain object; awaiting it is a no-op here
-    // but keeps this signature valid for Next 15+, where params is a Promise.
+    // `params` is a Promise from Next 15.
     const { id } = await params
     // Strict integer-string check before lookup. Two reasons:
     //   1. parseInt was permissive — parseInt("1abc", 10) === 1,

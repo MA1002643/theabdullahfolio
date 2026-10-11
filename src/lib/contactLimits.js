@@ -18,8 +18,9 @@
 // `email` is 254 on both sides: the longest address SMTP can carry (RFC 5321).
 // It had no cap at all, only the route's 16 KB body ceiling, and the address
 // reaches nodemailer's address parser as the reply-to, where GHSA-v53p-9fqp-m79j
-// (2026-09-29) is a quadratic backtrack. The cap bounds that cost while the
-// patched nodemailer (10.x) waits on next-auth allowing it.
+// (2026-09-29) is a quadratic backtrack. nodemailer 10 fixes that parser
+// (2026-10-11); the cap stays, because a real address is never longer and a
+// bounded input keeps the next parser defect bounded too.
 
 export const CONTACT_CLIENT_LIMITS = Object.freeze({
   name: { min: 3, max: 100 },

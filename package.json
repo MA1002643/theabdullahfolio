@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "^22.13.0 || ^24.0.0"
+    "node": "^22.18.0 || ^24.11.0"
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -35,8 +35,8 @@
     "test:all": "npm run lint && npm run test:coverage && npm run build && npm run test:bundle && playwright test --project=chromium --project=mobile-chrome --project=a11y --project=security --project=perf"
   },
   "dependencies": {
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.18.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
@@ -45,13 +45,13 @@
     "clsx": "^2.1.1",
     "emoji-dictionary": "^1.0.12",
     "framer-motion": "^11.18.2",
-    "lucide-react": "^0.344.0",
+    "lucide-react": "^1.55.0",
     "marked": "^16.4.2",
-    "next": "^14.2.30",
+    "next": "^15.5.27",
     "next-auth": "5.0.0-beta.32",
-    "nodemailer": "^7.0.10",
-    "react": "^18",
-    "react-dom": "^18",
+    "nodemailer": "^10.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "react-hook-form": "^7.61.1",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
@@ -75,7 +75,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "autoprefixer": "^10.0.1",
     "eslint": "^8.57.1",
-    "eslint-config-next": "^14.1.1",
+    "eslint-config-next": "^15.5.27",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "fast-check": "^4.10.2",
@@ -89,5 +89,16 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^3.3.0",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "^8.5.29"
+    },
+    "next-auth": {
+      "nodemailer": "$nodemailer"
+    },
+    "@auth/core": {
+      "nodemailer": "$nodemailer"
+    }
   }
 }

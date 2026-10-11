@@ -413,8 +413,8 @@ const ROUTE_DEFINITIONS = [
     // the cron schedule off `vercel.json`, the schematic's stage labels off the
     // workflow files' own `name:` fields, and the spec/route counts off the
     // test and API directories. Verified in the prerendered HTML, not assumed:
-    // `22.14.0`, `14.2.30`, the test-file count and all six workflow names
-    // appear verbatim in it.
+    // the `.nvmrc` pin, the Next version, the test-file count and all six
+    // workflow names appear verbatim in it.
     //
     // `src/lib/uses` covers the READER; these cover what it reads, which is the
     // distinction the first cut of this list missed. Watching the reader alone

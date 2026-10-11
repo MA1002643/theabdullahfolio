@@ -3,13 +3,13 @@
 <div align="center">
   <img src="public/background/logo.png" alt="theabdullahfolio" width="90" />
   <h1>theabdullahfolio</h1>
-  <p><em>A cinematic, 3D-powered developer portfolio built with Next.js 14</em></p>
+  <p><em>A cinematic, 3D-powered developer portfolio built with Next.js 15</em></p>
 </div>
 
 <!-- HERO-BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
   <img src="https://img.shields.io/badge/Three.js-r162-000000?style=for-the-badge&logo=threedotjs&logoColor=white" alt="Three.js" />
   <img src="https://img.shields.io/badge/Framer_Motion-11-FF0055?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
@@ -23,8 +23,8 @@
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
-  <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.13-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--09--25-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.18-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/last_synced-2026--10--11-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -40,7 +40,7 @@
 
 ## ✨ Overview
 
-**theabdullahfolio** is a cinematic developer portfolio that blends **Three.js 3D scenes**, **Framer Motion orchestration**, and **Next.js 14 App Router** into a single, performance-tuned experience. Every page tells a story — from the trigonometric orbital navigation ring on the home screen to the procedurally generated laptop keyboard in each project detail view.
+**theabdullahfolio** is a cinematic developer portfolio that blends **Three.js 3D scenes**, **Framer Motion orchestration**, and **Next.js 15 App Router** into a single, performance-tuned experience. Every page tells a story — from the trigonometric orbital navigation ring on the home screen to the procedurally generated laptop keyboard in each project detail view.
 
 Built without a UI template or design kit, this project demonstrates deep frontend engineering: generative 3D graphics, real-time GitHub data via GraphQL, physics-based spring animations, an AI-assisted contact form with an offline-durable, idempotent send path, and hardened Content Security Policy headers — all deployed on the edge.
 
@@ -80,15 +80,15 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 
 <!-- STACK-CORE:START -->
 <p>
-  <img src="https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js" alt="Next.js 14.2" />
-  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18" />
+  <img src="https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js" alt="Next.js 15.5" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3.3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3.3" />
 </p>
 
 | Technology | Version | Role |
 |------------|---------|------|
-| [Next.js](https://nextjs.org/) | `^14.2` | App Router, server components, API routes, metadata API |
-| [React](https://react.dev/) | `^18` | UI primitives, hooks, concurrent features |
+| [Next.js](https://nextjs.org/) | `^15.5` | App Router, server components, API routes, metadata API |
+| [React](https://react.dev/) | `^19` | UI primitives, hooks, concurrent features |
 | [Tailwind CSS](https://tailwindcss.com/) | `^3.3` | Utility-first styling, custom ember / amethyst / night theme |
 <!-- STACK-CORE:END -->
 
@@ -97,16 +97,16 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 <!-- STACK-3D:START -->
 <p>
   <img src="https://img.shields.io/badge/Three.js-r162-000000?style=flat-square&logo=threedotjs" alt="Three.js r162" />
-  <img src="https://img.shields.io/badge/@react--three/fiber-8.18-white?style=flat-square" alt="@react-three/fiber 8.18" />
-  <img src="https://img.shields.io/badge/@react--three/drei-9.122-white?style=flat-square" alt="@react-three/drei 9.122" />
+  <img src="https://img.shields.io/badge/@react--three/fiber-9.8-white?style=flat-square" alt="@react-three/fiber 9.8" />
+  <img src="https://img.shields.io/badge/@react--three/drei-10.7-white?style=flat-square" alt="@react-three/drei 10.7" />
   <img src="https://img.shields.io/badge/Framer_Motion-11.18-FF0055?style=flat-square&logo=framer" alt="Framer Motion 11.18" />
 </p>
 
 | Technology | Version | Role |
 |------------|---------|------|
 | [Three.js](https://threejs.org/) | `^0.162` | WebGL 3D scene rendering |
-| [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) | `^8.18` | React reconciler for Three.js |
-| [@react-three/drei](https://github.com/pmndrs/drei) | `^9.122` | OrbitControls, Environment presets, HTML overlays |
+| [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) | `^9.8` | React reconciler for Three.js |
+| [@react-three/drei](https://github.com/pmndrs/drei) | `^10.7` | OrbitControls, Environment presets, HTML overlays |
 | [Framer Motion](https://www.framer.com/motion/) | `^11.18` | AnimatePresence, scroll transforms, spring physics, stagger orchestration |
 <!-- STACK-3D:END -->
 
@@ -117,7 +117,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 |------------|---------|------|
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
 | Spotify Web API | — | Live now-playing track for the floating widget — server-side refresh-token exchange (no secret reaches the browser) |
-| [Nodemailer](https://nodemailer.com/) | `^7.0` | SMTP email delivery for the contact form |
+| [Nodemailer](https://nodemailer.com/) | `^10.1` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | `^7.61` | Form state management and validation |
 | [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
 | [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
@@ -132,19 +132,19 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 <!-- STACK-UI:START -->
 | Technology | Version | Role |
 |------------|---------|------|
-| [Lucide React](https://lucide.dev/) | `^0.344.0` | Primary icon system |
+| [Lucide React](https://lucide.dev/) | `^1.55.0` | Primary icon system |
 | [React Icons](https://react-icons.github.io/react-icons/) | `^5.5` | Extended icon library |
 | [Sonner](https://sonner.emilkowal.ski/) | `^1.7` | Toast notification system |
 | [clsx](https://github.com/lukeed/clsx) | `^2.1` | Conditional class name utility |
 | [tailwind-merge](https://github.com/dcastil/tailwind-merge) | `^3.6` | Conflict-free Tailwind class merging — the `cn()` helper in `src/lib/utils.js` |
-| [Sharp](https://sharp.pixelplumbing.com/) | `^0.34` | Server-side image optimisation pipeline |
+| [Sharp](https://sharp.pixelplumbing.com/) | `^0.35` | Server-side image optimisation pipeline |
 <!-- STACK-UI:END -->
 
 ---
 
 ## 🏗 Architecture
 
-A single **Next.js 14 App Router** application. Server components and route handlers run on the edge; a Three.js + Framer Motion layer renders in the browser. Every dynamic surface — stats, skills, experience, live status, contact — is backed by a **cached, fail-open API route**, so the UI never blocks on an upstream and never renders empty.
+A single **Next.js 15 App Router** application. Server components and route handlers run on the edge; a Three.js + Framer Motion layer renders in the browser. Every dynamic surface — stats, skills, experience, live status, contact — is backed by a **cached, fail-open API route**, so the UI never blocks on an upstream and never renders empty.
 
 ```mermaid
 %%{init: {"theme":"dark","themeVariables":{"fontFamily":"ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif","lineColor":"#9a7a42","edgeLabelBackground":"#050a14","tertiaryColor":"#050a14"}}}%%
@@ -152,7 +152,7 @@ graph TD
     subgraph Sys[" theabdullahfolio · architecture "]
         Browser(["👤 Browser"])
 
-        subgraph App[" Next.js 14 · App Router "]
+        subgraph App[" Next.js 15 · App Router "]
             Root["Root layout<br/>Fonts · Loader · Cursor · Toaster · Analytics"]
             Root --> Home["Home /<br/>Orbital nav · 3D laptop · Live status header"]
             Root --> Pages["(sub pages)"]
@@ -353,7 +353,7 @@ theabdullahfolio/
 
 ### Prerequisites
 
-- **Node.js** 22.x (≥ 22.13.0) or 24.x — LTS majors only: the unit-test stack (vitest → Vite 8, jsdom 29) declares `^22.13.0` within the 22 line, the AI SDK's gateway dependency (`@ai-sdk/gateway`) requires Node 22+, non-LTS majors (e.g. Homebrew's auto-bumped Node 25) crash the Next 14 dev server, and `.npmrc` sets `engine-strict=true`, so any Node outside the `engines` range fails `npm ci`
+- **Node.js** 22.x (≥ 22.18.0) or 24.x (≥ 24.11.0) — LTS majors only: Babel 8 (pulled in by the Stryker mutation-testing stack) declares `^22.18.0 || >=24.11.0`, `.nvmrc` pins the current 22 LTS, the AI SDK's gateway dependency (`@ai-sdk/gateway`) requires Node 22+, non-LTS majors (e.g. Homebrew's auto-bumped Node 25) crash the Next dev server, and `.npmrc` sets `engine-strict=true`, so any Node outside the `engines` range fails `npm ci`
 - **npm** / **yarn** / **pnpm**
 - A [GitHub Personal Access Token](https://github.com/settings/tokens) — see [GitHub Stats Integration](#github-stats-integration) below for the exact scopes required
 - SMTP credentials — Gmail [App Password](https://support.google.com/accounts/answer/185833) recommended

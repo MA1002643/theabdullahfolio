@@ -5,10 +5,11 @@
  *   node scripts/audit-gate.mjs          (npm run test:audit, security.yml)
  *
  * A plain `npm audit --audit-level=high` gate would have failed on its first
- * run: main carries 45 advisories, including two critical Next.js ones, and
- * every fix is a major upgrade (Next 14 → 15, nodemailer 7 → 10, sharp
- * 0.34 → 0.35). A gate that cannot pass gets disabled, and then catches
- * nothing new either. This gate instead:
+ * run: main then carried 45 advisories, including two critical Next.js ones,
+ * and every fix was a major upgrade (Next 14 → 15, nodemailer 7 → 10, sharp
+ * 0.34 → 0.35; all landed by 2026-10-11, emptying the allowlist). A gate that
+ * cannot pass gets disabled, and then catches nothing new either. This gate
+ * instead:
  *
  *   • FAILS on any high or critical advisory not in .github/audit-allowlist.json,
  *     so a newly published one, or a new dependency bringing one in, is caught

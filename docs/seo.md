@@ -942,9 +942,14 @@ card instead of a 404. Nothing about the build output says so — the route
 prints as `●` either way, because the enumerated params did prerender; the
 difference only appears when you request a slug that is not one of them. Both
 dynamic routes export the pair from their `opengraph-image.js`, and each
-`twitter-image.js` re-exports **both** alongside `default`/`alt`/`size`/
+`twitter-image.js` carries **both** alongside `default`/`alt`/`size`/
 `contentType` — it is a separate module again, so closing the set next door
 does nothing for it (fixed 2026-09-24; `/notes` had shipped with neither).
+`generateStaticParams` is re-exported, but `dynamicParams` is declared in the
+file itself: from Next 15 a re-exported segment config is ignored with a single
+build warning and the default (`true`) applies, which silently reopened both
+sets during the upgrade (fixed 2026-10-11; `tests/fitness/routeSegmentConfig.test.js`
+now fails on any re-export).
 
 **You do not add `src/lib/seo/site.js` yourself** — `SHARED_ROUTE_SOURCES` is
 appended to every entry when `ROUTES` is built. It is there because the registry

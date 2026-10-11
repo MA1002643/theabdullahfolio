@@ -13,7 +13,7 @@ If you have been invited to contribute, this document tells you exactly how.
 
 | Tool            | Version                                                                     |
 | --------------- | --------------------------------------------------------------------------- |
-| Node.js         | **22.x (≥ 22.13.0) or 24.x** — LTS majors only (the test stack's Vite 8 / jsdom 29 set the 22.13 floor); `engine-strict` fails `npm ci` outside this range |
+| Node.js         | **22.x (≥ 22.18.0) or 24.x (≥ 24.11.0)** — LTS majors only (Babel 8, via Stryker, sets both floors; `.nvmrc` pins the current 22 LTS); `engine-strict` fails `npm ci` outside this range |
 | Package manager | **npm** (a `package-lock.json` is committed; do not switch to yarn or pnpm) |
 | Git             | Any modern version                                                          |
 

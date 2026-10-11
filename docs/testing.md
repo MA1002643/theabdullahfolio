@@ -70,6 +70,7 @@ unit test would think to check:
 | `routeRegistry` | The browser suites' route list equals the sitemap registry. |
 | `testHygiene` | No focused or skipped tests; every `@quarantine` links an issue. |
 | `browserScripts` | Every `npm run` script that runs `playwright test` builds first; the CI JUnit reporter keeps `includeRetries`, so the run summary can name flaky tests. |
+| `routeSegmentConfig` | No file under `src/app` re-exports route segment config (`dynamicParams`, `revalidate`, …) from a sibling: Next 15 reads it only from the file itself and silently applies the default otherwise. |
 
 ### L2 · Unit and property-based tests
 
@@ -266,10 +267,12 @@ snapshot.
   fingerprint (commit, file, rule, line) per reviewed finding, never a path or
   a rule. A real secret added to the same file later is still caught.
 
-**The audit gate.** `npm audit` on `main` reports advisories whose fixes are
-all major upgrades (Next 14 → 15, nodemailer 7 → 10; sharp 0.34 → 0.35 has
-since landed and its waiver is gone). A
-plain `--audit-level=high` gate could never pass and would be switched off.
+**The audit gate.** When it was written, `npm audit` on `main` reported 45
+advisories whose fixes were all major upgrades, so a plain
+`--audit-level=high` gate could never pass and would have been switched off.
+(Those upgrades have since landed: sharp 0.35, then Next 15, React 19 and
+nodemailer 10 on 2026-10-11, which left the production audit at zero and the
+allowlist empty.)
 Instead `.github/audit-allowlist.json` lists each known advisory with a
 written exposure assessment and an **expiry date**. The gate fails on any new
 high or critical advisory, on any expired entry, and on any entry that no
@@ -368,6 +371,8 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Burn-in (the tests) | `/notes/discoverability`, the longest page, outran two flat limits when other tests ran beside it: the keyboard walk took the full 180 s on all five repeats and failed once, and the CLS scroll failed three times out of five at 60 s. Alone they take 55 s and 37 s. | The keyboard limit is now 5 s per stop (`MAX_STOPS × 5 s`), and the CLS test's limit is 120 s. Neither measures speed, so the limits only have to catch a hang. |
 | E2E (the test) | The ⌘K palette test failed whenever the CI runner was under load. The runner draws the Ember Passage's WebGL swarm in software, and `/about` committed about 18 s after Enter, past the 15 s limit. | The test runs under reduced motion, so the passage takes its static branch. The test covers the palette and history, not the passage. |
 | Review (`/about`) | The Enter/Space fix above gave every language row `role="button"` and a Tab stop, so a language with no repository breakdown was announced as a disabled button and still took focus. | Button role and Tab stop only on rows that open a breakdown; the rest stay plain statistics. `tests/component/LanguagesCard.test.jsx`. |
+| Upgrade (keyboard) | After the React 19 upgrade the page was never `inert` under the intro loader: LoaderWrapper passed `inert=""`, the form React 18 needed, and React 19 reads an empty string as `false` and drops the attribute. All four `loader-inert.spec.js` cases failed. | `inert={covered}`, a real boolean. |
+| Upgrade (build) | After the Next 15 upgrade both `twitter-image.js` routes re-exported `dynamicParams` from their sibling; Next 15 ignores a re-exported segment config with one build warning, so the param sets reopened while the build stayed green. | Declared in each file; the `routeSegmentConfig` fitness test fails on any re-export. |
 | Review (keyboard) | The page left `inert` when the loader's reveal began, but the overlay stays mounted and mostly opaque for the 520 ms wipe (or reduced-motion cross-fade), so Tab in that window reached controls still hidden behind it. | `inert` until the overlay is removed. `loader-inert.spec.js` samples every frame until then; before the fix it found 6 exposed frames. |
 
 ## Maintenance
