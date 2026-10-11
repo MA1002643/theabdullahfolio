@@ -1,6 +1,6 @@
 # Latest visual render
 
-Rendered for `4d4d548` by `.github/workflows/visual-baselines.yml` on every push (issue #92).
+Rendered for `5cb51c0` by `.github/workflows/visual-baselines.yml` on every push (issue #92).
 These are the CURRENT screenshots. The reviewed baselines CI compares against live in
 `../__screenshots__/`; promote a render to baseline by running the workflow with `promote: true`.
 
@@ -8,11 +8,11 @@ These are the CURRENT screenshots. The reviewed baselines CI compares against li
 
 | View | Status | Size |
 |---|---|---:|
-| `pages.spec.js/contact.png` | ⚠️ differs from baseline | 199 kB |
-| `pages.spec.js/cv.png` | ⚠️ differs from baseline | 257 kB |
-| `pages.spec.js/not-found.png` | ⚠️ differs from baseline | 235 kB |
-| `pages.spec.js/notes-index.png` | ⚠️ differs from baseline | 236 kB |
-| `pages.spec.js/privacy.png` | ⚠️ differs from baseline | 218 kB |
+| `pages.spec.js/contact.png` | ⚠️ differs from baseline | 197 kB |
+| `pages.spec.js/cv.png` | ⚠️ differs from baseline | 255 kB |
+| `pages.spec.js/not-found.png` | ⚠️ differs from baseline | 233 kB |
+| `pages.spec.js/notes-index.png` | ⚠️ differs from baseline | 234 kB |
+| `pages.spec.js/privacy.png` | ⚠️ differs from baseline | 217 kB |
 
 ### pages.spec.js/contact.png
 
