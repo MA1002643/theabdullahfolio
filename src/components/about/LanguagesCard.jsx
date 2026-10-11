@@ -819,7 +819,10 @@ function AnimatedLangLabel({
       className={hiddenUntilXl ? "hidden xl:block" : "block"}
     >
       <div
-        tabIndex={0}
+        // Only a row with a breakdown to open is a control. A row without one
+        // is a plain statistic: no button role and out of the Tab order, so it
+        // is not announced as a disabled button (mirrors SkillIcon).
+        tabIndex={hasRepos ? 0 : -1}
         data-lang-row=""
         // The whole row is the popover trigger, so the name OR the percentage
         // activates it; the same handlers still drive the bar spotlight.
@@ -855,15 +858,15 @@ function AnimatedLangLabel({
         // opens the popover, but Escape closes it WITHOUT moving focus, and
         // with no key handler the only way back was to Tab away and return.
         // Enter / Space now reopen it in place, the way they would on a
-        // native button — which is also why the row announces as one.
+        // native button — which is also why a row with a breakdown announces
+        // as one.
         onKeyDown={(e) => {
           if (!hasRepos || (e.key !== "Enter" && e.key !== " ")) return;
           e.preventDefault();
           onActivate();
           onRepoFocus?.(e.currentTarget);
         }}
-        role="button"
-        aria-disabled={hasRepos ? undefined : "true"}
+        role={hasRepos ? "button" : undefined}
         aria-haspopup={hasRepos ? "true" : undefined}
         className={`group flex items-center gap-2 min-w-0 rounded-md outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[rgba(255,170,42,0.8)] transition-[opacity,transform] duration-200 ${
           hasRepos ? "cursor-pointer" : ""

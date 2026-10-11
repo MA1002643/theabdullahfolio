@@ -75,15 +75,6 @@
       ],
       "expires": "2026-10-12",
       "reason": "Build-time only, pulled in by next; no user-controlled CSS or source maps are processed at runtime. Resolved by the Next upgrade."
-    },
-    {
-      "package": "sharp",
-      "advisories": [
-        "GHSA-f88m-g3jw-g9cj",
-        "GHSA-rgj7-g3m4-5g8c"
-      ],
-      "expires": "2026-10-12",
-      "reason": "Fix is sharp 0.35.5 (a breaking minor on 0.x). Used for next/image and the Spotify cover route on trusted inputs only (Spotify CDN art)."
     }
   ]
 }

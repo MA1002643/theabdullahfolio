@@ -183,9 +183,12 @@ export default function LoaderWrapper({ children }) {
   // unclickable and out of the accessibility tree. Without this a keyboard
   // user who pressed Tab during the ~3 s intro moved focus through links they
   // could not see, and a screen reader read a page that was not there yet
-  // (tests/a11y/keyboard.spec.js, WCAG 2.4.11). Released the moment the reveal
-  // begins, the same instant useLoaderRevealed() flips.
-  const covered = showLoader && phase !== 'reveal' && phase !== 'done';
+  // (tests/a11y/keyboard.spec.js, WCAG 2.4.11). Held until the overlay is
+  // removed, NOT released when the reveal begins: the wipe (or the reduced-
+  // motion cross-fade) keeps the overlay mostly opaque for REVEAL_DURATION_MS,
+  // and Tab in that window would land on controls still hidden behind it.
+  // useLoaderRevealed() still flips at the reveal, so entrances are not delayed.
+  const covered = showLoader;
 
   return (
     <>

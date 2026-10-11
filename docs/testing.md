@@ -267,7 +267,8 @@ snapshot.
   a rule. A real secret added to the same file later is still caught.
 
 **The audit gate.** `npm audit` on `main` reports advisories whose fixes are
-all major upgrades (Next 14 → 15, nodemailer 7 → 10, sharp 0.34 → 0.35). A
+all major upgrades (Next 14 → 15, nodemailer 7 → 10; sharp 0.34 → 0.35 has
+since landed and its waiver is gone). A
 plain `--audit-level=high` gate could never pass and would be switched off.
 Instead `.github/audit-allowlist.json` lists each known advisory with a
 written exposure assessment and an **expiry date**. The gate fails on any new
@@ -366,6 +367,8 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Burn-in (warm-up) | The first desktop axe scan of `/qualifications` timed out: axe scans at 1440 px, where the cards ask for `w=640`, but the warm-up ran at 1280 px, which asks for `w=384`. So the scan met a cold cache (35 s in the quality job, over 60 s in burn-in; about 11 s once warm). | A `warm-axe-desktop` project at axe's exact viewport and motion setting, which `a11y` depends on. |
 | Burn-in (the tests) | `/notes/discoverability`, the longest page, outran two flat limits when other tests ran beside it: the keyboard walk took the full 180 s on all five repeats and failed once, and the CLS scroll failed three times out of five at 60 s. Alone they take 55 s and 37 s. | The keyboard limit is now 5 s per stop (`MAX_STOPS × 5 s`), and the CLS test's limit is 120 s. Neither measures speed, so the limits only have to catch a hang. |
 | E2E (the test) | The ⌘K palette test failed whenever the CI runner was under load. The runner draws the Ember Passage's WebGL swarm in software, and `/about` committed about 18 s after Enter, past the 15 s limit. | The test runs under reduced motion, so the passage takes its static branch. The test covers the palette and history, not the passage. |
+| Review (`/about`) | The Enter/Space fix above gave every language row `role="button"` and a Tab stop, so a language with no repository breakdown was announced as a disabled button and still took focus. | Button role and Tab stop only on rows that open a breakdown; the rest stay plain statistics. `tests/component/LanguagesCard.test.jsx`. |
+| Review (keyboard) | The page left `inert` when the loader's reveal began, but the overlay stays mounted and mostly opaque for the 520 ms wipe (or reduced-motion cross-fade), so Tab in that window reached controls still hidden behind it. | `inert` until the overlay is removed. `loader-inert.spec.js` samples every frame until then; before the fix it found 6 exposed frames. |
 
 ## Maintenance
 

@@ -36,3 +36,33 @@ for (const path of ['/', '/about', '/projects/1']) {
     expect(result.escapees).toEqual([]);
   });
 }
+
+// The page must stay inert for as long as the overlay is MOUNTED, not just
+// until the reveal begins. The wipe (or the reduced-motion cross-fade) keeps the
+// overlay mostly opaque for REVEAL_DURATION_MS, and the page was released at the
+// start of it, so Tab in that window reached controls still hidden behind it.
+// This samples every frame from hydration until the overlay is removed.
+test('the page stays inert until the intro loader is removed, through the reveal', async ({ page }) => {
+  await page.goto('/about', { waitUntil: 'domcontentloaded' });
+  await page.locator(LOADER).waitFor({ state: 'attached' });
+  await page.waitForFunction(() => document.querySelector('[inert]'));
+
+  const result = await page.evaluate(
+    (loader) =>
+      new Promise((resolve) => {
+        let frames = 0;
+        let exposedFrames = 0;
+        const tick = () => {
+          if (!document.querySelector(loader)) return resolve({ frames, exposedFrames });
+          frames += 1;
+          if (!document.querySelector('[inert]')) exposedFrames += 1;
+          requestAnimationFrame(tick);
+        };
+        tick();
+      }),
+    LOADER,
+  );
+
+  expect(result.frames, 'the loader was never sampled').toBeGreaterThan(0);
+  expect(result.exposedFrames, 'frames where the overlay was up but the page was not inert').toBe(0);
+});
