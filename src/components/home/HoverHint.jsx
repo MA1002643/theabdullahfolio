@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { claimEscape } from '@/lib/escapeKey';
 
 // Styled replacement for the native `title` tooltip across the
 // maintenance header (issue #94 follow-up). Browsers render `title`
@@ -162,7 +163,9 @@ export default function HoverHint({
   useEffect(() => {
     if (!open) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') closeNow();
+      if (event.key !== 'Escape') return;
+      claimEscape(event);
+      closeNow();
     };
     const onPointerDown = () => closeNow();
     const onScroll = () => closeNow();

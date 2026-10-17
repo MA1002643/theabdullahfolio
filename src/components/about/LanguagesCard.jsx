@@ -19,6 +19,7 @@ import { useStaggeredScrollReveal } from "@/hooks/useStaggeredScrollReveal";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { fastStartSlowFinish } from "@/utils/animationCurves";
 import { onMediaChange } from "@/lib/mediaQuery";
+import { claimEscape } from "@/lib/escapeKey";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
 // Shared count-up window. Every row animates over the same duration with no
@@ -364,7 +365,9 @@ export default function LanguagesCard({ data, isLive = false }) {
     };
     const onResize = () => setPopover(null);
     const onKey = (e) => {
-      if (e.key === "Escape") setPopover(null);
+      if (e.key !== "Escape") return;
+      claimEscape(e);
+      setPopover(null);
     };
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onResize);

@@ -411,8 +411,9 @@ const ROUTE_DEFINITIONS = [
     // eight paths below and prints what it finds — the Node version off
     // `.nvmrc`, dependency versions and counts off the manifest and lockfile,
     // the cron schedule off `vercel.json`, the schematic's stage labels off the
-    // workflow files' own `name:` fields, and the spec/route counts off the
-    // test and API directories. Verified in the prerendered HTML, not assumed:
+    // workflow files' own `name:` fields, the test counts off the two files the
+    // runners' collected lists are written to, and the route counts off the
+    // API directory. Verified in the prerendered HTML, not assumed:
     // the `.nvmrc` pin, the Next version, the test-file count and all six
     // workflow names appear verbatim in it.
     //
@@ -423,8 +424,8 @@ const ROUTE_DEFINITIONS = [
     //
     // Cost, in the same terms as the notes below: this is now the most
     // frequently re-stamped route on the site, and some of that is coarse —
-    // editing an existing test does not change the count the page prints, but
-    // `tests/unit` is watched per directory. Taken deliberately, because a page
+    // a dependency bump re-stamps it even when only a version string moved.
+    // Taken deliberately, because a page
     // whose subject is the state of this repository genuinely does change with
     // the repository more often than any other, which is also why it is the one
     // route where the reader and the read must both be listed.
@@ -443,15 +444,10 @@ const ROUTE_DEFINITIONS = [
       '.nvmrc',
       'vercel.json',
       '.github/workflows',
-      // Every Vitest suite directory the instruments plate counts (issue #92
-      // split them by layer; VITEST_DIRS in buildFacts.js), and the browser
-      // count, which comes from Playwright's own list rather than the spec
-      // files (BROWSER_CASES_FILE there; #92 review).
-      'tests/unit',
-      'tests/property',
-      'tests/fitness',
-      'tests/component',
-      'tests/api',
+      // The two test counts the instruments plate prints, each taken from its
+      // runner's own collected list rather than the test files
+      // (VITEST_CASES_FILE and BROWSER_CASES_FILE in buildFacts.js; #92 review).
+      'tests/vitest-cases.json',
       'tests/browser-cases.json',
       'src/app/api',
       PAGE_TITLE_SOURCE,

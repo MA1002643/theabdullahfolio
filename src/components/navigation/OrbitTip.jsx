@@ -6,6 +6,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { X } from 'lucide-react';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { usePointerCapability } from '@/hooks/usePointerCapability';
+import { claimEscape } from '@/lib/escapeKey';
 
 // First-visit affordance tip for the orbital navigation (issue #105).
 //
@@ -212,7 +213,9 @@ const OrbitTip = ({ interacted }) => {
   useEffect(() => {
     if (!visible) return undefined;
     const onKey = (e) => {
-      if (e.key === 'Escape') dismiss();
+      if (e.key !== 'Escape') return;
+      claimEscape(e);
+      dismiss();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

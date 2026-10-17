@@ -37,8 +37,12 @@
 //      for 2.4.11 is exactly this: obscuring content passes only if it can be
 //      dismissed without moving focus. So Escape now also works page-wide, but
 //      as the LAST resort, yielding to every other owner of the key: it does
-//      nothing if a handler already took it (the palette prevents default), if
-//      a modal dialog is open, or if the visitor is typing in a field.
+//      nothing if any other handler claimed the press (every Escape owner calls
+//      `claimEscape`, and the notice decides only after dispatch has finished;
+//      see src/lib/escapeKey.js), if a modal dialog is open, or if the visitor
+//      is typing in a field. Markup alone could not tell: the 404 page's
+//      go-home shortcut and the about-page popovers are neither dialogs nor
+//      fields, and one press used to both decline here and act there.
 //
 // ── Why it waits ────────────────────────────────────────────────────────────
 // LoaderWrapper covers the page with a z-9999 overlay for ~3.3s from the first
@@ -57,6 +61,7 @@ import TransitionLink from '@/components/pageTransition/TransitionLink';
 import { fluid, fluidText } from '@/lib/fluidScale';
 import { wordFill } from '@/lib/fireRamp';
 import { cn } from '@/lib/utils';
+import { afterUnclaimedEscape, claimEscape } from '@/lib/escapeKey';
 import { STATUS } from '@/lib/privacy/consentStore';
 import { useConsent } from './ConsentProvider';
 
@@ -142,11 +147,14 @@ export default function PrivacyNotice() {
     };
   }, [open]);
 
-  // Page-wide Escape (point 3 above). Bubble phase on `document`, which runs
-  // AFTER React's own handlers (they are delegated to the root container, below
-  // document), so `defaultPrevented` is a reliable "someone else used this".
+  // Page-wide Escape (point 3 above). Checking `defaultPrevented` here and now
+  // is not enough: listeners on `window` (the 404 shortcut, the orbit tip, the
+  // about popovers) run AFTER this one, so the decision waits until dispatch is
+  // over. The dialog and field checks read the page as it was at the press,
+  // before a dialog's own Escape handler has closed it.
   useEffect(() => {
     if (!open) return undefined;
+    const cancels = new Set();
     const onKeyDown = (event) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
@@ -157,10 +165,17 @@ export default function PrivacyNotice() {
       ) {
         return;
       }
-      deny();
+      const cancel = afterUnclaimedEscape(event, () => {
+        cancels.delete(cancel);
+        deny();
+      });
+      cancels.add(cancel);
     };
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      cancels.forEach((cancel) => cancel());
+    };
   }, [open, deny]);
 
   // Reduced motion gets opacity only — no translate. The entrance is short
@@ -210,6 +225,7 @@ export default function PrivacyNotice() {
             // Scoped to the region on purpose — see the header. Stopped here so it
             // cannot bubble to a document-level handler and be read twice.
             event.stopPropagation();
+            claimEscape(event);
             deny();
           }}
           // z-[60]: above the two corner widgets and the toaster (z-50), below the

@@ -84,6 +84,11 @@ jobs:
       # starts no browser and no server, so the lint job can do it.
       - name: Browser-test count is current
         run: node scripts/count-browser-cases.mjs --check
+      # The same for the Vitest figure (tests/vitest-cases.json): `vitest list`
+      # collects every test, `.each` tables built at collection time expanded,
+      # without running one.
+      - name: Vitest count is current
+        run: node scripts/count-vitest-cases.mjs --check
 
   vitest:
     name: Vitest (unit · property · fitness · component · api)

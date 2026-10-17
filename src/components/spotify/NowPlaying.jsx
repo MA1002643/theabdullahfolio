@@ -13,6 +13,7 @@ import ProgressRing from './ProgressRing';
 import Spectrum from './Spectrum';
 import Marquee from './Marquee';
 import HoverHint from '@/components/home/HoverHint';
+import { claimEscape } from '@/lib/escapeKey';
 import { formatTime, formatPlayedAgo } from './format';
 
 // ── Now Playing widget (issue #42) ──────────────────────────────────────────
@@ -181,6 +182,9 @@ export default function NowPlaying() {
       e.preventDefault();
       toggle();
     } else if (e.key === 'Escape') {
+      // Claimed only when it collapsed something, so a press on an already
+      // collapsed card still reaches the privacy notice.
+      if (expanded) claimEscape(e);
       setExpanded(false);
     }
   };

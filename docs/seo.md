@@ -1021,8 +1021,10 @@ would re-stamp the URL for changes no crawler can see.
 
 **And watch out for inputs that are not imports at all.** `/uses` reads eight
 repository paths at build time through `readBuildFacts()` — `package.json`,
-`package-lock.json`, `.nvmrc`, `vercel.json`, `.github/workflows`, `tests/unit`,
-`tests/e2e`, `src/app/api` — with `fs`, not `import`, so no dependency walk can
+`package-lock.json`, `.nvmrc`, `vercel.json`, `.github/workflows`,
+`tests/vitest-cases.json`, `tests/browser-cases.json` (the two test counts, each
+written from its runner's own collected list), `src/app/api` — with `fs`, not
+`import`, so no dependency walk can
 find them. Listing `src/lib/uses` covers the *reader*; it says nothing about what
 the reader *reads*, and that distinction is what left a dependency bump able to
 rewrite the page's bill of materials with the timestamp unmoved. If a new route

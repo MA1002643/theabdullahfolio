@@ -31,7 +31,7 @@
     "test:bundle": "node scripts/scan-client-bundle.mjs && node scripts/check-bundle-budget.mjs",
     "test:bundle:update": "node scripts/check-bundle-budget.mjs --update",
     "test:audit": "node scripts/audit-gate.mjs",
-    "test:count": "node scripts/count-browser-cases.mjs",
+    "test:count": "node scripts/count-browser-cases.mjs && node scripts/count-vitest-cases.mjs",
     "test:all": "npm run lint && npm run test:coverage && npm run build && npm run test:bundle && playwright test --project=chromium --project=mobile-chrome --project=a11y --project=security --project=perf"
   },
   "dependencies": {

@@ -277,8 +277,9 @@ endpoints), `envHygiene` (new env vars), `testHygiene` (no skipped or focused
 tests, no hard-coded fast-check run counts), `reducedMotionHook` (the banned
 import), `loaderInertBoundary` (interactive overlays under the intro loader's
 `inert` boundary), `routeSegmentConfig` (route config declared, never
-re-exported), the browser-test count `/uses` publishes (CI fails until
-`npm run test:count` regenerates `tests/browser-cases.json`), and the error
+re-exported), `escapeOwnership` (every Escape handler claims the key), the
+two test counts `/uses` publishes (CI fails until `npm run test:count`
+regenerates `tests/browser-cases.json` and `tests/vitest-cases.json`), and the error
 sentinel in every browser test. **Everything else in the table is not**: a new feature
 with no tests at all passes CI. The check is a habit, not a gate, which is why
 it is written here.

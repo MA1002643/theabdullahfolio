@@ -15,9 +15,12 @@
  *      as sharp are per-platform), the build output (it must not clobber your
  *      local build), .git, and every .env*.local (baselines never see real
  *      credentials);
- *   2. it installs, builds and runs `--project=visual --update-snapshots`
- *      against the same stub environment CI uses;
- *   3. only the PNGs are copied back, into tests/visual/__screenshots__/.
+ *   2. it empties the copied snapshot tree, then installs, builds and runs
+ *      `--project=visual --update-snapshots=all` against the same stub
+ *      environment CI uses;
+ *   3. only after that succeeds is tests/visual/__screenshots__/ emptied and
+ *      refilled with the fresh render, so a view whose test was removed or
+ *      renamed loses its old baseline instead of keeping it forever.
  *
  * Emulating amd64 on Apple silicon is slow (the build dominates); set
  * VISUAL_PLATFORM=linux/arm64 for a quick look, but commit amd64 renders.
@@ -56,9 +59,16 @@ const inside = [
   'mkdir -p /work',
   "tar -C /src --exclude=./node_modules --exclude=./.next --exclude=./.next.nosync --exclude=./.git --exclude='./.env*.local' --exclude=./.stryker-tmp -cf - . | tar -C /work -xf -",
   'cd /work',
+  // Render into an EMPTY snapshot tree: Playwright never deletes a snapshot a
+  // removed or renamed test left behind, so the copied-in baselines would
+  // survive as orphans.
+  'rm -rf tests/visual/__screenshots__',
   'npm ci --no-audit --no-fund',
   'npm run build',
-  'npx playwright test --project=visual --update-snapshots --reporter=list',
+  'npx playwright test --project=visual --update-snapshots=all --reporter=list',
+  // Reached only if every step above succeeded (set -e): only now is the old
+  // set cleared, so a failed run leaves the existing baselines untouched.
+  'find /out -mindepth 1 -delete',
   'cp -r tests/visual/__screenshots__/. /out/',
 ].join(' && ');
 

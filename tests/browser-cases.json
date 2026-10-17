@@ -1,9 +1,9 @@
 {
   "suites": 17,
-  "cases": 247,
+  "cases": 248,
   "byDir": {
     "tests/a11y": 66,
-    "tests/e2e": 131,
+    "tests/e2e": 132,
     "tests/perf": 15,
     "tests/security": 30,
     "tests/visual": 5

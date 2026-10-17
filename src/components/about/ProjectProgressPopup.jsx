@@ -9,6 +9,7 @@ import { useProjectProgress } from "@/hooks/useProjectProgress";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { PROJECT_CATEGORY_COLORS } from "@/lib/categories";
 import { formatAge } from "@/utils/formatAge";
+import { claimEscape } from "@/lib/escapeKey";
 
 // ── Scroll-reveal cascade — the SAME entrance grammar as the Experience
 // Breakdown modal (sections slide up, list rows slide in from the left,
@@ -673,6 +674,7 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
     const handler = (e) => {
       if (e.key === "Escape") {
         e.stopPropagation();
+        claimEscape(e);
         onClose();
       }
     };

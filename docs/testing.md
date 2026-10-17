@@ -71,6 +71,7 @@ unit test would think to check:
 | `testHygiene` | No focused or skipped tests; every `@quarantine` links an issue. |
 | `browserScripts` | Every `npm run` script that runs `playwright test` builds first; the CI JUnit reporter keeps `includeRetries`, so the run summary can name flaky tests. |
 | `routeSegmentConfig` | No file under `src/app` re-exports route segment config (`dynamicParams`, `revalidate`, …) from a sibling: Next 15 reads it only from the file itself and silently applies the default otherwise. |
+| `escapeOwnership` | Every source that acts on Escape claims it with `claimEscape` (`src/lib/escapeKey.js`), and the privacy notice decides only after dispatch, so one press never both closes something and declines analytics. |
 
 ### L2 · Unit and property-based tests
 
@@ -204,6 +205,13 @@ Baselines are not overwritten on every push because a baseline that silently
 becomes whatever today's code renders could never catch a regression. The
 gallery shows what changed; promoting it is the review.
 
+Every render starts from an **empty** snapshot directory, in CI and in
+`npm run test:visual:update` alike. Playwright rewrites the snapshots the
+current tests reference but never deletes one whose test was removed or
+renamed, so rendering over the old tree would list that orphan in the gallery
+as a current view and keep it through a promotion. The local updater replaces
+`tests/visual/__screenshots__/` only after its run succeeds.
+
 **The image commit gets its own checks.** A commit pushed with the workflow's
 `GITHUB_TOKEN` starts no workflows, so the image commit used to head the
 branch with no CI at all, and a PR's required checks would wait on it forever.
@@ -317,11 +325,14 @@ run its own JUnit file, HTML report and output directory
 empties its output directory when it starts, so sharing one meant the visual
 run replaced the a11y/security/perf report and discarded its traces.
 
-**The browser-test count `/uses` publishes** comes from Playwright's own
-collected list (`npm run test:count` writes `tests/browser-cases.json`), not
-from reading the spec files: most browser tests are generated in loops, which
-a text count cannot expand. The lint job fails a PR that changes the browser
-tests without regenerating the file.
+**Both test counts `/uses` publishes** come from the runners' own collected
+lists, not from reading the test files: `npm run test:count` writes
+`tests/browser-cases.json` from `playwright test --list` and
+`tests/vitest-cases.json` from `vitest list`. Most browser tests are generated
+in loops, and on the Vitest side an `it.each` over a list built at collection
+time, or a table held in a variable, runs many cases from one line; a text
+count expands neither. The lint job fails a PR that changes either set of tests
+without regenerating its file.
 
 ## Known defects
 
@@ -373,6 +384,9 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (`/about`) | The Enter/Space fix above gave every language row `role="button"` and a Tab stop, so a language with no repository breakdown was announced as a disabled button and still took focus. | Button role and Tab stop only on rows that open a breakdown; the rest stay plain statistics. `tests/component/LanguagesCard.test.jsx`. |
 | Upgrade (keyboard) | After the React 19 upgrade the page was never `inert` under the intro loader: LoaderWrapper passed `inert=""`, the form React 18 needed, and React 19 reads an empty string as `false` and drops the attribute. All four `loader-inert.spec.js` cases failed. | `inert={covered}`, a real boolean. |
 | Upgrade (build) | After the Next 15 upgrade both `twitter-image.js` routes re-exported `dynamicParams` from their sibling; Next 15 ignores a re-exported segment config with one build warning, so the param sets reopened while the build stayed green. | Declared in each file; the `routeSegmentConfig` fitness test fails on any re-export. |
+| Review (keyboard) | The privacy notice's page-wide Escape inferred "nobody else owns this" from dialog markup and read `defaultPrevented` on the spot, from a `document` listener. Owners on `window` run after it, and most owners never prevented default: on the 404 page one press declined analytics **and** went home, and the about-page popovers and the orbit tip double-dismissed the same way. | Every owner claims the key (`claimEscape`); the notice decides after dispatch (`afterUnclaimedEscape`). `escapeKey.test.js` covers both listener orders, `escapeOwnership` (fitness) fails on an unclaimed handler, and the e2e spec checks the 404 case (it fails without the fix with an `analytics:false` record). |
+| Review (visual) | Both visual renderers wrote over the existing snapshot tree, so a removed or renamed view's PNG survived: listed in `__latest__` as current, kept on promotion, and left behind by `npm run test:visual:update`. | Both render into an empty tree; the local updater clears its output only after a successful run. |
+| Review (`/uses`) | After the Vitest layers were split, the published Vitest case total still came from a lexical scanner: the text read `routeSegmentConfig` (an `it.each(files)` over every app source file) as 2 cases of 80 and `contactContract` as 3 of 9, publishing 1,195 against Vitest's 1,356. | Taken from `vitest list` into `tests/vitest-cases.json`, checked in CI like the browser count; the scanner is gone. |
 | Review (keyboard) | The page left `inert` when the loader's reveal began, but the overlay stays mounted and mostly opaque for the 520 ms wipe (or reduced-motion cross-fade), so Tab in that window reached controls still hidden behind it. | `inert` until the overlay is removed. `loader-inert.spec.js` samples every frame until then; before the fix it found 6 exposed frames. |
 
 ## Maintenance

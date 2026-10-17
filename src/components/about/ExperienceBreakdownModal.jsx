@@ -8,6 +8,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { roleKey } from "@/hooks/useExperienceSummary";
 import { experienceSourceAvailability } from "@/utils/experience/experiencePresentation";
+import { claimEscape } from "@/lib/escapeKey";
 
 // ── Scroll-reveal cascade — the SAME entrance the Repository Breakdown / Used in
 // Repositories popovers use (sections slide up, list rows slide in from the left,
@@ -692,6 +693,7 @@ export function ExperienceBreakdownModal({
     const handler = (e) => {
       if (e.key === "Escape") {
         e.stopPropagation();
+        claimEscape(e);
         onClose();
       }
     };

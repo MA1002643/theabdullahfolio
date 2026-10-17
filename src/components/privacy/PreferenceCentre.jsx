@@ -40,6 +40,7 @@ import { Check, Lock, X } from 'lucide-react';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 import { fluid, fluidText } from '@/lib/fluidScale';
 import { cn } from '@/lib/utils';
+import { claimEscape } from '@/lib/escapeKey';
 import { ANALYTICS_SURFACES, CATEGORIES } from '@/lib/privacy/inventory';
 import { useConsent } from './ConsentProvider';
 
@@ -101,6 +102,7 @@ export default function PreferenceCentre() {
     const handler = (event) => {
       if (event.key !== 'Escape') return;
       event.stopPropagation();
+      claimEscape(event);
       closePrefs();
     };
     document.addEventListener('keydown', handler);

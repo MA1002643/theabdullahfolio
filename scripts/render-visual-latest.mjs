@@ -8,8 +8,8 @@
  *   VISUAL=1 PROMOTE=1 node scripts/render-visual-latest.mjs  …and adopt as baselines
  *
  * Playwright can only write screenshots to the snapshot path the tests compare
- * against (tests/visual/__screenshots__/), so the script renders THERE, moves
- * the result to __latest__, and puts the reviewed baselines back. Baselines are
+ * against (tests/visual/__screenshots__/), so the script empties it, renders
+ * THERE, moves the result to __latest__, and puts the reviewed baselines back. Baselines are
  * replaced only when none exist yet (the first render arms the visual layer) or
  * when PROMOTE=1 asks for it. Then it writes __latest__/README.md: every view,
  * its image, and whether it differs from the baseline, so the diff that needs
@@ -33,22 +33,24 @@ const pngs = (dir) =>
         .sort()
     : [];
 
-// 1. Set the reviewed baselines aside.
+// 1. Set the reviewed baselines aside, then empty the snapshot path. Playwright
+//    rewrites the snapshots the current tests reference but never deletes one a
+//    removed or renamed test left behind, so rendering over the old tree would
+//    file those orphans in __latest__ as current views and keep them on promote.
 const hadBaselines = pngs(BASE).length > 0;
 const backup = mkdtempSync(path.join(tmpdir(), 'visual-baselines-'));
 if (hadBaselines) cpSync(BASE, backup, { recursive: true });
+rmSync(BASE, { recursive: true, force: true });
 
-// 2. Render every view into the snapshot path.
+// 2. Render every view into the (now empty) snapshot path.
 const run = spawnSync('npx', ['playwright', 'test', '--project=visual', '--update-snapshots=all', '--reporter=list'], {
   stdio: 'inherit',
   env: { ...process.env, VISUAL: '1' },
 });
 if (run.status !== 0) {
   console.error('[visual] the render run failed; nothing filed.');
-  if (hadBaselines) {
-    rmSync(BASE, { recursive: true, force: true });
-    cpSync(backup, BASE, { recursive: true });
-  }
+  rmSync(BASE, { recursive: true, force: true });
+  if (hadBaselines) cpSync(backup, BASE, { recursive: true });
   process.exit(run.status ?? 1);
 }
 

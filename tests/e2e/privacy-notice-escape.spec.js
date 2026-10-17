@@ -54,6 +54,20 @@ test('Escape belongs to the ⌘K palette while it is open, not to the notice', a
   await expect(notice(page)).toBeVisible(); // untouched: the palette owned that key
 });
 
+test('Escape on the 404 page goes home and does NOT also decline', async ({ page, expectErrors }) => {
+  // The 404 shortcut listens on window, which runs after the notice's document
+  // listener, so the notice must wait for dispatch to end before deciding.
+  expectErrors(/status of 404/); // the browser logs the 404 document itself
+  await openWithNotice(page, '/no-such-page-escape-probe');
+  await page.keyboard.press('Escape');
+  await page.waitForURL((url) => url.pathname === '/');
+  const records = await page.evaluate(() =>
+    Object.values(localStorage).filter((v) => v.includes('"analytics"')),
+  );
+  expect(records).toHaveLength(0); // the press went home; consent was never answered
+  await expect(notice(page)).toBeVisible({ timeout: 15_000 });
+});
+
 test('Escape while typing in a field leaves the notice alone', async ({ page }) => {
   await openWithNotice(page, '/contact');
   await page.getByLabel('Full Name', { exact: true }).click();

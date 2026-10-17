@@ -21,6 +21,7 @@ import {
   hasLiveCategories,
   isRenderableSkill,
 } from "@/utils/skillsIconUrl";
+import { claimEscape } from "@/lib/escapeKey";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
 // How long the change banner lingers once the section scrolls into view —
@@ -462,7 +463,9 @@ function SkillsStage({
     };
     const onResize = () => setPopover(null);
     const onKey = (e) => {
-      if (e.key === "Escape") setPopover(null);
+      if (e.key !== "Escape") return;
+      claimEscape(e);
+      setPopover(null);
     };
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onResize);

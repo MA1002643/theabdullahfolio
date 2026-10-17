@@ -15,6 +15,7 @@ import { onMediaChange } from '@/lib/mediaQuery';
 import DidYouMean from './DidYouMean';
 import GlitchText from './GlitchText';
 import ReturnPortal from './ReturnPortal';
+import { claimEscape } from '@/lib/escapeKey';
 import { ROUTES } from './routes';
 import { suggestRoute } from './suggestRoute';
 
@@ -142,6 +143,9 @@ export default function NotFoundClient() {
         return;
       }
       if (e.key === 'Escape' || e.key.toLowerCase() === 'h') {
+        // Claimed so the privacy notice does not ALSO read this Escape as a
+        // decline: one press, one action (src/lib/escapeKey.js).
+        if (e.key === 'Escape') claimEscape(e);
         router.push('/');
       }
     };

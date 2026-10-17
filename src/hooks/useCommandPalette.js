@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { claimEscape } from '@/lib/escapeKey';
 
 // State + keyboard engine for the shared command palette
 // (src/components/commandPalette). Extracted from the component so the
@@ -94,7 +95,7 @@ export function useCommandPalette(actions) {
         e.preventDefault();
         run(filtered[activeIndex]);
       } else if (e.key === 'Escape') {
-        e.preventDefault();
+        claimEscape(e);
         close();
       } else if (e.key === 'Tab') {
         // Focus trap: the input IS the palette's single tab stop — options
