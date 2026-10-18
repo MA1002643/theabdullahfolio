@@ -197,7 +197,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: next-build
           path: .next.nosync
@@ -231,7 +231,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: next-build
           path: .next.nosync
@@ -327,7 +327,7 @@ jobs:
           cache: npm
       - if: ${{ steps.changed.outputs.specs != '' }}
         run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: ${{ steps.changed.outputs.specs != '' }}
         with:
           name: next-build
