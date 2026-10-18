@@ -16,6 +16,8 @@ export function useCommandPalette(actions) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const restoreFocusRef = useRef(null);
+  // Cancels a deferred open (see the hotkey below); null when none waits.
+  const pendingOpenRef = useRef(null);
 
   // The ONE close path. Every way out of the palette — Esc, running an
   // action, and the hotkey pressed while open — must come through here so
@@ -37,6 +39,15 @@ export function useCommandPalette(actions) {
   // untouched on the way OUT — only Esc reset them. Reading `open` from the
   // closure (re-subscribing on toggle is trivially cheap) lets the closing
   // branch reuse close() instead of duplicating it.
+  //
+  // Under the intro loader the page is `inert` (components/loaderWrapper), and
+  // the component's focus() on its input is a silent no-op there. Opening
+  // anyway left the dialog up with nothing focused, so Esc and the arrows
+  // (handled on the input) did nothing, and the focus effect, keyed on `open`
+  // alone, never retried. So a ⌘K pressed while covered is DEFERRED to the
+  // `loaderuncovered` event, which fires once `inert` is gone. Not
+  // `loaderdone`: that fires when the reveal starts, still inert. A second ⌘K
+  // while waiting cancels it, as it would close an open palette.
   useEffect(() => {
     const onKey = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -45,13 +56,32 @@ export function useCommandPalette(actions) {
           close();
           return;
         }
+        if (pendingOpenRef.current) {
+          pendingOpenRef.current();
+          return;
+        }
         restoreFocusRef.current = document.activeElement;
+        if (window.__loaderCovered) {
+          const onUncovered = () => {
+            pendingOpenRef.current = null;
+            setOpen(true);
+          };
+          window.addEventListener('loaderuncovered', onUncovered, { once: true });
+          pendingOpenRef.current = () => {
+            window.removeEventListener('loaderuncovered', onUncovered);
+            pendingOpenRef.current = null;
+          };
+          return;
+        }
         setOpen(true);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, close]);
+
+  // A deferred open must not outlive the palette that asked for it.
+  useEffect(() => () => pendingOpenRef.current?.(), []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

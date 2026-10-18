@@ -190,6 +190,21 @@ export default function LoaderWrapper({ children }) {
   // useLoaderRevealed() still flips at the reveal, so entrances are not delayed.
   const covered = showLoader;
 
+  // Broadcast the inert boundary itself, separately from `loaderdone`: that
+  // one fires when the reveal BEGINS, while the page is still inert, so a
+  // consumer that needs to move focus into the page has to wait for this one.
+  // The ⌘K palette is the case (useCommandPalette): its global shortcut works
+  // under the loader, but focus() on an inert input is a silent no-op, so an
+  // open there would leave the dialog showing with its input unfocused.
+  // `window.__loaderCovered` lets a keypress read the current state; the
+  // `loaderuncovered` event fires after the commit that removed `inert`, so a
+  // listener's focus() lands.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.__loaderCovered = covered;
+    if (!covered) window.dispatchEvent(new Event('loaderuncovered'));
+  }, [covered]);
+
   return (
     <>
       {/* Page mounts behind the loader from the first render. The overlay

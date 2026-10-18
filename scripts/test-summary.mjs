@@ -18,6 +18,8 @@
  */
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 
+import { flakyTestNames } from './junit-flaky.mjs';
+
 const [kind = 'vitest', title, junitArg] = process.argv.slice(2);
 const junitFile =
   junitArg ?? (kind === 'vitest' ? 'test-results/vitest-junit.xml' : 'test-results/playwright-junit.xml');
@@ -34,11 +36,8 @@ function readJunit(file) {
     skipped: attr(tag, 'skipped'),
     time: attr(tag, 'time'),
   }));
-  // A test that failed and then passed on retry carries a <flakyFailure> or
-  // <flakyError> child (playwright.config.mjs turns on the junit reporter's
-  // `includeRetries`, which is off by default); name them so they get fixed.
-  const flaky = [...xml.matchAll(/<testcase name="([^"]+)"[^>]*>(?:(?!<\/testcase>)[\s\S])*?flaky/g)].map((m) => m[1]);
-  return { suites, flaky };
+  // Tests that failed and then passed on retry, named so they get fixed.
+  return { suites, flaky: flakyTestNames(xml) };
 }
 
 const lines = [`### ${title ?? (kind === 'vitest' ? 'Vitest' : 'Playwright')}`, ''];

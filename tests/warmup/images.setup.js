@@ -1,6 +1,5 @@
-import { test as setup } from '@playwright/test';
-
 import { ALL_ROUTES } from '../support/routes.js';
+import { hermeticTest as setup } from '../support/test.js';
 
 // Warms the image optimiser before the e2e projects run (issue #92).
 //
@@ -27,6 +26,12 @@ import { ALL_ROUTES } from '../support/routes.js';
 // retried once (the encodes it queued keep running, so the second visit meets
 // a warmer cache), and a second timeout fails the setup so nothing downstream
 // runs against a cache that is known to be cold.
+//
+// The visits go through the shared fixture's browser interception
+// (tests/support/test.js, `hermeticTest`), so a warm-up reaches no host the
+// dependent specs could not: the server's fetch sandbox cannot stop browser
+// traffic. Not through its error sentinel, for the reason above: a warm-up
+// that failed on a page error would hide the cache it was there to warm.
 
 const WARM_TIMEOUT = 150_000;
 const WARM_ATTEMPTS = 2;

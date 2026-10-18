@@ -211,6 +211,19 @@ export default defineConfig({
       AI_GATEWAY_API_KEY: '',
       GSC_SERVICE_ACCOUNT_KEY: '',
       NEXT_PUBLIC_GA_MEASUREMENT_ID: '',
+      // Mail too, and not by blanking alone: /api/send-mail does not use
+      // fetch, so the fetch sandbox never saw it, and a blank SMTP_HOST is
+      // not "no mail", it is nodemailer's default of localhost:587. Point the
+      // transport at a local port nothing serves, with no account and no
+      // recipient, so an un-stubbed valid POST fails before anything leaves.
+      // network-sandbox.cjs also refuses any non-local TCP connection, so a
+      // host supplied some other way is stopped there too.
+      SMTP_HOST: '127.0.0.1',
+      SMTP_PORT: '1',
+      SMTP_SECURE: 'false',
+      SMTP_USER: '',
+      SMTP_PASS: '',
+      RECEIVER_EMAIL: '',
       AUTH_SECRET: randomBytes(32).toString('base64'),
       // The gate secrets, minted per run exactly like AUTH_SECRET (issue #92):
       // set, so tests/security/api-hardening.spec.js exercises the real 401

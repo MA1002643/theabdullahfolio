@@ -37,10 +37,6 @@ on:
   # to the routes collected or the preset used — without waiting for a PR.
   workflow_dispatch:
 
-concurrency:
-  group: lighthouse-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   audit:
     name: Budgets
@@ -61,6 +57,15 @@ jobs:
         && (github.event_name != 'pull_request'
           || (contains(github.event.pull_request.labels.*.name, 'lighthouse')
             && (github.event.action != 'labeled' || github.event.label.name == 'lighthouse'))) }}
+    # On the JOB, not the workflow: the job's `if` is evaluated first, and a
+    # job it skips never joins the group. At workflow level every run
+    # joined it, so adding any OTHER label to a PR mid-audit started a run that
+    # cancelled the audit and then skipped its own (the label was not
+    # `lighthouse`), leaving no measurement at all (code review). A new push
+    # still cancels a stale audit, since that run's job does pass `if`.
+    concurrency:
+      group: lighthouse-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout repository

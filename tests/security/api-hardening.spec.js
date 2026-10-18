@@ -58,6 +58,17 @@ test.describe('the contact endpoint', () => {
     expect(res.status()).toBe(400);
   });
 
+  // The one case above that reaches the transport. SMTP is not fetch, so the
+  // fetch sandbox never covered it, and the shell's or .env.local's real
+  // SMTP_* used to reach this server: a valid message would have been
+  // DELIVERED (code review). The config now points mail at a dead local port
+  // and the sandbox refuses non-local TCP, so the send fails, as a 500.
+  test('a valid message, un-stubbed, is not delivered', async ({ request }) => {
+    const res = await request.post('/api/send-mail', { data: validContactMessage() });
+    expect(res.status()).toBe(500);
+    expect((await res.json()).success).toBeUndefined();
+  });
+
   test('does not answer GET (no accidental read surface)', async ({ request }) => {
     const res = await request.get('/api/send-mail');
     expect(res.status()).toBe(405);

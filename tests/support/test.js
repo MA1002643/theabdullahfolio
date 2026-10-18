@@ -36,9 +36,12 @@ const PIXEL = Buffer.from(
   'base64',
 );
 
-export const test = base.extend({
-  allowedErrors: [[], { option: true }],
-
+// Guarantees 1 and 3 alone, without the error sentinel. For the image-cache
+// warm-ups (tests/warmup), which visit every route ahead of the real suites
+// and must not reach the internet doing it, but assert nothing about the page:
+// its errors are the dependent suites' to report (code review: the warm-ups
+// used the base fixture, so their visits went to third-party hosts unchecked).
+export const hermeticTest = base.extend({
   _hermetic: [
     async ({ context, browserName }, use) => {
       await context.route(
@@ -67,6 +70,10 @@ export const test = base.extend({
     },
     { auto: true },
   ],
+});
+
+export const test = hermeticTest.extend({
+  allowedErrors: [[], { option: true }],
 
   // Patterns one test declares it expects; read when the sentinel tears down.
   _expected: async ({}, use) => {

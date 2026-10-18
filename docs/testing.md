@@ -121,7 +121,11 @@ state. Ten concurrent requests with one key produce exactly one email.
 Playwright boots `next start` on port 3100 with every credential blanked and
 every gate secret minted at random. `NODE_OPTIONS` preloads
 `tests/support/network-sandbox.cjs`, which refuses any server-side fetch to a
-host other than localhost.
+host other than localhost, and below fetch any TCP connection to one: the
+contact route sends mail through nodemailer over raw sockets, which a fetch
+wrapper never sees. Mail is also pointed at a local port nothing serves
+(`SMTP_HOST=127.0.0.1`, `SMTP_PORT=1`, no account, no recipient), so an
+un-stubbed send fails before it leaves; `api-hardening.spec.js` checks that.
 
 New specs import `test` from `tests/support/test.js`, which adds:
 
@@ -155,7 +159,10 @@ persistent), so the fix warms the cache instead of loosening the specs. The
 warm-up asserts nothing about the page (an HTTP error still fires `load`, and
 the real specs report it), but it does require `load` to arrive: a timed-out
 visit is retried once, and a second timeout fails the setup, so no suite runs
-against a cache known to be cold.
+against a cache known to be cold. The warm-ups import `hermeticTest` from
+`tests/support/test.js`: the same browser interception as every spec, so a
+warm-up visit reaches no outside host either, without the error sentinel,
+whose findings belong to the suites that depend on it.
 
 **Debugging a failure.** CI uploads `playwright-report/` and `test-results/`
 on failure, from the burn-in job too. Retries record a trace, so the burn-in
@@ -388,6 +395,8 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Property soak (the test) | The first real 20,000-run soak drew the secret "SWo" and failed redaction, but the redaction was correct: the test searched the whole output for the secret, and "password" contains "swo". | The check now compares whole tokens. A defect in the test, recorded because the soak that found it had never actually run. |
 | Review (scripts) | `npm run test:a11y`, `test:security`, `test:perf`, `test:visual` and `test:e2e:ui` start `next start` without building, so on a fresh checkout they failed before collecting a test. | Each builds first. `browserScripts.test.js` fails on any script that runs `playwright test` unbuilt. |
 | Review (CI summary) | The JUnit reporter's `includeRetries` defaults to off, so a test that passed on retry left no trace in the XML and the run summary's flaky list was always empty. | Turned on for the CI reporter, and pinned by `browserScripts.test.js`. |
+| Review (CI summary) | Once retries were recorded, the summary still named a test flaky if the word "flaky" appeared anywhere in it, so a hard failure whose message said "flaky upstream" was reported as passed on retry. | `scripts/junit-flaky.mjs` matches only `<flakyFailure>`/`<flakyError>` elements; `junitFlaky.test.js`. |
+| Review (hermetic network) | The test server blanked every outbound credential but SMTP's, and the fetch sandbox cannot see nodemailer's raw sockets, so an un-stubbed valid contact POST could send real mail. The image warm-ups, on the base Playwright fixture, also reached third-party hosts from the browser. | SMTP pointed at a dead local port; the sandbox refuses non-local TCP; the warm-ups use `hermeticTest`. |
 | Review (contact form) | The message field accepts exactly 500 and exactly 50 characters, but its errors said "less than 500" and "more than 50". | "At most" and "at least", matching the other fields. |
 | Burn-in (warm-up) | The first desktop axe scan of `/qualifications` timed out: axe scans at 1440 px, where the cards ask for `w=640`, but the warm-up ran at 1280 px, which asks for `w=384`. So the scan met a cold cache (35 s in the quality job, over 60 s in burn-in; about 11 s once warm). | A `warm-axe-desktop` project at axe's exact viewport and motion setting, which `a11y` depends on. |
 | Burn-in (the tests) | `/notes/discoverability`, the longest page, outran two flat limits when other tests ran beside it: the keyboard walk took the full 180 s on all five repeats and failed once, and the CLS scroll failed three times out of five at 60 s. Alone they take 55 s and 37 s. | The keyboard limit is now 5 s per stop (`MAX_STOPS × 5 s`), and the CLS test's limit is 120 s. Neither measures speed, so the limits only have to catch a hang. |
@@ -399,6 +408,7 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (visual) | Both visual renderers wrote over the existing snapshot tree, so a removed or renamed view's PNG survived: listed in `__latest__` as current, kept on promotion, and left behind by `npm run test:visual:update`. | Both render into an empty tree; the local updater clears its output only after a successful run. |
 | Review (`/uses`) | After the Vitest layers were split, the published Vitest case total still came from a lexical scanner: the text read `routeSegmentConfig` (an `it.each(files)` over every app source file) as 2 cases of 80 and `contactContract` as 3 of 9, publishing 1,195 against Vitest's 1,356. | Taken from `vitest list` into `tests/vitest-cases.json`, checked in CI like the browser count; the scanner is gone. |
 | Review (keyboard) | The page left `inert` when the loader's reveal began, but the overlay stays mounted and mostly opaque for the 520 ms wipe (or reduced-motion cross-fade), so Tab in that window reached controls still hidden behind it. | `inert` until the overlay is removed. `loader-inert.spec.js` samples every frame until then; before the fix it found 6 exposed frames. |
+| Review (keyboard) | ⌘K during the intro loader opened the palette while the page was `inert`, so its input could not take focus and nothing retried: Esc and the arrow keys did nothing. | `LoaderWrapper` fires `loaderuncovered` once `inert` is gone, and the palette defers a covered ⌘K to it (`useCommandPalette.test.js`). |
 | Review (security) | The audit gate read an error-only `npm audit` response as a clean one: it kept npm's stdout, defaulted the missing `vulnerabilities` field to an empty map, and with the allowlist empty reported zero advisories and passed. A registry outage would have turned the gate green. | `scripts/audit-gate.mjs` refuses a report with an `error`, no JSON, or a missing or malformed `vulnerabilities` map. `tests/unit/auditGate.test.js` runs the real script against a fake `npm` on `PATH`. |
 | Review (keyboard) | Tabbing to an `/about` skill icon that had not scrolled into the stage dismissed its repository panel at once: focus opened the panel from the icon's off-stage rect, then the stage's own reveal scroll reached the panel's close-on-scroll listener. Writing the test found a second defect underneath: the browser's focus-scroll also scrolled the row's `overflow: hidden` wrapper sideways, on top of the scrub's translate, so the "revealed" icon landed a full row-width off the stage. | Keyboard focus now opens the panel once the focus-driven scrolling has settled, from the icon's final rect, and the reveal resets that sideways scroll. `tests/e2e/skills-keyboard-popover.spec.js`, in full motion. |
 | Review (e2e) | Three `seo.spec.js` focus tests waited for `__loaderDone`, which fires as the reveal starts, while the page stays `inert` for the 520 ms wipe. A fast run focused an inert link (a no-op) and read the still-clipped panel. One of them had no loader wait at all, and passed only because a 1px nav overlaps nothing. | Each now also waits for the `[inert]` boundary to detach before focusing. |
