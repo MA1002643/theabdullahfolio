@@ -84,7 +84,11 @@ It runs random histories of posts, deletes, polls and "load older" (bursts
 larger than a page, same-millisecond ties) against a model server that uses
 the real paging helpers and the real cursor codec. After every step it
 asserts the wall never shows a duplicate, never breaks order, and never loses
-a message.
+a message. It proves that under one assumption, that a new message sorts above
+everything already on the wall, which the model holds by construction (its
+same-millisecond ids increase). Production does not enforce it: two visitors
+posting in one millisecond get random id tails, so they sort either way round.
+`paging.js` records the assumption and what breaks without it.
 
 **Soaking.** `FC_RUNS` raises every property in the layer to at least that
 many runs, never fewer than its everyday count:
@@ -366,7 +370,7 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Fitness | `/api/work-status` compared `CRON_SECRET` with `===`, which returns at the first differing byte (a timing side channel). | Switched to the shared constant-time `safeBearerEqual`. |
 | Fitness / API | `/api/send-mail`, the one public unauthenticated POST, parsed any body in full before validating it, and answered malformed JSON with a 500, which the client retries forever. | 16 KB counted-read ceiling (413) and a 400 for malformed JSON. |
 | Fitness | The contact form's field limits existed twice, held together by a comment. | One shared module; the client is pinned never looser than the server. |
-| Property | The guestbook paging algorithm silently depends on messages arriving in time order. | The precondition is now documented in `paging.js`; 20,000 generated histories hold under it. |
+| Property | The guestbook paging algorithm silently depends on messages arriving in time order. | The assumption is now documented in `paging.js`; 20,000 generated histories hold under it. It is not enforced: same-millisecond posts from two visitors sort by a random id tail (corrected 2026-10-18). |
 | Property | The rank badge could disagree with the percentile printed beside it ("62.50%" ranked B-). | The level is derived from the displayed percentile. |
 | Component + axe | The ⌘K palette's empty state sat inside `role="listbox"` and was never announced. | Moved outside as a polite status. |
 | Lint (`jsx-a11y`) | Language rows on `/about` opened their popover by focus, but Enter/Space could not reopen it after Escape. | Keyboard handler and button role. |

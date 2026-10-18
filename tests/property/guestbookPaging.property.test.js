@@ -38,11 +38,13 @@ import {
 // shared the top card's id, so it "reached" the prefix, the old tail was kept,
 // and one message fell into the gap between them with no cursor pointing at it.
 // The algorithm is only correct when a new message sorts above everything
-// already on the wall, i.e. createdAt is non-decreasing in posting order. The
-// server assigns createdAt at write time and the per-user rate limit spaces
-// posts out, so that holds in production; it was simply never written down. It
-// is now, in paging.js, and the model below posts on a monotonic clock: equal
-// milliseconds allowed, never backwards.
+// already on the wall. That is an ASSUMPTION, documented in paging.js, not a
+// production guarantee: createdAt is stamped at write time, but a
+// same-millisecond tie is broken by the id's RANDOM tail (messageId.js), so two
+// visitors posting in one millisecond can sort in either order. This model
+// holds the assumption by construction (a monotonic clock, equal milliseconds
+// allowed, and increasing id tails, below), so it proves the algorithm under
+// the assumption and says nothing about a history that breaks it.
 
 // Mirrors of the hook's constants (src/hooks/useGuestbookMessages.js), which it
 // does not export. The poll algorithm below is a line-for-line port of the
@@ -63,7 +65,8 @@ function makeServer() {
       seq += 1;
       // Real id shape (msg_<ms>_<8 hex>). The counter makes ids unique and, on a
       // same-millisecond tie, sorts the later post above the earlier one, which
-      // is the monotonic order the precondition above requires.
+      // is the order the assumption above requires. Production's tails are
+      // random (mintMessageId), so this is where the model is kinder than prod.
       const id = `msg_${t}_${seq.toString(16).padStart(8, '0')}`;
       wall.push({ id, createdAt: new Date(t).toISOString() });
     },

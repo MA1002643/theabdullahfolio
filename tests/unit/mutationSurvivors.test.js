@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { noStoreJson, safeBearerEqual } from '@/app/api/_utils/cronAuth';
 import { decodeCursor } from '@/lib/guestbook/cursor';
 
+import { freshCronSecret } from '../helpers/secrets.js';
+
 // Cases written to kill specific mutants that survived the first Stryker run
 // (issue #92, L10). Each describes a real behaviour the suites never pinned; the
 // mutant is named so a future reader knows why the case exists.
@@ -12,10 +14,12 @@ const b64 = (text) => Buffer.from(text, 'utf8').toString('base64url');
 describe('cronAuth — survivors', () => {
   it('requires the exact "Bearer " scheme prefix (mutant: prefix → "")', () => {
     // With the prefix check emptied, a header that IS the bare secret would
-    // compare the whole header against the secret and pass.
-    expect(safeBearerEqual('s3cret-value', 's3cret-value')).toBe(false);
-    expect(safeBearerEqual('Basic s3cret-value', 's3cret-value')).toBe(false);
-    expect(safeBearerEqual('Bearer s3cret-value', 's3cret-value')).toBe(true);
+    // compare the whole header against the secret and pass. One generated
+    // value, not a literal (tests/helpers/secrets.js says why).
+    const secret = freshCronSecret();
+    expect(safeBearerEqual(secret, secret)).toBe(false);
+    expect(safeBearerEqual(`Basic ${secret}`, secret)).toBe(false);
+    expect(safeBearerEqual(`Bearer ${secret}`, secret)).toBe(true);
   });
 
   it('noStoreJson pins Cache-Control: no-store (mutant: headers → {})', async () => {
