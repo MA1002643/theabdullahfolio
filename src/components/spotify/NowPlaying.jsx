@@ -211,8 +211,20 @@ export default function NowPlaying() {
   // always gets cursor-pointer below — a cursor-default on the button branch
   // would falsely read as "not clickable", worst on desktop where click is the
   // only toggle besides hover.
+  //
+  // The link branch takes Escape alone. Without it, Escape on the focused,
+  // expanded link was claimed by nobody, so with the privacy notice open it
+  // declined analytics instead of collapsing the console. Enter stays the
+  // link's own (it opens Spotify), so only Escape reaches onCardKeyDown.
   const linkProps = hasLink
-    ? { href: trackUrl, target: '_blank', rel: 'noopener noreferrer' }
+    ? {
+        href: trackUrl,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        onKeyDown: (e) => {
+          if (e.key === 'Escape') onCardKeyDown(e);
+        },
+      }
     : {
         tabIndex: 0,
         role: 'button',

@@ -121,6 +121,25 @@ describe('CommandPalette', () => {
     expect(input()).toHaveFocus();
   });
 
+  // A role="status" inserted with its text already inside is often not
+  // announced, so the region must exist, empty, BEFORE "Nothing matches"
+  // arrives, and the same node must take the text (code review).
+  it('announces "Nothing matches" as a text change in a status mounted empty', async () => {
+    const { user } = setup();
+    await user.keyboard('{Meta>}k{/Meta}');
+    await waitFor(() => expect(input()).toHaveFocus());
+    const status = screen.getByRole('status');
+    expect(status).toBeEmptyDOMElement();
+
+    await user.type(input(), 'zzzz-no-match');
+    expect(screen.getByRole('status')).toBe(status);
+    expect(status).toHaveTextContent('Nothing matches');
+
+    await user.clear(input());
+    expect(screen.getByRole('status')).toBe(status);
+    expect(status).toBeEmptyDOMElement();
+  });
+
   it('has no axe violations open, filtered, or empty', async () => {
     const { user, container } = setup();
     await user.keyboard('{Meta>}k{/Meta}');

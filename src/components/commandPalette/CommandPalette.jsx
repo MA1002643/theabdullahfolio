@@ -173,15 +173,21 @@ export default function CommandPalette({ actions }) {
             be a bare <li> inside role="listbox", which may only own options,
             and nothing announced it: a screen-reader user typing a query that
             matched nothing heard silence. The listbox itself stays mounted,
-            empty, because the combobox's aria-controls points at it. */}
-        {pal.filtered.length === 0 ? (
-          <p
-            role="status"
-            className="px-4 pb-6 pt-4 text-center font-mono text-xs text-foreground/60"
-          >
-            Nothing matches
-          </p>
-        ) : null}
+            empty, because the combobox's aria-controls points at it.
+            The status is mounted EMPTY with the palette and only its text
+            changes, as PrivacyNotice's live region does: a role="status"
+            inserted with "Nothing matches" already inside is often not
+            announced at all, so an unmatched query could still be silent. */}
+        <p
+          role="status"
+          className={
+            pal.filtered.length === 0
+              ? 'px-4 pb-6 pt-4 text-center font-mono text-xs text-foreground/60'
+              : undefined
+          }
+        >
+          {pal.filtered.length === 0 ? 'Nothing matches' : null}
+        </p>
       </motion.div>
     </div>
   );
