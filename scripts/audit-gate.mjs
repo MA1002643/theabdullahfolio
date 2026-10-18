@@ -32,10 +32,40 @@ try {
 } catch (err) {
   raw = err.stdout; // npm audit exits non-zero whenever it finds anything
 }
-const report = JSON.parse(raw);
+
+// An audit that did not run must not read as an audit that found nothing. A
+// registry outage, an auth failure or a lockfile problem makes npm print
+// `{ "error": { ... } }` with no `vulnerabilities` field; defaulting that to {}
+// would report zero advisories and pass the gate with an empty allowlist.
+function refuse(reason) {
+  const summary = `### Production dependency audit\n\n❌ **The audit did not run:** ${reason}\n`;
+  console.error(summary);
+  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summary}\n`);
+  process.exit(1);
+}
+let report;
+try {
+  report = JSON.parse(raw);
+} catch {
+  refuse(`npm audit printed no JSON report (${raw ? `${String(raw).slice(0, 200)}…` : 'empty output'})`);
+}
+if (!report || typeof report !== 'object') refuse('npm audit returned no report object');
+if (report.error) {
+  refuse(`npm audit reported an error: ${report.error.code ?? ''} ${report.error.summary ?? JSON.stringify(report.error)}`.trim());
+}
+const { vulnerabilities } = report;
+if (!vulnerabilities || typeof vulnerabilities !== 'object' || Array.isArray(vulnerabilities)) {
+  refuse('the report has no valid `vulnerabilities` map');
+}
+for (const [pkg, vuln] of Object.entries(vulnerabilities)) {
+  if (!Array.isArray(vuln?.via)) refuse(`the entry for ${pkg} has no \`via\` list`);
+  for (const via of vuln.via) {
+    if (typeof via !== 'string' && typeof via?.url !== 'string') refuse(`an advisory on ${pkg} has no url`);
+  }
+}
 
 const advisories = new Map(); // GHSA id → { severity, title, package }
-for (const [pkg, vuln] of Object.entries(report.vulnerabilities ?? {})) {
+for (const [pkg, vuln] of Object.entries(vulnerabilities)) {
   for (const via of vuln.via) {
     if (typeof via === 'string') continue; // inherited from another package; counted there
     const id = via.url.split('/').pop();

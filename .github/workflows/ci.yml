@@ -7,7 +7,7 @@ name: CI
 #   build ──┬─ bundle ┤  (client-bundle secret scan · first-load JS budget)
 #           ├─ e2e ───┤  (chromium · mobile-chrome, sharded as a matrix)
 #           ├─ quality┤  (a11y · security · perf · visual)
-#           └─ burn-in┘  (PRs only: every CHANGED spec × 5, to catch a flake before it merges)
+#           └─ burn-in┘  (branches only: every spec THIS PUSH changed × 5, to catch a flake before it merges)
 #
 # Every job writes its own section of the run summary, and every browser job
 # uploads its report and traces when it fails. docs/testing.md is the map.
@@ -30,10 +30,19 @@ on:
   # pushed with GITHUB_TOKEN, which starts no push run, and would otherwise
   # head the branch with no checks.
   workflow_dispatch:
+    inputs:
+      burn_in_base:
+        description: 'Burn in the specs changed since this commit (visual-baselines passes its push''s `before`)'
+        type: string
+        required: false
+        default: ''
 
-# Cancel in-progress runs on the same branch when a new push arrives
+# One group per BRANCH, not per ref: a push to a PR branch raises a push run
+# (refs/heads/…) and a pull_request run (refs/pull/N/merge) on the same code,
+# and the screenshot commit's dispatch raises a third. Keyed on the branch
+# name, each newer run cancels the older, so one survives and it tests the head.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 # Least privilege for every job, declared rather than inherited from the
@@ -266,11 +275,21 @@ jobs:
             test-results-visual/
           retention-days: 7
 
+  # Burns in the specs THIS PUSH changed, not every spec the PR has changed: on
+  # a long-lived PR the whole-PR diff re-ran every touched spec × 5 × 4 projects
+  # on each push (130 billed minutes on PR #160, 2026-10-17). Every spec still
+  # gets burned in once, on the push that changed it.
+  #
+  # Runs on any event the concurrency group can leave as the survivor (the
+  # pull_request run, the branch push run, or the screenshot commit's dispatch),
+  # each with its own idea of "before this push". Not on main: its pushes are
+  # merges whose specs were burned in on the PR.
   burn-in:
     name: Flake burn-in (changed specs × 5)
     needs: build
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
         with:
@@ -278,9 +297,28 @@ jobs:
           persist-credentials: false
       - name: Find changed browser specs
         id: changed
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          BASE_REF: ${{ github.base_ref }}
+          # pull_request `synchronize` and push both carry the head before this
+          # push; a dispatch carries it as an input. All-zero means a new branch.
+          BEFORE: ${{ github.event.before || inputs.burn_in_base }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          specs=$(git diff --name-only --diff-filter=AM "origin/${{ github.base_ref }}...HEAD" -- 'tests/**/*.spec.js' | tr '\n' ' ')
+          if printf '%s' "$BEFORE" | grep -Eq '^[0-9a-f]{40}$' && [ "$BEFORE" != 0000000000000000000000000000000000000000 ] \
+             && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            range="$BEFORE...$HEAD_SHA"
+          elif [ "$EVENT" = pull_request ]; then
+            # opened / reopened, or a force-push that dropped the old head
+            range="origin/$BASE_REF...$HEAD_SHA"
+          else
+            echo "No earlier commit to compare against; nothing to burn in." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          specs=$(git diff --name-only --diff-filter=AM "$range" -- 'tests/**/*.spec.js' | tr '\n' ' ')
           echo "specs=$specs" >> "$GITHUB_OUTPUT"
+          echo "Burn-in range: \`$range\` ($EVENT${ACTION:+ $ACTION})" >> "$GITHUB_STEP_SUMMARY"
           if [ -z "$specs" ]; then echo "No browser spec changed; nothing to burn in." >> "$GITHUB_STEP_SUMMARY"; fi
       - uses: actions/setup-node@v6
         if: ${{ steps.changed.outputs.specs != '' }}

@@ -317,6 +317,10 @@ test.describe('answer-engine readiness (W3)', () => {
     // The intro loader holds the page inert until it reveals (issue #92), as
     // an opaque overlay should: a keyboard cannot reach what it cannot see.
     await page.waitForFunction(() => window.__loaderDone === true);
+    // `__loaderDone` fires as the reveal STARTS; the page stays inert under
+    // the still-opaque wipe for REVEAL_DURATION_MS more, and an inert link
+    // cannot take focus. Wait for the boundary itself to go.
+    await page.locator('[inert]').waitFor({ state: 'detached' });
 
     const summary = page.locator('main p.sr-only').first();
 
@@ -453,6 +457,10 @@ test.describe('structured data', () => {
     // The intro loader holds the page inert until it reveals (issue #92), as
     // an opaque overlay should: a keyboard cannot reach what it cannot see.
     await page.waitForFunction(() => window.__loaderDone === true);
+    // `__loaderDone` fires as the reveal STARTS; the page stays inert under
+    // the still-opaque wipe for REVEAL_DURATION_MS more, and an inert link
+    // cannot take focus. Wait for the boundary itself to go.
+    await page.locator('[inert]').waitFor({ state: 'detached' });
 
     const nav = page.locator('nav.project-sibling-nav');
     const firstLink = nav.locator('a').first();
@@ -512,6 +520,11 @@ test.describe('structured data', () => {
     // The panel is placed top-RIGHT because every other corner is taken on this
     // route. If it ever moves, this catches it covering a control a user needs.
     await page.goto('/projects/5');
+    // Past the loader's inert boundary first (see above): focus on an inert
+    // link is a no-op, and a still-clipped 1px nav overlaps nothing, so this
+    // test would pass without measuring the revealed panel at all.
+    await page.waitForFunction(() => window.__loaderDone === true);
+    await page.locator('[inert]').waitFor({ state: 'detached' });
     await page.locator('nav.project-sibling-nav a').first().focus();
 
     const navBox = await page.locator('nav.project-sibling-nav').boundingBox();

@@ -59,6 +59,9 @@ const CATEGORY_LABELS = {
 const hasDisclosure = (item) =>
   Boolean(item?.repos?.length) || (item?.privateRepoCount ?? 0) > 0;
 
+// Run `fn` once the scroll events and rAF work of the next frame have landed.
+const afterTwoFrames = (fn) => requestAnimationFrame(() => requestAnimationFrame(fn));
+
 // The card body shows ONE category at a time: header + gap + one icon row, plus
 // vertical breathing room so the row never touches the clip edges (icons fully
 // visible top & bottom, with headroom for the hover lift). Kept as a constant so
@@ -410,7 +413,30 @@ function SkillsStage({
   // Per-icon handlers, modality-gated: mouse/keyboard → hover-open, touch → tap.
   const onIconEnter = useCallback((item, el) => { if (canHover) openHover(item, el); }, [canHover, openHover]);
   const onIconLeave = useCallback(() => scheduleClose(), [scheduleClose]);
-  const onIconFocus = useCallback((item, el) => { if (keyboardModalityRef.current) openHover(item, el); }, [openHover]);
+  // Keyboard focus SCROLLS before it settles: the browser's own focus-scroll,
+  // and in the stage the scrub reveal (revealFocusedIcon) one frame later. Both
+  // are scrolls the close-on-scroll listener below would read as "the user
+  // scrolled away", and both leave a rect measured at focus time stale. So a
+  // focus-open is parked here and made only once that scrolling is done, from
+  // the icon's final rect: two frames on its own, or when the in-flight reveal
+  // (revealSeqRef) finishes. A previous icon's panel can still close on the
+  // reveal scroll; it is being replaced anyway.
+  const pendingFocusRef = useRef(null);
+  const revealSeqRef = useRef(0);
+  const revealingRef = useRef(false);
+  const flushFocusOpen = useCallback(() => {
+    const pending = pendingFocusRef.current;
+    pendingFocusRef.current = null;
+    if (pending && document.activeElement === pending.el) openHover(pending.item, pending.el);
+  }, [openHover]);
+  const onIconFocus = useCallback(
+    (item, el) => {
+      if (!keyboardModalityRef.current) return;
+      pendingFocusRef.current = { item, el };
+      if (!revealingRef.current) afterTwoFrames(flushFocusOpen);
+    },
+    [flushFocusOpen],
+  );
   const onIconBlur = useCallback(
     (e) => {
       if (e.relatedTarget?.closest?.("[data-skill-popover]")) return;
@@ -494,6 +520,11 @@ function SkillsStage({
   // had not slid in yet, and through every inactive category's row, all of
   // them invisible. Deferred one frame so it overrides the browser's own
   // focus-scroll of this nested scroller rather than racing it.
+  // Runs in the CAPTURE phase, before the icon's own onFocus, so it marks the
+  // reveal in flight (revealingRef) before onIconFocus parks the panel; the
+  // panel opens once the scrub has written the row's new transform: two frames
+  // after the scrollTop write, i.e. after the scroll event and the scrub's own
+  // rAF. A newer focus supersedes an older reveal (revealSeqRef).
   const revealFocusedIcon = useCallback(
     (event) => {
       const sc = scrollerRef.current;
@@ -501,14 +532,29 @@ function SkillsStage({
       if (!sc || !cell || !layout.starts.length) return;
       const i = rowRefs.current.findIndex((row) => row && row.contains(cell));
       if (i < 0) return;
+      const seq = ++revealSeqRef.current;
+      revealingRef.current = true;
       requestAnimationFrame(() => {
+        // Undo the browser's focus-scroll of the boxes between the icon and the
+        // scroller too. `overflow: hidden` is still scrollable from script and
+        // by focus, so the row's clipping wrapper was scrolled sideways ON TOP
+        // of the scrub's translate, and the "revealed" icon landed a full
+        // row-width off the stage. The translate alone owns horizontal position.
+        for (let n = cell.parentElement; n && n !== sc; n = n.parentElement) {
+          if (n.scrollLeft) n.scrollLeft = 0;
+        }
         const o = layout.overflows[i] || 0;
         const need = cell.offsetLeft + cell.offsetWidth + REVEAL_DIST - sc.clientWidth;
         const prog = o > 0 ? Math.min(1, Math.max(0, need / o)) : 0;
         sc.scrollTop = layout.starts[i] + prog * o;
+        afterTwoFrames(() => {
+          if (seq !== revealSeqRef.current) return;
+          revealingRef.current = false;
+          flushFocusOpen();
+        });
       });
     },
-    [layout],
+    [layout, flushFocusOpen],
   );
 
   // Heartbeat (item 4): which icon slugs / category indices are currently

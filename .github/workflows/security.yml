@@ -24,8 +24,10 @@ on:
     - cron: '17 4 * * 1' # Mondays 04:17 UTC
   workflow_dispatch:
 
+# Keyed on the branch name, as in ci.yml, so the screenshot commit's dispatch
+# cancels the superseded pull_request run instead of running beside it.
 concurrency:
-  group: security-${{ github.ref }}
+  group: security-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 permissions:

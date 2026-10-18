@@ -216,10 +216,14 @@ as a current view and keep it through a promotion. The local updater replaces
 `GITHUB_TOKEN` starts no workflows, so the image commit used to head the
 branch with no CI at all, and a PR's required checks would wait on it forever.
 `workflow_dispatch` is the one event that token may still raise, so after
-pushing, the workflow dispatches `ci.yml`, `security.yml` and `lighthouse.yml`
-on the branch, and their checks land on the image commit. It never commits to
-`main`: `main` only changes through a pull request, and the merged PR already
-carried its latest render.
+pushing, the workflow dispatches `ci.yml` and `security.yml` on the branch, and
+their checks land on the image commit. Both key their concurrency group on the
+branch name, so the dispatch cancels the superseded pull_request and push runs
+rather than running beside them. Not `lighthouse.yml`: the image commit changes
+only PNGs, so the pages are the ones the push already audited. A render whose
+only change is the gallery README's commit line is not committed, so it
+dispatches nothing. It never commits to `main`: `main` only changes through a
+pull request, and the merged PR already carried its latest render.
 
 Never on a Mac: macOS rasterises glyphs differently, and Docker on Apple
 silicon cannot run Chromium under amd64 emulation, which is why rendering lives
@@ -299,9 +303,16 @@ the advisory.
   2026-09-29: **87.2%** over eight modules (79.6% on the first run, which
   exposed the two gaps the rank oracle and the contact-client suite now
   close). The `break` score of 85 in `stryker.config.mjs` is the ratchet.
-- **Flake burn-in**: on every PR, each *changed* browser spec runs five times
-  with retries off. Elsewhere CI retries twice and reports tests that passed
-  on retry as flaky in the run summary.
+- **Flake burn-in**: on every push to a branch, each browser spec *that push*
+  changed runs five times with retries off (capped at 30 minutes). The range is
+  the push's own `before`, from whichever run survives the concurrency group:
+  the pull_request run, the branch's push run, or the screenshot commit's
+  dispatch, which passes it as `burn_in_base`. A newly opened PR compares
+  against `main`. Elsewhere CI retries twice and reports tests that passed on
+  retry as flaky in the run summary. Two pushes in quick succession cancel the
+  first run, so the first push's specs skip burn-in. That is the cost of not
+  re-running every spec the PR has ever touched on each push, which took 130
+  billed minutes a push on PR #160.
 - **Quarantine**: a browser test tagged `@quarantine` (with its issue linked,
   enforced) is left out of every run by `grepInvert` in
   `playwright.config.mjs`, so it no longer gates a merge. The nightly
@@ -315,8 +326,8 @@ the advisory.
 | `ci.yml` | every push and PR, and dispatched onto each screenshot commit | lint + the browser-test count check · Vitest + coverage · build → bundle scan + budget · E2E (chromium, mobile-chrome) · browser quality (a11y, security, perf, then visual, each with its own report and summary) · burn-in |
 | `security.yml` | PRs, `main`, weekly | CodeQL · OSV · Gitleaks · audit gate |
 | `nightly.yml` | daily | WebKit, Firefox, iPhone 14 · quarantined tests · mutation testing · every property at ≥ 20,000 runs |
-| `lighthouse.yml` | PRs, `main` | Lighthouse CI budgets |
-| `visual-baselines.yml` | every push (and manual, with `promote`) | render every view, commit `tests/visual/__latest__/` (and seed or promote the baselines) on any branch but `main`, then dispatch the three workflows above onto that commit |
+| `lighthouse.yml` | `main`; a PR only while it carries the `lighthouse` label | Lighthouse CI budgets |
+| `visual-baselines.yml` | every push (and manual, with `promote`) | render every view, commit `tests/visual/__latest__/` (and seed or promote the baselines) on any branch but `main` when a screenshot changed, then dispatch `ci.yml` and `security.yml` onto that commit |
 
 Each job writes a Markdown section to the run summary
 (`scripts/test-summary.mjs`). A job that runs Playwright twice gives the second
@@ -388,6 +399,10 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (visual) | Both visual renderers wrote over the existing snapshot tree, so a removed or renamed view's PNG survived: listed in `__latest__` as current, kept on promotion, and left behind by `npm run test:visual:update`. | Both render into an empty tree; the local updater clears its output only after a successful run. |
 | Review (`/uses`) | After the Vitest layers were split, the published Vitest case total still came from a lexical scanner: the text read `routeSegmentConfig` (an `it.each(files)` over every app source file) as 2 cases of 80 and `contactContract` as 3 of 9, publishing 1,195 against Vitest's 1,356. | Taken from `vitest list` into `tests/vitest-cases.json`, checked in CI like the browser count; the scanner is gone. |
 | Review (keyboard) | The page left `inert` when the loader's reveal began, but the overlay stays mounted and mostly opaque for the 520 ms wipe (or reduced-motion cross-fade), so Tab in that window reached controls still hidden behind it. | `inert` until the overlay is removed. `loader-inert.spec.js` samples every frame until then; before the fix it found 6 exposed frames. |
+| Review (security) | The audit gate read an error-only `npm audit` response as a clean one: it kept npm's stdout, defaulted the missing `vulnerabilities` field to an empty map, and with the allowlist empty reported zero advisories and passed. A registry outage would have turned the gate green. | `scripts/audit-gate.mjs` refuses a report with an `error`, no JSON, or a missing or malformed `vulnerabilities` map. `tests/unit/auditGate.test.js` runs the real script against a fake `npm` on `PATH`. |
+| Review (keyboard) | Tabbing to an `/about` skill icon that had not scrolled into the stage dismissed its repository panel at once: focus opened the panel from the icon's off-stage rect, then the stage's own reveal scroll reached the panel's close-on-scroll listener. Writing the test found a second defect underneath: the browser's focus-scroll also scrolled the row's `overflow: hidden` wrapper sideways, on top of the scrub's translate, so the "revealed" icon landed a full row-width off the stage. | Keyboard focus now opens the panel once the focus-driven scrolling has settled, from the icon's final rect, and the reveal resets that sideways scroll. `tests/e2e/skills-keyboard-popover.spec.js`, in full motion. |
+| Review (e2e) | Three `seo.spec.js` focus tests waited for `__loaderDone`, which fires as the reveal starts, while the page stays `inert` for the 520 ms wipe. A fast run focused an inert link (a no-op) and read the still-clipped panel. One of them had no loader wait at all, and passed only because a 1px nav overlaps nothing. | Each now also waits for the `[inert]` boundary to detach before focusing. |
+| Owner report (`/journey` atlas) | A role started in the current month got an 8px bar closed on the NOW line, and its caption was printed outside the bar with no border. The newest role also sat on a lower lane, because lanes were packed oldest-first. | Open bars too short for their caption now widen left to hold it, with the right edge still on the NOW line, and lanes pack newest-first. `tests/unit/timelineAtlasLayout.test.js` (its two atlas cases fail on the old code). |
 
 ## Maintenance
 
