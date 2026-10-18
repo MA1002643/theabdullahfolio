@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useAnimation, useReducedMotion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
 import { fluid, fluidText } from "@/lib/fluidScale";

@@ -8,9 +8,17 @@ loads this file automatically at the start of every session.
 ## 1. Never commit or push secrets
 
 **No API token, key, password, or other credential may ever enter a commit, a
-branch, or a push to GitHub.** This repository is public: anything that lands in
-a commit is world-readable the moment it is pushed, and stays readable in forks,
-clones, and the GitHub events API even after the commit is deleted.
+branch, or a push to GitHub.** This repository is currently private, but write
+every commit as if it were public: a private repository can be made public, and
+anything that lands in a commit stays in every clone, in forks, and in the
+history that would go public with it, even after the commit is deleted.
+
+Because the repository is private on a personal account, GitHub's secret
+scanning and push protection are not available (the API answers "Secret
+scanning is not available for this repository"). Nothing on GitHub blocks a
+secret at push time. The only automated check is the `Gitleaks (full history)`
+job in `.github/workflows/security.yml`, and it runs *after* the push. The
+pre-commit diff check below is the real guard.
 
 This rule is absolute. It is not relaxed for "just a test key", "it's already
 revoked", "only on a feature branch", "it's in a comment", or "I'll remove it in
@@ -115,6 +123,19 @@ Order matters — treat the value as burned the instant it is pushed.
 Every commit includes a `CHANGELOG.md` entry, and updates `README.md` when the
 change touches something the README documents.
 
+**The one exemption: the automated screenshot commits.** The
+`test(visual): render screenshots for <sha>` commits pushed by
+`github-actions[bot]` from `.github/workflows/visual-baselines.yml` carry no
+`CHANGELOG.md` entry, no test-plan record (§3) and no privacy check, by design.
+They are generated output, not a change: they touch only
+`tests/visual/__latest__/` (and `tests/visual/__screenshots__/` on a seeding or
+`promote: true` run), they render the commit named in their subject, and that
+commit already carried the entry and the checks. A changelog line per push
+would be noise that conflicts on every rebase. The exemption covers that bot,
+that workflow and those two directories only. A person or agent promoting
+baselines by hand, or a bot commit that touches anything else, follows the
+normal rules.
+
 ### `docs/seo.md` is checked on every change
 
 `docs/seo.md` is the decision record — why each choice on this site was made,
@@ -209,3 +230,56 @@ so those can go stale while CI stays green. Run `npx vitest run
 tests/unit/privacyInventory.test.js` after editing the inventory. Record the
 policy change in the commit's `CHANGELOG.md` entry, or state there that the
 privacy check found nothing to change.
+
+---
+
+## 3. Keep the test plan in step
+
+`docs/testing.md` is the master test plan. It started as issue #92, and it is
+a living document: it has to cover whatever the project is *now*, not what it
+was when #92 closed. **Every new issue or task re-considers the plan, and the
+tests and plan updates it calls for land in the same commit as the change.**
+An agent does this without being asked, then reports what it added, or that
+it found nothing to add.
+
+Do it twice: **when planning** the issue (so the tests are designed with the
+feature, not bolted on), and **before the commit** (so nothing that changed
+while building is missed).
+
+### What to check
+
+| If the change… | Then |
+| --- | --- |
+| Adds or renames a page | Add it to `tests/support/routes.js`. Static routes are enforced against the sitemap registry; a new **dynamic** template needs a sample in `DYNAMIC_SAMPLES` by hand. Every browser layer (navigation, axe, keyboard, motion, headers, Web Vitals, image warm-up) then covers it. |
+| Adds or changes an API route | A `tests/api/` test (MSW for outbound calls, `fakeRedis` for state), and a hostile-request case in `tests/security/api-hardening.spec.js` if it accepts input or a secret. The method surface in `apiSurface.test.js` fails until the new endpoint is reviewed into it. |
+| Adds interactive UI | A `tests/component/` test driven by role and label, and keyboard reachability; a new modal, popover or overlay also needs Escape and focus-return checks. |
+| Adds a user journey (a form, a multi-step flow, an offline path) | A `tests/e2e/` spec, tagged `@cross-browser` if a visitor on any browser takes it. |
+| Adds animation or motion | It must stop under `prefers-reduced-motion` (`tests/a11y/motion.spec.js` checks every route); read the preference through `src/hooks/useReducedMotion.js`, never framer-motion's hook. |
+| Adds pure logic with an invariant (parsing, ranking, diffing, paging) | A unit test, and a fast-check property in `tests/property/` where an invariant exists. If it is critical, add it to `stryker.config.mjs`'s mutation targets. |
+| Adds an env var, a secret, or an outside host | `.env.example` (enforced by `envHygiene.test.js`); the hermetic network (MSW handler, `tests/support/fixtures/api.js`, and the Playwright sandbox) so no test reaches the real host. |
+| Changes the look of a page in the visual set | Review the re-rendered `tests/visual/__latest__/` gallery, and promote the baselines deliberately if the change is intended. |
+| Adds a dependency, or a heavy client import | The first-load JS budget (`npm run test:bundle`); the audit gate if it brings an advisory. |
+| Finds a bug, whether while building or because a test caught it | A test that fails without the fix, and a row in the defects table in `docs/testing.md`. |
+
+Then update `docs/testing.md` itself wherever the change alters how a layer
+works, what it covers, or a command it names. Like `docs/seo.md` it is
+published (at `/notes/testing`), so a stale paragraph is published too.
+
+Record the result in the commit's `CHANGELOG.md` entry: the tests added, or
+"test-plan check: nothing to add". Changes that only touch copy or docs, or
+styling outside the visual set, usually need nothing, but the check still
+happens and is still recorded.
+
+### What CI catches, and what it does not
+
+Some of this is enforced: `routeRegistry` (static routes), `apiSurface` (new
+endpoints), `envHygiene` (new env vars), `testHygiene` (no skipped or focused
+tests, no hard-coded fast-check run counts), `reducedMotionHook` (the banned
+import), `loaderInertBoundary` (interactive overlays under the intro loader's
+`inert` boundary), `routeSegmentConfig` (route config declared, never
+re-exported), `escapeOwnership` (every Escape handler claims the key), the
+two test counts `/uses` publishes (CI fails until `npm run test:count`
+regenerates `tests/browser-cases.json` and `tests/vitest-cases.json`), and the error
+sentinel in every browser test. **Everything else in the table is not**: a new feature
+with no tests at all passes CI. The check is a habit, not a gate, which is why
+it is written here.

@@ -942,9 +942,14 @@ card instead of a 404. Nothing about the build output says so — the route
 prints as `●` either way, because the enumerated params did prerender; the
 difference only appears when you request a slug that is not one of them. Both
 dynamic routes export the pair from their `opengraph-image.js`, and each
-`twitter-image.js` re-exports **both** alongside `default`/`alt`/`size`/
+`twitter-image.js` carries **both** alongside `default`/`alt`/`size`/
 `contentType` — it is a separate module again, so closing the set next door
 does nothing for it (fixed 2026-09-24; `/notes` had shipped with neither).
+`generateStaticParams` is re-exported, but `dynamicParams` is declared in the
+file itself: from Next 15 a re-exported segment config is ignored with a single
+build warning and the default (`true`) applies, which silently reopened both
+sets during the upgrade (fixed 2026-10-11; `tests/fitness/routeSegmentConfig.test.js`
+now fails on any re-export).
 
 **You do not add `src/lib/seo/site.js` yourself** — `SHARED_ROUTE_SOURCES` is
 appended to every entry when `ROUTES` is built. It is there because the registry
@@ -1016,8 +1021,10 @@ would re-stamp the URL for changes no crawler can see.
 
 **And watch out for inputs that are not imports at all.** `/uses` reads eight
 repository paths at build time through `readBuildFacts()` — `package.json`,
-`package-lock.json`, `.nvmrc`, `vercel.json`, `.github/workflows`, `tests/unit`,
-`tests/e2e`, `src/app/api` — with `fs`, not `import`, so no dependency walk can
+`package-lock.json`, `.nvmrc`, `vercel.json`, `.github/workflows`,
+`tests/vitest-cases.json`, `tests/browser-cases.json` (the two test counts, each
+written from its runner's own collected list), `src/app/api` — with `fs`, not
+`import`, so no dependency walk can
 find them. Listing `src/lib/uses` covers the *reader*; it says nothing about what
 the reader *reads*, and that distinction is what left a dependency bump able to
 rewrite the page's bill of materials with the timestamp unmoved. If a new route
@@ -1639,6 +1646,14 @@ measured instead of assumed and it passes.
 
 ---
 
+**Beyond the six routes (2026-09-28, [#92](https://github.com/MA1002643/theabdullahfolio/issues/92)).**
+Lighthouse runs a subset of axe on the six routes above. The browser a11y
+suite now runs the full WCAG 2.2 AA axe rule set on **every** route at 1440 px
+and 390 px, and on its first run it found what the six-route budget could not:
+four sub-4.5:1 colours on `/uses` (not one of the six) and the unreachable
+scrollers noted in §16. Both are fixed; the Lighthouse budget above is
+unchanged and still enforced at 100.
+
 ## 16. `/notes` — publishing the reasoning
 
 This document is well over a thousand lines recording why each decision on this
@@ -1747,6 +1762,18 @@ re-stamping every URL on the site for a change only eleven can see. A window is
 not a project fact.
 
 ---
+
+**A second document, and scrollers a keyboard can reach (2026-09-28, [#92](https://github.com/MA1002643/theabdullahfolio/issues/92)).**
+`docs/testing.md`, the testing strategy and runbook, now publishes at
+`/notes/testing` by the rule above, with no code change: a second
+`TechArticle`, a second sitemap entry, and its own share cards. It is written
+for the same reader as this one (someone who wants to know *why*, not just
+*what*), and the structural suite (`notesCorpus.test.js`) covers it
+automatically. The same issue's axe pass found that at 390 px this document's
+code blocks and wide tables scroll sideways but could not be reached by
+keyboard (`scrollable-region-focusable`), so `renderNote()` now gives every
+rendered `<pre>` and `<table>` a `tabindex="0"`
+(`makeScrollersFocusable()`, pinned by `notesScrollersFocusable.test.js`).
 
 ## 17. The consent gate, and the privacy page that had to be true
 

@@ -26,7 +26,8 @@ export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 export default async function Image({ params }) {
-  const note = readNote(params.slug);
+  const { slug } = await params;
+  const note = readNote(slug);
 
   return new ImageResponse(
     await sectionCard({

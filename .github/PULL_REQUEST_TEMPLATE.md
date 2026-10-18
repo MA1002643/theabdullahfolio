@@ -64,6 +64,7 @@ Closes #
 - [ ] Responsive behaviour verified at all three breakpoints noted above.
 - [ ] Accessibility quick-check done (keyboard tab order, focus visibility, screen-reader labels for any new interactive element).
 - [ ] Documentation updated where behaviour, env vars, or API responses change.
+- [ ] Test plan re-considered (CLAUDE.md §3): new pages, routes, UI, journeys, motion, logic and hosts are covered by the right layer, `docs/testing.md` is still true, and the CHANGELOG entry names the tests added (or "nothing to add").
 - [ ] No secrets or `.env` files committed.
 - [ ] Commit messages follow Conventional Commits (`type(scope): summary`).
 - [ ] CodeRabbit findings addressed or explicitly acknowledged as invalid.

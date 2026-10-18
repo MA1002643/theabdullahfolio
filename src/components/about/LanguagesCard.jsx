@@ -1,6 +1,7 @@
 "use client";
 
-import { animate, motion, useReducedMotion } from "framer-motion";
+import { animate, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import React, {
   useCallback,
   useEffect,
@@ -18,6 +19,7 @@ import { useStaggeredScrollReveal } from "@/hooks/useStaggeredScrollReveal";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { fastStartSlowFinish } from "@/utils/animationCurves";
 import { onMediaChange } from "@/lib/mediaQuery";
+import { claimEscape } from "@/lib/escapeKey";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
 // Shared count-up window. Every row animates over the same duration with no
@@ -232,7 +234,11 @@ export default function LanguagesCard({ data, isLive = false }) {
   const keyboardModalityRef = useRef(false);
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Tab") keyboardModalityRef.current = true;
+      // Enter / Space too: they reopen a row's popover (the row's onKeyDown),
+      // and a row focused by a click then activated from the keyboard is still
+      // keyboard-driven. This capture listener runs before that handler.
+      if (e.key === "Tab" || e.key === "Enter" || e.key === " ")
+        keyboardModalityRef.current = true;
     };
     const onPointer = () => {
       keyboardModalityRef.current = false;
@@ -359,7 +365,9 @@ export default function LanguagesCard({ data, isLive = false }) {
     };
     const onResize = () => setPopover(null);
     const onKey = (e) => {
-      if (e.key === "Escape") setPopover(null);
+      if (e.key !== "Escape") return;
+      claimEscape(e);
+      setPopover(null);
     };
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onResize);
@@ -814,7 +822,10 @@ function AnimatedLangLabel({
       className={hiddenUntilXl ? "hidden xl:block" : "block"}
     >
       <div
-        tabIndex={0}
+        // Only a row with a breakdown to open is a control. A row without one
+        // is a plain statistic: no button role and out of the Tab order, so it
+        // is not announced as a disabled button (mirrors SkillIcon).
+        tabIndex={hasRepos ? 0 : -1}
         data-lang-row=""
         // The whole row is the popover trigger, so the name OR the percentage
         // activates it; the same handlers still drive the bar spotlight.
@@ -846,8 +857,21 @@ function AnimatedLangLabel({
           onRepoClose?.();
         }}
         onClick={(e) => onRepoTap?.(e.currentTarget)}
+        // Keyboard parity (issue #92, found by jsx-a11y/recommended). Focus
+        // opens the popover, but Escape closes it WITHOUT moving focus, and
+        // with no key handler the only way back was to Tab away and return.
+        // Enter / Space now reopen it in place, the way they would on a
+        // native button — which is also why a row with a breakdown announces
+        // as one.
+        onKeyDown={(e) => {
+          if (!hasRepos || (e.key !== "Enter" && e.key !== " ")) return;
+          e.preventDefault();
+          onActivate();
+          onRepoFocus?.(e.currentTarget);
+        }}
+        role={hasRepos ? "button" : undefined}
         aria-haspopup={hasRepos ? "true" : undefined}
-        className={`group flex items-center gap-2 min-w-0 rounded-md outline-none transition-[opacity,transform] duration-200 ${
+        className={`group flex items-center gap-2 min-w-0 rounded-md outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[rgba(255,170,42,0.8)] transition-[opacity,transform] duration-200 ${
           hasRepos ? "cursor-pointer" : ""
         }`}
         style={{

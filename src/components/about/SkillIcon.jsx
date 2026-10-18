@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -151,7 +152,7 @@ export function SkillIcon({
           onIconActivate?.(ref.current);
         }
       }}
-      className={`skill-icon-tile relative h-full w-full select-none rounded-md outline-none ${
+      className={`skill-icon-tile relative h-full w-full select-none rounded-md outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[rgba(255,170,42,0.8)] ${
         hasRepos ? "cursor-pointer" : ""
       } ${active ? "is-active" : ""} ${pulsing ? "skill-heartbeat" : ""}`}
     >

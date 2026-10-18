@@ -158,7 +158,14 @@ export default function EditorFrame({
 
         {/* Real text in a real <pre>: selectable, crawlable, copyable. The
           gutter numbers are decorative and hidden from AT. */}
-        <pre className="uses-editor__code m-0">
+        {/* Focusable because it scrolls sideways on a phone: a keyboard user
+            must be able to reach and scroll it (axe scrollable-region-
+            focusable, issue #92). */}
+        <pre
+          className="uses-editor__code m-0"
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be keyboard-focusable (axe scrollable-region-focusable)
+          tabIndex={0}
+        >
           {lines.map((line, i) => {
             const { start, dur } = rows[i];
             const last = i === lines.length - 1;

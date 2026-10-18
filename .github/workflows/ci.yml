@@ -1,5 +1,19 @@
 name: CI
 
+# The PR gate (issue #92). One workflow, parallel jobs, one shared build:
+#
+#   lint ─────────────┐
+#   vitest ───────────┤  (unit · property · fitness · component · api + coverage)
+#   build ──┬─ bundle ┤  (client-bundle secret scan · first-load JS budget)
+#           ├─ e2e ───┤  (chromium · mobile-chrome, sharded as a matrix)
+#           ├─ quality┤  (a11y · security · perf · visual)
+#           └─ burn-in┘  (branches only: every spec THIS PUSH changed × 5, to catch a flake before it merges)
+#
+# Every job writes its own section of the run summary, and every browser job
+# uploads its report and traces when it fails. docs/testing.md is the map.
+# The full engine matrix (webkit, firefox, mobile-safari) and mutation testing
+# run nightly (nightly.yml); CodeQL, OSV and Gitleaks run in security.yml.
+
 on:
   push:
     branches:
@@ -8,134 +22,334 @@ on:
       - 'fix/**'
       - 'docs/**'
       - 'chore/**'
+      - 'test/**'
   pull_request:
     branches:
       - main
+  # Raised by visual-baselines.yml after it commits screenshots: that commit is
+  # pushed with GITHUB_TOKEN, which starts no push run, and would otherwise
+  # head the branch with no checks.
+  workflow_dispatch:
+    inputs:
+      burn_in_base:
+        description: 'Burn in the specs changed since this commit (visual-baselines passes its push''s `before`)'
+        type: string
+        required: false
+        default: ''
 
-# Cancel in-progress runs on the same branch when a new push arrives
+# One group per BRANCH, not per ref: a push to a PR branch raises a push run
+# (refs/heads/…) and a pull_request run (refs/pull/N/merge) on the same code,
+# and the screenshot commit's dispatch raises a third. Keyed on the branch
+# name, each newer run cancels the older, so one survives and it tests the head.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
+# Least privilege for every job, declared rather than inherited from the
+# repository default. Nothing here writes back to the repository.
+permissions:
+  contents: read
+
+env:
+  # Node 22 is the minimum the dependency tree supports: a transitive dep
+  # (`ai` -> `@ai-sdk/gateway@4.x`) requires >=22 and `.npmrc` sets
+  # engine-strict, so `npm ci` hard-fails on anything older (EBADENGINE).
+  NODE_VERSION: '22'
+  # Non-secret stubs so module evaluation does not fail on an absent variable.
+  # None is a credential. Kept identical across the build and every job that
+  # boots the production server, because both evaluate the same modules.
+  NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+  SMTP_HOST: smtp.example.com
+  SMTP_PORT: '587'
+  SMTP_USER: ci@example.com
+  SMTP_PASS: placeholder
+  RECEIVER_EMAIL: ci@example.com
+  AUTH_GITHUB_ID: ci-placeholder
+  AUTH_GITHUB_SECRET: ci-placeholder
+  AUTH_GOOGLE_ID: ci-placeholder
+  AUTH_GOOGLE_SECRET: ci-placeholder
+
 jobs:
-  lint-and-build:
-    name: Lint & Build
+  lint:
+    name: Lint (ESLint + full jsx-a11y)
     runs-on: ubuntu-latest
     # Honor [skip ci] in commit messages (e.g. bot-authored README sync commits).
     # head_commit is null for pull_request events, so PR CI is unaffected.
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
-
-    strategy:
-      matrix:
-        # Node 18 went EOL in April 2025. Node 20 is no longer installable
-        # either: a transitive dep (`ai` -> `@ai-sdk/gateway@4.x`) requires
-        # `node >=22`, and `.npmrc` sets `engine-strict=true`, so `npm ci`
-        # hard-fails on Node 20 (EBADENGINE). Node 22 is the current LTS and
-        # the minimum the dependency tree supports.
-        node-version: ['22']
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+      - uses: actions/checkout@v6
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # /uses publishes the browser-test count from tests/browser-cases.json
+      # (Playwright's own collected list; the spec text undercounts generated
+      # tests). This fails a PR that adds or removes browser tests without
+      # regenerating it: run `npm run test:count` and commit the file. Listing
+      # starts no browser and no server, so the lint job can do it.
+      - name: Browser-test count is current
+        run: node scripts/count-browser-cases.mjs --check
+      # The same for the Vitest figure (tests/vitest-cases.json): `vitest list`
+      # collects every test, `.each` tables built at collection time expanded,
+      # without running one.
+      - name: Vitest count is current
+        run: node scripts/count-vitest-cases.mjs --check
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        id: lint
-        run: npm run lint
-
-      # Unit suite (vitest): the grammar, the drivers, the rate limiters, the
-      # presence route, the pad geometry, the palette hook. Before the build
-      # because it is fast and most regressions land here first.
-      - name: Unit tests
-        id: unit
-        run: npm test
-
-      - name: Build
-        id: build
-        run: npm run build
-        env:
-          # Stub secrets so the build does not fail on missing env vars.
-          # Names must match src/app/api/send-mail/route.js and github-stats/route.js.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
-          SMTP_HOST: smtp.example.com
-          SMTP_PORT: '587'
-          SMTP_USER: ci@example.com
-          SMTP_PASS: placeholder
-          RECEIVER_EMAIL: ci@example.com
-
-      # E2E gate (Playwright). The `test:e2e` script chains `npm run build` so
-      # a clean local checkout works; here the Build step above has already
-      # produced the output the production server boots from, so Playwright
-      # runs directly rather than building twice. playwright.config.mjs boots
-      # `next start` on port 3100 with the Redis credential names emptied, an
-      # AUTH_SECRET minted fresh for the run (random bytes at config load —
-      # no committed value, the specs never sign in) and the json file store
-      # unlocked through its e2e-only hatch (a served production refuses it
-      # otherwise) — nothing in this job touches a live service, and
-      # `reuseExistingServer` is off unless opted into.
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
-      - name: E2E tests
-        id: e2e
-        run: npx playwright test --reporter=list,html
-        env:
-          # Same non-secret stubs the Build step got (the server evaluates the
-          # same modules), plus placeholder OAuth client ids so Auth.js boots —
-          # the specs only ever read the UNAUTHENTICATED session, or stub it
-          # at the network layer. None of these is a credential.
-          NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
-          SMTP_HOST: smtp.example.com
-          SMTP_PORT: '587'
-          SMTP_USER: ci@example.com
-          SMTP_PASS: placeholder
-          RECEIVER_EMAIL: ci@example.com
-          AUTH_GITHUB_ID: ci-placeholder
-          AUTH_GITHUB_SECRET: ci-placeholder
-          AUTH_GOOGLE_ID: ci-placeholder
-          AUTH_GOOGLE_SECRET: ci-placeholder
-
-      - name: Upload Playwright report
-        if: ${{ failure() && steps.e2e.outcome == 'failure' }}
+  vitest:
+    name: Vitest (unit · property · fitness · component · api)
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    # Job-level so the Codecov step's `if:` can see it (a step's own `env` is
+    # not in scope for that step's condition).
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # Coverage thresholds are enforced by vitest.config.mjs, so a drop fails
+      # this step. JUnit output feeds the summary below.
+      - name: Run every Vitest project with coverage
+        run: npx vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=test-results/vitest-junit.xml
+      - name: Summarise
+        if: always()
+        run: node scripts/test-summary.mjs vitest
+      # Codecov is optional: without the CODECOV_TOKEN repo secret the upload is
+      # skipped rather than failed, and the summary above already carries the
+      # numbers. With it, PRs get a coverage-delta comment.
+      - name: Upload coverage to Codecov
+        if: ${{ always() && env.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ env.CODECOV_TOKEN }}
+          files: coverage/lcov.info
+          fail_ci_if_error: false
+      - name: Upload coverage report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-node-${{ matrix.node-version }}
-          path: playwright-report/
+          name: coverage
+          path: coverage/
+          retention-days: 14
+
+  build:
+    name: Build (production)
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          # The one REAL credential in this workflow, and the reason the bundle
+          # scan below means something: if any code path inlined it into client
+          # output, the scan finds its value there.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Client-bundle secret scan
+        run: node scripts/scan-client-bundle.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: First-load JS budget
+        run: node scripts/check-bundle-budget.mjs
+      # One build, shared by every browser job below. `include-hidden-files`
+      # is REQUIRED: the output lives in `.next.nosync` (next.config.mjs), and
+      # upload-artifact@v4 silently skips dot-directories without it.
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: |
+            .next.nosync
+            !.next.nosync/cache
+          include-hidden-files: true
+          retention-days: 1
+
+  e2e:
+    name: E2E (${{ matrix.project }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, mobile-chrome]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next.nosync
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run
+        run: npx playwright test --project=${{ matrix.project }}
+      - name: Summarise
+        if: always()
+        run: node scripts/test-summary.mjs playwright "E2E · ${{ matrix.project }}"
+      - name: Upload report and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7
 
-      - name: Write job summary
-        if: always()
+  quality:
+    name: Browser quality (a11y · security · perf · visual)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next.nosync
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run a11y, security and perf
+        id: quality
+        run: npx playwright test --project=a11y --project=security --project=perf
+      # Visual regression compares against baselines rendered on this same
+      # runner type by the "Visual baselines" workflow. The project arms itself
+      # only once they are committed (playwright.config.mjs), so this step runs
+      # only then; before that it is skipped, visibly, in the job's step list.
+      #
+      # A second Playwright run here would overwrite the first one's JUnit file,
+      # HTML report and test-results/ (Playwright empties its output directory
+      # at start), so the summary reported only the visual tests and a failed
+      # a11y run lost its traces. The visual run gets its own of all three, and
+      # `always()` so a failed a11y run still gets its visual comparison.
+      - name: Run visual regression
+        id: visual
+        if: ${{ always() && hashFiles('tests/visual/__screenshots__/**/*.png') != '' }}
+        run: npx playwright test --project=visual --output=test-results-visual
         env:
-          LINT_OUTCOME: ${{ steps.lint.outcome }}
-          UNIT_OUTCOME: ${{ steps.unit.outcome }}
-          BUILD_OUTCOME: ${{ steps.build.outcome }}
-          E2E_OUTCOME: ${{ steps.e2e.outcome }}
+          PLAYWRIGHT_JUNIT_FILE: test-results-visual/playwright-junit.xml
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-visual
+      - name: Summarise a11y, security and perf
+        if: ${{ always() && steps.quality.outcome != 'skipped' }}
+        run: node scripts/test-summary.mjs playwright "Browser quality · a11y, security, perf"
+      - name: Summarise visual regression
+        if: ${{ always() && steps.visual.outcome != 'skipped' }}
+        run: node scripts/test-summary.mjs playwright "Browser quality · visual" test-results-visual/playwright-junit.xml
+      - name: Upload report, traces and visual diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quality
+          path: |
+            playwright-report/
+            test-results/
+            playwright-report-visual/
+            test-results-visual/
+          retention-days: 7
+
+  # Burns in the specs THIS PUSH changed, not every spec the PR has changed: on
+  # a long-lived PR the whole-PR diff re-ran every touched spec × 5 × 4 projects
+  # on each push (130 billed minutes on PR #160, 2026-10-17). Every spec still
+  # gets burned in once, on the push that changed it.
+  #
+  # Runs on any event the concurrency group can leave as the survivor (the
+  # pull_request run, the branch push run, or the screenshot commit's dispatch),
+  # each with its own idea of "before this push". Not on main: its pushes are
+  # merges whose specs were burned in on the PR.
+  burn-in:
+    name: Flake burn-in (changed specs × 5)
+    needs: build
+    if: ${{ github.ref_name != github.event.repository.default_branch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Find changed browser specs
+        id: changed
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          BASE_REF: ${{ github.base_ref }}
+          # pull_request `synchronize` and push both carry the head before this
+          # push; a dispatch carries it as an input. All-zero means a new branch.
+          BEFORE: ${{ github.event.before || inputs.burn_in_base }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          status_icon() {
-            case "$1" in
-              success) echo "✅ passed" ;;
-              failure) echo "❌ failed" ;;
-              skipped) echo "⏭️ skipped" ;;
-              cancelled) echo "🚫 cancelled" ;;
-              *) echo "— not run" ;;
-            esac
-          }
-          {
-            echo "### CI result — Node ${{ matrix.node-version }}"
-            echo ""
-            echo "| Step   | Status |"
-            echo "|--------|--------|"
-            echo "| Lint   | $(status_icon "$LINT_OUTCOME") |"
-            echo "| Unit   | $(status_icon "$UNIT_OUTCOME") |"
-            echo "| Build  | $(status_icon "$BUILD_OUTCOME") |"
-            echo "| E2E    | $(status_icon "$E2E_OUTCOME") |"
-          } >> "$GITHUB_STEP_SUMMARY"
+          if printf '%s' "$BEFORE" | grep -Eq '^[0-9a-f]{40}$' && [ "$BEFORE" != 0000000000000000000000000000000000000000 ] \
+             && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            range="$BEFORE...$HEAD_SHA"
+          elif [ "$EVENT" = pull_request ]; then
+            # opened / reopened, or a force-push that dropped the old head
+            range="origin/$BASE_REF...$HEAD_SHA"
+          else
+            echo "No earlier commit to compare against; nothing to burn in." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          specs=$(git diff --name-only --diff-filter=AM "$range" -- 'tests/**/*.spec.js' | tr '\n' ' ')
+          echo "specs=$specs" >> "$GITHUB_OUTPUT"
+          echo "Burn-in range: \`$range\` ($EVENT${ACTION:+ $ACTION})" >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$specs" ]; then echo "No browser spec changed; nothing to burn in." >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/setup-node@v6
+        if: ${{ steps.changed.outputs.specs != '' }}
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - if: ${{ steps.changed.outputs.specs != '' }}
+        run: npm ci
+      - uses: actions/download-artifact@v4
+        if: ${{ steps.changed.outputs.specs != '' }}
+        with:
+          name: next-build
+          path: .next.nosync
+      - if: ${{ steps.changed.outputs.specs != '' }}
+        run: npx playwright install --with-deps chromium
+      # Five repeats with NO retries: a test that passes 4 of 5 is flaky, and
+      # a flaky test is cheapest to fix before it merges, while its author
+      # still remembers writing it.
+      - name: Burn in
+        if: ${{ steps.changed.outputs.specs != '' }}
+        run: npx playwright test ${{ steps.changed.outputs.specs }} --project=chromium --project=a11y --project=security --project=perf --repeat-each=5 --retries=0
+      # No traces: with retries off, `trace: on-first-retry` never records, and
+      # recording all ~1,200 runs would load the very job that measures flake
+      # under load. The screenshot, video and error context still say where a
+      # failure stopped, which the log alone does not.
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-burn-in
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -3,13 +3,13 @@
 <div align="center">
   <img src="public/background/logo.png" alt="theabdullahfolio" width="90" />
   <h1>theabdullahfolio</h1>
-  <p><em>A cinematic, 3D-powered developer portfolio built with Next.js 14</em></p>
+  <p><em>A cinematic, 3D-powered developer portfolio built with Next.js 15</em></p>
 </div>
 
 <!-- HERO-BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
   <img src="https://img.shields.io/badge/Three.js-r162-000000?style=for-the-badge&logo=threedotjs&logoColor=white" alt="Three.js" />
   <img src="https://img.shields.io/badge/Framer_Motion-11-FF0055?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
@@ -23,8 +23,8 @@
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome" />
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
-  <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.13-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--09--25-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.18-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/last_synced-2026--10--11-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -40,7 +40,7 @@
 
 ## ✨ Overview
 
-**theabdullahfolio** is a cinematic developer portfolio that blends **Three.js 3D scenes**, **Framer Motion orchestration**, and **Next.js 14 App Router** into a single, performance-tuned experience. Every page tells a story — from the trigonometric orbital navigation ring on the home screen to the procedurally generated laptop keyboard in each project detail view.
+**theabdullahfolio** is a cinematic developer portfolio that blends **Three.js 3D scenes**, **Framer Motion orchestration**, and **Next.js 15 App Router** into a single, performance-tuned experience. Every page tells a story — from the trigonometric orbital navigation ring on the home screen to the procedurally generated laptop keyboard in each project detail view.
 
 Built without a UI template or design kit, this project demonstrates deep frontend engineering: generative 3D graphics, real-time GitHub data via GraphQL, physics-based spring animations, an AI-assisted contact form with an offline-durable, idempotent send path, and hardened Content Security Policy headers — all deployed on the edge.
 
@@ -53,6 +53,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Orbital Navigation** | Trigonometric button ring on one viewport-derived ellipse — a fixed `0.204` tilt at every width, sized so the outermost button always clears the screen edge, anchored to the laptop's **measured base** and raised 15% of the laptop's own height above it (`ORBIT_RAISE`) so it circles the artwork's lower body at the same pose on every viewport, and depth-sorted per frame so the ring passes *behind* the laptop on the far half of each lap and in front of it on the near half; staggered reveal, two-column fallback below 480px. **The ring is an instrument, not just an ornament** (issue #105): wheel/touchpad over the ring or the laptop spins it, the ring band takes an angular touch-drag, the laptop doubles as a vertical scrubber — hover-driven on any hover-capable pointer (a desktop mouse, or an iPad the moment a trackpad/Magic Keyboard attaches, via a live `(hover: hover) and (pointer: fine)` query), drag-driven on touch — and `←` / `→` from any focused button turns it exactly one button slot. **The ring has real physics**: release a drag while still moving and it coasts on momentum with exponential friction (launch speed = an EMA of the hand's own deg/s at release; a held release never flicks), stopping dead the moment a button is hovered; touch drags tick a haptic detent at every 45° slot crossing where the hardware supports it. The ambient spin pauses while the visitor is engaged and eases back in after a 1.5s quiet period. The gesture is signposted twice over: the site cursor grows breathing ↑ ↓ chevrons over the laptop (`data-cursor="scrub"`, with a native `ns-resize` fallback for reduced-motion users), and a one-time dismissible tip (`localStorage`-remembered, auto-dismissed on first interaction, `role="status"`) leads with the laptop gesture in plain words beside an animated cursor-over-laptop pictogram — worded per capability, so a touch-only tablet is told to slide and drag, never to hover — and not rendered at all below 480px, where the two-column layout has no orbit to teach (nor does a column tap burn the remembered dismissal) |
 | **3D Project Viewer** | Interactive Three.js scene — procedural laptop model with canvas-generated keyboard texture, 40+ mesh objects, auto-rotate orbit controls |
 | **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
+| **Eleven-layer test system** | Static and fitness rules, property-based and model-based tests, component, API, cross-browser E2E, axe + keyboard + motion accessibility, visual, performance, security and mutation testing, all gating CI, and each layer had to catch a real defect before it counted. See [Testing & Quality](#-testing--quality). |
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
 | **Animated GitHub Stats** | Live GraphQL API → fast-start/slow-finish count-ups, a breathing SVG rank arc, hover-spotlight metric rows, and a per-stat change banner (e.g. "Total Stars +5 \| Total Commits +50"); a "Live GitHub Metrics" label that hides on stale/fallback data; diff-based change detection with 10-min polling |
 | **Interactive Language Breakdown** | Most-used-languages card with two-way bar↔list spotlight, rank + `PRIMARY` labelling, and a per-repo breakdown popover — opened by hover, keyboard focus, or tap — showing each repo's share of the language with a fast-start/slow-finish count-up; responsive list: top 5 in a single column (mobile → `lg`), up to 10 in two columns at `xl`+ |
@@ -79,15 +80,15 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 
 <!-- STACK-CORE:START -->
 <p>
-  <img src="https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js" alt="Next.js 14.2" />
-  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18" />
+  <img src="https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js" alt="Next.js 15.5" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3.3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3.3" />
 </p>
 
 | Technology | Version | Role |
 |------------|---------|------|
-| [Next.js](https://nextjs.org/) | `^14.2` | App Router, server components, API routes, metadata API |
-| [React](https://react.dev/) | `^18` | UI primitives, hooks, concurrent features |
+| [Next.js](https://nextjs.org/) | `^15.5` | App Router, server components, API routes, metadata API |
+| [React](https://react.dev/) | `^19` | UI primitives, hooks, concurrent features |
 | [Tailwind CSS](https://tailwindcss.com/) | `^3.3` | Utility-first styling, custom ember / amethyst / night theme |
 <!-- STACK-CORE:END -->
 
@@ -96,16 +97,16 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 <!-- STACK-3D:START -->
 <p>
   <img src="https://img.shields.io/badge/Three.js-r162-000000?style=flat-square&logo=threedotjs" alt="Three.js r162" />
-  <img src="https://img.shields.io/badge/@react--three/fiber-8.18-white?style=flat-square" alt="@react-three/fiber 8.18" />
-  <img src="https://img.shields.io/badge/@react--three/drei-9.122-white?style=flat-square" alt="@react-three/drei 9.122" />
+  <img src="https://img.shields.io/badge/@react--three/fiber-9.8-white?style=flat-square" alt="@react-three/fiber 9.8" />
+  <img src="https://img.shields.io/badge/@react--three/drei-10.7-white?style=flat-square" alt="@react-three/drei 10.7" />
   <img src="https://img.shields.io/badge/Framer_Motion-11.18-FF0055?style=flat-square&logo=framer" alt="Framer Motion 11.18" />
 </p>
 
 | Technology | Version | Role |
 |------------|---------|------|
 | [Three.js](https://threejs.org/) | `^0.162` | WebGL 3D scene rendering |
-| [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) | `^8.18` | React reconciler for Three.js |
-| [@react-three/drei](https://github.com/pmndrs/drei) | `^9.122` | OrbitControls, Environment presets, HTML overlays |
+| [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) | `^9.8` | React reconciler for Three.js |
+| [@react-three/drei](https://github.com/pmndrs/drei) | `^10.7` | OrbitControls, Environment presets, HTML overlays |
 | [Framer Motion](https://www.framer.com/motion/) | `^11.18` | AnimatePresence, scroll transforms, spring physics, stagger orchestration |
 <!-- STACK-3D:END -->
 
@@ -116,7 +117,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 |------------|---------|------|
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
 | Spotify Web API | — | Live now-playing track for the floating widget — server-side refresh-token exchange (no secret reaches the browser) |
-| [Nodemailer](https://nodemailer.com/) | `^7.0` | SMTP email delivery for the contact form |
+| [Nodemailer](https://nodemailer.com/) | `^10.1` | SMTP email delivery for the contact form |
 | [react-hook-form](https://react-hook-form.com/) | `^7.61` | Form state management and validation |
 | [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
 | [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
@@ -131,19 +132,19 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 <!-- STACK-UI:START -->
 | Technology | Version | Role |
 |------------|---------|------|
-| [Lucide React](https://lucide.dev/) | `^0.344.0` | Primary icon system |
+| [Lucide React](https://lucide.dev/) | `^1.55.0` | Primary icon system |
 | [React Icons](https://react-icons.github.io/react-icons/) | `^5.5` | Extended icon library |
 | [Sonner](https://sonner.emilkowal.ski/) | `^1.7` | Toast notification system |
 | [clsx](https://github.com/lukeed/clsx) | `^2.1` | Conditional class name utility |
 | [tailwind-merge](https://github.com/dcastil/tailwind-merge) | `^3.6` | Conflict-free Tailwind class merging — the `cn()` helper in `src/lib/utils.js` |
-| [Sharp](https://sharp.pixelplumbing.com/) | `^0.34` | Server-side image optimisation pipeline |
+| [Sharp](https://sharp.pixelplumbing.com/) | `^0.35` | Server-side image optimisation pipeline |
 <!-- STACK-UI:END -->
 
 ---
 
 ## 🏗 Architecture
 
-A single **Next.js 14 App Router** application. Server components and route handlers run on the edge; a Three.js + Framer Motion layer renders in the browser. Every dynamic surface — stats, skills, experience, live status, contact — is backed by a **cached, fail-open API route**, so the UI never blocks on an upstream and never renders empty.
+A single **Next.js 15 App Router** application. Server components and route handlers run on the edge; a Three.js + Framer Motion layer renders in the browser. Every dynamic surface — stats, skills, experience, live status, contact — is backed by a **cached, fail-open API route**, so the UI never blocks on an upstream and never renders empty.
 
 ```mermaid
 %%{init: {"theme":"dark","themeVariables":{"fontFamily":"ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif","lineColor":"#9a7a42","edgeLabelBackground":"#050a14","tertiaryColor":"#050a14"}}}%%
@@ -151,7 +152,7 @@ graph TD
     subgraph Sys[" theabdullahfolio · architecture "]
         Browser(["👤 Browser"])
 
-        subgraph App[" Next.js 14 · App Router "]
+        subgraph App[" Next.js 15 · App Router "]
             Root["Root layout<br/>Fonts · Loader · Cursor · Toaster · Analytics"]
             Root --> Home["Home /<br/>Orbital nav · 3D laptop · Live status header"]
             Root --> Pages["(sub pages)"]
@@ -229,6 +230,55 @@ graph TD
 
 ---
 
+## 🧪 Testing & Quality
+
+An eleven-layer quality system ([#92](https://github.com/MA1002643/theabdullahfolio/issues/92)), built on one rule: **a layer only counts once it has caught a real defect in this codebase.** Every layer answers a question the others cannot, and every command below is the one CI runs. The full strategy, the debugging runbook and the complete defects table are in [`docs/testing.md`](docs/testing.md), published on the site at [**ma.codes/notes/testing**](https://ma.codes/notes/testing).
+
+**At a glance** (as of 2026-10-04; the live figures are in each CI run's summary):
+
+| | |
+|---|---|
+| Vitest tests (unit, property, fitness, component, API) | **1,257** across 112 files |
+| Browser engines and devices | Chromium, WebKit, Firefox, Pixel 7, iPhone 14 |
+| Mutation score (Stryker, eight critical modules) | **87.2%** (79.6% on the first run) |
+| Real defects the layers found, all fixed | **25** |
+
+```mermaid
+%%{init: {"theme":"dark","themeVariables":{"fontFamily":"ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif","lineColor":"#9a7a42"}}}%%
+flowchart LR
+  S["Static + fitness<br/>(ms)"] --> V["Unit · property ·<br/>component · API<br/>(seconds)"]
+  V --> B["Production build<br/>bundle scan · budgets"]
+  B --> P["Browser: E2E · a11y ·<br/>visual · perf · security<br/>(minutes)"]
+  V -.-> M["Tests that test the tests<br/>coverage · mutation · flake burn-in"]
+  P -.-> M
+  B -.-> L["Supply chain<br/>CodeQL · OSV · Gitleaks · audit gate"]
+```
+
+| Layer | What it proves | Command |
+|---|---|---|
+| Static + fitness | ESLint with full `jsx-a11y`; architecture rules read from the source (env hygiene, API surface, contract parity, no skipped tests) | `npm run lint` · `npm run test:fitness` |
+| Unit + property | Well over a thousand unit tests; fast-check invariants, including a model-based test of the guestbook's paging | `npm run test:unit` · `npm run test:property` |
+| Component | The contact form and ⌘K palette, driven by label and keyboard in jsdom, network via MSW | `npm run test:component` |
+| API | Route handlers against MSW and a stateful fake Redis, including a ten-request idempotency race | `npm run test:api` |
+| E2E | Every route, the contact journey (offline → reconnect → delivered), chaos on every data API, on Chromium, WebKit, Firefox, Pixel 7 and iPhone 14 | `npm run test:e2e` |
+| Accessibility | axe WCAG 2.2 AA on every route at two widths, measured keyboard focus, reduced-motion audit | `npm run test:a11y` |
+| Visual | Screenshots re-rendered on every push and committed to [`tests/visual/__latest__/`](tests/visual/__latest__/) (always current); reviewed baselines CI compares against | `npm run test:visual` · `npm run test:visual:update` |
+| Performance | CLS through load and full scroll; first-load JS budget per route; Lighthouse CI | `npm run test:perf` · `npm run test:bundle` |
+| Security | Served headers, hostile API requests, client-bundle secret scan, CodeQL, OSV, Gitleaks, an audit gate with expiring waivers | `npm run test:security` · `npm run test:audit` |
+| Meta | Ratcheted V8 coverage, Stryker mutation testing (nightly), flake burn-in of changed specs | `npm run test:coverage` · `npm run test:mutation` |
+
+**What it caught** (a selection; the full table is on [/notes/testing](https://ma.codes/notes/testing)):
+
+- **"Live Demo" and "GitHub" did nothing on every project page.** The button component accepted a link and ignored it. Found by the keyboard layer; they are now real links.
+- **Hydration errors on every page for visitors who prefer reduced motion.** Found by the browser error sentinel; fixed at the root in one shared hook, with a fitness test that bans the broken import.
+- **A failed 3D chunk download blanked whole pages** with Next's "Application error". Found by E2E chaos tests; a decorative chunk that fails now renders nothing.
+- **A timing side channel on a cron secret** (`===` instead of a constant-time compare), and **an unbounded public POST body**. Found by fitness and API tests.
+- **An undisclosed third-party request** for a 3D lighting map on every project page. Found by the hermetic network; the file is now self-hosted.
+
+`npm run test:all` runs the whole PR gate locally. Browser specs need a production build (`npm run build`) and run against a sandboxed `next start` on port 3100 that cannot reach the internet. Debug a failed browser test with `npx playwright show-report` or `npx playwright show-trace test-results/<test>/trace.zip`.
+
+---
+
 ## 📁 Project Structure
 
 Feature-grouped and directory-annotated — each folder owns one surface of the site.
@@ -303,7 +353,7 @@ theabdullahfolio/
 
 ### Prerequisites
 
-- **Node.js** 22.x (≥ 22.13.0) or 24.x — LTS majors only: the unit-test stack (vitest → Vite 8, jsdom 29) declares `^22.13.0` within the 22 line, the AI SDK's gateway dependency (`@ai-sdk/gateway`) requires Node 22+, non-LTS majors (e.g. Homebrew's auto-bumped Node 25) crash the Next 14 dev server, and `.npmrc` sets `engine-strict=true`, so any Node outside the `engines` range fails `npm ci`
+- **Node.js** 22.x (≥ 22.18.0) or 24.x (≥ 24.11.0) — LTS majors only: Babel 8 (pulled in by the Stryker mutation-testing stack) declares `^22.18.0 || >=24.11.0`, `.nvmrc` pins the current 22 LTS, the AI SDK's gateway dependency (`@ai-sdk/gateway`) requires Node 22+, non-LTS majors (e.g. Homebrew's auto-bumped Node 25) crash the Next dev server, and `.npmrc` sets `engine-strict=true`, so any Node outside the `engines` range fails `npm ci`
 - **npm** / **yarn** / **pnpm**
 - A [GitHub Personal Access Token](https://github.com/settings/tokens) — see [GitHub Stats Integration](#github-stats-integration) below for the exact scopes required
 - SMTP credentials — Gmail [App Password](https://support.google.com/accounts/answer/185833) recommended
@@ -543,7 +593,7 @@ An interactive neon message wall (issue #40): visitors sign in with **GitHub or 
 
 **Reading the wall** — `GET /api/guestbook` is cursor-paged: it returns one newest-first page (`?limit=`, default 8, hard-capped at 50), the wall's total `count` (an O(1) `ZCARD`, read separately so nothing has to load the wall to size it) and an opaque `nextCursor` (`null` on the last page; a *malformed* cursor is a `400` — cursors are validated for **shape only**, not authenticated: a cursor is an unsigned position into public data, so a hand-built one reaches nothing that paging would not, and no secret is needed to mint or verify one). Reactions are fetched for the page's ids only. Every write answers with `count` as well — `POST` 201 is the public message plus the wall's size read just after the store, `DELETE` 200 is `{ ok, count }` — so the client settles its total from the write itself instead of guessing whether a page fetched in flight already included the change (a newest page would list a new mark; an older page can only count it). A cursor is the *position* of a page's last message (`createdAt` ms + id, the order a Redis ZSET walks in `REV` mode — ties broken by id, so a same-millisecond pair of posts is never skipped at a page edge), not an offset, so it stays exact as new marks land and old ones are deleted — and when a delete lands between the index read and the row fetch, the read scans on through the index (from the deleted id's own position, by score) rather than reporting a false end, so a short page always means the wall is exhausted. The client holds a newest-first *prefix* of the wall, never the whole thing: the first fetch is two leaves, each page flip extends the prefix (plus one leaf ahead, so *next* is instant), the 30-second live poll re-reads the newest page and merges it — reading on down, page by page, when more than a page has landed since the last poll, until the new pages reach the prefix (bounded at five), and past that bound restarting the prefix from the top with the contiguous run it fetched, so a burst can never leave a hole the continuation cursor would skip forever (arrivals glow, a card deleted elsewhere leaves, reaction counts refresh), and a `#msg_…` deep link walks older pages until its mark appears (bounded at ten requests) — only for a fragment shaped like a minted id (`msg_<epoch ms>_<8 hex>`, `src/lib/guestbook/messageId.js`, which the API mints from and the link validates against), so the page's own anchors such as `#guestbook` never start that walk. The page rail always shows the whole wall from the server's count, loaded or not — and is itself a constant five DOM nodes at any count, its graduations a repeated CSS tile that thins to every k-th page past 28 gaps — so payload, Redis commands, polling cost and the control's own DOM are flat in the wall's size (`src/lib/guestbook/paging.js`, `cursor.js`, `src/hooks/useGuestbookMessages.js`).
 
-**Tests** — `npm test` (vitest: timeAgo, the signature-path grammar, the signature field's keyboard-operable preset marks, the rate limiter, the driver contract including paging, the paging order + cursor codec + poll merge, and the paged `GET` route driven end-to-end over the json driver) and `npm run test:e2e` (Playwright smoke: read-only view renders, sign-in CTA visible, unauthenticated POST → 401, and — against a stubbed list route that honours `limit`/`cursor` — the page-at-a-time fetch and the deep-link walk; builds first — the config boots a production server on port 3100 with the Redis credential variables explicitly emptied so no heartbeat or limiter write can reach the live store and an `AUTH_SECRET` minted fresh per run — random bytes at config load, never a committed value; the specs stub the session endpoint and never sign in, so only its presence matters — with the json file store unlocked for that disposable server through the e2e-only `GUESTBOOK_ALLOW_JSON_IN_PRODUCTION=e2e-non-durable` hatch (a served production refuses the file store without it), and refuses to adopt a server already on that port unless `E2E_REUSE_SERVER=1` is set, the opt-in for iterating on specs against one you started yourself with the same env). **No test credential is a committed value on either side**: alongside that per-run `AUTH_SECRET`, every unit suite needing one mints it from `tests/helpers/secrets.js` — `freshCronSecret()` for the cron-protected routes' `CRON_SECRET`, `freshSecret()` for the redis driver's `KV_REST_API_TOKEN` — each returning fresh random bytes per suite, safe as a *distinct* value per suite because vitest runs each test file in its own forked process, so no suite can clobber another's `process.env`. Non-secret placeholders stay pinned and readable (`KV_REST_API_URL` is `https://unit-test.invalid`, unresolvable by RFC 2606). Both suites gate every push and pull request in CI (`.github/workflows/ci.yml`: lint → unit → build → Playwright against the job's own build output, with Chromium installed in the job and the HTML report uploaded as an artifact on failure).
+**Tests** — `npm test` (vitest: timeAgo, the signature-path grammar, the signature field's keyboard-operable preset marks, the rate limiter, the driver contract including paging, the paging order + cursor codec + poll merge (plus a model-based property test that replays random post/delete/poll/load-older histories against them, `tests/property/guestbookPaging.property.test.js`), and the paged `GET` route driven end-to-end over the json driver) and `npm run test:e2e` (Playwright smoke: read-only view renders, sign-in CTA visible, unauthenticated POST → 401, and — against a stubbed list route that honours `limit`/`cursor` — the page-at-a-time fetch and the deep-link walk; builds first — the config boots a production server on port 3100 with the Redis credential variables explicitly emptied so no heartbeat or limiter write can reach the live store and an `AUTH_SECRET` minted fresh per run — random bytes at config load, never a committed value; the specs stub the session endpoint and never sign in, so only its presence matters — with the json file store unlocked for that disposable server through the e2e-only `GUESTBOOK_ALLOW_JSON_IN_PRODUCTION=e2e-non-durable` hatch (a served production refuses the file store without it), and refuses to adopt a server already on that port unless `E2E_REUSE_SERVER=1` is set, the opt-in for iterating on specs against one you started yourself with the same env). **No test credential is a committed value on either side**: alongside that per-run `AUTH_SECRET`, every unit suite needing one mints it from `tests/helpers/secrets.js` — `freshCronSecret()` for the cron-protected routes' `CRON_SECRET`, `freshSecret()` for the redis driver's `KV_REST_API_TOKEN` — each returning fresh random bytes per suite, safe as a *distinct* value per suite because vitest runs each test file in its own forked process, so no suite can clobber another's `process.env`. Non-secret placeholders stay pinned and readable (`KV_REST_API_URL` is `https://unit-test.invalid`, unresolvable by RFC 2606). Both suites gate every push and pull request in CI (`.github/workflows/ci.yml`: lint → unit → build → Playwright against the job's own build output, with Chromium installed in the job and the HTML report uploaded as an artifact on failure).
 
 ### GitHub Stats Integration
 
@@ -596,9 +646,12 @@ npm run dev      # Dev server → http://localhost:3000
 npm run build    # Production build
 npm run start    # Serve production build locally
 npm run lint     # ESLint check
+npm test         # every Vitest layer (see Testing & Quality above)
 ```
 
 All four go through a launcher rather than calling `next` directly, because `engine-strict` only enforces `engines.node` at **install** time — nothing stopped an already-installed repo from being *run* on an unsupported Node. Each command re-execs Next under the newest nvm-installed 22.x/24.x when the invoking runtime is outside the range (`scripts/supported-node.mjs`), which matters most for `build`: it drives the same webpack cache serialization that the Node 25 V8 bug corrupts. On Vercel and CI the platform already honours `engines`, so the check is a no-op and nothing is re-execed. `dev` additionally owns the single-server port gate (`scripts/dev.mjs`) and is the only one that refuses to start when no supported Node exists — `build`/`start`/`lint` warn and continue, so a machine without nvm still behaves as it always did.
+
+Testing has its own section: [Testing & Quality](#-testing--quality) lists every layer and the command that runs it.
 
 **Scene asset scripts** (`scripts/scene/`) are deliberately *not* npm scripts — they are one-off tools that generate, bake and audit the backdrops in `public/background/`, run by hand and never at build time. Run them from the repo root (`node scripts/scene/detect-lights.mjs`); they stage intermediates in a gitignored `./.scene-work` (override with `SCRATCH=`), resolve ffmpeg from the `ffmpeg-static` devDependency (override with `FFMPEG=`), and read ungraded artwork from `assets/source/`. See [`scripts/scene/README.md`](scripts/scene/README.md) for the full index.
 

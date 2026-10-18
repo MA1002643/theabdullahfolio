@@ -79,10 +79,16 @@ export function calculateRank({
             FOLLOWERS_WEIGHT * log_normal_cdf(followers / FOLLOWERS_MEDIAN)) /
         TOTAL_WEIGHT;
 
-    const level = LEVELS[THRESHOLDS.findIndex((t) => rank * 100 <= t)] || "C";
+    // The level is read off the percentile AS DISPLAYED (two decimals), not the
+    // raw value (issue #92). The property suite found an account showing
+    // "62.50%" with level B-: the raw 62.5000…1 sat just past the B threshold
+    // (62.5) while the card printed a number on it, so the badge and the figure
+    // beside it disagreed. Rounding first makes them agree by construction.
+    const percentile = (rank * 100).toFixed(2);
+    const level = LEVELS[THRESHOLDS.findIndex((t) => Number(percentile) <= t)] || "C";
 
     return {
         level,
-        percentile: (rank * 100).toFixed(2),
+        percentile,
     };
 }

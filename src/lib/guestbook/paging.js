@@ -15,6 +15,29 @@
 // POSITION. { t: createdAt in ms, id }. The route encodes one as the opaque
 // `nextCursor` a client hands back (cursor.js); the drivers consume it as the
 // `after` argument to listMessages.
+//
+// ASSUMPTION, NOT ENFORCED: a new message sorts ABOVE every message already on
+// the wall. The client algebra below DEPENDS on it (issue #92), and nothing in
+// production guarantees it. The server stamps createdAt at write time, so
+// timestamps are non-decreasing in posting order (barring clock steps), but
+// that is not enough: within one millisecond the order is decided by the id,
+// and the id's tail is random (messageId.js), so two visitors posting in the
+// same millisecond sort either way round, the later one BELOW the earlier half
+// the time. The per-user rate limit spaces one visitor's posts, not two
+// visitors'.
+//
+// The model-based suite (tests/property/guestbookPaging.property.test.js)
+// found what breaks: if a page's worth of messages ever sorted BELOW a card
+// the client already holds, pageReachesPrefix would accept a page that shares
+// only that top card, the merge would keep the old tail, and the messages in
+// between would be neither on screen nor reachable from the cursor. Its
+// 20,000 generated histories keep every message reachable WHEN the assumption
+// holds: the model mints same-millisecond ids in increasing order, so it never
+// produces the inversion above and proves nothing about it. A real inversion
+// needs one visitor's poll to land between two same-millisecond posts that
+// sort the wrong way, so it is rare, but it is not ruled out. Anything that
+// could stamp createdAt out of order (a backfill, an import, a client-supplied
+// time) must re-read the wall from the top instead of merging.
 
 // Cards the wall renders per leaf — also the size of the poll's "newest page".
 export const PAGE_SIZE = 8;

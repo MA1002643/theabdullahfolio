@@ -1,30 +1,46 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+
 export default function GlowingTitle({ text }) {
     const [flicker, setFlicker] = useState(1);
 
+    // Reduced motion stills the bloom and the flicker (issue #92): the ring
+    // pulsed forever, which tests/a11y/motion.spec.js flags under WCAG 2.2.2.
+    // Gated behind a mounted flag (the house pattern, see PrivacyNotice) so the
+    // first client render matches the server's and adds no hydration mismatch.
+    const rawReduced = useReducedMotion();
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    const reduced = mounted && rawReduced;
+
     // Random tiny flicker every 6–8 seconds
     useEffect(() => {
+        if (reduced) return undefined;
         const doFlicker = () => {
             setFlicker(1 + (Math.random() * 0.02 - 0.01)); // ±1%
         };
 
         const interval = setInterval(doFlicker, 6000 + Math.random() * 2000);
         return () => clearInterval(interval);
-    }, []);
+    }, [reduced]);
 
     return (
         <div className="relative inline-block">
             {/* Bloom Ring Behind Text */}
             <motion.div
                 initial={{ scale: 1, opacity: 0.4 }}
-                animate={{ scale: [1, 1.02, 1], opacity: [0.4, 0.5, 0.4] }}
-                transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                }}
+                animate={
+                    reduced
+                        ? { scale: 1, opacity: 0.4 }
+                        : { scale: [1, 1.02, 1], opacity: [0.4, 0.5, 0.4] }
+                }
+                transition={
+                    reduced
+                        ? { duration: 0 }
+                        : { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                }
                 className="absolute inset-0 blur-2xl bg-[#b16612]"
             />
 

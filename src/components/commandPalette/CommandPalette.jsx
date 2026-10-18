@@ -64,8 +64,12 @@ export default function CommandPalette({ actions }) {
 
   return (
     <div className="fixed inset-0 z-[70]" role="presentation">
-      {/* Backdrop — click closes. */}
+      {/* Backdrop — click closes. A pointer convenience only: the keyboard
+          closes the palette with Escape (useCommandPalette), so the backdrop
+          needs no key handler of its own and is hidden from assistive tech. */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only backdrop; Escape is the keyboard path */}
       <div
+        aria-hidden="true"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={pal.close}
       />
@@ -115,11 +119,7 @@ export default function CommandPalette({ actions }) {
           aria-label="Commands"
           className="max-h-[19rem] overflow-y-auto py-2"
         >
-          {pal.filtered.length === 0 ? (
-            <li className="px-4 py-6 text-center font-mono text-xs text-foreground/60">
-              Nothing matches
-            </li>
-          ) : (
+          {pal.filtered.length === 0 ? null : (
             pal.filtered.map((action, i) => {
               const header =
                 action.section && action.section !== lastSection
@@ -136,6 +136,10 @@ export default function CommandPalette({ actions }) {
                       {header}
                     </div>
                   ) : null}
+                  {/* ARIA combobox pattern: the input keeps focus and drives the
+                      options through aria-activedescendant (arrows + Enter), so an
+                      option is never focusable and owns no key handler. */}
+                  {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- aria-activedescendant listbox; the input owns the keyboard */}
                   <div
                     id={`palette-opt-${action.id}`}
                     role="option"
@@ -164,6 +168,26 @@ export default function CommandPalette({ actions }) {
             })
           )}
         </ul>
+        {/* The empty state lives OUTSIDE the listbox, as a polite status
+            (issue #92, found by the component suite's axe pass). It used to
+            be a bare <li> inside role="listbox", which may only own options,
+            and nothing announced it: a screen-reader user typing a query that
+            matched nothing heard silence. The listbox itself stays mounted,
+            empty, because the combobox's aria-controls points at it.
+            The status is mounted EMPTY with the palette and only its text
+            changes, as PrivacyNotice's live region does: a role="status"
+            inserted with "Nothing matches" already inside is often not
+            announced at all, so an unmatched query could still be silent. */}
+        <p
+          role="status"
+          className={
+            pal.filtered.length === 0
+              ? 'px-4 pb-6 pt-4 text-center font-mono text-xs text-foreground/60'
+              : undefined
+          }
+        >
+          {pal.filtered.length === 0 ? 'Nothing matches' : null}
+        </p>
       </motion.div>
     </div>
   );

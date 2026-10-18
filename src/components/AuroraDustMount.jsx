@@ -4,11 +4,15 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { onMediaChange } from '@/lib/mediaQuery';
+import { optionalChunk } from '@/lib/optionalChunk';
 
 // The WebGL canvas is loaded lazily and client-only: Three never enters a
 // route's critical bundle, and the import doesn't fire until the conditions
-// below are met (loader lifted + motion allowed).
-const AuroraDust = dynamic(() => import('./AuroraDust'), {
+// below are met (loader lifted + motion allowed). Optional (issue #92): the
+// chunk is fetched after first paint, so it is the request a flaky connection
+// is most likely to drop, and a dropped one used to blank the whole page. Now
+// it leaves the static background, which is what reduced motion shows anyway.
+const AuroraDust = dynamic(optionalChunk(() => import('./AuroraDust'), 'AuroraDust'), {
   ssr: false,
 });
 

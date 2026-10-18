@@ -63,9 +63,11 @@ const OPEN_END = 12 * 9999; // packing sentinel for still-running entries
 // owner chose that trade explicitly (2026-09-01): a long pan over any
 // caption outside its bar. CLOSED bars shorter than their caption still
 // take a caption-width FLOOR (the bar widens just enough to hold its text),
-// and an open bar that STILL can't hold its caption — a future role only a
-// month or two old — falls back to printing it OUTSIDE, to the LEFT of the
-// bar, never past now, with the lane packing reserving that left-side room.
+// and an open bar that STILL can't hold its caption — a role only weeks or
+// months old — takes the same floor widening LEFT, its right edge still on
+// the NOW line, with the lane packing reserving that left-side room. (It used
+// to print the caption outside an 8px sliver with no border; owner report
+// 2026-10-18.)
 // Packing reserves max(duration, caption) per bar either way, so bars and
 // captions can never collide. Caption width is estimated, not measured:
 // 11px monospace advances ~6.6px/char (Menlo 0.602em); CHAR_W rounds up and
@@ -117,32 +119,40 @@ const toMonths = (ym) => {
   return y * 12 + (m - 1);
 };
 
-// Greedy interval packing: first lane whose last FOOTPRINT ends before this
-// one's footprint STARTS. The footprint is the bar's duration OR its caption,
-// whichever reaches further — a 4-month role with a 27-character caption
-// occupies far more axis than it occupies time, and packing by duration alone
-// would print the next bar straight through the caption. Closed bars spill
-// caption to the RIGHT (footprint end reaches past the bar); open bars are
-// clamped at the NOW line and spill caption to the LEFT instead, so their
-// footprint STARTS early (`fs`, computed in STRUCTURE) — which is also why
-// the sort and the lane test both read `fs`, not `s`. Same-month handovers
-// still stack (KFC ends and Lidl begins in the same SEP 2021 — flush bars on
-// one lane would erase the overlap the atlas exists to show). Mutates `lane`
-// onto the items it is given.
-const packLanes = (items) => {
-  const laneEnds = [];
+// Greedy interval packing, run NEWEST-FIRST: items are taken in order of where
+// their footprint ENDS, latest first, and each goes in the first lane whose
+// earliest footprint STARTS after this one's footprint ends. That is the mirror
+// image of the classic earliest-start greedy (same lane count), and it puts the
+// most recent role on the TOP lane (owner direction, 2026-10-18), matching the
+// newest-first timeline below and the atlas opening panned to the NOW edge.
+// Still-running bars all end at OPEN_END, so they tie and break by start,
+// latest first, which is what keeps the role that started most recently at
+// the top.
+//
+// The footprint is the bar's duration OR its caption, whichever reaches
+// further. A 4-month role with a 27-character caption occupies far more axis
+// than it occupies time, and packing by duration alone would print the next
+// bar straight through the caption. Closed bars widen to the RIGHT (footprint
+// end reaches past the bar). Open bars are clamped at the NOW line and widen
+// to the LEFT instead, so their footprint STARTS early (`fs`, computed in
+// STRUCTURE). Same-month handovers still stack (KFC ends and Lidl begins in
+// the same SEP 2021; flush bars on one lane would erase the overlap the atlas
+// exists to show). Mutates `lane` onto the items it is given.
+export const packLanes = (items) => {
+  const laneStarts = [];
   [...items]
-    .sort((a, b) => a.fs - b.fs || (b.e ?? OPEN_END) - (a.e ?? OPEN_END))
-    .forEach((item) => {
+    .map((item) => ({
+      item,
+      fe: Math.max(item.e ?? OPEN_END, item.s + item.capMonths - 1),
+    }))
+    .sort((a, b) => b.fe - a.fe || b.item.s - a.item.s)
+    .forEach(({ item, fe }) => {
       let lane = 0;
-      while (lane < laneEnds.length && laneEnds[lane] >= item.fs) lane += 1;
-      laneEnds[lane] = Math.max(
-        item.e ?? OPEN_END,
-        item.s + item.capMonths - 1,
-      );
+      while (lane < laneStarts.length && laneStarts[lane] <= fe) lane += 1;
+      laneStarts[lane] = Math.min(laneStarts[lane] ?? Infinity, item.fs);
       item.lane = lane;
     });
-  return laneEnds.length;
+  return laneStarts.length;
 };
 
 // Everything the clock does NOT touch, computed once at module scope: month
@@ -170,9 +180,9 @@ const STRUCTURE = (() => {
   });
   const maxFixedEnd = Math.max(...entries.map((d) => d.e ?? 0));
   // Footprint start for packing. Closed bars start where they start. An open
-  // bar closes ON the NOW line, so a caption its clamped width can't hold is
-  // printed to the LEFT of the bar — `fs` backs the footprint up by the
-  // months that caption overhang could need. The live clock isn't known at
+  // bar closes ON the NOW line, so when its clamped width can't hold its
+  // caption the bar widens to the LEFT, and `fs` backs the footprint up by the
+  // months that widening could need. The live clock isn't known at
   // module scope (packing must be deterministic for the SSR skeleton), so the
   // bar's guaranteed span is measured to the last DATED end — the earliest
   // "now" the axis can ever show — making the reservation pessimistic, never
@@ -448,6 +458,7 @@ const TimelineAtlas = ({
         ref={scrollerRef}
         role="region"
         aria-label="Overlap atlas: every role and course as parallel bars on one time axis"
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be keyboard-focusable (axe scrollable-region-focusable)
         tabIndex={0}
         className="ja-scroller mt-6 overflow-x-auto pb-1.5"
       >
@@ -573,15 +584,23 @@ const TimelineAtlas = ({
                       items.map((d) => {
                         const isDim = filter !== 'all' && d.type !== filter;
                         // Closed bars: month-true width (inclusive month
-                        // cells), floored at the caption. Open bars: clamped
-                        // so the right edge lands EXACTLY on the NOW line —
-                        // never floored, never past now (owner correction);
-                        // one that can't hold its caption prints it outside,
-                        // to the LEFT (packing reserved that room via `fs`).
+                        // cells), floored at the caption, widening RIGHT.
+                        // Open bars: the right edge lands EXACTLY on the NOW
+                        // line, never past now (owner correction), and the
+                        // same caption floor widens them LEFT instead. A role
+                        // only weeks old used to print its caption outside an
+                        // 8px sliver with no border round it (owner report,
+                        // 2026-10-18); now every caption sits inside its own
+                        // bordered bar. Packing reserved the left room via `fs`.
+                        const openW = d.open
+                          ? Math.max((nowM - d.s) * PX_PER_MONTH, d.capPx)
+                          : 0;
                         const width = d.open
-                          ? Math.max((nowM - d.s) * PX_PER_MONTH, 8)
+                          ? openW
                           : Math.max((d.e - d.s + 1) * PX_PER_MONTH, d.capPx);
-                        const captionLeft = d.open && d.capPx > width;
+                        const left = d.open
+                          ? scale.px(nowM) - openW
+                          : scale.px(d.s);
                         return (
                           <button
                             key={d.id}
@@ -596,8 +615,9 @@ const TimelineAtlas = ({
                               // No overflow-hidden and no truncation — the
                               // caption is a promise (owner direction: org
                               // and role fully visible), guaranteed by the
-                              // closed-bar floor / open-bar left spill plus
-                              // the packing reservation.
+                              // caption floor (rightward for closed bars,
+                              // leftward for open ones) plus the packing
+                              // reservation.
                               'ja-bar absolute flex items-center rounded-md border px-2.5 text-left font-mono',
                               d.open ? 'border-dashed' : 'border-solid',
                               // Dimmed = de-emphasised, not disabled (the
@@ -615,22 +635,13 @@ const TimelineAtlas = ({
                             )}
                             style={{
                               '--ja-accent': accent,
-                              left: scale.px(d.s),
+                              left,
                               width,
                               top: d.lane * LANE_STEP,
                               height: BAR_H,
                             }}
                           >
-                            <span
-                              className={clsx(
-                                'whitespace-nowrap',
-                                // Outside-left caption: right edge pinned
-                                // just before the bar starts, clear of the
-                                // px-2.5 padding box.
-                                captionLeft &&
-                                  'absolute right-full mr-2 text-right',
-                              )}
-                            >
+                            <span className="whitespace-nowrap">
                               <span className="text-white/90">{d.org}</span>
                               <span className="text-white/50"> · {d.role}</span>
                             </span>

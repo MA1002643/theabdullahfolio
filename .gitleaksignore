@@ -1,0 +1,13 @@
+# Gitleaks findings reviewed and confirmed NOT to be secrets (2026-10-04).
+# One fingerprint per finding: <commit>:<file>:<rule>:<line>. Fingerprints, not
+# path or rule allowlists, so a REAL secret added to any of these files later
+# is still caught. Gitleaks scans the full history, so a finding stays here
+# even after the line changes.
+
+# A fixed UUID used as the Idempotency-Key in the send-mail route tests.
+f70e2c0280c621e224e6e9f1e341e13bb45d6bde:tests/api/send-mail.route.test.js:generic-api-key:279
+
+# The identifier `profileGithubUrl` in an import list, matched by the LinkedIn
+# client-secret rule on its shape alone. It is a variable name, not a value.
+3626c640066b504f5b2be0feedd7fe90ea352b6b:src/app/llms.txt/route.js:linkedin-client-secret:27
+3626c640066b504f5b2be0feedd7fe90ea352b6b:src/lib/seo/schema.js:linkedin-client-secret:39

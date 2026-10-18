@@ -1,9 +1,24 @@
 "use client";
 import { motion } from "framer-motion";
 
-export function GlowButton({ children, href }) {
+// A real external link styled as the scene's glowing button (issue #92). It
+// used to be a <motion.button> that accepted `href` and ignored it, so "Live
+// Demo" and "GitHub" did nothing on every project page.
+//
+// `inert3d`: for copies projected onto the 3D laptop screen (drei <Html
+// transform>). Their layout box is not where they paint, so a keyboard focus
+// ring would be drawn somewhere else entirely (WCAG 2.4.11, keyboard suite
+// finding K3). Those copies stay clickable but leave the Tab order and the
+// accessibility tree; ProjectIntro renders the accessible pair in normal flow.
+export function GlowButton({ children, href, label, inert3d = false }) {
     return (
-        <motion.button
+        <motion.a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={inert3d ? undefined : label}
+            aria-hidden={inert3d ? true : undefined}
+            tabIndex={inert3d ? -1 : undefined}
             initial={{
                 filter: "drop-shadow(0 0 0px rgba(255,160,80,0))",
             }}
@@ -29,7 +44,7 @@ export function GlowButton({ children, href }) {
                 ease: "easeOut",
             }}
             className="
-        whitespace-nowrap px-8 py-4 
+        inline-block whitespace-nowrap px-8 py-4 
         custom-bg-abt text-shadow-neon-light-orange 
         rounded-lg font-bold text-[1.6rem]
         transition-all ease-in-out shadow-2xl
@@ -49,7 +64,7 @@ export function GlowButton({ children, href }) {
             />
 
             <span className="relative z-10">{children}</span>
-        </motion.button>
+        </motion.a>
 
     );
 }

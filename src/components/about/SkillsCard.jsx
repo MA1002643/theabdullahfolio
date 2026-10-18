@@ -1,6 +1,7 @@
 "use client";
 
-import { animate, motion, useReducedMotion } from "framer-motion";
+import { animate, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SkillIcon, SkillRepoPopover } from "./SkillIcon";
@@ -20,6 +21,7 @@ import {
   hasLiveCategories,
   isRenderableSkill,
 } from "@/utils/skillsIconUrl";
+import { claimEscape } from "@/lib/escapeKey";
 import { fluid, fluidText } from "@/lib/fluidScale";
 
 // How long the change banner lingers once the section scrolls into view —
@@ -56,6 +58,9 @@ const CATEGORY_LABELS = {
 // so a skill used only in private repos is still hoverable.
 const hasDisclosure = (item) =>
   Boolean(item?.repos?.length) || (item?.privateRepoCount ?? 0) > 0;
+
+// Run `fn` once the scroll events and rAF work of the next frame have landed.
+const afterTwoFrames = (fn) => requestAnimationFrame(() => requestAnimationFrame(fn));
 
 // The card body shows ONE category at a time: header + gap + one icon row, plus
 // vertical breathing room so the row never touches the clip edges (icons fully
@@ -408,7 +413,30 @@ function SkillsStage({
   // Per-icon handlers, modality-gated: mouse/keyboard → hover-open, touch → tap.
   const onIconEnter = useCallback((item, el) => { if (canHover) openHover(item, el); }, [canHover, openHover]);
   const onIconLeave = useCallback(() => scheduleClose(), [scheduleClose]);
-  const onIconFocus = useCallback((item, el) => { if (keyboardModalityRef.current) openHover(item, el); }, [openHover]);
+  // Keyboard focus SCROLLS before it settles: the browser's own focus-scroll,
+  // and in the stage the scrub reveal (revealFocusedIcon) one frame later. Both
+  // are scrolls the close-on-scroll listener below would read as "the user
+  // scrolled away", and both leave a rect measured at focus time stale. So a
+  // focus-open is parked here and made only once that scrolling is done, from
+  // the icon's final rect: two frames on its own, or when the in-flight reveal
+  // (revealSeqRef) finishes. A previous icon's panel can still close on the
+  // reveal scroll; it is being replaced anyway.
+  const pendingFocusRef = useRef(null);
+  const revealSeqRef = useRef(0);
+  const revealingRef = useRef(false);
+  const flushFocusOpen = useCallback(() => {
+    const pending = pendingFocusRef.current;
+    pendingFocusRef.current = null;
+    if (pending && document.activeElement === pending.el) openHover(pending.item, pending.el);
+  }, [openHover]);
+  const onIconFocus = useCallback(
+    (item, el) => {
+      if (!keyboardModalityRef.current) return;
+      pendingFocusRef.current = { item, el };
+      if (!revealingRef.current) afterTwoFrames(flushFocusOpen);
+    },
+    [flushFocusOpen],
+  );
   const onIconBlur = useCallback(
     (e) => {
       if (e.relatedTarget?.closest?.("[data-skill-popover]")) return;
@@ -436,6 +464,7 @@ function SkillsStage({
   );
   const iconHandlers = { onIconEnter, onIconLeave, onIconFocus, onIconBlur, onIconTap, onIconActivate };
 
+
   // A tap (touch) popover is sticky: a pointerdown outside it + outside any icon
   // dismisses it.
   useEffect(() => {
@@ -460,7 +489,9 @@ function SkillsStage({
     };
     const onResize = () => setPopover(null);
     const onKey = (e) => {
-      if (e.key === "Escape") setPopover(null);
+      if (e.key !== "Escape") return;
+      claimEscape(e);
+      setPopover(null);
     };
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onResize);
@@ -479,6 +510,52 @@ function SkillsStage({
   const activeRef = useRef(-1);
   const [active, setActive] = useState(0);
   const [layout, setLayout] = useState({ starts: [], overflows: [], total: 0 });
+
+  // Focus drives the scrub (issue #92, WCAG 2.4.11). The scrub is a pure
+  // function of the scroller's scrollTop (see the apply() effect below), so it
+  // can be INVERTED: for the icon that just took focus, find its category's
+  // segment and the progress at which its cell sits fully inside the stage,
+  // then set scrollTop there and let the scroll handler do the rest (switch
+  // category, translate, reveal). Before this, Tab walked through icons that
+  // had not slid in yet, and through every inactive category's row, all of
+  // them invisible. Deferred one frame so it overrides the browser's own
+  // focus-scroll of this nested scroller rather than racing it.
+  // Runs in the CAPTURE phase, before the icon's own onFocus, so it marks the
+  // reveal in flight (revealingRef) before onIconFocus parks the panel; the
+  // panel opens once the scrub has written the row's new transform: two frames
+  // after the scrollTop write, i.e. after the scroll event and the scrub's own
+  // rAF. A newer focus supersedes an older reveal (revealSeqRef).
+  const revealFocusedIcon = useCallback(
+    (event) => {
+      const sc = scrollerRef.current;
+      const cell = event.target?.closest?.("[data-slug]");
+      if (!sc || !cell || !layout.starts.length) return;
+      const i = rowRefs.current.findIndex((row) => row && row.contains(cell));
+      if (i < 0) return;
+      const seq = ++revealSeqRef.current;
+      revealingRef.current = true;
+      requestAnimationFrame(() => {
+        // Undo the browser's focus-scroll of the boxes between the icon and the
+        // scroller too. `overflow: hidden` is still scrollable from script and
+        // by focus, so the row's clipping wrapper was scrolled sideways ON TOP
+        // of the scrub's translate, and the "revealed" icon landed a full
+        // row-width off the stage. The translate alone owns horizontal position.
+        for (let n = cell.parentElement; n && n !== sc; n = n.parentElement) {
+          if (n.scrollLeft) n.scrollLeft = 0;
+        }
+        const o = layout.overflows[i] || 0;
+        const need = cell.offsetLeft + cell.offsetWidth + REVEAL_DIST - sc.clientWidth;
+        const prog = o > 0 ? Math.min(1, Math.max(0, need / o)) : 0;
+        sc.scrollTop = layout.starts[i] + prog * o;
+        afterTwoFrames(() => {
+          if (seq !== revealSeqRef.current) return;
+          revealingRef.current = false;
+          flushFocusOpen();
+        });
+      });
+    },
+    [layout, flushFocusOpen],
+  );
 
   // Heartbeat (item 4): which icon slugs / category indices are currently
   // pulsing, plus per-slug dedupe so each added icon pulses only the first time.
@@ -870,9 +947,12 @@ function SkillsStage({
         />
       )}
       {/* Vertical scroller = the scroll INPUT. Scrollbar hidden (the horizontal
-          movement IS the feedback); overflow-x clipped so rows never widen it. */}
+          movement IS the feedback); overflow-x clipped so rows never widen it.
+          onFocusCapture: keyboard focus drives the scrub (issue #92, see
+          revealFocusedIcon), so a tabbed-to icon is always on screen. */}
       <div
         ref={scrollerRef}
+        onFocusCapture={revealFocusedIcon}
         className="relative overflow-y-auto overflow-x-hidden h-[7.5rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {/* Tall track gives the scroll budget: one viewport + the summed segments. */}

@@ -121,6 +121,7 @@ export default function SoundProvider({ children }) {
           the strings). Hidden + decorative; loads only when first played. Lives
           here — not in the footer — so navigating between route groups never
           unmounts it. */}
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption -- instrumental music with no speech; nothing to caption */}
       <audio ref={trackRef} src={TRACK_SRC} loop preload="none" aria-hidden="true" />
     </SoundContext.Provider>
   );

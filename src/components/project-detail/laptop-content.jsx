@@ -6,11 +6,16 @@ import TypeOnChunks from "./typeon-chunks";
 import { GlowButton } from "./glow-button";
 import LaptopBootSequence from "./boot-on-sequence";
 
-export default function LaptopContent() {
+export default function LaptopContent({ links }) {
     const [bootComplete, setBootComplete] = useState(false);
 
+    // aria-hidden (issue #92): this is the 3D screen's VISUAL copy, projected
+    // with CSS 3D transforms. Its links are pointer-only (tabIndex -1) and the
+    // accessible versions live in ProjectIntro, so the whole screen leaves the
+    // accessibility tree; otherwise axe sees a scrollable region with nothing
+    // in it a keyboard can reach (scrollable-region-focusable).
     return (
-        <div className="w-full h-full">
+        <div className="w-full h-full" aria-hidden="true">
 
             {!bootComplete ? (
                 <LaptopBootSequence onComplete={() => setBootComplete(true)} />
@@ -86,8 +91,23 @@ export default function LaptopContent() {
                         </div>
 
                         <div className="w-full flex items-center justify-between gap-4 my-2 px-14">
-                            <GlowButton href="#">Live Demo</GlowButton>
-                            <GlowButton href="#">GitHub</GlowButton>
+                            {/* Real destinations (issue #92): these were
+                                href="#" on a component that ignored href, so
+                                neither did anything on any project page. They
+                                are pointer-only here, because projected onto
+                                the 3D screen their layout box is not where they
+                                paint; ProjectIntro carries the keyboard and
+                                screen-reader copies of the same two links. */}
+                            {links?.demo ? (
+                                <GlowButton href={links.demo} label={`Open the ${links.name} live demo`} inert3d>
+                                    Live Demo
+                                </GlowButton>
+                            ) : null}
+                            {links?.source ? (
+                                <GlowButton href={links.source} label={`View ${links.name} source on GitHub`} inert3d>
+                                    GitHub
+                                </GlowButton>
+                            ) : null}
                         </div>
 
 

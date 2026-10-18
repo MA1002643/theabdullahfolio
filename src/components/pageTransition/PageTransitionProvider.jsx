@@ -10,7 +10,8 @@ import {
   useState,
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { AnimatePresence, useReducedMotion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import EmberPassageOverlay from './EmberPassageOverlay';
 import { warmSwarm } from './emberSwarm';
 import { warmEmberField } from './emberField';

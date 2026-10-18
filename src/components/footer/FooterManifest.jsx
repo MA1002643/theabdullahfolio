@@ -29,7 +29,7 @@
 // is seen. Same reveal-gating pattern as ElsewhereTerminal.jsx.
 
 import { useEffect, useRef, useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { usePathname } from 'next/navigation';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 import { useFooterReveal } from './useFooterReveal';

@@ -1,0 +1,167 @@
+name: Security
+
+# Supply-chain and static security analysis (issue #92, L9). Separate from
+# ci.yml because none of it needs a build, two of the four upload SARIF to the
+# Security tab (which needs `security-events: write`, a permission the PR gate
+# should not hold), and the weekly schedule catches advisories published
+# against dependencies that have not changed.
+#
+#   codeql     GitHub CodeQL, security-extended queries, JavaScript
+#   osv        Google OSV-Scanner over package-lock.json (advisories npm audit
+#              does not carry, e.g. GHSA-only and ecosystem-wide databases)
+#   gitleaks   secret scanning over the FULL history, not just the diff:
+#              CLAUDE.md §1 treats a secret as burned the moment it is pushed,
+#              so an old commit matters as much as a new one
+#   audit      npm audit, production dependencies, through scripts/audit-gate.mjs:
+#              any NEW high/critical fails, and so does every expired waiver
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '17 4 * * 1' # Mondays 04:17 UTC
+  workflow_dispatch:
+
+# Keyed on the branch name, as in ci.yml, so the screenshot commit's dispatch
+# cancels the superseded pull_request run instead of running beside it.
+concurrency:
+  group: security-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    # `actions: read` is required on a private repository (the action reads
+    # its own workflow run). `security-events: write` is only used when the
+    # results are uploaded, which is only possible on a public one (below).
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      # GitHub code scanning is not available on a private personal repository
+      # ("Code scanning is not enabled", 2026-10-04), so the upload is skipped
+      # while the repository is private and the gate below judges the SARIF
+      # itself. Made public, the results also upload as code-scanning alerts.
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript
+          upload: ${{ github.event.repository.private && 'never' || 'always' }}
+          output: codeql-results
+      - name: Fail on high or critical findings
+        run: |
+          node --input-type=module <<'EOF'
+          import { readdirSync, readFileSync, appendFileSync } from 'node:fs';
+          const findings = [];
+          for (const file of readdirSync('codeql-results').filter((f) => f.endsWith('.sarif'))) {
+            const sarif = JSON.parse(readFileSync(`codeql-results/${file}`, 'utf8'));
+            for (const run of sarif.runs) {
+              const rules = new Map(run.tool.driver.rules?.map((r) => [r.id, r]) ?? []);
+              for (const result of run.results ?? []) {
+                const rule = rules.get(result.ruleId);
+                const severity = Number(rule?.properties?.['security-severity'] ?? 0);
+                const where = result.locations?.[0]?.physicalLocation;
+                findings.push({
+                  severity,
+                  rule: result.ruleId,
+                  at: `${where?.artifactLocation?.uri}:${where?.region?.startLine}`,
+                });
+              }
+            }
+          }
+          // "No critical/high CodeQL alerts" (issue #92): CVSS-style security
+          // severity 7.0 and up. Everything else is listed but does not fail.
+          const blocking = findings.filter((f) => f.severity >= 7);
+          const lines = [
+            `### CodeQL: ${findings.length} finding(s), ${blocking.length} high or critical`,
+            ...findings
+              .sort((a, b) => b.severity - a.severity)
+              .map((f) => `- ${f.severity >= 7 ? '❌' : '•'} ${f.severity || 'n/a'} \`${f.rule}\` at \`${f.at}\``),
+          ];
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          console.log(lines.join('\n'));
+          if (blocking.length) process.exit(1);
+          EOF
+
+  osv:
+    name: OSV-Scanner (informational)
+    runs-on: ubuntu-latest
+    # A second opinion, not the gate. OSV reads the whole lockfile, dev
+    # dependencies included, so it reports the same known advisories the
+    # expiring allowlist already accepts plus test-only tooling; the audit job
+    # below is the blocking check. Findings still show in the run.
+    #
+    # continue-on-error sits on the STEP, not the job: on the job it kept the
+    # workflow green but still drew a red ✘ in the PR's checks list, so an
+    # informational scan read as a failure (PR #160, 2026-10-04).
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Scan the lockfile
+        id: scan
+        continue-on-error: true
+        uses: google/osv-scanner-action/osv-scanner-action@v2.2.2
+        with:
+          scan-args: |-
+            --lockfile=package-lock.json
+      - name: Note findings (informational)
+        if: ${{ steps.scan.outcome == 'failure' }}
+        run: |
+          echo "::notice title=OSV-Scanner::Known advisories found (see the scan step). Not a gate: the npm audit job decides."
+          echo "OSV-Scanner reported known advisories; see the **Scan the lockfile** step. Informational only, the \`audit\` job is the gate." >> "$GITHUB_STEP_SUMMARY"
+
+  # The gitleaks CLI, not gitleaks/gitleaks-action. On a pull_request the action
+  # lists the PR's commits through the API (403 "Resource not accessible by
+  # integration" without `pull-requests: read`, PR #160, 2026-10-04) and then
+  # scans ONLY those commits, so the job's name was false on every PR. The CLI
+  # needs no token and scans every commit on every event. Pinned and checked
+  # against the release's published SHA-256; `.gitleaksignore` at the root is
+  # read automatically, and --redact keeps any match out of the log.
+  gitleaks:
+    name: Gitleaks (full history)
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.24.3
+      GITLEAKS_SHA256: 9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install gitleaks (pinned, checksum-verified)
+        run: |
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
+          echo "${GITLEAKS_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "$tarball" -C "$RUNNER_TEMP" gitleaks
+      - name: Scan every commit
+        run: |
+          "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --verbose
+
+  audit:
+    name: npm audit (production, expiring allowlist)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      # Production dependencies only: a devDependency never ships to a visitor,
+      # and its advisories are Dependabot's to raise, not a merge blocker.
+      - run: node scripts/audit-gate.mjs

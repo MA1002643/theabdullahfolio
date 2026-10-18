@@ -3,10 +3,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   useInView,
-  useReducedMotion,
   useScroll,
   useSpring,
 } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { journeyData } from '@/app/data';
 import { resumeUrl } from '@/components/footer/footer-data';
 import FireText from '@/components/shared/FireText';

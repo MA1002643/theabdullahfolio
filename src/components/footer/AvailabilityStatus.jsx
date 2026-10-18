@@ -17,7 +17,8 @@
 // under prefers-reduced-motion only the steady core remains.
 
 import { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
 import { availability } from './footer-data';
 

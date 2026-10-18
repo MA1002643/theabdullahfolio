@@ -6,7 +6,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import { onMediaChange } from '@/lib/mediaQuery';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';

@@ -1659,6 +1659,26 @@
 html {
   scrollbar-color: #ff6d05 #222;
   scrollbar-width: thin;
+  /* Keyboard focus never lands under the privacy notice (issue #92). When Tab
+     moves to an element below the fold, the browser scrolls it to the bottom
+     edge of the viewport, which is where the fixed notice sits, so the focused
+     control was entirely hidden (WCAG 2.4.11; found on /journey and in every
+     footer by tests/a11y/keyboard.spec.js). The notice already publishes its
+     measured height as --consent-lift for the corner widgets; scrolling
+     honours the same number. Unset (0) whenever the notice is closed. */
+  scroll-padding-bottom: var(--consent-lift, 0px);
+}
+
+/* …and the page's LAST controls can still get clear of it (issue #92).
+   scroll-padding cannot lift what is already at the bottom of the document:
+   the footer's final links (Privacy, Privacy choices) sat under the notice with
+   nowhere left to scroll. This spacer adds exactly the notice's height, only
+   while it is open. The homepage has no footer, so its no-scroll hero is
+   untouched. */
+footer[role='contentinfo']::after {
+  content: '';
+  display: block;
+  height: var(--consent-lift, 0px);
 }
 
 .perspective-3d {
@@ -6380,7 +6400,10 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .uses-ordinal {
   font-size: 1.5rem;
   letter-spacing: 0.12em;
-  color: rgba(255, 170, 42, 0.55);
+  /* Raised 2026-09-28 (issue #92): axe measured the old value under WCAG AA
+     4.5:1 on this plate's ground. /uses is not one of Lighthouse CI's six
+     routes, so nothing had measured it before tests/a11y/axe.spec.js. */
+  color: rgba(255, 170, 42, 0.7);
 }
 .uses-eyebrow {
   font-size: 0.625rem;
@@ -6780,7 +6803,9 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   background: #191a21;
   font-size: 0.625rem;
   letter-spacing: 0.04em;
-  color: #6272a4;
+  /* Dracula's comment blue (#6272a4) measured 3.68:1 here; this is the same
+     hue lifted to pass 4.5:1 (issue #92, tests/a11y/axe.spec.js). */
+  color: #7a88b4;
 }
 .fluid-scale .uses-editor__code {
   font-size: max(0.6875rem, calc(0.75rem * var(--fluid-scale, 1)));
@@ -6812,7 +6837,10 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .uses-stack__tally {
   font-size: 0.625rem;
   letter-spacing: 0.18em;
-  color: rgb(var(--foreground) / 0.5);
+  /* Raised 2026-09-28 (issue #92): axe measured the old value under WCAG AA
+     4.5:1 on this plate's ground. /uses is not one of Lighthouse CI's six
+     routes, so nothing had measured it before tests/a11y/axe.spec.js. */
+  color: rgb(var(--foreground) / 0.56);
 }
 /* The tally's figures wear the page title's ember; the "of" keeps the
    line's grey — the page's digit grammar (numbers are the readout, words
@@ -6894,7 +6922,10 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .uses-tool__rank {
   font-size: 0.625rem;
   letter-spacing: 0.16em;
-  color: rgba(255, 170, 42, 0.55);
+  /* Raised 2026-09-28 (issue #92): axe measured the old value under WCAG AA
+     4.5:1 on this plate's ground. /uses is not one of Lighthouse CI's six
+     routes, so nothing had measured it before tests/a11y/axe.spec.js. */
+  color: rgba(255, 170, 42, 0.7);
 }
 .uses-tool__desc {
   margin: 0.55rem 0 0;

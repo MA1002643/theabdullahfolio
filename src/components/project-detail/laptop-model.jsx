@@ -7,7 +7,7 @@ import { Html } from "@react-three/drei"
 import LaptopContent from "./laptop-content"
 import { motion } from "framer-motion"
 
-export default function LaptopModel({ position }) {
+export default function LaptopModel({ position, links }) {
     const groupRef = useRef(null)
 
     // ----------------------------
@@ -245,7 +245,7 @@ export default function LaptopModel({ position }) {
                     <planeGeometry args={[2.1, 1.22]} />
                     <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.4} metalness={0.05} roughness={0.08} side={THREE.BackSide} />
                     <Html transform distanceFactor={1} occlude={false} zIndexRange={[100, 0]} className="w-[880px] h-[480px] overflow-hidden rounded-md">
-                        <LaptopContent />
+                        <LaptopContent links={links} />
                     </Html>
                 </motion.mesh>
 

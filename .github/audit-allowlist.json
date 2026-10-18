@@ -1,0 +1,7 @@
+{
+  "$comment": [
+    "Known production advisories accepted TEMPORARILY (issue #92). scripts/audit-gate.mjs fails CI on any high/critical advisory NOT listed here, and on every entry once it expires, so nothing here can be forgotten. Renewing an entry means re-reading the advisory and re-justifying the exposure in review; it is not a formality.",
+    "Written 2026-09-28. Emptied 2026-10-11: the Next 15, React 19 and nodemailer 10 upgrades (with postcss overridden to the patched 8.5 line under next) cleared every waived advisory, and `npm audit --omit=dev` reports none. A new entry needs a package, the advisory ids, an expiry and a reason."
+  ],
+  "entries": []
+}

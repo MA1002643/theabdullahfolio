@@ -25,7 +25,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useFooterReveal } from './useFooterReveal';
 import { cn } from '@/lib/utils';
 import { socialLinks } from './footer-data';

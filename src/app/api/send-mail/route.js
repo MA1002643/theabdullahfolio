@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer';
 import { Redis } from '@upstash/redis';
 
 import { describeError } from '../_utils/redact';
+import { CONTACT_SERVER_LIMITS as LIMITS } from '@/lib/contactLimits';
+import { readJsonBody } from '@/lib/guestbook/body';
 
 // Pin the Node.js runtime, matching the repo's other API routes. Required here:
 // nodemailer relies on Node core modules (net/tls/stream) and cannot run on Edge.
@@ -71,6 +73,17 @@ const IDEMPOTENCY_KEY_PREFIX = 'contact:idempotency:';
 // real max of 36.
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 
+// Byte ceiling on the request body (issue #92). This is the one public,
+// unauthenticated POST on the site, and it used to call `req.json()` on
+// whatever arrived, so a multi-megabyte body was buffered and parsed in full
+// before validation turned it away. The largest LEGITIMATE body is the four
+// fields at their server maximums, every character a 4-byte UTF-8 sequence,
+// plus JSON punctuation: (100 + 254 + 175 + 2000) × 4 ≈ 10 KB. 16 KB leaves
+// headroom for escaping without admitting anything that could not be a real
+// message. Read through the guestbook's counted reader (lib/guestbook/body.js),
+// so an absent or understated Content-Length cannot walk past it either.
+const CONTACT_BODY_MAX_BYTES = 16 * 1024;
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -96,16 +109,30 @@ export async function POST(req) {
   const idempotencyStoreKey = idempotencyKey
     ? `${IDEMPOTENCY_KEY_PREFIX}${idempotencyKey}`
     : null;
+  // A body over the ceiling is a 413, and one that is not JSON a 400. The
+  // second used to throw into the catch-all below and answer 500, which the
+  // client (lib/contact.js) treats as TRANSIENT, so a malformed request would
+  // have been queued and retried forever instead of rejected once.
+  const parsed = await readJsonBody(req, { maxBytes: CONTACT_BODY_MAX_BYTES });
+  if (!parsed.ok) {
+    return new Response(JSON.stringify({ errors: [parsed.error] }), {
+      status: parsed.status,
+    });
+  }
+  const fields =
+    parsed.body !== null && typeof parsed.body === 'object' ? parsed.body : {};
+
   try {
-    let { name, email, subject, message } = await req.json();
+    let { name, email, subject, message } = fields;
     name = typeof name === 'string' ? name.trim() : '';
     email = typeof email === 'string' ? email.trim() : '';
     subject = typeof subject === 'string' ? subject.trim() : '';
     message = typeof message === 'string' ? message.trim() : '';
 
     const subjectSuffix = ' (ma.codes contact form)';
-    // Keep in sync with client-side maxLength in Form.jsx (subject field)
-    const maxRawSubjectLength = 175;
+    // Shared with the form via lib/contactLimits.js; the fitness suite pins
+    // that the client is never looser than these.
+    const maxRawSubjectLength = LIMITS.subject.max;
     const maxSubjectLength = maxRawSubjectLength + subjectSuffix.length;
 
     const validationErrors = [];
@@ -114,17 +141,24 @@ export async function POST(req) {
     if (!subject) validationErrors.push('Subject is required.');
     if (!message) validationErrors.push('Message is required.');
 
-    if (name.length > 100)
+    if (name.length > LIMITS.name.max)
       validationErrors.push(
-        'Full Name exceeds maximum allowed length (100 characters).',
+        `Full Name exceeds maximum allowed length (${LIMITS.name.max} characters).`,
+      );
+    // Before the format check and the reputation lookup, and well before
+    // nodemailer parses it as the reply-to (see lib/contactLimits.js).
+    const emailTooLong = email.length > LIMITS.email.max;
+    if (emailTooLong)
+      validationErrors.push(
+        `Email exceeds maximum allowed length (${LIMITS.email.max} characters).`,
       );
     if (subject.length > maxRawSubjectLength)
       validationErrors.push(
         `Subject exceeds maximum allowed length (${maxRawSubjectLength} characters).`,
       );
-    if (message.length > 2000)
+    if (message.length > LIMITS.message.max)
       validationErrors.push(
-        'Message exceeds maximum allowed length (2000 characters).',
+        `Message exceeds maximum allowed length (${LIMITS.message.max} characters).`,
       );
 
     // Reject inputs containing CR/LF to prevent header injection
@@ -140,7 +174,7 @@ export async function POST(req) {
 
     // Verify email deliverability via Abstract Email Reputation API
     // Runs alongside other checks so all errors are collected together
-    if (process.env.ABSTRACT_API_KEY && emailRegex.test(email)) {
+    if (process.env.ABSTRACT_API_KEY && !emailTooLong && emailRegex.test(email)) {
       const controller = new AbortController();
       const timeoutMs = 5000;
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);

@@ -26,7 +26,7 @@
 // name is always correct — identical to HoverText.
 
 import { useEffect, useRef } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useFooterReveal } from './useFooterReveal';
 
 // A non-breaking space keeps its width when a plain space would collapse inside

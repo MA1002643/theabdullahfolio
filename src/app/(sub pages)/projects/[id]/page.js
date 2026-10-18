@@ -43,8 +43,9 @@ export const dynamicParams = false
 // this file. Same shallow-merge rule as the section pages: openGraph is
 // restated wholesale via the shared helper so siteName/type/locale
 // survive the page-level override.
-export function generateMetadata({ params }) {
-    const project = projectsData.find((p) => String(p.id) === String(params.id))
+export async function generateMetadata({ params }) {
+    const { id } = await params
+    const project = projectsData.find((p) => String(p.id) === String(id))
     if (!project) return {}
     return sectionMetadata({
         title: project.name,
@@ -61,8 +62,7 @@ export function generateMetadata({ params }) {
 }
 
 export default async function ProjectDetailPage({ params }) {
-    // Next 14 passes params as a plain object; awaiting it is a no-op here
-    // but keeps this signature valid for Next 15+, where params is a Promise.
+    // `params` is a Promise from Next 15.
     const { id } = await params
     // Strict integer-string check before lookup. Two reasons:
     //   1. parseInt was permissive — parseInt("1abc", 10) === 1,
@@ -106,6 +106,23 @@ export default async function ProjectDetailPage({ params }) {
     // a clamp: a clamp would make projects 1 and 11 each have only one
     // neighbour, and those two are precisely the pages a listing-page failure
     // would strand.
+    // The project's two outbound links (issue #92). `demoLink` falls back to
+    // the repository for projects with no live site, so a "Live demo" that is
+    // only the repo again is dropped rather than shown twice under two names.
+    //
+    // A `private: true` record keeps `repo` for internal tracking (the progress
+    // popup, the language data), but that URL answers 404 to every visitor, so
+    // it is never published as "Source on GitHub", in the intro or on the
+    // laptop. The demo is compared against the repo URL, not against `source`,
+    // so a private repo cannot come back in as a "Live demo" either.
+    const repoUrl = project.repo ? `https://github.com/${project.repo}` : null
+    const source = project.private ? null : repoUrl
+    const links = {
+        name: project.name,
+        source,
+        demo: project.demoLink && project.demoLink !== repoUrl ? project.demoLink : null,
+    }
+
     const index = projectsData.findIndex((p) => p.id === project.id)
     const previous =
         projectsData[(index - 1 + projectsData.length) % projectsData.length]
@@ -231,10 +248,10 @@ export default async function ProjectDetailPage({ params }) {
                 </div>
 
                 {/* 3D Canvas — streams in via the dynamic ssr:false chunk */}
-                <SceneLoader />
+                <SceneLoader links={links} />
 
                 {/* Overlay UI */}
-                <ProjectIntro name={project.name} description={project.description} />
+                <ProjectIntro name={project.name} description={project.description} links={links} />
             </div>
 
         </>

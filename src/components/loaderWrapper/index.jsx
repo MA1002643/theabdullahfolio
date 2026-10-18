@@ -8,9 +8,9 @@ import {
   useMotionTemplate,
   useMotionValue,
   useMotionValueEvent,
-  useReducedMotion,
   useTransform,
 } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import EmblemSeal from './EmblemSeal';
 import {
   BUILD_DURATION_MS,
@@ -179,13 +179,44 @@ export default function LoaderWrapper({ children }) {
     ? { maskImage, WebkitMaskImage: maskImage }
     : null;
 
+  // The page is INERT while the overlay hides it (issue #92): unfocusable,
+  // unclickable and out of the accessibility tree. Without this a keyboard
+  // user who pressed Tab during the ~3 s intro moved focus through links they
+  // could not see, and a screen reader read a page that was not there yet
+  // (tests/a11y/keyboard.spec.js, WCAG 2.4.11). Held until the overlay is
+  // removed, NOT released when the reveal begins: the wipe (or the reduced-
+  // motion cross-fade) keeps the overlay mostly opaque for REVEAL_DURATION_MS,
+  // and Tab in that window would land on controls still hidden behind it.
+  // useLoaderRevealed() still flips at the reveal, so entrances are not delayed.
+  const covered = showLoader;
+
+  // Broadcast the inert boundary itself, separately from `loaderdone`: that
+  // one fires when the reveal BEGINS, while the page is still inert, so a
+  // consumer that needs to move focus into the page has to wait for this one.
+  // The ⌘K palette is the case (useCommandPalette): its global shortcut works
+  // under the loader, but focus() on an inert input is a silent no-op, so an
+  // open there would leave the dialog showing with its input unfocused.
+  // `window.__loaderCovered` lets a keypress read the current state; the
+  // `loaderuncovered` event fires after the commit that removed `inert`, so a
+  // listener's focus() lands.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.__loaderCovered = covered;
+    if (!covered) window.dispatchEvent(new Event('loaderuncovered'));
+  }, [covered]);
+
   return (
     <>
       {/* Page mounts behind the loader from the first render. The overlay
           (z-9999) covers it during the build, and the radial wipe genuinely
           reveals the real page underneath — heavy work like Three.js init can
-          also warm up while the seal plays. */}
-      {children}
+          also warm up while the seal plays. `display: contents` so the wrapper
+          adds no box and changes no layout. `inert` is a boolean prop from
+          React 19. The empty-string form React 18 needed is FALSE in 19, so
+          it would silently drop the attribute and un-inert the page. */}
+      <div style={{ display: 'contents' }} inert={covered}>
+        {children}
+      </div>
 
       <AnimatePresence>
         {showLoader && (

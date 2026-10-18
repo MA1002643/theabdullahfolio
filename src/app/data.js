@@ -366,6 +366,20 @@ export const BtnList = [
 // one story.
 export const journeyData = [
   {
+    id: 'j-adullam-lead',
+    year: 2026,
+    dateLabel: 'OCT 2026 →',
+    start: '2026-10',
+    end: null,
+    org: 'Adullam Homes Housing Association',
+    title: 'Concierge Team Leader · Adullam Homes Housing Association',
+    description:
+      'Area-level lead for concierge services across eight supported-accommodation sites in Bolton — leading three teams across two organisations, hiring for the region, managing incidents, and replacing two separate spreadsheet rotas with a Microsoft Teams shift-management tool that offers open shifts to staff directly.',
+    type: 'career',
+    tags: ['Team leadership', 'Hiring manager', 'Microsoft Teams'],
+    link: null,
+  },
+  {
     id: 'j-indie',
     year: 2026,
     dateLabel: 'APR 2026 →',
@@ -413,8 +427,8 @@ export const journeyData = [
     dateLabel: 'APR 2025 — MAY 2026',
     start: '2025-04',
     end: '2026-05',
-    org: 'Adullam Homes',
-    title: 'Concierge · Adullam Homes',
+    org: 'Adullam Homes Housing Association',
+    title: 'Concierge · Adullam Homes Housing Association',
     description:
       'Out-of-hours point of contact in supported accommodation — safeguarding escalations, incident management and accurate electronic record-keeping for vulnerable residents.',
     type: 'career',

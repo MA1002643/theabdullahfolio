@@ -6,7 +6,6 @@ import {
   BOM_FALLBACK,
   BOM_RULES,
   classifyPackage,
-  countCases,
   exportedMethods,
   formatBuiltAt,
   readBuildFacts,
@@ -77,6 +76,13 @@ function seedFullRepo(root) {
   write(root, 'tests/unit/b.test.js', "describe('x', () => {\n  it('five', () => {});\n});\n");
   write(root, 'tests/unit/helper.js', "it('not a suite file', () => {});\n");
   write(root, 'tests/e2e/smoke.spec.js', "test('boots', async () => {});\ntest('renders', async () => {});\n");
+  // The browser count comes from Playwright's own list, written by
+  // scripts/count-browser-cases.mjs, never from the spec text above.
+  write(root, 'tests/browser-cases.json', JSON.stringify({ suites: 1, cases: 2, byDir: { 'tests/e2e': 2 } }));
+  // Likewise the Vitest count, from Vitest's own list (count-vitest-cases.mjs).
+  // Deliberately NOT what the test text above would read as (2 files, 5 cases):
+  // the plate must print the runner's figure, never a scan of the source.
+  write(root, 'tests/vitest-cases.json', JSON.stringify({ suites: 3, cases: 9, byProject: { unit: 9 } }));
   write(root, 'src/app/api/one/route.js', 'export function GET() {}');
   write(
     root,
@@ -212,19 +218,57 @@ describe('readBuildFacts — a full fixture repository', () => {
     expect(facts.pipeline.crons).toEqual([{ path: '/api/daily-warmup', schedule: '0 1 * * *' }]);
   });
 
-  it('counts suites and cases from the files, never from a typed number', () => {
+  it('counts suites and cases from the runners and the files, never from a typed number', () => {
     const root = makeRoot();
     seedFullRepo(root);
     const facts = readBuildFacts(root, FIXED_NOW);
-    // Two *.test.js files (helper.js is not a suite); it / test / it.only /
-    // test.each all count; the commented line does not.
-    expect(facts.instruments.unit).toEqual({ suites: 2, cases: 5 });
+    expect(facts.instruments.unit).toEqual({ suites: 3, cases: 9 });
     expect(facts.instruments.e2e).toEqual({ suites: 1, cases: 2 });
     // Recursive: the dynamic segment's route.js counts, helper.js does not.
     expect(facts.instruments.apiRoutes).toBe(3);
     // Handlers per verb, HTTP order, verbs present only — across the
     // function, `const`, and destructured (next-auth) export forms.
     expect(facts.instruments.apiMethods).toEqual({ GET: 3, POST: 1, DELETE: 1 });
+  });
+
+  it('takes the Vitest count from Vitest’s collected list, not the test text (#92 review)', () => {
+    const root = makeRoot();
+    seedFullRepo(root);
+    // One lexical `it.each(files)` over a list built at collection time: the
+    // shape that made the text counter read routeSegmentConfig as one case.
+    write(root, 'tests/fitness/segments.test.js', "it.each(walk('src'))('%s declares its config', () => {});\n");
+    write(root, 'tests/vitest-cases.json', JSON.stringify({ suites: 4, cases: 89 }));
+    expect(readBuildFacts(root, FIXED_NOW).instruments.unit).toEqual({ suites: 4, cases: 89 });
+  });
+
+  it('publishes no Vitest count rather than a wrong one when the list is missing or malformed', () => {
+    const root = makeRoot();
+    seedFullRepo(root);
+    write(root, 'tests/vitest-cases.json', JSON.stringify({ suites: 3 }));
+    expect(readBuildFacts(root, FIXED_NOW).instruments.unit).toBeNull();
+    rmSync(join(root, 'tests/vitest-cases.json'));
+    expect(readBuildFacts(root, FIXED_NOW).instruments.unit).toBeNull();
+  });
+
+  it('takes the browser count from Playwright’s collected list, not the spec text (#92 review)', () => {
+    const root = makeRoot();
+    seedFullRepo(root);
+    // One lexical `test(...)` that registers 32 tests: the shape that made the
+    // text counter publish 2 for axe.spec.js instead of 32.
+    write(
+      root,
+      'tests/a11y/axe.spec.js',
+      "for (const w of [1440, 390]) for (const r of ROUTES) test(`${r} at ${w}`, async () => {});\n",
+    );
+    write(root, 'tests/browser-cases.json', JSON.stringify({ suites: 2, cases: 34 }));
+    expect(readBuildFacts(root, FIXED_NOW).instruments.e2e).toEqual({ suites: 2, cases: 34 });
+  });
+
+  it('publishes no browser count rather than a wrong one when the list is malformed', () => {
+    const root = makeRoot();
+    seedFullRepo(root);
+    write(root, 'tests/browser-cases.json', JSON.stringify({ suites: '17', cases: null }));
+    expect(readBuildFacts(root, FIXED_NOW).instruments.e2e).toBeNull();
   });
 
   it('stamps builtAt as ISO with a fixed en-GB UTC label', () => {
@@ -339,74 +383,6 @@ describe('resolveVercelNodeMajor — the major Vercel deploys from engines.node'
   it('honours a custom supported list', () => {
     expect(resolveVercelNodeMajor('>=18', [18, 20])).toBe(20);
     expect(resolveVercelNodeMajor('^22.0.0', [18, 20])).toBeNull();
-  });
-});
-
-// The case counter must agree with the runner (owner audit 2026-09-06: the
-// plate read 402 where Vitest ran 431 because multi-line each-tables counted
-// zero). Each fixture is a source string, never a file the runner would pick
-// up.
-describe('countCases — counts the way the runner does', () => {
-  it('expands a multi-line each-table by its rows — trailing comma, nested brackets and bracket-shaped strings included', () => {
-    const src = `
-describe('x', () => {
-  it.each([
-    ['a', [1, 2], { k: ']' }],
-    ['b', [3], { k: '(' }],
-    ['c', [], {}],
-  ])('%s', () => {});
-  test.each([[1], [2]])('inline %i', () => {});
-});
-`;
-    expect(countCases(src)).toBe(5);
-  });
-
-  it('expands a template table by its lines below the header', () => {
-    const src = "it.each`\n  a    | b\n  ${1} | ${2}\n  ${3} | ${4}\n`('$a + $b', () => {});\n";
-    expect(countCases(src)).toBe(2);
-  });
-
-  it('multiplies a describe.each block by its rows, and counts what follows it once', () => {
-    const src = `
-describe.each([['x'], ['y'], ['z']])('%s', () => {
-  it('one', () => {});
-  it('two', () => {});
-});
-it('outside', () => {});
-`;
-    expect(countCases(src)).toBe(7);
-  });
-
-  it('never counts a commented-out case or a case name that contains it(', () => {
-    const src = `
-// it('commented', () => {});
-/* it('block', () => {});
-   test('block 2', () => {}); */
-it("renders it('x') verbatim", () => {});
-it('name with // slashes', () => {});
-`;
-    expect(countCases(src)).toBe(2);
-  });
-
-  it('accepts the Vitest and Playwright modifiers; describe blocks and hooks are not cases', () => {
-    const src = `
-test.describe('suite', () => {
-  test.describe.configure({ mode: 'serial' });
-  test('a', async () => {});
-  test.skip('b', async () => {});
-  test.fixme('c', async () => {});
-  test.beforeEach(async () => {});
-});
-describe.skip('d', () => {
-  it.fails('e', () => {});
-  it.concurrent.each([[1], [2]])('f %i', () => {});
-});
-`;
-    expect(countCases(src)).toBe(6);
-  });
-
-  it('a table held in a variable counts once — the limit of a static read', () => {
-    expect(countCases("const cases = [[1], [2], [3]];\nit.each(cases)('%i', () => {});\n")).toBe(1);
   });
 });
 

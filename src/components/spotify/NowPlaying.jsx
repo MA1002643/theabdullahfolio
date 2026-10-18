@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Music } from 'lucide-react';
 import { SiSpotify } from 'react-icons/si';
 import { useNowPlaying } from './useNowPlaying';
@@ -12,6 +13,7 @@ import ProgressRing from './ProgressRing';
 import Spectrum from './Spectrum';
 import Marquee from './Marquee';
 import HoverHint from '@/components/home/HoverHint';
+import { claimEscape } from '@/lib/escapeKey';
 import { formatTime, formatPlayedAgo } from './format';
 
 // ── Now Playing widget (issue #42) ──────────────────────────────────────────
@@ -180,6 +182,9 @@ export default function NowPlaying() {
       e.preventDefault();
       toggle();
     } else if (e.key === 'Escape') {
+      // Claimed only when it collapsed something, so a press on an already
+      // collapsed card still reaches the privacy notice.
+      if (expanded) claimEscape(e);
       setExpanded(false);
     }
   };
@@ -206,8 +211,20 @@ export default function NowPlaying() {
   // always gets cursor-pointer below — a cursor-default on the button branch
   // would falsely read as "not clickable", worst on desktop where click is the
   // only toggle besides hover.
+  //
+  // The link branch takes Escape alone. Without it, Escape on the focused,
+  // expanded link was claimed by nobody, so with the privacy notice open it
+  // declined analytics instead of collapsing the console. Enter stays the
+  // link's own (it opens Spotify), so only Escape reaches onCardKeyDown.
   const linkProps = hasLink
-    ? { href: trackUrl, target: '_blank', rel: 'noopener noreferrer' }
+    ? {
+        href: trackUrl,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        onKeyDown: (e) => {
+          if (e.key === 'Escape') onCardKeyDown(e);
+        },
+      }
     : {
         tabIndex: 0,
         role: 'button',

@@ -15,6 +15,7 @@ import { useStaggeredScrollReveal } from '@/hooks/useStaggeredScrollReveal';
 import { animateToTarget } from '@/utils/animationCurves';
 import { useNow } from './useNow';
 import { formatAge } from '@/utils/formatAge';
+import { claimEscape } from '@/lib/escapeKey';
 
 // Per-metric breakdown popover for the maintenance header (issue #94).
 // Wraps a counter in an accessible dialog trigger:
@@ -304,6 +305,7 @@ export default function MetricPopover({
 
     const onKeyDown = (event) => {
       if (event.key !== 'Escape') return;
+      claimEscape(event);
       const active = document.activeElement;
       closeNow(containsTarget(active));
     };

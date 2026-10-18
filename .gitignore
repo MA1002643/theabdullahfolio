@@ -50,6 +50,9 @@ TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
 # playwright test-runner artifacts (issue #40 e2e smoke)
 /test-results/
 /playwright-report/
+# …and the visual run's own copies (ci.yml `quality` runs Playwright twice)
+/test-results-visual/
+/playwright-report-visual/
 
 # guestbook local dev data (GUESTBOOK_DRIVER=json) — visitor or seeded
 # messages; must never reach the public repo
@@ -75,3 +78,9 @@ TESTING_SOFTWARE_GITHUB_INTEGRATION_BLUEPRINT.md
 # is the net, not the plan.
 service-account-key*.json
 *-service-account*.json
+
+# issue #92 test outputs: mutation reports and Stryker's sandbox copy. Coverage
+# (/coverage) and Playwright (/test-results, /playwright-report) are above.
+# NOT ignored on purpose: tests/visual/__screenshots__/ (reviewed baselines).
+/reports/
+.stryker-tmp/

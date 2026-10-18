@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
   Home,
   MessageSquare,
@@ -233,7 +234,11 @@ const NavButton = ({
       // the button would either stop orbiting or jump. Splitting them gives
       // each owner its own node, and since both are transforms on absolutely
       // positioned boxes, neither can affect layout.
-      className="absolute mx-auto cursor-pointer"
+      // focus-within:!z-50 (issue #92): a ring button that takes keyboard focus
+      // while passing BEHIND the laptop (z-10) was entirely hidden, WCAG 2.4.11.
+      // The stylesheet !important beats the inline zIndex only while focus is
+      // inside, so the orbit's depth is untouched for everyone else.
+      className="absolute mx-auto cursor-pointer focus-within:!z-50"
       style={{
         transform: `translate(${x}px, ${y}px)`,
         zIndex,

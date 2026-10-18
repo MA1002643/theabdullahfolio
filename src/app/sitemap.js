@@ -104,6 +104,11 @@ export const PROJECT_SOURCES = [
   // Next composes the two, so no dependency walk can reach them.
   'src/app/(sub pages)/projects/[id]/opengraph-image.js',
   'src/app/(sub pages)/projects/[id]/twitter-image.js',
+  // The 3D scene's environment map. `project-detail/scene.jsx` loads it by URL
+  // string (`<Environment files="/hdri/…">`), so no import walk reaches it, and
+  // replacing it relights the scene on all eleven pages. Self-hosted in #92
+  // (it was fetched from raw.githack.com); a literal asset, listed by hand.
+  'public/hdri/dikhololo_night_1k.hdr',
   ...SHARED_ROUTE_SOURCES,
   // These eleven live inside the `(sub pages)` group too, so they render the
   // group layout, its footer and its two nav links, and take their metadata

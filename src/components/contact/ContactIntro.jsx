@@ -1,7 +1,8 @@
 'use client';
 
 import { Fragment, useMemo } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { wordFill } from '@/lib/fireRamp';
 

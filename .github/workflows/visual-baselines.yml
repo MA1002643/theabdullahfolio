@@ -1,0 +1,141 @@
+name: Visual baselines
+
+# Renders every visual-regression screenshot on each push and commits the
+# images back to the branch (issue #92, L7), so the latest render of every
+# view is always in the repository to look at.
+#
+# Two directories, on purpose:
+#
+#   tests/visual/__latest__/       re-rendered and committed on EVERY push,
+#                                  with a README.md gallery noting which views
+#                                  differ from their baseline. Always current.
+#   tests/visual/__screenshots__/  the REVIEWED baselines CI compares against.
+#                                  Seeded automatically when missing (the first
+#                                  run arms the layer); after that, changed only
+#                                  deliberately: run this workflow by hand with
+#                                  `promote: true`, or commit the PNGs in a PR.
+#
+# Why not overwrite the baselines on every push: a baseline that silently
+# becomes whatever the code renders today cannot catch a regression, ever.
+# __latest__ shows the current truth; __screenshots__ holds the agreed truth,
+# and the diff between them is the review.
+#
+# Rendered on ubuntu-latest with the SAME Chromium install the CI comparison job
+# uses (ci.yml, `quality`), not in a container, so a baseline rendered here and
+# a screenshot taken there come from the identical rasteriser. (Docker on Apple
+# silicon cannot run Chromium under amd64 emulation, which is why this lives in
+# CI rather than on a laptop.)
+#
+# Loop-safe: commits made with the job's GITHUB_TOKEN do not trigger workflows,
+# so the image commit does not re-run this.
+#
+# That same rule used to leave the image commit with NO checks at all. It
+# becomes the branch's head, so a PR's required checks would wait on it forever.
+# `workflow_dispatch` is the one event a GITHUB_TOKEN may still raise, so after
+# pushing, this job dispatches CI and Security on the branch, and their check
+# runs land on the image commit. Their concurrency groups are keyed on the
+# branch name, so the dispatch also cancels the now-superseded pull_request
+# and push runs on the commit before it. A push whose render changed nothing
+# but the gallery's commit line makes no image commit and dispatches nothing.
+#
+# Never on the default branch: `main` only changes through a PR, so a direct
+# push would be refused, and the merged PR already carried its latest render.
+#
+# No CHANGELOG.md entry, on purpose: CLAUDE.md §2 exempts these commits by
+# name (generated output for a commit that already carried its own entry). The
+# exemption holds only while the commit stages nothing but the two screenshot
+# directories, which is why `git add` below names them and nothing else.
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore:
+      - 'tests/visual/__latest__/**'
+      - 'tests/visual/__screenshots__/**'
+  workflow_dispatch:
+    inputs:
+      promote:
+        description: 'Also copy the fresh render over the reviewed baselines'
+        type: boolean
+        default: false
+
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  # Dispatching the checks onto the image commit (see the header).
+  actions: write
+
+env:
+  NEXT_PUBLIC_GITHUB_USERNAME: MA1002643
+  SMTP_HOST: smtp.example.com
+  SMTP_PORT: '587'
+  SMTP_USER: ci@example.com
+  SMTP_PASS: placeholder
+  RECEIVER_EMAIL: ci@example.com
+  AUTH_GITHUB_ID: ci-placeholder
+  AUTH_GITHUB_SECRET: ci-placeholder
+  AUTH_GOOGLE_ID: ci-placeholder
+  AUTH_GOOGLE_SECRET: ci-placeholder
+
+jobs:
+  render:
+    name: Render and commit screenshots
+    runs-on: ubuntu-latest
+    # Never on a bot's own commit, and never for Dependabot (no write token).
+    if: ${{ github.actor != 'github-actions[bot]' && github.actor != 'dependabot[bot]' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install Playwright Chromium (as ci.yml does)
+        run: npx playwright install --with-deps chromium
+      - name: Render every view
+        run: node scripts/render-visual-latest.mjs
+        env:
+          VISUAL: '1'
+          PROMOTE: ${{ inputs.promote && '1' || '' }}
+      - name: Commit the images (if anything changed)
+        id: commit
+        if: ${{ github.ref_name != github.event.repository.default_branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/__latest__ tests/visual/__screenshots__
+          # The gallery README names the commit it was rendered for, so it
+          # differs on every push. A diff in nothing else is not a new render,
+          # and committing it would re-run every check below for no reason.
+          if git diff --cached --quiet -- . ':(exclude)tests/visual/__latest__/README.md'; then
+            echo "Screenshots unchanged." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git commit -m "test(visual): render screenshots for ${GITHUB_SHA::7}" -m "Automated by .github/workflows/visual-baselines.yml (issue #92)."
+          git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      # Not Lighthouse: the image commit changes only PNGs under tests/, so the
+      # pages it would audit are byte-for-byte the ones the push's own run
+      # audited, and it is the slowest workflow there is.
+      #
+      # CI gets the push's `before`, so its burn-in can still cover the specs
+      # this push changed: the dispatched run supersedes the pull_request run
+      # (one concurrency group per branch), burn-in and all.
+      - name: Run the checks on the image commit
+        if: ${{ steps.commit.outputs.pushed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          gh workflow run ci.yml --ref "$GITHUB_REF_NAME" -f burn_in_base="$PUSH_BEFORE"
+          gh workflow run security.yml --ref "$GITHUB_REF_NAME"
+          echo "Dispatched CI and Security onto the image commit." >> "$GITHUB_STEP_SUMMARY"
+      - name: Summary
+        if: always()
+        run: cat tests/visual/__latest__/README.md >> "$GITHUB_STEP_SUMMARY" || true

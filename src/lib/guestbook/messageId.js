@@ -5,7 +5,8 @@
 //
 // The timestamp makes ids sort with creation (paging.js breaks same-instant
 // ties on the id itself); the random tail makes a same-millisecond pair
-// distinct. Every place that takes an id from OUTSIDE checks the shape first:
+// distinct, but in RANDOM order, so it does not keep the later of two such
+// posts on top. paging.js records what depends on that. Every place that takes an id from OUTSIDE checks the shape first:
 //   • the deep link (deepLink.js): `/guestbook#<id>` walks older pages until
 //     the mark appears, up to ten 50-message fetches — so a fragment that is
 //     not a message id must never be taken for one (the page's own anchors,

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
-import { useScroll, useTransform, useReducedMotion, motion } from "framer-motion";
+import { useScroll, useTransform, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { projectsData } from "@/app/data";
 import LanguagesCard from "./LanguagesCard";
 import GitHubStatsCard from "./StatsCard";

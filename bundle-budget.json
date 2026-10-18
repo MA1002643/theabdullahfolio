@@ -1,0 +1,20 @@
+{
+  "$comment": "First-load JS per route, gzipped bytes: measured + 10% headroom. Regenerate with `npm run test:bundle:update` and explain the change in review. See scripts/check-bundle-budget.mjs.",
+  "routes": {
+    "/": 265216,
+    "/_not-found": 223232,
+    "/about": 299008,
+    "/contact": 264192,
+    "/cv": 243712,
+    "/guestbook": 283648,
+    "/journey": 267264,
+    "/my-past": 243712,
+    "/notes": 245760,
+    "/notes/[slug]": 243712,
+    "/privacy": 244736,
+    "/projects": 256000,
+    "/projects/[id]": 242688,
+    "/qualifications": 253952,
+    "/uses": 279552
+  }
+}

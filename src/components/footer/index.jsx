@@ -27,7 +27,8 @@
 // /qualifications, /projects and /contact without per-page duplication.
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Mail } from 'lucide-react';
 import { useFooterReveal } from './useFooterReveal';
 import { useSound } from '@/components/sound/SoundProvider';

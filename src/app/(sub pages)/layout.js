@@ -59,8 +59,16 @@ export default function SubPagesLayout({ children }) {
           island on small screens. The horizontal/bottom padding are the
           jumps (0.5rem → 4rem/5rem at md); on fluid pages they become one
           scaled value instead. */}
+      {/* Project pages render ENTIRELY in a fixed full-screen layer (the 3D
+          scene), so <main> had no in-flow height beyond its padding and the
+          footer started ~160px down, covering the scene on every screen size
+          (issue #92: the keyboard suite found focused intro links under the
+          footer). A full viewport of height puts the footer below the fold,
+          one scroll away, as on every other page. */}
       <main
         className={`flex flex-1 flex-col justify-start pt-20 ${
+          isDynamicProjectPage ? 'min-h-[100svh] ' : ''
+        }${
           isFluidScalePage
             ? 'fluid-scale'
             : 'px-2 pb-2 md:px-16 md:py-20'

@@ -22,7 +22,8 @@ export function generateStaticParams() {
 export const dynamicParams = false;
 
 export default async function Image({ params }) {
-  const project = projectsData.find((p) => String(p.id) === String(params.id));
+  const { id } = await params;
+  const project = projectsData.find((p) => String(p.id) === String(id));
 
   // dynamicParams=false makes this unreachable, but a metadata image
   // should degrade to the generic card rather than ever failing a build.

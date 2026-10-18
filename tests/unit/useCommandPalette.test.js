@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 
 // The shared ⌘K palette's state engine. jsdom per-file (the suite default is
@@ -115,5 +115,60 @@ describe('useCommandPalette — every exit lands in the same state', () => {
 
     act(() => hotkey());
     expect(document.activeElement).toBe(input);
+  });
+});
+
+// Under the intro loader the page is `inert`, so the component's focus() on
+// its input is a no-op: opening there showed the dialog with nothing focused,
+// and Esc and the arrows (handled on the input) did nothing. A ⌘K pressed
+// while covered waits for `loaderuncovered`, which LoaderWrapper fires once
+// `inert` is gone (code review).
+describe('useCommandPalette — the intro loader', () => {
+  const uncover = () => {
+    window.__loaderCovered = false;
+    window.dispatchEvent(new Event('loaderuncovered'));
+  };
+
+  afterEach(() => {
+    delete window.__loaderCovered;
+    vi.restoreAllMocks();
+  });
+
+  it('defers a ⌘K pressed under the loader until the page is uncovered', () => {
+    window.__loaderCovered = true;
+    const { result } = renderHook(() => useCommandPalette(ACTIONS));
+    act(() => hotkey());
+    expect(result.current.open).toBe(false);
+
+    // `loaderdone` (the reveal STARTING) is too early: still inert.
+    act(() => window.dispatchEvent(new Event('loaderdone')));
+    expect(result.current.open).toBe(false);
+
+    act(() => uncover());
+    expect(result.current.open).toBe(true);
+  });
+
+  it('a second ⌘K while waiting cancels the deferred open', () => {
+    window.__loaderCovered = true;
+    const { result } = renderHook(() => useCommandPalette(ACTIONS));
+    act(() => hotkey());
+    act(() => hotkey());
+    act(() => uncover());
+    expect(result.current.open).toBe(false);
+
+    // …and the next ⌘K, uncovered, opens at once.
+    act(() => hotkey());
+    expect(result.current.open).toBe(true);
+  });
+
+  it('an unmount drops the deferred open', () => {
+    window.__loaderCovered = true;
+    const add = vi.spyOn(window, 'addEventListener');
+    const remove = vi.spyOn(window, 'removeEventListener');
+    const { unmount } = renderHook(() => useCommandPalette(ACTIONS));
+    act(() => hotkey());
+    const [, waiting] = add.mock.calls.find(([type]) => type === 'loaderuncovered');
+    unmount();
+    expect(remove).toHaveBeenCalledWith('loaderuncovered', waiting);
   });
 });
