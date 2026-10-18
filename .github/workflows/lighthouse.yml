@@ -79,7 +79,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           # Matched to ci.yml, and for the same reason: `.npmrc` sets
           # engine-strict and a transitive dependency requires >=22.
