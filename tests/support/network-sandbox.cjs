@@ -25,6 +25,14 @@
 const net = require('node:net');
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0']);
+
+// This machine: a named local host, or any 127/8 address, but only as an IPv4
+// LITERAL. A bare `127.` prefix also passed DNS names such as
+// `127.example.com`, which the real connect would resolve, possibly to a
+// public address (code review).
+function isLocalHost(host) {
+  return LOCAL_HOSTS.has(host) || (net.isIPv4(host) && host.startsWith('127.'));
+}
 const realFetch = globalThis.fetch;
 
 if (typeof realFetch === 'function' && !globalThis.__e2eNetworkSandbox) {
@@ -72,7 +80,7 @@ if (!globalThis.__e2eSocketSandbox) {
     } else {
       return realConnect.apply(this, args);
     }
-    if (LOCAL_HOSTS.has(host) || /^127\./.test(host)) return realConnect.apply(this, args);
+    if (isLocalHost(host)) return realConnect.apply(this, args);
     process.stderr.write(`[e2e network sandbox] blocked outbound connection to ${host}\n`);
     const error = Object.assign(new Error(`connect ECONNREFUSED: e2e network sandbox: ${host} is not reachable from the test server`), {
       code: 'ECONNREFUSED',
@@ -81,3 +89,7 @@ if (!globalThis.__e2eSocketSandbox) {
     return this;
   };
 }
+
+// For tests/unit/networkSandbox.test.js. Harmless under `--require`, where
+// nothing reads it.
+module.exports = { isLocalHost };
