@@ -1513,6 +1513,17 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### Build: Tailwind back to v3 after a version-only major bump broke every build on `main` · 2026-10-19
+
+| | |
+|:--|:--|
+| **What was wrong** | Dependabot PR #169 moved `tailwindcss` from `^3.3.0` to `^4.3.3` and changed nothing else. Tailwind 4 no longer ships its PostCSS plugin (it moved to `@tailwindcss/postcss`) and reads a CSS-first config, so with `postcss.config.js`, `tailwind.config.js` and the `@tailwind` directives still written for v3, `next build` failed on `src/app/globals.css`. The PR was merged with its checks red. `main` requires no status checks, so the merge button stayed green. From `f1e2eee` on, CI's Build and Vitest (`metadataContract`, which compiles the stylesheet), Lighthouse and Visual baselines all failed on `main`, and E2E and browser quality, which wait on the build, did not run. |
+| **Why production looked fine** | Vercel restored the previous deployment's build cache, whose `node_modules` still held v3. Its install "changed 19 packages" without a clean reinstall, so it built and deployed v3 CSS. The next deploy without that cache would have failed. |
+| **Fix** | `tailwindcss` is `^3.4.19` again, and the lockfile is regenerated with `npm ci` verified. `.github/dependabot.yml` ignores Tailwind majors, so v4 is not reopened every Monday; remove that entry when the v4 migration lands on its own branch. |
+| **Tests** | **new** `tests/fitness/tailwindToolchain.test.js`: the installed major matches `package.json`, and the PostCSS plugin and the stylesheet entry match that major. All three cases fail with v4 installed over the v3 setup. Verified locally: `npm ci`, `npm run build`, `npm run lint`, and Vitest at 1,391/1,391. `tests/vitest-cases.json` is regenerated. `docs/testing.md` gains the fitness row and a defects-table row. |
+| **Privacy check** | Nothing to change: a build dependency and CI configuration only. |
+| **Files** | `package.json`, `package-lock.json`, `.github/dependabot.yml`, `tests/fitness/tailwindToolchain.test.js`, `tests/vitest-cases.json`, `docs/testing.md` |
+
 #### Burn-in: a cold image cache for the axe scan, and two limits too tight for the longest page · 2026-10-10
 
 | | |
