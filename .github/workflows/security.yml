@@ -114,7 +114,7 @@ jobs:
       - name: Scan the lockfile
         id: scan
         continue-on-error: true
-        uses: google/osv-scanner-action/osv-scanner-action@v2.2.2
+        uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
         with:
           scan-args: |-
             --lockfile=package-lock.json
