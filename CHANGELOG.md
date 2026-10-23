@@ -2998,6 +2998,16 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Security
 
+#### Next 15.5.27 → 15.5.28: a critical RCE and a high DoS advisory · 2026-10-23
+
+| | |
+|:--|:--|
+| **What was wrong** | Two advisories published against every Next up to 15.5.27, which production was running: **critical** [GHSA-2464-fhr4-w9xw](https://github.com/advisories/GHSA-2464-fhr4-w9xw), unauthenticated remote code execution in the Image Optimization API when SVG files are used; **high** [GHSA-p3m5-59mp-jv5r](https://github.com/advisories/GHSA-p3m5-59mp-jv5r), denial of service in the App Router through Server Actions. The audit gate (`scripts/audit-gate.mjs`) failed Security on this PR's dispatched run with both as new and not allowlisted. |
+| **Fix** | `next` and `eslint-config-next` are `^15.5.28`, the patched 15.x release. `npm audit --omit=dev` reports 0 vulnerabilities and the audit gate passes with nothing allowlisted. No waiver was needed. |
+| **Tests** | Verified locally on 15.5.28: `npm ci`, the production build, lint, and Vitest at 1,391/1,391; CI runs E2E and browser quality. Test-plan check: nothing to add, since the audit gate is the test that caught it, and it fails again on any new high or critical advisory. |
+| **Privacy check** | Nothing to change: a framework patch release. |
+| **Files** | `package.json`, `package-lock.json` |
+
 #### Lighthouse workflow given least-privilege permissions and a non-persistent checkout
 
 | | |
