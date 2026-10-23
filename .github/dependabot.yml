@@ -21,6 +21,14 @@ updates:
       # that migration is done on its own branch.
       - dependency-name: tailwindcss
         update-types: [version-update:semver-major]
+      # three.js is 0.x: each r-release is a "minor" to semver and to the
+      # grouping above, but it can break. r162 → r186 rode in on the
+      # production minor-and-patch batch (#162) and hung every project page
+      # on the mobile-chrome E2E (the WebGL scene starved the main thread);
+      # back on r162 the same suite passed 59/59. Patches still arrive.
+      # Upgrade three on its own branch, then remove this entry.
+      - dependency-name: three
+        update-types: [version-update:semver-minor, version-update:semver-major]
     groups:
       production-minor-and-patch:
         dependency-type: production
