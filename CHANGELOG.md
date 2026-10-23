@@ -2998,12 +2998,13 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Security
 
-#### Next 15.5.27 → 15.5.28: a critical RCE and a high DoS advisory · 2026-10-23
+#### Next 15.5.27 → 15.5.28 and zod 4.4.3 → 4.6.7: a critical RCE, a high DoS and a high memory-exhaustion advisory · 2026-10-23
 
 | | |
 |:--|:--|
 | **What was wrong** | Two advisories published against every Next up to 15.5.27, which production was running: **critical** [GHSA-2464-fhr4-w9xw](https://github.com/advisories/GHSA-2464-fhr4-w9xw), unauthenticated remote code execution in the Image Optimization API when SVG files are used; **high** [GHSA-p3m5-59mp-jv5r](https://github.com/advisories/GHSA-p3m5-59mp-jv5r), denial of service in the App Router through Server Actions. The audit gate (`scripts/audit-gate.mjs`) failed Security on this PR's dispatched run with both as new and not allowlisted. |
 | **Fix** | `next` and `eslint-config-next` are `^15.5.28`, the patched 15.x release. `npm audit --omit=dev` reports 0 vulnerabilities and the audit gate passes with nothing allowlisted. No waiver was needed. |
+| **Then zod** | The next Security run failed on a third advisory, published after the local audit above: **high** [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5), zod below 4.6.6 can exhaust memory validating oversized constrained collections. zod is transitive, through the `ai` SDK (the contact form's refine route) and Stryker. Every dependent's range (`ai` and `@ai-sdk/provider-utils`: `^3.25.76 \|\| ^4.1.8`) already allows the fix, so `npm update zod` moved the lockfile alone to 4.6.7; `package.json` is unchanged. The audit gate passes. |
 | **Tests** | Verified locally on 15.5.28: `npm ci`, the production build, lint, and Vitest at 1,391/1,391; CI runs E2E and browser quality. Test-plan check: nothing to add, since the audit gate is the test that caught it, and it fails again on any new high or critical advisory. |
 | **Privacy check** | Nothing to change: a framework patch release. |
 | **Files** | `package.json`, `package-lock.json` |
