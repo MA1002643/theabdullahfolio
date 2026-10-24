@@ -14,6 +14,11 @@
  * run ever reported. `vitest list` collects every test the way a run would,
  * tables expanded, without running a single one.
  *
+ * That holds only with `--staticParse=false`. Vitest 5 made static parsing the
+ * default for `list`, and that is the text read this script exists to avoid:
+ * under it the count fell from 1,391 to 1,114 (fitness 120 → 34), every
+ * `it.each` over a list built at collection time read as one case again.
+ *
  * Committed rather than counted at build for the reason the browser count is:
  * `src/lib/uses/buildFacts.js` runs inside `next build`, and collecting every
  * suite there would put the test runner, jsdom and MSW in the site's build.
@@ -32,7 +37,7 @@ const scratch = mkdtempSync(path.join(tmpdir(), 'vitest-list-'));
 const listFile = path.join(scratch, 'list.json');
 let listed;
 try {
-  execFileSync('npx', ['vitest', 'list', `--json=${listFile}`], {
+  execFileSync('npx', ['vitest', 'list', '--staticParse=false', `--json=${listFile}`], {
     stdio: ['ignore', 'ignore', 'inherit'],
     env: { ...process.env, CI: '1' },
   });
