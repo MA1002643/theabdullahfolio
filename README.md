@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.18-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--10--11-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-2026--10--23-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -82,14 +82,14 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 <p>
   <img src="https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js" alt="Next.js 15.5" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-3.3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3.3" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3.4" />
 </p>
 
 | Technology | Version | Role |
 |------------|---------|------|
 | [Next.js](https://nextjs.org/) | `^15.5` | App Router, server components, API routes, metadata API |
 | [React](https://react.dev/) | `^19` | UI primitives, hooks, concurrent features |
-| [Tailwind CSS](https://tailwindcss.com/) | `^3.3` | Utility-first styling, custom ember / amethyst / night theme |
+| [Tailwind CSS](https://tailwindcss.com/) | `^3.4` | Utility-first styling, custom ember / amethyst / night theme |
 <!-- STACK-CORE:END -->
 
 ### 3D & Animation
@@ -118,7 +118,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
 | Spotify Web API | — | Live now-playing track for the floating widget — server-side refresh-token exchange (no secret reaches the browser) |
 | [Nodemailer](https://nodemailer.com/) | `^10.1` | SMTP email delivery for the contact form |
-| [react-hook-form](https://react-hook-form.com/) | `^7.61` | Form state management and validation |
+| [react-hook-form](https://react-hook-form.com/) | `^7.90` | Form state management and validation |
 | [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
 | [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
 | [tz-lookup](https://github.com/darkskyapp/tz-lookup) | `^6.1` | Offline coordinates→IANA-timezone lookup for the footer's live-location clock |
@@ -132,11 +132,11 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 <!-- STACK-UI:START -->
 | Technology | Version | Role |
 |------------|---------|------|
-| [Lucide React](https://lucide.dev/) | `^1.55.0` | Primary icon system |
-| [React Icons](https://react-icons.github.io/react-icons/) | `^5.5` | Extended icon library |
+| [Lucide React](https://lucide.dev/) | `^1.57.0` | Primary icon system |
+| [React Icons](https://react-icons.github.io/react-icons/) | `^5.7` | Extended icon library |
 | [Sonner](https://sonner.emilkowal.ski/) | `^1.7` | Toast notification system |
 | [clsx](https://github.com/lukeed/clsx) | `^2.1` | Conditional class name utility |
-| [tailwind-merge](https://github.com/dcastil/tailwind-merge) | `^3.6` | Conflict-free Tailwind class merging — the `cn()` helper in `src/lib/utils.js` |
+| [tailwind-merge](https://github.com/dcastil/tailwind-merge) | `^3.7` | Conflict-free Tailwind class merging — the `cn()` helper in `src/lib/utils.js` |
 | [Sharp](https://sharp.pixelplumbing.com/) | `^0.35` | Server-side image optimisation pipeline |
 <!-- STACK-UI:END -->
 
