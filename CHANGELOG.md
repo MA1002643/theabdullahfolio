@@ -1525,6 +1525,17 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### Vitest 4 → 5, and the published test count it would have broken · 2026-10-24
+
+| | |
+|:--|:--|
+| **Ref** | Dependabot PR #171, which bumped `vitest` alone. |
+| **What was wrong** | (1) `npm ci` refused the PR outright: `@vitest/coverage-v8@4` requires `vitest@4`, so every CI job failed at install. (2) Once installed, the suite passed, but `scripts/count-vitest-cases.mjs --check` failed. Vitest 5 made `vitest list` parse files statically by default (`--staticParse`, default `true`), which cannot expand an `it.each` over a list built at collection time. The count `/uses` publishes fell from 1,391 to 1,114 (fitness 120 → 34) while 1,391 tests still ran. That is exactly the text-read error the script was written to replace. |
+| **Fix** | `@vitest/coverage-v8` moves to `^5.0.5` with `vitest`. The count script passes `--staticParse=false`, which restores collection by running the files: 1,391 again, every project matching its run. |
+| **Tests** | **new** case in `tests/fitness/browserScripts.test.js`: the count script must pass `--staticParse=false`. It fails on the script without the flag. Vitest 5 with coverage: 1,392/1,392. `tests/vitest-cases.json` regenerated (+1, the new case). A defects-table row in `docs/testing.md`. |
+| **Privacy check** | Nothing to change: test tooling only. |
+| **Files** | `package.json`, `package-lock.json`, `scripts/count-vitest-cases.mjs`, `tests/fitness/browserScripts.test.js`, `tests/vitest-cases.json`, `docs/testing.md` |
+
 #### Build: Tailwind back to v3 and three.js back to r162 after two bumps broke `main` · 2026-10-19
 
 | | |
