@@ -18,7 +18,8 @@ const career = journeyData.find((d) => d.type === 'career');
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const barFor = (entry) =>
   screen.getByRole('button', {
-    name: new RegExp(`^Jump to ${escapeRe(entry.title)}`),
+    // The bar names itself with its caption, "org · role".
+    name: new RegExp(`^Jump to ${escapeRe(`${entry.org} · ${entry.title.split(' · ')[0]}`)}`),
   });
 
 let scrolledOn;

@@ -610,7 +610,11 @@ const TimelineAtlas = ({
                             }
                             onClick={() => jump(d)}
                             title={`${d.title} — ${d.dateLabel}`}
-                            aria-label={`Jump to ${d.title}, ${spokenDates(d)}`}
+                            // The caption's own words, in its order ("org ·
+                            // role"), WCAG 2.5.3: a voice-control user says
+                            // what the bar shows. `Jump to ${d.title}` read
+                            // "role · org", the reverse of the caption.
+                            aria-label={`Jump to ${d.org} · ${d.role}, ${spokenDates(d)}`}
                             className={clsx(
                               // No overflow-hidden and no truncation — the
                               // caption is a promise (owner direction: org

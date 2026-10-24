@@ -143,13 +143,18 @@ export function buildSplitBreakdownLabel(payload) {
   // split so AT users hear the "data unavailable" distinction even when the
   // measured side is itself zero.
   if (personalAvailable && employmentAvailable && total === 0) return '';
+  // Worded exactly as the legend prints it ("Personal 40 %", "Personal
+  // Unavailable"), in the legend's order, because this sentence is part of
+  // the card's accessible name and WCAG 2.5.3 requires the name to contain
+  // the visible text. "personal projects 40 percent" said the same thing in
+  // words the card does not show. Screen readers speak "40%" as "40 percent".
   const personalText = personalAvailable
-    ? `${total > 0 ? Math.round((effectivePersonal / total) * 100) : 0} percent`
-    : 'data unavailable';
+    ? `${total > 0 ? Math.round((effectivePersonal / total) * 100) : 0}%`
+    : 'unavailable';
   const employmentText = employmentAvailable
-    ? `${total > 0 ? Math.round((effectiveEmployment / total) * 100) : 0} percent`
-    : 'data unavailable';
-  return `Experience split: personal projects ${personalText}, employment ${employmentText}.`;
+    ? `${total > 0 ? Math.round((effectiveEmployment / total) * 100) : 0}%`
+    : 'unavailable';
+  return `Personal ${personalText}, Employment ${employmentText}.`;
 }
 
 /**
@@ -161,7 +166,7 @@ export function buildSplitBreakdownLabel(payload) {
  * withheld on purpose.
  *
  * The degraded name states the unavailability FIRST, before the split sentence
- * that follows it, because a screen-reader user hearing "personal projects data
+ * that follows it, because a screen-reader user hearing "Personal
  * unavailable" halfway through a sentence that opened with a number has already
  * been told the wrong thing.
  *
@@ -207,11 +212,19 @@ export function buildExperienceCardLabel({
     // A label finer-grained than everything it labels would be the odd one out,
     // and enumerating reasons is what goes stale the next time a third way to
     // be partial appears — which is exactly how this sentence went wrong.
+    //
+    // ── Visible words, in visible order (WCAG 2.5.3) ──────────────────────────
+    // Every name below runs through the card's own text in reading order:
+    // eyebrow ("Years in the craft"), figure, legend, action ("View
+    // breakdown"). A voice-control user says those words to operate the card,
+    // so the name must contain them as one run. The explanation is in
+    // parentheses: still spoken, and outside the visible-text run, which is
+    // how axe's label-in-name check reads a name too.
     return (
-      'Total years of experience unavailable — the GitHub half of the summary ' +
-      `is missing or incomplete.${split} Activate to open the breakdown of ` +
-      'what is available.'
+      'Years in the craft: experience unavailable (the GitHub half of the ' +
+      `summary is missing or incomplete).${split} View breakdown: opens the ` +
+      'breakdown of what is available.'
     );
   }
-  return `${counterValue}+ ${counterUnit} of experience.${split} Activate to open category breakdown.`;
+  return `Years in the craft: ${counterValue}+ ${counterUnit} of experience.${split} View breakdown: opens the category breakdown.`;
 }

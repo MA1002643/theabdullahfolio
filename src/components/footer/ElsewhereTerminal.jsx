@@ -36,7 +36,13 @@ import { socialLinks } from './footer-data';
 const CHANNELS = socialLinks.map((s) => ({
   label: s.label,
   href: s.href,
-  aria: s.aria,
+  // The name starts with exactly what the entry shows ("open github",
+  // "github.com/MA1002643"), then says where it goes. WCAG 2.5.3: a
+  // voice-control user says the words on screen, so the name must contain
+  // them. "GitHub profile (opens in a new tab)" alone named a link whose
+  // visible text was "open github". The name is fixed, so it still never
+  // depends on how far the type-out has run.
+  aria: `open ${s.label.toLowerCase()}, ${s.handle}: ${s.aria}`,
   handle: s.handle,
   // `external` used to be read by nothing here — every entry was hardcoded to
   // open in a new tab, which was correct while every destination WAS external.

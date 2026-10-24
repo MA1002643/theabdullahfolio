@@ -302,7 +302,10 @@ const JourneyTimeline = () => {
           href={resumeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Open the CV PDF (new tab)"
+          // Starts with the visible words, WCAG 2.5.3: the link shows "THE
+          // PAPER VERSION →", and a name of "Open the CV PDF" could not be
+          // followed by saying what is on screen.
+          aria-label="The paper version: the CV as a PDF (opens in a new tab)"
           className="journey-cv-link mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.2em]"
         >
           <FireText text="THE PAPER VERSION →" />

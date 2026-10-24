@@ -173,7 +173,11 @@ export default function ProjectGithubCta() {
       href={projectGithubUrl}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="View this project on GitHub (opens in a new tab)"
+      // No aria-label: the name is the visible label plus the sr-only
+      // new-tab note below, so it always contains what a voice-control user
+      // reads on screen (WCAG 2.5.3). An aria-label here overrode the content,
+      // and axe 4.14 counts the aria-hidden caption's words ("❯ main") as
+      // visible text the name left out.
       // The magnet's motion values ({x,y}) drive the physical lean; scope the
       // colour/shadow easing here so nothing intercepts the per-frame transform.
       style={{
@@ -229,6 +233,7 @@ export default function ProjectGithubCta() {
 
         <Github className="gh-cta__mark" strokeWidth={1.75} aria-hidden="true" />
         <span className="gh-cta__label">View this project on GitHub</span>
+        <span className="sr-only"> (opens in a new tab)</span>
         <ArrowUpRight
           className="gh-cta__arrow"
           strokeWidth={2}
@@ -238,8 +243,9 @@ export default function ProjectGithubCta() {
 
       {/* Honest terminal caption — live repo metadata. The branch always shows;
           the commit count and "pushed" chip appear only once real values load,
-          so it never displays a faked number. aria-hidden: the button's
-          aria-label already names the action; this is a decorative live detail. */}
+          so it never displays a faked number. aria-hidden: the link's name
+          (its visible label) already names the action; this is a decorative
+          live detail. */}
       <span className="gh-cta__meta" aria-hidden="true">
         <span className="gh-cta__prompt">❯</span>
         <span className="gh-cta__branchname">{repo.branch}</span>
