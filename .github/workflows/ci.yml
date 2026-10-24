@@ -77,10 +77,10 @@ jobs:
     # head_commit is null for pull_request events, so PR CI is unaffected.
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -108,10 +108,10 @@ jobs:
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -146,10 +146,10 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -189,15 +189,15 @@ jobs:
       matrix:
         project: [chromium, mobile-chrome]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: next-build
           path: .next.nosync
@@ -223,15 +223,15 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: next-build
           path: .next.nosync
@@ -291,7 +291,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -320,14 +320,14 @@ jobs:
           echo "specs=$specs" >> "$GITHUB_OUTPUT"
           echo "Burn-in range: \`$range\` ($EVENT${ACTION:+ $ACTION})" >> "$GITHUB_STEP_SUMMARY"
           if [ -z "$specs" ]; then echo "No browser spec changed; nothing to burn in." >> "$GITHUB_STEP_SUMMARY"; fi
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         if: ${{ steps.changed.outputs.specs != '' }}
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - if: ${{ steps.changed.outputs.specs != '' }}
         run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: ${{ steps.changed.outputs.specs != '' }}
         with:
           name: next-build

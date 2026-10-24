@@ -14,6 +14,21 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     labels: [dependencies]
+    ignore:
+      # Tailwind 3 → 4 is a migration (CSS-first config, a new PostCSS
+      # plugin, renamed utility scales), not a bump. PR #169 merged it as a
+      # bump and broke every build on 2026-10-18. Remove this entry when
+      # that migration is done on its own branch.
+      - dependency-name: tailwindcss
+        update-types: [version-update:semver-major]
+      # three.js is 0.x: each r-release is a "minor" to semver and to the
+      # grouping above, but it can break. r162 → r186 rode in on the
+      # production minor-and-patch batch (#162) and hung every project page
+      # on the mobile-chrome E2E (the WebGL scene starved the main thread);
+      # back on r162 the same suite passed 59/59. Patches still arrive.
+      # Upgrade three on its own branch, then remove this entry.
+      - dependency-name: three
+        update-types: [version-update:semver-minor, version-update:semver-major]
     groups:
       production-minor-and-patch:
         dependency-type: production
