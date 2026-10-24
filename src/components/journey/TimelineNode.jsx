@@ -274,7 +274,9 @@ const TimelineNode = ({
                     href={milestone.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Open ${milestone.title} (new tab)`}
+                    // Starts with the visible word ("VIEW"), WCAG 2.5.3: a
+                    // voice-control user says "view" to follow it.
+                    aria-label={`View ${milestone.title} (opens in a new tab)`}
                     className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] tracking-widest text-white/50 transition-colors duration-300 hover:text-[color:var(--jn-accent)]"
                   >
                     VIEW

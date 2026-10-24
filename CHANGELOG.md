@@ -1437,6 +1437,18 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### Development dependencies, and the label-in-name failures axe 4.14 found on seven controls · 2026-10-24
+
+| | |
+|:--|:--|
+| **Ref** | Dependabot PR #168 (development minor-and-patch group). It was opened against the broken `main` and conflicted once #175 landed, so it was rebuilt on current `main` with the same nine updates. |
+| **Updates** | `@axe-core/playwright` 4.13 → 4.14, `@next/bundle-analyzer` 16.3 → 16.4, `@playwright/test` 1.62 → 1.64, `@testing-library/dom` 10.4.1 → 10.4.2, `@testing-library/user-event` 14.6.7 → 14.6.8, `autoprefixer` 10.4 → 10.6, `postcss` 8.5.26 → 8.5.31, `prettier` 3.6 → 3.9, `prettier-plugin-tailwindcss` 0.6 → 0.8 (its only peer is `prettier ^3`, so it still supports the Tailwind 3 setup). |
+| **What axe 4.14 found** | Browser quality failed on 15 routes with one rule, `label-content-name-mismatch` (WCAG 2.5.3, Label in Name). axe 4.14 promoted it out of "experimental", so it had never run before. These were real failures: a voice-control user operates a control by saying its visible text, and these controls' accessible names left that text out, reordered it, or ran it together. axe compares word tokens: the visible words, `aria-hidden` ones included, must appear as one run in the name, ignoring case, symbols and parenthesised text. |
+| **Fixes** | **Footer GitHub CTA** (every page): no `aria-label`; the name is the visible label plus an sr-only "(opens in a new tab)", so the decorative `❯ main` caption is outside it. **Footer terminal** (GitHub, LinkedIn, Résumé): names start with what the entry shows ("open github, github.com/MA1002643: GitHub profile …"). **`/about` cards**: names follow the card's order ("Projects shipped: 11 completed projects. System 3, …"; "Years in the craft: … Personal 40%, Employment 60%. View breakdown …"), and word breaks join the stacked parts (axe read "shipped11completed"). **`/uses` meters**: word breaks between the stacked figure, label and note. **`/journey`**: timeline bars name themselves "org · role" as captioned (they read "role · org"); the milestone link starts "View …" (it showed VIEW); the CV link starts "The paper version" (it showed THE PAPER VERSION but was named "Open the CV PDF"). The word breaks are whitespace between flex or block siblings, so nothing moves on screen. |
+| **Tests** | The regression test is the existing axe layer (`tests/a11y/axe.spec.js`), which fails on axe 4.14 without these fixes and passes with them on every route at both widths. `experiencePresentation.test.js` gains a label-in-name case using the same tokenising as axe, and its pinned strings follow the new wording; the two `timelineAtlas` suites find bars by their new "org · role" names. A defects-table row in `docs/testing.md`. Verified locally: build, lint, Vitest, the full axe spec and the audit gate. |
+| **Privacy check** | Nothing to change: development tooling and accessible names only. |
+| **Files** | `package.json`, `package-lock.json`, `src/components/footer/ProjectGithubCta.jsx`, `src/components/footer/ElsewhereTerminal.jsx`, `src/components/about/index.jsx`, `src/utils/experience/experiencePresentation.js`, `src/components/uses/InstrumentsPlate.jsx`, `src/components/journey/{TimelineAtlas,TimelineNode,index}.jsx`, `tests/unit/{experiencePresentation,timelineAtlasDimmed,timelineAtlasLayout}.test.js`, `docs/testing.md` |
+
 #### `/cv` was a document with one colour, so nothing on it had rank — and the two treatments that fixed it would have printed blank
 
 | | |

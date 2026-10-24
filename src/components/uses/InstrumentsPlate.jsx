@@ -162,6 +162,11 @@ function Meter({
           <ArrowUpRight className="h-4 w-4 shrink-0 text-[#ffaa2a] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </motion.span>
       </span>
+      {/* Word breaks between the stacked lines. They render nothing (block
+          siblings), but without them the visible text reads as one run,
+          "124VITEST SUITES1391 test cases", which no longer matches the
+          label's words (WCAG 2.5.3, axe label-content-name-mismatch). */}
+      {' '}
       <span
         className="uses-label uses-mask mt-2 block font-mono uppercase text-[#ffaa2a]"
         aria-hidden="true"
@@ -175,6 +180,7 @@ function Meter({
           {label}
         </motion.span>
       </span>
+      {' '}
       <motion.span
         className="uses-anim uses-note mt-1 block text-foreground/60"
         aria-hidden="true"

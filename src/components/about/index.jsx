@@ -273,6 +273,7 @@ function ExperienceSplitBar({
             />
             <span className={`text-fire-amber ${personalPulse}`}>Personal</span>
           </span>
+          {" "}
           <span className={personalPulse} style={{ color: "#ff6d05", textShadow: "none" }}>
             <PercentCount
               value={Math.round(personalPct)}
@@ -307,6 +308,7 @@ function ExperienceSplitBar({
             />
             <span className={`text-fire-amber ${employmentPulse}`}>Employment</span>
           </span>
+          {" "}
           <span className={employmentPulse} style={{ color: "#ff6d05", textShadow: "none" }}>
             <PercentCount
               value={Math.round(employmentPct)}
@@ -343,15 +345,17 @@ const PROJECT_CATEGORY_BREAKDOWN = (() => {
     .sort((a, b) => b.count - a.count);
 })();
 
-// Spoken category summary for the completed-projects card's accessible name.
+// Spoken category split for the completed-projects card's accessible name.
 // Making that card a `role="button"` (issue #48) turns it into a leaf for
 // name computation — its descendant text, including ProjectsSplitBar's
 // sr-only breakdown, is never announced — so the split has to be folded into
 // the button's own label, exactly as the years card folds in its
-// Personal/Employment split. Same phrasing as the split bar's sr-only text
-// so the two surfaces can't drift.
-const PROJECT_CATEGORY_SUMMARY = PROJECT_CATEGORY_BREAKDOWN.map(
-  (c) => `${c.label}: ${c.count} ${c.count === 1 ? "project" : "projects"}`,
+// Personal/Employment split. Worded as the legend prints it ("System 3,
+// AI 3, …"), in the legend's order, so the name contains the card's visible
+// text (WCAG 2.5.3). "System: 3 projects" said it in words the card does
+// not show.
+const PROJECT_CATEGORY_LEGEND = PROJECT_CATEGORY_BREAKDOWN.map(
+  (c) => `${c.label} ${c.count}`,
 ).join(", ");
 
 // Completed-projects category split bar — the "elite & complex" counterpart to
@@ -472,6 +476,12 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
                   />
                   <span className={`text-fire-amber ${pulse}`}>{s.label}</span>
                 </span>
+                {/* Word breaks (here and after the item): flex children, so
+                    they render nothing, but without them the visible text
+                    runs together ("System3", "3Mobile") and no longer matches
+                    the card's accessible name (WCAG 2.5.3, axe
+                    label-content-name-mismatch). */}
+                {" "}
                 {/* Legend shows the raw project count per category (not a
                     percentage) — the bar segment widths already carry the
                     proportional share. `s.count` is derived from projectsData,
@@ -482,6 +492,7 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
                   <CountUp value={s.count} inView={inView} />
                 </span>
               </span>
+              {" "}
             </React.Fragment>
           );
         })}
@@ -1420,12 +1431,17 @@ const AboutDetails = () => {
           // contract) because the trigger's own facts are static imports; the
           // popup handles its own loading/fallback states. The category
           // split is folded into the label because a labelled button never
-          // announces its descendants (see PROJECT_CATEGORY_SUMMARY).
+          // announces its descendants (see PROJECT_CATEGORY_LEGEND).
           role="button"
           tabIndex={0}
           aria-haspopup="dialog"
           aria-expanded={isProgressPopupOpen}
-          aria-label={`${projectsData.length} completed projects. ${PROJECT_CATEGORY_SUMMARY}. Activate to open live project progress.`}
+          // Reads in the card's on-screen order (eyebrow, figure, legend,
+          // action) so the name contains every word the card shows. WCAG 2.5.3:
+          // a voice-control user says what they see ("projects shipped",
+          // "view progress"), and a name that left those out could not be
+          // spoken to.
+          aria-label={`Projects shipped: ${projectsData.length} completed projects. ${PROJECT_CATEGORY_LEGEND}. View progress: opens live project progress.`}
           onClick={openProgressPopup}
           onKeyDown={handleProgressTriggerKeyDown}
           // Mirrors the "Years in the craft" card exactly: `!p-0` hands all
@@ -1503,6 +1519,10 @@ const AboutDetails = () => {
             >
               Projects shipped
             </motion.p>
+            {/* Word breaks between the card's stacked parts: block and flex
+                siblings, so nothing renders, but the visible text must read
+                as separate words to match the card's name (WCAG 2.5.3). */}
+            {" "}
 
             {/* Digit uses the vivid neon-orange (#ff6d05) of the sibling years
                 digit; the label now matches the years card's `text-fire-amber`
@@ -1532,6 +1552,7 @@ const AboutDetails = () => {
               style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(3, 1.5), gap: fluid(0.5) }}
             >
               <Counter from={0} to={projectsData.length} plusIcon={false} inView={isCompletedProjectsInView}></Counter>
+              {" "}
               <span
                 className="font-semibold text-base text-fire-amber"
                 style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
@@ -1540,6 +1561,7 @@ const AboutDetails = () => {
               </span>
             </motion.div>
 
+            {" "}
             {/* Two-segment category split bar (Web / System) — the "elite &
                 complex" counterpart to the years card's Personal/Employment
                 split, same track, animated fill, legend, and percentages.
@@ -1665,6 +1687,7 @@ const AboutDetails = () => {
             >
               Years in the craft
             </motion.p>
+            {" "}
 
             {/* `motion.div`, NOT `motion.h1` — see the note on the sibling
                 "completed projects" figure above. Same defect, same reason
@@ -1687,6 +1710,7 @@ const AboutDetails = () => {
               {experienceIsReady ? (
                 <>
                   <Counter from={0} to={experienceCounterValue} inView={isExperienceCardInView}></Counter>
+                  {" "}
                   <span
                     className="font-semibold text-base text-fire-amber"
                     style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
@@ -1727,6 +1751,7 @@ const AboutDetails = () => {
               )}
             </motion.div>
 
+            {" "}
             {/* Two-segment split bar — Personal vs Employment as a share of
                 total. Renders when there's measured experience to split OR a
                 source is unavailable (so its "Unavailable" row still shows);

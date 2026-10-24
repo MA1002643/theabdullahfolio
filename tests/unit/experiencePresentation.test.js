@@ -204,11 +204,11 @@ describe('buildExperienceCardLabel', () => {
     // "0+ months of experience. … Activate to open category breakdown."
     expect(label).not.toMatch(/\b0\+/);
     expect(label).not.toMatch(/\b0\s+(months|years)\b/);
-    expect(label).toMatch(/^Total years of experience unavailable/);
+    expect(label).toMatch(/^Years in the craft: experience unavailable/);
     // The employment half is still spoken — the payload does carry it, and the
     // trigger is still offered, so the name says what is behind it.
-    expect(label).toContain('personal projects data unavailable');
-    expect(label).toContain('Activate to open the breakdown of what is available');
+    expect(label).toContain('Personal unavailable');
+    expect(label).toContain('View breakdown: opens the breakdown of what is available');
   });
 
   it('does not tell a truncated payload that nothing loaded', () => {
@@ -247,7 +247,7 @@ describe('buildExperienceCardLabel', () => {
     // honest invitation to the breakdown.
     expect(label(truncated)).not.toMatch(/\b0\+/);
     expect(label(truncated)).toMatch(
-      /Activate to open the breakdown of what is available/,
+      /View breakdown: opens the breakdown of what is available/,
     );
   });
 
@@ -273,9 +273,35 @@ describe('buildExperienceCardLabel', () => {
     });
 
     expect(label).toBe(
-      '12+ years of experience. Experience split: personal projects 40 percent, ' +
-        'employment 60 percent. Activate to open category breakdown.',
+      'Years in the craft: 12+ years of experience. Personal 40%, Employment 60%. ' +
+        'View breakdown: opens the category breakdown.',
     );
+  });
+
+  it('runs through the card\'s visible text in order (WCAG 2.5.3)', () => {
+    // The card shows, top to bottom: "Years in the craft", the figure, the
+    // legend ("Personal 40 %  Employment 60 %") and "View breakdown". A
+    // voice-control user says those words, so the name must contain them as
+    // one run, in that order. Tokens are compared the way axe's
+    // label-content-name-mismatch does: lower case, symbols dropped,
+    // parenthesised text ignored.
+    const tokens = (s) =>
+      s.replace(/\([^)]*\)/g, ' ').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().split(' ');
+    const contains = (name, visible) => tokens(name).join(' ').includes(tokens(visible).join(' '));
+
+    const ready = buildExperienceCardLabel({
+      state: 'ready',
+      counterValue: 12,
+      counterUnit: 'years',
+      splitLabel: buildSplitBreakdownLabel(COMPLETE),
+    });
+    expect(contains(ready, 'Years in the craft 12+ years of experience Personal 40 % Employment 60 % View breakdown →')).toBe(true);
+
+    const degraded = buildExperienceCardLabel({
+      state: 'degraded',
+      splitLabel: buildSplitBreakdownLabel(DEGRADED),
+    });
+    expect(contains(degraded, 'Years in the craft — experience unavailable Personal Unavailable | Employment 100 % View breakdown →')).toBe(true);
   });
 
   it('says only that it is loading before anything arrives', () => {
@@ -291,7 +317,7 @@ describe('buildSplitBreakdownLabel', () => {
     // name computation: the visual legend's "Unavailable" is never announced,
     // and this sentence is the only place an AT user hears it.
     expect(buildSplitBreakdownLabel(DEGRADED)).toBe(
-      'Experience split: personal projects data unavailable, employment 100 percent.',
+      'Personal unavailable, Employment 100%.',
     );
   });
 
@@ -309,7 +335,7 @@ describe('buildSplitBreakdownLabel', () => {
     // bound in either direction — it is simply a wrong number, and this sentence
     // is the only place a screen-reader user hears the split at all.
     //
-    // 60 and 90 months would have been spoken as "40 percent / 60 percent",
+    // 60 and 90 months would have been spoken as "40% / 60%",
     // which is what the assertion below is the absence of.
     const truncated = {
       ...COMPLETE,
@@ -319,10 +345,8 @@ describe('buildSplitBreakdownLabel', () => {
     };
 
     const label = buildSplitBreakdownLabel(truncated);
-    expect(label).toBe(
-      'Experience split: personal projects data unavailable, employment 100 percent.',
-    );
-    expect(label).not.toMatch(/40 percent/);
+    expect(label).toBe('Personal unavailable, Employment 100%.');
+    expect(label).not.toMatch(/40%/);
   });
 
   it('says nothing when both halves loaded and measured zero', () => {
@@ -349,7 +373,7 @@ describe('buildSplitBreakdownLabel', () => {
         total: null,
       }),
     ).toBe(
-      'Experience split: personal projects data unavailable, employment 0 percent.',
+      'Personal unavailable, Employment 0%.',
     );
   });
 });
