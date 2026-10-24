@@ -1513,6 +1513,18 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### Build: Tailwind back to v3 and three.js back to r162 after two bumps broke `main` · 2026-10-19
+
+| | |
+|:--|:--|
+| **What was wrong** | Dependabot PR #169 moved `tailwindcss` from `^3.3.0` to `^4.3.3` and changed nothing else. Tailwind 4 no longer ships its PostCSS plugin (it moved to `@tailwindcss/postcss`) and reads a CSS-first config, so with `postcss.config.js`, `tailwind.config.js` and the `@tailwind` directives still written for v3, `next build` failed on `src/app/globals.css`. The PR was merged with its checks red. `main` requires no status checks, so the merge button stayed green. From `f1e2eee` on, CI's Build and Vitest (`metadataContract`, which compiles the stylesheet), Lighthouse and Visual baselines all failed on `main`, and E2E and browser quality, which wait on the build, did not run. |
+| **Why production looked fine** | Vercel restored the previous deployment's build cache, whose `node_modules` still held v3. Its install "changed 19 packages" without a clean reinstall, so it built and deployed v3 CSS. The next deploy without that cache would have failed. |
+| **Fix** | `tailwindcss` is `^3.4.19` again, and the lockfile is regenerated with `npm ci` verified. `.github/dependabot.yml` ignores Tailwind majors, so v4 is not reopened every Monday; remove that entry when the v4 migration lands on its own branch. |
+| **The second regression: three.js r162 → r186** | With the build fixed, this PR's first CI run reached E2E, which had not run on `main` since #162 merged. **E2E (mobile-chrome)** failed five project-page tests on every retry. The intro loader never finished, and a 15 s `waitForFunction` took 51 s to time out, because the WebGL scene starved the main thread of a software-rendered Pixel 7. #162, the production minor-and-patch batch, had moved `three` from 0.162 to 0.186: to semver a 0.x "minor", but 24 three.js releases (the trace logs r186's `PCFSoftShadowMap has been removed` and `THREE.Clock … deprecated`). A throwaway branch with only `three` back on 0.162 passed mobile-chrome 59/59 with no retries. `three` is `^0.162.0` again, and Dependabot ignores three.js minors and majors (patches still arrive) until the upgrade is done on its own branch. The other #162 updates (React 19.3.1, R3F 9.8.2 and the rest) passed the full suite on that branch and stay. |
+| **Tests** | **new** `tests/fitness/tailwindToolchain.test.js`: the installed major matches `package.json`, and the PostCSS plugin and the stylesheet entry match that major. All three cases fail with v4 installed over the v3 setup. The three.js regression is caught by the existing mobile-chrome E2E (`project-links.spec.js`, `navigation.spec.js` on `/projects/*`), which fails on r186 and passes on r162. Verified locally: `npm ci`, `npm run build`, `npm run lint`, and Vitest at 1,391/1,391. `tests/vitest-cases.json` is regenerated. `docs/testing.md` gains the fitness row and two defects-table rows. |
+| **Privacy check** | Nothing to change: build dependencies and CI configuration only. |
+| **Files** | `package.json`, `package-lock.json`, `.github/dependabot.yml`, `tests/fitness/tailwindToolchain.test.js`, `tests/vitest-cases.json`, `docs/testing.md` |
+
 #### Burn-in: a cold image cache for the axe scan, and two limits too tight for the longest page · 2026-10-10
 
 | | |
@@ -2985,6 +2997,17 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 | **Details** | Stale root direct dependency on `@napi-rs/canvas@^1.0.0` from `package.json`. The version didn't satisfy any transitive consumer's range (`pdfjs-dist` wants `^0.1.80`, `pdf-parse` pins `0.1.80`) and only added install weight while masking the real resolution. |
 
 ### Security
+
+#### Next 15.5.27 → 15.5.28 and zod 4.4.3 → 4.6.7: a critical RCE, a high DoS and a high memory-exhaustion advisory · 2026-10-23
+
+| | |
+|:--|:--|
+| **What was wrong** | Two advisories published against every Next up to 15.5.27, which production was running: **critical** [GHSA-2464-fhr4-w9xw](https://github.com/advisories/GHSA-2464-fhr4-w9xw), unauthenticated remote code execution in the Image Optimization API when SVG files are used; **high** [GHSA-p3m5-59mp-jv5r](https://github.com/advisories/GHSA-p3m5-59mp-jv5r), denial of service in the App Router through Server Actions. The audit gate (`scripts/audit-gate.mjs`) failed Security on this PR's dispatched run with both as new and not allowlisted. |
+| **Fix** | `next` and `eslint-config-next` are `^15.5.28`, the patched 15.x release. `npm audit --omit=dev` reports 0 vulnerabilities and the audit gate passes with nothing allowlisted. No waiver was needed. |
+| **Then zod** | The next Security run failed on a third advisory, published after the local audit above: **high** [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5), zod below 4.6.6 can exhaust memory validating oversized constrained collections. zod is transitive, through the `ai` SDK (the contact form's refine route) and Stryker. Every dependent's range (`ai` and `@ai-sdk/provider-utils`: `^3.25.76 \|\| ^4.1.8`) already allows the fix, so `npm update zod` moved the lockfile alone to 4.6.7; `package.json` is unchanged. The audit gate passes. |
+| **Tests** | Verified locally on 15.5.28: `npm ci`, the production build, lint, and Vitest at 1,391/1,391; CI runs E2E and browser quality. Test-plan check: nothing to add, since the audit gate is the test that caught it, and it fails again on any new high or critical advisory. |
+| **Privacy check** | Nothing to change: a framework patch release. |
+| **Files** | `package.json`, `package-lock.json` |
 
 #### Lighthouse workflow given least-privilege permissions and a non-persistent checkout
 
