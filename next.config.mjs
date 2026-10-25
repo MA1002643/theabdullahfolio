@@ -90,6 +90,10 @@ const nextConfig = {
     // Negotiate AVIF first (~20% smaller than WebP on mobile), fall back to
     // WebP. Purely a wire-format choice; the source assets stay .webp.
     formats: ['image/avif', 'image/webp'],
+    // Next 16 allows only quality 75 unless told otherwise, and coerces any
+    // other `quality` prop to the nearest allowed value. The homepage hero
+    // asks for 100 (src/app/page.js), so 100 is listed to keep it lossless.
+    qualities: [75, 100],
   },
   // ── www → apex, 308 ───────────────────────────────────────────────────────
   // Issue #32, F2. `www.ma.codes` and `ma.codes` both answered 200 with

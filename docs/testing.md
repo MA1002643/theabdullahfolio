@@ -14,7 +14,7 @@ repository.
 
 | Layer | Question it answers | Tool | Where | Command |
 |---|---|---|---|---|
-| L1 Static | Does the code follow the rules we can check without running it? | ESLint + full `jsx-a11y` | `.eslintrc.json` | `npm run lint` |
+| L1 Static | Does the code follow the rules we can check without running it? | ESLint + full `jsx-a11y` | `eslint.config.mjs` | `npm run lint` |
 | L1 Fitness | Does the *architecture* still hold? | Vitest | `tests/fitness/` | `npm run test:fitness` |
 | L2 Unit | Does each module do what it says? | Vitest | `tests/unit/` | `npm run test:unit` |
 | L2 Property | Does it hold for *every* input, not just the ones we thought of? | fast-check | `tests/property/` | `npm run test:property` |
@@ -252,7 +252,10 @@ snapshot.
   the sum of every shift in the page's life. LCP is recorded as an annotation only, because
   runner timing is noise.
 - `scripts/check-bundle-budget.mjs` computes first-load JS per route (gzip)
-  from the build manifest, against `bundle-budget.json` (measured + 10%).
+  from the `<script src>` tags in each route's prerendered HTML (module
+  scripts only; a dynamic template is budgeted at its largest prerendered
+  page), against `bundle-budget.json` (measured + 10%). It read the build
+  manifest until Next 16 stopped writing it.
   After a deliberate change, run `npm run test:bundle:update` and explain the
   new number in review.
 - Lighthouse CI (`lighthouserc.json`) is unchanged: a11y, best practices and

@@ -4,7 +4,8 @@
  *
  *   node scripts/next-cmd.mjs build   →  next build
  *   node scripts/next-cmd.mjs start   →  next start
- *   node scripts/next-cmd.mjs lint    →  next lint
+ *
+ * (`next lint` was removed in Next 16; `npm run lint` calls ESLint directly.)
  *
  * `npm run dev` has been guarded against Homebrew's Node 25 since dev.mjs
  * landed, but `npm run build` was still a bare `next build` and inherited
@@ -27,7 +28,7 @@ import { resolveSupportedNodeBin } from "./supported-node.mjs";
 const [subcommand, ...args] = process.argv.slice(2);
 
 if (!subcommand) {
-  console.error("[next-cmd] usage: node scripts/next-cmd.mjs <build|start|lint> [args…]");
+  console.error("[next-cmd] usage: node scripts/next-cmd.mjs <build|start> [args…]");
   process.exit(1);
 }
 

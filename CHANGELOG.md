@@ -1437,6 +1437,18 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### Next 15 → 16, with ESLint 9 and a flat config · 2026-10-25
+
+| | |
+|:--|:--|
+| **Ref** | Dependabot PRs #174 (`next` 16.4.2) and #173 (`eslint-config-next` 16.4.2). Neither works alone, so the migration lands on #174 and #173 closes as superseded. |
+| **What had to change** | (1) **`next lint` is gone** in Next 16, and `eslint-config-next` 16 needs ESLint 9 and a flat config. `.eslintrc.json` becomes `eslint.config.mjs` with the same rule set (core-web-vitals, the full `jsx-a11y` recommended set, the `no-redundant-roles` override; 31 `jsx-a11y` rules on both sides), and `npm run lint` runs `eslint src`. React Hooks 7's new React Compiler rules (`set-state-in-effect`, `purity`, `refs`, `immutability`) found 133 existing sites. They are warnings, not errors: the site does not use the compiler, and adopting it is its own change. (2) **Turbopack is the default bundler.** `dev` and `build` pass `--webpack`, because the bundle budget, Lighthouse thresholds and visual baselines were all measured on webpack; moving bundlers is a separate, measured change. (3) **`images.qualities` defaults to `[75]`**, which would have coerced the homepage hero's `quality={100}`; `next.config.mjs` allows `[75, 100]`. (4) **`app-build-manifest.json` is no longer written**, so `scripts/check-bundle-budget.mjs` measures first-load JS from each route's prerendered HTML (`<script src>` tags, module scripts only, a dynamic template at its largest page). On the same Next 15 build the two methods differ by a constant ~7 kB per route, because the HTML also counts the `not-found` boundary chunk every page loads. |
+| **Bundle budget** | Re-measured with `npm run test:bundle:update`. Next 16's framework runtime adds about 30 kB gzipped to every route; the app's own chunks are unchanged (~150 kB on `/` either way). |
+| **Also** | `src/app/globals.css`: `.hover\\:animate-bounce-shake` had a doubled backslash, which Turbopack's CSS parser rejects; the rule is unused, so nothing changes on screen. `CODEOWNERS`, `labeler.yml` and `docs/testing.md` name `eslint.config.mjs`. |
+| **Tests** | Test-plan check: the bundle-budget method changed, and `docs/testing.md` L8 says how it measures now. Verified locally: build (webpack), lint (0 errors), Vitest 1,393/1,393, the client-bundle scan, the budget, and the audit gate; CI runs E2E, browser quality and Lighthouse. |
+| **Privacy check** | Nothing to change: framework and tooling only. |
+| **Files** | `package.json`, `package-lock.json`, `eslint.config.mjs` (**new**), `.eslintrc.json` (**removed**), `next.config.mjs`, `scripts/next-cmd.mjs`, `scripts/check-bundle-budget.mjs`, `bundle-budget.json`, `src/app/globals.css`, `.github/CODEOWNERS`, `.github/labeler.yml`, `docs/testing.md` |
+
 #### Development dependencies, and the label-in-name failures axe 4.14 found on seven controls · 2026-10-24
 
 | | |
