@@ -1,15 +1,15 @@
 # Latest visual render
 
-Rendered for `a0ff95e` by `.github/workflows/visual-baselines.yml` on every push (issue #92).
+Rendered for `efe77e0` by `.github/workflows/visual-baselines.yml` on every push (issue #92).
 These are the CURRENT screenshots. The reviewed baselines CI compares against live in
 `../__screenshots__/`; promote a render to baseline by running the workflow with `promote: true`.
 
-**4 view(s) differ from their baseline.** Review them, then promote or fix.
+**5 view(s) differ from their baseline.** Review them, then promote or fix.
 
 | View | Status | Size |
 |---|---|---:|
 | `pages.spec.js/contact.png` | ⚠️ differs from baseline | 197 kB |
-| `pages.spec.js/cv.png` | ✅ matches baseline | 272 kB |
+| `pages.spec.js/cv.png` | ⚠️ differs from baseline | 272 kB |
 | `pages.spec.js/not-found.png` | ⚠️ differs from baseline | 233 kB |
 | `pages.spec.js/notes-index.png` | ⚠️ differs from baseline | 234 kB |
 | `pages.spec.js/privacy.png` | ⚠️ differs from baseline | 217 kB |
