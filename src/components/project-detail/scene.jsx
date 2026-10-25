@@ -15,6 +15,17 @@ import { useRef, useEffect } from "react"
 import * as THREE from "three"
 import RealisticTree from "@/components/project-detail/tree-stump"
 import LaptopModel from "@/components/project-detail/laptop-model"
+import { isSoftwareRenderer } from "@/lib/softwareRenderer"
+
+// No GPU (software WebGL): draw on demand at 1x instead of every frame, so the
+// laptop holds still and the main thread stays free for the page around it.
+// The only per-frame motion is a 0.06-unit float, which a CPU renderer was
+// paying for with the whole page's responsiveness. See softwareRenderer.js.
+function settleOnSoftware(state) {
+    if (!isSoftwareRenderer(state.gl.getContext())) return
+    state.setDpr(1)
+    state.setFrameloop("demand")
+}
 
 function Scene({ links }) {
     const cameraRef = useRef(null)
@@ -84,6 +95,7 @@ export default function ProjectScene({ links }) {
                 toneMappingExposure: 1.2,
             }}
             className="absolute inset-0 w-full h-full overflow-hidden z-[0]"
+            onCreated={settleOnSoftware}
         >
             <Scene links={links} />
         </Canvas>
