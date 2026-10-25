@@ -66,5 +66,5 @@
 /postcss.config.js                      @MA1002643
 /jsconfig.json                          @MA1002643
 /tsconfig.json                          @MA1002643
-/.eslintrc.json                         @MA1002643
+/eslint.config.mjs                       @MA1002643
 /vercel.json                            @MA1002643

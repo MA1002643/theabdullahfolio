@@ -6,11 +6,18 @@
  *   node scripts/check-bundle-budget.mjs            check against bundle-budget.json
  *   node scripts/check-bundle-budget.mjs --update   re-measure and rewrite the budget
  *
- * "First load" is what a visitor downloads to open a route cold: the runtime
- * chunks every page shares, every layout on the route's path, and the page's
- * own chunks. It is computed from Next's app-build-manifest.json, each file
- * gzipped (level 9, which is close to what a CDN serves), and compared with
- * the committed budget.
+ * "First load" is what a visitor downloads to open a route cold: every
+ * `<script src>` in the route's prerendered HTML, which is the runtime chunks
+ * every page shares, every layout on the route's path, and the page's own
+ * chunks. Each file is gzipped (level 9, which is close to what a CDN serves)
+ * and the total compared with the committed budget. `noModule` polyfills are
+ * left out: a browser that runs this site's modules never fetches them.
+ *
+ * Read from the HTML since Next 16, which no longer writes the
+ * app-build-manifest.json this used to read. The HTML is also what the browser
+ * actually receives, and it reads the same under webpack or Turbopack. A
+ * dynamic template (`/projects/[id]`) is measured on every prerendered page
+ * (`prerender-manifest.json` maps each one back) and budgeted at the largest.
  *
  * The budget is the MEASURED size plus 10% headroom, not an aspiration: an
  * aspirational number fails on the first build and is disabled within a week
@@ -18,7 +25,7 @@
  * a feature that adds a library to a page crosses it and must say so in review
  * by running --update, which puts the new number in the diff.
  */
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 
@@ -29,14 +36,14 @@ const update = process.argv.includes('--update');
 
 const distDir = [process.env.NEXT_DIST_DIR, '.next.nosync', '.next']
   .filter(Boolean)
-  .find((d) => existsSync(path.join(root, d, 'app-build-manifest.json')));
+  .find((d) => existsSync(path.join(root, d, 'prerender-manifest.json')));
 if (!distDir) {
   console.error('[bundle-budget] no build output found; run `npm run build` first.');
   process.exit(2);
 }
 
-const appManifest = JSON.parse(readFileSync(path.join(root, distDir, 'app-build-manifest.json'), 'utf8'));
-const buildManifest = JSON.parse(readFileSync(path.join(root, distDir, 'build-manifest.json'), 'utf8'));
+const prerendered = JSON.parse(readFileSync(path.join(root, distDir, 'prerender-manifest.json'), 'utf8')).routes;
+const appDir = path.join(root, distDir, 'server', 'app');
 
 const gz = new Map();
 const sizeOf = (file) => {
@@ -44,24 +51,24 @@ const sizeOf = (file) => {
   return gz.get(file);
 };
 
-/** "/(sub pages)/about/page" → "/about"; route groups vanish from URLs. */
-const routeOf = (key) =>
-  key.replace(/\/page$/, '').replace(/\/\([^)]+\)/g, '') || '/';
+const htmlFiles = (dir) =>
+  readdirSync(dir).flatMap((name) => {
+    const p = path.join(dir, name);
+    return statSync(p).isDirectory() ? htmlFiles(p) : p.endsWith('.html') ? [p] : [];
+  });
 
-/** Every layout key on a page key's path, root first. */
-const layoutsOf = (key) => {
-  const segments = key.replace(/\/page$/, '').split('/').filter(Boolean);
-  const layouts = ['/layout'];
-  for (let i = 1; i <= segments.length; i += 1) layouts.push(`/${segments.slice(0, i).join('/')}/layout`);
-  return layouts.filter((l) => appManifest.pages[l]);
-};
+// Module scripts only: `noModule` polyfills load in no browser this site runs in.
+const SCRIPT = /<script(?![^>]*\bnoModule\b)[^>]*\bsrc="\/_next\/(static\/[^"?]+\.js)"/g;
 
 const measured = {};
-for (const key of Object.keys(appManifest.pages).filter((k) => k.endsWith('/page'))) {
-  const files = new Set(buildManifest.rootMainFiles ?? []);
-  for (const part of [...layoutsOf(key), key]) appManifest.pages[part].forEach((f) => files.add(f));
-  const js = [...files].filter((f) => f.endsWith('.js'));
-  measured[routeOf(key)] = js.reduce((sum, f) => sum + sizeOf(f), 0);
+for (const file of htmlFiles(appDir)) {
+  // "(sub pages)/projects/1.html" → "/projects/1"; route groups vanish from URLs.
+  const url = `/${path.relative(appDir, file).replace(/\.html$/, '')}`.replace(/\/\([^)]+\)/g, '').replace(/^\/index$/, '/');
+  const route = prerendered[url]?.srcRoute ?? url;
+  // URLs are percent-encoded: "(sub pages)" arrives as "(sub%20pages)".
+  const js = new Set([...readFileSync(file, 'utf8').matchAll(SCRIPT)].map((m) => decodeURIComponent(m[1])));
+  const bytes = [...js].reduce((sum, f) => sum + sizeOf(f), 0);
+  measured[route] = Math.max(measured[route] ?? 0, bytes);
 }
 
 const kb = (bytes) => `${(bytes / 1024).toFixed(1)} kB`;

@@ -1331,7 +1331,7 @@
   }
 }
 
-.hover\\:animate-bounce-shake:hover {
+.hover\:animate-bounce-shake:hover {
   animation: bounce-shake 0.6s ease;
 }
 

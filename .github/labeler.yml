@@ -91,5 +91,5 @@ config:
           - 'next.config.*'
           - 'jsconfig.json'
           - 'tsconfig.json'
-          - '.eslintrc.json'
+          - 'eslint.config.mjs'
           - 'vercel.json'
