@@ -8,7 +8,7 @@
 
 <!-- HERO-BADGES:START -->
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
   <img src="https://img.shields.io/badge/Three.js-r162-000000?style=for-the-badge&logo=threedotjs&logoColor=white" alt="Three.js" />
   <img src="https://img.shields.io/badge/Framer_Motion-11-FF0055?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.18-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--10--23-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-2026--10--25-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -80,14 +80,14 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 
 <!-- STACK-CORE:START -->
 <p>
-  <img src="https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js" alt="Next.js 15.5" />
+  <img src="https://img.shields.io/badge/Next.js-16.4-black?style=flat-square&logo=next.js" alt="Next.js 16.4" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3.4" />
 </p>
 
 | Technology | Version | Role |
 |------------|---------|------|
-| [Next.js](https://nextjs.org/) | `^15.5` | App Router, server components, API routes, metadata API |
+| [Next.js](https://nextjs.org/) | `^16.4` | App Router, server components, API routes, metadata API |
 | [React](https://react.dev/) | `^19` | UI primitives, hooks, concurrent features |
 | [Tailwind CSS](https://tailwindcss.com/) | `^3.4` | Utility-first styling, custom ember / amethyst / night theme |
 <!-- STACK-CORE:END -->
@@ -132,7 +132,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 <!-- STACK-UI:START -->
 | Technology | Version | Role |
 |------------|---------|------|
-| [Lucide React](https://lucide.dev/) | `^1.57.0` | Primary icon system |
+| [Lucide React](https://lucide.dev/) | `^1.58.0` | Primary icon system |
 | [React Icons](https://react-icons.github.io/react-icons/) | `^5.7` | Extended icon library |
 | [Sonner](https://sonner.emilkowal.ski/) | `^1.7` | Toast notification system |
 | [clsx](https://github.com/lukeed/clsx) | `^2.1` | Conditional class name utility |
