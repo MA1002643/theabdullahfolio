@@ -53,7 +53,7 @@ jobs:
       - run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: next-build
           path: |
@@ -94,7 +94,7 @@ jobs:
       - if: always()
         run: node scripts/test-summary.mjs playwright "Nightly E2E · ${{ matrix.project }}"
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ matrix.project }}
           path: |
@@ -132,7 +132,7 @@ jobs:
       - if: always()
         run: node scripts/test-summary.mjs playwright "Nightly · quarantined tests"
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-quarantine
           path: |
@@ -156,7 +156,7 @@ jobs:
       # stryker.config.mjs beside the list of mutated modules.
       - run: npm run test:mutation
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mutation-report
           path: reports/mutation/
