@@ -1,8 +1,13 @@
 import Image from 'next/image';
-import Link from 'next/link';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
+import IntlScope from '@/i18n/IntlScope';
+import { intlTag } from '@/i18n/format';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
+import EnglishOnly from '@/components/i18n/EnglishOnly';
 import { notFound } from 'next/navigation';
 
-import bg from '../../../../../public/background/contact-bg.png';
+import bg from '../../../../../../public/background/contact-bg.png';
 import AuroraDustMount from '@/components/AuroraDustMount';
 import PageTitle from '@/components/PageTitle';
 import JsonLd from '@/components/seo/JsonLd';
@@ -24,10 +29,14 @@ export const dynamicParams = false;
 
 // `params` is a Promise from Next 15; synchronous access is deprecated.
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const note = readNote(slug);
   if (!note) return {};
   return sectionMetadata({
+    // English-only document (issue #82): canonical → the English URL, no
+    // hreflang alternates. See `alternatesFor` for why.
+    locale,
+    translated: false,
     title: note.title,
     // Composed in `src/lib/seo/noteMeta.js` and attached by `readNotes()`, so
     // this and the JSON-LD below publish one string. The fallback that used to
@@ -40,14 +49,16 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function NotePage({ params }) {
-  const { slug } = await params;
+  const { slug, locale } = await params;
+  setRequestLocale(locale);
   const note = readNote(slug);
   if (!note) notFound();
 
   const html = renderNote(note.markdown);
+  const t = await getTranslations({ locale, namespace: 'Notes' });
 
   return (
-    <>
+    <IntlScope locale={locale} route="/notes/[slug]">
       {/* The article node and its trail, composed in src/lib/seo/schema.js —
           see `notePage` there for why the type, the ids and the absent dates
           are what they are, and for the document-spread-into-a-node defect
@@ -93,15 +104,28 @@ export default async function NotePage({ params }) {
           screen-reader user cannot already get from the scroll position. */}
       <div className="note-progress" aria-hidden="true" />
 
-      <PageTitle title="NOTE" subtitle={note.title} replayOnView />
+      {/* The eyebrow word is chrome and translates; the subtitle is the
+          document's own (English) title, marked as such off the English
+          route so a screen reader switches voice for it. */}
+      <PageTitle
+        title={t('note.title')}
+        subtitle={note.title}
+        subtitleLang={locale === DEFAULT_LOCALE ? undefined : 'en'}
+        replayOnView
+      />
 
       <div className="mx-auto w-full max-w-3xl pb-24">
-        <nav aria-label="Breadcrumb" className="mb-8">
+        <nav aria-label={t('note.breadcrumb')} className="mb-8">
           <Link
             className="font-mono text-xs uppercase tracking-wider text-gold-soft underline decoration-[#ffaa2a]/30 underline-offset-4 transition-colors hover:text-[#ffaa2a]"
             href="/notes"
           >
-            ← All notes
+            {/* The arrow points BACK, so it turns round in RTL (issue #82).
+                Hidden from AT: the link's name is its words. */}
+            <span aria-hidden="true" className="inline-block rtl:-scale-x-100">
+              ←
+            </span>{' '}
+            {t('note.allNotes')}
           </Link>
         </nav>
 
@@ -110,15 +134,25 @@ export default async function NotePage({ params }) {
             is the line that would have to change: the only input is a markdown
             file committed to this repository and reviewed in a pull request.
             It is never user input and never fetched. */}
-        <div
-          className="note-prose"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        {/* English-only by decision (issue #82 — the route's metadata
+            canonicalises to the English URL): the wrapper marks the prose
+            `lang="en" dir="ltr"` and, in any other locale, says so above it
+            in the reader's language. */}
+        <EnglishOnly>
+          <div
+            className="note-prose"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        </EnglishOnly>
 
         <p className="mt-16 border-t border-white/10 pt-6 font-mono text-xs uppercase tracking-wider text-gold-soft">
-          Source: {note.source} · {note.lines.toLocaleString('en-GB')} lines
+          {t('note.source', {
+            source: note.source,
+            count: note.lines,
+            n: note.lines.toLocaleString(intlTag(locale)),
+          })}
         </p>
       </div>
-    </>
+    </IntlScope>
   );
 }

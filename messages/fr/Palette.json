@@ -1,0 +1,15 @@
+{
+  "dialog": "Palette de commandes",
+  "search": "Rechercher des commandes",
+  "placeholder": "Saisissez une commande ou une destination…",
+  "list": "Commandes",
+  "empty": "Aucun résultat",
+  "sections": {
+    "navigate": "Naviguer",
+    "language": "Langue"
+  },
+  "keywords": {
+    "navigate": "aller accéder page route navigation destination",
+    "language": "langue traduire traduction locale"
+  }
+}

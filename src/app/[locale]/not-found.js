@@ -1,4 +1,6 @@
+import { getTranslations } from 'next-intl/server';
 import NotFoundClient from '@/components/not-found/NotFoundClient';
+import IntlScope from '@/i18n/IntlScope';
 
 // Server component on purpose — exporting `metadata` only works
 // from server components, and the validation checklist requires
@@ -24,12 +26,27 @@ import NotFoundClient from '@/components/not-found/NotFoundClient';
 // locale), which is the right thing for a dead link to preview as.
 // Next marks this route `noindex` on its own, so no robots key
 // belongs here either.
-export const metadata = {
-  title: '404 — Page Not Found',
-  description:
-    "You've drifted into the void. This page doesn't exist — yet.",
-};
+//
+// `generateMetadata` rather than a `metadata` object since issue #82: the
+// title and description are the catalogue's (`NotFound.meta`), so a visitor
+// lost on /ar/… gets an Arabic tab title. not-found receives no params; the
+// locale comes from the request config, which the [locale] layout has
+// already pinned with setRequestLocale.
+export async function generateMetadata() {
+  const t = await getTranslations('NotFound');
+  return {
+    title: t('meta.title'),
+    description: t('meta.description'),
+  };
+}
 
+// The 404's copy is handed down here rather than on every page (issue #82,
+// the 8 kB budget): only this boundary renders it. not-found receives no
+// params, so IntlScope reads the locale the [locale] layout already pinned.
 export default function NotFound() {
-  return <NotFoundClient />;
+  return (
+    <IntlScope namespaces={['NotFound']}>
+      <NotFoundClient />
+    </IntlScope>
+  );
 }

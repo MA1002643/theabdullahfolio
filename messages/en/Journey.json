@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "MY JOURNEY",
+    "subtitle": "from first line to production"
+  },
+  "timeline": {
+    "label": "Journey timeline"
+  },
+  "endCap": {
+    "est": "EST. {year} · BOLTON, UK",
+    "tally": "{years, plural, one {# YR} other {# YRS}} · {entries, plural, one {# ENTRY} other {# ENTRIES}} · {tracks, plural, one {# TRACK} other {# TRACKS}}",
+    "paper": "THE PAPER VERSION →",
+    "paperHint": "the CV as a PDF (opens in a new tab)"
+  },
+  "spine": {
+    "now": "NOW"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# mo}}} one {# yr{months, plural, =0 {} other { # mo}}} other {# yrs{months, plural, =0 {} other { # mo}}}}",
+    "tenureOngoing": "{tenure} so far",
+    "view": "VIEW",
+    "viewLabel": "View {title} (opens in a new tab)"
+  },
+  "eraRail": {
+    "label": "Timeline eras",
+    "jump": "Jump to {year}"
+  },
+  "atlas": {
+    "eyebrow": "Overlap view",
+    "title": "The atlas — three tracks, one clock",
+    "live": {
+      "career": "{count, plural, one {# role} other {# roles}}",
+      "education": "{count, plural, one {# degree} other {# degrees}}",
+      "milestone": "{count, plural, one {# community post} other {# community posts}}",
+      "separator": " + ",
+      "sentence": "Running today: {parts}{total, plural, =1 {.} other { — in parallel.}}"
+    },
+    "tracks": {
+      "all": "All",
+      "career": "Career",
+      "education": "Education",
+      "milestone": "Community"
+    },
+    "chipsLabel": "Highlight one track",
+    "zoom": {
+      "group": "Grid zoom",
+      "out": "Zoom the grid out",
+      "outTitle": "Zoom out",
+      "in": "Zoom the grid in",
+      "inTitle": "Zoom in",
+      "readoutLabel": "Grid zoom {pct}. Reset to {full}",
+      "readoutTitle": "Grid zoom",
+      "resetTitle": "Reset zoom to {full}",
+      "status": "Grid zoom {pct}"
+    },
+    "region": "Overlap atlas: every role and course as parallel bars on one time axis",
+    "entries": "{count, plural, one {# entry} other {# entries}}",
+    "now": "Now",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Jump to {org} · {role}, {dates}",
+    "spokenRange": "{start} to {end}",
+    "spokenOpen": "{start} to now",
+    "key": {
+      "select": "Select any bar to jump to it.",
+      "dashed": "Dashed edge = still running.",
+      "stacked": "Stacked bars = concurrent."
+    }
+  },
+  "palette": {
+    "section": "Journey",
+    "jumpYear": "Jump to {year}",
+    "eraHint": "era",
+    "jumpAtlas": "Jump to the overlap atlas",
+    "openCv": "Open the CV (PDF)",
+    "openCvHint": "the paper version"
+  }
+}

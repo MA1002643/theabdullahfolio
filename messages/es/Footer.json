@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Índice",
+    "elsewhere": "En otros lugares"
+  },
+  "siteNav": "Sitio",
+  "identity": {
+    "role": "Ingeniero de software",
+    "statement": "Creo experiencias web rápidas y cuidadas desde el norte de Inglaterra."
+  },
+  "availability": "Abierto a nuevas oportunidades",
+  "githubCta": {
+    "label": "Ver este proyecto en GitHub",
+    "newTab": "(se abre en una pestaña nueva)",
+    "commits": "{count, plural, one {<num>{formatted}</num> commit} other {<num>{formatted}</num> commits}}",
+    "pushed": "enviado {when}"
+  },
+  "manifest": {
+    "departures": "Salidas",
+    "nowBoarding": "Embarcando",
+    "onTime": "A tiempo",
+    "links": {
+      "about": {
+        "label": "Acerca de",
+        "desc": "Quién soy"
+      },
+      "journey": {
+        "label": "Trayectoria",
+        "desc": "El camino hasta ahora"
+      },
+      "qualifications": {
+        "label": "Formación",
+        "desc": "Credenciales"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "El historial completo"
+      },
+      "projects": {
+        "label": "Proyectos",
+        "desc": "Trabajos seleccionados"
+      },
+      "uses": {
+        "label": "Herramientas",
+        "desc": "Con qué construyo"
+      },
+      "notes": {
+        "label": "Notas",
+        "desc": "Por qué se construyó así"
+      },
+      "contact": {
+        "label": "Contacto",
+        "desc": "Saluda"
+      },
+      "guestbook": {
+        "label": "Libro de visitas",
+        "desc": "Deja tu huella"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "Perfil de GitHub (se abre en una pestaña nueva)",
+    "linkedin": "Perfil de LinkedIn (se abre en una pestaña nueva)",
+    "resume": "Leer el CV completo",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Hora local {time} {period} en {town}} other {Hora local {time} en {town}}}",
+    "placeLabel": "Ubicación: {town}",
+    "live": "EN VIVO"
+  },
+  "sound": {
+    "label": "Sonido",
+    "on": "Activado",
+    "off": "Desactivado",
+    "turnOn": "Activar el sonido de guitarra del pie de página",
+    "turnOff": "Desactivar el sonido de guitarra del pie de página",
+    "hoverLines": "Pasa el cursor sobre las líneas",
+    "nowPlaying": "Sonando — una guitarra relajante",
+    "turnOnPrompt": "Activa el sonido para escuchar una guitarra relajante"
+  },
+  "privacy": {
+    "policy": "Privacidad",
+    "choices": "Opciones de privacidad"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/en-otros-sitios",
+    "cmd": {
+      "github": "abrir github",
+      "linkedin": "abrir linkedin",
+      "resume": "abrir currículum"
+    }
+  }
+}

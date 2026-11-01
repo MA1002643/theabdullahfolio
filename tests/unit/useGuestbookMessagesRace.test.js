@@ -3,6 +3,11 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGuestbookMessages } from '@/hooks/useGuestbookMessages';
 import { PAGE_SIZE } from '@/lib/guestbook/paging';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderHookIntl = (cb, options) => renderHook(cb, { wrapper: IntlWrapper, ...options });
 
 // The guestbook data layer's two write races. The server stores a message
 // (or removes one) BEFORE it answers, so a read that runs while the request
@@ -108,7 +113,7 @@ describe('useGuestbookMessages — a POST confirmed after a read already saw it'
   it('a reload listed AND counted it: the polled copy goes, the pending card takes the real id, counted once', async () => {
     const wall = { messages: [] };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
     expect(ids(result)).toEqual([]);
     expect(result.current.count).toBe(0);
@@ -146,7 +151,7 @@ describe('useGuestbookMessages — a POST confirmed after a read already saw it'
   it('an OLDER page fetched in flight counted it but could not list it: the 201 settles the total, nothing increments it again', async () => {
     const wall = { messages: NEWEST, older: OLDER };
     const { write, calls } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
     expect(ids(result)).toEqual(idsOf(NEWEST));
     expect(result.current.count).toBe(PAGE_SIZE + 2);
@@ -186,7 +191,7 @@ describe('useGuestbookMessages — a POST confirmed after a read already saw it'
   it('with no read in between, the 201 count is the total', async () => {
     const wall = { messages: [] };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
 
     let submitted;
@@ -205,7 +210,7 @@ describe('useGuestbookMessages — a POST confirmed after a read already saw it'
   it('a 201 without a count (an older server) still settles the card once and counts by the list', async () => {
     const wall = { messages: [] };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
 
     let submitted;
@@ -239,7 +244,7 @@ describe('useGuestbookMessages — a DELETE that fails after a read already revi
   it('a reload revived the card AND its count: the rollback adds neither a second card nor a second count', async () => {
     const wall = { messages: [REAL] };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
 
     let removed;
@@ -266,7 +271,7 @@ describe('useGuestbookMessages — a DELETE that fails after a read already revi
   it('an OLDER page fetched in flight restored the count but could not list the card: the card comes back once, the count is not bumped again', async () => {
     const wall = { messages: NEWEST, older: OLDER };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
     expect(result.current.count).toBe(PAGE_SIZE + 2);
 
@@ -296,7 +301,7 @@ describe('useGuestbookMessages — a DELETE that fails after a read already revi
   it('with no read in between, the rollback restores both the card and the count (the original contract)', async () => {
     const wall = { messages: [REAL] };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
 
     let removed;
@@ -320,7 +325,7 @@ describe('useGuestbookMessages — a DELETE confirmed after a read already saw i
   it('a reload revived the card: it is taken back on the 200, the total settled from the 200', async () => {
     const wall = { messages: [REAL] };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
     expect(ids(result)).toEqual(['msg_real']);
     expect(result.current.count).toBe(1);
@@ -351,7 +356,7 @@ describe('useGuestbookMessages — a DELETE confirmed after a read already saw i
   it('an OLDER page fetched in flight still counted the card without listing it: the 200 settles the total', async () => {
     const wall = { messages: NEWEST, older: OLDER };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
     expect(result.current.count).toBe(PAGE_SIZE + 2);
 
@@ -380,7 +385,7 @@ describe('useGuestbookMessages — a DELETE confirmed after a read already saw i
   it('an OLDER page served AFTER the delete counted it out already: the 200 keeps that total, no second decrement', async () => {
     const wall = { messages: NEWEST, older: OLDER };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
 
     let removed;
@@ -410,7 +415,7 @@ describe('useGuestbookMessages — a DELETE confirmed after a read already saw i
   it('a 200 without a count (an older server) still takes back a revived card and its count', async () => {
     const wall = { messages: [REAL] };
     const { write } = stubFetch(wall);
-    const { result } = renderHook(() => useGuestbookMessages());
+    const { result } = renderHookIntl(() => useGuestbookMessages());
     await flush();
 
     let removed;

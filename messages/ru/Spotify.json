@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "СЕЙЧАС ИГРАЕТ",
+  "lastPlayed": "ИГРАЛО РАНЕЕ",
+  "cardLabel": "{state, select, playing {сейчас играет} other {играло ранее}}: {title}, исполнитель — {artist}.",
+  "cardLabelLink": "{state, select, playing {сейчас играет} other {играло ранее}}: {title}, исполнитель — {artist}. Открыть в Spotify.",
+  "openOnSpotify": "Открыть в Spotify"
+}

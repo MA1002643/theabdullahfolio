@@ -2,7 +2,7 @@
 import HomeBtn from '@/components/HomeBtn';
 import ProjectsBtn from '@/components/ProjectsBtn';
 import Footer from '@/components/footer';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { fluid } from '@/lib/fluidScale';
 
 // Pages that have adopted the fluid-scale system (issue #50). A listed page

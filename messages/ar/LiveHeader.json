@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "ستُطلَق ميزات جديدة قريبًا جدًا. هذا الموقع قيد التطوير النشط.",
+    "shippingNone": "تم للتو إطلاق {count, plural, zero {# تحديث} one {تحديث واحد} two {تحديثين} few {# تحديثات} many {# تحديثًا} other {# تحديث}} على هذا الموقع.",
+    "shippingOne": "تم للتو إطلاق <bdi>#{number} {title}</bdi>.",
+    "shippingMany": "تم للتو إطلاق <bdi>#{number} {title}</bdi> ({more, plural, zero {و# عنصر آخر} one {وعنصر واحد آخر} two {وعنصرين آخرين} few {و# عناصر أخرى} many {و# عنصرًا آخر} other {و# عنصر آخر}}).",
+    "liveWithTop": "تحديث مباشر: يجري إطلاق التغييرات الآن — والتركيز حاليًا على <bdi>#{number} {title}</bdi>.",
+    "livePushes": "تحديث مباشر: يجري الآن إطلاق تغييرات جديدة على هذا الموقع.",
+    "liveActive": "العمل نشط الآن{hasTop, select, yes { — والتركيز حاليًا على <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "العمل جارٍ بنشاط على {count, plural, zero {# مهمة} one {مهمة واحدة} two {مهمتين} few {# مهام} many {# مهمة} other {# مهمة}}{hasTop, select, yes { — والتركيز حاليًا على <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "العمل جارٍ على {prs, plural, zero {# طلب دمج} one {طلب دمج واحد} two {طلبَي دمج} few {# طلبات دمج} many {# طلب دمج} other {# طلب دمج}} و{issues, plural, zero {# مهمة مفتوحة} one {مهمة مفتوحة واحدة} two {مهمتين مفتوحتين} few {# مهام مفتوحة} many {# مهمة مفتوحة} other {# مهمة مفتوحة}}{hasTop, select, yes { — والتركيز حاليًا على <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "العمل جارٍ على {prs, plural, zero {# طلب دمج} one {طلب دمج واحد} two {طلبَي دمج} few {# طلبات دمج} many {# طلب دمج} other {# طلب دمج}}{hasTop, select, yes { — والتركيز حاليًا على <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "العمل جارٍ على {issues, plural, zero {# مهمة مفتوحة} one {مهمة مفتوحة واحدة} two {مهمتين مفتوحتين} few {# مهام مفتوحة} many {# مهمة مفتوحة} other {# مهمة مفتوحة}}{hasTop, select, yes { — والتركيز حاليًا على <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "العمل جارٍ على هذا الموقع.",
+    "planning": "التخطيط للتحسينات القادمة{hasTop, select, yes { — والتركيز حاليًا على <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "العمل جارٍ على {count, plural, zero {# مهمة} one {مهمة واحدة} two {مهمتين} few {# مهام} many {# مهمة} other {# مهمة}} — والتركيز حاليًا على <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "تم للتو الإطلاق",
+    "live": "التطوير المباشر جارٍ",
+    "inProgress": "العمل جارٍ",
+    "planning": "التخطيط للتحسينات القادمة",
+    "idle": "الصيانة مستمرة"
+  },
+  "region": "حالة الصيانة المباشرة",
+  "state": {
+    "shipping": "إطلاق",
+    "live": "مباشر",
+    "inProgress": "قيد التنفيذ",
+    "planning": "تخطيط",
+    "idle": "صيانة"
+  },
+  "stateSpoken": {
+    "shipping": "إطلاق",
+    "live": "مباشر",
+    "inProgress": "قيد التنفيذ",
+    "planning": "تخطيط",
+    "idle": "صيانة"
+  },
+  "pipeline": {
+    "planning": "تخطيط",
+    "inProgress": "بناء",
+    "shipping": "إطلاق",
+    "live": "مباشر"
+  },
+  "legend": {
+    "title": "مسار التسليم",
+    "srIdle": "مسار التسليم. خارج المسار: مراقبة الصيانة.",
+    "srStage": "مسار التسليم. المرحلة الحالية: {stage}، {index} من {total}.",
+    "headingIdle": "الصيانة · خارج المسار",
+    "headingStage": "{stage} · المرحلة {index} من {total}",
+    "maintenance": "الصيانة",
+    "offPipeline": "خارج المسار — مراقبة {count, plural, =0 {المستودعات المتتبَّعة} one {مستودع واحد} two {مستودعين} few {# مستودعات} many {# مستودعًا} other {# مستودع}}",
+    "meaning": {
+      "planning": "مهام مفتوحة مُرتَّبة ومحدَّدة النطاق",
+      "inProgress": "عمل نشط على الفروع وطلبات الدمج",
+      "shipping": "أعمال مدموجة انتقلت إلى «تم» خلال آخر 48 ساعة",
+      "live": "إيداعات أو تحديثات خلال آخر ساعتين"
+    }
+  },
+  "fields": {
+    "state": "الحالة",
+    "focus": "التركيز",
+    "focusPr": "التركيز · PR",
+    "focusIssue": "التركيز · مهمة",
+    "prs": "PR",
+    "issues": "المهام",
+    "pushes24h": "الدفعات · 24س",
+    "pushes": "الدفعات",
+    "activity": "النشاط · {days}ي",
+    "sync": "المزامنة",
+    "metered": "· محدودة"
+  },
+  "metric": {
+    "prs": "طلبات PR النشطة",
+    "issues": "المهام المفتوحة",
+    "pushes": "الدفعات (24س)",
+    "emptyPrs": "لا توجد طلبات PR نشطة عبر المشاريع المتتبَّعة.",
+    "emptyIssues": "لا توجد مشكلات مفتوحة في المشاريع المتتبَّعة.",
+    "emptyPushes": "لا توجد عمليات دفع في المشاريع المتتبَّعة خلال آخر 24 ساعة."
+  },
+  "popover": {
+    "breakdown": "تفصيل {metric}",
+    "summary": "{metric} · {count} عبر {projects, plural, zero {# مشاريع} one {مشروع واحد} two {مشروعين} few {# مشاريع} many {# مشروعًا} other {# مشروع}}",
+    "heading": "<count></count> عبر {projects, plural, zero {# مشاريع} one {مشروع واحد} two {مشروعين} few {# مشاريع} many {# مشروعًا} other {# مشروع}}",
+    "stale": "يُعرض آخر نشاط معروف.",
+    "more": "+ {count} أخرى على GitHub",
+    "openOnGitHub": "فتح على GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {طلب سحب} other {مشكلة}} #{number}",
+    "ariaOpen": "فتح {type, select, pr {طلب السحب} other {المشكلة}} #{number}: {title} على GitHub",
+    "stepped": "{type, select, pr {طلب سحب} other {مشكلة}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {نشط <age></age>} other {}}",
+    "monitoring": "مراقبة {count, plural, zero {# مستودعات} one {مستودع واحد} two {مستودعين} few {# مستودعات} many {# مستودعًا} other {# مستودع}} — لا يوجد عنصر تركيز نشط",
+    "monitoringNone": "مراقبة المستودعات المتتبَّعة"
+  },
+  "queue": {
+    "label": "قائمة التركيز",
+    "hint": "العنصر {index} من {count} · ← → للتنقل",
+    "sr": "قائمة تركيز من {count} عنصرًا — مفتاحا السهم الأيمن والأيسر للتنقل"
+  },
+  "activity": {
+    "label": "مسار الإيداعات",
+    "summary": "{total, plural, zero {# إيداعات} one {إيداع واحد} two {إيداعان} few {# إيداعات} many {# إيداعًا} other {# إيداع}} · آخر {days, plural, zero {# أيام} one {يوم واحد} two {يومين} few {# أيام} many {# يومًا} other {# يوم}}{truncated, select, yes { (أقدم الأيام غير مكتملة العدّ)} other {}}"
+  },
+  "sync": {
+    "label": "آخر مزامنة",
+    "hint": "الثقة {confidence} · استطلاع كل {seconds}ث{metered, select, yes { · اتصال محدود} other {}}",
+    "detail": "{hasLast, select, yes {آخر مزامنة {last} · } other {}}ثقة الإشارة {confidence} · استطلاع كل {seconds, plural, zero {# ثانية} one {ثانية واحدة} two {ثانيتين} few {# ثوانٍ} many {# ثانية} other {# ثانية}}{metered, select, yes { عند الاتصال المحدود} other {}}",
+    "stale": "قديم"
+  },
+  "announce": {
+    "status": "الحالة: {state}.",
+    "focus": "التركيز الحالي: {type, select, pr {طلب سحب} other {مشكلة}} {number}، {title}.",
+    "counts": "{prs, plural, zero {لا طلبات سحب نشطة} one {طلب سحب نشط واحد} two {طلبا سحب نشطان} few {# طلبات سحب نشطة} many {# طلب سحب نشطًا} other {# طلب سحب نشط}}، {issues, plural, zero {لا مشكلات مفتوحة} one {مشكلة مفتوحة واحدة} two {مشكلتان مفتوحتان} few {# مشكلات مفتوحة} many {# مشكلة مفتوحة} other {# مشكلة مفتوحة}}، و{pushes, plural, zero {لا عمليات دفع} one {عملية دفع واحدة} two {عمليتا دفع} few {# عمليات دفع} many {# عملية دفع} other {# عملية دفع}} خلال آخر 24 ساعة."
+  },
+  "error": {
+    "snapshot": "الحالة المباشرة غير متاحة مؤقتًا. تُعرض أحدث لقطة.",
+    "fallback": "الحالة المباشرة غير متاحة مؤقتًا. تُعرض النسخة الاحتياطية للصيانة."
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "Refonte cinématographique d’un portfolio rythmé par le défilement"
+    },
+    "2": {
+      "description": "Plateforme de gestion d’entreprise multi-locataire"
+    },
+    "3": {
+      "description": "Plateforme de découverte de recettes propulsée par l’IA"
+    },
+    "4": {
+      "description": "Portfolio immersif piloté par le mouvement"
+    },
+    "5": {
+      "description": "Plateforme de publication multiplateforme propulsée par l’IA"
+    },
+    "6": {
+      "description": "Plateforme de streaming musical multiplateforme"
+    },
+    "7": {
+      "description": "Plateforme d’engagement pédagogique en temps réel"
+    },
+    "8": {
+      "description": "Plateforme de coaching sportif propulsée par l’IA"
+    },
+    "9": {
+      "description": "Navigation et conformité réglementaire pour poids lourds"
+    },
+    "10": {
+      "description": "Appels de vérification automatisés toutes les heures"
+    },
+    "11": {
+      "description": "Recherche d’emploi et personnalisation de candidatures par l’IA"
+    }
+  },
+  "categories": {
+    "Web": "Web",
+    "System": "Système",
+    "AI": "IA",
+    "Mobile": "Mobile"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "Responsable d’équipe conciergerie · Adullam Homes Housing Association",
+      "description": "Responsable de zone des services de conciergerie sur huit sites d’hébergement accompagné à Bolton : encadrement de trois équipes réparties sur deux organisations, recrutement pour la région, gestion des incidents, et remplacement de deux plannings sur tableur par un outil de gestion des horaires dans Microsoft Teams qui propose directement les créneaux libres au personnel.",
+      "tags": {
+        "team-leadership": "Gestion d’équipe",
+        "hiring-manager": "Responsable du recrutement",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "Ingénieur logiciel · Projets indépendants",
+      "description": "Conception, développement et mise en production de projets full-stack de bout en bout : une API REST documentée avec Swagger et testée avec Mocha/Chai, Colophon (publication assistée par l’IA — Vue 3, Express, PostgreSQL + pgvector), AfaaqX, et un profil GitHub régénéré chaque jour par des pipelines Actions planifiés.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "Agent de sécurité · Constant Security Services",
+      "description": "Titulaire de la licence SIA sur des sites scientifiques et universitaires sensibles, dont l’observatoire de Jodrell Bank : rondes, vidéosurveillance, intervention en cas d’incident et comptes rendus depuis le poste de contrôle, en attendant de décrocher mon prochain poste d’ingénieur.",
+      "tags": {
+        "sia-licensed": "Licence SIA",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "Ingénieur DevOps · C365Cloud",
+      "description": "Maintien des livraisons d’une plateforme de conformité : pipelines CI/CD, administration de Microsoft SQL Server et de MySQL, et fonctionnalités de la plateforme en .NET (Blazor) pour les équipes internes à Wakefield.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "Concierge · Adullam Homes Housing Association",
+      "description": "Interlocuteur hors horaires d’ouverture en hébergement accompagné : signalements de protection des personnes, gestion des incidents et tenue rigoureuse des dossiers électroniques de résidents vulnérables.",
+      "tags": {
+        "safeguarding": "Protection des personnes"
+      }
+    },
+    "j-showsec": {
+      "title": "Agent de sécurité / opérateur de vidéosurveillance · Showsec",
+      "description": "Surveillance par vidéosurveillance, gestion des foules et intervention en cas d’incident lors d’événements de grande envergure, en coordination en temps réel avec les équipes de sécurité et les forces de l’ordre.",
+      "tags": {
+        "cctv": "Vidéosurveillance",
+        "incident-response": "Gestion d’incidents"
+      }
+    },
+    "j-lidl": {
+      "title": "Employé commercial · Lidl GB",
+      "description": "Magasin à fort volume pendant toute la durée de mes études : caisse, livraisons, stocks ; membre de l’équipe qui a fait passer le magasin de la 14ᵉ à la 10ᵉ place du classement des ventes et progresser la satisfaction client de 18 % en quatre mois.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "3 ans 8 mois en parallèle des études"
+      }
+    },
+    "j-unisys": {
+      "title": "Ingénieur logiciel · Unisys",
+      "description": "Stage industriel de 16 mois à Manchester : développement de fonctionnalités full-stack en C# / .NET (Blazor) qui ont amélioré l’efficacité du système d’environ 20 %, réduction de 30 % des incidents en production grâce à la prise en charge du tri du support, puis direction d’une équipe projet jusqu’à une livraison dans les délais qui a permis de décrocher de nouveaux contrats clients.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "Ambassadeur étudiant · MMU",
+      "description": "Représentation de l’université lors de journées portes ouvertes, de visites et d’événements de recrutement dans le Greater Manchester.",
+      "tags": {
+        "community": "Communauté"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "Technicien support informatique · MMU",
+      "description": "Support de premier niveau pour le personnel et les étudiants : problèmes matériels, logiciels et d’accès, à l’interface entre l’informatique et les services partenaires ; salué par plusieurs services dès la première semaine.",
+      "tags": {
+        "first-line-support": "Support de premier niveau"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "Développeur logiciel · MMU",
+      "description": "Fonctionnalités front-end et back-end au sein d’une équipe universitaire pluridisciplinaire : plus de 50 bugs corrigés, vitesse de chargement améliorée de 25 % et temps de développement réduit de 15 % en traduisant les besoins des parties prenantes en fonctionnalités opérationnelles.",
+      "tags": {
+        "full-stack": "Full-stack",
+        "50-bugs-resolved": "Plus de 50 bugs corrigés"
+      }
+    },
+    "j-course-rep": {
+      "title": "Délégué de promotion · MMU",
+      "description": "Voix élue de la promotion — a négocié l’organisation du calendrier des évaluations en tenant compte des pratiques religieuses et a élargi les interventions d’invités du département.",
+      "tags": {
+        "learner-voice-award": "Learner Voice Award",
+        "volunteering-award": "Volunteering Award"
+      }
+    },
+    "j-bsc": {
+      "title": "BSc (Hons) Software Engineering · MMU",
+      "description": "Manchester Metropolitan University — cursus accrédité BCS, mention First-Class Honours prévue. L’immersion formelle, sans filet.",
+      "tags": {
+        "bcs-accredited": "Accrédité BCS",
+        "first-class-predicted": "First-Class (prévue)"
+      }
+    },
+    "j-kfc": {
+      "title": "Équipier · KFC",
+      "description": "Tous les postes, de la salle à la cuisine — élu Meilleur employé six mois consécutifs, au sein de l’équipe qui a fait passer le restaurant de la 5ᵉ à la 2ᵉ place du classement régional.",
+      "tags": {
+        "best-employee-6": "Meilleur employé ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC Level 3 Extended Diploma in IT",
+      "description": "Bolton College — Triple Distinction (DDD). Deux années qui ont transformé la curiosité en discipline.",
+      "tags": {
+        "triple-distinction": "Triple Distinction"
+      }
+    },
+    "j-ocnlr": {
+      "title": "OCNLR Certificate in Digital Skills",
+      "description": "Bolton College — le premier pas formel dans l’informatique, et la porte d’entrée vers tout ce qui suit.",
+      "tags": {
+        "digital-skills": "Compétences numériques"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "Machine",
+        "value": "MacBook Pro 13 pouces · Apple M1 · 16 Go de mémoire unifiée"
+      },
+      "display": {
+        "label": "Écran",
+        "value": "Retina 2560 × 1600 · 1440 × 900 logiques",
+        "note": "Le viewport de référence de l’échelle fluide : chaque sous-page est conçue à l’échelle 1 sur cette largeur exacte, puis se déploie à partir d’un seul facteur."
+      },
+      "os": {
+        "label": "Système",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "Téléphone",
+        "value": "iPhone, avec OwnTracks en mode HTTP",
+        "note": "Il envoie une position à /api/location ; la ville et l’heure locale affichées dans le pied de page proviennent de cet appareil.",
+        "hrefLabel": "voir la ville qu’il alimente"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "Éditeur",
+        "detail": "Thème Dracula · vscode-icons · Prettier à l’enregistrement"
+      },
+      "agentic-pair": {
+        "role": "Binôme agentique",
+        "detail": "Extension VS Code + CLI — skills, sous-agents et serveurs MCP (Chrome DevTools, Playwright) pilotent le navigateur pendant la vérification"
+      },
+      "terminal-and-shell": {
+        "role": "Terminal et shell",
+        "detail": "Node fixé par .nvmrc via nvm · Homebrew pour tout le reste"
+      },
+      "formatting-and-lint": {
+        "role": "Formatage et lint",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "Typographie",
+        "detail": "next/font/google — auto-hébergées à la compilation, pour que les polices ne décalent jamais la mise en page"
+      },
+      "browser-tooling": {
+        "role": "Outils navigateur",
+        "detail": "Sondes de pixels, émulation de la réduction des animations et barrière e2e s’exécutent toutes sur un vrai Chromium"
+      }
+    }
+  }
+}

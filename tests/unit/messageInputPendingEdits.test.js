@@ -2,6 +2,11 @@
 import { createElement, forwardRef } from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The composer stays editable while a send is in flight — the optimistic
 // clear's whole point — so the settle step must only touch what the visitor
@@ -59,7 +64,7 @@ async function mount() {
     pending.push(d);
     return d.promise;
   });
-  const utils = render(createElement(MessageInput, { user: USER, onSubmit, submitting: false }));
+  const utils = renderIntl(createElement(MessageInput, { user: USER, onSubmit, submitting: false }));
   const input = utils.container.querySelector('#guestbook-message');
   const form = utils.container.querySelector('form');
   const type = (value) => fireEvent.change(input, { target: { value } });

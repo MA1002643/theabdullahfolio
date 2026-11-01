@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Single fixed key — the completed-projects count is a site-wide value
 // (driven by `projectsData`), not per-user. Mirrors the keying discipline of
@@ -113,6 +114,8 @@ function writeStored(count, cats) {
  */
 export function useProjectCountSignal(breakdown) {
   const [pendingMessage, setPendingMessage] = useState(null);
+  // Reader's-language banner copy (issue #82); see useLanguagesUpdateSignal.
+  const t = useTranslations("About");
   // The category labels whose count GREW or that are newly present in this
   // change cycle — surfaced so the card can heartbeat exactly those legend
   // entries. Cleared by the consumer once the pulse has played.
@@ -188,10 +191,11 @@ export function useProjectCountSignal(breakdown) {
     writeStored(count, cats);
 
     const delta = count - stored.count;
+    // One catalogue sentence per case, the count an ICU plural (issue #82).
     const message =
       delta > 0
-        ? `${delta} new completed project${delta !== 1 ? "s" : ""} added — now ${count}`
-        : `Completed projects updated — now ${count}`;
+        ? t("changes.projects.added", { delta, count })
+        : t("changes.projects.updated", { count });
     setPendingMessage(message);
 
     // Heartbeat targets: categories that GREW or are NEW since the baseline. A

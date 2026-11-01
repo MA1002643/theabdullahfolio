@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Pesan Anda yang belum terkirim telah dipulihkan",
+    "keep": "Simpan",
+    "clear": "Hapus"
+  },
+  "refine": {
+    "affordance": "Sempurnakan pesan saya",
+    "panelLabel": "Saran penulisan ulang",
+    "polishing": "Menyempurnakan…",
+    "announcePolishing": "Sedang menyempurnakan pesan Anda…",
+    "announceReady": "Saran penulisan ulang sudah siap.",
+    "announceError": "Pesan tidak dapat disempurnakan.",
+    "use": "Gunakan ini",
+    "again": "Sempurnakan lagi",
+    "discard": "Buang",
+    "retry": "Coba lagi",
+    "dismiss": "Tutup",
+    "cancel": "Batal",
+    "errors": {
+      "unconfigured": "Penyempurnaan pesan sedang tidak tersedia.",
+      "unavailable": "Penyempurnaan pesan sedang tidak tersedia.",
+      "rate_limited": "Terlalu banyak permintaan — coba lagi sebentar lagi.",
+      "too_large": "Permintaan terlalu besar.",
+      "bad_request": "Permintaan tidak valid.",
+      "too_short": "Tulis sedikit lebih banyak dulu, lalu saya bisa menyempurnakannya.",
+      "too_long": "Pesan ini terlalu panjang untuk disempurnakan.",
+      "budget": "Penyempurnaan pesan sedang dijeda.",
+      "failed": "Pesan tidak dapat disempurnakan. Silakan coba lagi."
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "role": "Inżynier oprogramowania",
+  "summary": "Muhammad Abdullah jest inżynierem oprogramowania z Bolton w Greater Manchester. Tworzy szybkie, przemyślane aplikacje webowe w Next.js, React, TypeScript i Node.js. Ta strona zbiera {count} projektów — webowych, systemowych, mobilnych i opartych na AI — z których każdy jest śledzony na żywo na własnej tablicy GitHub. Znajdziesz tu też studia i role, które za nimi stoją, oś czasu drogi od college'u do produkcji oraz narzędzia, w których ta praca naprawdę powstaje. Do każdej sekcji prowadzi pierścień poniżej, poza trzema: pełny życiorys znajduje się na <cv>stronie CV</cv> i w formie pliku PDF, uzasadnienie tego, jak zbudowano tę stronę, opisano w <notes>notatkach inżynierskich</notes>, a to, co ta strona zbiera — wraz z przełącznikiem wyłączającym część opcjonalną — wyjaśniono na <privacy>stronie prywatności</privacy>.",
+  "orbitTip": {
+    "hover": {
+      "lead": "Zatrzymaj kursor na laptopie, a potem poruszaj nim albo przewijaj w górę i w dół — pierścień będzie się obracał razem z Tobą.",
+      "keys": "Możesz też przeciągnąć pierścień albo nacisnąć <key>←</key> <key>→</key>, gdy aktywny jest któryś przycisk.",
+      "sr": "Wskazówka: pierścień nawigacji można obracać. Zatrzymaj wskaźnik na laptopie i poruszaj nim albo przewijaj w górę i w dół, aby go obrócić. Możesz też przeciągnąć pierścień albo nacisnąć strzałki w lewo i w prawo, gdy aktywny jest przycisk nawigacji."
+    },
+    "touch": {
+      "lead": "Przesuwaj palcem w górę i w dół po laptopie — albo przeciągnij pierścień — aby obracać nawigację.",
+      "sr": "Wskazówka: pierścień nawigacji można obracać. Przesuwaj palcem w górę i w dół po laptopie albo przeciągnij sam pierścień, aby go obrócić."
+    },
+    "dismiss": "Zamknij wskazówkę dotyczącą nawigacji"
+  }
+}

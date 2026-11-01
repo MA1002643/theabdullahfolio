@@ -2,11 +2,13 @@
 
 import { useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useViewportCountUp } from '@/hooks/useViewportCountUp';
 import { fluid } from '@/lib/fluidScale';
 import { maxUsage, rankByUsage } from '@/lib/uses/stack';
 import { CATEGORY_COPY } from '@/lib/uses/toolCopy';
 import ToolTile from './ToolTile';
+import { useUsesFormat } from './useUsesFormat';
 import { riseProps, staged, useStagedReveal } from './useStagedReveal';
 
 // The Stack plate's ledger (owner correction, 2026-09-05 — replaces the
@@ -43,8 +45,21 @@ import { riseProps, staged, useStagedReveal } from './useStagedReveal';
 // A tile whose icon fails to load drops out (onHidden), as before, so a
 // dead icon URL never leaves an empty card.
 
-const pad2 = (n) => String(n).padStart(2, '0');
 const HEAD_STEP_S = 0.07;
+
+// A category's heading and strapline in the reader's language. The Uses
+// catalogue mirrors CATEGORY_COPY under toolCopy.categories (pinned equal by
+// tests/unit/usesI18n.test.js); a category the catalogue lacks falls back to
+// the dictionary, and one the dictionary lacks to its own key, as before.
+export function categoryCopy(t, category) {
+  const base = `toolCopy.categories.${category}`;
+  const own = CATEGORY_COPY[category];
+  if (!own && !t.has(`${base}.label`)) return { label: category, lay: '' };
+  return {
+    label: t.has(`${base}.label`) ? t(`${base}.label`) : own.label,
+    lay: t.has(`${base}.lay`) ? t(`${base}.lay`) : (own?.lay ?? ''),
+  };
+}
 
 function CategoryHead({
   headingId,
@@ -57,6 +72,8 @@ function CategoryHead({
   reduceMotion,
   revealedAtRef,
 }) {
+  const t = useTranslations('Uses');
+  const { num, countFormat } = useUsesFormat();
   const { ref, on, delay } = useStagedReveal({
     revealed,
     reduceMotion,
@@ -79,11 +96,13 @@ function CategoryHead({
     to: count,
     inView: counting,
     prefersReducedMotion: reduceMotion,
+    format: countFormat,
   });
   useViewportCountUp(totalRef, {
     to: total,
     inView: counting,
     prefersReducedMotion: reduceMotion,
+    format: countFormat,
   });
 
   return (
@@ -115,13 +134,21 @@ function CategoryHead({
           animate={{ opacity: on ? 1 : 0 }}
           transition={at(0.2, 0.4)}
         >
-          <span ref={countRef} className="uses-stack__figure">
-            {reduceMotion ? count : 0}
-          </span>
-          {' of '}
-          <span ref={totalRef} className="uses-stack__figure">
-            {reduceMotion ? total : 0}
-          </span>
+          {/* One message, "<count></count> of <total></total>", so the
+              connective and its word order are the translator's (issue #82);
+              the two figures are the count-up's own nodes, filled in place. */}
+          {t.rich('stack.tally', {
+            count: () => (
+              <span key="count" ref={countRef} className="uses-stack__figure">
+                {num(reduceMotion ? count : 0)}
+              </span>
+            ),
+            total: () => (
+              <span key="total" ref={totalRef} className="uses-stack__figure">
+                {num(reduceMotion ? total : 0)}
+              </span>
+            ),
+          })}
         </motion.p>
       </div>
       {lay ? (
@@ -137,6 +164,7 @@ function CategoryHead({
 }
 
 function ReadingKey({ counted, revealed, reduceMotion, revealedAtRef }) {
+  const t = useTranslations('Uses');
   const { ref, on, delay } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
   return (
     <motion.p
@@ -148,21 +176,23 @@ function ReadingKey({ counted, revealed, reduceMotion, revealedAtRef }) {
       {counted ? (
         <>
           <span aria-hidden="true" className="uses-stack__swatch is-public" />
-          public repositories
+          {t('stack.keyPublic')}
           {' · '}
           <span aria-hidden="true" className="uses-stack__swatch is-private" />
-          private
+          {t('stack.keyPrivate')}
           {' · '}
-          bars are relative to the most-used tool
+          {t('stack.keyRelative')}
         </>
       ) : (
-        'bars fill and repository counts arrive with the live crawl'
+        t('stack.keyPending')
       )}
     </motion.p>
   );
 }
 
 export default function ToolGrid({ groups, revealed, reduceMotion, revealedAtRef }) {
+  const t = useTranslations('Uses');
+  const { num, ord } = useUsesFormat();
   const [hidden, setHidden] = useState(() => new Set());
 
   const visible = groups
@@ -183,7 +213,7 @@ export default function ToolGrid({ groups, revealed, reduceMotion, revealedAtRef
   return (
     <div className="uses-stack" data-counted={counted ? 'true' : 'false'}>
       {visible.map((g, gi) => {
-        const copy = CATEGORY_COPY[g.category] ?? { label: g.category, lay: '' };
+        const copy = categoryCopy(t, g.category);
         const headingId = `uses-stack-${g.category}`;
         const headIndex = running;
         running += 1;
@@ -209,7 +239,10 @@ export default function ToolGrid({ groups, revealed, reduceMotion, revealedAtRef
             <ul
               className="uses-stack__grid m-0 grid list-none p-0"
               style={{ gap: fluid(0.6), marginTop: fluid(0.8) }}
-              aria-label={`${copy.label} — ${g.items.length}`}
+              aria-label={t('stack.listLabel', {
+                label: copy.label,
+                count: num(g.items.length),
+              })}
             >
               {g.items.map((item, i) => {
                 const index = running;
@@ -219,7 +252,7 @@ export default function ToolGrid({ groups, revealed, reduceMotion, revealedAtRef
                     key={item.slug}
                     item={item}
                     category={g.category}
-                    rank={pad2(i + 1)}
+                    rank={ord(i + 1)}
                     index={index}
                     max={max}
                     counted={counted}

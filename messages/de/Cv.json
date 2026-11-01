@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "die vollständige Übersicht"
+  },
+  "identity": {
+    "role": "Softwareentwickler"
+  },
+  "downloadPdf": "PDF herunterladen",
+  "sections": {
+    "experience": "Berufserfahrung",
+    "education": "Ausbildung",
+    "representation": "Vertretung",
+    "skills": "Kenntnisse",
+    "projects": "Ausgewählte Projekte"
+  },
+  "skillGroups": {
+    "languages": "Sprachen",
+    "frameworks": "Frameworks",
+    "libraries": "Bibliotheken",
+    "tools": "Werkzeuge",
+    "software": "Software"
+  },
+  "allProjects": "Alle Projekte",
+  "asTimeline": "Derselbe Werdegang als Zeitleiste"
+}

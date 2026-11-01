@@ -1,0 +1,15 @@
+{
+  "dialog": "Bảng lệnh",
+  "search": "Tìm lệnh",
+  "placeholder": "Nhập lệnh hoặc nơi bạn muốn đến…",
+  "list": "Lệnh",
+  "empty": "Không có kết quả phù hợp",
+  "sections": {
+    "navigate": "Điều hướng",
+    "language": "Ngôn ngữ"
+  },
+  "keywords": {
+    "navigate": "đi tới chuyển trang điều hướng đường dẫn go jump route page",
+    "language": "ngôn ngữ dịch bản dịch vùng language translate locale"
+  }
+}

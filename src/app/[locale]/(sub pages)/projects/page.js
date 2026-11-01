@@ -1,11 +1,13 @@
 import Image from "next/image";
-import bg from "../../../../public/background/project-bg.webp";
+import bg from "../../../../../public/background/project-bg.webp";
 import ProjectList from "@/components/projects";
 import SceneVideo from "@/components/projects/SceneVideo";
 import SceneParallax from "@/components/projects/SceneParallax";
 import SceneSealIgnite from "@/components/projects/SceneSealIgnite";
-import { projectsData } from "../../data";
-import { sectionMetadata } from "@/lib/og/meta";
+import { projectsData } from "@/app/data";
+import { setRequestLocale } from 'next-intl/server';
+import IntlScope from '@/i18n/IntlScope';
+import { routeCopy, routeMetadata } from '@/lib/og/meta';
 import JsonLd from "@/components/seo/JsonLd";
 import { projectsCollection } from "@/lib/seo/schema";
 import { routeFor } from "@/lib/seo/site";
@@ -14,19 +16,20 @@ const ROUTE = routeFor("/projects");
 
 // Title and description read from the route registry (issue #32, W7) so the
 // page, the sitemap, the JSON-LD and llms.txt all state one string.
-export const metadata = sectionMetadata({
-  title: ROUTE.title,
-  description: ROUTE.description,
-  path: ROUTE.path,
-});
+export function generateMetadata({ params }) {
+  return routeMetadata(ROUTE.path, params);
+}
 
-export default function Project() {
+export default async function Project({ params }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const copy = await routeCopy(ROUTE.path, locale);
   return (
     // Fragment, not <main>: the (sub pages) layout already renders the one
     // <main> landmark this page lives in, and a second nested <main> is
     // invalid HTML that screen readers may announce twice (issue #86 bonus
     // cleanup). The qualifications page already uses this fragment structure.
-    <>
+    <IntlScope locale={locale} route={ROUTE.path}>
       {/* CollectionPage + ItemList (issue #32, W2). Built from the SAME
           `projectsData` array the cards below render and `generateStaticParams`
           enumerates, so the list cannot claim a project the site does not have.
@@ -38,7 +41,7 @@ export default function Project() {
           following the reference gets the full record; one reading only this
           page still learns the collection exists and how to reach every member,
           which is the half of F8 that a sitemap alone does not fix. */}
-      <JsonLd id="ld-projects" data={projectsCollection(projectsData)} />
+      <JsonLd id="ld-projects" data={projectsCollection(projectsData, { locale, name: copy.title })} />
       {/* The workshop scene itself: instant paint, the video's "poster", and
           the permanent fallback (reduced motion / Save-Data / video error).
           Source is native 2560×1440 now (issue-era 1024×576 needed a 0.4px
@@ -82,6 +85,6 @@ export default function Project() {
       <SceneParallax />
 
       <ProjectList projects={projectsData} />
-    </>
+    </IntlScope>
   );
 }

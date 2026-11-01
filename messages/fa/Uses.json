@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "ابزارهای من",
+    "subtitle": "ابزارها، راستی‌آزمایی‌شده"
+  },
+  "opensNewTab": "{name} (در تب جدید باز می‌شود)",
+  "machine": {
+    "eyebrow": "سخت‌افزار · ثبت دستی",
+    "title": "دستگاه من",
+    "provenance": "{count, plural, one {<fig>{n}</fig> ردیف} other {<fig>{n}</fig> ردیف}} · تأییدشده توسط مالک",
+    "seeItLive": "نمایش زنده"
+  },
+  "bench": {
+    "eyebrow": "محیط کار · ثبت دستی",
+    "title": "میز کار",
+    "provenance": "{count, plural, one {<fig>{n}</fig> ایستگاه} other {<fig>{n}</fig> ایستگاه}} · گزیده‌ای از {file}",
+    "extensions": "افزونه‌هایی که بیشتر سراغشان می‌روم",
+    "editorCaption": "گزیده‌ای از {file} در VS Code من، با تم {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "پشته · استخراج‌شده از مخازن",
+    "eyebrowCurated": "پشته · مجموعهٔ گزینش‌شده",
+    "title": "پشتهٔ فناوری",
+    "provenanceLive": "زنده · {count, plural, one {<fig>{n}</fig> ابزار} other {<fig>{n}</fig> ابزار}}",
+    "provenanceCurated": "گزینش‌شده · {count, plural, one {<fig>{n}</fig> ابزار} other {<fig>{n}</fig> ابزار}} · {state, select, unreachable {GitHub در دسترس نیست} other {در حال همگام‌سازی با GitHub…}}",
+    "verifiedSr": "تطبیق‌داده‌شده با GitHub",
+    "verifiedStatus": "پشته با GitHub تطبیق داده شد.",
+    "cta": "مشاهدهٔ مخازن",
+    "ctaLabel": "مشاهدهٔ مخازن در GitHub (در تب جدید باز می‌شود)",
+    "tally": "<count></count> از <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "مخازن عمومی",
+    "keyPrivate": "خصوصی",
+    "keyRelative": "طول نوارها نسبت به پراستفاده‌ترین ابزار است",
+    "keyPending": "نوارها و تعداد مخازن با خزش زنده پر می‌شوند",
+    "repoCount": {
+      "public": "استفاده‌شده در {pub, plural, one {# مخزن عمومی} other {# مخزن عمومی}}",
+      "private": "استفاده‌شده در {priv, plural, one {# مخزن خصوصی} other {# مخزن خصوصی}}",
+      "mixed": "استفاده‌شده در {pub, plural, one {# مخزن عمومی} other {# مخزن عمومی}} · به‌علاوهٔ {priv} خصوصی"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: تعداد مخازن با خزش زنده می‌رسد",
+    "figure": {
+      "publicRepos": "{n, plural, one {مخزن عمومی} other {مخزن عمومی}}",
+      "privateRepos": "{n, plural, one {مخزن خصوصی} other {مخزن خصوصی}}",
+      "repos": "{n, plural, one {مخزن} other {مخزن}}",
+      "public": "عمومی",
+      "private": "خصوصی"
+    },
+    "curated": "گزینش‌شده"
+  },
+  "liveAge": {
+    "verified": "تأیید شد، {age}",
+    "s": "{s} ثانیه پیش",
+    "ms": "{m} دقیقه و {s} ثانیه پیش",
+    "hm": "{h} ساعت و {m} دقیقه پیش",
+    "dh": "{d} روز و {h} ساعت پیش"
+  },
+  "pipeline": {
+    "eyebrow": "تحویل · از کامیت تا محاسبه",
+    "title": "خط لولهٔ استقرار",
+    "provenance": "{count, plural, one {<fig>{n}</fig> گردش‌کار} other {<fig>{n}</fig> گردش‌کار}} · خوانده‌شده از .github هنگام ساخت",
+    "provenanceHandSet": "طرح کلی · ثبت دستی",
+    "region": "نمودار خط لولهٔ ساخت",
+    "svgTitle": "خط تحویل: هر push از GitHub به GitHub Actions و سپس به build در Vercel می‌رسد و از آنجا به Fluid compute می‌رسد؛ یک webhook در GitHub هم مستقیم به آن می‌رسد و یک cron روزانه نیز آن را فرا می‌خواند. Fluid compute از طریق یک service bus به سرویس‌های فهرست‌شده در ادامه گسترش می‌یابد.",
+    "fires": "اجرا در <fig>{window}</fig> UTC (دقت پلن Hobby)",
+    "kinds": {
+      "source": "منبع",
+      "ci": "CI",
+      "build": "ساخت",
+      "runtime": "اجرا",
+      "schedule": "زمان‌بندی",
+      "store": "ذخیره‌سازی",
+      "gateway": "دروازه",
+      "graphql": "GraphQL",
+      "rest": "REST",
+      "mail": "ایمیل",
+      "auth": "احراز هویت",
+      "search": "جستجو"
+    },
+    "workflows": "{count, plural, one {{n} گردش‌کار} other {{n} گردش‌کار}}",
+    "apiRoutes": "{count, plural, one {{n} مسیر API} other {{n} مسیر API}}",
+    "apiRoutesBare": "مسیرهای API",
+    "locales": "{count, plural, one {{n} زبان} other {{n} زبان}}",
+    "crons": "{count, plural, one {کرون} other {{n} کرون}}",
+    "daily": "روزانه · {time} UTC",
+    "services": {
+      "redis": "دفتر مهمانان · موقعیت مکانی · سئو · حذف تکرار",
+      "graphql": "آمار · مهارت‌ها · پیشرفت",
+      "spotify": "در حال پخش",
+      "mail": "تماس · تأیید Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "کیفیت · شمارش در زمان ساخت",
+    "title": "ابزارهای سنجش",
+    "provenance": "شمارش در زمان ساخت · <fig>{date}</fig>",
+    "provenanceBare": "شمارش در زمان ساخت",
+    "unitLabel": "{count, plural, one {مجموعه‌آزمون Vitest} other {مجموعه‌آزمون Vitest}}",
+    "unitSub": "{count, plural, one {{n} مورد آزمون} other {{n} مورد آزمون}} · Vitest",
+    "e2eLabel": "{count, plural, one {مجموعه‌آزمون مرورگر} other {مجموعه‌آزمون مرورگر}}",
+    "e2eSub": "{count, plural, one {{n} سناریو} other {{n} سناریو}} · Playwright",
+    "apiLabel": "{count, plural, one {مسیر API} other {مسیر API}}",
+    "apiSub": "کنترل‌گرهای مسیر · {methods}",
+    "apiSubBare": "کنترل‌گرهای مسیر",
+    "tileLabel": "{figure} {label} — {sub} (پوشه را در GitHub در زبانه‌ای جدید باز می‌کند)"
+  },
+  "bom": {
+    "eyebrow": "صورت مواد · همین سایت",
+    "title": "از چه ساخته شده است",
+    "provenance": "{source} · تأییدشده در زمان ساخت · <fig>{date}</fig>",
+    "provenanceBare": "{source} · تأییدشده در زمان ساخت",
+    "unreadable": "مانیفست در زمان ساخت خوانده نشد، بنابراین نسخه‌ای فهرست نشده است.",
+    "packages": "{count, plural, one {<fig>{n}</fig> بسته} other {<fig>{n}</fig> بسته}}",
+    "packagesOf": "<fig>{n}</fig> از <fig>{all}</fig> بسته",
+    "built": "ساخته‌شده در <fig>{date}</fig>",
+    "groups": {
+      "core": "هسته",
+      "3d-and-motion": "سه‌بعدی و حرکت",
+      "data-and-services": "داده و سرویس‌ها",
+      "interface": "رابط کاربری",
+      "platform": "پلتفرم",
+      "media": "رسانه",
+      "quality": "کیفیت",
+      "build": "ساخت",
+      "runtime": "زمان اجرا",
+      "tooling": "ابزارگان"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "زبان‌ها",
+        "lay": "زبانی که خود کد با آن نوشته می‌شود."
+      },
+      "frameworks": {
+        "label": "فریم‌ورک‌ها",
+        "lay": "داربستی که یک برنامه بر آن ساخته می‌شود: ساختار و قراردادهای آن."
+      },
+      "libraries": {
+        "label": "کتابخانه‌ها",
+        "lay": "قطعه‌های آماده‌ای که هرکدام برای انجام یک کار، و انجام دقیق همان کار، به پروژه اضافه می‌شوند."
+      },
+      "tools": {
+        "label": "ابزارها",
+        "lay": "هرآنچه پیرامون کد کار می‌کند: آزمون، قالب‌بندی، پایگاه داده و استقرار."
+      },
+      "software": {
+        "label": "نرم‌افزارها",
+        "lay": "سرویس‌هایی که کار تمام‌شده روی آن‌ها در دسترس است."
+      }
+    }
+  }
+}

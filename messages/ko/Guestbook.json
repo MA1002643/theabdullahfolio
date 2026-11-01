@@ -1,0 +1,124 @@
+{
+  "title": "방명록",
+  "subtitle": "흔적을 남겨 보세요",
+  "wall": {
+    "marksLeft": "{count, plural, one {남은 흔적 <n>{shown}</n>개} other {남은 흔적 <n>{shown}</n>개}}",
+    "commands": "{shortcut} · 명령어",
+    "loading": "방명록을 불러오는 중…",
+    "loadingMore": "방명록을 더 불러오는 중…",
+    "loadFailed": "방명록을 불러오지 못했어요",
+    "pageFailed": "이 페이지를 불러오지 못했어요",
+    "retry": "다시 시도",
+    "emptyTitle": "아직 메시지가 없어요",
+    "emptyInvite": "첫 번째 흔적을 남겨 보세요"
+  },
+  "presence": "{count, plural, other {지금 <n>{shown}</n>명 접속 중}}",
+  "announce": {
+    "one": "{name}님의 새 메시지: {message}",
+    "many": "{count, plural, other {새 메시지 #개.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "누군가"
+  },
+  "card": {
+    "sending": "보내는 중…",
+    "guest": "게스트",
+    "onGitHub": "GitHub의 {username} (새 탭에서 열기)",
+    "copyLink": "이 메시지의 링크 복사",
+    "linkCopied": "링크를 복사했어요. 이 메시지로 바로 연결돼요",
+    "linkFailed": "링크를 복사하지 못했어요",
+    "deleteOwn": "내 메시지 삭제",
+    "deleteOther": "{name}님의 메시지 삭제",
+    "signature": "{name}님의 서명",
+    "signatureAnon": "서명"
+  },
+  "reactions": {
+    "fire": "불꽃",
+    "rocket": "로켓",
+    "heart": "하트",
+    "count": "{label} — {count}명",
+    "signInToReact": "로그인하고 반응 남기기"
+  },
+  "composer": {
+    "label": "내 메시지",
+    "placeholder": "메시지를 남겨 주세요…",
+    "send": "메시지 보내기",
+    "offline": "오프라인 상태예요. 다시 연결될 때까지 메시지를 여기에 보관해 둘게요.",
+    "notSent": "이전 메시지가 전송되지 않았어요",
+    "restore": "복원하기"
+  },
+  "signature": {
+    "add": "서명 추가 (선택)",
+    "discard": "서명 버리기",
+    "clear": "지우기",
+    "padLabel": "서명 그리기 영역 — 마우스, 손가락 또는 펜으로 그리거나 아래에서 기본 마크를 골라 주세요.",
+    "padHint": "손가락, 트랙패드, 마우스로 그려 보세요. 속도에 따라 선의 굵기가 달라져요",
+    "pickMark": "마크 고르기",
+    "orPickMark": "또는 마크 고르기",
+    "marks": {
+      "flourish": "장식 필기체",
+      "wave": "물결",
+      "spark": "불꽃",
+      "orbit": "궤도"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "메시지를 남겨 주세요…",
+    "ghostRefine": "AI로 다듬기",
+    "ghostSignature": "서명 추가 (선택)",
+    "ghostDrafts": "입력하는 동안 초안이 자동으로 저장돼요",
+    "prompt": "로그인하고 메시지 남기기",
+    "promptReauth": "다시 로그인하고 메시지 남기기",
+    "reauthExplain": "현재 로그인은 방명록의 계정 키가 도입되기 전에 만들어져 읽기만 가능하고 쓸 수는 없어요. 한 번만 다시 로그인하면 해결돼요.",
+    "github": "GITHUB로 로그인",
+    "google": "GOOGLE로 로그인"
+  },
+  "pagination": {
+    "nav": "방명록 페이지",
+    "previous": "이전 페이지",
+    "next": "다음 페이지",
+    "page": "페이지 ",
+    "status": "{total}페이지 중 {page}페이지"
+  },
+  "palette": {
+    "leaveMessage": "메시지 남기기",
+    "leaveKeywords": "쓰기 작성 서명 남기기 방명록 write sign post compose",
+    "sectionGuestbook": "방명록",
+    "sectionPreferences": "환경설정",
+    "signInToLeave": "로그인하고 메시지 남기기",
+    "toggleSound": "UI 효과음 켜기/끄기",
+    "soundKeywords": "소리 오디오 효과음 음소거 audio blip mute",
+    "toggleMotion": "모션 켜기/끄기",
+    "motionKeywords": "애니메이션 모션 줄이기 정지 animation reduce still",
+    "on": "켜짐",
+    "off": "꺼짐"
+  },
+  "toast": {
+    "posted": "메시지를 남겼어요!",
+    "postFailed": "메시지를 남기지 못했어요",
+    "reactFailed": "반응을 남기지 못했어요",
+    "deleteFailed": "메시지를 삭제하지 못했어요",
+    "removedOwn": "내 메시지가 방명록에서 삭제되었어요",
+    "removedOther": "메시지가 방명록에서 삭제되었어요",
+    "you": "나"
+  },
+  "errors": {
+    "unauthorized": "인증되지 않았어요",
+    "too_large": "요청 본문은 최대 {max, number, ::group-off}바이트까지 가능해요",
+    "invalid_body": "요청 본문이 올바르지 않아요",
+    "message_required": "메시지를 입력해 주세요",
+    "message_length": "메시지는 {min}~{max}자로 입력해 주세요",
+    "invalid_characters": "메시지에 사용할 수 없는 문자가 포함되어 있어요",
+    "links_not_allowed": "방명록 메시지에는 링크를 넣을 수 없어요",
+    "unfriendly": "따뜻한 말로 남겨 주세요",
+    "invalid_signature": "서명이 올바르지 않아요",
+    "rate_limited": "메시지는 5분에 한 번만 남길 수 있어요 — {minutes, plural, other {#분}} 후에 다시 시도해 주세요",
+    "invalid_reaction": "올바르지 않은 반응이에요",
+    "reaction_rate_limited": "반응을 너무 많이 남겼어요 — {seconds}초 후에 다시 시도해 주세요",
+    "not_found": "메시지를 찾을 수 없어요",
+    "id_required": "메시지 ID가 필요해요",
+    "invalid_id": "메시지 ID가 올바르지 않아요",
+    "forbidden": "접근 권한이 없어요",
+    "invalid_cursor": "커서가 올바르지 않아요"
+  }
+}

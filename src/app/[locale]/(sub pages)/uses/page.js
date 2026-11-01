@@ -1,9 +1,11 @@
 import Image from 'next/image';
-import bg from '../../../../public/background/contact-bg.png';
+import bg from '../../../../../public/background/contact-bg.png';
 import AuroraDustMount from '@/components/AuroraDustMount';
 import PageTitle from '@/components/PageTitle';
 import UsesBench from '@/components/uses';
-import { sectionMetadata } from '@/lib/og/meta';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import IntlScope from '@/i18n/IntlScope';
+import { routeCopy, routeMetadata } from '@/lib/og/meta';
 import JsonLd from '@/components/seo/JsonLd';
 import { sectionPage } from '@/lib/seo/schema';
 import { routeFor } from '@/lib/seo/site';
@@ -12,25 +14,28 @@ import { routeFor } from '@/lib/seo/site';
 // description, sitemap entry and JSON-LD (issue #32, W1/W7).
 const ROUTE = routeFor('/uses');
 import { readBuildFacts } from '@/lib/uses/buildFacts';
+import { CURATED_TOOL_COPY } from '@/lib/uses/curatedToolCopy';
 
 // Server component on purpose (the /journey pattern): metadata exports live
 // here, the build-time facts are read here with synchronous `fs` (so
 // node:fs never reaches a client bundle and the route stays static), and all
 // interactivity sits behind the 'use client' boundary in @/components/uses.
-export const metadata = sectionMetadata({
-  title: ROUTE.title,
-  description: ROUTE.description,
-  path: ROUTE.path,
-});
+export function generateMetadata({ params }) {
+  return routeMetadata(ROUTE.path, params);
+}
 
-export default function UsesPage() {
+export default async function UsesPage({ params }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const copy = await routeCopy(ROUTE.path, locale);
   // Read once at build. Static route: no dynamic APIs are touched here.
   const facts = readBuildFacts();
+  const t = await getTranslations({ locale, namespace: 'Uses' });
 
   return (
     // Fragment, not <main>: the (sub pages) layout already provides the one
     // <main> landmark (issue #86 — nested <main> is invalid HTML).
-    <>
+    <IntlScope locale={locale} route={ROUTE.path} namespaces={CURATED_TOOL_COPY}>
       {/* WebPage + BreadcrumbList (issue #32, W2). Declares this route as part
           of the site and about `#person`, and gives it the Home → here trail
           the project pages get. Built from the same registry entry the title
@@ -39,8 +44,9 @@ export default function UsesPage() {
         id="ld-uses"
         data={sectionPage({
           path: ROUTE.path,
-          name: ROUTE.title,
-          description: ROUTE.description,
+          name: copy.title,
+          description: copy.description,
+          locale,
         })}
       />
       {/* Backdrop trio shared with /about, /contact, /journey and /my-past:
@@ -56,9 +62,9 @@ export default function UsesPage() {
       <div className="fixed left-0 top-0 -z-40 h-full w-full bg-black/70" />
       <AuroraDustMount />
 
-      <PageTitle title="MY SETUP" subtitle="the tools, verified" replayOnView />
+      <PageTitle title={t('page.title')} subtitle={t('page.subtitle')} replayOnView />
 
       <UsesBench facts={facts} />
-    </>
+    </IntlScope>
   );
 }

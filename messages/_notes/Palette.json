@@ -1,0 +1,5 @@
+{
+  "keywords.navigate": "Extra search words (space-separated) that find the navigation commands. Not shown.",
+  "keywords.language": "Extra search words (space-separated) that find the language commands. Not shown.",
+  "placeholder": "Hint inside the command palette's search field; ends with an ellipsis."
+}

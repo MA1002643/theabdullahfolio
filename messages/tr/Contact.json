@@ -1,0 +1,58 @@
+{
+  "title": "İLETİŞİM",
+  "subtitle": "bana ulaş",
+  "intro": "Büyülü çemberin içine adım at ve sözlerini evrenin dokusuna işle. İster iş birlikleri tılsımlamak, ister sırları çözmek, ister yalnızca macera hikâyeleri paylaşmak iste; bu diyarda mesajların birer kadim parşömen gibi saklanır. Aşağıdaki formu kullanarak mektuplarını eterik ağ üzerinden yolla ve karşılığında büyünün fısıltısını bekle.",
+  "fields": {
+    "name": "Ad Soyad",
+    "email": "E-posta",
+    "subject": "Konu",
+    "message": "Mesaj"
+  },
+  "validation": {
+    "nameRequired": "Ad Soyad zorunludur!",
+    "nameMin": "Ad en az {min} karakter olmalıdır.",
+    "nameMax": "Ad en fazla {max} karakter olmalıdır.",
+    "emailRequired": "E-posta zorunludur!",
+    "emailMax": "E-posta en fazla {max} karakter olmalıdır.",
+    "subjectRequired": "Konu zorunludur!",
+    "subjectMax": "Konu en fazla {max} karakter olmalıdır.",
+    "messageRequired": "Mesaj zorunludur!",
+    "messageMin": "Mesaj en az {min} karakter olmalıdır.",
+    "messageMax": "Mesaj en fazla {max} karakter olmalıdır."
+  },
+  "submit": {
+    "label": "MESAJ GÖNDER!",
+    "ariaLabel": "Mesajı gönder",
+    "sending": "GÖNDERİLİYOR",
+    "sent": "GÖNDERİLDİ",
+    "held": "BEKLİYOR"
+  },
+  "toast": {
+    "sent": "Mesaj başarıyla gönderildi!",
+    "savedOffline": "Kaydedildi — yeniden bağlandığında gönderilecek.",
+    "savedRetrying": "Kaydedildi — birazdan yeniden denenecek…",
+    "failed": "Mesaj gönderilemedi",
+    "heldSent": "{count, plural, other {Bekleyen # mesaj gönderildi ✦}}"
+  },
+  "status": {
+    "held": "Beklemede — çevrimiçi olduğun anda mesajın kendiliğinden gönderilecek.",
+    "offline": "Çevrimdışısın — mesajın bekletilecek ve yeniden bağlandığında otomatik olarak gönderilecek."
+  },
+  "errors": {
+    "name_required": "Ad Soyad zorunludur.",
+    "email_required": "E-posta zorunludur.",
+    "subject_required": "Konu zorunludur.",
+    "message_required": "Mesaj zorunludur.",
+    "name_too_long": "Ad Soyad izin verilen azami uzunluğu aşıyor ({max} karakter).",
+    "email_too_long": "E-posta izin verilen azami uzunluğu aşıyor ({max} karakter).",
+    "subject_too_long": "Konu izin verilen azami uzunluğu aşıyor ({max} karakter).",
+    "message_too_long": "Mesaj izin verilen azami uzunluğu aşıyor ({max, number, ::group-off} karakter).",
+    "invalid_characters": "Girdi geçersiz karakterler içeriyor.",
+    "invalid_email": "Geçersiz e-posta biçimi.",
+    "undeliverable_email": "Bu e-posta adresi mevcut değil veya e-posta alamıyor.",
+    "disposable_email": "Geçici e-posta adreslerine izin verilmez.",
+    "too_large": "İstek gövdesi en fazla {max, number, ::group-off} bayt olmalıdır",
+    "invalid_body": "Geçersiz istek gövdesi",
+    "send_failed": "Mesaj gönderilemedi"
+  }
+}

@@ -1,9 +1,11 @@
 import Image from 'next/image';
-import bg from '../../../../public/background/contact-bg.png';
+import bg from '../../../../../public/background/contact-bg.png';
 import AuroraDustMount from '@/components/AuroraDustMount';
 import PageTitle from '@/components/PageTitle';
 import JourneyTimeline from '@/components/journey';
-import { sectionMetadata } from '@/lib/og/meta';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import IntlScope from '@/i18n/IntlScope';
+import { routeCopy, routeMetadata } from '@/lib/og/meta';
 import JsonLd from '@/components/seo/JsonLd';
 import { sectionPage } from '@/lib/seo/schema';
 import { routeFor } from '@/lib/seo/site';
@@ -15,17 +17,19 @@ const ROUTE = routeFor('/journey');
 // Server component on purpose (the /projects pattern): metadata exports live
 // here while all interactivity sits behind the 'use client' boundary in
 // @/components/journey — no pass-through layout.js needed.
-export const metadata = sectionMetadata({
-  title: ROUTE.title,
-  description: ROUTE.description,
-  path: ROUTE.path,
-});
+export function generateMetadata({ params }) {
+  return routeMetadata(ROUTE.path, params);
+}
 
-export default function JourneyPage() {
+export default async function JourneyPage({ params }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const copy = await routeCopy(ROUTE.path, locale);
+  const t = await getTranslations({ locale, namespace: 'Journey' });
   return (
     // Fragment, not <main>: the (sub pages) layout already provides the one
     // <main> landmark (see issue #86 — nested <main> is invalid HTML).
-    <>
+    <IntlScope locale={locale} route={ROUTE.path}>
       {/* WebPage + BreadcrumbList (issue #32, W2). Declares this route as part
           of the site and about `#person`, and gives it the Home → here trail
           the project pages get. Built from the same registry entry the title
@@ -34,8 +38,9 @@ export default function JourneyPage() {
         id="ld-journey"
         data={sectionPage({
           path: ROUTE.path,
-          name: ROUTE.title,
-          description: ROUTE.description,
+          name: copy.title,
+          description: copy.description,
+          locale,
         })}
       />
       {/* Backdrop trio shared with /about, /contact and /my-past: the still at
@@ -53,12 +58,12 @@ export default function JourneyPage() {
       <AuroraDustMount />
 
       <PageTitle
-        title="MY JOURNEY"
-        subtitle="from first line to production"
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
         replayOnView
       />
 
       <JourneyTimeline />
-    </>
+    </IntlScope>
   );
 }

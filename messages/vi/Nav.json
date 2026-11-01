@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "Giới thiệu",
+    "projects": "Dự án",
+    "qualifications": "Trình độ",
+    "contact": "Liên hệ",
+    "journey": "Hành trình",
+    "past": "Quá khứ",
+    "guestbook": "Sổ lưu bút",
+    "uses": "Công cụ"
+  },
+  "routes": {
+    "home": "Trang chủ",
+    "about": "Giới thiệu",
+    "projects": "Dự án",
+    "qualifications": "Trình độ",
+    "contact": "Liên hệ",
+    "myPast": "Quá khứ",
+    "journey": "Hành trình",
+    "guestbook": "Sổ lưu bút",
+    "uses": "Công cụ",
+    "cv": "CV",
+    "notes": "Ghi chú",
+    "privacy": "Quyền riêng tư"
+  },
+  "homeButton": {
+    "tooltip": "Trang chủ",
+    "srLabel": "Đi đến Trang chủ"
+  },
+  "projectsButton": {
+    "label": "Dự án",
+    "tooltip": "Dự án",
+    "srLabel": "Đi đến trang Dự án"
+  }
+}

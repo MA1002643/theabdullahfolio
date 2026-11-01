@@ -1,0 +1,15 @@
+{
+  "dialog": "Komut paleti",
+  "search": "Komutlarda ara",
+  "placeholder": "Bir komut veya hedef yaz…",
+  "list": "Komutlar",
+  "empty": "Eşleşen bir sonuç yok",
+  "sections": {
+    "navigate": "Git",
+    "language": "Dil"
+  },
+  "keywords": {
+    "navigate": "git geç yönlendir rota sayfa gezin",
+    "language": "dil çevir çeviri yerel ayar lisan"
+  }
+}

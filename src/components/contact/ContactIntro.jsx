@@ -2,19 +2,16 @@
 
 import { Fragment, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { wordFill } from '@/lib/fireRamp';
+import { wordChunks } from '@/components/ui/textSegments';
 
-// The contact-page intro copy. It lives here (not in the server `page.js`)
-// because the reveal below is a client interaction; the page renders this
-// component in the paragraph's place and hands it the same typographic classes.
-const INTRO =
-  'Step into the circle of enchantment and weave your words into the fabric ' +
-  'of the cosmos. Whether you seek to conjure collaborations, unlock ' +
-  'mysteries, or simply share tales of adventure, your messages are treasured ' +
-  'scrolls within this realm. Use the form below to send your missives through ' +
-  'the ethereal network, and await the whisper of magic in response.';
+// The contact-page intro copy (Contact.intro, issue #82). It renders here (not
+// in the server `page.js`) because the reveal below is a client interaction;
+// the page renders this component in the paragraph's place and hands it the
+// same typographic classes.
 
 // Per-word stagger, in seconds. ~58 words × 0.03 ≈ a 1.7s left→right wave —
 // clearly a wave (the "wow"), but confident rather than draggy. Tunable here.
@@ -43,7 +40,10 @@ const STAGGER = 0.03;
 export default function ContactIntro({ className = '', style }) {
   const reduced = useReducedMotion();
   const revealed = useLoaderRevealed();
-  const words = useMemo(() => INTRO.split(' '), []);
+  const intro = useTranslations('Contact')('intro');
+  // wordChunks, not split(' ') (issue #82): identical for spaced scripts, and
+  // Chinese/Japanese — no spaces — still break into words that can wrap.
+  const words = useMemo(() => wordChunks(intro), [intro]);
 
   // Parent only orchestrates the stagger; each word carries the actual gesture
   // and inherits its play state ("visible") from here via variant propagation.
@@ -81,8 +81,9 @@ export default function ContactIntro({ className = '', style }) {
       initial="hidden"
       animate={revealed ? 'visible' : 'hidden'}
     >
-      {words.map((w, i) => (
+      {words.map(({ word: w, gap }, i) => (
         <Fragment key={`${w}-${i}`}>
+          {gap}
           {/* inline-block so the word can take transform + blur; the space
               between words is a regular breakable text node OUTSIDE the span so
               the paragraph still wraps naturally. */}
@@ -92,7 +93,6 @@ export default function ContactIntro({ className = '', style }) {
           >
             {w}
           </motion.span>
-          {i < words.length - 1 ? ' ' : ''}
         </Fragment>
       ))}
     </motion.p>

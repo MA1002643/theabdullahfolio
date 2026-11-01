@@ -1,0 +1,48 @@
+{
+  "siblingNav": {
+    "label": "Project navigation",
+    "all": "All projects",
+    "previous": "Previous project: {name}",
+    "next": "Next project: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "projects": "Projects"
+  },
+  "loading": "Loading project",
+  "intro": {
+    "fallbackName": "Project Name",
+    "fallbackDescription": "Innovative, fast, and futuristic web solutions.",
+    "linksLabel": "{name} links",
+    "liveDemo": "Live demo<sr> (opens in a new tab)</sr>",
+    "source": "Source on GitHub<sr> (opens in a new tab)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "Initializing BIOS...",
+      "hardware": "Detecting hardware...",
+      "os": "Loading operating system..."
+    },
+    "tagline": "Empowering your ideas with next-gen digital craftsmanship.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Tools & Frameworks",
+    "overview": "Project Overview",
+    "overviewLead": "This platform streamlines e-commerce workflows through a unified dashboard and live analytics.",
+    "overviewBody": "It solves the complexity of managing multiple tools by offering a centralized, intuitive interface.",
+    "features": "Features",
+    "feature": {
+      "auth": { "title": "Authentication", "desc": "Secure login and user access." },
+      "payments": { "title": "Payments", "desc": "Integrated payment gateway." },
+      "chat": { "title": "Live Chat", "desc": "Instant user communication." },
+      "admin": { "title": "Admin Panel", "desc": "Simplified content control." }
+    },
+    "liveDemo": "Live Demo",
+    "github": "GitHub",
+    "demoLabel": "Open the {name} live demo",
+    "sourceLabel": "View {name} source on GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. {category} build, started {when}. {visibility, select, private {Private repository} other {Public repository}}, tracked live from its GitHub board.",
+    "undated": "{name} — {description}. {category} build. {visibility, select, private {Private repository} other {Public repository}}, tracked live from its GitHub board."
+  }
+}

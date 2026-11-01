@@ -9,7 +9,12 @@ import {
   useRef,
   useState,
 } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+// Locale-aware (issue #82): `pathname` arrives WITHOUT the locale prefix and
+// `router.push('/about')` lands on `/ar/about` for an Arabic reader, so every
+// comparison below keeps working in unprefixed terms.
+import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter } from '@/i18n/navigation';
+import { localePrefix } from '@/i18n/locales';
 import { AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import EmberPassageOverlay from './EmberPassageOverlay';
@@ -51,9 +56,10 @@ const cleanPath = (p) => {
   return bare === '' ? '/' : bare;
 };
 
-const deriveLabel = (path) => {
+const deriveLabel = (path, given, tNav) => {
   const known = ROUTE_LABELS[path];
-  if (known) return known;
+  if (known) return tNav(`routes.${known}`);
+  if (given) return given;
   const segment = path.split('/').filter(Boolean).pop() || 'Home';
   return segment
     .split('-')
@@ -64,6 +70,10 @@ const deriveLabel = (path) => {
 export default function PageTransitionProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const locale = useLocale();
+  const tNav = useTranslations('Nav');
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
   const prefersReducedMotion = useReducedMotion() ?? false;
 
   // 'idle' | 'covering' | 'holding' | 'revealing'
@@ -112,10 +122,13 @@ export default function PageTransitionProvider({ children }) {
       // (the arrival check keys off pathname, which wouldn't change). Only a
       // truly identical destination stays a quiet no-op.
       if (dest === cleanPath(pathnameRef.current)) {
-        const current =
-          window.location.pathname +
-          window.location.search +
-          window.location.hash;
+        // The browser's pathname carries the locale prefix (`/ar/about`);
+        // `href` never does, so strip it before comparing.
+        const prefix = localePrefix(localeRef.current);
+        const bare = prefix
+          ? window.location.pathname.slice(prefix.length) || '/'
+          : window.location.pathname;
+        const current = bare + window.location.search + window.location.hash;
         if (href !== current) router.push(href);
         return;
       }
@@ -125,13 +138,13 @@ export default function PageTransitionProvider({ children }) {
       // pointer position leave it undefined and the overlay uses the centre.
       setTarget({
         href,
-        label: opts.label || deriveLabel(dest),
+        label: deriveLabel(dest, opts.label, tNav),
         origin: opts.origin,
       });
       startedAtRef.current = performance.now();
       setPhase('covering');
     },
-    [router],
+    [router, tNav],
   );
 
   // covering → push under the opaque cover → holding.

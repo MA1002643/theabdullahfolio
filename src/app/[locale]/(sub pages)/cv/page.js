@@ -1,12 +1,14 @@
 import Image from 'next/image';
 
-import bg from '../../../../public/background/contact-bg.png';
+import bg from '../../../../../public/background/contact-bg.png';
 import AuroraDustMount from '@/components/AuroraDustMount';
 import PageTitle from '@/components/PageTitle';
 import Cv from '@/components/cv';
 import JsonLd from '@/components/seo/JsonLd';
 import { buildCv } from '@/lib/cv/buildCv';
-import { sectionMetadata } from '@/lib/og/meta';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import IntlScope from '@/i18n/IntlScope';
+import { routeMetadata } from '@/lib/og/meta';
 import { cvPage } from '@/lib/seo/schema';
 import { knowsAboutFromStack, routeFor } from '@/lib/seo/site';
 import { usesData } from '@/app/data';
@@ -15,21 +17,22 @@ import { usesData } from '@/app/data';
 // description, sitemap entry and JSON-LD (issue #32, W1/W7).
 const ROUTE = routeFor('/cv');
 
-export const metadata = sectionMetadata({
-  title: ROUTE.title,
-  description: ROUTE.description,
-  path: ROUTE.path,
-});
+export function generateMetadata({ params }) {
+  return routeMetadata(ROUTE.path, params);
+}
 
 // Server component, and a fully static one: `buildCv()` reads three committed
 // arrays and nothing else — no request, no clock, no network. The whole
 // document is in the prerendered HTML, which is the entire point of the route
 // (see the note at the top of src/components/cv/index.jsx).
-export default function CvPage() {
+export default async function CvPage({ params }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const cv = buildCv();
+  const t = await getTranslations({ locale, namespace: 'Cv' });
 
   return (
-    <>
+    <IntlScope locale={locale} route={ROUTE.path}>
       {/* ProfilePage + Person (issue #32, W2). The Person node is RESTATED
           rather than referenced so `hasOccupation` and `alumniOf` attach to it
           — JSON-LD merges nodes sharing an `@id`, so this adds properties to
@@ -40,6 +43,7 @@ export default function CvPage() {
       <JsonLd
         id="ld-cv"
         data={cvPage({
+          locale,
           experience: cv.experience,
           education: cv.education,
           knowsAbout: knowsAboutFromStack(usesData.stack),
@@ -66,10 +70,12 @@ export default function CvPage() {
           inside the document already names the person, and the decorative page
           title would print as a second, larger name above it. */}
       <div className="print:hidden">
-        <PageTitle title="CV" subtitle="the full record" replayOnView />
+        <PageTitle title={t('page.title')} subtitle={t('page.subtitle')} replayOnView />
       </div>
 
-      <Cv cv={cv} />
-    </>
+      {/* `cv` is the English model (the JSON-LD above reads it too); the
+          component lays the reader's language over it (issue #82). */}
+      <Cv cv={cv} locale={locale} />
+    </IntlScope>
   );
 }

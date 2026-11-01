@@ -13,7 +13,9 @@ import { read, stripComments } from '../support/source.js';
 // control renders (no Spotify credentials, no track playing), so this reads
 // the layout instead.
 
-const LAYOUT = 'src/app/layout.js';
+// The document shell moved into the locale segment in issue #82; the root
+// `src/app/layout.js` is a pass-through with no providers.
+const LAYOUT = 'src/app/[locale]/layout.js';
 
 // Every root-layout component that renders something a visitor can focus.
 // Purely visual overlays (GlobalToaster, whose action toasts only follow a

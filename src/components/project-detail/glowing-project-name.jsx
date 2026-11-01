@@ -70,6 +70,10 @@ export default function GlowingTitle({ text }) {
                 // #ff6d05 fill so each letter is a filled orange
                 // glyph instead of an outline-only shape.
                 className="relative text-[2rem] md:text-[3rem] font-extrabold uppercase leading-tight text-glow-stroke-neon"
+                // The project's name, not prose: never translated. The
+                // pseudo-locale gate also reads this to accept the same name
+                // in the <title>.
+                translate="no"
             >
                 {text}
             </motion.h1>

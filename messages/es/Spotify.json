@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "REPRODUCIENDO AHORA",
+  "lastPlayed": "ÚLTIMA REPRODUCCIÓN",
+  "cardLabel": "{state, select, playing {reproduciendo ahora} other {última reproducción}}: {title} de {artist}.",
+  "cardLabelLink": "{state, select, playing {reproduciendo ahora} other {última reproducción}}: {title} de {artist}. Abrir en Spotify.",
+  "openOnSpotify": "Abrir en Spotify"
+}

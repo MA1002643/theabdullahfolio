@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
   isValidSignaturePath,
@@ -23,13 +24,18 @@ import {
 // settles; under reduced motion the glyph renders complete and still.
 export default function SignatureGlyph({ d, authorName, delay = 0, play = true }) {
   const reduceMotion = useReducedMotion();
+  const t = useTranslations('Guestbook');
   if (!isValidSignaturePath(d)) return null;
 
   return (
     <svg
       viewBox={`0 0 ${SIGNATURE_VIEWBOX.width} ${SIGNATURE_VIEWBOX.height}`}
       role="img"
-      aria-label={authorName ? `${authorName}’s signature` : 'Signature'}
+      aria-label={
+        authorName
+          ? t('card.signature', { name: authorName })
+          : t('card.signatureAnon')
+      }
       className="mt-3 h-10 w-auto max-w-[9rem] overflow-visible [filter:drop-shadow(0_0_3px_rgba(255,109,5,0.7))] sm:h-12 sm:max-w-[10rem]"
     >
       <motion.path

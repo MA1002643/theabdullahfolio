@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "il percorso completo"
+  },
+  "identity": {
+    "role": "Software Engineer"
+  },
+  "downloadPdf": "Scarica il PDF",
+  "sections": {
+    "experience": "Esperienza",
+    "education": "Formazione",
+    "representation": "Rappresentanza",
+    "skills": "Competenze",
+    "projects": "Progetti selezionati"
+  },
+  "skillGroups": {
+    "languages": "linguaggi",
+    "frameworks": "framework",
+    "libraries": "librerie",
+    "tools": "strumenti",
+    "software": "software"
+  },
+  "allProjects": "Tutti i progetti",
+  "asTimeline": "La stessa storia in forma di timeline"
+}

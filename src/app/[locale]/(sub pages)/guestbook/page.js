@@ -1,7 +1,8 @@
 "use client"
 import Image from "next/image";
 import { MotionConfig } from "framer-motion";
-import bg from "../../../../public/background/contact-bg.png";
+import { useTranslations } from "next-intl";
+import bg from "../../../../../public/background/contact-bg.png";
 import AuroraDustMount from "@/components/AuroraDustMount";
 import PageTitle from "@/components/PageTitle";
 import GuestbookTitle from "@/components/guestbook/GuestbookTitle";
@@ -27,6 +28,9 @@ export default function Guestbook() {
   // The OS-level preference is respected independently of the toggle by
   // every layer ("user", the media query, the mount's own query).
   const { motion: motionAllowed } = useGuestbookPrefs();
+  // A Client Component, so the headline reads the Guestbook namespace the
+  // layout's IntlScope hands down (issue #82).
+  const t = useTranslations("Guestbook");
 
   return (
     <MotionConfig reducedMotion={motionAllowed ? "user" : "always"}>
@@ -43,9 +47,9 @@ export default function Guestbook() {
           alt=""
           priority
           sizes="100vw"
-          className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-50"
+          className="-z-50 fixed top-0 start-0 w-full h-full object-cover object-center opacity-50"
         />
-        <div className="-z-40 fixed top-0 left-0 w-full h-full bg-black/70" />
+        <div className="-z-40 fixed top-0 start-0 w-full h-full bg-black/70" />
 
         {/* Ambient layer — the shared aurora, matching /about exactly (owner
             call). It self-gates on the OS motion preference + loader reveal,
@@ -63,14 +67,14 @@ export default function Guestbook() {
             headline must match every other sub-page's ignite exactly. */}
         {GUESTBOOK_FLAGS.scramble ? (
           <GuestbookTitle
-            title="GUESTBOOK"
-            subtitle="LEAVE YOUR MARK"
+            title={t("title")}
+            subtitle={t("subtitle")}
             id="guestbook"
           />
         ) : (
           <PageTitle
-            title="GUESTBOOK"
-            subtitle="LEAVE YOUR MARK"
+            title={t("title")}
+            subtitle={t("subtitle")}
             id="guestbook"
             replayOnView
           />

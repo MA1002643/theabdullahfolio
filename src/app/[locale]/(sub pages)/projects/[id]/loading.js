@@ -1,5 +1,6 @@
 import Image from "next/image"
-import bg from "../../../../../public/background/home-bg.webp"
+import bg from "../../../../../../public/background/home-bg.webp"
+import LoadingStatus from "@/components/project-detail/loading-status"
 
 // Segment-level Suspense fallback for /projects/[id] (issue #83). Next.js
 // swaps this in the instant a navigation to the route commits — before the
@@ -23,11 +24,9 @@ export default function Loading() {
                 priority
                 className="fixed top-0 left-0 w-full h-full object-cover object-center -z-10"
             />
-            <div
-                role="status"
-                aria-label="Loading project"
-                className="fixed inset-0 flex items-end justify-center pb-24 pointer-events-none"
-            >
+            {/* The status wrapper is a client component so its label can be
+                translated without a locale param — see loading-status.jsx. */}
+            <LoadingStatus>
                 {/* Lone ember waking up — restrained stand-in for the lantern
                     glow while the scene chunk arrives. */}
                 <span
@@ -35,7 +34,7 @@ export default function Loading() {
                     className="h-2 w-2 rounded-full bg-[#ff9d3f] opacity-70 animate-pulse"
                     style={{ boxShadow: "0 0 18px 6px rgba(255, 157, 63, 0.35)" }}
                 />
-            </div>
+            </LoadingStatus>
         </>
     )
 }

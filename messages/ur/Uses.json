@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "میرا سیٹ اپ",
+    "subtitle": "اوزار، تصدیق کے ساتھ"
+  },
+  "opensNewTab": "{name} (نئے ٹیب میں کھلتا ہے)",
+  "machine": {
+    "eyebrow": "ہارڈویئر · ہاتھ سے ترتیب دیا گیا",
+    "title": "مشین",
+    "provenance": "{count, plural, one {<fig>{n}</fig> اندراج} other {<fig>{n}</fig> اندراجات}} · مالک کی جانب سے تصدیق شدہ",
+    "seeItLive": "لائیو دیکھیں"
+  },
+  "bench": {
+    "eyebrow": "ماحول · ہاتھ سے ترتیب دیا گیا",
+    "title": "ورک بینچ",
+    "provenance": "{count, plural, one {<fig>{n}</fig> اسٹیشن} other {<fig>{n}</fig> اسٹیشن}} · {file} کا اقتباس",
+    "extensions": "وہ ایکسٹینشنز جو میں اکثر استعمال کرتا ہوں",
+    "editorCaption": "میری VS Code کی {file} کا ایک اقتباس، {theme} تھیم میں۔"
+  },
+  "stack": {
+    "eyebrowLive": "اسٹیک · ریپازٹریز سے حاصل کردہ",
+    "eyebrowCurated": "اسٹیک · منتخب مجموعہ",
+    "title": "اسٹیک",
+    "provenanceLive": "لائیو · {count, plural, one {<fig>{n}</fig> ٹول} other {<fig>{n}</fig> ٹولز}}",
+    "provenanceCurated": "منتخب · {count, plural, one {<fig>{n}</fig> ٹول} other {<fig>{n}</fig> ٹولز}} · {state, select, unreachable {GitHub تک رسائی نہیں ہو سکی} other {GitHub کے ساتھ ہم آہنگی جاری ہے…}}",
+    "verifiedSr": "GitHub سے تصدیق شدہ",
+    "verifiedStatus": "اسٹیک کی GitHub سے تصدیق ہو چکی ہے۔",
+    "cta": "ریپازٹریز دیکھیں",
+    "ctaLabel": "GitHub پر ریپازٹریز دیکھیں (نئے ٹیب میں کھلتا ہے)",
+    "tally": "<total></total> میں سے <count></count>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "پبلک ریپازٹریز",
+    "keyPrivate": "پرائیویٹ",
+    "keyRelative": "بارز سب سے زیادہ استعمال ہونے والے ٹول کے مقابلے میں ہیں",
+    "keyPending": "بارز اور ریپازٹری کی تعداد لائیو کرال کے ساتھ آتی ہیں",
+    "repoCount": {
+      "public": "{pub, plural, one {# پبلک ریپو میں استعمال ہوا} other {# پبلک ریپوز میں استعمال ہوا}}",
+      "private": "{priv, plural, one {# پرائیویٹ ریپو میں استعمال ہوا} other {# پرائیویٹ ریپوز میں استعمال ہوا}}",
+      "mixed": "{pub, plural, one {# پبلک ریپو میں استعمال ہوا} other {# پبلک ریپوز میں استعمال ہوا}} · +{priv} پرائیویٹ"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: ریپازٹری کی تعداد لائیو کرال کے ساتھ آتی ہے",
+    "figure": {
+      "publicRepos": "{n, plural, one {پبلک ریپو} other {پبلک ریپوز}}",
+      "privateRepos": "{n, plural, one {پرائیویٹ ریپو} other {پرائیویٹ ریپوز}}",
+      "repos": "{n, plural, one {ریپو} other {ریپوز}}",
+      "public": "پبلک",
+      "private": "پرائیویٹ"
+    },
+    "curated": "منتخب"
+  },
+  "liveAge": {
+    "verified": "تصدیق {age}",
+    "s": "{s} سیکنڈ پہلے",
+    "ms": "{m} منٹ {s} سیکنڈ پہلے",
+    "hm": "{h} گھنٹے {m} منٹ پہلے",
+    "dh": "{d} دن {h} گھنٹے پہلے"
+  },
+  "pipeline": {
+    "eyebrow": "ڈیلیوری · کمٹ سے کمپیوٹ تک",
+    "title": "پائپ لائن",
+    "provenance": "{count, plural, one {<fig>{n}</fig> ورک فلو} other {<fig>{n}</fig> ورک فلوز}} · بلڈ کے وقت .github سے پڑھے گئے",
+    "provenanceHandSet": "خاکہ · ہاتھ سے ترتیب دیا گیا",
+    "region": "بلڈ پائپ لائن کا خاکہ",
+    "svgTitle": "ڈیلیوری پائپ لائن: GitHub پر کیا گیا push GitHub Actions اور Vercel بلڈ سے ہوتا ہوا Fluid compute تک پہنچتا ہے؛ GitHub کا ایک webhook بھی براہِ راست اسی تک آتا ہے اور روزانہ کا cron بھی اسے چلاتا ہے؛ پھر compute ایک سروس بس کے ذریعے نیچے درج سروسز تک پھیل جاتا ہے۔",
+    "fires": "UTC کے مطابق <fig>{window}</fig> پر چلتا ہے (Hobby کی درستگی)",
+    "kinds": {
+      "source": "سورس",
+      "ci": "CI",
+      "build": "بلڈ",
+      "runtime": "رن ٹائم",
+      "schedule": "شیڈول",
+      "store": "اسٹور",
+      "gateway": "گیٹ وے",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "میل",
+      "auth": "تصدیق",
+      "search": "تلاش"
+    },
+    "workflows": "{count, plural, one {{n} ورک فلو} other {{n} ورک فلوز}}",
+    "apiRoutes": "{count, plural, one {{n} API روٹ} other {{n} API روٹس}}",
+    "apiRoutesBare": "API روٹس",
+    "locales": "{count, plural, one {{n} زبان} other {{n} زبانیں}}",
+    "crons": "{count, plural, one {کرون} other {{n} کرونز}}",
+    "daily": "روزانہ · {time} UTC",
+    "services": {
+      "redis": "گیسٹ بک · لوکیشن · SEO · ڈپلیکیٹ روک تھام",
+      "graphql": "اعداد و شمار · مہارتیں · پیش رفت",
+      "spotify": "ابھی چل رہا ہے",
+      "mail": "رابطہ · Abstract تصدیق"
+    }
+  },
+  "instruments": {
+    "eyebrow": "معیار · بلڈ کے وقت شمار کیا گیا",
+    "title": "پیمائشی آلات",
+    "provenance": "بلڈ کے وقت شمار کیا گیا · <fig>{date}</fig>",
+    "provenanceBare": "بلڈ کے وقت شمار کیا گیا",
+    "unitLabel": "{count, plural, one {Vitest سوئٹ} other {Vitest سوئٹس}}",
+    "unitSub": "{count, plural, one {{n} ٹیسٹ کیس} other {{n} ٹیسٹ کیسز}} · Vitest",
+    "e2eLabel": "{count, plural, one {براؤزر سوئٹ} other {براؤزر سوئٹس}}",
+    "e2eSub": "{count, plural, one {{n} منظرنامہ} other {{n} منظرنامے}} · Playwright",
+    "apiLabel": "{count, plural, one {API روٹ} other {API روٹس}}",
+    "apiSub": "روٹ ہینڈلرز · {methods}",
+    "apiSubBare": "روٹ ہینڈلرز",
+    "tileLabel": "{figure} {label} — {sub} (GitHub پر فولڈر نئے ٹیب میں کھلتا ہے)"
+  },
+  "bom": {
+    "eyebrow": "بل آف میٹریلز · یہ سائٹ",
+    "title": "یہ کن چیزوں سے بنی ہے",
+    "provenance": "{source} · بلڈ کے وقت تصدیق شدہ · <fig>{date}</fig>",
+    "provenanceBare": "{source} · بلڈ کے وقت تصدیق شدہ",
+    "unreadable": "بلڈ کے وقت مینی فیسٹ نہیں پڑھا جا سکا، اس لیے ورژنز درج نہیں ہیں۔",
+    "packages": "{count, plural, one {<fig>{n}</fig> پیکیج} other {<fig>{n}</fig> پیکیجز}}",
+    "packagesOf": "<fig>{all}</fig> میں سے <fig>{n}</fig> پیکیجز",
+    "built": "بلڈ کی تاریخ <fig>{date}</fig>",
+    "groups": {
+      "core": "بنیادی",
+      "3d-and-motion": "تھری ڈی اور حرکت",
+      "data-and-services": "ڈیٹا اور سروسز",
+      "interface": "انٹرفیس",
+      "platform": "پلیٹ فارم",
+      "media": "میڈیا",
+      "quality": "معیار",
+      "build": "بلڈ",
+      "runtime": "رن ٹائم",
+      "tooling": "ٹولنگ"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "زبانیں",
+        "lay": "وہ زبان جس میں خود کوڈ لکھا جاتا ہے۔"
+      },
+      "frameworks": {
+        "label": "فریم ورکس",
+        "lay": "وہ بنیادی ڈھانچا جس پر ایپلیکیشن تعمیر ہوتی ہے: اس کی ساخت اور اس کے اصول و ضوابط۔"
+      },
+      "libraries": {
+        "label": "لائبریریاں",
+        "lay": "پہلے سے تیار بنیادی اجزا، جن میں سے ہر ایک کو ایک کام عمدگی سے انجام دینے کے لیے شامل کیا جاتا ہے۔"
+      },
+      "tools": {
+        "label": "ٹولز",
+        "lay": "وہ سب کچھ جو کوڈ کے گرد چلتا ہے: ٹیسٹنگ، فارمیٹنگ، ڈیٹابیس اور ڈیپلائمنٹ۔"
+      },
+      "software": {
+        "label": "سافٹ ویئر",
+        "lay": "وہ سروسز جن پر تیار شدہ کام قائم رہتا ہے۔"
+      }
+    }
+  }
+}

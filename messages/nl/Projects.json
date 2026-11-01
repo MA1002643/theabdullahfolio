@@ -1,0 +1,13 @@
+{
+  "title": "PROJECTEN",
+  "subtitle": "MIJN WERK",
+  "filters": {
+    "label": "Projectcategorieën",
+    "all": "Alles",
+    "empty": "Nog geen projecten in \"{category}\".",
+    "fallback": "Nog geen projecten in \"{category}\". In plaats daarvan zie je alle projecten."
+  },
+  "list": {
+    "empty": "Geen projecten gevonden!"
+  }
+}

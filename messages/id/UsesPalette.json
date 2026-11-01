@@ -1,0 +1,20 @@
+{
+  "section": "Uses",
+  "preferences": "Preferensi",
+  "jumpPlate": "Buka {ordinal} {label}",
+  "plates": {
+    "machine": "Mesinnya",
+    "bench": "Meja kerja",
+    "stack": "Stack-nya",
+    "pipeline": "Pipeline-nya",
+    "instruments": "Instrumen ukur",
+    "bom": "Daftar komponen"
+  },
+  "copySettings": "Salin pengaturan editor saya",
+  "openRepos": "Lihat repositori di GitHub",
+  "toggleMotion": "Aktifkan/nonaktifkan gerak",
+  "motionOn": "aktif",
+  "motionOff": "nonaktif",
+  "copied": "Pengaturan editor disalin",
+  "clipboardUnavailable": "Papan klip tidak tersedia — pilih bingkai untuk menyalin"
+}

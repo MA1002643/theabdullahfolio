@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Deine nicht gesendete Nachricht wurde wiederhergestellt",
+    "keep": "Behalten",
+    "clear": "Verwerfen"
+  },
+  "refine": {
+    "affordance": "Nachricht verfeinern",
+    "panelLabel": "Umformulierungsvorschlag",
+    "polishing": "Wird überarbeitet …",
+    "announcePolishing": "Deine Nachricht wird überarbeitet …",
+    "announceReady": "Umformulierungsvorschlag ist bereit.",
+    "announceError": "Die Nachricht konnte nicht überarbeitet werden.",
+    "use": "Übernehmen",
+    "again": "Nochmal überarbeiten",
+    "discard": "Verwerfen",
+    "retry": "Erneut versuchen",
+    "dismiss": "Schließen",
+    "cancel": "Abbrechen",
+    "errors": {
+      "unconfigured": "Die Überarbeitung von Nachrichten ist derzeit nicht verfügbar.",
+      "unavailable": "Die Überarbeitung von Nachrichten ist derzeit nicht verfügbar.",
+      "rate_limited": "Zu viele Anfragen – versuch es gleich noch einmal.",
+      "too_large": "Die Anfrage ist zu groß.",
+      "bad_request": "Ungültige Anfrage.",
+      "too_short": "Schreib zuerst noch ein bisschen mehr, dann kann ich sie überarbeiten.",
+      "too_long": "Diese Nachricht ist zu lang, um sie zu überarbeiten.",
+      "budget": "Die Überarbeitung von Nachrichten ist derzeit pausiert.",
+      "failed": "Die Nachricht konnte nicht überarbeitet werden. Bitte versuch es noch einmal."
+    }
+  }
+}

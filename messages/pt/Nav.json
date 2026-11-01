@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "Sobre",
+    "projects": "Projetos",
+    "qualifications": "Qualificações",
+    "contact": "Contato",
+    "journey": "Jornada",
+    "past": "Meu passado",
+    "guestbook": "Livro de visitas",
+    "uses": "Uso"
+  },
+  "routes": {
+    "home": "Início",
+    "about": "Sobre",
+    "projects": "Projetos",
+    "qualifications": "Qualificações",
+    "contact": "Contato",
+    "myPast": "Meu passado",
+    "journey": "Jornada",
+    "guestbook": "Livro de visitas",
+    "uses": "Uso",
+    "cv": "CV",
+    "notes": "Notas",
+    "privacy": "Privacidade"
+  },
+  "homeButton": {
+    "tooltip": "Início",
+    "srLabel": "Ir para a página inicial"
+  },
+  "projectsButton": {
+    "label": "Projetos",
+    "tooltip": "Projetos",
+    "srLabel": "Ir para a página de projetos"
+  }
+}

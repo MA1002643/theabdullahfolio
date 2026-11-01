@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "OVER MIJ",
+    "subtitle": "WIE IK BEN"
+  },
+  "intro": {
+    "heading": "Architect van betovering",
+    "paragraph": "Mijn reis door webontwikkeling wordt aangedreven door een reeks mystieke werktuigen en talen, met JavaScript als kern van mijn betoveringen. Ik hanteer frameworks als React.js en Next.js met precisie en schep naadloze portalen (websites) die rijken (gebruikers) verbinden in het digitale universum. De oeroude kunsten van de Jamstack stellen me in staat snelle, veilige en dynamische ervaringen te scheppen, terwijl mijn ontwerpvaardigheden ervoor zorgen dat elke creatie niet alleen functioneel is, maar ook visueel betoverend. Voorbij de zichtbare betoveringen beheer ik de verborgen raderwerken: ik bezweer veerkrachtige API's en databases (de kluizen waar het geheugen van elk rijk veilig bewaard blijft) en weef geautomatiseerde pijplijnen die mijn creaties van het atelier naar de cloud voeren (de grenzeloze aether waar ze eindelijk ontwaken). Prestaties en toegankelijkheid beschouw ik als heilige geloften, zodat elk portaal snel opent voor elke reiziger, op elk apparaat en in elke uithoek van het rijk. Nieuwsgierigheid blijft mijn trouwste kompas en trekt me steeds naar nieuwe grimoires, scherpere instincten en ideeën die stoutmoedig genoeg zijn om levende, ademende ervaringen te worden. Ga met me mee terwijl ik nieuwe spreuken en technologieën blijf verkennen om de toekomst van het web vorm te geven."
+  },
+  "projectsCard": {
+    "eyebrow": "Opgeleverde projecten",
+    "unit": "{count, plural, one {afgerond project} other {afgeronde projecten}}",
+    "viewProgress": "Bekijk voortgang →",
+    "ariaLabel": "Opgeleverde projecten: {count, number, ::group-off} {count, plural, one {afgerond project} other {afgeronde projecten}}. {legend}. Bekijk voortgang: opent de live projectvoortgang.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "Afgeronde projecten per categorie — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, one {project} other {projecten}}",
+    "srPrefix": "Projectupdate: "
+  },
+  "statsCard": {
+    "title": "GitHub-statistieken van {name}",
+    "defaultUser": "GitHub-gebruiker",
+    "live": "Live GitHub-statistieken",
+    "rank": "Rang",
+    "updated": "GitHub-statistieken bijgewerkt",
+    "srPrefix": "Statistiekenupdate: ",
+    "metrics": {
+      "stars": "Totaal verdiende sterren",
+      "commits": "Totaal commits (afgelopen jaar)",
+      "prs": "Totaal PR's",
+      "issues": "Totaal issues",
+      "contributedTo": "Bijgedragen aan (afgelopen jaar)"
+    }
+  },
+  "languagesCard": {
+    "title": "Meest gebruikte talen",
+    "count": "{count, number, ::group-off} {count, plural, one {taal} other {talen}}",
+    "live": "live van GitHub",
+    "primary": "Primair",
+    "percent": "<n></n>%",
+    "srPrefix": "Talenupdate: ",
+    "popover": {
+      "eyebrow": "Overzicht per repository",
+      "ariaLabel": "Repositories die {language} gebruiken",
+      "privateRepos": "{count, number, ::group-off} {count, plural, one {privérepository} other {privérepositories}}"
+    }
+  },
+  "streakCard": {
+    "title": "Contributiereeksen",
+    "subtitle": "GitHub-activiteit",
+    "srPrefix": "Reeksenupdate: ",
+    "total": "Totaal aantal contributies",
+    "current": "Huidige reeks",
+    "longest": "Langste reeks",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, one {dag} other {dagen}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, one {dag} other {dagen}}, {percent, number, ::group-off} procent van je langste reeks"
+  },
+  "repoCard": {
+    "badge": "Meest actieve repository",
+    "srPrefix": "Repositoryupdate: ",
+    "metrics": {
+      "stars": "Sterren",
+      "forks": "Forks",
+      "mergedPrs": "Gemergede PR's",
+      "commits": "Totaal commits",
+      "lastPushed": "Laatst gepusht"
+    },
+    "score": "score",
+    "activityScore": "Activiteitsscore"
+  },
+  "skillsCard": {
+    "title": "Vaardigheden & technologieën",
+    "categories": {
+      "languages": "Talen",
+      "frameworks": "Frameworks",
+      "libraries": "Bibliotheken",
+      "tools": "Tools",
+      "software": "Software"
+    },
+    "count": "<n></n> {count, plural, one {technologie} other {technologieën}}",
+    "live": "live van GitHub",
+    "syncing": "Synchroniseren met GitHub…",
+    "noneDetected": "Geen vaardigheden gevonden",
+    "noneInRepos": "Geen vaardigheden gevonden in je repositories",
+    "fetching": "Vaardigheden ophalen van GitHub…",
+    "srPrefix": "Update vaardigheden: ",
+    "popover": {
+      "eyebrow": "Gebruikt in repositories",
+      "ariaLabel": "Repositories die {name} gebruiken",
+      "label": "Repositories:",
+      "publicSr": "{count, number, ::group-off} openbaar",
+      "privateSr": "{count, number, ::group-off} privé",
+      "publicCount": "<n></n> openbaar",
+      "privateCount": "<n></n> privé",
+      "slash": "/",
+      "allPrivate": "Alle repositories zijn privé"
+    }
+  },
+  "progress": {
+    "eyebrow": "Leveringstelemetrie",
+    "title": "Projectvoortgang",
+    "close": "Projectvoortgang sluiten",
+    "failed": "De voortgangssynchronisatie is nu niet bereikbaar.",
+    "retry": "Opnieuw synchroniseren",
+    "ringLineOne": "boarditems",
+    "ringLineTwo": "afgerond",
+    "percent": "<n></n>%",
+    "itemsDone": "Items afgerond",
+    "ofTotal": "van {total, number, ::group-off}",
+    "boardsLive": "Boards live",
+    "allProjects": "{count, plural, one {project} other {projecten}}",
+    "ofProjects": "van {total, number, ::group-off} projecten",
+    "unavailable": "Live synchronisatie is nu niet beschikbaar — je ziet de structuur van de portfolio; de percentages komen terug bij de volgende geslaagde verversing.",
+    "byCategory": "Per categorie",
+    "projectCount": "{count, number, ::group-off} projecten",
+    "perProject": "Per project",
+    "liveFrom": "Live vanuit GitHub Projects",
+    "footer": "Automatisch gesynchroniseerd vanuit GitHub Projects · twee keer per dag",
+    "lastSync": "Laatste synchronisatie",
+    "awaiting": "Wacht op eerste synchronisatie",
+    "row": {
+      "tracked": "{percent, number, ::group-off}% voltooid, {done, number, ::group-off} van {total, number, ::group-off} boarditems afgerond",
+      "syncUnavailable": "voortgangssynchronisatie niet beschikbaar",
+      "notTracked": "niet gevolgd",
+      "ariaLabel": "{name}, {category}. {status}. Schakel de board-uitsplitsing in of uit.",
+      "syncUnavailableTag": "· synchronisatie niet beschikbaar",
+      "total": "Totaal",
+      "couldNotSync": "Dit board kon nu niet worden gesynchroniseerd — live aantallen komen terug bij de volgende verversing.",
+      "noBoard": "Aan dit project is geen GitHub-projectboard gekoppeld.",
+      "viewBoard": "Projectboard bekijken →"
+    },
+    "age": {
+      "seconds": "{s}s geleden",
+      "minutes": "{m}m {s}s geleden",
+      "hours": "{h}u {m}m geleden",
+      "days": "{d}d {h}u geleden"
+    },
+    "columns": {
+      "todo": "Te doen",
+      "backlog": "Backlog",
+      "ready": "Gereed",
+      "inProgress": "In uitvoering",
+      "inReview": "In review",
+      "done": "Klaar",
+      "noStatus": "Geen status",
+      "blocked": "Geblokkeerd",
+      "onHold": "On hold"
+    }
+  },
+  "wire": {
+    "present": "Heden",
+    "noCurrent": "Geen lopende reeks",
+    "noneFound": "Geen reeks gevonden",
+    "noData": "Geen gegevens",
+    "notAvailable": "n.v.t.",
+    "noDescription": "Geen beschrijving",
+    "unknown": "Onbekend",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "Meest actieve repository gewijzigd naar \"{name}\"",
+      "stars": "Sterren {direction, select, increased {met {amount, number, ::group-off} gestegen} other {met {amount, number, ::group-off} gedaald}} (nu {total, number, ::group-off})",
+      "forks": "Forks {direction, select, increased {met {amount, number, ::group-off} gestegen} other {met {amount, number, ::group-off} gedaald}} (nu {total, number, ::group-off})",
+      "commits": "{count, number, ::group-off} nieuwe {count, plural, one {commit} other {commits}} gepusht",
+      "mergedPrs": "{count, number, ::group-off} {count, plural, one {PR} other {PR’s}} samengevoegd",
+      "activityScore": "Activiteitsscore {direction, select, increased {gestegen} other {gedaald}} met {amount, number, ::group-off} (nu {total, number, ::group-off})",
+      "language": "Hoofdtaal gewijzigd naar \"{language}\""
+    },
+    "stats": {
+      "stars": "Totaal aantal sterren {delta, number, ::sign-always group-off}",
+      "commits": "Totaal aantal commits {delta, number, ::sign-always group-off}",
+      "prs": "Totaal aantal PR's {delta, number, ::sign-always group-off}",
+      "issues": "Totaal aantal issues {delta, number, ::sign-always group-off}",
+      "contributedTo": "Bijgedragen aan {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "Totaal aantal bijdragen {delta, number, ::sign-always group-off}",
+      "currentStreak": "Huidige reeks {delta, number, ::sign-always group-off}",
+      "longestStreak": "Langste reeks {delta, number, ::sign-always group-off}",
+      "currentDates": "Datums van huidige reeks gewijzigd",
+      "longestDates": "Datums van langste reeks gewijzigd"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language} is toegevoegd aan de toptalen.",
+      "addedMany": "{count, number, ::group-off} {count, plural, one {nieuwe taal} other {nieuwe talen}} in de toplijst gekomen.",
+      "removedOne": "{language} is uit de toptalen gevallen.",
+      "removedMany": "{count, number, ::group-off} {count, plural, one {taal} other {talen}} uit de toplijst gevallen.",
+      "percentage": "{language} is met {delta, number, ::.0 group-off}% {direction, select, increased {gestegen} other {gedaald}}.",
+      "rank": "{language} is {direction, select, up {omhoog} other {omlaag}} gegaan naar #{rank, number, ::group-off}."
+    },
+    "skills": {
+      "added": "Toegevoegd: {items}",
+      "removed": "Verwijderd: {items}",
+      "moved": "Verplaatst: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, number, ::group-off} nieuw afgerond {delta, plural, one {project} other {projecten}} toegevoegd — nu {count, number, ::group-off}",
+      "updated": "Afgeronde projecten bijgewerkt — nu {count, number, ::group-off}"
+    }
+  }
+}

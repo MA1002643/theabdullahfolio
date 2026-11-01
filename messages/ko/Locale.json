@@ -1,0 +1,28 @@
+{
+  "label": "언어",
+  "triggerLabel": "언어: {language}",
+  "searchLabel": "언어 검색",
+  "searchPlaceholder": "20개 언어 검색…",
+  "noResults": "“{query}”와(과) 일치하는 언어가 없어요.",
+  "tier1": "1단계",
+  "tier2": "2단계",
+  "current": "현재",
+  "machineBadge": "기계 번역",
+  "machineBadgeLabel": "기계 번역됨",
+  "switching": "{language}(으)로 전환하는 중…",
+  "notice": {
+    "title": "기계 번역",
+    "body": "이 번역은 기계가 작성했으며, 아직 원어민의 검수를 거치지 않았어요.",
+    "cta": "더 나은 번역 제안하기"
+  },
+  "suggestion": {
+    "region": "언어 추천",
+    "message": "이 사이트는 {language}(으)로도 볼 수 있어요.",
+    "switch": "{language}(으)로 전환",
+    "dismiss": "{current} 유지"
+  },
+  "englishOnly": {
+    "label": "영어로만 제공",
+    "body": "이 문서는 영어로만 게시돼요. 탐색 메뉴와 컨트롤은 선택하신 언어로 계속 표시됩니다."
+  }
+}

@@ -26,6 +26,10 @@
 // that test, so a new project with an unusually long name cannot silently ship
 // a truncated description.
 
+import { DEFAULT_LOCALE } from '@/i18n/locales';
+import { intlTag } from '@/i18n/format';
+import { localizeCategory, localizeProject } from '@/i18n/data';
+
 const MONTHS = [
   'January',
   'February',
@@ -149,6 +153,56 @@ export function projectMetaDescription(project) {
     `${article(project.category)} ${project.category} build${started}. ` +
     `${provenance}.`
   );
+}
+
+/**
+ * The meta description in the reader's language (issue #82).
+ *
+ * English returns `projectMetaDescription(project)` untouched, byte for byte.
+ * Every other locale composes the SAME facts — name, short description,
+ * category, start month, visibility — through one ProjectDetail template
+ * (`meta.dated` / `meta.undated`) rather than by translating the English
+ * sentence's pieces: word order, the article rule (`article()` is an English
+ * rule) and the capitalisation fix (`lowerFirstUnlessAcronym`) are all English
+ * grammar, so none of them is applied here. The project NAME still opens the
+ * sentence and is never translated or re-cased.
+ *
+ * Translators are passed in rather than fetched, so this module stays free of
+ * `next-intl/server` and of src/app/data.js — it is still imported by the
+ * detail route alone (sitemapDrift.test.js checks that).
+ *
+ * @param {object} project A `projectsData` record.
+ * @param {{locale: string, t: Function, dataT: Function}} options
+ *   `t` — the ProjectDetail translator; `dataT` — `getDataT(locale)`.
+ * @returns {string}
+ */
+export function localizedProjectMetaDescription(project, { locale, t, dataT } = {}) {
+  if (!locale || locale === DEFAULT_LOCALE || !t) return projectMetaDescription(project);
+  const { description } = localizeProject(project, dataT);
+  const values = {
+    name: project.name,
+    description: String(description ?? ''),
+    category: localizeCategory(project.category, dataT),
+    visibility: project.private ? 'private' : 'public',
+  };
+  const when = localMonthYear(project.date, locale);
+  return when ? t('meta.dated', { ...values, when }) : t('meta.undated', values);
+}
+
+/**
+ * "julio de 2025" / "يوليو ٢٠٢٥" — `monthYear` for any locale, via Intl.
+ * Split-parsed and formatted in UTC for the same no-drift reason `monthYear`
+ * gives above.
+ */
+function localMonthYear(iso, locale) {
+  if (typeof iso !== 'string') return '';
+  const [year, month] = iso.split('-').map(Number);
+  if (!year || !month || month < 1 || month > 12) return '';
+  return new Intl.DateTimeFormat(intlTag(locale), {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
 }
 
 // `assertDescriptionFits` moved to `src/lib/seo/descriptionWindow.js` and is

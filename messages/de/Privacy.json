@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Datenschutzhinweis",
+    "heading": "Datenschutz",
+    "announce": "Am unteren Seitenrand ist ein Datenschutzhinweis erschienen. Du kannst die Analyse annehmen oder ablehnen oder die Einstellungen öffnen.",
+    "body": "Diese Website speichert ein wenig Zustand auf deinem Gerät, damit sie sich an deine Einstellungen erinnert, und zählt – nur wenn du es erlaubst –, welche Seiten gelesen werden. Keine Werbe-Cookies, kein Tracking, keine Profilbildung durch Dritte. <link>Was das bedeutet, erfährst du hier</link>.",
+    "accept": "Akzeptieren",
+    "decline": "Ablehnen",
+    "preferences": "Einstellungen"
+  },
+  "prefs": {
+    "title": "Datenschutzoptionen",
+    "intro": "Zwei Kategorien, denn mehr gibt es tatsächlich nicht. Alle Details findest du auf der <link>Datenschutzseite</link>.",
+    "close": "Datenschutzoptionen schließen",
+    "alwaysOn": "Immer aktiv",
+    "reloadNote": "Beim Ausschalten wird die Seite neu geladen – nur so lässt sich ein Skript, das dein Browser bereits ausgeführt hat, wirklich entladen, statt es geladen zu lassen und höflich zu bitten, damit aufzuhören.",
+    "declineAll": "Alle ablehnen",
+    "acceptAnalytics": "Analyse akzeptieren",
+    "on": "An",
+    "off": "Aus",
+    "switchLabel": "Anonyme Analyse erlauben"
+  },
+  "categories": {
+    "essential": {
+      "name": "Notwendig",
+      "summary": "Immer aktiv. Wird auf deinem Gerät gespeichert und dient ausschließlich dazu, dass die Website für dich funktioniert.",
+      "detail": "Die Website merkt sich lokal ein paar Dinge, damit sie sich wie eine Seite verhält, die du schon kennst: Eine halb getippte Nachricht übersteht eine Aktualisierung, das Intro läuft nur einmal, ein weggeklickter Hinweis bleibt weg. Das wird in deinem eigenen Browser gespeichert und von deinem eigenen Browser wieder gelesen; nichts davon dient dazu, dich wiederzuerkennen. Zwei Dinge verlassen dein Gerät. Eine Kontaktnachricht, die du offline abschickst, wird hier zwischengespeichert, bis das Netz wieder da ist, und dann wie jede andere Nachricht an mich zugestellt. Auf der Gästebuchseite wird eine zufällige ID pro Tab gesendet, um zu zählen, wer gerade hier ist; sie ist nicht mit dir verknüpft, und der Server vergisst sie innerhalb weniger Minuten. Entwürfe, die du nicht abgeschickt hast, werden nie übertragen."
+    },
+    "analytics": {
+      "name": "Analyse",
+      "summary": "Aus, solange du sie nicht einschaltest. Zählt, welche Seiten gelesen werden – nie, wer sie gelesen hat.",
+      "detail": "Drei Messskripte, die als eine Entscheidung behandelt werden, weil sie eine einzige Frage beantworten: Welche Seiten lohnt es sich zu behalten? Keines setzt ein Werbe-Cookie, keines erstellt ein Profil, und keines wird überhaupt geladen, bevor du zustimmst – weder geladen und untätig noch geladen und blockiert. Vor deiner Entscheidung sendet dein Browser keine Anfrage an eines davon."
+    }
+  },
+  "status": {
+    "heading": "Deine aktuelle Wahl",
+    "noScript": "Die Analyse läuft nicht. Bei deaktiviertem JavaScript kann sie das auch nicht.",
+    "allowed": "Anonyme Analyse ist erlaubt.",
+    "off": "Die Analyse ist aus. Es wird nichts gemessen.",
+    "notAsked": "Du wurdest noch nicht gefragt, die Antwort lautet also Nein.",
+    "decidedOn": "Du hast dies am {date} entschieden.",
+    "stored": "Deine Entscheidung wird auf diesem Gerät gespeichert.",
+    "change": "Ändern"
+  }
+}

@@ -20,20 +20,52 @@ import { animate } from "framer-motion";
 //   - A genuine re-entry after a sustained exit (re-armed) replays the count-up,
 //     and a changed `to` re-animates even while still in view.
 // Reduced motion writes the final value immediately, with no tween.
+//
+// `format` (issue #82) decides how each painted frame reads. Omitted, it is the
+// legacy `${Math.round(v)}` — Western digits, no grouping — so every existing
+// caller is unchanged. Pass either a function `(rounded) => string` or an
+// object `{ locale, options }` to paint through `Intl.NumberFormat` (the
+// locale's own digits: Arabic-Indic for `ar`, extended for `fa`). The value
+// is rounded BEFORE formatting either way, so a fractional tween never shows
+// decimals. Read through a ref, so a new function identity each render neither
+// restarts the tween nor re-arms the latch.
 export const COUNT_RESET_DELAY_MS = 300;
+
+const legacyFormat = (n) => `${n}`;
+
+/** Normalise the `format` option into a `(rounded:number) => string`. */
+export function countUpFormatter(format) {
+  if (typeof format === "function") return format;
+  if (format && typeof format === "object") {
+    const fmt = new Intl.NumberFormat(format.locale, format.options);
+    return (n) => fmt.format(n);
+  }
+  return legacyFormat;
+}
 
 export function useViewportCountUp(
   nodeRef,
-  { from = 0, to, inView, prefersReducedMotion, enabled = true },
+  { from = 0, to, inView, prefersReducedMotion, enabled = true, format },
 ) {
   const armedRef = useRef(true);
+  // Latest formatter, read at paint time — see the `format` note above.
+  const formatRef = useRef(countUpFormatter(format));
+  const formatKey =
+    format && typeof format === "object" ? JSON.stringify(format) : typeof format;
+  useEffect(() => {
+    formatRef.current = countUpFormatter(format);
+    // `formatKey` stands in for an object option's VALUE, so an inline
+    // `{ locale, options }` literal doesn't rebuild the Intl formatter every
+    // render; a function option is picked up by identity on the next render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formatKey, typeof format === "function" ? format : null]);
   const lastToRef = useRef(null);
   const resetTimerRef = useRef(null);
   const controlsRef = useRef(null);
 
   useEffect(() => {
     const node = nodeRef.current;
-    const fmt = (v) => `${Math.round(v)}`;
+    const fmt = (v) => formatRef.current(Math.round(v));
 
     // Disabled (e.g. PercentCount's `unavailable`) or no node yet — tear down
     // any in-flight work AND re-arm the latch so a later re-enable (or the node

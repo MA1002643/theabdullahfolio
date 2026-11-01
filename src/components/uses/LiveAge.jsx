@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { formatAge } from '@/utils/formatAge';
+import { useTranslations } from 'next-intl';
+import { useUsesFormat } from './useUsesFormat';
 
 // The Stack plate's "verified 3m 25s ago" readout (owner correction,
 // 2026-09-05: the age must visibly count up second by second, and its digits
@@ -29,10 +30,31 @@ export function nextAgeDelay(fromISO, now) {
 }
 
 // "3m 25s ago" → digit runs and the text between them, in order. A fixed
-// split of a formatter this module owns, so index keys are stable.
-export const splitAge = (text) => text.split(/(\d+)/).filter(Boolean);
+// split of a formatter this module owns, so index keys are stable. `\p{Nd}`
+// rather than `\d` (issue #82): the digit runs may be Arabic-Indic or any
+// other script's decimal digits, and they must still wear the ember.
+export const splitAge = (text) => text.split(/(\p{Nd}+)/u).filter(Boolean);
+
+// formatAge's grammar (src/utils/formatAge.js — "3m 25s ago", "2h 04m ago",
+// "1d 03h ago"), as parts the catalogue can word: the unit band and its two
+// numbers, the trailing one zero-padded. The words are the Uses catalogue's
+// (liveAge.s / ms / hm / dh), so English renders exactly formatAge's string
+// and every other locale its own, in its own digits.
+export function ageParts(fromISO, now) {
+  const fromMs = Date.parse(fromISO);
+  if (Number.isNaN(fromMs)) return null;
+  const sec = Math.max(0, Math.floor((now - fromMs) / 1000));
+  if (sec < 60) return { key: 's', a: sec };
+  if (sec < 3600) return { key: 'ms', a: Math.floor(sec / 60), b: sec % 60 };
+  if (sec < 86400) return { key: 'hm', a: Math.floor(sec / 3600), b: Math.floor((sec % 3600) / 60) };
+  return { key: 'dh', a: Math.floor(sec / 86400), b: Math.floor((sec % 86400) / 3600) };
+}
+
+const AGE_VARS = { s: ['s'], ms: ['m', 's'], hm: ['h', 'm'], dh: ['d', 'h'] };
 
 export default function LiveAge({ fetchedAt }) {
+  const t = useTranslations('Uses');
+  const { num, ord } = useUsesFormat();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -58,11 +80,19 @@ export default function LiveAge({ fetchedAt }) {
 
   if (!fetchedAt) return null;
 
+  const parts = ageParts(fetchedAt, now);
+  const [first, second] = parts ? AGE_VARS[parts.key] : [];
+  const age = parts
+    ? t(`liveAge.${parts.key}`, {
+        [first]: num(parts.a),
+        ...(second ? { [second]: ord(parts.b) } : {}),
+      })
+    : '';
+
   return (
     <span className="uses-age tabular-nums">
-      verified{' '}
-      {splitAge(formatAge(fetchedAt, now)).map((part, i) =>
-        /^\d+$/.test(part) ? (
+      {splitAge(t('liveAge.verified', { age })).map((part, i) =>
+        /^\p{Nd}+$/u.test(part) ? (
           <span key={i} className="font-semibold text-[#ff6d05]">
             {part}
           </span>

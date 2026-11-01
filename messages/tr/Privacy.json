@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Gizlilik bildirimi",
+    "heading": "Gizlilik",
+    "announce": "Sayfanın altında bir gizlilik bildirimi belirdi. Analitiği kabul edebilir, reddedebilir veya tercihleri açabilirsin.",
+    "body": "Bu site, tercihlerini hatırlamak için cihazında küçük bir durum bilgisi tutar ve yalnızca izin verirsen hangi sayfaların okunduğunu sayar. Reklam çerezi, izleme ya da üçüncü taraf profillemesi yok. <link>Bunun ne anlama geldiğini oku</link>.",
+    "accept": "Kabul et",
+    "decline": "Reddet",
+    "preferences": "Tercihler"
+  },
+  "prefs": {
+    "title": "Gizlilik tercihleri",
+    "intro": "İki kategori var, çünkü gerçek sayı bu. Ayrıntıların tamamı <link>gizlilik sayfasında</link>.",
+    "close": "Gizlilik tercihlerini kapat",
+    "alwaysOn": "Her zaman açık",
+    "reloadNote": "Bunu kapatmak sayfayı yeniden yükler. Tarayıcının çalıştırdığı bir betiği gerçekten kaldırmanın tek yolu bu; yüklü bırakıp nazikçe durmasını istemek yerine.",
+    "declineAll": "Tümünü reddet",
+    "acceptAnalytics": "Analitiği kabul et",
+    "on": "Açık",
+    "off": "Kapalı",
+    "switchLabel": "Anonim analitiğe izin ver"
+  },
+  "categories": {
+    "essential": {
+      "name": "Zorunlu",
+      "summary": "Her zaman açık. Cihazında tutulur ve yalnızca sitenin senin için çalışmasını sağlamak için kullanılır.",
+      "detail": "Site, daha önce kullandığın bir site gibi davranabilmek için yerel olarak birkaç şeyi hatırlar: yarım yazılmış bir mesaj yenilemeden sonra da durur, giriş animasyonu yalnızca bir kez oynar, kapattığın ipucu kapalı kalır. Bunlar senin tarayıcına yazılır ve yine senin tarayıcın tarafından okunur; hiçbiri seni tanımak için kullanılmaz. İki öğe cihazından çıkar. Çevrimdışıyken gönderdiğin bir iletişim mesajı, ağ geri gelene kadar burada bekletilir, ardından diğer mesajlar gibi bana iletilir. Ziyaretçi defteri sayfasında, şu anda kimlerin burada olduğunu saymak için sekmeye özgü rastgele bir kimlik gönderilir; bu kimlik seninle ilişkilendirilmez ve sunucu onu dakikalar içinde unutur. Göndermediğin taslaklar asla iletilmez."
+    },
+    "analytics": {
+      "name": "Analitik",
+      "summary": "Sen açmadıkça kapalı. Hangi sayfaların okunduğunu sayar, kimin okuduğunu asla.",
+      "detail": "Üç ölçüm betiği var; hepsi tek bir karar olarak ele alınır, çünkü tek bir soruya yanıt verirler: hangi sayfalar tutulmaya değer. Hiçbiri reklam çerezi bırakmaz, hiçbiri profil oluşturmaz ve sen evet demeden hiçbiri yüklenmez; ne yüklenip boşta bekler ne de yüklenip engellenir. Bir karar verilene kadar tarayıcın bunların hiçbirine istek göndermez."
+    }
+  },
+  "status": {
+    "heading": "Şu anki tercihin",
+    "noScript": "Analitik çalışmıyor. JavaScript kapalıyken çalışamaz.",
+    "allowed": "Anonim analitiğe izin verildi.",
+    "off": "Analitik kapalı. Hiçbir şey ölçülmüyor.",
+    "notAsked": "Sana henüz sorulmadı, dolayısıyla yanıt hayır.",
+    "decidedOn": "Bu kararı {date} tarihinde verdin.",
+    "stored": "Kararın bu cihazda saklanıyor.",
+    "change": "Bunu değiştir"
+  }
+}

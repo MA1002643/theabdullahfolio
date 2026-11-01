@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "지금 재생 중",
+  "lastPlayed": "마지막 재생",
+  "cardLabel": "{state, select, playing {지금 재생 중} other {마지막으로 재생한 곡}}: {artist}의 {title}.",
+  "cardLabelLink": "{state, select, playing {지금 재생 중} other {마지막으로 재생한 곡}}: {artist}의 {title}. Spotify에서 열기.",
+  "openOnSpotify": "Spotify에서 열기"
+}

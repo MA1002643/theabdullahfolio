@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "プロジェクトナビゲーション",
+    "all": "すべてのプロジェクト",
+    "previous": "前のプロジェクト：{name}",
+    "next": "次のプロジェクト：{name}"
+  },
+  "breadcrumbs": {
+    "home": "ホーム",
+    "projects": "プロジェクト"
+  },
+  "loading": "プロジェクトを読み込み中",
+  "intro": {
+    "fallbackName": "プロジェクト名",
+    "fallbackDescription": "革新的で高速、そして未来的なウェブソリューション。",
+    "linksLabel": "{name}のリンク",
+    "liveDemo": "ライブデモ<sr>（新しいタブで開きます）</sr>",
+    "source": "GitHubでソースを見る<sr>（新しいタブで開きます）</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "BIOSを初期化しています...",
+      "hardware": "ハードウェアを検出しています...",
+      "os": "オペレーティングシステムを読み込んでいます..."
+    },
+    "tagline": "次世代のデジタルクラフトマンシップで、あなたのアイデアを形にします。",
+    "badgeFullstack": "フルスタック",
+    "tools": "ツールとフレームワーク",
+    "overview": "プロジェクト概要",
+    "overviewLead": "このプラットフォームは、統合ダッシュボードとリアルタイム分析によって、ECのワークフローを効率化します。",
+    "overviewBody": "複数のツールを管理する煩雑さを、一元化された直感的なインターフェースで解消します。",
+    "features": "機能",
+    "feature": {
+      "auth": {
+        "title": "認証",
+        "desc": "安全なログインとユーザーアクセス。"
+      },
+      "payments": {
+        "title": "決済",
+        "desc": "統合された決済ゲートウェイ。"
+      },
+      "chat": {
+        "title": "ライブチャット",
+        "desc": "ユーザーとの即時コミュニケーション。"
+      },
+      "admin": {
+        "title": "管理パネル",
+        "desc": "コンテンツ管理をシンプルに。"
+      }
+    },
+    "liveDemo": "ライブデモ",
+    "github": "GitHub",
+    "demoLabel": "{name}のライブデモを開く",
+    "sourceLabel": "GitHubで{name}のソースを見る"
+  },
+  "meta": {
+    "dated": "{name} — {description}。{category}の開発で、{when}に開始。{visibility, select, private {非公開リポジトリ} other {公開リポジトリ}}で、GitHubボードからリアルタイムで進捗を追跡しています。",
+    "undated": "{name} — {description}。{category}の開発。{visibility, select, private {非公開リポジトリ} other {公開リポジトリ}}で、GitHubボードからリアルタイムで進捗を追跡しています。"
+  }
+}

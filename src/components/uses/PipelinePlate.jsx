@@ -2,17 +2,28 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import { intlTag } from '@/i18n/format';
 import { fluid } from '@/lib/fluidScale';
 import { USES_FLAGS } from '@/lib/flags';
-import { PAD_X, buildGraph, buildTimeline, scheduleWindow } from '@/lib/uses/pipelineGraph';
-import Plate, { Figure, PLATE_EASE } from './Plate';
+import {
+  DEFAULT_LABELS,
+  PAD_X,
+  buildGraph,
+  buildTimeline,
+  describeSchedule,
+  scheduleWindow,
+} from '@/lib/uses/pipelineGraph';
+import Plate, { Figure, PLATE_EASE, figTag } from './Plate';
+import { useUsesFormat } from './useUsesFormat';
 
 // 03 · THE PIPELINE — one inline SVG schematic of how a commit becomes the
 // page you are reading: GitHub → GitHub Actions (the real workflow names,
 // read from .github/workflows at build — one CI lane per workflow) → Vercel
 // build (the Node major Vercel resolves from `engines`) → Fluid compute (the
 // counted API routes), with every external system the routes talk to hung
-// off a service bus below and the daily cron dropping in from above. The
+// off a service bus below, the daily cron dropping in from above, and the
+// GitHub webhook as a dashed lane that skips CI and goes straight to compute. The
 // geometry, labels and choreography come from src/lib/uses/pipelineGraph.js;
 // this file renders them and runs the clock.
 //
@@ -50,27 +61,67 @@ const easeOut = (q) => 1 - Math.pow(1 - q, 3);
 const headPath = ({ x, y, dir }) =>
   dir === 'down'
     ? `M${x - 5} ${y} L${x + 5} ${y} L${x} ${y + 8} Z`
-    : `M${x} ${y - 5} L${x} ${y + 5} L${x + 8} ${y} Z`;
+    : dir === 'up'
+      ? `M${x - 5} ${y} L${x + 5} ${y} L${x} ${y - 8} Z`
+      : `M${x} ${y - 5} L${x} ${y + 5} L${x + 8} ${y} Z`;
 
 const sameMeasure = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
+// The schematic's prose in the reader's language (issue #82): the same shape
+// as pipelineGraph's DEFAULT_LABELS, filled from the Uses catalogue. English
+// returns DEFAULT_LABELS itself, so the English drawing is the one the unit
+// suite pins, unchanged. The schedule's clock time stays as the platform
+// writes it ("05:00 UTC") — it is a cron fact, not prose.
+function useGraphLabels() {
+  const t = useTranslations('Uses');
+  const { english, num } = useUsesFormat();
+  return useMemo(() => {
+    if (english) return DEFAULT_LABELS;
+    const kinds = Object.fromEntries(
+      Object.keys(DEFAULT_LABELS.kinds).map((k) => [k, t(`pipeline.kinds.${k}`)]),
+    );
+    return {
+      kinds,
+      workflows: (n) => t('pipeline.workflows', { count: n, n: num(n) }),
+      apiRoutes: (n) => t('pipeline.apiRoutes', { count: n, n: num(n) }),
+      apiRoutesBare: t('pipeline.apiRoutesBare'),
+      locales: (n) => t('pipeline.locales', { count: n, n: num(n) }),
+      crons: (n) => t('pipeline.crons', { count: n, n: num(n) }),
+      describeSchedule: (s) => {
+        const m = typeof s === 'string' && s.match(/^(\d{1,2}) (\d{1,2}) \* \* \*$/);
+        if (!m) return describeSchedule(s);
+        const time = `${String(m[2]).padStart(2, '0')}:${String(m[1]).padStart(2, '0')}`;
+        return t('pipeline.daily', { time });
+      },
+      services: {
+        redis: t('pipeline.services.redis'),
+        graphql: t('pipeline.services.graphql'),
+        spotify: t('pipeline.services.spotify'),
+        mail: t('pipeline.services.mail'),
+      },
+    };
+  }, [english, num, t]);
+}
+
 export default function PipelinePlate({ facts }) {
+  const t = useTranslations('Uses');
+  const { num, ord } = useUsesFormat();
   const workflows = facts?.pipeline?.workflows ?? null;
   // The count is the readout (ember); the words are the label (grey).
-  const provenance = workflows ? (
-    <>
-      <Figure>{workflows.length}</Figure> workflows · read from .github at build
-    </>
-  ) : (
-    'schematic · hand-set'
-  );
+  const provenance = workflows
+    ? t.rich('pipeline.provenance', {
+        count: workflows.length,
+        n: num(workflows.length),
+        fig: figTag,
+      })
+    : t('pipeline.provenanceHandSet');
 
   return (
     <Plate
       slug="pipeline"
-      ordinal="03"
-      eyebrow="Delivery · commit to compute"
-      title="The pipeline"
+      ordinal={ord(3)}
+      eyebrow={t('pipeline.eyebrow')}
+      title={t('pipeline.title')}
       provenance={provenance}
     >
       {({ revealed, reduceMotion }) => (
@@ -81,8 +132,11 @@ export default function PipelinePlate({ facts }) {
 }
 
 function Schematic({ facts, revealed, reduceMotion }) {
+  const t = useTranslations('Uses');
+  const { locale } = useUsesFormat();
+  const labels = useGraphLabels();
   const [measure, setMeasure] = useState(null);
-  const graph = useMemo(() => buildGraph(facts, measure), [facts, measure]);
+  const graph = useMemo(() => buildGraph(facts, measure, labels), [facts, measure, labels]);
   const timeline = useMemo(() => buildTimeline(graph), [graph]);
   const svgRef = useRef(null);
   const wrapRef = useRef(null);
@@ -168,7 +222,12 @@ function Schematic({ facts, revealed, reduceMotion }) {
         // Scrolls sideways on a phone, so it must be keyboard-reachable
         // (axe scrollable-region-focusable, issue #92).
         role="region"
-        aria-label="Build pipeline diagram"
+        aria-label={t('pipeline.region')}
+        // A left-to-right flow diagram in every language (issue #82): the
+        // rail runs commit → compute along the x axis of one SVG viewBox,
+        // and the labels are measured and laid out in that coordinate space.
+        // Mirroring it would mean mirroring the geometry, not the text.
+        dir="ltr"
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be keyboard-focusable (axe scrollable-region-focusable)
         tabIndex={0}
         className="uses-pipeline custom-bg-abt relative overflow-x-auto rounded-xl"
@@ -181,11 +240,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
           aria-labelledby="uses-pipeline-title"
           className="uses-pipeline__svg block h-auto w-full"
         >
-          <title id="uses-pipeline-title">
-            Delivery pipeline: GitHub to GitHub Actions to Vercel build to Fluid compute, fanning
-            out over a service bus to Upstash Redis, the AI Gateway, GitHub GraphQL, Spotify and
-            SMTP, with a daily cron dropping in from above.
-          </title>
+          <title id="uses-pipeline-title">{t('pipeline.svgTitle')}</title>
           <defs>
             <linearGradient id="uses-node-fill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor="#0f1426" stopOpacity="0.97" />
@@ -211,14 +266,17 @@ function Schematic({ facts, revealed, reduceMotion }) {
               sequence; the ambient drift fades in behind each once drawn. */}
           {visibleStrokes.map((e) => (
             <g key={e.id}>
+              {/* A dashed edge (the webhook) fades in: framer's pathLength
+                  draw owns stroke-dasharray, so it cannot also carry dashes. */}
               <motion.path
                 d={e.d}
                 className="uses-pipeline__edge"
                 fill="none"
                 vectorEffect="non-scaling-stroke"
-                {...strokeMotion(e.drawDelay)}
+                strokeDasharray={e.dashed ? '4 4' : undefined}
+                {...(e.dashed ? fadeMotion(e.drawDelay, 0.45) : strokeMotion(e.drawDelay))}
               />
-              {flow ? (
+              {flow && !e.dashed ? (
                 <motion.path
                   d={e.d}
                   className="uses-pipeline__drift"
@@ -277,10 +335,25 @@ function Schematic({ facts, revealed, reduceMotion }) {
               <text x={n.x + PAD_X} y={n.y + n.text.kind} className="uses-pipeline__kind" data-m={`${n.id}|kind`}>
                 {n.kind}
               </text>
-              <text x={n.x + PAD_X} y={n.y + n.text.title} className="uses-pipeline__title" data-m={`${n.id}|title`}>
+              {/* Titles are product names (the cron's "N crons" is the one from
+                  the catalogue); a sub flagged `subLiteral` is command and
+                  route vocabulary. Neither is prose: translate="no". */}
+              <text
+                x={n.x + PAD_X}
+                y={n.y + n.text.title}
+                className="uses-pipeline__title"
+                data-m={`${n.id}|title`}
+                translate={n.id === 'cron' ? undefined : 'no'}
+              >
                 {n.title}
               </text>
-              <text x={n.x + PAD_X} y={n.y + n.text.sub} className="uses-pipeline__sub" data-m={`${n.id}|sub`}>
+              <text
+                x={n.x + PAD_X}
+                y={n.y + n.text.sub}
+                className="uses-pipeline__sub"
+                data-m={`${n.id}|sub`}
+                translate={n.subLiteral ? 'no' : undefined}
+              >
                 {n.sub}
               </text>
               {n.id === 'actions' && graph.laneBox.count > 0 ? (
@@ -371,8 +444,12 @@ function Schematic({ facts, revealed, reduceMotion }) {
       {/* Text equivalent of the schematic. */}
       <ol className="sr-only">
         {graph.nodes.map((n) => (
+          // The same split as the drawing: the kind (and any catalogue sub)
+          // is prose; product names and command vocabulary are not.
           <li key={n.id}>
-            {n.kind.toLowerCase()} — {n.title}: {n.sub}
+            {n.kind.toLocaleLowerCase(intlTag(locale))} —{' '}
+            <span translate={n.id === 'cron' ? undefined : 'no'}>{n.title}</span>:{' '}
+            <span translate={n.subLiteral ? 'no' : undefined}>{n.sub}</span>
           </li>
         ))}
       </ol>
@@ -392,12 +469,20 @@ function Schematic({ facts, revealed, reduceMotion }) {
           <span className="text-[#ff6d05]" aria-hidden="true">
             ❯
           </span>{' '}
-          <span className="text-[#ffaa2a]">main</span> · {graph.workflows.join(', ')}
+          {/* Branch, workflow `name:` fields and the cron path, verbatim:
+              names, so translate="no". */}
+          <span className="text-[#ffaa2a]" translate="no">
+            main
+          </span>{' '}
+          · <span translate="no">{graph.workflows.join(', ')}</span>
           {singleCron ? (
             <>
               {' '}
-              · <span className="text-[#ffaa2a]">cron</span>{' '}
-              {singleCron.path.replace(/^\/api\//, '')}
+              ·{' '}
+              <span translate="no">
+                <span className="text-[#ffaa2a]">cron</span>{' '}
+                {singleCron.path.replace(/^\/api\//, '')}
+              </span>
               {singleCron.schedule ? (
                 <>
                   {' '}
@@ -405,8 +490,11 @@ function Schematic({ facts, revealed, reduceMotion }) {
                   {scheduleWindow(singleCron.schedule) ? (
                     <>
                       {' '}
-                      · fires <Figure>{scheduleWindow(singleCron.schedule).replace(/ UTC$/, '')}</Figure>{' '}
-                      UTC (Hobby precision)
+                      ·{' '}
+                      {t.rich('pipeline.fires', {
+                        window: scheduleWindow(singleCron.schedule).replace(/ UTC$/, ''),
+                        fig: figTag,
+                      })}
                     </>
                   ) : null}
                 </>
@@ -415,7 +503,10 @@ function Schematic({ facts, revealed, reduceMotion }) {
           ) : graph.cron ? (
             <>
               {' '}
-              · <span className="text-[#ffaa2a]">cron</span> {graph.cron.sub}
+              ·{' '}
+              <span translate="no">
+                <span className="text-[#ffaa2a]">cron</span> {graph.cron.sub}
+              </span>
             </>
           ) : null}
         </motion.p>

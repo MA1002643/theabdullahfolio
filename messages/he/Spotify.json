@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "מתנגן כעת",
+  "lastPlayed": "הושמע לאחרונה",
+  "cardLabel": "{state, select, playing {מתנגן כעת} other {הושמע לאחרונה}}: {title} מאת {artist}.",
+  "cardLabelLink": "{state, select, playing {מתנגן כעת} other {הושמע לאחרונה}}: {title} מאת {artist}. פתחו ב-Spotify.",
+  "openOnSpotify": "פתחו ב-Spotify"
+}

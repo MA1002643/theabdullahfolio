@@ -1,0 +1,16 @@
+{
+  "role": "Softwareentwickler",
+  "summary": "Muhammad Abdullah ist Softwareentwickler aus Bolton, Greater Manchester, und baut schnelle, durchdachte Webanwendungen mit Next.js, React, TypeScript und Node.js. Diese Seite versammelt {count} Projekte – Web, Systeme, Mobile und KI –, die jeweils live von ihrem eigenen GitHub-Board verfolgt werden, dazu die Abschlüsse und Stationen dahinter, eine Zeitleiste vom College bis in die Produktion und die Werkzeuge, mit denen die Arbeit tatsächlich entsteht. Alle Bereiche erreichst du über den Ring unten, bis auf drei: Den vollständigen Werdegang findest du auf der <cv>CV-Seite</cv> und als PDF, die Überlegungen hinter dem Aufbau dieser Seite sind in den <notes>Engineering-Notizen</notes> festgehalten, und was diese Seite erfasst – samt dem Schalter, der den optionalen Teil abschaltet – steht auf der <privacy>Datenschutzseite</privacy>.",
+  "orbitTip": {
+    "hover": {
+      "lead": "Halte den Mauszeiger über den Laptop und bewege oder scrolle nach oben und unten – der Ring dreht sich mit.",
+      "keys": "Du kannst den Ring auch ziehen oder bei einer fokussierten Schaltfläche <key>←</key> <key>→</key> drücken.",
+      "sr": "Tipp: Der Navigationsring lässt sich drehen. Halte den Mauszeiger über den Laptop und bewege oder scrolle nach oben und unten, um ihn zu drehen. Du kannst den Ring auch ziehen oder, solange eine Navigationsschaltfläche fokussiert ist, die Pfeiltasten nach links und rechts drücken."
+    },
+    "touch": {
+      "lead": "Wische auf dem Laptop nach oben und unten – oder ziehe den Ring –, um die Navigation zu drehen.",
+      "sr": "Tipp: Der Navigationsring lässt sich drehen. Wische auf dem Laptop nach oben und unten oder ziehe den Ring selbst, um ihn zu drehen."
+    },
+    "dismiss": "Navigationstipp schließen"
+  }
+}

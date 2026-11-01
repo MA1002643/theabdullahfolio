@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "关于",
+    "projects": "项目",
+    "qualifications": "资历",
+    "contact": "联系",
+    "journey": "历程",
+    "past": "过往经历",
+    "guestbook": "留言板",
+    "uses": "常用工具"
+  },
+  "routes": {
+    "home": "首页",
+    "about": "关于",
+    "projects": "项目",
+    "qualifications": "资历",
+    "contact": "联系",
+    "myPast": "过往经历",
+    "journey": "历程",
+    "guestbook": "留言板",
+    "uses": "常用工具",
+    "cv": "CV",
+    "notes": "笔记",
+    "privacy": "隐私"
+  },
+  "homeButton": {
+    "tooltip": "首页",
+    "srLabel": "前往首页"
+  },
+  "projectsButton": {
+    "label": "项目",
+    "tooltip": "项目",
+    "srLabel": "前往项目页面"
+  }
+}

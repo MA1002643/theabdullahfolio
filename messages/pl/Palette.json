@@ -1,0 +1,15 @@
+{
+  "dialog": "Paleta poleceń",
+  "search": "Szukaj poleceń",
+  "placeholder": "Wpisz polecenie lub cel…",
+  "list": "Polecenia",
+  "empty": "Brak pasujących wyników",
+  "sections": {
+    "navigate": "Nawigacja",
+    "language": "Język"
+  },
+  "keywords": {
+    "navigate": "idź przejdź skocz trasa strona nawigacja podstrona",
+    "language": "język tłumaczenie wersja językowa lokalizacja locale language"
+  }
+}

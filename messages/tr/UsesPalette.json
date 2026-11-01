@@ -1,0 +1,20 @@
+{
+  "section": "Kullandıklarım",
+  "preferences": "Tercihler",
+  "jumpPlate": "Şuraya git: {ordinal} {label}",
+  "plates": {
+    "machine": "Makine",
+    "bench": "Tezgâh",
+    "stack": "Yığın",
+    "pipeline": "Boru hattı",
+    "instruments": "Ölçüm aletleri",
+    "bom": "Malzeme listesi"
+  },
+  "copySettings": "Editör ayarlarımı kopyala",
+  "openRepos": "GitHub'daki depolara göz at",
+  "toggleMotion": "Hareketi aç/kapat",
+  "motionOn": "açık",
+  "motionOff": "kapalı",
+  "copied": "Editör ayarları kopyalandı",
+  "clipboardUnavailable": "Pano kullanılamıyor — kopyalamak için çerçeveyi seç"
+}

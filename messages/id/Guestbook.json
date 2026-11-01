@@ -1,0 +1,124 @@
+{
+  "title": "BUKU TAMU",
+  "subtitle": "TINGGALKAN JEJAK ANDA",
+  "wall": {
+    "marksLeft": "{count, plural, other {<n>{shown}</n> jejak tertinggal}}",
+    "commands": "{shortcut} · perintah",
+    "loading": "Memuat buku tamu…",
+    "loadingMore": "Memuat lebih banyak isi buku tamu…",
+    "loadFailed": "Buku tamu tidak dapat dimuat",
+    "pageFailed": "Halaman ini tidak dapat dimuat",
+    "retry": "Coba lagi",
+    "emptyTitle": "Belum ada pesan",
+    "emptyInvite": "Jadilah yang pertama meninggalkan jejak"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> di sini sekarang}}",
+  "announce": {
+    "one": "Pesan baru dari {name}: {message}",
+    "many": "{count, plural, other {# pesan baru.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Seseorang"
+  },
+  "card": {
+    "sending": "mengirim…",
+    "guest": "Tamu",
+    "onGitHub": "{username} di GitHub (terbuka di tab baru)",
+    "copyLink": "Salin tautan ke pesan ini",
+    "linkCopied": "Tautan disalin — langsung mengarah ke jejak ini",
+    "linkFailed": "Tautan tidak dapat disalin",
+    "deleteOwn": "Hapus pesan Anda",
+    "deleteOther": "Hapus pesan {name}",
+    "signature": "Tanda tangan {name}",
+    "signatureAnon": "Tanda tangan"
+  },
+  "reactions": {
+    "fire": "Api",
+    "rocket": "Roket",
+    "heart": "Hati",
+    "count": "{label} — {count}",
+    "signInToReact": "Masuk untuk bereaksi"
+  },
+  "composer": {
+    "label": "Pesan Anda",
+    "placeholder": "Tinggalkan pesan…",
+    "send": "Kirim pesan",
+    "offline": "Anda sedang offline — pesan Anda disimpan di sini sampai Anda kembali online.",
+    "notSent": "Pesan Anda sebelumnya tidak terkirim",
+    "restore": "Pulihkan"
+  },
+  "signature": {
+    "add": "Tambahkan tanda tangan (opsional)",
+    "discard": "Buang tanda tangan",
+    "clear": "Hapus",
+    "padLabel": "Area gambar tanda tangan — gambar dengan mouse, jari, atau pena, atau pilih tanda yang tersedia di bawah.",
+    "padHint": "Gambar dengan jari, trackpad, atau mouse — ketebalan goresan mengikuti kecepatan Anda",
+    "pickMark": "Pilih tanda",
+    "orPickMark": "Atau pilih tanda",
+    "marks": {
+      "flourish": "Lengkung hias",
+      "wave": "Gelombang",
+      "spark": "Percikan",
+      "orbit": "Orbit"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Tinggalkan pesan…",
+    "ghostRefine": "Sempurnakan dengan AI",
+    "ghostSignature": "Tambahkan tanda tangan (opsional)",
+    "ghostDrafts": "Draf tersimpan otomatis saat Anda mengetik",
+    "prompt": "Masuk untuk meninggalkan pesan",
+    "promptReauth": "Masuk lagi untuk meninggalkan pesan",
+    "reauthExplain": "Sesi masuk Anda saat ini dibuat sebelum kunci akun dinding diterapkan, sehingga hanya bisa membaca, tidak menulis — cukup masuk ulang satu kali untuk memperbaikinya.",
+    "github": "MASUK DENGAN GITHUB",
+    "google": "MASUK DENGAN GOOGLE"
+  },
+  "pagination": {
+    "nav": "Halaman buku tamu",
+    "previous": "Halaman sebelumnya",
+    "next": "Halaman berikutnya",
+    "page": "HALAMAN ",
+    "status": "Halaman {page} dari {total}"
+  },
+  "palette": {
+    "leaveMessage": "Tinggalkan pesan",
+    "leaveKeywords": "tulis tanda tangani kirim buat pesan",
+    "sectionGuestbook": "Buku tamu",
+    "sectionPreferences": "Preferensi",
+    "signInToLeave": "Masuk untuk meninggalkan pesan",
+    "toggleSound": "Aktifkan/nonaktifkan suara antarmuka",
+    "soundKeywords": "audio bunyi bip senyap bisu",
+    "toggleMotion": "Aktifkan/nonaktifkan gerakan",
+    "motionKeywords": "animasi kurangi diam",
+    "on": "aktif",
+    "off": "nonaktif"
+  },
+  "toast": {
+    "posted": "Pesan terkirim!",
+    "postFailed": "Gagal mengirim pesan",
+    "reactFailed": "Gagal memberi reaksi",
+    "deleteFailed": "Gagal menghapus pesan",
+    "removedOwn": "Pesan Anda telah dihapus dari buku tamu",
+    "removedOther": "Pesan dihapus dari buku tamu",
+    "you": "Anda"
+  },
+  "errors": {
+    "unauthorized": "Tidak diizinkan",
+    "too_large": "Isi permintaan maksimal {max, number, ::group-off} byte",
+    "invalid_body": "Isi permintaan tidak valid",
+    "message_required": "Pesan wajib diisi",
+    "message_length": "Pesan harus terdiri dari {min}–{max} karakter",
+    "invalid_characters": "Pesan mengandung karakter yang tidak valid",
+    "links_not_allowed": "Tautan tidak diperbolehkan dalam pesan buku tamu",
+    "unfriendly": "Mohon gunakan bahasa yang ramah",
+    "invalid_signature": "Tanda tangan tidak valid",
+    "rate_limited": "Satu pesan setiap 5 menit — coba lagi dalam {minutes, plural, other {# menit}}",
+    "invalid_reaction": "Reaksi tidak valid",
+    "reaction_rate_limited": "Terlalu banyak reaksi — coba lagi dalam {seconds} dtk",
+    "not_found": "Pesan tidak ditemukan",
+    "id_required": "ID pesan wajib diisi",
+    "invalid_id": "ID pesan tidak valid",
+    "forbidden": "Dilarang",
+    "invalid_cursor": "Kursor tidak valid"
+  }
+}

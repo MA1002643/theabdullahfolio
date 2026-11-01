@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Ho ripristinato il tuo messaggio non inviato",
+    "keep": "Mantieni",
+    "clear": "Cancella"
+  },
+  "refine": {
+    "affordance": "Migliora il mio messaggio",
+    "panelLabel": "Riscrittura suggerita",
+    "polishing": "Sto rifinendo…",
+    "announcePolishing": "Sto rifinendo il tuo messaggio…",
+    "announceReady": "Riscrittura suggerita pronta.",
+    "announceError": "Impossibile rifinire il messaggio.",
+    "use": "Usa questo",
+    "again": "Rifinisci di nuovo",
+    "discard": "Scarta",
+    "retry": "Riprova",
+    "dismiss": "Chiudi",
+    "cancel": "Annulla",
+    "errors": {
+      "unconfigured": "La rifinitura del messaggio al momento non è disponibile.",
+      "unavailable": "La rifinitura del messaggio al momento non è disponibile.",
+      "rate_limited": "Troppe richieste — riprova tra un attimo.",
+      "too_large": "La richiesta è troppo grande.",
+      "bad_request": "Richiesta non valida.",
+      "too_short": "Scrivi ancora un po', poi posso rifinirlo io.",
+      "too_long": "Il messaggio è troppo lungo per essere rifinito.",
+      "budget": "La rifinitura del messaggio è momentaneamente sospesa.",
+      "failed": "Impossibile rifinire il messaggio. Riprova."
+    }
+  }
+}

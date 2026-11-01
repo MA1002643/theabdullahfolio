@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "私について",
+    "subtitle": "私という人間"
+  },
+  "intro": {
+    "heading": "魔法の設計者",
+    "paragraph": "私のウェブ開発の旅は、さまざまな神秘の道具と言語に支えられており、その魔法の核を成すのが JavaScript です。React.js や Next.js といったフレームワークを精密に操り、デジタルの宇宙に広がる領域（ユーザー）をつなぐ、継ぎ目のないポータル（ウェブサイト）を築いています。Jamstack という古の術のおかげで、高速で安全、そして動きのある体験を生み出せます。デザインの力は、あらゆる作品が機能的であるだけでなく、見た目にも心を惹きつけるものにしてくれます。目に見える魔法の裏では、隠れた機構も手入れしています。堅牢な API とデータベース（各領域の記憶が安全に保たれる金庫）を呼び出し、工房から雲（作品がようやく目覚める果てしないエーテル）へと作品を運ぶ自動化パイプラインを織り上げます。パフォーマンスとアクセシビリティは神聖な誓いとして守り、どんな端末でも、領域のどんな遠い片隅にいる旅人にも、すべてのポータルが素早く開くようにしています。好奇心は今も変わらぬ最良の羅針盤であり、新たな魔導書、より鋭い直感、そして生きた体験へと育つほど大胆な発想へと私を導き続けます。ウェブの未来を形づくる新たな呪文と技術を、これからも探求していきます。ぜひご一緒に。"
+  },
+  "projectsCard": {
+    "eyebrow": "公開したプロジェクト",
+    "unit": "{count, plural, other {件の完了プロジェクト}}",
+    "viewProgress": "進捗を見る →",
+    "ariaLabel": "公開したプロジェクト：{count, number, ::group-off}件の完了プロジェクト。{legend}。進捗を見る：プロジェクトの最新の進捗を開きます。",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "カテゴリ別の完了プロジェクト — {summary}。",
+    "srItem": "{label}：{count, number, ::group-off}{count, plural, other {件のプロジェクト}}",
+    "srPrefix": "プロジェクトの更新："
+  },
+  "statsCard": {
+    "title": "{name}のGitHub統計",
+    "defaultUser": "GitHubユーザー",
+    "live": "GitHubのライブ指標",
+    "rank": "ランク",
+    "updated": "GitHub統計を更新しました",
+    "srPrefix": "統計の更新：",
+    "metrics": {
+      "stars": "獲得スター総数",
+      "commits": "総コミット数（過去1年）",
+      "prs": "PR総数",
+      "issues": "Issue総数",
+      "contributedTo": "貢献先（過去1年）"
+    }
+  },
+  "languagesCard": {
+    "title": "よく使う言語",
+    "count": "{count, number, ::group-off}{count, plural, other {言語}}",
+    "live": "GitHubからライブ取得",
+    "primary": "主要",
+    "percent": "<n></n>%",
+    "srPrefix": "言語の更新：",
+    "popover": {
+      "eyebrow": "リポジトリの内訳",
+      "ariaLabel": "{language}を使用しているリポジトリ",
+      "privateRepos": "非公開リポジトリ {count, number, ::group-off}{count, plural, other {件}}"
+    }
+  },
+  "streakCard": {
+    "title": "コントリビューション連続記録",
+    "subtitle": "GitHubのアクティビティ",
+    "srPrefix": "連続記録の更新：",
+    "total": "総コントリビューション数",
+    "current": "現在の連続記録",
+    "longest": "最長の連続記録",
+    "ringSrDays": "{days, number, ::group-off}{days, plural, other {日}}",
+    "ringSrShare": "{days, number, ::group-off}{days, plural, other {日}}、最長連続記録の{percent, number, ::group-off}パーセント"
+  },
+  "repoCard": {
+    "badge": "最もアクティブなリポジトリ",
+    "srPrefix": "リポジトリの更新：",
+    "metrics": {
+      "stars": "スター",
+      "forks": "フォーク",
+      "mergedPrs": "マージ済みPR",
+      "commits": "総コミット数",
+      "lastPushed": "最終プッシュ"
+    },
+    "score": "スコア",
+    "activityScore": "アクティビティスコア"
+  },
+  "skillsCard": {
+    "title": "スキルと技術",
+    "categories": {
+      "languages": "言語",
+      "frameworks": "フレームワーク",
+      "libraries": "ライブラリ",
+      "tools": "ツール",
+      "software": "ソフトウェア"
+    },
+    "count": "<n></n>{count, plural, other {件の技術}}",
+    "live": "GitHubからライブ取得",
+    "syncing": "GitHubと同期中…",
+    "noneDetected": "スキルは検出されませんでした",
+    "noneInRepos": "リポジトリからスキルは検出されませんでした",
+    "fetching": "GitHubからスキルを取得しています…",
+    "srPrefix": "スキルの更新：",
+    "popover": {
+      "eyebrow": "使用しているリポジトリ",
+      "ariaLabel": "{name}を使用しているリポジトリ",
+      "label": "リポジトリ：",
+      "publicSr": "公開 {count, number, ::group-off}件",
+      "privateSr": "非公開 {count, number, ::group-off}件",
+      "publicCount": "公開 <n></n>件",
+      "privateCount": "非公開 <n></n>件",
+      "slash": "/",
+      "allPrivate": "すべて非公開リポジトリです"
+    }
+  },
+  "progress": {
+    "eyebrow": "デリバリーテレメトリ",
+    "title": "プロジェクトの進捗",
+    "close": "プロジェクトの進捗を閉じる",
+    "failed": "現在、進捗の同期に接続できません。",
+    "retry": "再同期",
+    "ringLineOne": "ボード項目",
+    "ringLineTwo": "完了",
+    "percent": "<n></n>%",
+    "itemsDone": "完了した項目",
+    "ofTotal": "全{total, number, ::group-off}件中",
+    "boardsLive": "稼働中のボード",
+    "allProjects": "{count, plural, other {プロジェクト}}",
+    "ofProjects": "全{total, number, ::group-off}プロジェクト中",
+    "unavailable": "現在ライブ同期を利用できないため、ポートフォリオの構成を表示しています。パーセンテージは次回の更新に成功すると表示されます。",
+    "byCategory": "カテゴリ別",
+    "projectCount": "{count, number, ::group-off}プロジェクト",
+    "perProject": "プロジェクト別",
+    "liveFrom": "GitHub Projectsからライブ取得",
+    "footer": "GitHub Projectsから自動同期 · 1日2回",
+    "lastSync": "最終同期",
+    "awaiting": "初回同期待ち",
+    "row": {
+      "tracked": "{percent, number, ::group-off}%完了、ボード項目{total, number, ::group-off}件中{done, number, ::group-off}件が完了",
+      "syncUnavailable": "進捗の同期は利用できません",
+      "notTracked": "未追跡",
+      "ariaLabel": "{name}、{category}。{status}。ボードの内訳を切り替えます。",
+      "syncUnavailableTag": "· 同期不可",
+      "total": "合計",
+      "couldNotSync": "現在このボードを同期できません。ライブの件数は次回の更新で戻ります。",
+      "noBoard": "このプロジェクトにはGitHubのプロジェクトボードが関連付けられていません。",
+      "viewBoard": "プロジェクトボードを見る →"
+    },
+    "age": {
+      "seconds": "{s}秒前",
+      "minutes": "{m}分{s}秒前",
+      "hours": "{h}時間{m}分前",
+      "days": "{d}日{h}時間前"
+    },
+    "columns": {
+      "todo": "未着手",
+      "backlog": "バックログ",
+      "ready": "準備完了",
+      "inProgress": "進行中",
+      "inReview": "レビュー中",
+      "done": "完了",
+      "noStatus": "ステータスなし",
+      "blocked": "ブロック中",
+      "onHold": "保留中"
+    }
+  },
+  "wire": {
+    "present": "現在",
+    "noCurrent": "現在のストリークはありません",
+    "noneFound": "ストリークが見つかりません",
+    "noData": "データなし",
+    "notAvailable": "該当なし",
+    "noDescription": "説明なし",
+    "unknown": "不明",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "最もアクティブなリポジトリが「{name}」に変わりました",
+      "stars": "スターが{amount, number, ::group-off}{direction, select, increased {増加} other {減少}}しました（現在 {total, number, ::group-off}）",
+      "forks": "フォークが{amount, number, ::group-off}{direction, select, increased {増加} other {減少}}しました（現在 {total, number, ::group-off}）",
+      "commits": "新しいコミットを{count, plural, other {#件}}プッシュしました",
+      "mergedPrs": "PRを{count, plural, other {#件}}マージしました",
+      "activityScore": "アクティビティスコアが{amount, number, ::group-off}{direction, select, increased {上昇} other {低下}}しました（現在 {total, number, ::group-off}）",
+      "language": "主要言語が「{language}」に変わりました"
+    },
+    "stats": {
+      "stars": "スター総数 {delta, number, ::sign-always group-off}",
+      "commits": "コミット総数 {delta, number, ::sign-always group-off}",
+      "prs": "PR総数 {delta, number, ::sign-always group-off}",
+      "issues": "Issue総数 {delta, number, ::sign-always group-off}",
+      "contributedTo": "コントリビュート先 {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "コントリビューション総数 {delta, number, ::sign-always group-off}",
+      "currentStreak": "現在の連続記録 {delta, number, ::sign-always group-off}",
+      "longestStreak": "最長の連続記録 {delta, number, ::sign-always group-off}",
+      "currentDates": "現在の連続記録の期間が変わりました",
+      "longestDates": "最長の連続記録の期間が変わりました"
+    },
+    "comma": "、",
+    "languages": {
+      "addedOne": "{language}が上位言語に加わりました。",
+      "addedMany": "{count, plural, other {#}}件の新しい言語が上位リストに入りました。",
+      "removedOne": "{language}が上位言語から外れました。",
+      "removedMany": "{count, plural, other {#}}件の言語が上位リストから外れました。",
+      "percentage": "{language}が{delta, number, ::.0 group-off}%{direction, select, increased {上昇} other {低下}}しました。",
+      "rank": "{language}が#{rank, number, ::group-off}位に{direction, select, up {上昇} other {下降}}しました。"
+    },
+    "skills": {
+      "added": "追加：{items}",
+      "removed": "削除：{items}",
+      "moved": "移動：{items}",
+      "entry": "{name}（{category}）",
+      "move": "{name}（{from} → {to}）"
+    },
+    "projects": {
+      "added": "{delta, plural, other {#}}件の完成済みプロジェクトを追加しました（現在 {count, number, ::group-off}件）",
+      "updated": "完成済みプロジェクトを更新しました（現在 {count, number, ::group-off}件）"
+    }
+  }
+}

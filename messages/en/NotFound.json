@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Page Not Found",
+    "description": "You've drifted into the void. This page doesn't exist — yet."
+  },
+  "messages": {
+    "void": "You've drifted into the void.",
+    "dimension": "This page is in another dimension.",
+    "render": "Even my 3D skills couldn't render this page.",
+    "vibes": "404: page not found, vibes still immaculate.",
+    "edge": "You've reached the edge of the portfolio."
+  },
+  "subtitle": "This page doesn't exist — yet.",
+  "didYouMean": "Did you mean <link>{label}</link>?",
+  "takeMeBack": "TAKE ME BACK",
+  "keyHint": "Press {key} to go home"
+}

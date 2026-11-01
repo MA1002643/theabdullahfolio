@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Índice",
+    "elsewhere": "Em outros lugares"
+  },
+  "siteNav": "Site",
+  "identity": {
+    "role": "Engenheiro de Software",
+    "statement": "Experiências web rápidas e bem pensadas, direto do norte da Inglaterra."
+  },
+  "availability": "Aberto a novas oportunidades",
+  "githubCta": {
+    "label": "Ver este projeto no GitHub",
+    "newTab": "(abre em uma nova aba)",
+    "commits": "{count, plural, one {<num>{formatted}</num> commit} other {<num>{formatted}</num> commits}}",
+    "pushed": "enviado {when}"
+  },
+  "manifest": {
+    "departures": "Partidas",
+    "nowBoarding": "Embarcando",
+    "onTime": "No horário",
+    "links": {
+      "about": {
+        "label": "Sobre",
+        "desc": "Quem eu sou"
+      },
+      "journey": {
+        "label": "Trajetória",
+        "desc": "O caminho até aqui"
+      },
+      "qualifications": {
+        "label": "Formação",
+        "desc": "Credenciais"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "O registro completo"
+      },
+      "projects": {
+        "label": "Projetos",
+        "desc": "Trabalhos selecionados"
+      },
+      "uses": {
+        "label": "Uso",
+        "desc": "Com o que eu construo"
+      },
+      "notes": {
+        "label": "Notas",
+        "desc": "Por que foi feito assim"
+      },
+      "contact": {
+        "label": "Contato",
+        "desc": "Diga olá"
+      },
+      "guestbook": {
+        "label": "Livro de visitas",
+        "desc": "Deixe sua marca"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "Perfil no GitHub (abre em uma nova aba)",
+    "linkedin": "Perfil no LinkedIn (abre em uma nova aba)",
+    "resume": "Ler o CV completo",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Hora local {time} {period} em {town}} other {Hora local {time} em {town}}}",
+    "placeLabel": "Localização: {town}",
+    "live": "AO VIVO"
+  },
+  "sound": {
+    "label": "Som",
+    "on": "Ligado",
+    "off": "Desligado",
+    "turnOn": "Ligar o som de violão do rodapé",
+    "turnOff": "Desligar o som de violão do rodapé",
+    "hoverLines": "Passe o mouse sobre as linhas",
+    "nowPlaying": "Tocando agora — um violão relaxante",
+    "turnOnPrompt": "Ligue o som para ouvir um violão relaxante"
+  },
+  "privacy": {
+    "policy": "Privacidade",
+    "choices": "Opções de privacidade"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/em-outros-lugares",
+    "cmd": {
+      "github": "abrir github",
+      "linkedin": "abrir linkedin",
+      "resume": "abrir currículo"
+    }
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "시네마틱 스크롤 기반 포트폴리오 리빌드"
+    },
+    "2": {
+      "description": "멀티 테넌트 비즈니스 관리 플랫폼"
+    },
+    "3": {
+      "description": "AI 기반 레시피 탐색 플랫폼"
+    },
+    "4": {
+      "description": "모션 중심의 몰입형 포트폴리오"
+    },
+    "5": {
+      "description": "크로스 플랫폼 AI 기반 퍼블리싱 플랫폼"
+    },
+    "6": {
+      "description": "크로스 플랫폼 음악 스트리밍 플랫폼"
+    },
+    "7": {
+      "description": "실시간 교육 참여 플랫폼"
+    },
+    "8": {
+      "description": "AI 기반 피트니스 코칭 플랫폼"
+    },
+    "9": {
+      "description": "트럭 운행 규정에 맞춘 내비게이션 및 컴플라이언스"
+    },
+    "10": {
+      "description": "매시간 자동으로 걸어주는 체크인 전화"
+    },
+    "11": {
+      "description": "AI 기반 채용 공고 탐색 및 맞춤 지원"
+    }
+  },
+  "categories": {
+    "Web": "웹",
+    "System": "시스템",
+    "AI": "AI",
+    "Mobile": "모바일"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "컨시어지 팀 리더 · Adullam Homes Housing Association",
+      "description": "Bolton에 있는 8개 지원 주거 시설의 컨시어지 서비스를 총괄하는 지역 리더로서, 두 기관에 걸친 세 팀을 이끌고 지역 채용을 담당하며 사건·사고를 관리했습니다. 또한 별도로 운영하던 두 개의 스프레드시트 근무표를 직원에게 빈 근무를 직접 제안하는 Microsoft Teams 기반 근무 관리 도구로 대체했습니다.",
+      "tags": {
+        "team-leadership": "팀 리더십",
+        "hiring-manager": "채용 담당",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "소프트웨어 엔지니어 · 개인 프로젝트",
+      "description": "풀스택 작업을 설계부터 구축, 배포까지 처음부터 끝까지 진행했습니다. Swagger로 문서화하고 Mocha/Chai로 테스트한 REST API, Colophon(AI 퍼블리싱 — Vue 3, Express, PostgreSQL + pgvector), AfaaqX, 그리고 예약된 Actions 파이프라인으로 매일 다시 생성되는 GitHub 프로필이 대표적입니다.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "보안 요원 · Constant Security Services",
+      "description": "Jodrell Bank 천문대를 비롯한 주요 과학 및 대학 시설에서 SIA 자격으로 근무했습니다. 순찰, CCTV, 사건 대응, 관제실 보고를 맡으면서 다음 엔지니어링 직무를 준비했습니다.",
+      "tags": {
+        "sia-licensed": "SIA 자격 보유",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "DevOps 엔지니어 · C365Cloud",
+      "description": "컴플라이언스 플랫폼이 끊김 없이 배포되도록 CI/CD 파이프라인, Microsoft SQL Server와 MySQL 관리, 그리고 Wakefield의 내부 팀을 위한 .NET(Blazor) 플랫폼 기능 개발을 맡았습니다.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "컨시어지 · Adullam Homes Housing Association",
+      "description": "지원 주거 시설에서 업무 시간 외 연락 창구를 맡아 보호 대상 에스컬레이션, 사건·사고 관리, 취약한 입주민을 위한 정확한 전자 기록 관리를 담당했습니다.",
+      "tags": {
+        "safeguarding": "보호 및 안전 관리"
+      }
+    },
+    "j-showsec": {
+      "title": "보안 요원 / CCTV 운영자 · Showsec",
+      "description": "주요 행사에서 CCTV 모니터링, 군중 관리, 사건 대응을 맡았고 보안팀 및 법 집행 기관과 실시간으로 협력했습니다.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "사건 대응"
+      }
+    },
+    "j-lidl": {
+      "title": "고객 응대 직원 · Lidl GB",
+      "description": "학위 과정 내내 방문객이 많은 매장에서 계산대, 입고, 재고 업무를 맡았습니다. 4개월 만에 매장 매출 순위를 14위에서 10위로, 고객 만족도를 18% 끌어올린 팀의 일원이었습니다.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "학업 병행 3년 8개월"
+      }
+    },
+    "j-unisys": {
+      "title": "소프트웨어 엔지니어 · Unisys",
+      "description": "Manchester에서 16개월간 산업 현장 실습을 했습니다. 풀스택 C# / .NET(Blazor) 기능을 개발해 시스템 효율을 약 20% 높였고, 지원 트리아지를 맡아 운영 이슈를 30% 줄였으며, 프로젝트 팀을 이끌어 기한 내 납품을 달성해 후속 고객 계약까지 따냈습니다.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "학생 앰배서더 · MMU",
+      "description": "Greater Manchester 전역의 오픈 데이, 캠퍼스 투어, 신입생 모집 행사에서 대학을 대표했습니다.",
+      "tags": {
+        "community": "커뮤니티"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "IT 헬프 데스크 기술자 · MMU",
+      "description": "교직원과 학생을 위한 1차 지원을 맡아 하드웨어, 소프트웨어, 접근 권한 문제를 해결했고 IT 부서와 협력 부서를 연결했습니다. 첫 주에 여러 부서로부터 칭찬을 받았습니다.",
+      "tags": {
+        "first-line-support": "1차 지원"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "소프트웨어 개발자 · MMU",
+      "description": "다학제 대학 팀에서 프런트엔드와 백엔드 기능을 개발했습니다. 이해관계자의 요구 사항을 실제 동작하는 기능으로 구현하며 50개 이상의 버그를 해결했고, 로딩 속도를 25% 개선했으며, 개발 시간을 15% 단축했습니다.",
+      "tags": {
+        "full-stack": "풀스택",
+        "50-bugs-resolved": "버그 50개 이상 해결"
+      }
+    },
+    "j-course-rep": {
+      "title": "학과 대표 · MMU",
+      "description": "학생 대표로 선출되어 종교 의례 일정을 고려한 평가 일정 조율을 이끌어 냈고, 학과 초청 연사 세션도 확대했어요.",
+      "tags": {
+        "learner-voice-award": "Learner Voice Award",
+        "volunteering-award": "Volunteering Award"
+      }
+    },
+    "j-bsc": {
+      "title": "소프트웨어 공학 학사(BSc, Hons) · MMU",
+      "description": "맨체스터 메트로폴리탄 대학교 — BCS 인증 과정이며 최우등(First-Class Honours) 졸업이 예상돼요. 본격적으로 깊이 파고든 시간이에요.",
+      "tags": {
+        "bcs-accredited": "BCS 인증",
+        "first-class-predicted": "최우등 (예상)"
+      }
+    },
+    "j-kfc": {
+      "title": "팀 멤버 · KFC",
+      "description": "모든 스테이션을 앞에서 뒤까지 경험했어요. 6개월 연속 최우수 직원으로 선정되었고, 매장의 지역 순위를 5위에서 2위로 끌어올린 팀의 일원이었어요.",
+      "tags": {
+        "best-employee-6": "최우수 직원 ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC 레벨 3 IT 확장 디플로마",
+      "description": "Bolton College — 트리플 디스팅션(DDD). 호기심을 하나의 전문 분야로 바꿔 준 2년이었어요.",
+      "tags": {
+        "triple-distinction": "트리플 디스팅션"
+      }
+    },
+    "j-ocnlr": {
+      "title": "OCNLR 디지털 스킬 자격증",
+      "description": "Bolton College — 컴퓨팅 분야로 내디딘 첫 정규 과정이자, 이후 모든 여정으로 이어진 관문이에요.",
+      "tags": {
+        "digital-skills": "디지털 스킬"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "기기",
+        "value": "13인치 MacBook Pro · Apple M1 · 통합 메모리 16GB"
+      },
+      "display": {
+        "label": "디스플레이",
+        "value": "2560 × 1600 Retina · 논리 해상도 1440 × 900",
+        "note": "유동 스케일의 기준이 되는 뷰포트예요. 모든 하위 페이지는 정확히 이 너비에서 스케일 1로 작업한 뒤, 하나의 배율로 자연스럽게 늘어나고 줄어들어요."
+      },
+      "os": {
+        "label": "OS",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "휴대폰",
+        "value": "iPhone, OwnTracks를 HTTP 모드로 실행",
+        "note": "위치 정보를 /api/location으로 전송해요. 푸터에 표시되는 도시와 현지 시간은 이 기기에서 가져와요.",
+        "hrefLabel": "연동되는 도시 보기"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "에디터",
+        "detail": "Dracula 테마 · vscode-icons · 저장 시 Prettier 적용"
+      },
+      "agentic-pair": {
+        "role": "에이전트 페어",
+        "detail": "VS Code 확장 + CLI — 스킬, 서브에이전트, MCP 서버(Chrome DevTools, Playwright)가 검증 중에 브라우저를 직접 구동해요"
+      },
+      "terminal-and-shell": {
+        "role": "터미널 & 셸",
+        "detail": "nvm으로 .nvmrc에 Node 버전 고정 · 그 밖의 모든 것은 Homebrew"
+      },
+      "formatting-and-lint": {
+        "role": "포맷팅 & 린트",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "서체",
+        "detail": "next/font/google — 빌드 시점에 자체 호스팅해서 폰트로 인한 레이아웃 이동이 없어요"
+      },
+      "browser-tooling": {
+        "role": "브라우저 도구",
+        "detail": "픽셀 프로브, 모션 감소 에뮬레이션, e2e 게이트 모두 실제 Chromium에서 실행해요"
+      }
+    }
+  }
+}

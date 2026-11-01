@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "Hakkımda",
+    "projects": "Projeler",
+    "qualifications": "Yeterlilikler",
+    "contact": "İletişim",
+    "journey": "Yolculuk",
+    "past": "Geçmişim",
+    "guestbook": "Ziyaretçi Defteri",
+    "uses": "Kullandıklarım"
+  },
+  "routes": {
+    "home": "Ana Sayfa",
+    "about": "Hakkımda",
+    "projects": "Projeler",
+    "qualifications": "Yeterlilikler",
+    "contact": "İletişim",
+    "myPast": "Geçmişim",
+    "journey": "Yolculuk",
+    "guestbook": "Ziyaretçi Defteri",
+    "uses": "Kullandıklarım",
+    "cv": "CV",
+    "notes": "Notlar",
+    "privacy": "Gizlilik"
+  },
+  "homeButton": {
+    "tooltip": "Ana Sayfa",
+    "srLabel": "Ana sayfaya git"
+  },
+  "projectsButton": {
+    "label": "Projeler",
+    "tooltip": "Projeler",
+    "srLabel": "Projeler sayfasına git"
+  }
+}

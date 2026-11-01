@@ -1,0 +1,15 @@
+{
+  "dialog": "コマンドパレット",
+  "search": "コマンドを検索",
+  "placeholder": "コマンドや移動先を入力…",
+  "list": "コマンド",
+  "empty": "一致する項目はありません",
+  "sections": {
+    "navigate": "移動",
+    "language": "言語"
+  },
+  "keywords": {
+    "navigate": "移動 ジャンプ 行く ページ ナビゲート go jump route page",
+    "language": "言語 翻訳 ロケール 切り替え language translate locale"
+  }
+}

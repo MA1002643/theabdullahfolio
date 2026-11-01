@@ -884,11 +884,28 @@ baseline makes every query look new.
 
 ### Adding a route
 
-1. Add an entry to `ROUTES` in `src/lib/seo/site.js` — path, title, description
-   (110–160 chars), `changeFrequency`, `priority`, `sources`.
-2. Build its metadata with `sectionMetadata({ title: ROUTE.title, ... })`.
-3. Render a `<JsonLd>` block — `sectionPage()` unless a more specific type fits.
-4. Run `npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js`.
+1. Write the English title and description (110–160 chars) in
+   `messages/en/Meta.json` under `routes.<key>`. Since #82 that catalogue is
+   the one source for the English `<title>`, the translation pipeline's input
+   and every locale's metadata.
+2. Add an entry to `ROUTES` in `src/lib/seo/site.js`: path, that `key`,
+   `title` / `description` read from `META.routes.<key>`, `changeFrequency`,
+   `priority`, `sources`. Add `translated: false` only for a document that
+   stays English in every locale (§18). Its `sources` name the files under
+   `src/app/[locale]/…`; the sitemap appends `messages/` to every translated
+   route itself.
+3. Put the page under `src/app/[locale]/(sub pages)/`. Export
+   `generateMetadata({ params })` returning `routeMetadata(ROUTE.path, params)`
+   (`src/lib/og/meta.js`), which composes `sectionMetadata` from the localised
+   copy and adds the hreflang set. In the page, call `setRequestLocale(locale)`
+   and wrap the content in `<IntlScope locale={locale} route={ROUTE.path}>`.
+4. Give the route the namespaces its client components read in
+   `ROUTE_NAMESPACES` (`src/i18n/namespaces.js`). Use a dotted subtree
+   (`Data.journey`) where it renders one slice of a shared namespace.
+5. Render a `<JsonLd>` block — `sectionPage()` unless a more specific type fits —
+   passing `locale`, so `inLanguage` and the page `@id` follow it.
+6. Translate and audit (*Translations*, below).
+7. Run `npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js tests/unit/i18nAlternates.test.js tests/fitness/i18nCatalogues.test.js tests/fitness/i18nBudget.test.js`.
 
 **Skipping step 1 fails CI.** The drift test walks `src/app` on disk and fails
 on any `page.js` that is in neither the registry nor its own `EXCLUDED` map —
@@ -1070,14 +1087,27 @@ dated by the award.
 
 ### Adding a project
 
-Add it to `projectsData` and nothing else needs editing. `sitemap.js` generates
-the URL, `/llms.txt` describes it, `/projects/[id]` gets its params, and the two
-places that state the count in prose both recount themselves:
+Add it to `projectsData`, then regenerate and translate its copy:
+
+```bash
+npm run i18n:data        # derive messages/en/Data.json from src/app/data.js
+npm run i18n:translate   # translate the new strings into every locale
+npm run i18n:audit       # what CI runs
+```
+
+Nothing else needs editing. `sitemap.js` generates the URL in every locale,
+`/llms.txt` describes it, `/projects/[id]` gets its params, and the two places
+that state the count in prose both recount themselves:
 
 | Surface | How the count is stated |
 | --- | --- |
-| `/projects` meta description (`src/lib/seo/site.js`) | `` `${countWord(projectsData.length)} builds — …` `` |
-| Homepage `sr-only` summary (`src/app/page.js`) | `{countWord(projectsData.length).toLowerCase()} projects` |
+| `/projects` meta description (`src/lib/seo/site.js`, `messages/*/Meta.json`) | `{countWord}` in the catalogue, filled with `countWord(projectsData.length)` in English and a locale-formatted number elsewhere |
+| Homepage `sr-only` summary (`src/app/[locale]/(home)/page.js`, `messages/*/Home.json`) | `{count}` in the catalogue, filled with `countWord(projectsData.length).toLowerCase()` in English and a locale-formatted number elsewhere |
+
+`npm run i18n:data` matters because the content catalogue is derived, not
+hand-written. Skip it and `i18nCatalogues.test.js` and the audit both fail on
+the stale `Data.json`, and until it runs the new project's copy has no
+catalogue entry for the translator to work from.
 
 `tests/unit/projectCountDrift.test.js` fails if either goes back to a typed
 number — which is how both were originally written, and how they would have
@@ -1238,6 +1268,87 @@ the only safe direction, and it is deliberately the *only* thing a bump can do:
 it can neither silently grant nor silently deny. Reword a sentence without
 bumping it; change the bargain and bump.
 
+### Translations
+
+English copy lives in `messages/en/<Namespace>.json`, one file per namespace.
+The content fields of `src/app/data.js` are the exception: they are derived into
+`messages/en/Data.json` (and the `links` block of `Nav.json`) by
+`npm run i18n:data`, so edit `data.js` and regenerate rather than editing the
+derived file. Every other locale is `messages/<code>/`, and
+`messages/.i18n-lock.json` records, per locale and key, a hash of the English
+each translation was made from.
+
+**After changing any English string:**
+
+```bash
+npm run i18n:data                          # only if src/app/data.js changed
+npm run i18n:translate -- --dry-run        # what would be sent; needs no key
+npm run i18n:translate                     # every locale, only what changed
+npm run i18n:audit                         # what CI runs; must report 0 errors
+```
+
+**After adding any visible text, label or `aria-label`:** CI also crawls every
+page in the pseudo-locale `en-XA` and fails on English that never reached a
+catalogue (`docs/testing.md`, "The pseudo-locale gate"). To run it locally:
+
+```bash
+npm run test:i18n        # i18n:pseudo → build with NEXT_PUBLIC_I18N_PSEUDO=1 → crawl
+```
+
+A name, an address or data (a repository, a package, a town) is not a leak:
+mark its element `translate="no"`. Never set `NEXT_PUBLIC_I18N_PSEUDO` on
+Vercel: the pseudo-locale would become a public route. It is not in `LOCALES`,
+so it is never in the sitemap, `hreflang` or the selector, but a build with
+the flag still serves `/en-XA`.
+
+`i18n:translate` needs `AI_GATEWAY_API_KEY` in `.env.local` (or the
+`VERCEL_OIDC_TOKEN` that `vercel env pull` provides). It sends only keys that
+are **missing** in a locale or whose English hash has **changed**, so editing
+one sentence costs one sentence per locale, and a key whose English has not
+changed is never sent again. A translator's hand edit survives every later run
+for that reason, except a `--force` run, which retranslates everything it
+selects and so overwrites reviewed work. The keys in the script's `HAND_SET`
+(the owner's name, `Common.owner.*`, §18) are never sent, not even under
+`--force`: edit them in each locale's `Common.json` by hand, and when adding a
+locale, add its spelling there before running the audit. `--locale ar,ja`, `--ns Home`, `--force` and `--dry-run`
+are documented in the script's header; `--model` (or `I18N_MODEL`), `--batch`
+and `--concurrency` are read beside them, and the model defaults to
+`anthropic/claude-sonnet-5.5`. Every response is checked
+by `icuProblems` (`scripts/i18n-lib.mjs`) and retried with the error stated, up
+to three times, before anything is written.
+
+**The one interaction to know about.** When English changes, the audit reports
+that key as `outdated` in every locale, and the next `i18n:translate` run
+replaces it with a fresh machine translation — in a reviewed locale too. The
+locale's `status` stays `reviewed`, so after a copy change to a reviewed
+locale, ask its reviewer to look at the changed keys. `--locale xx --dry-run`
+shows how many keys per namespace a run would replace before you make it.
+
+**A locale goes from machine to reviewed** through one pull request, labelled
+`i18n:locale-<code>`:
+
+1. A native speaker edits `messages/<code>/*.json`, using the context in
+   `messages/_notes/<Namespace>.json` and keeping the ICU structure (the
+   translator workflow in `CONTRIBUTING.md` has the rules).
+2. The same PR changes that locale's `status` from `'machine'` to `'reviewed'`
+   in `src/i18n/locales.js`. That is the only thing that removes the
+   "machine-translated" notice, and nothing else should ever change it: not
+   the translation script, and not a maintainer who has not had the review done.
+3. The maintainer reviews **layout**, not language. Right-to-left locales are
+   checked at ≥ 1024, 640–1023 and ≤ 479 px, because a longer string is what
+   breaks a layout.
+4. `npm run i18n:audit` passes.
+
+**Adding a locale** is one row in `LOCALES` (`src/i18n/locales.js`): code,
+endonym, English name, `dir`, `hreflang`, `og`, `script`, `tier`, and
+`status: 'machine'`. Then run `npm run i18n:translate -- --locale <code>`. Check
+that its `script` has a font chain in `src/i18n/fonts.js`, and add a register
+line for it to `REGISTER` in `scripts/i18n-translate.mjs`.
+`tests/unit/i18nLocales.test.js` pins the launch count and the set of
+right-to-left codes, so it fails until it is updated, deliberately: a new locale
+adds a URL to every translated page, every sitemap cluster and every hreflang
+set.
+
 ### Weekly
 
 - Read the latest `/api/seo-report` output (or `seo:gsc:latest` in Upstash).
@@ -1294,10 +1405,16 @@ npx playwright test tests/e2e/seo.spec.js     # incl. every sitemap URL → 200
 npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js \
               tests/unit/schema.test.js tests/unit/cspAnalytics.test.js \
               tests/unit/gaConsentMode.test.js tests/unit/privacyInventory.test.js \
-              tests/unit/consentStore.test.js
+              tests/unit/consentStore.test.js tests/unit/i18nAlternates.test.js \
+              tests/unit/i18nProxy.test.js
+npm run i18n:audit
 ```
 
-The last three are #141's and belong in this list for the reason the others do:
+`i18nAlternates` and `i18nProxy` are #82's: the hreflang cluster is reciprocal
+and English canonicals are unchanged, and no browser language ever redirects
+anyone. The audit is the catalogue check CI runs.
+
+The three before them are #141's and belong in this list for the reason the others do:
 they guard claims that are **published** and that nothing else can check. The
 consent gate is the only thing standing between an undecided visitor and three
 measurement scripts, and `/privacy` is a document that is legally required to be
@@ -1654,6 +1771,31 @@ four sub-4.5:1 colours on `/uses` (not one of the six) and the unreachable
 scrollers noted in §16. Both are fixed; the Lighthouse budget above is
 unchanged and still enforced at 100.
 
+**Decision (owner, 2026-10-31): the intro seal plays only on visits that enter
+at `/`.** Vercel Speed Insights showed a Real Experience Score of 54, with LCP
+at 12.46 s. Two things were true at once. The score rested on about ten visits
+in thirty days, and its FCP, LCP and TTFB were a single visit to
+`/qualifications`, so it was mostly noise. But the one structural cost behind it
+was real: each sub-page's headline waits for the seal's reveal, so on a first
+visit no sub-page could post an LCP before the ~3.4 s seal finished. Measured
+on production, `/qualifications` was at 4.6 s with the seal and 1.7 s without.
+The homepage was never affected, because its LCP is the H1, painted at ~0.3 s
+underneath the overlay.
+
+Three options were weighed: shorten the seal everywhere (helps, but a slow
+phone still misses 2.5 s), paint the sub-page titles under it from the start
+(LCP lands early, but the title ignite no longer plays on a first visit), or
+play it only on `/`. The last was chosen. A visitor arriving on `/cv` from a
+link came to read the CV, and the homepage loses nothing. `LoaderWrapper`
+decides from the pathname on its first render, so a sub-page does not ship
+the overlay in its HTML at all. After the change, on a production build at 4×
+CPU, `/qualifications` reached LCP in about 1.8 s instead of about 4.2 s.
+
+Considered and **not** changed, because the measurements did not support it:
+INP (about 72 ms per click on a real GPU; the 208 ms p75 was one sample) and
+Lighthouse's mobile TBT on `/` (380 ms to 8 s on one build, and not
+reproducible outside Lighthouse).
+
 ## 16. `/notes` — publishing the reasoning
 
 This document is well over a thousand lines recording why each decision on this
@@ -1898,3 +2040,204 @@ Global Privacy Control / Do Not Track. Honouring a browser-level signal needs
 its own decision about precedence over a stored choice — specifically whether a
 GPC header should override an explicit grant the same visitor gave — and that is
 a policy question, not a wiring one.
+
+---
+
+## 18. Twenty languages, without moving an English URL
+
+[#82](https://github.com/MA1002643/theabdullahfolio/issues/82), built
+2026-10-25 → 2026-10-29. The issue was written for a Next 14 site with five
+pages. By the time it was built, the site had the canonical builder and route
+registry this document describes, a consent gate and a test plan, and several of
+the original choices would have undone them. The spec was revised against `main`
+on 2026-10-25 before any code was written. This section records what that
+revision decided, because every choice below changes what a crawler sees.
+
+**Decision (owner, 2026-10-29): the multilingual site ships as follows.**
+
+### English stays unprefixed
+
+next-intl's default is a prefix for every locale (`/en/about`). Here
+`localePrefix: 'as-needed'` keeps English at `/about` and puts the other
+locales at `/{locale}/…`. Every URL Search Console has indexed, every canonical
+§2 declared, and every inbound link names `ma.codes/about`. Prefixing the
+default locale would have 308'd the whole site and restarted its indexing
+history to gain a URL segment nobody needed. `/en/about` still resolves, by
+redirecting to `/about`, so English has exactly one URL per page.
+
+The request proxy is Next 16's `src/proxy.js` (the file formerly called
+`middleware`). It rewrites `/about` onto the `[locale]` segment invisibly, so
+the visitor and the crawler both see the URL they asked for.
+
+### No `Accept-Language` redirect
+
+The original spec redirected `/` on the browser's language. Rejected, for two
+reasons. Google advises against locale-adaptive redirects: its crawler sends no
+`Accept-Language`, so it would only ever see one version, and the redirect hides
+the others from it. And a recruiter who was sent an English link should read it
+in English unless they have said otherwise.
+
+So next-intl's detection is off (`localeDetection: false`), and so is its
+automatic cookie (`localeCookie: false`), which would otherwise turn "followed a
+link to `/ja/about` once" into a sticky preference. The one redirect the site
+makes is a **307** from an unprefixed URL to the same page in the visitor's
+language, and only when they have **chosen** one in the language selector,
+which is the only thing that writes `NEXT_LOCALE`. It is temporary rather than
+permanent because its target depends on one visitor's cookie, and a cached 308
+would outlive that. It applies only to document requests, never to prefetches.
+
+A browser whose `navigator.languages` prefers a supported locale gets a
+dismissible **suggestion**, worded in the suggested language, instead. It is an
+offer. Nothing moves until the visitor accepts.
+
+### hreflang, from the seam that was left for it
+
+`alternatesFor()` in `src/lib/seo/canonical.js` was written with an empty
+`languages` slot for this issue (§10, *Adding a route*). It is now filled. A
+translated page is canonical **in its own locale**: `/ar/about` is the
+canonical URL of the Arabic document, not a duplicate of `/about`. Every page in
+a cluster carries the **same** full set of alternates, keyed by hreflang, plus
+`x-default` pointing at the English URL. The set is identical on every member
+because Google ignores an alternate that does not link back.
+`tests/unit/i18nAlternates.test.js` pins that reciprocity, and pins that every
+English canonical is byte-identical to what it was before #82.
+
+Chinese is published as `zh-Hans`, not `zh`. The bare code names a
+macrolanguage, and the catalogue is Simplified Han. A Traditional-script
+browser is never offered it as "your language".
+
+next-intl can also advertise alternates in a `Link` response header. That is
+off (`alternateLinks: false`): it cannot know which documents are untranslated,
+so it would advertise translations of the notes, which have none.
+
+### The sitemap lists every locale, with the same alternates
+
+Each translated page is one `<url>` per locale, and each carries the same
+`xhtml:link` set as the documents' `<head>`. The sitemap and the head are built
+by the same `alternatesFor()` call, so they cannot disagree about which URLs are
+siblings.
+
+**The cost:** `messages/` is a source of every translated route
+(`MESSAGE_SOURCES` in `src/app/sitemap.js`), and `git log` resolves per path, so
+editing any catalogue moves the `<lastmod>` of every translated URL, in every
+locale. That errs in the direction §3 already chose: an over-stamped date costs
+a crawl, and a stale one suppresses it. The twenty URLs of one page share one
+date, because they are rendered from the same sources.
+
+### English-only documents canonicalise to English and leave the sitemap
+
+Three kinds of content stay English, by decision: the engineering decision
+records under `/notes` (this document is one), the `/privacy` policy body (a
+legal text should have one authoritative version; the consent notice and the
+preference centre around it *are* translated), and what visitors write in the
+guestbook. Translating a document of well over a thousand lines nineteen times
+would multiply its maintenance for the smallest audience.
+
+Their locale URLs (`/ar/notes/discoverability`) still resolve, because the
+chrome around them is translated. But they render an English document, so
+they canonicalise to the English URL, declare no alternates, name only `en_GB`
+as their `og:locale`, and are listed once in the sitemap. A sitemap may list
+only canonical URLs, and an hreflang claiming an Arabic version of a document
+that has none is a false alternate, which Search Console reports. The registry
+marks these routes `translated: false`, and `isTranslated()` is the only thing
+that reads the flag. The English islands render inside an `EnglishOnly` wrapper
+carrying `lang="en" dir="ltr"`, so a screen reader switches voice.
+
+### Open Graph text per locale; the card images stay English
+
+`og:title`, `og:description`, `og:url` and `og:locale` follow the page's locale,
+and a translated page lists every other locale as `og:locale:alternate`. The
+card **images** are the English brand cards on every locale. Satori, the
+renderer behind `opengraph-image.js`, has no Arabic shaping and no bidi, so an
+Arabic card would render as disconnected letters in the wrong order. The image
+carries the name and the seal, not prose, so nothing is lost by keeping it.
+
+### Structured data
+
+JSON-LD `WebPage.inLanguage` follows the page, and each localised document has
+its prefixed URL as its `@id`. The **entity** ids (`#person`, `#website`,
+`#project`) do not change with the locale. They name the thing being described,
+not the document describing it, and a per-locale id would split one person into
+twenty in the graph §11 works to keep consistent.
+
+### The name in the reader's script (decision, owner, 2026-10-31)
+
+The homepage `<h1>`, the intro seal and the footer masthead print the owner's
+name in the page's own script: محمد عبدالله on `/ar`, ムハンマド・アブドゥッラー on `/ja`,
+Muhammed Abdullah on `/tr`, and Muhammad Abdullah in every language that writes
+it that way. The spellings are hand-set in `Common.owner`, one per locale, and
+`scripts/i18n-translate.mjs` never sends them to the model: a name is a fact
+about a person, and a model asked twice can spell it two ways.
+
+The rest stays Latin on purpose. Titles, Open Graph text and the JSON-LD
+`Person.name` keep "Muhammad Abdullah", the name on the CV, the GitHub and
+LinkedIn profiles and every inbound link, so all twenty documents still resolve
+to one entity. The English `<h1>` is byte-identical to what it was. A localised
+`<h1>` that does not repeat the Latin title text is the normal shape of a
+translated page, and the hreflang cluster already says the documents are one.
+Not done, and the next step if native-script searches matter: listing the
+spellings as `Person.alternateName`.
+
+### Fonts: Naskh for Urdu, system faces for CJK
+
+Arabic, Persian and Urdu use a self-hosted Noto Sans Arabic, with Noto Sans
+Hebrew and Noto Sans Devanagari beside it, each sliced by `unicode-range` and
+never preloaded. An English visitor downloads none of them.
+
+Urdu is set in the **Naskh**-style Noto Sans Arabic, not Nastaliq. Nastaliq is
+the traditional Urdu hand, and an Urdu reader will notice its absence. But its
+vertical extent is roughly double Naskh's, and every line height on the site was
+set for Latin. Nastaliq would either clip or reflow every page. The spec's goal
+of no structural change outranked typographic tradition here. That is a real
+cost, so it is recorded rather than buried.
+
+Chinese, Japanese and Korean use **system stacks**, one per language, composed
+onto the brand font variables by `src/i18n/fonts.js` (PingFang SC, Hiragino or
+Apple SD Gothic Neo first, then Noto Sans CJK and Source Han, then YaHei, Yu
+Gothic or Malgun Gothic). A CJK webfont is
+megabytes even when sliced, and every target OS ships a first-class CJK face.
+The `lang` attribute plus a per-language stack is also what gives each reader
+their own regional glyph forms for unified Han code points.
+
+### Every locale launches machine-translated, and says so
+
+No native reviewers were available at launch. So every non-English catalogue
+was produced by `npm run i18n:translate`, which sends only missing or outdated
+strings through the Vercel AI Gateway and validates every response against the
+English ICU structure before writing it. Every non-English locale ships with
+`status: 'machine'` in `src/i18n/locales.js`. While it is `machine`, the footer
+and the language selector say the translation is unreviewed. A native review
+changes the status to `'reviewed'`, and that is the only thing that removes the
+notice. The tiers in the registry now set review **priority**, not launch
+quality. The `locale_switch` analytics event (behind the consent gate, §17)
+records which languages visitors actually choose, so review effort can follow
+real readers.
+
+### What it measured
+
+The spec set a client message budget of 8 kB gzipped per locale per route. Two
+routes were over it when first measured (English, 2026-10-29): `/uses` at
+10.8 kB and `/about` at 9.1 kB. After routes were given only the subtrees they
+render, and `/uses`'s tool descriptions were deferred to a file fetched alongside
+the live crawl, the figures were 7.0 kB and 6.1 kB.
+`tests/fitness/i18nBudget.test.js` holds every locale × route to the budget.
+
+**Re-measured in every locale (2026-11-01).** The figures above were English,
+and a stale local test cache had been measuring every other locale as English
+too (`docs/testing.md`, defects table). Measured for real, translated copy ran
+over in 16 of 20 locales: `/uses` up to 10.1 kB (Russian), `/about` 9.0 kB,
+`/journey` 8.6 kB. Copy nobody sees until they ask for it now loads on demand:
+the privacy preferences dialog, the `/uses` ⌘K commands and the 404's own
+copy. After that, every route passes in every locale except Russian `/uses`, at
+8.3 kB, and what remained there was all on screen at first paint (42 curated
+tool descriptions, 2.4 kB). **Decision (owner, 2026-11-01):** `/uses` alone is
+allowed 9 kB, and the 8 kB line stays for every other route. Rejected:
+raising the line for every route, and deferring the tool descriptions, which
+would paint the stack in English first.
+
+### Out of scope, and still open
+
+- **Native review**, locale by locale (§10, *Translations*).
+- **Browser-level coverage of locale URLs.** The E2E, axe and visual suites
+  still walk the English URLs only (`docs/testing.md`, L5).
+- **The Auth.js sign-in pages** the guestbook hands off to are English.

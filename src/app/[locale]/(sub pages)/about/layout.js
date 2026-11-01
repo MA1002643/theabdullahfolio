@@ -1,6 +1,8 @@
 import { usesData } from '@/app/data';
 import JsonLd from '@/components/seo/JsonLd';
-import { sectionMetadata } from '@/lib/og/meta';
+import { setRequestLocale } from 'next-intl/server';
+import IntlScope from '@/i18n/IntlScope';
+import { routeMetadata } from '@/lib/og/meta';
 import { profilePage } from '@/lib/seo/schema';
 import { knowsAboutFromStack, routeFor } from '@/lib/seo/site';
 
@@ -15,15 +17,15 @@ const ROUTE = routeFor('/about');
 // metadata contract test asserts every description is unique and 110–160
 // characters, the JSON-LD graph states the same description, and `llms.txt`
 // prints it — four consumers that were four chances to disagree.
-export const metadata = sectionMetadata({
-  title: ROUTE.title,
-  description: ROUTE.description,
-  path: ROUTE.path,
-});
+export function generateMetadata({ params }) {
+  return routeMetadata(ROUTE.path, params);
+}
 
-export default function AboutLayout({ children }) {
+export default async function AboutLayout({ children, params }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return (
-    <>
+    <IntlScope locale={locale} route={ROUTE.path}>
       {/* ProfilePage — the page whose SUBJECT is the person (issue #32, W2).
           `mainEntity` points at `#person`, defined once in the root layout's
           graph, so this adds the "this page is about that entity" statement
@@ -42,9 +44,9 @@ export default function AboutLayout({ children }) {
           JavaScript. */}
       <JsonLd
         id="ld-about"
-        data={profilePage({ knowsAbout: knowsAboutFromStack(usesData.stack) })}
+        data={profilePage({ knowsAbout: knowsAboutFromStack(usesData.stack), locale })}
       />
       {children}
-    </>
+    </IntlScope>
   );
 }

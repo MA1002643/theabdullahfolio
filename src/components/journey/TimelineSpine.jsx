@@ -45,6 +45,7 @@ const TimelineSpine = ({
   amplitude,
   revealed,
   reduceMotion,
+  nowLabel = 'NOW',
 }) => {
   // useId keeps the gradient ids unique per instance — a duplicate id would
   // let one mounted copy capture the other's url(#…) references. Colons
@@ -76,9 +77,18 @@ const TimelineSpine = ({
   );
 
   return (
+    // RTL (issue #82): the rail sits on the reading-START side (right) on a
+    // phone and the cards alternate the other way round, so the snake has to
+    // bow the other way too. Rather than teach the geometry about direction,
+    // the whole wrapper is mirrored (`rtl:-scale-x-100` — the gradients are
+    // vertical and the comet is round, so nothing reads backwards) and the one
+    // piece of text, the NOW label, is flipped back. `start-*` + the signed
+    // translate keep the wrapper centred on the axis in both directions;
+    // `md:start-1/2` rather than `md:left-1/2` because with both insets set
+    // an RTL box honours `right` and ignores `left`.
     <div
       aria-hidden
-      className="absolute bottom-0 top-0 left-[1.375rem] -translate-x-1/2 md:left-1/2"
+      className="absolute bottom-0 top-0 start-[1.375rem] -translate-x-1/2 rtl:translate-x-1/2 rtl:-scale-x-100 md:start-1/2"
       style={{ width }}
     >
       {geometry && (
@@ -187,8 +197,8 @@ const TimelineSpine = ({
           on the page; reduced motion keeps the dot and label (state, not
           motion) and drops the pulse. */}
       <div className="absolute -top-1 left-1/2 -translate-x-1/2">
-        <span className="absolute -top-7 left-1/2 -translate-x-1/2 font-mono text-[10px] tracking-[0.3em] text-[#ff6d05]">
-          NOW
+        <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[10px] tracking-[0.3em] text-[#ff6d05] rtl:-scale-x-100">
+          {nowLabel}
         </span>
         <motion.span
           className="block h-3 w-3 rounded-full bg-[#ff6d05]"

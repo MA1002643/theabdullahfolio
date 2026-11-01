@@ -21,6 +21,13 @@ const VIEWS = [
   { name: 'privacy', path: '/privacy' },
   { name: 'notes-index', path: '/notes' },
   { name: 'contact', path: '/contact' },
+  // The same stable views right to left and in CJK (issue #82 follow-up):
+  // a mirrored form and CV, and Japanese line breaking on the system stack.
+  // A view with no baseline yet is seeded on its first render
+  // (scripts/render-visual-latest.mjs), so adding one does not fail CI.
+  { name: 'ar-contact', path: '/ar/contact' },
+  { name: 'ar-cv', path: '/ar/cv' },
+  { name: 'ja-cv', path: '/ja/cv' },
 ];
 
 // Content that legitimately differs between runs.

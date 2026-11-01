@@ -24,16 +24,27 @@
 // unsplit string is exposed once via an sr-only node, so the link's accessible
 // name is always correct regardless of any aria-label on the parent anchor.
 
+import { glyphUnits } from '@/components/ui/textSegments';
+
 // A non-breaking space keeps its width when a plain space would collapse inside
 // an inline-block char box.
 const NBSP = ' ';
 
 export default function HoverText({ text }) {
-  const chars = String(text).split('');
+  // Script-aware split (issue #82): grapheme clusters — and whole WORDS for
+  // Arabic-script and Devanagari text, whose letters lose their joined forms
+  // in separate inline-block boxes, so those languages roll word by word.
+  // See src/components/ui/textSegments.js.
+  const chars = glyphUnits(text);
 
+  // dir="auto": every glyph is its own inline-block, and inline-blocks are
+  // neutral to the bidi algorithm, so in a right-to-left page they line up
+  // right to left whatever script they hold — "CV" read "VC" in the Arabic
+  // index. The run takes its direction from its own first letter instead:
+  // a Latin label rolls left to right, an Arabic one right to left.
   return (
     <>
-      <span className="hover-text" aria-hidden="true">
+      <span className="hover-text" aria-hidden="true" dir="auto">
         {chars.map((char, i) => (
           <span
             key={i}

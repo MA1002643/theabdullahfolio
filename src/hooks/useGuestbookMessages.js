@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import {
   MAX_PAGE_LIMIT,
   PAGE_SIZE,
@@ -59,6 +60,20 @@ const ENSURE_MAX_FETCHES = 10;
 // the one-post-per-user-per-five-minutes limit makes a forty-author burst.
 const POLL_MAX_FETCHES = 5;
 
+// A failed write's error, carrying the route's machine `code` and its
+// `values` beside the English `message` (issue #82), so the toast can word it
+// in the visitor's language.
+// No server message → an empty one, so the toast falls through to the
+// catalogue's fallback in the visitor's language rather than hard English.
+function apiError(data) {
+  const err = new Error(data.error || '');
+  if (typeof data.code === 'string') {
+    err.code = data.code;
+    err.values = data.values;
+  }
+  return err;
+}
+
 async function fetchPage(limit, cursor) {
   const qs = new URLSearchParams({ limit: String(limit) });
   if (cursor) qs.set('cursor', cursor);
@@ -89,6 +104,22 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
   // can tell whether a read moved it in the meantime. Every other site goes
   // through the two thin setters, unchanged in shape.
   const [wall, setWall] = useState({ list: null, total: 0, seq: 0 });
+  // Copy through a ref (issue #82): the flows below are stable callbacks, and
+  // must read the current locale's words at toast time. `say(err, key)` is
+  // the route's code in the visitor's language when the catalogue has it,
+  // else the error's own (server English) message, else the fallback.
+  const t = useTranslations('Guestbook');
+  const tRef = useRef(t);
+  // Synced after render, never during it (react-hooks/refs).
+  useEffect(() => {
+    tRef.current = t;
+  });
+  const sayRef = useRef((err, fallbackKey) => {
+    const tr = tRef.current;
+    const key = err?.code ? `errors.${err.code}` : null;
+    if (key && tr.has(key)) return tr(key, err.values);
+    return err?.message || tr(fallbackKey);
+  });
   const messages = wall.list; // null = first load in flight
   const total = wall.total; // the server's count of confirmed marks
   const setMessages = useCallback((next) => {
@@ -366,7 +397,7 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
         // serves carries it — so the pending card carries none either and
         // shows the name.
         author: {
-          name: user?.name || user?.username || 'You',
+          name: user?.name || user?.username || tRef.current('toast.you'),
           ...(provider === 'github' && user?.username
             ? { username: user.username }
             : {}),
@@ -393,7 +424,7 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          throw new Error(data.error || 'Failed to post message');
+          throw apiError(data);
         }
         // The server stores the message before it answers, so a read that ran
         // while the POST was in flight can already reflect it. Settle INSIDE
@@ -426,13 +457,13 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
               : withTotal(next, w.total + 1);
         });
         setNewIds((prev) => new Set(prev).add(confirmed.id));
-        toast.success('Message posted!');
+        toast.success(tRef.current('toast.posted'));
         return true;
       } catch (err) {
         setMessages((prev) =>
           (prev ?? []).filter((m) => m.id !== optimistic.id),
         );
-        toast.error(err.message || 'Failed to post message');
+        toast.error(sayRef.current(err, 'toast.postFailed'));
         return false;
       } finally {
         setSubmitting(false);
@@ -475,7 +506,7 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
         body: JSON.stringify(clearing ? { id, key, clear: true } : { id, key }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Failed to react');
+      if (!res.ok) throw apiError(data);
       // Server truth wins — someone else may have reacted since our snapshot.
       setMessages((list) =>
         (list ?? []).map((m) =>
@@ -493,7 +524,7 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
       setMessages((list) =>
         (list ?? []).map((m) => (m.id === id ? prev : m)),
       );
-      toast.error(err.message || 'Failed to react');
+      toast.error(sayRef.current(err, 'toast.reactFailed'));
       return false;
     }
   }, [setMessages]);
@@ -529,7 +560,7 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
         method: 'DELETE',
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Failed to delete message');
+      if (!res.ok) throw apiError(data);
       // The mirror of the submit race: a poll that ran while the DELETE was
       // in flight still saw the message on the server and revived the card;
       // any read in flight — an older page included — may have carried a
@@ -550,9 +581,7 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
             : next;
       });
       toast.success(
-        own
-          ? 'Your message was removed from the guestbook'
-          : 'Message removed from the guestbook',
+        tRef.current(own ? 'toast.removedOwn' : 'toast.removedOther'),
       );
       return true;
     } catch (err) {
@@ -578,7 +607,7 @@ export function useGuestbookMessages({ pollMs = 0 } = {}) {
         const next = { ...w, list: nextList };
         return untouched ? withTotal(next, w.total + 1) : next;
       });
-      toast.error(err.message || 'Failed to delete message');
+      toast.error(sayRef.current(err, 'toast.deleteFailed'));
       return false;
     }
   }, []);

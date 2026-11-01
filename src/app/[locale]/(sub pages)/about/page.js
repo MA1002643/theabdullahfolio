@@ -1,11 +1,15 @@
 "use client"
 import Image from "next/image";
-import bg from "../../../../public/background/contact-bg.png";
+import bg from "../../../../../public/background/contact-bg.png";
 import AboutDetails from "@/components/about";
 import AuroraDustMount from "@/components/AuroraDustMount";
 import PageTitle from "@/components/PageTitle";
+import { useTranslations } from "next-intl";
 
 export default function About() {
+  // Headline copy from the About catalogue (issue #82); the layout's IntlScope
+  // hands this client page the About namespace.
+  const t = useTranslations("About");
   return (
     // Fragment, not <main>: the (sub pages) layout already provides the one
     // <main> landmark (see issue #86 — nested <main> is invalid HTML).
@@ -19,9 +23,9 @@ export default function About() {
         alt=""
         priority
         sizes="100vw"
-        className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-50"
+        className="-z-50 fixed top-0 start-0 w-full h-full object-cover object-center opacity-50"
       />
-      <div className="-z-40 fixed top-0 left-0 w-full h-full bg-black/70" />
+      <div className="-z-40 fixed top-0 start-0 w-full h-full bg-black/70" />
 
       {/* Shared aurora (drifts + bends toward the cursor), scroll-reactive: a
           gentle vertical parallax shifts the whole aurora as the page scrolls
@@ -37,7 +41,7 @@ export default function About() {
           plain <h2> treatment as the qualifications page. replayOnView
           re-arms the headline ignite whenever the block scrolls out of
           view, matching /qualifications and /projects. */}
-      <PageTitle title="ABOUT ME" subtitle="WHO I AM" id="about" replayOnView />
+      <PageTitle title={t("page.title")} subtitle={t("page.subtitle")} id="about" replayOnView />
 
       <AboutDetails />
     </>

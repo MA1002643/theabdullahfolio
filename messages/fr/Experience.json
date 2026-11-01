@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Années de métier",
+    "unit": "{unit, select, years {{count, plural, other {ans d’expérience}}} other {{count, plural, other {mois d’expérience}}}}",
+    "unavailable": "expérience indisponible",
+    "loadingAria": "Chargement des années d’expérience",
+    "viewBreakdown": "Voir le détail →",
+    "srPrefix": "Mise à jour de l’expérience : ",
+    "personal": "Personnel",
+    "employment": "Emploi",
+    "splitUnavailable": "Indisponible",
+    "percent": "<n></n> %"
+  },
+  "label": {
+    "loading": "Chargement du résumé de l’expérience",
+    "degraded": "Années de métier : expérience indisponible (la partie GitHub du résumé est absente ou incomplète).{split} Voir le détail : ouvre le détail des données disponibles.",
+    "ready": "Années de métier : {count, number, ::group-off}+ {unit, select, years {ans} other {mois}} d’expérience.{split} Voir le détail : ouvre le détail par catégorie.",
+    "split": "Personnel {personal}, Emploi {employment}.",
+    "splitPercent": "{value, number, ::group-off} %",
+    "splitUnavailable": "indisponible"
+  },
+  "modal": {
+    "eyebrow": "Aperçu de carrière",
+    "title": "Expérience par catégorie",
+    "close": "Fermer le détail de l’expérience",
+    "personalProjects": "Projets personnels",
+    "employment": "Emploi",
+    "unavailable": "Indisponible",
+    "unitWord": "{unit, select, years {{count, plural, one {an} other {ans}}} other {{count, plural, one {mois} other {mois}}}}",
+    "totalUnavailable": "total indisponible",
+    "totalUnit": "total {unit, select, years {ans} other {mois}}",
+    "ownedRepos": "<n></n> {count, plural, one {dépôt en propre} other {dépôts en propre}}",
+    "roles": "<n></n> {count, plural, one {poste} other {postes}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ ans} other { mois}}",
+    "newestFirst": "Plus récents d’abord",
+    "showFewer": "Afficher moins",
+    "showAll": "Afficher les {count, number, ::group-off} dépôts →",
+    "noRepos": "Aucun dépôt en propre détecté pour le moment.",
+    "personalFailed": "Les données des projets personnels n’ont pas pu être chargées pour le moment.",
+    "relativeDuration": "Durée relative",
+    "noRoles": "Aucun poste d’ingénierie logicielle détecté pour le moment.",
+    "employmentFailed": "Les données d’emploi n’ont pas pu être chargées pour le moment."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {an} other {ans}}} other {{count, plural, one {mois} other {mois}}}}",
+  "changes": {
+    "newRole": "Nouveau poste détecté depuis le CV : {company}",
+    "years": "Années d’expérience mises à jour : {from} → {to}",
+    "employment": "Expérience professionnelle mise à jour : +{count, number, ::group-off} {count, plural, one {mois} other {mois}}",
+    "newRepo": "Nouveau dépôt détecté : {name}",
+    "newRepos": "{count, number, ::group-off} {count, plural, one {nouveau dépôt détecté} other {nouveaux dépôts détectés}} sur GitHub",
+    "timeline": "Chronologie des projets personnels mise à jour"
+  }
+}

@@ -2,6 +2,8 @@
 
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import { wordChunks } from '@/components/ui/textSegments';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Eraser, PenLine } from 'lucide-react';
 import { useSignaturePad } from '@/hooks/useSignaturePad';
@@ -45,14 +47,16 @@ import { onMediaChange } from '@/lib/mediaQuery';
 // One label's words, each carrying its own slice of the fire ramp. Spaces
 // stay as breakable text nodes OUTSIDE the spans (the ContactIntro pattern)
 // so the line still wraps naturally.
+// wordChunks (issue #82): the same split(' ') for spaced scripts, and real
+// word breaks for Chinese/Japanese, which have no spaces to split on.
 function FireWords({ text }) {
-  const words = text.split(' ');
-  return words.map((w, i) => (
+  const words = wordChunks(text);
+  return words.map(({ word: w, gap }, i) => (
     <Fragment key={`${w}-${i}`}>
+      {gap}
       <span className="gb-fire-word" style={wordFill(i, words.length)}>
         {w}
       </span>
-      {i < words.length - 1 ? ' ' : ''}
     </Fragment>
   ));
 }
@@ -63,6 +67,7 @@ function FireWords({ text }) {
 // in the signature's 100×40 space, so what the visitor picks is exactly the
 // glyph their card will carry.
 function PresetMarks({ selected, onSelect, labelId, label }) {
+  const t = useTranslations('Guestbook');
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
       <span
@@ -72,8 +77,9 @@ function PresetMarks({ selected, onSelect, labelId, label }) {
         <FireWords text={label} />
       </span>
       <div role="group" aria-labelledby={labelId} className="flex items-center gap-1.5">
-        {PRESET_MARKS.map(({ id, label: name, d }) => {
+        {PRESET_MARKS.map(({ id, d }) => {
           const pressed = selected === id;
+          const name = t(`signature.marks.${id}`);
           return (
             <button
               key={id}
@@ -112,6 +118,7 @@ function PresetMarks({ selected, onSelect, labelId, label }) {
 
 export default function SignatureField({ onSignatureChange, resetSignal }) {
   const reduceMotion = useReducedMotion();
+  const t = useTranslations('Guestbook');
   const marksLabelId = useId();
   const [open, setOpen] = useState(false);
   // Canvas holds ink (comp: the pad's dashed border turns solid ember the
@@ -203,7 +210,7 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
           />
           <span>
             <FireWords
-              text={open ? 'Discard signature' : 'Add a signature (optional)'}
+              text={open ? t('signature.discard') : t('signature.add')}
             />
           </span>
         </button>
@@ -215,7 +222,7 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
             className="inline-flex items-center gap-1.5 rounded-md border border-[#ff6d05]/25 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#fc83ff]/70 transition-[color,border-color,box-shadow] duration-300 hover:border-[#ff6d05]/60 hover:text-[#ff6d05] hover:shadow-[0_0_8px_rgba(255,109,5,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
           >
             <Eraser aria-hidden="true" className="h-3 w-3" />
-            Clear
+            {t('signature.clear')}
           </button>
         ) : null}
       </div>
@@ -241,7 +248,7 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
                 onPointerMove={pad.handlers.onPointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
-                aria-label="Signature drawing area — draw with your mouse, finger, or pen, or pick a preset mark below."
+                aria-label={t('signature.padLabel')}
                 className={`aspect-[5/2] w-full cursor-crosshair touch-none rounded-lg border bg-[linear-gradient(180deg,rgba(255,109,5,0.045),rgba(0,0,0,0.25))] transition-colors duration-300 ${
                   inked
                     ? 'border-solid border-[#ff6d05]/40'
@@ -252,7 +259,7 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
                 aria-hidden="true"
                 className="text-center font-mono text-[10px] tracking-wide"
               >
-                <FireWords text="Draw with your finger, trackpad or mouse — stroke weight follows your speed" />
+                <FireWords text={t('signature.padHint')} />
               </p>
             </>
           )}
@@ -260,7 +267,7 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
             selected={mark}
             onSelect={selectMark}
             labelId={marksLabelId}
-            label={noPointer ? 'Pick a mark' : 'Or pick a mark'}
+            label={noPointer ? t('signature.pickMark') : t('signature.orPickMark')}
           />
         </motion.div>
       ) : null}

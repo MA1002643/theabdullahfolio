@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "再生中",
+  "lastPlayed": "最後に再生",
+  "cardLabel": "{state, select, playing {再生中} other {最後に再生}}:{artist}の「{title}」。",
+  "cardLabelLink": "{state, select, playing {再生中} other {最後に再生}}:{artist}の「{title}」。Spotifyで開く。",
+  "openOnSpotify": "Spotifyで開く"
+}

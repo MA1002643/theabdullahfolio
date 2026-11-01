@@ -1,0 +1,20 @@
+{
+  "section": "使用技術",
+  "preferences": "環境設定",
+  "jumpPlate": "{ordinal} の {label} へ移動",
+  "plates": {
+    "machine": "マシン",
+    "bench": "作業台",
+    "stack": "スタック",
+    "pipeline": "パイプライン",
+    "instruments": "計測器",
+    "bom": "部品表"
+  },
+  "copySettings": "エディター設定をコピー",
+  "openRepos": "GitHub のリポジトリを見る",
+  "toggleMotion": "モーションを切り替え",
+  "motionOn": "オン",
+  "motionOff": "オフ",
+  "copied": "エディター設定をコピーしました",
+  "clipboardUnavailable": "クリップボードを利用できません — フレームを選択してコピーしてください"
+}

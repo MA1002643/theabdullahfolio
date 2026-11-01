@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { createElement } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TimelineAtlas from '@/components/journey/TimelineAtlas';
 import { journeyData } from '@/app/data';
+import { renderWithIntl } from '../support/intl';
 
 // The atlas's track chips HIGHLIGHT a track: non-matching bars dim, they are
 // not disabled (TimelineNode's `dimmed` is the same de-emphasis). A dimmed bar
@@ -55,7 +56,9 @@ afterEach(() => {
 // reduceMotion: the atlas shows without waiting on in-view, and the jump's
 // scroll contract becomes `auto` — the deterministic branch to assert on.
 function renderAtlas(filter) {
-  render(
+  // Inside the real catalogue (issue #82): the atlas reads its copy through
+  // useTranslations, and every assertion below is on the English it renders.
+  renderWithIntl(
     createElement(TimelineAtlas, {
       activeYear: career.year,
       filter,

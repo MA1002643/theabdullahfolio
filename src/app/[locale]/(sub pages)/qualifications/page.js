@@ -1,18 +1,22 @@
 "use client"
 import React from 'react'
 import Image from "next/image";
-import bg from "../../../../public/background/qualifications-bg.webp";
+import bg from "../../../../../public/background/qualifications-bg.webp";
 import Carousel from '@/components/qualifications/Carousel'
 import PageTitle from '@/components/PageTitle'
 import SceneVideo from '@/components/qualifications/SceneVideo'
+import { useTranslations } from 'next-intl'
 
-const page = () => {
+const QualificationsPage = () => {
+  // Client page, so the headline reads the route's client-scoped catalogue
+  // (the layout's IntlScope hands down `Qualifications`).
+  const t = useTranslations('Qualifications')
   return (
     <>
       {/* HEADLINE — uses shared PageTitle (issue #104). replayOnView makes the
           letter-ignite re-run every time the heading scrolls back into view
           (issue #46), instead of once per mount. */}
-      <PageTitle title="QUALIFICATION" subtitle="accomplishments" replayOnView />
+      <PageTitle title={t('title')} subtitle={t('subtitle')} replayOnView />
       {/* Static frame of the scene: instant paint, the video's "poster", and
           the permanent fallback (reduced motion / Save-Data / video error).
           No blur — the source is native ~4MP now, softening it away defeats
@@ -48,4 +52,4 @@ const page = () => {
   )
 }
 
-export default page
+export default QualificationsPage

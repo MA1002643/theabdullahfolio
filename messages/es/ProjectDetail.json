@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Navegación de proyectos",
+    "all": "Todos los proyectos",
+    "previous": "Proyecto anterior: {name}",
+    "next": "Proyecto siguiente: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Inicio",
+    "projects": "Proyectos"
+  },
+  "loading": "Cargando proyecto",
+  "intro": {
+    "fallbackName": "Nombre del proyecto",
+    "fallbackDescription": "Soluciones web innovadoras, rápidas y futuristas.",
+    "linksLabel": "Enlaces de {name}",
+    "liveDemo": "Demo en vivo<sr> (se abre en una pestaña nueva)</sr>",
+    "source": "Código fuente en GitHub<sr> (se abre en una pestaña nueva)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "Inicializando BIOS...",
+      "hardware": "Detectando hardware...",
+      "os": "Cargando el sistema operativo..."
+    },
+    "tagline": "Impulsamos tus ideas con artesanía digital de nueva generación.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Herramientas y frameworks",
+    "overview": "Resumen del proyecto",
+    "overviewLead": "Esta plataforma agiliza los flujos de trabajo del comercio electrónico mediante un panel unificado y analíticas en tiempo real.",
+    "overviewBody": "Resuelve la complejidad de gestionar varias herramientas ofreciendo una interfaz centralizada e intuitiva.",
+    "features": "Funcionalidades",
+    "feature": {
+      "auth": {
+        "title": "Autenticación",
+        "desc": "Inicio de sesión y acceso de usuarios seguros."
+      },
+      "payments": {
+        "title": "Pagos",
+        "desc": "Pasarela de pago integrada."
+      },
+      "chat": {
+        "title": "Chat en vivo",
+        "desc": "Comunicación instantánea con los usuarios."
+      },
+      "admin": {
+        "title": "Panel de administración",
+        "desc": "Control sencillo del contenido."
+      }
+    },
+    "liveDemo": "Demo en vivo",
+    "github": "GitHub",
+    "demoLabel": "Abrir la demo en vivo de {name}",
+    "sourceLabel": "Ver el código fuente de {name} en GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. Proyecto {category}, iniciado {when}. {visibility, select, private {Repositorio privado} other {Repositorio público}}, con seguimiento en vivo desde su tablero de GitHub.",
+    "undated": "{name} — {description}. Proyecto {category}. {visibility, select, private {Repositorio privado} other {Repositorio público}}, con seguimiento en vivo desde su tablero de GitHub."
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "インデックス",
+    "elsewhere": "その他の場所"
+  },
+  "siteNav": "サイト",
+  "identity": {
+    "role": "ソフトウェアエンジニア",
+    "statement": "イングランド北部から、速く丁寧なウェブ体験をつくっています。"
+  },
+  "availability": "新しい職を募集中です",
+  "githubCta": {
+    "label": "GitHubでこのプロジェクトを見る",
+    "newTab": "（新しいタブで開きます）",
+    "commits": "{count, plural, other {<num>{formatted}</num>件のコミット}}",
+    "pushed": "{when}にプッシュ"
+  },
+  "manifest": {
+    "departures": "出発",
+    "nowBoarding": "ご搭乗中",
+    "onTime": "定刻",
+    "links": {
+      "about": {
+        "label": "自己紹介",
+        "desc": "私について"
+      },
+      "journey": {
+        "label": "歩み",
+        "desc": "これまでの道のり"
+      },
+      "qualifications": {
+        "label": "資格",
+        "desc": "学歴・資格"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "経歴の全体"
+      },
+      "projects": {
+        "label": "プロジェクト",
+        "desc": "厳選した制作物"
+      },
+      "uses": {
+        "label": "使用ツール",
+        "desc": "開発に使うもの"
+      },
+      "notes": {
+        "label": "ノート",
+        "desc": "この設計にした理由"
+      },
+      "contact": {
+        "label": "連絡先",
+        "desc": "お気軽にどうぞ"
+      },
+      "guestbook": {
+        "label": "ゲストブック",
+        "desc": "足跡を残す"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHubプロフィール（新しいタブで開きます）",
+    "linkedin": "LinkedInプロフィール（新しいタブで開きます）",
+    "resume": "CVの全文を読む",
+    "linkLabel": "{command}、{handle}：{description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {{town}の現地時間 {period} {time}} other {{town}の現地時間 {time}}}",
+    "placeLabel": "所在地：{town}",
+    "live": "ライブ"
+  },
+  "sound": {
+    "label": "サウンド",
+    "on": "オン",
+    "off": "オフ",
+    "turnOn": "フッターのギター音をオンにする",
+    "turnOff": "フッターのギター音をオフにする",
+    "hoverLines": "線にカーソルを重ねてください",
+    "nowPlaying": "再生中 — 心安らぐギター",
+    "turnOnPrompt": "サウンドをオンにすると、心安らぐギターが流れます"
+  },
+  "privacy": {
+    "policy": "プライバシー",
+    "choices": "プライバシーの選択"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/外部サイト",
+    "cmd": {
+      "github": "github を開く",
+      "linkedin": "linkedin を開く",
+      "resume": "履歴書を開く"
+    }
+  }
+}

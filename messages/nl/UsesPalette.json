@@ -1,0 +1,20 @@
+{
+  "section": "Uses",
+  "preferences": "Voorkeuren",
+  "jumpPlate": "Ga naar {ordinal} {label}",
+  "plates": {
+    "machine": "De machine",
+    "bench": "De werkbank",
+    "stack": "De stack",
+    "pipeline": "De pipeline",
+    "instruments": "De instrumenten",
+    "bom": "Stuklijst"
+  },
+  "copySettings": "Kopieer mijn editorinstellingen",
+  "openRepos": "Bekijk de repositories op GitHub",
+  "toggleMotion": "Beweging aan- of uitzetten",
+  "motionOn": "aan",
+  "motionOff": "uit",
+  "copied": "Editorinstellingen gekopieerd",
+  "clipboardUnavailable": "Klembord niet beschikbaar — selecteer het kader om te kopiëren"
+}

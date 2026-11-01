@@ -1,0 +1,124 @@
+{
+  "title": "LIBRO DE VISITAS",
+  "subtitle": "DEJA TU MARCA",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> marca dejada} other {<n>{shown}</n> marcas dejadas}}",
+    "commands": "{shortcut} · comandos",
+    "loading": "Cargando el libro de visitas…",
+    "loadingMore": "Cargando más del libro de visitas…",
+    "loadFailed": "No se pudo cargar el libro de visitas",
+    "pageFailed": "No se pudo cargar esta página",
+    "retry": "Reintentar",
+    "emptyTitle": "Aún no hay mensajes",
+    "emptyInvite": "Sé el primero en dejar tu marca"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> aquí ahora}}",
+  "announce": {
+    "one": "Nuevo mensaje de {name}: {message}",
+    "many": "{count, plural, one {# mensaje nuevo.} other {# mensajes nuevos.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Alguien"
+  },
+  "card": {
+    "sending": "enviando…",
+    "guest": "Invitado",
+    "onGitHub": "{username} en GitHub (se abre en una pestaña nueva)",
+    "copyLink": "Copiar un enlace a este mensaje",
+    "linkCopied": "Enlace copiado: apunta directamente a esta marca",
+    "linkFailed": "No se pudo copiar el enlace",
+    "deleteOwn": "Eliminar tu mensaje",
+    "deleteOther": "Eliminar el mensaje de {name}",
+    "signature": "Firma de {name}",
+    "signatureAnon": "Firma"
+  },
+  "reactions": {
+    "fire": "Fuego",
+    "rocket": "Cohete",
+    "heart": "Corazón",
+    "count": "{label} — {count}",
+    "signInToReact": "Inicia sesión para reaccionar"
+  },
+  "composer": {
+    "label": "Tu mensaje",
+    "placeholder": "Deja un mensaje…",
+    "send": "Enviar mensaje",
+    "offline": "Estás sin conexión: tu mensaje se guarda aquí hasta que vuelvas.",
+    "notSent": "Tu mensaje anterior no se envió",
+    "restore": "Restaurarlo"
+  },
+  "signature": {
+    "add": "Añade una firma (opcional)",
+    "discard": "Descartar firma",
+    "clear": "Borrar",
+    "padLabel": "Área de dibujo de la firma: dibuja con el ratón, el dedo o un lápiz, o elige una marca predefinida más abajo.",
+    "padHint": "Dibuja con el dedo, el trackpad o el ratón: el grosor del trazo sigue tu velocidad",
+    "pickMark": "Elige una marca",
+    "orPickMark": "O elige una marca",
+    "marks": {
+      "flourish": "Floritura",
+      "wave": "Onda",
+      "spark": "Chispa",
+      "orbit": "Órbita"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Deja un mensaje…",
+    "ghostRefine": "Mejorar con IA",
+    "ghostSignature": "Añade una firma (opcional)",
+    "ghostDrafts": "Los borradores se guardan solos mientras escribes",
+    "prompt": "Inicia sesión para dejar un mensaje",
+    "promptReauth": "Vuelve a iniciar sesión para dejar un mensaje",
+    "reauthExplain": "Tu inicio de sesión actual es anterior a las claves de cuenta del muro, así que puede leer pero no escribir: basta con iniciar sesión de nuevo para solucionarlo.",
+    "github": "INICIAR SESIÓN CON GITHUB",
+    "google": "INICIAR SESIÓN CON GOOGLE"
+  },
+  "pagination": {
+    "nav": "Páginas del libro de visitas",
+    "previous": "Página anterior",
+    "next": "Página siguiente",
+    "page": "PÁGINA ",
+    "status": "Página {page} de {total}"
+  },
+  "palette": {
+    "leaveMessage": "Dejar un mensaje",
+    "leaveKeywords": "escribir firmar publicar redactar mensaje",
+    "sectionGuestbook": "Libro de visitas",
+    "sectionPreferences": "Preferencias",
+    "signInToLeave": "Inicia sesión para dejar un mensaje",
+    "toggleSound": "Activar o desactivar los sonidos de la interfaz",
+    "soundKeywords": "audio sonido pitido silenciar mute",
+    "toggleMotion": "Activar o desactivar el movimiento",
+    "motionKeywords": "animación animaciones reducir movimiento quieto",
+    "on": "activado",
+    "off": "desactivado"
+  },
+  "toast": {
+    "posted": "¡Mensaje publicado!",
+    "postFailed": "No se pudo publicar el mensaje",
+    "reactFailed": "No se pudo registrar la reacción",
+    "deleteFailed": "No se pudo eliminar el mensaje",
+    "removedOwn": "Tu mensaje se eliminó del libro de visitas",
+    "removedOther": "Se eliminó un mensaje del libro de visitas",
+    "you": "Tú"
+  },
+  "errors": {
+    "unauthorized": "No autorizado",
+    "too_large": "El cuerpo de la solicitud no puede superar los {max, number, ::group-off} bytes",
+    "invalid_body": "Cuerpo de la solicitud no válido",
+    "message_required": "El mensaje es obligatorio",
+    "message_length": "El mensaje debe tener entre {min} y {max} caracteres",
+    "invalid_characters": "El mensaje contiene caracteres no válidos",
+    "links_not_allowed": "No se permiten enlaces en los mensajes del libro de visitas",
+    "unfriendly": "Por favor, mantén un tono amable",
+    "invalid_signature": "Firma no válida",
+    "rate_limited": "Un mensaje cada 5 minutos — inténtalo de nuevo en {minutes, plural, one {# minuto} other {# minutos}}",
+    "invalid_reaction": "Reacción no válida",
+    "reaction_rate_limited": "Demasiadas reacciones — inténtalo de nuevo en {seconds} s",
+    "not_found": "Mensaje no encontrado",
+    "id_required": "El identificador del mensaje es obligatorio",
+    "invalid_id": "Identificador de mensaje no válido",
+    "forbidden": "Acceso prohibido",
+    "invalid_cursor": "Cursor no válido"
+  }
+}

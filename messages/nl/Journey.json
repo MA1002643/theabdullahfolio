@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "MIJN REIS",
+    "subtitle": "van eerste regel tot productie"
+  },
+  "timeline": {
+    "label": "Tijdlijn van mijn reis"
+  },
+  "endCap": {
+    "est": "SINDS {year} · BOLTON, UK",
+    "tally": "{years, plural, one {# JAAR} other {# JAAR}} · {entries, plural, one {# VERMELDING} other {# VERMELDINGEN}} · {tracks, plural, one {# SPOOR} other {# SPOREN}}",
+    "paper": "DE PAPIEREN VERSIE →",
+    "paperHint": "het cv als pdf (opent in een nieuw tabblad)"
+  },
+  "spine": {
+    "now": "NU"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# mnd}}} one {# jr{months, plural, =0 {} other { # mnd}}} other {# jr{months, plural, =0 {} other { # mnd}}}}",
+    "tenureOngoing": "{tenure} tot nu toe",
+    "view": "BEKIJK",
+    "viewLabel": "Bekijk {title} (opent in een nieuw tabblad)"
+  },
+  "eraRail": {
+    "label": "Tijdperken op de tijdlijn",
+    "jump": "Ga naar {year}"
+  },
+  "atlas": {
+    "eyebrow": "Overlapweergave",
+    "title": "De atlas — drie sporen, één klok",
+    "live": {
+      "career": "{count, plural, one {# functie} other {# functies}}",
+      "education": "{count, plural, one {# opleiding} other {# opleidingen}}",
+      "milestone": "{count, plural, one {# communitybijdrage} other {# communitybijdragen}}",
+      "separator": " + ",
+      "sentence": "Vandaag actief: {parts}{total, plural, =1 {.} other { — tegelijk.}}"
+    },
+    "tracks": {
+      "all": "Alles",
+      "career": "Loopbaan",
+      "education": "Opleiding",
+      "milestone": "Community"
+    },
+    "chipsLabel": "Licht één spoor uit",
+    "zoom": {
+      "group": "Rasterzoom",
+      "out": "Het raster uitzoomen",
+      "outTitle": "Uitzoomen",
+      "in": "Het raster inzoomen",
+      "inTitle": "Inzoomen",
+      "readoutLabel": "Rasterzoom {pct}. Terugzetten naar {full}",
+      "readoutTitle": "Rasterzoom",
+      "resetTitle": "Zoom terugzetten naar {full}",
+      "status": "Rasterzoom {pct}"
+    },
+    "region": "Overlap-atlas: elke functie en cursus als parallelle balken op één tijdas",
+    "entries": "{count, plural, one {# vermelding} other {# vermeldingen}}",
+    "now": "Nu",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Ga naar {org} · {role}, {dates}",
+    "spokenRange": "{start} tot {end}",
+    "spokenOpen": "{start} tot nu",
+    "key": {
+      "select": "Selecteer een balk om ernaartoe te gaan.",
+      "dashed": "Gestippelde rand = loopt nog.",
+      "stacked": "Gestapelde balken = tegelijkertijd."
+    }
+  },
+  "palette": {
+    "section": "Reis",
+    "jumpYear": "Ga naar {year}",
+    "eraHint": "tijdperk",
+    "jumpAtlas": "Ga naar de overlap-atlas",
+    "openCv": "Open het CV (PDF)",
+    "openCvHint": "de papieren versie"
+  }
+}

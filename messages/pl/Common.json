@@ -1,0 +1,14 @@
+{
+  "loadingProject": "Wczytywanie projektu",
+  "emblem": "Godło Muhammad Abdullah",
+  "notifications": "Powiadomienia",
+  "sound": {
+    "turnOn": "Włącz dźwięk gitary",
+    "turnOff": "Wyłącz dźwięk gitary"
+  },
+  "owner": {
+    "given": "Muhammad",
+    "family": "Abdullah",
+    "full": "Muhammad Abdullah"
+  }
+}

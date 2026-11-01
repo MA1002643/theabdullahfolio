@@ -1,0 +1,20 @@
+{
+  "section": "Что я использую",
+  "preferences": "Настройки",
+  "jumpPlate": "Перейти: {ordinal} {label}",
+  "plates": {
+    "machine": "Машина",
+    "bench": "Верстак",
+    "stack": "Стек",
+    "pipeline": "Конвейер",
+    "instruments": "Приборы",
+    "bom": "Спецификация"
+  },
+  "copySettings": "Скопировать мои настройки редактора",
+  "openRepos": "Репозитории на GitHub",
+  "toggleMotion": "Переключить анимацию",
+  "motionOn": "вкл.",
+  "motionOff": "выкл.",
+  "copied": "Настройки редактора скопированы",
+  "clipboardUnavailable": "Буфер обмена недоступен — выделите рамку, чтобы скопировать"
+}

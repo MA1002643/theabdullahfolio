@@ -1,16 +1,20 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   useInView,
   useScroll,
   useSpring,
 } from 'framer-motion';
+import { useLocale, useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { journeyData } from '@/app/data';
 import { resumeUrl } from '@/components/footer/footer-data';
 import FireText from '@/components/shared/FireText';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
+import { useDataT } from '@/i18n/useDataT';
+import { localizeJourneyEntry } from '@/i18n/data';
+import { intlTag } from '@/i18n/format';
 import TimelineSpine from './TimelineSpine';
 import TimelineNode from './TimelineNode';
 import TimelineAtlas from './TimelineAtlas';
@@ -61,6 +65,22 @@ const TALLY = (() => {
 const SCROLL_LINE = 0.62;
 
 const JourneyTimeline = () => {
+  const t = useTranslations('Journey');
+  const locale = useLocale();
+  const dataT = useDataT();
+  // The cards read the reader's language (issue #82); ids, years, types and
+  // the machine start/end fields are untouched, so every geometry and election
+  // below still runs off the same values in every locale.
+  const entries = useMemo(
+    () => journeyData.map((m) => localizeJourneyEntry(m, dataT, locale)),
+    [dataT, locale],
+  );
+  // Years print in the locale's digits but never with a grouping separator —
+  // "2,026" is not a year.
+  const formatYear = useMemo(() => {
+    const fmt = new Intl.NumberFormat(intlTag(locale), { useGrouping: false });
+    return (year) => fmt.format(year);
+  }, [locale]);
   const listRef = useRef(null);
   const [mounted, setMounted] = useState(false);
   const prefersReduced = useReducedMotion();
@@ -221,7 +241,7 @@ const JourneyTimeline = () => {
     // this very clip, so one side read flatter than the other three. 8px
     // of padding keeps every card clear of the clip line.
     <section
-      aria-label="Journey timeline"
+      aria-label={t('timeline.label')}
       className="relative mx-auto mt-16 w-full max-w-5xl overflow-x-clip px-2 md:mt-20"
     >
       <GhostYear
@@ -236,6 +256,7 @@ const JourneyTimeline = () => {
         progress={scrollYProgress}
         height={spineHeight}
         anchors={eraAnchors}
+        formatYear={formatYear}
         reduceMotion={reduceMotion}
       />
 
@@ -245,6 +266,8 @@ const JourneyTimeline = () => {
         activeYear={activeYear}
         filter={trackFilter}
         onFilter={setTrackFilter}
+        entries={entries}
+        formatYear={formatYear}
         revealed={revealed}
         reduceMotion={reduceMotion}
       />
@@ -257,14 +280,16 @@ const JourneyTimeline = () => {
           amplitude={amplitude}
           revealed={revealed}
           reduceMotion={reduceMotion}
+          nowLabel={t('spine.now')}
         />
 
         <ol className="relative list-none">
-          {journeyData.map((milestone, index) => (
+          {entries.map((milestone, index) => (
             <TimelineNode
               key={milestone.id}
               milestone={milestone}
               isLeft={index % 2 !== 0}
+              formatYear={formatYear}
               isEraStart={
                 index === 0 || journeyData[index - 1].year !== milestone.year
               }
@@ -291,24 +316,27 @@ const JourneyTimeline = () => {
           aria-hidden
           className="font-mono text-[10px] tracking-[0.35em]"
         >
-          <FireText text="EST. 2018 · BOLTON, UK" />
+          <FireText text={t('endCap.est', { year: formatYear(2018) })} />
         </p>
         <p className="mt-2 font-mono text-[10px] tracking-[0.3em]">
           <FireText
-            text={`${TALLY.years} YRS · ${TALLY.entries} ENTRIES · ${TALLY.tracks} TRACKS`}
+            text={t('endCap.tally', TALLY)}
           />
         </p>
         <a
           href={resumeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          // Starts with the visible words, WCAG 2.5.3: the link shows "THE
-          // PAPER VERSION →", and a name of "Open the CV PDF" could not be
-          // followed by saying what is on screen.
-          aria-label="The paper version: the CV as a PDF (opens in a new tab)"
+          // Named from its content, not an aria-label (WCAG 2.5.3): the visible
+          // words ARE the start of the name, then a heard-only continuation.
+          // An aria-label had to repeat the visible words in every language,
+          // and the Japanese one did not (紙版はこちら shown, 紙版：PDF形式のCV
+          // named) — found by the localized axe run, 2026-11-01. Now no
+          // translation can drift out of step with what is on screen.
           className="journey-cv-link mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.2em]"
         >
-          <FireText text="THE PAPER VERSION →" />
+          <FireText text={t('endCap.paper')} />
+          <span className="sr-only">: {t('endCap.paperHint')}</span>
         </a>
       </div>
 

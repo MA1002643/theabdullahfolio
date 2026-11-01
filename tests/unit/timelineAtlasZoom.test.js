@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { createElement } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TimelineAtlas, { ZOOM_STEPS } from '@/components/journey/TimelineAtlas';
 import { journeyData } from '@/app/data';
+import { renderWithIntl } from '../support/intl';
 
 // The atlas grid is a fixed-metric instrument (90px/month), which on a phone
 // is a very long pan. The owner's direction (2026-09-05): the GRID — and only
@@ -36,7 +37,9 @@ afterEach(() => {
 });
 
 function renderAtlas() {
-  render(
+  // Inside the real catalogue (issue #82): the atlas reads its copy through
+  // useTranslations, and every assertion below is on the English it renders.
+  renderWithIntl(
     createElement(TimelineAtlas, {
       activeYear: career.year,
       filter: 'all',

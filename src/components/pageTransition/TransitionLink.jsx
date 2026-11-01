@@ -1,7 +1,9 @@
 'use client';
 
 import { forwardRef } from 'react';
-import Link from 'next/link';
+// Locale-aware Link (issue #82): `href="/about"` renders `/ar/about` for an
+// Arabic reader, so the passage never drops a visitor out of their language.
+import { Link } from '@/i18n/navigation';
 import { usePageTransition } from './PageTransitionProvider';
 
 // Drop-in next/link replacement that routes eligible clicks through the Ember

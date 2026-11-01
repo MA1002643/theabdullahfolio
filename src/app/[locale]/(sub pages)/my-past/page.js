@@ -1,8 +1,10 @@
 import Image from 'next/image';
-import bg from '../../../../public/background/contact-bg.png';
+import bg from '../../../../../public/background/contact-bg.png';
 import AuroraDustMount from '@/components/AuroraDustMount';
 import PageTitle from '@/components/PageTitle';
-import { sectionMetadata } from '@/lib/og/meta';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import IntlScope from '@/i18n/IntlScope';
+import { routeCopy, routeMetadata } from '@/lib/og/meta';
 import JsonLd from '@/components/seo/JsonLd';
 import { sectionPage } from '@/lib/seo/schema';
 import { routeFor } from '@/lib/seo/site';
@@ -17,17 +19,19 @@ const ROUTE = routeFor('/my-past');
 // reachable from a page that answers 200. The old portfolio itself lands
 // here later; until then the page states what the archive is, in the same
 // voice as every other sub-page.
-export const metadata = sectionMetadata({
-  title: ROUTE.title,
-  description: ROUTE.description,
-  path: ROUTE.path,
-});
+export function generateMetadata({ params }) {
+  return routeMetadata(ROUTE.path, params);
+}
 
-export default function MyPast() {
+export default async function MyPast({ params }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const copy = await routeCopy(ROUTE.path, locale);
+  const t = await getTranslations({ locale, namespace: 'MyPast' });
   return (
     // Fragment, not <main>: the (sub pages) layout already provides the one
     // <main> landmark (issue #86 — nested <main> is invalid HTML).
-    <>
+    <IntlScope locale={locale} route={ROUTE.path}>
       {/* WebPage + BreadcrumbList (issue #32, W2). Declares this route as part
           of the site and about `#person`, and gives it the Home → here trail
           the project pages get. Built from the same registry entry the title
@@ -36,8 +40,9 @@ export default function MyPast() {
         id="ld-my-past"
         data={sectionPage({
           path: ROUTE.path,
-          name: ROUTE.title,
-          description: ROUTE.description,
+          name: copy.title,
+          description: copy.description,
+          locale,
         })}
       />
       {/* Background mirrors the about/contact pages: contact-bg at half
@@ -53,16 +58,14 @@ export default function MyPast() {
       <div className="fixed left-0 top-0 -z-40 h-full w-full bg-black/70" />
       <AuroraDustMount />
 
-      <PageTitle title="MY PAST" subtitle="where it began" replayOnView />
+      <PageTitle title={t('title')} subtitle={t('subtitle')} replayOnView />
 
       {/* The archive's holding copy — the fire-amber gradient the contact
           intro uses, at a readable measure. Replaced by the restored
           portfolio showcase when the archive opens. */}
       <p className="text-fire-amber mx-auto mt-8 max-w-2xl px-4 text-center font-light leading-relaxed">
-        My first portfolio — built during university, hand-coded in HTML, CSS
-        and JavaScript — is being restored for this archive. It was the proving
-        ground for everything this site became.
+        {t('holding')}
       </p>
-    </>
+    </IntlScope>
   );
 }

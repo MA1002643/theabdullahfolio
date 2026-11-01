@@ -1,0 +1,20 @@
+{
+  "section": "Uses",
+  "preferences": "Einstellungen",
+  "jumpPlate": "Zu {ordinal} {label} springen",
+  "plates": {
+    "machine": "Die Maschine",
+    "bench": "Die Werkbank",
+    "stack": "Der Stack",
+    "pipeline": "Die Pipeline",
+    "instruments": "Die Instrumente",
+    "bom": "Stückliste"
+  },
+  "copySettings": "Meine Editor-Einstellungen kopieren",
+  "openRepos": "Repositories auf GitHub ansehen",
+  "toggleMotion": "Bewegung umschalten",
+  "motionOn": "an",
+  "motionOff": "aus",
+  "copied": "Editor-Einstellungen kopiert",
+  "clipboardUnavailable": "Zwischenablage nicht verfügbar — Rahmen markieren, um zu kopieren"
+}

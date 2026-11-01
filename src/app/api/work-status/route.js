@@ -7,6 +7,8 @@ import {
   buildMessage,
   buildSecondaryMessage,
   buildHeadline,
+  describeMessage,
+  describeSecondaryMessage,
   WORK_STATES,
 } from '@/utils/workSignal';
 import { refineMessageWithAI } from '@/utils/workMessageAI';
@@ -315,6 +317,12 @@ export async function GET(request) {
     const signal = computePortfolioSignal({ repos });
     const baseMessage = buildMessage(signal);
     const secondaryMessage = buildSecondaryMessage(signal);
+    // The same two sentences as `{ key, values }` (issue #82): a non-English
+    // header words these in the visitor's locale from its own catalogue, so
+    // one cache entry serves every language. English keeps rendering
+    // `message` (which may be AI-refined — the refinement is English-only).
+    const messageDescriptor = describeMessage(signal);
+    const secondaryMessageDescriptor = describeSecondaryMessage(signal);
     const headline = buildHeadline(signal);
 
     // Soft floor: the deterministic template is free — skip the OpenAI
@@ -333,6 +341,8 @@ export async function GET(request) {
       // ~10 seconds so both "what I'm working on" and "what I just
       // shipped" get airtime in the same header.
       secondaryMessage,
+      messageDescriptor,
+      secondaryMessageDescriptor,
       meta: {
         // Summed portfolio totals — field names unchanged from the
         // single-repo payload so stale client builds keep working (§4.6).
@@ -401,6 +411,10 @@ const buildIdlePayload = (note) => {
     state: signal.state,
     headline: buildHeadline(signal),
     message: buildMessage(signal),
+    // Descriptors on the fallback path too, so a non-English header never
+    // drops to English just because GitHub was unreachable (issue #82).
+    messageDescriptor: describeMessage(signal),
+    secondaryMessageDescriptor: null,
     meta: {
       activePrs: 0,
       activeIssues: 0,

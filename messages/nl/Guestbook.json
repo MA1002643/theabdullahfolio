@@ -1,0 +1,124 @@
+{
+  "title": "GASTENBOEK",
+  "subtitle": "LAAT JE SPOOR ACHTER",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> spoor achtergelaten} other {<n>{shown}</n> sporen achtergelaten}}",
+    "commands": "{shortcut} · opdrachten",
+    "loading": "Gastenboek laden…",
+    "loadingMore": "Meer van het gastenboek laden…",
+    "loadFailed": "Het gastenboek kon niet worden geladen",
+    "pageFailed": "Deze pagina kon niet worden geladen",
+    "retry": "Probeer opnieuw",
+    "emptyTitle": "Nog geen berichten",
+    "emptyInvite": "Wees de eerste die een spoor achterlaat"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> nu hier}}",
+  "announce": {
+    "one": "Nieuw bericht van {name}: {message}",
+    "many": "{count, plural, one {# nieuw bericht.} other {# nieuwe berichten.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Iemand"
+  },
+  "card": {
+    "sending": "verzenden…",
+    "guest": "Gast",
+    "onGitHub": "{username} op GitHub (opent in een nieuw tabblad)",
+    "copyLink": "Kopieer een link naar dit bericht",
+    "linkCopied": "Link gekopieerd — wijst rechtstreeks naar dit spoor",
+    "linkFailed": "De link kon niet worden gekopieerd",
+    "deleteOwn": "Verwijder je bericht",
+    "deleteOther": "Bericht van {name} verwijderen",
+    "signature": "Handtekening van {name}",
+    "signatureAnon": "Handtekening"
+  },
+  "reactions": {
+    "fire": "Vuur",
+    "rocket": "Raket",
+    "heart": "Hart",
+    "count": "{label} — {count}",
+    "signInToReact": "Log in om te reageren"
+  },
+  "composer": {
+    "label": "Je bericht",
+    "placeholder": "Laat een bericht achter…",
+    "send": "Bericht versturen",
+    "offline": "Je bent offline — je bericht blijft hier bewaard tot je weer online bent.",
+    "notSent": "Je eerdere bericht is niet verzonden",
+    "restore": "Herstellen"
+  },
+  "signature": {
+    "add": "Voeg een handtekening toe (optioneel)",
+    "discard": "Handtekening weggooien",
+    "clear": "Wissen",
+    "padLabel": "Tekenvlak voor je handtekening — teken met je muis, vinger of pen, of kies hieronder een kant-en-klaar teken.",
+    "padHint": "Teken met je vinger, trackpad of muis — de lijndikte volgt je snelheid",
+    "pickMark": "Kies een teken",
+    "orPickMark": "Of kies een teken",
+    "marks": {
+      "flourish": "Krul",
+      "wave": "Golf",
+      "spark": "Vonk",
+      "orbit": "Baan"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Laat een bericht achter…",
+    "ghostRefine": "Verfijnen met AI",
+    "ghostSignature": "Voeg een handtekening toe (optioneel)",
+    "ghostDrafts": "Concepten worden automatisch bewaard terwijl je typt",
+    "prompt": "Log in om een bericht achter te laten",
+    "promptReauth": "Log opnieuw in om een bericht achter te laten",
+    "reauthExplain": "Je huidige login is ouder dan de accountsleutels van de muur, waardoor je wel kunt lezen maar niet schrijven — één nieuwe login lost dat op.",
+    "github": "INLOGGEN MET GITHUB",
+    "google": "INLOGGEN MET GOOGLE"
+  },
+  "pagination": {
+    "nav": "Pagina's van het gastenboek",
+    "previous": "Vorige pagina",
+    "next": "Volgende pagina",
+    "page": "PAGINA ",
+    "status": "Pagina {page} van {total}"
+  },
+  "palette": {
+    "leaveMessage": "Laat een bericht achter",
+    "leaveKeywords": "schrijven ondertekenen plaatsen bericht opstellen",
+    "sectionGuestbook": "Gastenboek",
+    "sectionPreferences": "Voorkeuren",
+    "signInToLeave": "Log in om een bericht achter te laten",
+    "toggleSound": "Interfacegeluiden aan- of uitzetten",
+    "soundKeywords": "audio geluid piepje dempen",
+    "toggleMotion": "Beweging aan- of uitzetten",
+    "motionKeywords": "animatie animaties verminderen stilstaand",
+    "on": "aan",
+    "off": "uit"
+  },
+  "toast": {
+    "posted": "Bericht geplaatst!",
+    "postFailed": "Bericht plaatsen mislukt",
+    "reactFailed": "Reageren mislukt",
+    "deleteFailed": "Bericht verwijderen mislukt",
+    "removedOwn": "Je bericht is uit het gastenboek verwijderd",
+    "removedOther": "Bericht uit het gastenboek verwijderd",
+    "you": "Jij"
+  },
+  "errors": {
+    "unauthorized": "Geen toegang",
+    "too_large": "De aanvraag mag maximaal {max, number, ::group-off} bytes groot zijn",
+    "invalid_body": "Ongeldige aanvraaginhoud",
+    "message_required": "Een bericht is verplicht",
+    "message_length": "Een bericht moet {min}–{max} tekens bevatten",
+    "invalid_characters": "Het bericht bevat ongeldige tekens",
+    "links_not_allowed": "Links zijn niet toegestaan in berichten in het gastenboek",
+    "unfriendly": "Hou het vriendelijk",
+    "invalid_signature": "Ongeldige handtekening",
+    "rate_limited": "Eén bericht per 5 minuten — probeer het over {minutes, plural, one {# minuut} other {# minuten}} opnieuw",
+    "invalid_reaction": "Ongeldige reactie",
+    "reaction_rate_limited": "Te veel reacties — probeer het over {seconds}s opnieuw",
+    "not_found": "Bericht niet gevonden",
+    "id_required": "Een bericht-id is verplicht",
+    "invalid_id": "Ongeldig bericht-id",
+    "forbidden": "Verboden",
+    "invalid_cursor": "Ongeldige cursor"
+  }
+}

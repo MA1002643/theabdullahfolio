@@ -52,8 +52,9 @@
 // hero has landed rather than racing it. The hero gets its moment; then the
 // question is asked.
 
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
@@ -63,14 +64,44 @@ import { wordFill } from '@/lib/fireRamp';
 import { cn } from '@/lib/utils';
 import { afterUnclaimedEscape, claimEscape } from '@/lib/escapeKey';
 import { STATUS } from '@/lib/privacy/consentStore';
+import { wordChunks } from '@/components/ui/textSegments';
 import { useConsent } from './ConsentProvider';
 
-// Split once at module scope — the notice's copy never changes at runtime.
-const NOTICE_WORDS = (
-  'This site keeps a little state on your device so it remembers your ' +
-  'preferences, and — only if you allow it — counts which pages get ' +
-  'read. No advertising cookies, no tracking, no third-party profiling.'
-).split(' ');
+// The notice's copy is ONE catalogue message with the link inside it
+// (`Privacy.notice.body`, issue #82), because word order — and where the link
+// falls in the sentence — differs by language. `t.rich` hands back the text
+// runs and the link element in order; this cuts the text runs into the words
+// the fire ramp colours, exactly as the old module-scope `split(' ')` did
+// (each word carries its trailing space, the link stays whole, and a
+// punctuation-only run such as the closing "." stays bare text). Chinese and
+// Japanese runs go through the word segmenter, since they have no spaces.
+const PUNCTUATION_ONLY = /^[\p{P}\s]+$/u;
+
+function toFillTokens(nodes) {
+  const parts = Array.isArray(nodes) ? nodes : [nodes];
+  const tokens = [];
+  for (const part of parts) {
+    if (typeof part !== 'string') {
+      if (part != null) tokens.push({ node: part });
+      continue;
+    }
+    if (PUNCTUATION_ONLY.test(part)) {
+      tokens.push({ bare: part });
+      continue;
+    }
+    const chunks = wordChunks(part);
+    chunks.forEach(({ word, gap }, i) => {
+      // A word owns the gap that FOLLOWS it, so the text reads exactly as
+      // `${word} ` per span did; the last word of a run takes the run's own
+      // trailing space (it precedes the link).
+      const next = chunks[i + 1];
+      const trailing = next ? next.gap : '';
+      if (word === '') return;
+      tokens.push({ word, trailing });
+    });
+  }
+  return tokens;
+}
 
 // How long after the loader lifts before the notice arrives. Long enough that
 // the hero's own entrance reads as the thing that happened, short enough that a
@@ -81,6 +112,7 @@ const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05] focus-visible:ring-offset-2 focus-visible:ring-offset-night-950';
 
 export default function PrivacyNotice() {
+  const t = useTranslations('Privacy');
   const { status, hydrated, grant, deny, reopen } = useConsent();
   const revealed = useLoaderRevealed();
   const rawReduced = useReducedMotion();
@@ -178,6 +210,28 @@ export default function PrivacyNotice() {
     };
   }, [open, deny]);
 
+  // The notice copy, cut into fire-ramp words around the in-sentence link.
+  const noticeTokens = toFillTokens(
+    t.rich('notice.body', {
+      link: (chunks) => (
+        <TransitionLink
+          href="/privacy"
+          transitionLabel={t('notice.heading')}
+          className={cn(
+            'rounded-sm font-medium text-[#ff6d05] underline decoration-[#ff6d05]/40 underline-offset-[3px] transition-colors hover:decoration-[#ff6d05]',
+            FOCUS_RING,
+          )}
+        >
+          {chunks}
+        </TransitionLink>
+      ),
+    }),
+  );
+  let wordCount = 0;
+  for (const token of noticeTokens) {
+    if (token.word != null) token.index = wordCount++;
+  }
+
   // Reduced motion gets opacity only — no translate. The entrance is short
   // either way; this element should arrive, not perform.
   const variants = reduced
@@ -205,7 +259,7 @@ export default function PrivacyNotice() {
           failure. Keep the span at this position and only swap its text. */}
       <span className="sr-only" role="status" aria-live="polite">
         {open
-          ? 'A privacy notice has appeared at the bottom of the page. You can accept or decline analytics, or open preferences.'
+          ? t('notice.announce')
           : null}
       </span>
 
@@ -216,7 +270,7 @@ export default function PrivacyNotice() {
           // behind it stays operable. Labelled so it is reachable as a landmark
           // rather than being an unnamed box at the end of the document.
           role="region"
-          aria-label="Privacy notice"
+          aria-label={t('notice.region')}
           variants={variants}
           initial="hidden"
           animate="show"
@@ -257,7 +311,7 @@ export default function PrivacyNotice() {
                 className="mb-1.5 font-semibold uppercase tracking-[0.18em] text-[#ffaa2a]"
                 style={{ fontSize: fluidText(0.72, 0.68) }}
               >
-                Privacy
+                {t('notice.heading')}
               </h2>
               {/* The copy. Every clause is checkable against the inventory —
                 which is the point of writing it from an audit rather than from
@@ -281,22 +335,16 @@ export default function PrivacyNotice() {
                     'drop-shadow(0 0 4px rgba(255, 178, 60, 0.55)) drop-shadow(0 0 12px rgba(255, 73, 0, 0.35))',
                 }}
               >
-                {NOTICE_WORDS.map((word, i) => (
-                  <span key={i} style={wordFill(i, NOTICE_WORDS.length)}>
-                    {word}{' '}
-                  </span>
-                ))}
-                <TransitionLink
-                  href="/privacy"
-                  transitionLabel="Privacy"
-                  className={cn(
-                    'rounded-sm font-medium text-[#ff6d05] underline decoration-[#ff6d05]/40 underline-offset-[3px] transition-colors hover:decoration-[#ff6d05]',
-                    FOCUS_RING,
-                  )}
-                >
-                  Read what that means
-                </TransitionLink>
-                .
+                {noticeTokens.map((token, i) => {
+                  if (token.node) return <Fragment key={i}>{token.node}</Fragment>;
+                  if (token.bare != null) return <Fragment key={i}>{token.bare}</Fragment>;
+                  return (
+                    <span key={i} style={wordFill(token.index, wordCount)}>
+                      {token.word}
+                      {token.trailing}
+                    </span>
+                  );
+                })}
               </p>
             </div>
 
@@ -311,26 +359,26 @@ export default function PrivacyNotice() {
                   onClick={grant}
                   style={{ fontSize: fluidText(0.88, 0.82) }}
                 >
-                  Accept
+                  {t('notice.accept')}
                 </NoticeButton>
                 <NoticeButton
                   tone="neutral"
                   onClick={deny}
                   style={{ fontSize: fluidText(0.88, 0.82) }}
                 >
-                  Decline
+                  {t('notice.decline')}
                 </NoticeButton>
               </div>
               <button
                 type="button"
                 onClick={reopen}
                 className={cn(
-                  'rounded-sm text-left text-[#8f8f8f] underline decoration-[#8f8f8f]/35 underline-offset-[3px] transition-colors hover:text-[#d4d4d4] hover:decoration-[#d4d4d4] sm:ml-1 sm:text-center',
+                  'rounded-sm text-start text-[#8f8f8f] underline decoration-[#8f8f8f]/35 underline-offset-[3px] transition-colors hover:text-[#d4d4d4] hover:decoration-[#d4d4d4] sm:ms-1 sm:text-center',
                   FOCUS_RING,
                 )}
                 style={{ fontSize: fluidText(0.82, 0.76) }}
               >
-                Preferences
+                {t('notice.preferences')}
               </button>
             </div>
           </div>

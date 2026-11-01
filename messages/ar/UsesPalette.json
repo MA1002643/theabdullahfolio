@@ -1,0 +1,20 @@
+{
+  "section": "ما أستخدمه",
+  "preferences": "التفضيلات",
+  "jumpPlate": "الانتقال إلى {ordinal} {label}",
+  "plates": {
+    "machine": "الجهاز",
+    "bench": "منضدة العمل",
+    "stack": "حزمة التقنيات",
+    "pipeline": "خط النشر",
+    "instruments": "أدوات القياس",
+    "bom": "قائمة المواد"
+  },
+  "copySettings": "نسخ إعدادات المحرر",
+  "openRepos": "عرض المستودعات على GitHub",
+  "toggleMotion": "تبديل الحركة",
+  "motionOn": "تشغيل",
+  "motionOff": "إيقاف",
+  "copied": "تم نسخ إعدادات المحرر",
+  "clipboardUnavailable": "الحافظة غير متاحة — حدّد الإطار لنسخه"
+}

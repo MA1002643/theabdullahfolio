@@ -649,7 +649,10 @@ export const usesData = {
     },
     {
       role: 'Terminal & shell',
-      name: 'zsh · macOS Terminal · the VS Code terminal',
+      // Names only: a station's `name` is not in any catalogue, so prose here
+      // (it once read 'the VS Code terminal') stays English in every locale.
+      // The pseudo-locale gate caught it.
+      name: 'zsh · macOS Terminal · VS Code',
       detail: 'Node pinned by .nvmrc through nvm · Homebrew for everything else',
     },
     {

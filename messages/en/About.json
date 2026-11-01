@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "ABOUT ME",
+    "subtitle": "WHO I AM"
+  },
+  "intro": {
+    "heading": "Architect of Enchantment",
+    "paragraph": "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Beyond the visible enchantments, I tend the hidden machinery — conjuring resilient APIs and databases (the vaults where each realm's memory is safely kept) and weaving automated pipelines that carry my creations from the workshop to the cloud (the boundless aether where they finally awaken). I hold performance and accessibility as sacred vows, so every portal opens swiftly for every traveller, on any device and in any far-flung corner of the realm. Curiosity remains my truest compass, forever drawing me toward new grimoires, sharper instincts, and ideas bold enough to become living, breathing experiences. Join me as I continue to explore new spells and technologies to shape the future of the web."
+  },
+  "projectsCard": {
+    "eyebrow": "Projects shipped",
+    "unit": "{count, plural, other {completed projects}}",
+    "viewProgress": "View progress →",
+    "ariaLabel": "Projects shipped: {count, number, ::group-off} completed projects. {legend}. View progress: opens live project progress.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "Completed projects by category — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, one {project} other {projects}}",
+    "srPrefix": "Projects update: "
+  },
+  "statsCard": {
+    "title": "{name}'s GitHub Stats",
+    "defaultUser": "GitHub User",
+    "live": "Live GitHub Metrics",
+    "rank": "Rank",
+    "updated": "GitHub stats updated",
+    "srPrefix": "Stats update: ",
+    "metrics": {
+      "stars": "Total Stars Earned",
+      "commits": "Total Commits (last year)",
+      "prs": "Total PRs",
+      "issues": "Total Issues",
+      "contributedTo": "Contributed to (last year)"
+    }
+  },
+  "languagesCard": {
+    "title": "Most Used Languages",
+    "count": "{count, number, ::group-off} {count, plural, one {language} other {languages}}",
+    "live": "live from GitHub",
+    "primary": "Primary",
+    "percent": "<n></n>%",
+    "srPrefix": "Languages update: ",
+    "popover": {
+      "eyebrow": "Repository breakdown",
+      "ariaLabel": "Repositories using {language}",
+      "privateRepos": "{count, number, ::group-off} private {count, plural, one {repository} other {repositories}}"
+    }
+  },
+  "streakCard": {
+    "title": "Contribution Streaks",
+    "subtitle": "GitHub activity",
+    "srPrefix": "Streaks update: ",
+    "total": "Total Contributions",
+    "current": "Current Streak",
+    "longest": "Longest Streak",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, one {day} other {days}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, one {day} other {days}}, {percent, number, ::group-off} percent of your longest streak"
+  },
+  "repoCard": {
+    "badge": "Most Active Repository",
+    "srPrefix": "Repository update: ",
+    "metrics": {
+      "stars": "Stars",
+      "forks": "Forks",
+      "mergedPrs": "Merged PRs",
+      "commits": "Total Commits",
+      "lastPushed": "Last Pushed"
+    },
+    "score": "score",
+    "activityScore": "Activity Score"
+  },
+  "skillsCard": {
+    "title": "Skills & Technologies",
+    "categories": {
+      "languages": "Languages",
+      "frameworks": "Frameworks",
+      "libraries": "Libraries",
+      "tools": "Tools",
+      "software": "Software"
+    },
+    "count": "<n></n> {count, plural, one {technology} other {technologies}}",
+    "live": "live from GitHub",
+    "syncing": "Syncing with GitHub…",
+    "noneDetected": "No skills detected",
+    "noneInRepos": "No skills detected in your repositories",
+    "fetching": "Fetching skills from GitHub…",
+    "srPrefix": "Skills update: ",
+    "popover": {
+      "eyebrow": "Used in repositories",
+      "ariaLabel": "Repositories using {name}",
+      "label": "Repositories:",
+      "publicSr": "{count, number, ::group-off} public",
+      "privateSr": "{count, number, ::group-off} private",
+      "publicCount": "<n></n> public",
+      "privateCount": "<n></n> private",
+      "slash": "/",
+      "allPrivate": "All repositories are private"
+    }
+  },
+  "progress": {
+    "eyebrow": "Delivery telemetry",
+    "title": "Project progress",
+    "close": "Close project progress",
+    "failed": "Couldn’t reach the progress sync right now.",
+    "retry": "Retry sync",
+    "ringLineOne": "board items",
+    "ringLineTwo": "done",
+    "percent": "<n></n>%",
+    "itemsDone": "Items done",
+    "ofTotal": "of {total, number, ::group-off}",
+    "boardsLive": "Boards live",
+    "allProjects": "{count, plural, one {project} other {projects}}",
+    "ofProjects": "of {total, number, ::group-off} projects",
+    "unavailable": "Live sync is unavailable right now — showing the portfolio’s structure; percentages return with the next successful refresh.",
+    "byCategory": "By category",
+    "projectCount": "{count, number, ::group-off} projects",
+    "perProject": "Per project",
+    "liveFrom": "Live from GitHub Projects",
+    "footer": "Auto-synced from GitHub Projects · twice daily",
+    "lastSync": "Last sync",
+    "awaiting": "Awaiting first sync",
+    "row": {
+      "tracked": "{percent, number, ::group-off}% complete, {done, number, ::group-off} of {total, number, ::group-off} board items done",
+      "syncUnavailable": "progress sync unavailable",
+      "notTracked": "not tracked",
+      "ariaLabel": "{name}, {category}. {status}. Toggle board breakdown.",
+      "syncUnavailableTag": "· sync unavailable",
+      "total": "Total",
+      "couldNotSync": "This board couldn’t be synced right now — live counts return with the next refresh.",
+      "noBoard": "No GitHub project board is linked to this project.",
+      "viewBoard": "View project board →"
+    },
+    "age": {
+      "seconds": "{s}s ago",
+      "minutes": "{m}m {s}s ago",
+      "hours": "{h}h {m}m ago",
+      "days": "{d}d {h}h ago"
+    },
+    "columns": {
+      "todo": "Todo",
+      "backlog": "Backlog",
+      "ready": "Ready",
+      "inProgress": "In progress",
+      "inReview": "In review",
+      "done": "Done",
+      "noStatus": "No status",
+      "blocked": "Blocked",
+      "onHold": "On hold"
+    }
+  },
+  "wire": {
+    "present": "Present",
+    "noCurrent": "No current streak",
+    "noneFound": "No streak found",
+    "noData": "No data",
+    "notAvailable": "N/A",
+    "noDescription": "No description",
+    "unknown": "Unknown",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "Most active repository changed to \"{name}\"",
+      "stars": "Stars {direction, select, increased {increased} other {decreased}} by {amount, number, ::group-off} (now {total, number, ::group-off})",
+      "forks": "Forks {direction, select, increased {increased} other {decreased}} by {amount, number, ::group-off} (now {total, number, ::group-off})",
+      "commits": "{count, number, ::group-off} new {count, plural, one {commit} other {commits}} pushed",
+      "mergedPrs": "{count, number, ::group-off} {count, plural, one {PR} other {PRs}} merged",
+      "activityScore": "Activity score {direction, select, increased {increased} other {decreased}} by {amount, number, ::group-off} (now {total, number, ::group-off})",
+      "language": "Primary language changed to \"{language}\""
+    },
+    "stats": {
+      "stars": "Total Stars {delta, number, ::sign-always group-off}",
+      "commits": "Total Commits {delta, number, ::sign-always group-off}",
+      "prs": "Total PRs {delta, number, ::sign-always group-off}",
+      "issues": "Total Issues {delta, number, ::sign-always group-off}",
+      "contributedTo": "Contributed to {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "Total Contributions {delta, number, ::sign-always group-off}",
+      "currentStreak": "Current Streak {delta, number, ::sign-always group-off}",
+      "longestStreak": "Longest Streak {delta, number, ::sign-always group-off}",
+      "currentDates": "Current Streak dates changed",
+      "longestDates": "Longest Streak dates changed"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language} has been added to the top languages.",
+      "addedMany": "{count, number, ::group-off} new {count, plural, one {language} other {languages}} entered the top list.",
+      "removedOne": "{language} dropped out of the top languages.",
+      "removedMany": "{count, number, ::group-off} {count, plural, one {language} other {languages}} dropped out of the top list.",
+      "percentage": "{language} {direction, select, increased {increased} other {decreased}} by {delta, number, ::.0 group-off}%.",
+      "rank": "{language} moved {direction, select, up {up} other {down}} to #{rank, number, ::group-off}."
+    },
+    "skills": {
+      "added": "Added: {items}",
+      "removed": "Removed: {items}",
+      "moved": "Moved: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, number, ::group-off} new completed {delta, plural, one {project} other {projects}} added — now {count, number, ::group-off}",
+      "updated": "Completed projects updated — now {count, number, ::group-off}"
+    }
+  }
+}

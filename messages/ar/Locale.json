@@ -1,0 +1,28 @@
+{
+  "label": "اللغة",
+  "triggerLabel": "اللغة: {language}",
+  "searchLabel": "البحث عن لغة",
+  "searchPlaceholder": "ابحث في 20 لغة…",
+  "noResults": "لا توجد لغة مطابقة لـ «{query}».",
+  "tier1": "المستوى 1",
+  "tier2": "المستوى 2",
+  "current": "الحالية",
+  "machineBadge": "آلية",
+  "machineBadgeLabel": "ترجمة آلية",
+  "switching": "جارٍ التبديل إلى {language}…",
+  "notice": {
+    "title": "ترجمة آلية",
+    "body": "أُنتجت هذه الترجمة آليًا ولم يراجعها بعدُ متحدث أصلي باللغة.",
+    "cta": "اقتراح ترجمة أفضل"
+  },
+  "suggestion": {
+    "region": "اقتراح اللغة",
+    "message": "يتوفر هذا الموقع أيضًا باللغة {language}.",
+    "switch": "التبديل إلى {language}",
+    "dismiss": "البقاء على {current}"
+  },
+  "englishOnly": {
+    "label": "منشور بالإنجليزية",
+    "body": "هذا المستند منشور بالإنجليزية فقط. ويبقى التنقل وعناصر التحكم بلغتك."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "role": "Software Engineer",
+  "summary": "Muhammad Abdullah is a software engineer based in Bolton, Greater Manchester, building fast, considered web applications with Next.js, React, TypeScript and Node.js. This site collects {count} projects — web, systems, mobile and AI — each tracked live from its own GitHub board, alongside the degrees and roles behind them, a timeline of the route from college to production, and the tools the work is actually built with. Every section is reachable from the ring below apart from three: the full record is on the <cv>CV page</cv> and as a PDF, the reasoning behind how this site is built is written up in the <notes>engineering notes</notes>, and what this site collects — with the switch that turns the optional part off — is set out on the <privacy>privacy page</privacy>.",
+  "orbitTip": {
+    "hover": {
+      "lead": "Rest your cursor on the laptop, then move or scroll up and down — the ring spins with you.",
+      "keys": "You can also drag the ring, or press <key>←</key> <key>→</key> on a focused button.",
+      "sr": "Tip: the navigation ring can be rotated. Rest your pointer on the laptop and move or scroll up and down to spin it; you can also drag the ring, or press the left and right arrow keys while a navigation button is focused."
+    },
+    "touch": {
+      "lead": "Slide up and down on the laptop — or drag the ring — to spin the navigation.",
+      "sr": "Tip: the navigation ring can be rotated. Slide up and down on the laptop, or drag the ring itself, to spin it."
+    },
+    "dismiss": "Dismiss navigation tip"
+  }
+}

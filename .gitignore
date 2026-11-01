@@ -84,3 +84,6 @@ service-account-key*.json
 # NOT ignored on purpose: tests/visual/__screenshots__/ (reviewed baselines).
 /reports/
 .stryker-tmp/
+
+# The pseudo-locale catalogue: generated from messages/en by `npm run i18n:pseudo`
+messages/en-XA/

@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Kỹ sư phần mềm. Thẻ nền tối sắc than hồng với con dấu Muhammad Abdullah và trạng thái portfolio trực tiếp.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Kỹ sư phần mềm. Thẻ vuông nền tối sắc than hồng với con dấu Muhammad Abdullah và trạng thái portfolio trực tiếp.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Kỹ sư phần mềm",
+      "description": "Kỹ sư phần mềm tại Bolton, xây dựng các ứng dụng web nhanh và chỉn chu với Next.js, React và TypeScript. Dự án, chứng chỉ và những công cụ đứng sau chúng."
+    },
+    "about": {
+      "title": "Giới thiệu",
+      "description": "Người kỹ sư đứng sau ngọn lửa than hồng — câu chuyện, bộ công nghệ và dữ liệu GitHub trực tiếp về những gì đang được xây dựng ngay lúc này."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "Hồ sơ đầy đủ — mọi vị trí công việc, bằng cấp và dự án đã triển khai, dưới dạng HTML. Được viết từ cùng nguồn dữ liệu mà dòng thời gian hiển thị, còn bản PDF chỉ cách một cú nhấp chuột."
+    },
+    "notes": {
+      "title": "Ghi chú",
+      "description": "Các bản ghi quyết định kỹ thuật — vì sao mỗi lựa chọn trên trang này được đưa ra, những phương án nào đã bị loại và mỗi lựa chọn phải đánh đổi những gì."
+    },
+    "projects": {
+      "title": "Dự án",
+      "description": "{countWord} sản phẩm — web, hệ thống, di động và AI — mỗi sản phẩm được theo dõi trực tiếp từ bảng GitHub riêng, với bộ công nghệ và trạng thái hoàn thành trên từng thẻ."
+    },
+    "qualifications": {
+      "title": "Bằng cấp",
+      "description": "Bằng đại học, chứng chỉ và chứng nhận nghề nghiệp — hồ sơ giấy tờ đã được xác minh đứng sau quá trình hành nghề, mỗi chứng chỉ đều có thể xem trực tiếp."
+    },
+    "journey": {
+      "title": "Hành trình",
+      "description": "Mọi vị trí công việc, bằng cấp và hoạt động tình nguyện gói trong một dòng thời gian cuộn theo trang — từ Bolton College năm 2018 đến việc triển khai phần mềm thực tế ngày nay."
+    },
+    "uses": {
+      "title": "Công cụ",
+      "description": "Chiếc máy, bàn làm việc, bộ công nghệ và quy trình triển khai — mọi công cụ trên trang này đều được đối chiếu với các kho mã và bản dựng đưa nó vào vận hành."
+    },
+    "contact": {
+      "title": "Liên hệ",
+      "description": "Bắt đầu cuộc trò chuyện về một vị trí công việc hoặc một dự án — biểu mẫu liên hệ giúp trau chuốt tin nhắn khi bạn viết và không bao giờ làm mất bản nháp."
+    },
+    "myPast": {
+      "title": "Quá khứ của tôi",
+      "description": "Portfolio thời đại học nơi mọi thứ bắt đầu — được dựng tay bằng HTML, CSS và JavaScript thuần, giữ lại trực tuyến như một bức ảnh \"trước đây\" trung thực."
+    },
+    "guestbook": {
+      "title": "Sổ lưu bút",
+      "description": "Để lại dấu ấn của bạn trên bức tường — bảng tin nhắn neon do khách truy cập ký tên qua GitHub hoặc Google, với trạng thái hiện diện và biểu cảm trực tiếp."
+    },
+    "privacy": {
+      "title": "Quyền riêng tư",
+      "description": "Mọi cookie, khóa lưu trữ và bên thứ ba mà trang này chạm tới, lý do từng thứ tồn tại và cách tắt những mục tùy chọn. Được kiểm tra thực tế, không phải bản mẫu có sẵn."
+    }
+  },
+  "notFound": {
+    "title": "404 — Không tìm thấy trang",
+    "description": "Bạn đã lạc vào khoảng không. Trang này không tồn tại — ít nhất là chưa."
+  }
+}

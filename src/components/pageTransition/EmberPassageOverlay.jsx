@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { MONO_D, MONO_VIEWBOX } from '@/components/emblem/monogram';
+import { breaksWhenSplit } from '@/components/ui/textSegments';
 import { getSwarm } from './emberSwarm';
 import { EMBER_PALETTE } from './passagePalette';
 import { GATHER_MS, LABEL_IN, LABEL_OUT, REVEAL_MS } from './constants';
@@ -161,6 +162,11 @@ export default function EmberPassageOverlay({ phase, label, reduced, origin }) {
     LABEL_IN,
     narrow ? ['0.42em', '0.26em'] : ['0.62em', '0.44em'],
   );
+  // No tracking at all for joined scripts (issue #82): letter-spacing pulls
+  // an Arabic or Devanagari word apart into disconnected letters in the
+  // engines that apply it to cursive text. Latin, Cyrillic and CJK keep the
+  // closing-tracking gesture.
+  const shaped = breaksWhenSplit(label);
 
   // ---------------------------------------------------------------------------
   // static branch: reduced motion, or no WebGL
@@ -201,7 +207,7 @@ export default function EmberPassageOverlay({ phase, label, reduced, origin }) {
           // Colour and glow come from the utility itself — see the live branch.
           className="text-glow-stroke-neon mt-8 text-sm font-[500] uppercase sm:text-base"
           style={{
-            letterSpacing: '0.42em',
+            letterSpacing: shaped ? 'normal' : '0.42em',
             color: '#000e1700',
             WebkitTextStrokeWidth: '1px',
           }}
@@ -241,7 +247,7 @@ export default function EmberPassageOverlay({ phase, label, reduced, origin }) {
             x: '-50%',
             y: labelY,
             opacity: labelOpacity,
-            letterSpacing: labelTracking,
+            letterSpacing: shaped ? 'normal' : labelTracking,
             // Transparent fill, exactly as the hero does it inline — the shared
             // class paints a SOLID fill for the sub-page titles, and the hollow
             // tube is what makes the homepage name read as neon.

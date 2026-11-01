@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "فہرست",
+    "elsewhere": "دیگر مقامات"
+  },
+  "siteNav": "سائٹ",
+  "identity": {
+    "role": "سافٹ ویئر انجینئر",
+    "statement": "شمالی انگلینڈ سے تیز اور سوچی سمجھی ویب تخلیقات۔"
+  },
+  "availability": "نئے مواقع کے لیے دستیاب",
+  "githubCta": {
+    "label": "اس پروجیکٹ کو GitHub پر دیکھیں",
+    "newTab": "(نئے ٹیب میں کھلتا ہے)",
+    "commits": "{count, plural, one {<num>{formatted}</num> کمٹ} other {<num>{formatted}</num> کمٹس}}",
+    "pushed": "پش کیا گیا: {when}"
+  },
+  "manifest": {
+    "departures": "روانگیاں",
+    "nowBoarding": "سوار ہو رہے ہیں",
+    "onTime": "بروقت",
+    "links": {
+      "about": {
+        "label": "تعارف",
+        "desc": "میں کون ہوں"
+      },
+      "journey": {
+        "label": "سفر",
+        "desc": "اب تک کا راستہ"
+      },
+      "qualifications": {
+        "label": "قابلیتیں",
+        "desc": "اسناد"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "مکمل ریکارڈ"
+      },
+      "projects": {
+        "label": "پروجیکٹس",
+        "desc": "منتخب کام"
+      },
+      "uses": {
+        "label": "استعمال",
+        "desc": "جن سے میں بناتا ہوں"
+      },
+      "notes": {
+        "label": "نوٹس",
+        "desc": "یہ اس طرح کیوں بنایا گیا"
+      },
+      "contact": {
+        "label": "رابطہ",
+        "desc": "سلام کہیں"
+      },
+      "guestbook": {
+        "label": "مہمان نامہ",
+        "desc": "اپنی چھاپ چھوڑیں"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHub پروفائل (نئے ٹیب میں کھلتا ہے)",
+    "linkedin": "LinkedIn پروفائل (نئے ٹیب میں کھلتا ہے)",
+    "resume": "مکمل CV پڑھیں",
+    "linkLabel": "{command}، {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {{town} میں مقامی وقت {time} {period}} other {{town} میں مقامی وقت {time}}}",
+    "placeLabel": "مقام: {town}",
+    "live": "براہِ راست"
+  },
+  "sound": {
+    "label": "آواز",
+    "on": "آن",
+    "off": "آف",
+    "turnOn": "فوٹر کی گٹار آواز آن کریں",
+    "turnOff": "فوٹر کی گٹار آواز آف کریں",
+    "hoverLines": "لکیروں پر ماؤس لے جائیں",
+    "nowPlaying": "اب چل رہی ہے — سکون بخش گٹار",
+    "turnOnPrompt": "سکون بخش گٹار کے لیے آواز آن کریں"
+  },
+  "privacy": {
+    "policy": "رازداری",
+    "choices": "رازداری کے انتخابات"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/کہیں-اور",
+    "cmd": {
+      "github": "github کھولیں",
+      "linkedin": "linkedin کھولیں",
+      "resume": "سی-وی کھولیں"
+    }
+  }
+}

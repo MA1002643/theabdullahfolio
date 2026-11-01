@@ -24,6 +24,47 @@
   }
 }
 
+/* ── Reading direction (issue #82) ───────────────────────────────────────────
+   `<html dir>` is `rtl` for ar / he / fa / ur. Box geometry in this file uses
+   logical properties (`margin-inline-start`, `inset-inline-end`, …), which
+   follow the direction on their own. What they cannot express — a rule that
+   draws in FROM the start, a gradient that runs WITH the line, a slide-in from
+   the start side — gets a `:dir(rtl)` override next to the original rule.
+
+   `:dir()` and not `[dir='rtl'] &`, deliberately: English-only islands (the
+   notes prose, the privacy body) sit in a `dir="ltr"` wrapper INSIDE an RTL
+   page, and an ancestor-attribute selector would still match there and flip
+   them. `:dir()` reads the element's real directionality. An engine without
+   `:dir()` (Chromium before 120) drops those rules and keeps the LTR look,
+   which is the acceptable fallback — so never put a `:dir()` selector in a
+   list with others, or the whole list is dropped with it.
+
+   Keyframes cannot be overridden per direction, so a horizontal offset that
+   means "from the start side" is multiplied by `--inline-sign`: 1 in LTR, -1
+   in RTL. It is set on every element CARRYING a dir attribute, so an LTR
+   island inside an RTL page inherits 1 again. Unset, the fallback is 1 —
+   English renders exactly as before. */
+[dir='ltr'] {
+  --inline-sign: 1;
+}
+[dir='rtl'] {
+  --inline-sign: -1;
+}
+
+/* An English island in a right-to-left page keeps its own entrances: its rows
+   and headings slide in from ITS start, the left. In a left-to-right document
+   an overhang past the left edge is never scrollable, so English never showed
+   it; in a right-to-left one the scroll origin is on the right, and those
+   10–12px became a sideways scroll on a phone (/ar/privacy 7px, /ar/notes/*
+   2px — found by the localized phone check in tests/e2e/navigation.spec.js).
+   The island clips its own horizontal overhang. `clip`, not `hidden`: no
+   scroll container, so sticky children and inner table scrollers are
+   untouched. The ancestor selector is deliberate here — this is exactly
+   "inside a right-to-left page" — and English pages do not match it. */
+[dir='rtl'] [lang='en'][dir='ltr'] {
+  overflow-x: clip;
+}
+
 @layer utilities {
   .pause {
     animation-play-state: paused;
@@ -174,7 +215,7 @@
   }
   .float-label {
     position: absolute;
-    left: 0.55rem;
+    inset-inline-start: 0.55rem;
     top: 50%;
     transform: translateY(-50%);
     transform-origin: left center;
@@ -193,6 +234,11 @@
       transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
       top 240ms cubic-bezier(0.22, 1, 0.36, 1),
       color 200ms ease;
+  }
+  /* RTL: the label floats into the notch at the field's START (right) — the
+     <legend> notch already sits there natively — so it shrinks toward it. */
+  .float-label:dir(rtl) {
+    transform-origin: right center;
   }
   /* Textarea: the label rests near the top, not vertically centred. */
   .float-field--area .float-label {
@@ -721,6 +767,16 @@
     -webkit-text-fill-color: transparent;
     /* JS sets `transform: translateX(...)` on this element to mirror
        the input's scrollLeft so long values stay aligned. */
+  }
+  /* RTL: "first characters amber" means the RIGHT-hand ones. */
+  .fire-input-overlay-text:dir(rtl) {
+    background-image: linear-gradient(
+      270deg,
+      #ffd27d 0%,
+      #ffbb55 40%,
+      #ffaa2a 70%,
+      #ff6d05 100%
+    );
   }
 
   /* FireTextarea overlay (see components/contact/FireTextarea.jsx) — the
@@ -1308,6 +1364,20 @@
   background-size: 200% 100%;
   animation: shimmer-sweep 1.5s ease-out 0.25s 1 both;
 }
+/* RTL: the bar's segments run the other way, so the sweep is mirrored — the
+   angle reflected, and the shared keyframe played in reverse. Reversing also
+   reverses the easing, so `ease-in` here plays as the original ease-out. The
+   badge shimmer that shares the keyframe is untouched. */
+.lang-bar-sheen:dir(rtl) {
+  background-image: linear-gradient(
+    255deg,
+    transparent 42%,
+    rgba(255, 196, 92, 0.5) 50%,
+    transparent 58%
+  );
+  animation-direction: reverse;
+  animation-timing-function: ease-in;
+}
 
 @keyframes bounce-shake {
   0% {
@@ -1515,7 +1585,8 @@
 @keyframes repo-row-reveal {
   from {
     opacity: 0;
-    transform: translateX(-16px);
+    /* From the start side: `--inline-sign` flips it under RTL (see top). */
+    transform: translateX(calc(-16px * var(--inline-sign, 1)));
   }
   to {
     opacity: 1;
@@ -1695,8 +1766,14 @@ footer[role='contentinfo']::after {
 .control-island {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
-  left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+  inset-inline-start: calc(env(safe-area-inset-left, 0px) + 0.75rem);
   z-index: 120;
+}
+/* RTL: the start corner is the RIGHT one, so clear the right-hand safe area.
+   The page chrome mirrors as a set (ProjectsBtn `start-4`, the sound toggle
+   `end-6`), so the corners stay shared out the same way. */
+.control-island:dir(rtl) {
+  inset-inline-start: calc(env(safe-area-inset-right, 0px) + 0.75rem);
 }
 
 /* Hide the home button while a modal owns the screen. The
@@ -2135,7 +2212,7 @@ body[data-modal-open] .control-island {
    ──────────────────────────────────────────────────────────────────────────── */
 @layer utilities {
   .refine-root {
-    text-align: left;
+    text-align: start;
   }
 
   /* The quiet affordance that offers to polish the message. */
@@ -2213,7 +2290,7 @@ body[data-modal-open] .control-island {
     display: inline-block;
     width: 2px;
     height: 1em;
-    margin-left: 2px;
+    margin-inline-start: 2px;
     vertical-align: text-bottom;
     background: #ff6d05;
     /* opt out of the parent's transparent text fill */
@@ -2276,7 +2353,8 @@ body[data-modal-open] .control-island {
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.45rem 0.7rem 0.45rem 0.85rem;
+    padding-block: 0.45rem;
+    padding-inline: 0.85rem 0.7rem;
     border-radius: 0.6rem;
     border: 1px solid rgba(155, 89, 182, 0.35);
     background: rgba(20, 8, 30, 0.5);
@@ -2472,7 +2550,7 @@ html.custom-cursor-active * {
 .footer-link-underline::after {
   content: "";
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   bottom: -2px;
   height: 1px;
   width: 100%;
@@ -2481,6 +2559,10 @@ html.custom-cursor-active * {
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* RTL: the underline sweeps out from the start (right) edge. */
+.footer-link-underline:dir(rtl)::after {
+  transform-origin: right;
 }
 .footer-link-underline:hover::after,
 .footer-link-underline:focus-visible::after {
@@ -2515,7 +2597,7 @@ html.custom-cursor-active * {
 /* The clone waits one glyph-height below, blurred and invisible. */
 .hover-text__clone {
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0;
   /* Incoming glyph colour on hover: the about-page title orange (#ff6d05) at
      82% — the SAME hue as the active-link highlight, just a touch dimmed, so a
@@ -2623,7 +2705,7 @@ html.custom-cursor-active * {
   .footer-col-rule::before {
     content: "";
     position: absolute;
-    left: -0.75rem;
+    inset-inline-start: -0.75rem;
     top: 0.15rem;
     bottom: 0.15rem;
     width: 1px;
@@ -2670,6 +2752,14 @@ html.custom-cursor-active * {
   height: 1px;
   background: linear-gradient(
     90deg,
+    rgba(255, 109, 5, 0.4),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+/* RTL: the rule leaves the marquee at the start (right) and fades away. */
+.footer-index__rule:dir(rtl) {
+  background: linear-gradient(
+    270deg,
     rgba(255, 109, 5, 0.4),
     rgba(255, 255, 255, 0.04)
   );
@@ -2934,6 +3024,14 @@ html.custom-cursor-active * {
     rgba(255, 255, 255, 0.05)
   );
 }
+/* RTL: the hairline runs with the line, bright end at the start (right). */
+.footer-reach-strip__sep:dir(rtl) {
+  background: linear-gradient(
+    270deg,
+    rgba(255, 109, 5, 0.22),
+    rgba(255, 255, 255, 0.05)
+  );
+}
 @media (max-width: 640px) {
   /* On a phone (no room for the three-across baseline strip) the reach items
      stack — and, per the mobile brief, CENTRE rather than hang off the left
@@ -2982,6 +3080,10 @@ html.custom-cursor-active * {
 .footer-reach-strip[data-revealed="true"] .footer-reach-strip__sep {
   transform-origin: left center;
   animation: reach-sep-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* RTL: the separators draw in from the start (right). */
+.footer-reach-strip[data-revealed="true"] .footer-reach-strip__sep:dir(rtl) {
+  transform-origin: right center;
 }
 .footer-reach-strip[data-revealed="true"] .footer-reach-strip__sep:nth-of-type(1) {
   animation-delay: 0.2s;
@@ -3089,6 +3191,11 @@ html.custom-cursor-active * {
   opacity: 0.85; /* resting; the pre-reveal opacity:0 lives on [data-revealed="false"] */
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
+/* RTL: the underbar draws out from the start (right) and fades toward the end. */
+.footer-identity__rule:dir(rtl) {
+  transform-origin: right center;
+  background: linear-gradient(270deg, #ff6d05, rgba(255, 109, 5, 0));
+}
 .footer-identity:hover .footer-identity__rule,
 .footer-identity:focus-within .footer-identity__rule {
   transform: scaleX(1);
@@ -3120,6 +3227,10 @@ html.custom-cursor-active * {
 .footer-identity__divider {
   transform-origin: left;
 }
+/* RTL: the divider draws in from the start (right). */
+.footer-identity__divider:dir(rtl) {
+  transform-origin: right;
+}
 
 /* Pre-reveal hidden state — applied ONLY once the client has staged the block
    (FooterIdentity sets data-revealed="false" after mount). With the attribute
@@ -3138,7 +3249,7 @@ html.custom-cursor-active * {
 }
 .footer-identity[data-revealed="false"] .footer-identity__role {
   opacity: 0;
-  transform: translateX(-8px);
+  transform: translateX(calc(-8px * var(--inline-sign, 1)));
 }
 .footer-identity[data-revealed="false"] .footer-identity__stmt {
   opacity: 0;
@@ -3214,7 +3325,8 @@ html.custom-cursor-active * {
 @keyframes footer-ink-role {
   from {
     opacity: 0;
-    transform: translateX(-8px);
+    /* Snaps in from the start side — `--inline-sign` mirrors it under RTL. */
+    transform: translateX(calc(-8px * var(--inline-sign, 1)));
   }
   to {
     opacity: 1;
@@ -3480,7 +3592,7 @@ html.custom-cursor-active * {
   display: flex;
   align-items: center;
   gap: 0.42rem;
-  padding-left: 0.15rem;
+  padding-inline-start: 0.15rem;
   font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
   font-size: 0.7rem;
   letter-spacing: 0.01em;
@@ -3504,7 +3616,7 @@ html.custom-cursor-active * {
 .gh-cta__caret {
   width: 6px;
   height: 0.95em;
-  margin-left: 1px;
+  margin-inline-start: 1px;
   background: #ff6d05;
   opacity: 0.85;
   animation: gh-blink 1.05s steps(1) infinite;
@@ -3575,6 +3687,10 @@ html.custom-cursor-active * {
    footer's terminal moments read as one system. The contact micro-block below
    the divider is deliberately left untouched. Colour / opacity only — no CLS. */
 .footer-term {
+  /* A terminal session reads left to right in every locale (issue #82):
+     prompt, command and handle are code, so the window keeps its LTR
+     anatomy on an RTL page. Translated words inside still shape correctly. */
+  direction: ltr;
   margin-top: 0.35rem;
   width: 100%;
   max-width: 22rem;
@@ -3606,7 +3722,7 @@ html.custom-cursor-active * {
 .footer-term__dot--y { background: #febc2e; }
 .footer-term__dot--g { background: #28c840; }
 .footer-term__path {
-  margin-left: 0.45rem;
+  margin-inline-start: 0.45rem;
   font-size: 0.66rem;
   letter-spacing: 0.02em;
   color: #6d675f;
@@ -3656,7 +3772,7 @@ html.custom-cursor-active * {
   display: flex;
   align-items: baseline;
   gap: 0.4rem;
-  padding-left: 1.1rem;
+  padding-inline-start: 1.1rem;
   min-width: 0;
   font-size: 0.72rem;
   line-height: 1.45;
@@ -3762,7 +3878,7 @@ html.custom-cursor-active * {
   color: #ff8a2b;
 }
 .live-place__live {
-  margin-left: 0.35rem;
+  margin-inline-start: 0.35rem;
   display: inline-flex;
   align-items: center;
   gap: 0.32rem;
@@ -4127,6 +4243,10 @@ html.custom-cursor-active * {
   background-size: 9px 3px;
   background-position: left center;
   background-repeat: repeat-x;
+}
+/* RTL: anchor the dots beside the name, at the start (right). */
+.project-separator-dot:dir(rtl) {
+  background-position: right center;
 }
 
 /* NOTE (issue #52): the CSS/SVG water-surface layer that lived here
@@ -5858,7 +5978,7 @@ h2.hero-role {
   font-size: var(--field-font);
   /* Resting label tracks the field text's start (pad + the ~1px border),
      so it stays seated on the text at every scale, floors included. */
-  left: calc(var(--field-pad) + 0.05rem);
+  inset-inline-start: calc(var(--field-pad) + 0.05rem);
   padding: 0 calc(var(--field-font) * 0.3);
 }
 .fluid-scale .float-field--area .float-label {
@@ -6434,6 +6554,16 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   );
   box-shadow: 0 0 8px rgba(255, 109, 5, 0.25);
 }
+/* RTL: draws in from the start (right), fading toward the end. */
+.uses-rule:dir(rtl) {
+  transform-origin: right center;
+  background: linear-gradient(
+    270deg,
+    rgba(255, 109, 5, 0.85),
+    rgba(255, 109, 5, 0.3) 55%,
+    rgba(255, 109, 5, 0)
+  );
+}
 .uses-label {
   font-size: 0.6875rem;
   letter-spacing: 0.18em;
@@ -6472,7 +6602,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   display: inline-block;
   width: 0.4rem;
   height: 0.4rem;
-  margin-right: 0.35rem;
+  margin-inline-end: 0.35rem;
   border-radius: 9999px;
   background: #ff6d05;
   box-shadow: 0 0 6px #ff6d05;
@@ -6523,6 +6653,10 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   transform-origin: left center;
   background: rgba(255, 109, 5, 0.22);
   pointer-events: none;
+}
+/* RTL: the row rule draws in from the start (right). */
+.uses-row__rule:dir(rtl) {
+  transform-origin: right center;
 }
 /* The bench's stations run 3-across from md (Tailwind's breakpoint; the
    phone keeps the single ruled column). Each row draws its own rule, so the
@@ -6606,6 +6740,11 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   height: 12px;
   transform-origin: left center;
 }
+/* RTL: the ruler etches in from the start (right). Only effective once the
+   component stops pinning `originX` inline. */
+.uses-meter__ticks:dir(rtl) {
+  transform-origin: right center;
+}
 /* The cutter that rides the ruler's front as it etches in (the Machine
    plate's `.uses-cutter`, the ruler's height). Framer moves its `left`
    0→100% on the ruler's own clock and burns it out at the end. */
@@ -6684,6 +6823,10 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   /* Draws left→right as the row prints (framer scaleX on the bill). */
   transform-origin: left center;
 }
+/* RTL: the leader draws from the start (right), toward the version. */
+.uses-ledger__leader:dir(rtl) {
+  transform-origin: right center;
+}
 .fluid-scale .uses-ledger__row {
   font-size: max(0.6875rem, calc(0.75rem * var(--fluid-scale, 1)));
 }
@@ -6699,6 +6842,9 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   box-shadow: 0 0 6px orangered;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   transition: box-shadow 0.3s ease;
+  /* An editor showing JSON is LTR in every locale (issue #82): the gutter,
+     the typed wipe and the caret all assume code reads left to right. */
+  direction: ltr;
 }
 .uses-editor:hover {
   box-shadow:
@@ -6751,11 +6897,11 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .uses-editor__line {
   display: grid;
   grid-template-columns: 2.75rem 1fr;
-  padding-right: 0.75rem;
+  padding-inline-end: 0.75rem;
 }
 .uses-editor__gutter {
-  text-align: right;
-  padding-right: 0.9rem;
+  text-align: end;
+  padding-inline-end: 0.9rem;
   color: #6272a4;
   user-select: none;
 }
@@ -6833,6 +6979,10 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   height: 1px;
   align-self: center;
   background: linear-gradient(90deg, rgba(255, 170, 42, 0.35), rgba(255, 170, 42, 0));
+}
+/* RTL: the category rule leaves its heading at the start (right). */
+.uses-stack__rule:dir(rtl) {
+  background: linear-gradient(270deg, rgba(255, 170, 42, 0.35), rgba(255, 170, 42, 0));
 }
 .uses-stack__tally {
   font-size: 0.625rem;
@@ -6988,7 +7138,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 }
 .uses-tool__figure {
   margin-top: 0.45rem;
-  text-align: right;
+  text-align: end;
   font-size: 0.6875rem;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -7008,7 +7158,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   display: inline-block;
   width: 0.9rem;
   height: 0.4rem;
-  margin-right: 0.4rem;
+  margin-inline-end: 0.4rem;
   border-radius: 1px;
   vertical-align: middle;
 }
@@ -7339,7 +7489,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   border-width: 1px;
 
   top: 1rem;
-  right: 1rem;
+  inset-inline-end: 1rem;
   z-index: 60;
   display: flex;
   flex-direction: column;
@@ -7398,7 +7548,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   white-space: normal;
 
   top: 1rem;
-  left: 1rem;
+  inset-inline-start: 1rem;
   z-index: 60;
   /* The paragraph is ~90 words. It is revealed whole rather than trimmed to the
      links because the sentence is what gives the two destinations their
@@ -7514,6 +7664,16 @@ li:has(.journey-lift :focus-visible) .journey-connector {
     transparent 92%
   );
 }
+/* RTL: the rule fades out at the END of the line. (The prose is an LTR
+   island today, where `:dir()` keeps this rule from matching.) */
+.note-prose h2:dir(rtl)::after {
+  background: linear-gradient(
+    270deg,
+    rgb(255 109 5 / 0.85) 0%,
+    rgb(255 170 42 / 0.5) 40%,
+    transparent 92%
+  );
+}
 
 @supports ((-webkit-background-clip: text) or (background-clip: text)) {
   .note-prose h2 {
@@ -7546,13 +7706,13 @@ li:has(.journey-lift :focus-visible) .journey-connector {
      the page gutter, and on a phone the layout's inline padding shrinks with
      the fluid scale to less than the tick's own offset — which is a
      horizontal page scroll, on the one route that is pure reading. */
-  padding-left: 0.85rem;
+  padding-inline-start: 0.85rem;
 }
 
 .note-prose h3::before {
   content: '';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0.32em;
   width: 3px;
   height: 0.85em;
@@ -7587,7 +7747,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .note-prose ul,
 .note-prose ol {
   margin-bottom: 1.125rem;
-  padding-left: 1.5rem;
+  padding-inline-start: 1.5rem;
 }
 
 .note-prose ul {
@@ -7655,7 +7815,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   /* An ember edge marks the block's start without tinting the whole panel —
      a code block must stay dark and calm to be read. Dim here; `::before`
      draws the bright rail over it as the block arrives. */
-  border-left: 3px solid rgb(255 109 5 / 0.25);
+  border-inline-start: 3px solid rgb(255 109 5 / 0.25);
   /* A code block scrolls ITSELF rather than widening the page. */
   overflow-x: auto;
 }
@@ -7663,7 +7823,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .note-prose pre::before {
   content: '';
   position: absolute;
-  left: -3px;
+  inset-inline-start: -3px;
   top: 0;
   width: 3px;
   height: 100%;
@@ -7694,8 +7854,11 @@ li:has(.journey-lift :focus-visible) .journey-connector {
      Same arrangement as the /cv entry rail, and for the same reason: the
      element keeps a visible left edge at every moment, including in an engine
      that never runs the animation. */
-  border-left: 3px solid rgb(255 109 5 / 0.3);
-  border-radius: 0 6px 6px 0;
+  border-inline-start: 3px solid rgb(255 109 5 / 0.3);
+  /* Square at the rail, rounded at the far edge — on whichever side that is. */
+  border-radius: 0;
+  border-start-end-radius: 6px;
+  border-end-end-radius: 6px;
   background: rgb(255 109 5 / 0.07);
   color: rgb(var(--foreground) / 0.82);
 }
@@ -7703,7 +7866,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .note-prose blockquote::before {
   content: '';
   position: absolute;
-  left: -3px;
+  inset-inline-start: -3px;
   top: 0;
   width: 3px;
   height: 100%;
@@ -7754,7 +7917,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
      type is what made the tables read as pasted in from somewhere else. */
   border: 1px solid rgb(255 170 42 / 0.16);
   padding: 0.55rem 0.8rem;
-  text-align: left;
+  text-align: start;
   vertical-align: top;
 }
 
@@ -7823,7 +7986,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   }
   .note-prose blockquote {
     background: none;
-    border-left-color: #999;
+    border-inline-start-color: #999;
     color: #000;
   }
   .note-prose hr {
@@ -7920,6 +8083,12 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   pointer-events: none;
 }
 
+/* RTL: the reading rail fills from the start (right) edge. */
+.cv-progress:dir(rtl) {
+  transform-origin: 100% 50%;
+  background: linear-gradient(270deg, #ff6d05 0%, #ffaa2a 55%, #fc83ff 100%);
+}
+
 /* Driven by the DOCUMENT's scroll position rather than the bar's own position
    in it, which is why this needs `scroll(root block)` and not the `view()`
    the reveals below use — the bar is `position: fixed` and never moves, so a
@@ -7945,7 +8114,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .cv-entry::before {
   content: '';
   position: absolute;
-  left: -1px;
+  inset-inline-start: -1px;
   top: 0;
   width: 1px;
   height: 100%;
@@ -7978,6 +8147,10 @@ li:has(.journey-lift :focus-visible) .journey-connector {
       animation: cv-draw-x linear both;
       animation-timeline: view();
       animation-range: cover 0% cover 26%;
+    }
+    /* RTL: the rule draws out from the start (right). */
+    .cv-rule:dir(rtl) {
+      transform-origin: 100% 50%;
     }
 
     /* The rail draws DOWN at roughly reading pace — a slower range than the
@@ -8075,7 +8248,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 .note-record__track,
 .note-record__rail {
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0.15em;
   bottom: 0;
   width: 1px;
@@ -8102,7 +8275,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
    fighting an inline transform. */
 .note-record__node {
   position: absolute;
-  left: -2.5px;
+  inset-inline-start: -2.5px;
   top: calc(0.15em - 2.5px);
   width: 6px;
   height: 6px;
@@ -8360,7 +8533,8 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 @keyframes note-rise-heading {
   from {
     opacity: 0.7;
-    transform: translate3d(-10px, 22px, 0);
+    /* From the start side — `--inline-sign` mirrors it under RTL. */
+    transform: translate3d(calc(-10px * var(--inline-sign, 1)), 22px, 0);
   }
   to {
     opacity: 1;
@@ -8427,6 +8601,12 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   pointer-events: none;
 }
 
+/* RTL: the reading rail fills from the start (right) edge. */
+.note-progress:dir(rtl) {
+  transform-origin: 100% 50%;
+  background: linear-gradient(270deg, #ff6d05 0%, #ffaa2a 55%, #fc83ff 100%);
+}
+
 /* NOTE the declaration order here and in every rule below: the `animation`
    shorthand RESETS `animation-timeline` to `auto`, so the timeline must be
    declared AFTER it. Declared before, the rule silently degrades to a
@@ -8485,6 +8665,10 @@ li:has(.journey-lift :focus-visible) .journey-connector {
       animation: note-draw-x linear both;
       animation-timeline: view();
       animation-range: cover 6% cover 40%;
+    }
+    /* RTL: the underline is written from the start (right). */
+    .note-prose > h2:dir(rtl)::after {
+      transform-origin: 100% 50%;
     }
 
     .note-prose > h3,
@@ -8699,7 +8883,8 @@ li:has(.journey-lift :focus-visible) .journey-connector {
    are transforms, so both stay on the compositor. */
 @keyframes pv-run {
   from {
-    transform: translate3d(-100%, 0, 0);
+    /* Parked off the START end — `--inline-sign` mirrors it under RTL. */
+    transform: translate3d(calc(-100% * var(--inline-sign, 1)), 0, 0);
   }
   to {
     transform: translate3d(0, 0, 0);
@@ -8758,7 +8943,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 @keyframes pv-focus-ord {
   from {
     filter: blur(5px);
-    transform: translate3d(-10px, 0, 0);
+    transform: translate3d(calc(-10px * var(--inline-sign, 1)), 0, 0);
   }
 }
 
@@ -8789,7 +8974,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 @keyframes pv-deal {
   from {
     opacity: 0.8;
-    transform: translate3d(-12px, 0, 0);
+    transform: translate3d(calc(-12px * var(--inline-sign, 1)), 0, 0);
   }
   to {
     opacity: 1;
@@ -8811,7 +8996,7 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 
 @keyframes pv-chip {
   from {
-    transform: translate3d(10px, 0, 0) scale(0.92);
+    transform: translate3d(calc(10px * var(--inline-sign, 1)), 0, 0) scale(0.92);
   }
   to {
     transform: translate3d(0, 0, 0) scale(1);
@@ -8831,6 +9016,12 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   transform-origin: 0 50%;
   background: linear-gradient(90deg, #ff6d05 0%, #ffcd5b 55%, #fc83ff 100%);
   pointer-events: none;
+}
+
+/* RTL: the reading rail fills from the start (right) edge. */
+.pv-progress:dir(rtl) {
+  transform-origin: 100% 50%;
+  background: linear-gradient(270deg, #ff6d05 0%, #ffcd5b 55%, #fc83ff 100%);
 }
 
 /* The rule sits over the section's own border-top. 5px tall so the spark fits;
@@ -8864,6 +9055,18 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   );
 }
 
+/* RTL: the rule is drawn from the start (right), its spark riding the head. */
+.pv-rule-line:dir(rtl) {
+  transform-origin: 100% 50%;
+  background: linear-gradient(
+    270deg,
+    #ff6d05 0%,
+    #ffaa2a 40%,
+    rgb(255 205 91 / 0.45) 75%,
+    rgb(255 205 91 / 0) 100%
+  );
+}
+
 .pv-rule-run {
   position: absolute;
   inset: 0;
@@ -8871,7 +9074,8 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 
 .pv-rule-spark {
   position: absolute;
-  right: 0;
+  /* Pinned to the run's END edge, so `pv-run` carries it start → end. */
+  inset-inline-end: 0;
   top: 0;
   width: 5px;
   height: 5px;
@@ -8903,13 +9107,24 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   pointer-events: none;
 }
 
+/* RTL: the underline draws out from the start (right). */
+.pv-under:dir(rtl) {
+  transform-origin: 100% 50%;
+  background: linear-gradient(
+    270deg,
+    rgb(255 170 42 / 0.9) 0%,
+    rgb(255 170 42 / 0.35) 55%,
+    rgb(255 170 42 / 0) 100%
+  );
+}
+
 /* The ledger margin: a gold bar down each record's left edge, on its border.
    Visible in the base rule too, because it is part of the card's design and
    not just part of the animation. */
 .pv-record::before {
   content: '';
   position: absolute;
-  left: -1px;
+  inset-inline-start: -1px;
   top: 14px;
   bottom: 14px;
   width: 2px;
@@ -9055,4 +9270,72 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   .pv-chip {
     animation: none;
   }
+}
+
+/* ══ Script-aware typography (issue #82) ════════════════════════════════════
+   Wide tracking and forced capitals are a Latin idiom. In Arabic-script text
+   letter-spacing pulls joined letters apart (the joins break, and the word
+   stops being spelled correctly); Hebrew, Devanagari and CJK have no case, and
+   tracking them reads as a rendering fault rather than as an eyebrow. So the
+   site's CSS-tracked labels drop both — but ONLY under those languages' `lang`,
+   which the root layout sets on <html>. English and the other Latin-script
+   locales render exactly as before, and the EnglishOnly islands carry
+   `lang="en"`, so they never match.
+
+   Targeted, not a global reset: these are the classes this file defines with
+   tracking of 2px / 0.08em or more. `tracking-[…]` utilities live in the
+   components and are their owners' to adapt. `.text-glow-stroke-neon` is
+   deliberately absent — the homepage title and the footer wordmark are the
+   owner's NAME, set in Latin on every locale, and the hero layout is measured
+   around it. The page titles are named by their own class instead.
+   Unlayered, so it outranks the @layer utilities rules it overrides. */
+:is(
+    .footer-index__marquee,
+    .footer-index__status,
+    .footer-identity__role,
+    .live-place__live,
+    .live-place__town,
+    .journey-date,
+    .ja-eyebrow,
+    .ja-chip,
+    .uses-ordinal,
+    .uses-eyebrow,
+    .uses-provenance,
+    .uses-label,
+    .uses-chipmark,
+    .uses-xref,
+    .uses-stack__cat,
+    .uses-stack__tally,
+    .uses-tool__rank,
+    .uses-stack__key,
+    .uses-pipeline__kind,
+    .hero-role,
+    .page-title-heading
+  ):is(:lang(ar), :lang(fa), :lang(ur), :lang(he), :lang(hi), :lang(zh), :lang(ja), :lang(ko)) {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* The component-side half of the rule above: Tailwind `tracking-*` utilities
+   (`tracking-[0.22em]` eyebrows, `tracking-widest` chips) written in JSX. Only
+   for the JOINING scripts, where spacing breaks the word itself — Arabic,
+   Persian, Urdu, and Devanagari's headline bar. CJK and Hebrew tracking reads
+   as a style choice rather than a fault, so those keep the designed rhythm.
+   An attribute match because the utility set is open-ended; unlayered, so it
+   outranks `@layer utilities` without `!important`. */
+[class*='tracking-']:is(:lang(ar), :lang(fa), :lang(ur), :lang(hi)) {
+  letter-spacing: normal;
+}
+
+/* Arabic marks sit above and below the letter; Devanagari's matras and the
+   headline bar reach high. At the tight leading Latin capitals are set in, a
+   heading that wraps puts one line's marks into the next. Only the two titles
+   whose leading is tight enough for that get more room — `leading-tight`
+   page titles and the 1.1 `/uses` plate title. The homepage title is the
+   owner's name in Latin, so it is left alone. */
+:is(.page-title-heading):is(:lang(ar), :lang(fa), :lang(ur), :lang(hi)) {
+  line-height: 1.45;
+}
+:is(.uses-title):is(:lang(ar), :lang(fa), :lang(ur), :lang(hi)) {
+  line-height: 1.35;
 }

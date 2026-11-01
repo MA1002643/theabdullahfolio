@@ -1,0 +1,124 @@
+{
+  "title": "LIVRO DE VISITAS",
+  "subtitle": "DEIXE SUA MARCA",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> marca restante} other {<n>{shown}</n> marcas restantes}}",
+    "commands": "{shortcut} · comandos",
+    "loading": "Carregando o livro de visitas…",
+    "loadingMore": "Carregando mais do livro de visitas…",
+    "loadFailed": "Não foi possível carregar o livro de visitas",
+    "pageFailed": "Não foi possível carregar esta página",
+    "retry": "Tentar novamente",
+    "emptyTitle": "Nenhuma mensagem ainda",
+    "emptyInvite": "Seja o primeiro a deixar sua marca"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> aqui agora}}",
+  "announce": {
+    "one": "Nova mensagem de {name}: {message}",
+    "many": "{count, plural, one {# nova mensagem.} many {# de novas mensagens.} other {# novas mensagens.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Alguém"
+  },
+  "card": {
+    "sending": "enviando…",
+    "guest": "Visitante",
+    "onGitHub": "{username} no GitHub (abre em uma nova aba)",
+    "copyLink": "Copiar um link para esta mensagem",
+    "linkCopied": "Link copiado — ele leva direto a esta marca",
+    "linkFailed": "Não foi possível copiar o link",
+    "deleteOwn": "Excluir sua mensagem",
+    "deleteOther": "Excluir a mensagem de {name}",
+    "signature": "Assinatura de {name}",
+    "signatureAnon": "Assinatura"
+  },
+  "reactions": {
+    "fire": "Fogo",
+    "rocket": "Foguete",
+    "heart": "Coração",
+    "count": "{label} — {count}",
+    "signInToReact": "Entre para reagir"
+  },
+  "composer": {
+    "label": "Sua mensagem",
+    "placeholder": "Deixe uma mensagem…",
+    "send": "Enviar mensagem",
+    "offline": "Você está offline — sua mensagem fica guardada aqui até você voltar.",
+    "notSent": "Sua mensagem anterior não foi enviada",
+    "restore": "Restaurar"
+  },
+  "signature": {
+    "add": "Adicionar uma assinatura (opcional)",
+    "discard": "Descartar assinatura",
+    "clear": "Limpar",
+    "padLabel": "Área de desenho da assinatura — desenhe com o mouse, o dedo ou a caneta, ou escolha uma marca pronta abaixo.",
+    "padHint": "Desenhe com o dedo, o trackpad ou o mouse — a espessura do traço acompanha a sua velocidade",
+    "pickMark": "Escolha uma marca",
+    "orPickMark": "Ou escolha uma marca",
+    "marks": {
+      "flourish": "Floreio",
+      "wave": "Onda",
+      "spark": "Faísca",
+      "orbit": "Órbita"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Deixe uma mensagem…",
+    "ghostRefine": "Aprimorar com IA",
+    "ghostSignature": "Adicionar uma assinatura (opcional)",
+    "ghostDrafts": "Os rascunhos são salvos automaticamente enquanto você digita",
+    "prompt": "Entre para deixar uma mensagem",
+    "promptReauth": "Entre novamente para deixar uma mensagem",
+    "reauthExplain": "Seu login atual é anterior às chaves de conta do mural, então ele permite ler, mas não escrever — basta entrar novamente uma vez para resolver.",
+    "github": "ENTRAR COM GITHUB",
+    "google": "ENTRAR COM GOOGLE"
+  },
+  "pagination": {
+    "nav": "Páginas do livro de visitas",
+    "previous": "Página anterior",
+    "next": "Próxima página",
+    "page": "PÁGINA ",
+    "status": "Página {page} de {total}"
+  },
+  "palette": {
+    "leaveMessage": "Deixar uma mensagem",
+    "leaveKeywords": "escrever assinar publicar redigir mensagem",
+    "sectionGuestbook": "Livro de visitas",
+    "sectionPreferences": "Preferências",
+    "signInToLeave": "Entre para deixar uma mensagem",
+    "toggleSound": "Alternar sons da interface",
+    "soundKeywords": "áudio som bipe silenciar mudo",
+    "toggleMotion": "Alternar movimento",
+    "motionKeywords": "animação reduzir movimento parado",
+    "on": "ativado",
+    "off": "desativado"
+  },
+  "toast": {
+    "posted": "Mensagem publicada!",
+    "postFailed": "Não foi possível publicar a mensagem",
+    "reactFailed": "Não foi possível reagir",
+    "deleteFailed": "Não foi possível excluir a mensagem",
+    "removedOwn": "Sua mensagem foi removida do livro de visitas",
+    "removedOther": "Mensagem removida do livro de visitas",
+    "you": "Você"
+  },
+  "errors": {
+    "unauthorized": "Não autorizado",
+    "too_large": "O corpo da requisição deve ter no máximo {max, number, ::group-off} bytes",
+    "invalid_body": "Corpo da requisição inválido",
+    "message_required": "A mensagem é obrigatória",
+    "message_length": "A mensagem deve ter de {min} a {max} caracteres",
+    "invalid_characters": "A mensagem contém caracteres inválidos",
+    "links_not_allowed": "Links não são permitidos nas mensagens do livro de visitas",
+    "unfriendly": "Por favor, mantenha um tom amigável",
+    "invalid_signature": "Assinatura inválida",
+    "rate_limited": "Uma mensagem a cada 5 minutos — tente novamente em {minutes, plural, one {# minuto} other {# minutos}}",
+    "invalid_reaction": "Reação inválida",
+    "reaction_rate_limited": "Reações demais — tente novamente em {seconds}s",
+    "not_found": "Mensagem não encontrada",
+    "id_required": "O ID da mensagem é obrigatório",
+    "invalid_id": "ID de mensagem inválido",
+    "forbidden": "Acesso negado",
+    "invalid_cursor": "Cursor inválido"
+  }
+}

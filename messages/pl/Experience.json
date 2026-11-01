@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Lata w zawodzie",
+    "unit": "{unit, select, years {{count, plural, one {rok doświadczenia} few {lata doświadczenia} many {lat doświadczenia} other {lat doświadczenia}}} other {{count, plural, one {miesiąc doświadczenia} few {miesiące doświadczenia} many {miesięcy doświadczenia} other {miesięcy doświadczenia}}}}",
+    "unavailable": "doświadczenie niedostępne",
+    "loadingAria": "Wczytywanie lat doświadczenia",
+    "viewBreakdown": "Zobacz podział →",
+    "srPrefix": "Aktualizacja doświadczenia: ",
+    "personal": "Osobiste",
+    "employment": "Zatrudnienie",
+    "splitUnavailable": "Niedostępne",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "Wczytywanie podsumowania doświadczenia",
+    "degraded": "Lata w zawodzie: doświadczenie niedostępne (brakuje części danych z GitHub lub są niepełne).{split} Zobacz podział: otwiera podział dostępnych danych.",
+    "ready": "Lata w zawodzie: {count, number, ::group-off}+ {unit, select, years {lat} other {miesięcy}} doświadczenia.{split} Zobacz podział: otwiera podział według kategorii.",
+    "split": "Osobiste {personal}, zatrudnienie {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "niedostępne"
+  },
+  "modal": {
+    "eyebrow": "Migawka kariery",
+    "title": "Doświadczenie według kategorii",
+    "close": "Zamknij podział doświadczenia",
+    "personalProjects": "Projekty osobiste",
+    "employment": "Zatrudnienie",
+    "unavailable": "Niedostępne",
+    "unitWord": "{unit, select, years {{count, plural, one {rok} few {lata} many {lat} other {lat}}} other {{count, plural, one {miesiąc} few {miesiące} many {miesięcy} other {miesięcy}}}}",
+    "totalUnavailable": "łącznie niedostępne",
+    "totalUnit": "łącznie {unit, select, years {lat} other {mies.}}",
+    "ownedRepos": "<n></n> {count, plural, one {własne repozytorium} few {własne repozytoria} many {własnych repozytoriów} other {własnych repozytoriów}}",
+    "roles": "<n></n> {count, plural, one {rola} few {role} many {ról} other {ról}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ lat} other { mies.}}",
+    "newestFirst": "Od najnowszych",
+    "showFewer": "Pokaż mniej",
+    "showAll": "Pokaż wszystkie repozytoria ({count, number, ::group-off}) →",
+    "noRepos": "Nie wykryto jeszcze własnych repozytoriów.",
+    "personalFailed": "Nie udało się teraz wczytać danych o projektach osobistych.",
+    "relativeDuration": "Czas względny",
+    "noRoles": "Nie wykryto jeszcze ról programistycznych.",
+    "employmentFailed": "Nie udało się teraz wczytać danych o zatrudnieniu."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {rok} few {lata} many {lat} other {lat}}} other {{count, plural, one {miesiąc} few {miesiące} many {miesięcy} other {miesięcy}}}}",
+  "changes": {
+    "newRole": "Wykryto nową rolę w CV: {company}",
+    "years": "Zaktualizowano lata doświadczenia: {from} → {to}",
+    "employment": "Zaktualizowano doświadczenie zawodowe: +{count, number, ::group-off} {count, plural, one {miesiąc} few {miesiące} many {miesięcy} other {miesięcy}}",
+    "newRepo": "Wykryto nowe repozytorium: {name}",
+    "newRepos": "Wykryto na GitHubie: {count, number, ::group-off} {count, plural, one {nowe repozytorium} few {nowe repozytoria} many {nowych repozytoriów} other {nowych repozytoriów}}",
+    "timeline": "Zaktualizowano oś czasu projektów osobistych"
+  }
+}

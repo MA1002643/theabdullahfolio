@@ -118,7 +118,8 @@ const FireTextarea = forwardRef(function FireTextarea(
       {/* Overlay is decorative — the real <textarea> above it owns all
           interaction, focus, validation, and AT semantics. */}
       <div className="fire-textarea-overlay" aria-hidden="true">
-        <div ref={overlayRef} className="fire-textarea-overlay-text" />
+        {/* Same `dir` as the real textarea (issue #82) — see FireInput. */}
+        <div ref={overlayRef} dir={rest.dir} className="fire-textarea-overlay-text" />
       </div>
     </div>
   );

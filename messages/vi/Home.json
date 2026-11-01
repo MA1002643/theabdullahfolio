@@ -1,0 +1,16 @@
+{
+  "role": "Kỹ sư phần mềm",
+  "summary": "Muhammad Abdullah là kỹ sư phần mềm sống tại Bolton, Greater Manchester, chuyên xây dựng các ứng dụng web nhanh và chỉn chu với Next.js, React, TypeScript và Node.js. Trang web này tập hợp {count} dự án — web, hệ thống, di động và AI — mỗi dự án được theo dõi trực tiếp từ bảng GitHub riêng, cùng với các bằng cấp và vị trí công việc đứng sau chúng, một dòng thời gian từ trường cao đẳng đến môi trường sản xuất, và những công cụ thực sự được dùng để làm nên các sản phẩm ấy. Bạn có thể đến mọi mục từ vòng điều hướng bên dưới, trừ ba mục: hồ sơ đầy đủ nằm ở <cv>trang CV</cv> và dưới dạng PDF, lý do đằng sau cách xây dựng trang này được viết trong <notes>ghi chú kỹ thuật</notes>, còn những gì trang này thu thập — cùng nút tắt phần tùy chọn — được nêu rõ tại <privacy>trang quyền riêng tư</privacy>.",
+  "orbitTip": {
+    "hover": {
+      "lead": "Đặt con trỏ lên laptop, rồi di chuyển hoặc cuộn lên xuống — vòng điều hướng sẽ xoay theo bạn.",
+      "keys": "Bạn cũng có thể kéo vòng điều hướng, hoặc nhấn <key>←</key> <key>→</key> khi một nút đang được chọn.",
+      "sr": "Mẹo: bạn có thể xoay vòng điều hướng. Đặt con trỏ lên laptop rồi di chuyển hoặc cuộn lên xuống để xoay vòng; bạn cũng có thể kéo vòng điều hướng, hoặc nhấn phím mũi tên trái và phải khi một nút điều hướng đang được chọn."
+    },
+    "touch": {
+      "lead": "Vuốt lên xuống trên laptop — hoặc kéo vòng điều hướng — để xoay thanh điều hướng.",
+      "sr": "Mẹo: bạn có thể xoay vòng điều hướng. Vuốt lên xuống trên laptop, hoặc kéo chính vòng điều hướng để xoay."
+    },
+    "dismiss": "Đóng mẹo điều hướng"
+  }
+}

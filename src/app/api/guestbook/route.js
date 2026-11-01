@@ -51,7 +51,7 @@ import {
   listMessages,
 } from '@/lib/guestbook/store';
 import { isAdminIdentity } from '@/lib/guestbook/admin';
-import { readJsonBody } from '@/lib/guestbook/body';
+import { bodyError, readJsonBody } from '@/lib/guestbook/body';
 import { ownsMessage, viewerFromSession } from '@/lib/guestbook/identity';
 import { checkRateLimit } from '@/lib/guestbook/ratelimit';
 import { validateMessage } from '@/lib/guestbook/validate';
@@ -119,7 +119,7 @@ export async function GET(request) {
   const rawCursor = query.get('cursor');
   const after = rawCursor ? decodeCursor(rawCursor) : null;
   if (rawCursor && !after) {
-    return NextResponse.json({ error: 'Invalid cursor' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid cursor', code: 'invalid_cursor' }, { status: 400 });
   }
 
   // The viewer may be anonymous — the session only personalises `isOwn` and
@@ -153,18 +153,25 @@ export async function POST(request) {
   // minted before keys existed (identity.js), which signing in again fixes.
   const viewer = viewerFromSession(await auth());
   if (!viewer) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
   }
 
   const read = await readJsonBody(request, { maxBytes: MESSAGE_BODY_MAX_BYTES });
   if (!read.ok) {
-    return NextResponse.json({ error: read.error }, { status: read.status });
+    return NextResponse.json(bodyError(read, MESSAGE_BODY_MAX_BYTES), { status: read.status });
   }
   const { body } = read;
 
   const checked = validateMessage(body?.message);
   if (!checked.ok) {
-    return NextResponse.json({ error: checked.error }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: checked.error,
+        code: checked.code,
+        ...(checked.values ? { values: checked.values } : {}),
+      },
+      { status: 400 },
+    );
   }
 
   // Optional ink signature — an SVG path string that must match the strict
@@ -174,7 +181,10 @@ export async function POST(request) {
   let signature = null;
   if (body?.signature !== undefined && body?.signature !== null) {
     if (!isValidSignaturePath(body.signature)) {
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid signature', code: 'invalid_signature' },
+        { status: 400 },
+      );
     }
     signature = body.signature.trim();
   }
@@ -185,6 +195,8 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: `One message every 5 minutes — try again in ${minutes} minute${minutes === 1 ? '' : 's'}`,
+        code: 'rate_limited',
+        values: { minutes },
       },
       {
         status: 429,
@@ -241,18 +253,21 @@ export async function POST(request) {
 export async function DELETE(request) {
   const viewer = viewerFromSession(await auth());
   if (!viewer) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
   }
 
   const id = new URL(request.url).searchParams.get('id');
   if (!id) {
-    return NextResponse.json({ error: 'Message id is required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Message id is required', code: 'id_required' },
+      { status: 400 },
+    );
   }
   // Shape before storage (messageId.js, the same check the deep link and the
   // reactions route make): an id the API could not have minted is a 400
   // here, not a Redis GET that answers 404 (code review).
   if (!isMessageId(id)) {
-    return NextResponse.json({ error: 'Invalid message id' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid message id', code: 'invalid_id' }, { status: 400 });
   }
 
   // Own-or-admin (owner-directed): an author may always remove their own
@@ -265,15 +280,15 @@ export async function DELETE(request) {
   // key equal to GUESTBOOK_ADMIN — a key, never a login, for the same reason.
   const target = await getMessage(id);
   if (!target) {
-    return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Message not found', code: 'not_found' }, { status: 404 });
   }
   if (!isAdminIdentity(viewer) && !ownsMessage(target.author, viewer)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden', code: 'forbidden' }, { status: 403 });
   }
 
   const removed = await deleteMessage(id);
   if (!removed) {
-    return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Message not found', code: 'not_found' }, { status: 404 });
   }
   // The mirror of POST's `count`: the wall's size just after the removal.
   return NextResponse.json({ ok: true, count: await countMessages() });

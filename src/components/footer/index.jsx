@@ -28,6 +28,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useLocale, useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import { localeInfo } from '@/i18n/locales';
+import { formatNumber } from '@/i18n/format';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Mail } from 'lucide-react';
 import { useFooterReveal } from './useFooterReveal';
@@ -41,7 +45,7 @@ import LiveLocation from './LiveLocation';
 import ElsewhereTerminal from './ElsewhereTerminal';
 import FooterManifest from './FooterManifest';
 import FooterIdentity from './FooterIdentity';
-import { brand, email } from './footer-data';
+import { email } from './footer-data';
 
 // Shared focus ring — a full-strength orange indicator against the dark plate,
 // with an offset so it reads clearly on tightly-packed link rows.
@@ -93,6 +97,11 @@ function FooterReveal({ as = 'div', variants, className, children, ...rest }) {
 }
 
 export default function Footer() {
+  const t = useTranslations('Footer');
+  const tLocale = useTranslations('Locale');
+  // The name in the reader's script, hand-set per locale (Common.owner).
+  const ownerName = useTranslations('Common')('owner.full');
+  const locale = useLocale();
   const rawReduced = useReducedMotion();
 
   // useReducedMotion resolves synchronously on the client but is null on the
@@ -109,9 +118,19 @@ export default function Footer() {
   // strings. Pre-mount SSR + first client render omit the year so they agree; it
   // fills in a frame later, well before the footer scrolls into view and the
   // split-flap copyright cascade plays.
+  //
+  // The year is formatted in the locale's own digits (٢٠٢٦ in Arabic) with
+  // grouping OFF — a plain `{year, number}` would print "2,026".
   const copyright = mounted
-    ? `© ${new Date().getFullYear()} ${brand.name}`
-    : `© ${brand.name}`;
+    ? t('copyright.withYear', {
+        year: formatNumber(new Date().getFullYear(), locale, { useGrouping: false }),
+        name: ownerName,
+      })
+    : t('copyright.noYear', { name: ownerName });
+
+  // Unreviewed machine translations say so, in the reader's language, on every
+  // sub-page (issue #82, "honest translation quality").
+  const isMachine = localeInfo(locale).status === 'machine';
 
   // The reach strip reveals its three items in sequence (availability → email
   // decode → live-location) rather than as one block fade. `reachRevealed` is the
@@ -199,7 +218,7 @@ export default function Footer() {
           decorative + aria-hidden; the vertical pluck is suppressed under
           reduced motion. */}
       <FooterWordmark
-        name={brand.name}
+        name={ownerName}
         reduced={reduced}
         soundOn={soundOn}
         autoPlay={autoPlay}
@@ -227,10 +246,10 @@ export default function Footer() {
           <FooterReveal
             as="nav"
             variants={blockFade}
-            aria-label="Site"
+            aria-label={t('siteNav')}
             className="lg:footer-col-rule"
           >
-            <ColumnHeading>Index</ColumnHeading>
+            <ColumnHeading>{t('columns.index')}</ColumnHeading>
             <FooterManifest />
           </FooterReveal>
 
@@ -242,7 +261,7 @@ export default function Footer() {
               and live-location plate now live in the full-width reach strip
               below the grid (Baseline Strip layout), not in this column. */}
           <FooterReveal variants={block} className="lg:footer-col-rule">
-            <ColumnHeading>Elsewhere</ColumnHeading>
+            <ColumnHeading>{t('columns.elsewhere')}</ColumnHeading>
             <ElsewhereTerminal />
           </FooterReveal>
         </div>
@@ -306,6 +325,30 @@ export default function Footer() {
           copyright={copyright}
           className="mt-14 flex flex-col items-center gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between"
         />
+
+        {/* Machine-translation notice (issue #82). One slim line, never a
+            banner: it states plainly that this language has not been reviewed
+            by a native speaker and offers the one useful thing to do about it.
+            Absent in English and in any locale whose `status` is 'reviewed'. */}
+        {isMachine ? (
+          <p
+            role="note"
+            className="mt-6 text-center text-[0.72rem] leading-relaxed text-[#a3a3a3] sm:text-start"
+          >
+            <span className="font-medium text-[#ffaa2a]">{tLocale('notice.title')}</span>
+            {' · '}
+            {tLocale('notice.body')}{' '}
+            <Link
+              href="/contact"
+              className={cn(
+                'text-[#ffaa2a] underline decoration-[#ffaa2a]/40 underline-offset-4 hover:decoration-[#ffaa2a]',
+                FOCUS_RING,
+              )}
+            >
+              {tLocale('notice.cta')}
+            </Link>
+          </p>
+        ) : null}
       </div>
     </footer>
   );

@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "نبذة عني",
+    "subtitle": "من أنا"
+  },
+  "intro": {
+    "heading": "مهندس السحر",
+    "paragraph": "تُحرّك رحلتي في تطوير الويب مجموعةٌ من الأدوات واللغات السحرية، وتشكّل JavaScript نواة تعاويذي. أُمسك بأطر مثل React.js وNext.js بدقة، وأصوغ بوابات (مواقع ويب) سلسة تصل بين العوالم (المستخدمين) عبر الكون الرقمي. وتمنحني فنون Jamstack العتيقة القدرة على صنع تجارب سريعة وآمنة وحيّة، بينما تضمن مهاراتي في التصميم أن يكون كل ما أبدعه عمليًا وآسرًا للنظر في آن واحد. وخلف التعاويذ المرئية، أرعى الآلات الخفية: أستحضر واجهات برمجية (APIs) وقواعد بيانات متينة (الخزائن التي تُحفظ فيها ذاكرة كل عالم بأمان)، وأنسج خطوط عمل آلية تحمل ما أصنعه من الورشة إلى السحابة (الأثير الرحب الذي يستيقظ فيه أخيرًا). وأعدّ الأداء وإتاحة الوصول عهدين مقدّسين، فتُفتح كل بوابة بسرعة لكل مسافر، على أي جهاز وفي أي ركن قصي من أرجاء العالم. ويبقى الفضول بوصلتي الأصدق، يجذبني دائمًا نحو كتب تعاويذ جديدة، وحدس أكثر حدّة، وأفكار جريئة بما يكفي لتصير تجارب حيّة تنبض. انضموا إليّ وأنا أواصل استكشاف تعاويذ وتقنيات جديدة لأسهم في تشكيل مستقبل الويب."
+  },
+  "projectsCard": {
+    "eyebrow": "مشاريع منجزة",
+    "unit": "{count, plural, zero {مشروع مكتمل} one {مشروع مكتمل} two {مشروعان مكتملان} few {مشاريع مكتملة} many {مشروعًا مكتملًا} other {مشروع مكتمل}}",
+    "viewProgress": "عرض التقدّم →",
+    "ariaLabel": "مشاريع منجزة: {count, number, ::group-off} {count, plural, zero {مشروع مكتمل} one {مشروع مكتمل} two {مشروعان مكتملان} few {مشاريع مكتملة} many {مشروعًا مكتملًا} other {مشروع مكتمل}}. {legend}. عرض التقدّم: يفتح التقدّم المباشر للمشاريع.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "المشاريع المكتملة حسب الفئة — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, zero {مشروع} one {مشروع} two {مشروعان} few {مشاريع} many {مشروعًا} other {مشروع}}",
+    "srPrefix": "تحديث المشاريع: "
+  },
+  "statsCard": {
+    "title": "إحصاءات GitHub لدى {name}",
+    "defaultUser": "مستخدم GitHub",
+    "live": "مقاييس GitHub المباشرة",
+    "rank": "الترتيب",
+    "updated": "تم تحديث إحصاءات GitHub",
+    "srPrefix": "تحديث الإحصاءات: ",
+    "metrics": {
+      "stars": "إجمالي النجوم المكتسبة",
+      "commits": "إجمالي الإيداعات (العام الماضي)",
+      "prs": "إجمالي PRs",
+      "issues": "إجمالي المشكلات",
+      "contributedTo": "المشاريع المُساهَم فيها (العام الماضي)"
+    }
+  },
+  "languagesCard": {
+    "title": "اللغات الأكثر استخدامًا",
+    "count": "{count, number, ::group-off} {count, plural, zero {لغة} one {لغة} two {لغتان} few {لغات} many {لغةً} other {لغة}}",
+    "live": "مباشر من GitHub",
+    "primary": "الأساسية",
+    "percent": "<n></n>%",
+    "srPrefix": "تحديث اللغات: ",
+    "popover": {
+      "eyebrow": "توزيع المستودعات",
+      "ariaLabel": "المستودعات التي تستخدم {language}",
+      "privateRepos": "{count, number, ::group-off} {count, plural, zero {مستودع خاص} one {مستودع خاص} two {مستودعان خاصان} few {مستودعات خاصة} many {مستودعًا خاصًا} other {مستودع خاص}}"
+    }
+  },
+  "streakCard": {
+    "title": "سلاسل المساهمات",
+    "subtitle": "نشاط GitHub",
+    "srPrefix": "تحديث السلاسل: ",
+    "total": "إجمالي المساهمات",
+    "current": "السلسلة الحالية",
+    "longest": "أطول سلسلة",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, zero {يوم} one {يوم} two {يومان} few {أيام} many {يومًا} other {يوم}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, zero {يوم} one {يوم} two {يومان} few {أيام} many {يومًا} other {يوم}}، أي {percent, number, ::group-off} بالمئة من أطول سلسلة لديك"
+  },
+  "repoCard": {
+    "badge": "المستودع الأكثر نشاطًا",
+    "srPrefix": "تحديث المستودع: ",
+    "metrics": {
+      "stars": "النجوم",
+      "forks": "التفرعات",
+      "mergedPrs": "PRs المدمجة",
+      "commits": "إجمالي الإيداعات",
+      "lastPushed": "آخر دفع"
+    },
+    "score": "نقاط",
+    "activityScore": "نقاط النشاط"
+  },
+  "skillsCard": {
+    "title": "المهارات والتقنيات",
+    "categories": {
+      "languages": "اللغات",
+      "frameworks": "الأطر",
+      "libraries": "المكتبات",
+      "tools": "الأدوات",
+      "software": "البرمجيات"
+    },
+    "count": "<n></n> {count, plural, zero {تقنية} one {تقنية} two {تقنيتان} few {تقنيات} many {تقنيةً} other {تقنية}}",
+    "live": "مباشر من GitHub",
+    "syncing": "جارٍ المزامنة مع GitHub…",
+    "noneDetected": "لم يتم رصد أي مهارات",
+    "noneInRepos": "لم يتم رصد أي مهارات في مستودعاتك",
+    "fetching": "جارٍ جلب المهارات من GitHub…",
+    "srPrefix": "تحديث المهارات: ",
+    "popover": {
+      "eyebrow": "مستخدمة في المستودعات",
+      "ariaLabel": "المستودعات التي تستخدم {name}",
+      "label": "المستودعات:",
+      "publicSr": "{count, number, ::group-off} عامة",
+      "privateSr": "{count, number, ::group-off} خاصة",
+      "publicCount": "<n></n> عامة",
+      "privateCount": "<n></n> خاصة",
+      "slash": "/",
+      "allPrivate": "جميع المستودعات خاصة"
+    }
+  },
+  "progress": {
+    "eyebrow": "قياسات التسليم",
+    "title": "تقدّم المشاريع",
+    "close": "إغلاق تقدّم المشاريع",
+    "failed": "تعذّر الوصول إلى مزامنة التقدّم حاليًا.",
+    "retry": "إعادة المزامنة",
+    "ringLineOne": "عناصر اللوحة",
+    "ringLineTwo": "مكتملة",
+    "percent": "<n></n>%",
+    "itemsDone": "العناصر المكتملة",
+    "ofTotal": "من {total, number, ::group-off}",
+    "boardsLive": "اللوحات المباشرة",
+    "allProjects": "{count, plural, zero {مشاريع} one {مشروع} two {مشروعان} few {مشاريع} many {مشروعًا} other {مشروع}}",
+    "ofProjects": "من {total, number, ::group-off} مشاريع",
+    "unavailable": "المزامنة المباشرة غير متاحة حاليًا — يُعرض هيكل المعرض فقط، وستعود النسب المئوية مع التحديث الناجح التالي.",
+    "byCategory": "حسب الفئة",
+    "projectCount": "{count, number, ::group-off} مشاريع",
+    "perProject": "لكل مشروع",
+    "liveFrom": "مباشر من GitHub Projects",
+    "footer": "مزامنة تلقائية من GitHub Projects · مرتين يوميًا",
+    "lastSync": "آخر مزامنة",
+    "awaiting": "بانتظار أول مزامنة",
+    "row": {
+      "tracked": "اكتمل {percent, number, ::group-off}%، أُنجز {done, number, ::group-off} من أصل {total, number, ::group-off} من عناصر اللوحة",
+      "syncUnavailable": "مزامنة التقدّم غير متاحة",
+      "notTracked": "غير متتبَّع",
+      "ariaLabel": "{name}، {category}. {status}. بدّل عرض تفاصيل اللوحة.",
+      "syncUnavailableTag": "· المزامنة غير متاحة",
+      "total": "الإجمالي",
+      "couldNotSync": "تعذّرت مزامنة هذه اللوحة حاليًا — ستعود الأعداد المباشرة مع التحديث التالي.",
+      "noBoard": "لا توجد لوحة مشروع على GitHub مرتبطة بهذا المشروع.",
+      "viewBoard": "عرض لوحة المشروع ←"
+    },
+    "age": {
+      "seconds": "منذ {s} ث",
+      "minutes": "منذ {m} د {s} ث",
+      "hours": "منذ {h} س {m} د",
+      "days": "منذ {d} ي {h} س"
+    },
+    "columns": {
+      "todo": "للإنجاز",
+      "backlog": "قائمة المهام المؤجلة",
+      "ready": "جاهز",
+      "inProgress": "قيد التنفيذ",
+      "inReview": "قيد المراجعة",
+      "done": "مكتمل",
+      "noStatus": "بلا حالة",
+      "blocked": "معطّل",
+      "onHold": "معلّق"
+    }
+  },
+  "wire": {
+    "present": "الآن",
+    "noCurrent": "لا توجد سلسلة حالية",
+    "noneFound": "لم يُعثر على سلسلة",
+    "noData": "لا توجد بيانات",
+    "notAvailable": "غير متاح",
+    "noDescription": "لا يوجد وصف",
+    "unknown": "غير معروف",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "تغيّر المستودع الأكثر نشاطًا إلى \"{name}\"",
+      "stars": "{direction, select, increased {زاد عدد النجوم} other {انخفض عدد النجوم}} بمقدار {amount, number, ::group-off} (الإجمالي الآن {total, number, ::group-off})",
+      "forks": "{direction, select, increased {زاد عدد التفرعات} other {انخفض عدد التفرعات}} بمقدار {amount, number, ::group-off} (الإجمالي الآن {total, number, ::group-off})",
+      "commits": "{count, plural, zero {لم يُدفع أي إيداع جديد} one {تم دفع إيداع جديد واحد} two {تم دفع إيداعين جديدين} few {تم دفع {count, number, ::group-off} إيداعات جديدة} many {تم دفع {count, number, ::group-off} إيداعًا جديدًا} other {تم دفع {count, number, ::group-off} إيداع جديد}}",
+      "mergedPrs": "{count, plural, zero {لم يُدمج أي طلب PR} one {تم دمج طلب PR واحد} two {تم دمج طلبي PR} few {تم دمج {count, number, ::group-off} طلبات PR} many {تم دمج {count, number, ::group-off} طلب PR} other {تم دمج {count, number, ::group-off} طلب PR}}",
+      "activityScore": "{direction, select, increased {ارتفعت} other {انخفضت}} درجة النشاط بمقدار {amount, number, ::group-off} (الإجمالي الآن {total, number, ::group-off})",
+      "language": "تغيّرت اللغة الأساسية إلى \"{language}\""
+    },
+    "stats": {
+      "stars": "إجمالي النجوم {delta, number, ::sign-always group-off}",
+      "commits": "إجمالي الإيداعات {delta, number, ::sign-always group-off}",
+      "prs": "إجمالي PRs {delta, number, ::sign-always group-off}",
+      "issues": "إجمالي المشكلات {delta, number, ::sign-always group-off}",
+      "contributedTo": "المشاريع التي تمت المساهمة فيها {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "إجمالي المساهمات {delta, number, ::sign-always group-off}",
+      "currentStreak": "السلسلة الحالية {delta, number, ::sign-always group-off}",
+      "longestStreak": "أطول سلسلة {delta, number, ::sign-always group-off}",
+      "currentDates": "تغيّرت تواريخ السلسلة الحالية",
+      "longestDates": "تغيّرت تواريخ أطول سلسلة"
+    },
+    "comma": "، ",
+    "languages": {
+      "addedOne": "أُضيفت {language} إلى أكثر اللغات استخدامًا.",
+      "addedMany": "{count, plural, zero {انضمت {count, number, ::group-off} لغة جديدة} one {انضمت لغة جديدة} two {انضمت لغتان جديدتان} few {انضمت {count, number, ::group-off} لغات جديدة} many {انضمت {count, number, ::group-off} لغةً جديدة} other {انضمت {count, number, ::group-off} لغة جديدة}} إلى قائمة الأعلى.",
+      "removedOne": "خرجت {language} من قائمة أكثر اللغات استخدامًا.",
+      "removedMany": "{count, plural, zero {خرجت {count, number, ::group-off} لغة} one {خرجت لغة واحدة} two {خرجت لغتان} few {خرجت {count, number, ::group-off} لغات} many {خرجت {count, number, ::group-off} لغةً} other {خرجت {count, number, ::group-off} لغة}} من قائمة الأعلى.",
+      "percentage": "{direction, select, increased {ارتفعت} other {انخفضت}} نسبة {language} بمقدار {delta, number, ::.0 group-off}%.",
+      "rank": "{language} {direction, select, up {ارتفعت} other {تراجعت}} إلى المرتبة #{rank, number, ::group-off}."
+    },
+    "skills": {
+      "added": "أُضيف: {items}",
+      "removed": "أُزيل: {items}",
+      "moved": "نُقل: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, plural, zero {أُضيف {delta, number, ::group-off} مشروع مكتمل جديد} one {أُضيف مشروع مكتمل جديد} two {أُضيف مشروعان مكتملان جديدان} few {أُضيفت {delta, number, ::group-off} مشاريع مكتملة جديدة} many {أُضيف {delta, number, ::group-off} مشروعًا مكتملًا جديدًا} other {أُضيف {delta, number, ::group-off} مشروع مكتمل جديد}} — الإجمالي الآن {count, number, ::group-off}",
+      "updated": "حُدّث عدد المشاريع المكتملة — الإجمالي الآن {count, number, ::group-off}"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { formatDuration } from "@/utils/experience/dateMath";
 
@@ -29,7 +30,18 @@ export const roleKey = (r) => `${r?.company ?? ""}|${r?.role ?? ""}|${r?.start ?
 // Messages are prioritised: the most specific / user-impacting change
 // wins, so we don't surface "1 new repository" when the actual story
 // is "new employment role".
-function buildChangeMessage(prev, next) {
+//
+// Worded through the `Experience` catalogue (issue #82): `t` is
+// `useTranslations('Experience')`, each case one ICU message.
+// The "X+ years" bucket is spoken through `Experience.duration`, the same
+// count/unit split as `formatDuration` (whose English it reproduces).
+const durationValues = (months) => {
+  const m = Math.max(0, Math.floor(Number(months) || 0));
+  return m >= 12 ? { count: Math.floor(m / 12), unit: "years" } : { count: m, unit: "months" };
+};
+
+// Exported for the English pin in tests/unit/aboutCopy.test.js.
+export function buildChangeMessage(prev, next, t) {
   if (!prev || !next) return null;
 
   // 1. New employment role — highest priority because role additions
@@ -39,22 +51,25 @@ function buildChangeMessage(prev, next) {
     (r) => !prevRoleKeys.has(roleKey(r)),
   );
   if (newRoles.length > 0) {
-    return `New role detected from resume: ${newRoles[0].company}`;
+    return t("changes.newRole", { company: newRoles[0].company });
   }
 
   // 2. Total experience tipped over to a new "X+" bucket. Only fire
   //    on an upward move per spec — counting *down* is a parser
   //    regression and shouldn't be celebrated. Display strings come
   //    from the same `formatDuration` helper the server uses for its
-  //    `total.display` field, so the banner text can't drift from the
-  //    payload's own formatting over time.
+  //    `total.display` field, so the bucket test can't drift from the
+  //    payload's own formatting; the WORDS come from `Experience.duration`.
   const prevDisplay = formatDuration(prev.total?.months ?? 0);
   const nextDisplay = formatDuration(next.total?.months ?? 0);
   if (
     prevDisplay !== nextDisplay &&
     (next.total?.months ?? 0) > (prev.total?.months ?? 0)
   ) {
-    return `Years of experience updated: ${prevDisplay} → ${nextDisplay}`;
+    return t("changes.years", {
+      from: t("duration", durationValues(prev.total?.months ?? 0)),
+      to: t("duration", durationValues(next.total?.months ?? 0)),
+    });
   }
 
   // 3. Employment months ticked without crossing a display bucket
@@ -64,7 +79,7 @@ function buildChangeMessage(prev, next) {
   const nextEmpMonths = next.employment?.months ?? 0;
   if (nextEmpMonths > prevEmpMonths) {
     const delta = nextEmpMonths - prevEmpMonths;
-    return `Employment experience updated: +${delta} month${delta === 1 ? "" : "s"}`;
+    return t("changes.employment", { count: delta });
   }
 
   // 4. New repositories detected on GitHub. Surfaces creates without
@@ -76,10 +91,10 @@ function buildChangeMessage(prev, next) {
     (r) => !prevRepoNames.has(r.name),
   );
   if (newRepos.length === 1) {
-    return `New repository detected: ${newRepos[0].name}`;
+    return t("changes.newRepo", { name: newRepos[0].name });
   }
   if (newRepos.length > 1) {
-    return `${newRepos.length} new repositories detected on GitHub`;
+    return t("changes.newRepos", { count: newRepos.length });
   }
 
   // 5. Source-date drift: the earliest-repo date changed (probably
@@ -88,7 +103,7 @@ function buildChangeMessage(prev, next) {
     prev.personalProjects?.firstRepoDate !==
     next.personalProjects?.firstRepoDate
   ) {
-    return "Personal projects timeline updated";
+    return t("changes.timeline");
   }
 
   return null;
@@ -299,6 +314,9 @@ function writeStoredPayload(username, content) {
 export function useExperienceSummary(username) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  // Banner copy in the reader's language (issue #82). Captured by the
+  // username-keyed effect; a locale switch remounts the page.
+  const t = useTranslations("Experience");
   const [isLoading, setIsLoading] = useState(true);
   // `null` = no banner-worthy change to display (either first load or
   // current === last stored). Set to a human-readable sentence when a
@@ -456,7 +474,7 @@ export function useExperienceSummary(username) {
         // identical content doesn't trip on `generatedAt` drift.
         const nextContent = pickContent(payload);
         const prevContent = readStoredPayload(username);
-        const message = buildChangeMessage(prevContent, nextContent);
+        const message = buildChangeMessage(prevContent, nextContent, t);
         // Always set the state to the current comparison result —
         // including `null` when there's no diff. The previous "only set
         // when truthy" path left a stale sentence on screen across
@@ -507,6 +525,10 @@ export function useExperienceSummary(username) {
       cancelled = true;
       clearInterval(intervalId);
     };
+    // `t` is deliberately not a dependency: re-running would refetch and reset
+    // the poll on a mere re-render, and the locale cannot change under a
+    // mounted page (a locale switch remounts it).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
   return {

@@ -1,0 +1,124 @@
+{
+  "title": "مہمانوں کی کتاب",
+  "subtitle": "اپنا نشان چھوڑیں",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> نشان چھوڑا گیا} other {<n>{shown}</n> نشان چھوڑے گئے}}",
+    "commands": "{shortcut} · کمانڈز",
+    "loading": "مہمانوں کی کتاب لوڈ ہو رہی ہے…",
+    "loadingMore": "مہمانوں کی کتاب کا مزید حصہ لوڈ ہو رہا ہے…",
+    "loadFailed": "مہمانوں کی کتاب لوڈ نہیں ہو سکی",
+    "pageFailed": "یہ صفحہ لوڈ نہیں ہو سکا",
+    "retry": "دوبارہ کوشش کریں",
+    "emptyTitle": "ابھی تک کوئی پیغام نہیں",
+    "emptyInvite": "سب سے پہلے اپنا نشان آپ چھوڑیں"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> افراد اس وقت یہاں ہیں}}",
+  "announce": {
+    "one": "{name} کی طرف سے نیا پیغام: {message}",
+    "many": "{count, plural, one {# نیا پیغام۔} other {# نئے پیغامات۔}} {lines}",
+    "line": "{name}: {message}",
+    "separator": "۔ ",
+    "someone": "کوئی صاحب"
+  },
+  "card": {
+    "sending": "ارسال…",
+    "guest": "مہمان",
+    "onGitHub": "GitHub پر {username} (نئے ٹیب میں کھلتا ہے)",
+    "copyLink": "اس پیغام کا لنک کاپی کریں",
+    "linkCopied": "لنک کاپی ہو گیا — یہ سیدھا اسی نشان تک لے جاتا ہے",
+    "linkFailed": "لنک کاپی نہیں ہو سکا",
+    "deleteOwn": "اپنا پیغام حذف کریں",
+    "deleteOther": "{name} کا پیغام حذف کریں",
+    "signature": "{name} کا دستخط",
+    "signatureAnon": "دستخط"
+  },
+  "reactions": {
+    "fire": "آگ",
+    "rocket": "راکٹ",
+    "heart": "دل",
+    "count": "{label} — {count}",
+    "signInToReact": "ردِعمل دینے کے لیے سائن اِن کریں"
+  },
+  "composer": {
+    "label": "آپ کا پیغام",
+    "placeholder": "کوئی پیغام چھوڑیں…",
+    "send": "پیغام بھیجیں",
+    "offline": "آپ آف لائن ہیں — آپ کا پیغام واپسی تک یہیں محفوظ رہے گا۔",
+    "notSent": "آپ کا پچھلا پیغام نہیں بھیجا جا سکا",
+    "restore": "اسے بحال کریں"
+  },
+  "signature": {
+    "add": "دستخط شامل کریں (اختیاری)",
+    "discard": "دستخط ہٹا دیں",
+    "clear": "صاف کریں",
+    "padLabel": "دستخط کا خانہ — ماؤس، انگلی یا قلم سے لکیریں کھینچیں، یا نیچے سے کوئی تیار نشان چنیں۔",
+    "padHint": "انگلی، ٹریک پیڈ یا ماؤس سے بنائیں — لکیر کی موٹائی آپ کی رفتار کے مطابق ہوتی ہے",
+    "pickMark": "کوئی نشان چنیں",
+    "orPickMark": "یا کوئی نشان چنیں",
+    "marks": {
+      "flourish": "گل کاری",
+      "wave": "لہر",
+      "spark": "چنگاری",
+      "orbit": "مدار"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "کوئی پیغام چھوڑیں…",
+    "ghostRefine": "AI کے ساتھ بہتر بنائیں",
+    "ghostSignature": "دستخط شامل کریں (اختیاری)",
+    "ghostDrafts": "آپ کے لکھتے ہی مسودے خود محفوظ ہو جاتے ہیں",
+    "prompt": "پیغام چھوڑنے کے لیے سائن اِن کریں",
+    "promptReauth": "پیغام چھوڑنے کے لیے دوبارہ سائن اِن کریں",
+    "reauthExplain": "آپ کا موجودہ سائن اِن دیوار کی اکاؤنٹ کیز سے پہلے کا ہے، اس لیے وہ پڑھ تو سکتا ہے مگر لکھ نہیں سکتا — ایک بار نیا سائن اِن کرنے سے مسئلہ حل ہو جائے گا۔",
+    "github": "GitHub کے ساتھ سائن اِن کریں",
+    "google": "Google کے ساتھ سائن اِن کریں"
+  },
+  "pagination": {
+    "nav": "مہمانوں کی کتاب کے صفحات",
+    "previous": "پچھلا صفحہ",
+    "next": "اگلا صفحہ",
+    "page": "صفحہ ",
+    "status": "صفحہ {page} از {total}"
+  },
+  "palette": {
+    "leaveMessage": "پیغام چھوڑیں",
+    "leaveKeywords": "لکھیں دستخط پوسٹ تحریر پیغام",
+    "sectionGuestbook": "گیسٹ بک",
+    "sectionPreferences": "ترجیحات",
+    "signInToLeave": "پیغام چھوڑنے کے لیے سائن اِن کریں",
+    "toggleSound": "انٹرفیس کی آوازیں آن/آف کریں",
+    "soundKeywords": "آواز بیپ خاموش میوٹ audio",
+    "toggleMotion": "حرکت آن/آف کریں",
+    "motionKeywords": "حرکت اینیمیشن کم ساکن animation",
+    "on": "آن",
+    "off": "آف"
+  },
+  "toast": {
+    "posted": "پیغام پوسٹ ہو گیا!",
+    "postFailed": "پیغام پوسٹ نہیں ہو سکا",
+    "reactFailed": "ردِعمل نہیں دیا جا سکا",
+    "deleteFailed": "پیغام حذف نہیں ہو سکا",
+    "removedOwn": "آپ کا پیغام گیسٹ بک سے ہٹا دیا گیا",
+    "removedOther": "پیغام گیسٹ بک سے ہٹا دیا گیا",
+    "you": "آپ"
+  },
+  "errors": {
+    "unauthorized": "غیر مجاز",
+    "too_large": "درخواست کی باڈی زیادہ سے زیادہ {max, number, ::group-off} بائٹس کی ہونی چاہیے",
+    "invalid_body": "درخواست کی باڈی غلط ہے",
+    "message_required": "پیغام درکار ہے",
+    "message_length": "پیغام {min} سے {max} حروف کے درمیان ہونا چاہیے",
+    "invalid_characters": "پیغام میں غلط حروف شامل ہیں",
+    "links_not_allowed": "گیسٹ بک کے پیغامات میں لنکس کی اجازت نہیں ہے",
+    "unfriendly": "براہِ کرم دوستانہ انداز رکھیں",
+    "invalid_signature": "دستخط غلط ہے",
+    "rate_limited": "ہر 5 منٹ میں ایک پیغام — {minutes, plural, one {# منٹ} other {# منٹ}} بعد دوبارہ کوشش کریں",
+    "invalid_reaction": "ردِعمل غلط ہے",
+    "reaction_rate_limited": "بہت زیادہ ردِعمل — {seconds} سیکنڈ بعد دوبارہ کوشش کریں",
+    "not_found": "پیغام نہیں ملا",
+    "id_required": "پیغام کی شناخت درکار ہے",
+    "invalid_id": "پیغام کی شناخت غلط ہے",
+    "forbidden": "ممنوع",
+    "invalid_cursor": "کرسر غلط ہے"
+  }
+}

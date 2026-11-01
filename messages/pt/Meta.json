@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Engenheiro de Software. Cartão escuro cor de brasa com o selo de Muhammad Abdullah e o status do portfólio ao vivo.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Engenheiro de Software. Cartão quadrado escuro cor de brasa com o selo de Muhammad Abdullah e o status do portfólio ao vivo.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Engenheiro de Software",
+      "description": "Engenheiro de software em Bolton que cria aplicações web rápidas e bem pensadas com Next.js, React e TypeScript. Projetos, credenciais e as ferramentas por trás deles."
+    },
+    "about": {
+      "title": "Sobre",
+      "description": "O engenheiro por trás da brasa — a história, a stack e telemetria ao vivo do GitHub sobre o que está sendo construído agora."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "O registro completo — cada cargo, qualificação e projeto entregue, em HTML. Escrito a partir dos mesmos dados que a linha do tempo exibe, com o PDF a um clique de distância."
+    },
+    "notes": {
+      "title": "Notas",
+      "description": "Registros de decisões de engenharia — por que cada escolha neste site foi feita, quais alternativas foram descartadas e quanto cada uma custou."
+    },
+    "projects": {
+      "title": "Projetos",
+      "description": "{countWord} projetos — web, sistemas, mobile e IA — cada um acompanhado ao vivo no próprio quadro do GitHub, com a stack e o estágio de conclusão em cada cartão."
+    },
+    "qualifications": {
+      "title": "Qualificações",
+      "description": "Graduações, certificados e credenciais profissionais — o histórico verificado por trás da prática, com todos os certificados disponíveis para consulta."
+    },
+    "journey": {
+      "title": "Trajetória",
+      "description": "Cada cargo, qualificação e atuação voluntária em uma única linha do tempo guiada pela rolagem — do Bolton College em 2018 até a entrega de software em produção hoje."
+    },
+    "uses": {
+      "title": "Uso",
+      "description": "A máquina, a bancada, a stack e o pipeline — cada ferramenta desta página verificada nos repositórios e no build que a entrega."
+    },
+    "contact": {
+      "title": "Contato",
+      "description": "Inicie uma conversa sobre uma vaga ou um projeto — um formulário de contato que refina sua mensagem enquanto você escreve e nunca perde um rascunho."
+    },
+    "myPast": {
+      "title": "Meu Passado",
+      "description": "O portfólio da época da universidade, onde tudo começou — feito à mão com HTML, CSS e JavaScript puros e mantido no ar como um retrato honesto do antes."
+    },
+    "guestbook": {
+      "title": "Livro de Visitas",
+      "description": "Deixe sua marca no mural — um quadro de mensagens em neon assinado por visitantes via GitHub ou Google, com presença e reações ao vivo."
+    },
+    "privacy": {
+      "title": "Privacidade",
+      "description": "Cada cookie, chave de armazenamento e serviço de terceiros que este site utiliza, por que cada um existe e como desativar os opcionais. Auditado, não copiado de modelo."
+    }
+  },
+  "notFound": {
+    "title": "404 — Página Não Encontrada",
+    "description": "Você foi parar no vazio. Esta página não existe — ainda."
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { UpdateBanner } from "./UpdateBanner";
 
@@ -60,6 +61,7 @@ const SESSION_KEY = "experience-update-banner:lastPlayed";
  *                                       under the blur).
  */
 export function ExperienceUpdateBanner({ message, inView, variant = "orange", onVisibilityChange }) {
+  const t = useTranslations("Experience");
   const [shown, setShown] = useState(false);
   // Remembers which message we've already played so re-entries with the
   // same message don't re-show it. Hydrated from sessionStorage on first
@@ -127,7 +129,7 @@ export function ExperienceUpdateBanner({ message, inView, variant = "orange", on
     <UpdateBanner
       message={shown ? message : null}
       visible={shown}
-      srPrefix="Experience update: "
+      srPrefix={t("card.srPrefix")}
       variant={variant}
       onExitComplete={() => onVisibilityChange?.(false)}
     />

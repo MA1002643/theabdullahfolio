@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "MEIN WERDEGANG",
+    "subtitle": "von der ersten Zeile bis in die Produktion"
+  },
+  "timeline": {
+    "label": "Zeitleiste des Werdegangs"
+  },
+  "endCap": {
+    "est": "SEIT {year} · BOLTON, UK",
+    "tally": "{years, plural, one {# JAHR} other {# JAHRE}} · {entries, plural, one {# EINTRAG} other {# EINTRÄGE}} · {tracks, plural, one {# SPUR} other {# SPUREN}}",
+    "paper": "DIE PAPIERVERSION →",
+    "paperHint": "der Lebenslauf als PDF (öffnet in einem neuen Tab)"
+  },
+  "spine": {
+    "now": "JETZT"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# Mon.}}} one {# Jahr{months, plural, =0 {} other { # Mon.}}} other {# Jahre{months, plural, =0 {} other { # Mon.}}}}",
+    "tenureOngoing": "bisher {tenure}",
+    "view": "ANSEHEN",
+    "viewLabel": "{title} ansehen (öffnet in neuem Tab)"
+  },
+  "eraRail": {
+    "label": "Epochen der Zeitleiste",
+    "jump": "Zu {year} springen"
+  },
+  "atlas": {
+    "eyebrow": "Überlappungsansicht",
+    "title": "Der Atlas — drei Spuren, eine Uhr",
+    "live": {
+      "career": "{count, plural, one {# Rolle} other {# Rollen}}",
+      "education": "{count, plural, one {# Abschluss} other {# Abschlüsse}}",
+      "milestone": "{count, plural, one {# Community-Beitrag} other {# Community-Beiträge}}",
+      "separator": " + ",
+      "sentence": "Aktuell laufend: {parts}{total, plural, =1 {.} other { — parallel.}}"
+    },
+    "tracks": {
+      "all": "Alle",
+      "career": "Karriere",
+      "education": "Ausbildung",
+      "milestone": "Community"
+    },
+    "chipsLabel": "Eine Spur hervorheben",
+    "zoom": {
+      "group": "Raster-Zoom",
+      "out": "Raster verkleinern",
+      "outTitle": "Verkleinern",
+      "in": "Raster vergrößern",
+      "inTitle": "Vergrößern",
+      "readoutLabel": "Raster-Zoom {pct}. Zurücksetzen auf {full}",
+      "readoutTitle": "Raster-Zoom",
+      "resetTitle": "Zoom auf {full} zurücksetzen",
+      "status": "Raster-Zoom {pct}"
+    },
+    "region": "Überlappungsatlas: jede Rolle und jeder Kurs als parallele Balken auf einer Zeitachse",
+    "entries": "{count, plural, one {# Eintrag} other {# Einträge}}",
+    "now": "Jetzt",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Zu {org} · {role}, {dates} springen",
+    "spokenRange": "{start} bis {end}",
+    "spokenOpen": "{start} bis heute",
+    "key": {
+      "select": "Wähle einen Balken, um dorthin zu springen.",
+      "dashed": "Gestrichelter Rand = läuft noch.",
+      "stacked": "Gestapelte Balken = gleichzeitig."
+    }
+  },
+  "palette": {
+    "section": "Werdegang",
+    "jumpYear": "Zu {year} springen",
+    "eraHint": "Epoche",
+    "jumpAtlas": "Zum Überlappungsatlas springen",
+    "openCv": "CV öffnen (PDF)",
+    "openCvHint": "die Papierversion"
+  }
+}

@@ -1,7 +1,7 @@
-import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import LanguagesCard from '@/components/about/LanguagesCard';
+import { renderWithIntl } from '../support/intl';
 
 // The /about languages list (issue #92). Each row is the trigger for a
 // per-language repository breakdown, but only when there IS a breakdown: a
@@ -24,7 +24,7 @@ function rowFor(container, name) {
 
 describe('LanguagesCard rows', () => {
   it('exposes button semantics only on rows that open a breakdown', () => {
-    const { container } = render(<LanguagesCard data={DATA} />);
+    const { container } = renderWithIntl(<LanguagesCard data={DATA} />);
 
     for (const name of ['JavaScript', 'Go']) {
       const row = rowFor(container, name);

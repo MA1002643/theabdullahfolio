@@ -1,0 +1,15 @@
+{
+  "dialog": "Befehlspalette",
+  "search": "Befehle durchsuchen",
+  "placeholder": "Befehl oder Ziel eingeben…",
+  "list": "Befehle",
+  "empty": "Keine Treffer",
+  "sections": {
+    "navigate": "Navigation",
+    "language": "Sprache"
+  },
+  "keywords": {
+    "navigate": "gehen springen navigieren wechseln öffnen Seite Route Ziel",
+    "language": "Sprache übersetzen Übersetzung Lokalisierung Locale Deutsch Englisch"
+  }
+}

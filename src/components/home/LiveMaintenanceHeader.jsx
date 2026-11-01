@@ -6,7 +6,10 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import MetricPopover from './MetricPopover';
 import HoverHint from './HoverHint';
 import { useNow } from './useNow';
-import { formatAge } from '@/utils/formatAge';
+import { useLocale, useTranslations } from 'next-intl';
+import { intlTag, formatRelativeMs } from '@/i18n/format';
+import { useDirection } from '@/i18n/useDirection';
+import { formatAgeFor, localDigits, localNumber } from './localeFormat';
 
 // Live Maintenance Header (issue #24, multi-repo since issue #94).
 //
@@ -38,23 +41,43 @@ const POLL_INTERVAL_MS = 30 * 1000;
 const POLL_INTERVAL_SOFT_MS = 60 * 1000;
 const POLL_INTERVAL_HIDDEN_MS = 15 * 60 * 1000;
 
-const STATE_LABELS = {
-  shipping: 'SHIPPING',
-  live: 'LIVE',
-  in_progress: 'IN PROGRESS',
-  planning: 'PLANNING',
-  idle: 'MAINTENANCE',
+// API state → catalogue key (issue #82). Every label the strip shows for a
+// state — the word, its spoken form, the rail station, the legend meaning,
+// the headline — lives in messages/<locale>/LiveHeader.json under this key.
+const STATE_KEYS = {
+  shipping: 'shipping',
+  live: 'live',
+  in_progress: 'inProgress',
+  planning: 'planning',
+  idle: 'idle',
 };
+const stateKeyOf = (state) => STATE_KEYS[state] ?? STATE_KEYS.idle;
 
 // Delivery-rail stations in pipeline order. `idle` is deliberately not a
 // station — maintenance is off-pipeline and renders the rail dimmed with
-// every node hollow.
+// every node hollow. Labels come from `pipeline.<key>` in the catalogue.
 const PIPELINE = [
-  { key: 'planning', label: 'Plan' },
-  { key: 'in_progress', label: 'Build' },
-  { key: 'shipping', label: 'Ship' },
-  { key: 'live', label: 'Live' },
+  { key: 'planning' },
+  { key: 'in_progress' },
+  { key: 'shipping' },
+  { key: 'live' },
 ];
+
+// A descriptor this client can word (issue #82): a `message.*` key and a
+// plain-object `values`. Deliberately a local copy of workSignal.js's
+// `isMessageDescriptor` — importing that module here would ship
+// `createTranslator` and the whole English catalogue into the client bundle
+// for one shape check. Anything that fails it (a payload cached before
+// descriptors existed, a malformed response) falls back to the English
+// sentence that always rides beside it.
+const isDescriptor = (value) =>
+  value !== null &&
+  typeof value === 'object' &&
+  typeof value.key === 'string' &&
+  /^message\.[A-Za-z]+$/.test(value.key) &&
+  value.values !== null &&
+  typeof value.values === 'object' &&
+  !Array.isArray(value.values);
 
 // The strip's single rotation clock. One 10s beat drives BOTH the focus
 // queue (the FOCUS field cycles through every active work item — so
@@ -98,13 +121,22 @@ const passThroughVariants = {
 // The single reveal. Non-sweeping insets rest at -8% so the finished clip
 // sits outside the box and can never shave descenders or focus rings; the
 // right inset overshoots to -8% for the same reason.
-const wipeVariants = {
-  hidden: { clipPath: 'inset(-8% 100% -8% -8%)' },
+//
+// The sweep runs in READING direction (issue #82): left-to-right in LTR, and
+// right-to-left in RTL, where the strip itself is mirrored and its first
+// field (STATE) sits on the right — so the power-on still starts at the
+// field the eye starts at. Same distance, duration and ease either way.
+const wipeVariantsFor = (isRtl) => ({
+  hidden: {
+    clipPath: isRtl ? 'inset(-8% -8% -8% 100%)' : 'inset(-8% 100% -8% -8%)',
+  },
   visible: {
     clipPath: 'inset(-8% -8% -8% -8%)',
     transition: { duration: SWEEP_S, delay: SWEEP_DELAY_S, ease: EASE_SWEEP },
   },
-};
+});
+const WIPE_LTR = wipeVariantsFor(false);
+const WIPE_RTL = wipeVariantsFor(true);
 
 // Read-head: a full-width sled whose right edge carries the 1px rule, so
 // translating the sled walks the rule across the strip. Its span (-100% →
@@ -113,10 +145,14 @@ const wipeVariants = {
 // journey; opacity keyframes light it just after departure and dissolve it
 // on arrival. Hidden at rest via the class opacity-0, so reduced-motion
 // (variants undefined through v()) never shows it at all.
-const headVariants = {
-  hidden: { x: '-100%', opacity: 0 },
+//
+// In RTL the sled sits at the start (right) edge, carries its rule on the
+// end (left) edge, and travels by `sign` — the mirror of the LTR journey,
+// riding the mirrored wipe above.
+const headVariantsFor = (sign) => ({
+  hidden: { x: `${-100 * sign}%`, opacity: 0 },
   visible: {
-    x: '8%',
+    x: `${8 * sign}%`,
     opacity: [0, 1, 1, 0],
     transition: {
       duration: SWEEP_S,
@@ -130,7 +166,9 @@ const headVariants = {
       },
     },
   },
-};
+});
+const HEAD_LTR = headVariantsFor(1);
+const HEAD_RTL = headVariantsFor(-1);
 
 // Orchestration only — the trees stagger their fields' focus-settle but no
 // longer move or fade themselves (the wipe owns the reveal).
@@ -186,6 +224,10 @@ const ACTIVITY_RISE_DELAY = 0.1; // signal rise waits for the carrier to read
 const ACTIVITY_HIDDEN_RESET = { duration: 0.15, ease: 'easeOut' };
 
 export default function LiveMaintenanceHeader() {
+  const t = useTranslations('LiveHeader');
+  const locale = useLocale();
+  const { isRtl } = useDirection();
+  const num = (value) => localNumber(value, locale);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -283,7 +325,8 @@ export default function LiveMaintenanceHeader() {
   }, []);
 
   const state = data?.state ?? 'idle';
-  const stateLabel = STATE_LABELS[state] ?? STATE_LABELS.idle;
+  const stateKey = stateKeyOf(state);
+  const stateLabel = t(`state.${stateKey}`);
 
   const meta = data?.meta ?? {
     activePrs: 0,
@@ -331,7 +374,23 @@ export default function LiveMaintenanceHeader() {
 
   const [beat, setBeat] = useState(0);
   const [rotationPaused, setRotationPaused] = useState(false);
-  const secondary = data?.secondaryMessage ?? null;
+  // English renders the API's `secondaryMessage` sentence exactly as before.
+  // Every other locale words the descriptor that rides beside it from its own
+  // catalogue (issue #82), with the GitHub number + title isolated in <bdi>
+  // so a Latin title cannot reorder the punctuation of right-to-left text.
+  // The title itself is never translated.
+  const secondaryText = data?.secondaryMessage ?? null;
+  const secondaryDescriptor = data?.secondaryMessageDescriptor;
+  const secondary =
+    secondaryText &&
+    locale !== 'en' &&
+    isDescriptor(secondaryDescriptor) &&
+    t.has(secondaryDescriptor.key)
+      ? t.rich(secondaryDescriptor.key, {
+          ...secondaryDescriptor.values,
+          bdi: (chunks) => <bdi>{chunks}</bdi>,
+        })
+      : secondaryText;
   const rotating = focusItems.length > 1 || Boolean(secondary);
 
   useEffect(() => {
@@ -375,14 +434,17 @@ export default function LiveMaintenanceHeader() {
   // Arrow keys drive the same beat the rotation clock advances — the
   // manual control and the clock are one instrument dial. Only plain
   // Left/Right are captured (Alt/Cmd+Left is browser history), and only
-  // when there's an actual queue to step.
+  // when there's an actual queue to step. "Next" is the arrow that points
+  // the way the line reads (issue #82): → in LTR, ← in RTL — the WAI-ARIA
+  // convention for horizontal widgets in a mirrored layout.
+  const nextKey = isRtl ? 'ArrowLeft' : 'ArrowRight';
   const handleQueueKeys = (event) => {
     if (queueLength <= 1) return;
     if (event.altKey || event.metaKey || event.ctrlKey) return;
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
     event.preventDefault();
     event.stopPropagation();
-    setBeat((b) => (event.key === 'ArrowRight' ? b + 1 : b - 1));
+    setBeat((b) => (event.key === nextKey ? b + 1 : b - 1));
   };
   // The arrow-key affordance itself is surfaced by QueueDots — its hover
   // hint and sr text — so the hint lives on the queue indicator, not as a
@@ -405,8 +467,8 @@ export default function LiveMaintenanceHeader() {
           ) ?? null))
     : null;
   const focusEyebrow = focus
-    ? `Focus · ${focus.type === 'pr' ? 'PR' : 'Issue'}`
-    : 'Focus';
+    ? t(focus.type === 'pr' ? 'fields.focusPr' : 'fields.focusIssue')
+    : t('fields.focus');
   // Reserve the folio's width for the widest number in the queue ("#" +
   // digits) so the title's left edge never shifts as the rotation cycles
   // between numbers of different lengths.
@@ -428,8 +490,8 @@ export default function LiveMaintenanceHeader() {
   const repoCount = Object.keys(byRepo).length;
   const monitoringCopy =
     repoCount > 0
-      ? `Monitoring ${repoCount} ${repoCount === 1 ? 'repository' : 'repositories'} — no active focus item`
-      : 'Monitoring tracked repositories';
+      ? t('focus.monitoring', { count: repoCount })
+      : t('focus.monitoringNone');
 
   const confidence = meta.confidence ?? 0;
   const softRateLimit = Boolean(meta.softRateLimit);
@@ -440,8 +502,11 @@ export default function LiveMaintenanceHeader() {
     (softRateLimit ? POLL_INTERVAL_SOFT_MS : POLL_INTERVAL_MS) / 1000;
   // Locale-formatted absolute time is client-safe here: the strip only
   // renders after the first client-side fetch, so it never crosses SSR.
+  // The PAGE's locale, not the browser's (issue #82): an Arabic page reads
+  // its time in Arabic, and English reads British, like every other date on
+  // the site.
   const lastSyncAbsolute = meta.lastUpdated
-    ? new Date(meta.lastUpdated).toLocaleString(undefined, {
+    ? new Date(meta.lastUpdated).toLocaleString(intlTag(locale), {
         dateStyle: 'medium',
         timeStyle: 'short',
       })
@@ -456,16 +521,23 @@ export default function LiveMaintenanceHeader() {
       <span
         className={`block ${lastSyncAbsolute ? 'mt-0.5 text-[#ffaa2a]/85' : ''}`}
       >
-        Confidence {confidence} · polls every {pollSeconds}s
-        {softRateLimit ? ' · metered' : ''}
+        {t('sync.hint', {
+          confidence: num(confidence),
+          seconds: num(pollSeconds),
+          metered: softRateLimit ? 'yes' : 'no',
+        })}
       </span>
     </>
   );
   // sr twin: the hover hint is mouse/keyboard-only, so the same facts stay
   // readable to AT (the native title used to double as a description).
-  const syncDetail = `${lastSyncAbsolute ? `Last sync ${lastSyncAbsolute} · ` : ''}Signal confidence ${confidence} · polls every ${pollSeconds} seconds${
-    softRateLimit ? ' while metered' : ''
-  }`;
+  const syncDetail = t('sync.detail', {
+    hasLast: lastSyncAbsolute ? 'yes' : 'no',
+    last: lastSyncAbsolute ?? '',
+    confidence: num(confidence),
+    seconds: pollSeconds,
+    metered: softRateLimit ? 'yes' : 'no',
+  });
 
   const isInitialLoading = loading && !data;
 
@@ -478,13 +550,24 @@ export default function LiveMaintenanceHeader() {
   // Announce the canonical primary item (queue head), never the rotating
   // one — the visible rotation must not re-announce every 10s.
   const primaryFocus = focusItems[0] ?? null;
+  // Three sentences, each its own catalogue message (issue #82) — the spoken
+  // state word is its own key rather than `toLowerCase()` of the visible
+  // one, which is wrong for any language without English casing rules.
   const srAnnouncement = data
     ? [
-        `Status: ${stateLabel.toLowerCase()}.`,
+        t('announce.status', { state: t(`stateSpoken.${stateKey}`) }),
         primaryFocus
-          ? `Current focus: ${primaryFocus.type === 'pr' ? 'pull request' : 'issue'} ${primaryFocus.number}, ${primaryFocus.title}.`
+          ? t('announce.focus', {
+              type: primaryFocus.type === 'pr' ? 'pr' : 'issue',
+              number: String(primaryFocus.number),
+              title: primaryFocus.title ?? '',
+            })
           : null,
-        `${pluralize(meta.activePrs, 'active pull request')}, ${pluralize(meta.activeIssues, 'open issue')}, and ${pluralize(meta.recentPushes, 'push', 'pushes')} in the last 24 hours.`,
+        t('announce.counts', {
+          prs: meta.activePrs ?? 0,
+          issues: meta.activeIssues ?? 0,
+          pushes: meta.recentPushes ?? 0,
+        }),
       ]
         .filter(Boolean)
         .join(' ')
@@ -497,7 +580,7 @@ export default function LiveMaintenanceHeader() {
       role="region"
       aria-live="off"
       aria-busy={isInitialLoading}
-      aria-label="Live maintenance status"
+      aria-label={t('region')}
       // The initial/whileInView styles are deliberately identical in both
       // motion modes (only the transition timing branches): this element
       // renders at SSR, where useReducedMotion() is always false, so any
@@ -523,10 +606,11 @@ export default function LiveMaintenanceHeader() {
           sits as the strip's accent rail against the card's pale gold
           border. Replaces the old scale-0 section pop-in as the
           orchestrated entrance moment. */}
+      {/* `origin-left rtl:origin-right`: the hairline draws in reading
+          direction, like the wipe it leads (issue #82). */}
       <motion.div
         aria-hidden="true"
-        className="elite-divider absolute inset-x-[clamp(0.75rem,2.5vw,2rem)] top-0 h-px"
-        style={{ transformOrigin: 'left center' }}
+        className="elite-divider absolute inset-x-[clamp(0.75rem,2.5vw,2rem)] top-0 h-px origin-left rtl:origin-right"
         initial={{ opacity: 0, scaleX: 0 }}
         whileInView={{ opacity: 1, scaleX: 1 }}
         viewport={{ once: false, amount: 0.3 }}
@@ -552,7 +636,10 @@ export default function LiveMaintenanceHeader() {
             }
             className="relative min-w-0"
           >
-            <motion.div variants={v(wipeVariants)} className="min-w-0">
+            <motion.div
+              variants={v(isRtl ? WIPE_RTL : WIPE_LTR)}
+              className="min-w-0"
+            >
               {/* ── Desktop / tablet: segmented field strip ─────────────── */}
               <motion.div
                 variants={v(contentVariants)}
@@ -565,7 +652,7 @@ export default function LiveMaintenanceHeader() {
                 <motion.div variants={v(childVariants)} className="shrink-0">
                   <MetricPopover
                     id="work-popover-state"
-                    metricLabel="Delivery pipeline"
+                    metricLabel={t('legend.title')}
                     panel={
                       <StateLegendPanel state={state} repoCount={repoCount} />
                     }
@@ -573,12 +660,12 @@ export default function LiveMaintenanceHeader() {
                     reduceMotion={reduceMotion}
                     underline={false}
                   >
-                    <span className="flex flex-col gap-y-1.5 text-left">
+                    <span className="flex flex-col gap-y-1.5 text-start">
                       <Eyebrow
                         compressed={compressed}
                         className="group-hover:text-[#ffd27a]"
                       >
-                        State
+                        {t('fields.state')}
                       </Eyebrow>
                       <StateWord
                         state={state}
@@ -606,7 +693,11 @@ export default function LiveMaintenanceHeader() {
                       rotation never re-announces. */}
                   <span className="sr-only" aria-live="polite">
                     {rotationPaused && focus
-                      ? `${focus.type === 'pr' ? 'Pull request' : 'Issue'} ${focus.number}: ${focus.title}`
+                      ? t('focus.stepped', {
+                          type: focus.type === 'pr' ? 'pr' : 'issue',
+                          number: String(focus.number),
+                          title: focus.title ?? '',
+                        })
                       : ''}
                   </span>
                   <Eyebrow
@@ -656,8 +747,8 @@ export default function LiveMaintenanceHeader() {
                 <motion.div variants={v(childVariants)} className="shrink-0">
                   <MetricPopover
                     id="work-popover-prs"
-                    metricLabel="Active PRs"
-                    emptyLabel="No active PRs across tracked projects."
+                    metricLabel={t('metric.prs')}
+                    emptyLabel={t('metric.emptyPrs')}
                     count={meta.activePrs}
                     items={breakdown.prs}
                     totalsByRepo={repoTotals('activePrs')}
@@ -665,7 +756,7 @@ export default function LiveMaintenanceHeader() {
                     reduceMotion={reduceMotion}
                   >
                     <MetricField
-                      eyebrow="PRs"
+                      eyebrow={t('fields.prs')}
                       value={meta.activePrs}
                       reduceMotion={reduceMotion}
                       compressed={compressed}
@@ -678,8 +769,8 @@ export default function LiveMaintenanceHeader() {
                 <motion.div variants={v(childVariants)} className="shrink-0">
                   <MetricPopover
                     id="work-popover-issues"
-                    metricLabel="Open issues"
-                    emptyLabel="No open issues across tracked projects."
+                    metricLabel={t('metric.issues')}
+                    emptyLabel={t('metric.emptyIssues')}
                     count={meta.activeIssues}
                     items={breakdown.issues}
                     totalsByRepo={repoTotals('activeIssues')}
@@ -687,7 +778,7 @@ export default function LiveMaintenanceHeader() {
                     reduceMotion={reduceMotion}
                   >
                     <MetricField
-                      eyebrow="Issues"
+                      eyebrow={t('fields.issues')}
                       value={meta.activeIssues}
                       reduceMotion={reduceMotion}
                       compressed={compressed}
@@ -708,8 +799,8 @@ export default function LiveMaintenanceHeader() {
                 >
                   <MetricPopover
                     id="work-popover-pushes"
-                    metricLabel="Pushes (24h)"
-                    emptyLabel="No pushes across tracked projects in the last 24h."
+                    metricLabel={t('metric.pushes')}
+                    emptyLabel={t('metric.emptyPushes')}
                     count={meta.recentPushes}
                     items={breakdown.pushes}
                     totalsByRepo={repoTotals('recentPushes')}
@@ -717,7 +808,7 @@ export default function LiveMaintenanceHeader() {
                     reduceMotion={reduceMotion}
                   >
                     <MetricField
-                      eyebrow="Pushes · 24h"
+                      eyebrow={t('fields.pushes24h')}
                       value={meta.recentPushes}
                       reduceMotion={reduceMotion}
                       compressed={compressed}
@@ -757,7 +848,7 @@ export default function LiveMaintenanceHeader() {
                     EQUAL gaps around the dot — reserving on the value put
                     the slack between label and dot, off-centering it. */}
                 <HoverHint
-                  label="Last sync"
+                  label={t('sync.label')}
                   content={syncHint}
                   reduceMotion={reduceMotion}
                 >
@@ -766,9 +857,9 @@ export default function LiveMaintenanceHeader() {
                     className="flex min-w-[7.5rem] shrink-0 items-baseline justify-end gap-x-1.5 whitespace-nowrap"
                   >
                     <Eyebrow compressed={false} className="whitespace-nowrap">
-                      Sync
+                      {t('fields.sync')}
                       {softRateLimit && (
-                        <span className="text-[#f9d174]"> · metered</span>
+                        <span className="text-[#f9d174]">{` ${t('fields.metered')}`}</span>
                       )}
                     </Eyebrow>
                     <SyncValue
@@ -800,7 +891,7 @@ export default function LiveMaintenanceHeader() {
                     />
                   </span>
                   <HoverHint
-                    label="Last sync"
+                    label={t('sync.label')}
                     content={syncHint}
                     reduceMotion={reduceMotion}
                   >
@@ -879,8 +970,8 @@ export default function LiveMaintenanceHeader() {
                   <div className="flex items-center justify-between gap-2">
                     <MetricPopover
                       id="work-popover-prs-m"
-                      metricLabel="Active PRs"
-                      emptyLabel="No active PRs across tracked projects."
+                      metricLabel={t('metric.prs')}
+                      emptyLabel={t('metric.emptyPrs')}
                       count={meta.activePrs}
                       items={breakdown.prs}
                       totalsByRepo={repoTotals('activePrs')}
@@ -888,15 +979,15 @@ export default function LiveMaintenanceHeader() {
                       reduceMotion={reduceMotion}
                     >
                       <MetricInline
-                        label="PRs"
+                        label={t('fields.prs')}
                         value={meta.activePrs}
                         reduceMotion={reduceMotion}
                       />
                     </MetricPopover>
                     <MetricPopover
                       id="work-popover-issues-m"
-                      metricLabel="Open issues"
-                      emptyLabel="No open issues across tracked projects."
+                      metricLabel={t('metric.issues')}
+                      emptyLabel={t('metric.emptyIssues')}
                       count={meta.activeIssues}
                       items={breakdown.issues}
                       totalsByRepo={repoTotals('activeIssues')}
@@ -904,15 +995,15 @@ export default function LiveMaintenanceHeader() {
                       reduceMotion={reduceMotion}
                     >
                       <MetricInline
-                        label="Issues"
+                        label={t('fields.issues')}
                         value={meta.activeIssues}
                         reduceMotion={reduceMotion}
                       />
                     </MetricPopover>
                     <MetricPopover
                       id="work-popover-pushes-m"
-                      metricLabel="Pushes (24h)"
-                      emptyLabel="No pushes across tracked projects in the last 24h."
+                      metricLabel={t('metric.pushes')}
+                      emptyLabel={t('metric.emptyPushes')}
                       count={meta.recentPushes}
                       items={breakdown.pushes}
                       totalsByRepo={repoTotals('recentPushes')}
@@ -920,7 +1011,7 @@ export default function LiveMaintenanceHeader() {
                       reduceMotion={reduceMotion}
                     >
                       <MetricInline
-                        label="Pushes"
+                        label={t('fields.pushes')}
                         value={meta.recentPushes}
                         reduceMotion={reduceMotion}
                       />
@@ -934,11 +1025,11 @@ export default function LiveMaintenanceHeader() {
                 Sibling of the clipped subtree so the clip never cuts it;
                 opacity-0 keeps it invisible whenever variants are off. */}
             <motion.div
-              variants={v(headVariants)}
+              variants={v(isRtl ? HEAD_RTL : HEAD_LTR)}
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 w-full opacity-0"
+              className="pointer-events-none absolute inset-y-0 start-0 w-full opacity-0"
             >
-              <span className="elite-divider-v absolute inset-y-0 right-0 w-px" />
+              <span className="elite-divider-v absolute inset-y-0 end-0 w-px" />
             </motion.div>
           </motion.div>
         )}
@@ -946,17 +1037,12 @@ export default function LiveMaintenanceHeader() {
 
       {error && (
         <p className="mt-2 text-center text-xs text-amber-300/80" role="alert">
-          {data
-            ? 'Live status temporarily unavailable. Showing the latest snapshot.'
-            : 'Live status temporarily unavailable. Showing maintenance fallback.'}
+          {data ? t('error.snapshot') : t('error.fallback')}
         </p>
       )}
     </motion.section>
   );
 }
-
-const pluralize = (n, word, pluralWord) =>
-  `${n} ${n === 1 ? word : (pluralWord ?? `${word}s`)}`;
 
 // 10px letterspaced micro-label — the strip's field naming layer. Matches
 // the popovers' eyebrow treatment (10px / 0.22em / #ffaa2a). Collapses
@@ -1034,8 +1120,9 @@ function DeliveryRail({ state, reduceMotion }) {
                 {!idle && i <= activeIdx && (
                   <motion.span
                     key={`fill-${state}-${i}`}
-                    className="absolute inset-0 bg-[rgba(255,170,42,0.65)]"
-                    style={{ transformOrigin: 'left center' }}
+                    // Fills from the reading-start side: the rail is a flex
+                    // row, so it mirrors in RTL and the fill must too.
+                    className="absolute inset-0 origin-left bg-[rgba(255,170,42,0.65)] rtl:origin-right"
                     initial={reduceMotion ? false : { scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     transition={{
@@ -1101,11 +1188,16 @@ function StateDot({ state, reduceMotion }) {
 // cluster is the queue hint's hover home — position plus the arrow-key
 // affordance — with a padded hit area because 3px dots aren't a target.
 function QueueDots({ count, active, reduceMotion }) {
+  const t = useTranslations('LiveHeader');
+  const locale = useLocale();
   if (count <= 1) return null;
   return (
     <HoverHint
-      label="Focus queue"
-      content={`Item ${active + 1} of ${count} · ← → to cycle`}
+      label={t('queue.label')}
+      content={t('queue.hint', {
+        index: localNumber(active + 1, locale),
+        count: localNumber(count, locale),
+      })}
       reduceMotion={reduceMotion}
     >
       <span className="relative flex shrink-0 items-center gap-x-1 before:absolute before:-inset-x-1.5 before:-inset-y-2 before:content-['']">
@@ -1118,7 +1210,7 @@ function QueueDots({ count, active, reduceMotion }) {
           />
         ))}
         <span className="sr-only">
-          {`Focus queue of ${count} — left and right arrow keys cycle`}
+          {t('queue.sr', { count: localNumber(count, locale) })}
         </span>
       </span>
     </HoverHint>
@@ -1145,17 +1237,23 @@ function QueueDots({ count, active, reduceMotion }) {
 // Under reduced motion every slot's variants strip to undefined and the
 // finished sparkline renders statically.
 function ActivityField({ trace, reduceMotion, compressed }) {
+  const t = useTranslations('LiveHeader');
+  const locale = useLocale();
   const max = Math.max(...trace.counts, 1);
-  const summary = `${trace.total} commit${trace.total === 1 ? '' : 's'} · last ${trace.counts.length} days${trace.truncated ? ' (oldest days undercounted)' : ''}`;
+  const summary = t('activity.summary', {
+    total: trace.total,
+    days: trace.counts.length,
+    truncated: trace.truncated ? 'yes' : 'no',
+  });
   return (
     <HoverHint
-      label="Commit trace"
+      label={t('activity.label')}
       content={summary}
       reduceMotion={reduceMotion}
     >
       <span className="flex flex-col items-center gap-y-1.5">
         <Eyebrow compressed={compressed} className="whitespace-nowrap">
-          Activity · 14d
+          {t('fields.activity', { days: localNumber(trace.counts.length, locale) })}
         </Eyebrow>
         <span
           className="flex h-[14px] items-end gap-x-[2px]"
@@ -1249,15 +1347,10 @@ function ActivityField({ trace, reduceMotion, compressed }) {
   );
 }
 
-// One-line meanings for the pipeline legend — mirrors the server's actual
-// state-derivation rules (workSignal.js precedence), so the legend is
-// documentation of real behavior, not marketing copy.
-const STAGE_MEANINGS = {
-  planning: 'Open issues queued and scoped',
-  in_progress: 'Active work on branches and pull requests',
-  shipping: 'Merged work moved to Done in the last 48 hours',
-  live: 'Commits or updates within the last 2 hours',
-};
+// One-line meanings for the pipeline legend (`legend.meaning.<key>` in the
+// catalogue) — they mirror the server's actual state-derivation rules
+// (workSignal.js precedence), so the legend is documentation of real
+// behavior, not marketing copy.
 
 // The STATE field's hover/focus legend: the four pipeline stages plus the
 // off-pipeline maintenance row, current position highlighted. Pure text —
@@ -1265,8 +1358,18 @@ const STAGE_MEANINGS = {
 // current stage's dot does NOT breathe: the rail already pulses on the
 // strip, and one motion source per meaning is the rule.
 function StateLegendPanel({ state, repoCount }) {
+  const t = useTranslations('LiveHeader');
+  const locale = useLocale();
   const activeIdx = PIPELINE.findIndex((stage) => stage.key === state);
   const idle = activeIdx === -1;
+  const stageName = (key) => t(`pipeline.${stateKeyOf(key)}`);
+  const position = idle
+    ? null
+    : {
+        stage: stageName(PIPELINE[activeIdx].key),
+        index: localNumber(activeIdx + 1, locale),
+        total: localNumber(PIPELINE.length, locale),
+      };
   const dotStyle = (isActive, isPast) =>
     isActive
       ? { background: '#ff6d05' }
@@ -1276,21 +1379,17 @@ function StateLegendPanel({ state, repoCount }) {
   return (
     <div>
       <p aria-live="polite" className="sr-only">
-        {idle
-          ? 'Delivery pipeline. Off pipeline: maintenance monitoring.'
-          : `Delivery pipeline. Current stage: ${PIPELINE[activeIdx].label}, ${activeIdx + 1} of ${PIPELINE.length}.`}
+        {idle ? t('legend.srIdle') : t('legend.srStage', position)}
       </p>
       <div aria-hidden="true">
         <p className="mb-1 text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a]">
-          Delivery pipeline
+          {t('legend.title')}
         </p>
         <h3
           className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]"
           style={{ color: '#ff6d05', textShadow: 'none' }}
         >
-          {idle
-            ? 'Maintenance · off pipeline'
-            : `${PIPELINE[activeIdx].label} · stage ${activeIdx + 1} of ${PIPELINE.length}`}
+          {idle ? t('legend.headingIdle') : t('legend.headingStage', position)}
         </h3>
         <div className="elite-divider mb-3 h-px" />
         <ul className="space-y-2">
@@ -1310,12 +1409,12 @@ function StateLegendPanel({ state, repoCount }) {
                       color: isActive ? '#ff6d05' : 'rgba(255, 170, 42, 0.75)',
                     }}
                   >
-                    {stage.label}
+                    {stageName(stage.key)}
                   </span>
                   <span
                     className={`block text-[11px] leading-snug ${isActive ? 'text-fire-amber' : 'text-[#f9d174]/80'}`}
                   >
-                    {STAGE_MEANINGS[stage.key]}
+                    {t(`legend.meaning.${stateKeyOf(stage.key)}`)}
                   </span>
                 </span>
               </li>
@@ -1334,13 +1433,12 @@ function StateLegendPanel({ state, repoCount }) {
               className="text-[11px] font-semibold uppercase tracking-[0.15em]"
               style={{ color: idle ? '#ff6d05' : 'rgba(255, 170, 42, 0.75)' }}
             >
-              Maintenance
+              {t('legend.maintenance')}
             </span>
             <span
               className={`block text-[11px] leading-snug ${idle ? 'text-fire-amber' : 'text-[#f9d174]/80'}`}
             >
-              Off pipeline — monitoring{' '}
-              {repoCount > 0 ? `${repoCount} repos` : 'tracked repositories'}
+              {t('legend.offPipeline', { count: repoCount })}
             </span>
           </span>
         </div>
@@ -1367,10 +1465,16 @@ function FieldRule({ variants, className = '' }) {
 // left-to-right — a page number being reset in metal type. Instant swap
 // under reduced motion. The visible digits are aria-hidden; the anchor's
 // aria-label (or the SR announcement) carries the value.
-function RollingDigits({ value, reduceMotion }) {
-  const digits = String(value ?? '').split('');
+// `locale` (optional) re-writes the digits in the locale's own digit set —
+// the metric counters pass it; the FOCUS folio does not, because an issue
+// number is a GitHub identifier and stays in GitHub's digits (issue #82).
+function RollingDigits({ value, reduceMotion, locale }) {
+  const digits = localDigits(value ?? '', locale).split('');
+  // `dir="ltr"`: the digits are flex ITEMS, and a flex row in an RTL page
+  // runs right to left — "123" would paint as "321". Numbers read left to
+  // right in every script this site serves, Arabic-Indic digits included.
   return (
-    <span className="inline-flex" aria-hidden="true">
+    <span className="inline-flex" dir="ltr" aria-hidden="true">
       {digits.map((digit, i) => (
         <AnimatePresence key={i} mode="popLayout" initial={false}>
           <motion.span
@@ -1434,13 +1538,16 @@ function FocusLine({
   reduceMotion,
   compact = false,
 }) {
-  const typeWord = focus.type === 'pr' ? 'pull request' : 'issue';
+  const t = useTranslations('LiveHeader');
+  const type = focus.type === 'pr' ? 'pr' : 'issue';
   const hintLabel = url
-    ? 'Open on GitHub ↗'
-    : `${focus.type === 'pr' ? 'Pull request' : 'Issue'} #${focus.number}`;
+    ? t('popover.openOnGitHub')
+    : t('focus.hintItem', { type, number: String(focus.number) });
   const content = (
     <span className="flex min-w-0 items-baseline gap-x-2">
+      {/* `dir="ltr"` keeps the folio "#123" — not "123#" — in RTL. */}
       <span
+        dir="ltr"
         className={`shrink-0 font-mono font-semibold tabular-nums leading-none ${compact ? 'text-[0.95rem]' : 'text-[clamp(1.05rem,1.6vw,1.25rem)]'}`}
         style={{
           color: '#ff6d05',
@@ -1476,7 +1583,9 @@ function FocusLine({
             }
             className={`text-fire-amber block truncate font-medium leading-snug decoration-[#ffaa2a]/70 underline-offset-2 ${compact ? 'text-[0.78rem]' : 'text-[clamp(0.78rem,1.5vw,0.95rem)]'} ${url ? 'group-hover/focus:underline' : ''}`}
           >
-            {focus.title}
+            {/* <bdi>: a GitHub title is untranslated Latin text; isolated, it
+                cannot reorder the punctuation around it in RTL (issue #82). */}
+            <bdi>{focus.title}</bdi>
           </motion.span>
         </AnimatePresence>
       </span>
@@ -1504,7 +1613,11 @@ function FocusLine({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={`Open ${typeWord} #${focus.number}: ${focus.title} on GitHub`}
+        aria-label={t('focus.ariaOpen', {
+          type,
+          number: String(focus.number),
+          title: focus.title ?? '',
+        })}
         className="group/focus relative block min-w-0 rounded-sm before:absolute before:-inset-y-2 before:inset-x-0 before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
       >
         {content}
@@ -1526,6 +1639,7 @@ function FocusSubRow({
   compressed,
   className = '',
 }) {
+  const t = useTranslations('LiveHeader');
   if (!lastActivityAt && !secondary && !repo) return null;
 
   return (
@@ -1541,18 +1655,15 @@ function FocusSubRow({
           transition={{ duration: reduceMotion ? 0.1 : 0.22 }}
           className="block truncate text-[11px] leading-tight text-[#f9d174]/90"
         >
-          {showSecondary && secondary ? (
-            secondary
-          ) : (
-            <>
-              {repo ? `${repo} · ` : ''}
-              {lastActivityAt ? (
-                <>
-                  active <ActiveAge iso={lastActivityAt} />
-                </>
-              ) : null}
-            </>
-          )}
+          {showSecondary && secondary
+            ? secondary
+            : t.rich('focus.subRow', {
+                hasRepo: repo ? 'yes' : 'no',
+                hasAge: lastActivityAt ? 'yes' : 'no',
+                // The repo is a project name — never translated, isolated.
+                repo: () => <bdi>{repo}</bdi>,
+                age: () => <ActiveAge iso={lastActivityAt} />,
+              })}
         </motion.span>
       </AnimatePresence>
     </span>
@@ -1562,9 +1673,10 @@ function FocusSubRow({
 // Live age text on the shared once-per-second ticker. Isolated in its own
 // component so the seconds tick re-renders this span, not the header.
 function ActiveAge({ iso }) {
+  const locale = useLocale();
   const now = useNow(Boolean(iso));
   if (!iso) return null;
-  return formatAge(iso, now);
+  return formatAgeFor(iso, now, locale);
 }
 
 // Instruments dim dead channels: a zero metric renders in muted amber so
@@ -1619,6 +1731,7 @@ function MetricInline({ label, value, reduceMotion }) {
 // loop), next to the live relative time. Stale data hollows the dot and
 // swaps the time for STALE.
 function SyncValue({ meta, stale, reduceMotion, compact = false }) {
+  const t = useTranslations('LiveHeader');
   return (
     <span
       className={`flex items-center gap-x-1.5 whitespace-nowrap tabular-nums leading-none ${compact ? 'text-[0.68rem]' : 'text-[clamp(0.7rem,1.4vw,0.85rem)]'}`}
@@ -1648,7 +1761,7 @@ function SyncValue({ meta, stale, reduceMotion, compact = false }) {
           text-level reservation stranded the dot left of short values. */}
       {stale ? (
         <span className="text-[0.68rem] font-semibold uppercase tracking-[0.15em] text-[#f9d174]/70">
-          Stale
+          {t('sync.stale')}
         </span>
       ) : (
         <RelativeTime iso={meta.lastUpdated} />
@@ -1666,6 +1779,7 @@ function SyncValue({ meta, stale, reduceMotion, compact = false }) {
 // The visible rolling digits are aria-hidden, so a sibling sr-only span
 // carries the value for the popover trigger's accessible name.
 function MetricValue({ value, reduceMotion }) {
+  const locale = useLocale();
   const [display, setDisplay] = useState(0);
   const [entered, setEntered] = useState(false);
   const targetRef = useRef(value ?? 0);
@@ -1706,16 +1820,21 @@ function MetricValue({ value, reduceMotion }) {
     return () => cancelAnimationFrame(raf);
   }, [entered, reduceMotion]);
 
-  if (!entered) return display;
+  if (!entered) return localDigits(display, locale);
   return (
     <>
-      <RollingDigits value={value ?? 0} reduceMotion={reduceMotion} />
-      <span className="sr-only">{value ?? 0}</span>
+      <RollingDigits
+        value={value ?? 0}
+        reduceMotion={reduceMotion}
+        locale={locale}
+      />
+      <span className="sr-only">{localNumber(value ?? 0, locale)}</span>
     </>
   );
 }
 
 function RelativeTime({ iso }) {
+  const locale = useLocale();
   const [, setTick] = useState(0);
 
   // Adaptive tick rate so the displayed unit always feels live:
@@ -1757,28 +1876,42 @@ function RelativeTime({ iso }) {
   // `.text-fire-amber` gradient. Guarded fallback renders the whole
   // string in the gradient if the format ever changes shape so the
   // digits regex stops matching.
-  const formatted = formatRelative(diffMs);
-  const match = /^(\d+)(\D.*)$/.exec(formatted);
+  //
+  // English keeps the compact hand-rolled format; other locales use
+  // `Intl.RelativeTimeFormat` (issue #82), whose number may sit anywhere in
+  // the phrase ("il y a 5 min", "قبل ٥ دقائق") and in any digit set — hence
+  // the optional prefix and `\p{Nd}` rather than `\d`. For English the
+  // prefix is always empty and the split is the one it always was.
+  const formatted =
+    locale === 'en'
+      ? formatRelative(diffMs)
+      : formatRelativeMs(diffMs, locale, { style: 'short' });
+  const match = /^(\D*?)(\p{Nd}+)(\D.*)$/su.exec(formatted);
 
   // No title attr: the absolute wall-clock time lives in the SYNC field's
   // HoverHint (and its sr twin) — a native tooltip nested inside the
   // styled one would resurrect exactly the browser-chrome look it replaced.
+  // A <time>, not a <span>: it IS a time, and its words are Intl's, not a
+  // catalogue's (the pseudo-locale gate skips <time> for that reason).
   return (
-    <span>
+    <time dateTime={iso}>
       {match ? (
         <>
+          {match[1] ? (
+            <span className="text-fire-amber">{match[1]}</span>
+          ) : null}
           <span
             className="font-semibold"
             style={{ color: '#ff6d05', textShadow: 'none' }}
           >
-            {match[1]}
+            {match[2]}
           </span>
-          <span className="text-fire-amber">{match[2]}</span>
+          <span className="text-fire-amber">{match[3]}</span>
         </>
       ) : (
         <span className="text-fire-amber">{formatted}</span>
       )}
-    </span>
+    </time>
   );
 }
 

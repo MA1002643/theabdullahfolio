@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "电影感滚动驱动的作品集重构"
+    },
+    "2": {
+      "description": "多租户企业管理平台"
+    },
+    "3": {
+      "description": "AI 驱动的食谱发现平台"
+    },
+    "4": {
+      "description": "沉浸式动效驱动的作品集"
+    },
+    "5": {
+      "description": "跨平台 AI 驱动出版平台"
+    },
+    "6": {
+      "description": "跨平台音乐流媒体平台"
+    },
+    "7": {
+      "description": "实时教育互动平台"
+    },
+    "8": {
+      "description": "AI 驱动的健身教练平台"
+    },
+    "9": {
+      "description": "符合卡车通行规定的导航与合规"
+    },
+    "10": {
+      "description": "每小时自动签到来电"
+    },
+    "11": {
+      "description": "AI 驱动的职位发现与简历定制"
+    }
+  },
+  "categories": {
+    "Web": "网页",
+    "System": "系统",
+    "AI": "AI",
+    "Mobile": "移动端"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "礼宾团队主管 · Adullam Homes Housing Association",
+      "description": "负责 Bolton 八处supported accommodation（辅助住宿）站点的礼宾服务区域管理——带领跨两家机构的三支团队，负责区域招聘与事件处理，并用可直接向员工发布空缺班次的 Microsoft Teams 排班工具，取代了两份各自独立的电子表格排班表。",
+      "tags": {
+        "team-leadership": "团队管理",
+        "hiring-manager": "招聘负责人",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "软件工程师 · 独立项目",
+      "description": "端到端设计、构建并交付全栈项目：一套带 Swagger 文档、使用 Mocha/Chai 测试的 REST API；Colophon（AI 出版平台——Vue 3、Express、PostgreSQL + pgvector）；AfaaqX；以及一个由定时 Actions 流水线每日自动重新生成的 GitHub 个人主页。",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "安保人员 · Constant Security Services",
+      "description": "持 SIA 执照，服务于重要科研与高校场所，包括 Jodrell Bank 天文台——负责巡逻、CCTV 监控、事件响应及控制室报告，同时努力争取下一份工程岗位。",
+      "tags": {
+        "sia-licensed": "持 SIA 执照",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "DevOps 工程师 · C365Cloud",
+      "description": "保障一个合规平台持续交付：负责 CI/CD 流水线、Microsoft SQL Server 与 MySQL 管理，以及为 Wakefield 内部团队开发 .NET（Blazor）平台功能。",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "礼宾员 · Adullam Homes Housing Association",
+      "description": "在辅助住宿场所担任非工作时段的联络人——负责安全保护事项上报、事件处理，并为弱势住户准确维护电子记录。",
+      "tags": {
+        "safeguarding": "安全保护"
+      }
+    },
+    "j-showsec": {
+      "title": "安保人员 / CCTV 操作员 · Showsec",
+      "description": "在大型高关注度活动中负责 CCTV 监控、人群管理与事件响应，并与安保团队及执法部门实时协调。",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "事件响应"
+      }
+    },
+    "j-lidl": {
+      "title": "顾客服务助理 · Lidl GB",
+      "description": "在大学全程于一家高客流门店工作——负责收银、收货与库存；作为团队一员，在四个月内将门店销售排名从第 14 位提升至第 10 位，并使顾客满意度提高 18%。",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "边学习边工作 3 年 8 个月"
+      }
+    },
+    "j-unisys": {
+      "title": "软件工程师 · Unisys",
+      "description": "在 Manchester 完成 16 个月的工业实习：交付全栈 C# / .NET（Blazor）功能，使系统效率提升约 20%；负责支持工单分流，将生产问题减少 30%；并晋升带领项目团队按时交付，赢得了客户的后续合同。",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "学生大使 · MMU",
+      "description": "在 Greater Manchester 各地的开放日、校园参观和招生活动中代表大学。",
+      "tags": {
+        "community": "社区"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "IT 服务台技术员 · MMU",
+      "description": "为教职员工和学生提供一线支持——处理硬件、软件及访问权限问题，并在 IT 部门与合作部门之间搭建沟通桥梁；第一周即获得多个部门的好评。",
+      "tags": {
+        "first-line-support": "一线支持"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "软件开发人员 · MMU",
+      "description": "在跨学科的大学团队中负责前后端功能开发——修复 50 多个缺陷，将加载速度提升 25%，并在把干系人需求转化为可用功能的过程中将开发时间缩短 15%。",
+      "tags": {
+        "full-stack": "全栈",
+        "50-bugs-resolved": "修复 50+ 个缺陷"
+      }
+    },
+    "j-course-rep": {
+      "title": "课程代表 · MMU",
+      "description": "由同学选出的年级代表——就宗教节庆期间的考核安排进行协商，并增设了院系嘉宾讲座。",
+      "tags": {
+        "learner-voice-award": "学习者之声奖",
+        "volunteering-award": "志愿服务奖"
+      }
+    },
+    "j-bsc": {
+      "title": "软件工程荣誉理学学士（BSc Hons）· MMU",
+      "description": "曼彻斯特城市大学——通过 BCS 认证，预计获得一等荣誉学位。正式而深入的专业训练。",
+      "tags": {
+        "bcs-accredited": "BCS 认证",
+        "first-class-predicted": "一等荣誉（预计）"
+      }
+    },
+    "j-kfc": {
+      "title": "团队成员 · KFC",
+      "description": "前台到后厨，每个岗位都做过——连续六个月获评最佳员工，所在团队也将门店的区域排名从第 5 提升到第 2。",
+      "tags": {
+        "best-employee-6": "最佳员工 ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC 三级 IT 扩展文凭",
+      "description": "Bolton College——三项全优（DDD）。两年时间，让好奇心变成了一门专业功夫。",
+      "tags": {
+        "triple-distinction": "三项全优"
+      }
+    },
+    "j-ocnlr": {
+      "title": "OCNLR 数字技能证书",
+      "description": "Bolton College——踏入计算机领域的第一步，也是通往上述一切的大门。",
+      "tags": {
+        "digital-skills": "数字技能"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "设备",
+        "value": "13 英寸 MacBook Pro · Apple M1 · 16 GB 统一内存"
+      },
+      "display": {
+        "label": "显示屏",
+        "value": "2560 × 1600 Retina · 1440 × 900 逻辑分辨率",
+        "note": "流式缩放的基准视口——每个子页面都以缩放比例 1 按这一精确宽度设计，再由同一个系数统一伸缩。"
+      },
+      "os": {
+        "label": "操作系统",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "手机",
+        "value": "iPhone，以 HTTP 模式运行 OwnTracks",
+        "note": "它会向 /api/location 发送位置信息；页脚中的城镇和当地时间就来自这台设备。",
+        "hrefLabel": "看看它提供的城镇"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "编辑器",
+        "detail": "Dracula 主题 · vscode-icons · 保存时自动运行 Prettier"
+      },
+      "agentic-pair": {
+        "role": "智能体搭档",
+        "detail": "VS Code 扩展 + CLI——技能、子智能体与 MCP 服务器（Chrome DevTools、Playwright）在验证阶段驱动浏览器"
+      },
+      "terminal-and-shell": {
+        "role": "终端与 Shell",
+        "detail": "通过 nvm 按 .nvmrc 锁定 Node 版本 · 其余一切交给 Homebrew"
+      },
+      "formatting-and-lint": {
+        "role": "格式化与代码检查",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next（core-web-vitals）"
+      },
+      "type": {
+        "role": "字体",
+        "detail": "next/font/google——构建时自托管，因此字体绝不会造成布局偏移"
+      },
+      "browser-tooling": {
+        "role": "浏览器工具",
+        "detail": "像素探测、减弱动态效果模拟和端到端关卡检查，全部在真实的 Chromium 上运行"
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "経験年数",
+    "unit": "{unit, select, years {{count, plural, other {年の経験}}} other {{count, plural, other {か月の経験}}}}",
+    "unavailable": "経験年数を取得できません",
+    "loadingAria": "経験年数を読み込み中",
+    "viewBreakdown": "内訳を見る →",
+    "srPrefix": "経験年数の更新：",
+    "personal": "個人",
+    "employment": "雇用",
+    "splitUnavailable": "取得不可",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "経験の概要を読み込み中",
+    "degraded": "経験年数：経験年数を取得できません（概要のGitHub分が欠けているか不完全です）。{split} 内訳を見る：取得できた範囲の内訳を開きます。",
+    "ready": "経験年数：{count, number, ::group-off}+ {unit, select, years {年} other {か月}}の経験。{split} 内訳を見る：カテゴリ別の内訳を開きます。",
+    "split": "個人 {personal}、雇用 {employment}。",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "取得不可"
+  },
+  "modal": {
+    "eyebrow": "キャリアの概要",
+    "title": "カテゴリ別の経験",
+    "close": "経験の内訳を閉じる",
+    "personalProjects": "個人プロジェクト",
+    "employment": "雇用",
+    "unavailable": "取得不可",
+    "unitWord": "{unit, select, years {{count, plural, other {年}}} other {{count, plural, other {か月}}}}",
+    "totalUnavailable": "合計を取得できません",
+    "totalUnit": "合計{unit, select, years {年} other {か月}}",
+    "ownedRepos": "<n></n>{count, plural, other {件の所有リポジトリ}}",
+    "roles": "<n></n>{count, plural, other {件の職歴}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+年} other {か月}}",
+    "newestFirst": "新しい順",
+    "showFewer": "表示を減らす",
+    "showAll": "{count, number, ::group-off}件のリポジトリをすべて表示 →",
+    "noRepos": "所有リポジトリはまだ検出されていません。",
+    "personalFailed": "個人プロジェクトのデータを現在読み込めません。",
+    "relativeDuration": "相対的な期間",
+    "noRoles": "ソフトウェアエンジニアリングの職歴はまだ検出されていません。",
+    "employmentFailed": "雇用データを現在読み込めません。"
+  },
+  "duration": "{count, number, ::group-off}+{unit, select, years {{count, plural, other {年}}} other {{count, plural, other {か月}}}}",
+  "changes": {
+    "newRole": "履歴書から新しい職歴を検出しました：{company}",
+    "years": "経験年数を更新しました：{from} → {to}",
+    "employment": "雇用経験を更新しました：+{count, number, ::group-off}{count, plural, other {か月}}",
+    "newRepo": "新しいリポジトリを検出しました：{name}",
+    "newRepos": "GitHubで新しいリポジトリを{count, number, ::group-off}{count, plural, other {件}}検出しました",
+    "timeline": "個人プロジェクトのタイムラインを更新しました"
+  }
+}

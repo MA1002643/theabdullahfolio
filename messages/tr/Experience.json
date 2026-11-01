@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Mesleğe verilen yıllar",
+    "unit": "{unit, select, years {{count, plural, other {yıllık deneyim}}} other {{count, plural, other {aylık deneyim}}}}",
+    "unavailable": "deneyim bilgisi yok",
+    "loadingAria": "Deneyim yılı yükleniyor",
+    "viewBreakdown": "Dökümü gör →",
+    "srPrefix": "Deneyim güncellemesi: ",
+    "personal": "Kişisel",
+    "employment": "İş deneyimi",
+    "splitUnavailable": "Yok",
+    "percent": "%<n></n>"
+  },
+  "label": {
+    "loading": "Deneyim özeti yükleniyor",
+    "degraded": "Mesleğe verilen yıllar: deneyim bilgisi yok (özetin GitHub kısmı eksik ya da tamamlanmamış).{split} Dökümü gör: mevcut verilerin dökümünü açar.",
+    "ready": "Mesleğe verilen yıllar: {count, number, ::group-off}+ {unit, select, years {yıllık} other {aylık}} deneyim.{split} Dökümü gör: kategori dökümünü açar.",
+    "split": "Kişisel {personal}, İş deneyimi {employment}.",
+    "splitPercent": "%{value, number, ::group-off}",
+    "splitUnavailable": "yok"
+  },
+  "modal": {
+    "eyebrow": "Kariyer özeti",
+    "title": "Kategoriye göre deneyim",
+    "close": "Deneyim dökümünü kapat",
+    "personalProjects": "Kişisel projeler",
+    "employment": "İş deneyimi",
+    "unavailable": "Yok",
+    "unitWord": "{unit, select, years {{count, plural, other {yıl}}} other {{count, plural, other {ay}}}}",
+    "totalUnavailable": "toplam yok",
+    "totalUnit": "toplam {unit, select, years {yıl} other {ay}}",
+    "ownedRepos": "<n></n> {count, plural, other {kendi deposu}}",
+    "roles": "<n></n> {count, plural, other {rol}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ yıl} other {+ ay}}",
+    "newestFirst": "En yeniden eskiye",
+    "showFewer": "Daha az göster",
+    "showAll": "{count, number, ::group-off} deponun tümünü göster →",
+    "noRepos": "Henüz sahip olunan bir depo bulunamadı.",
+    "personalFailed": "Kişisel proje verileri şu anda yüklenemedi.",
+    "relativeDuration": "Göreli süre",
+    "noRoles": "Henüz yazılım mühendisliği rolü bulunamadı.",
+    "employmentFailed": "İş deneyimi verileri şu anda yüklenemedi."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, other {yıl}}} other {{count, plural, other {ay}}}}",
+  "changes": {
+    "newRole": "Özgeçmişte yeni rol bulundu: {company}",
+    "years": "Deneyim yılı güncellendi: {from} → {to}",
+    "employment": "İş deneyimi güncellendi: +{count, number, ::group-off} {count, plural, other {ay}}",
+    "newRepo": "Yeni depo bulundu: {name}",
+    "newRepos": "GitHub'da {count, number, ::group-off} {count, plural, other {yeni depo}} bulundu",
+    "timeline": "Kişisel projeler zaman çizelgesi güncellendi"
+  }
+}

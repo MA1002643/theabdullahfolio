@@ -11,6 +11,11 @@ import { DRAFT_KEY, QUEUE_KEY } from '@/lib/contact';
 import { validContactMessage } from '../support/fixtures/api.js';
 import { sendMailHandler, sendMailNetworkError } from '../support/msw/handlers.js';
 import { server } from '../support/msw/server.js';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The contact form, rendered in jsdom and driven the way a person drives it
 // (issue #92, L3): found by its LABELS, typed into with real keyboard events,
@@ -44,7 +49,7 @@ afterEach(() => {
 
 function setup() {
   const user = userEvent.setup();
-  render(
+  renderIntl(
     <>
       <Form />
       <Toaster />

@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "परिचय",
+    "projects": "प्रोजेक्ट्स",
+    "qualifications": "योग्यताएँ",
+    "contact": "संपर्क",
+    "journey": "सफ़र",
+    "past": "मेरा अतीत",
+    "guestbook": "गेस्टबुक",
+    "uses": "Uses"
+  },
+  "routes": {
+    "home": "होम",
+    "about": "परिचय",
+    "projects": "प्रोजेक्ट्स",
+    "qualifications": "योग्यताएँ",
+    "contact": "संपर्क",
+    "myPast": "मेरा अतीत",
+    "journey": "सफ़र",
+    "guestbook": "गेस्टबुक",
+    "uses": "Uses",
+    "cv": "CV",
+    "notes": "नोट्स",
+    "privacy": "गोपनीयता"
+  },
+  "homeButton": {
+    "tooltip": "होम",
+    "srLabel": "होम पेज पर जाएँ"
+  },
+  "projectsButton": {
+    "label": "प्रोजेक्ट्स",
+    "tooltip": "प्रोजेक्ट्स",
+    "srLabel": "प्रोजेक्ट्स पेज पर जाएँ"
+  }
+}

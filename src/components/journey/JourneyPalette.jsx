@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { intlTag } from '@/i18n/format';
+import { useRouter } from '@/i18n/navigation';
 import CommandPalette from '@/components/commandPalette/CommandPalette';
 import { routeActions, routesExcept } from '@/components/commandPalette/routes';
 import { usePageTransition } from '@/components/pageTransition/PageTransitionProvider';
@@ -35,34 +37,40 @@ const jumpTo = (id) => {
 export default function JourneyPalette() {
   const router = useRouter();
   const { navigate } = usePageTransition();
+  const t = useTranslations('Journey');
+  const locale = useLocale();
 
+  // Labels, hints and the section heading follow the locale (issue #82); the
+  // search keywords stay English on purpose — they are extra match terms, and
+  // an English query still finds the action from any locale.
   const actions = useMemo(() => {
+    const year = new Intl.NumberFormat(intlTag(locale), { useGrouping: false });
     const go = (href, label) => {
       if (navigate) navigate(href, { label });
       else router.push(href);
     };
 
     return [
-      ...ERA_YEARS.map((year) => ({
-        id: `jump-${year}`,
-        label: `Jump to ${year}`,
-        hint: 'era',
-        section: 'Journey',
+      ...ERA_YEARS.map((y) => ({
+        id: `jump-${y}`,
+        label: t('palette.jumpYear', { year: year.format(y) }),
+        hint: t('palette.eraHint'),
+        section: t('palette.section'),
         keywords: 'year era timeline scroll go',
-        perform: () => jumpTo(`era-${year}`),
+        perform: () => jumpTo(`era-${y}`),
       })),
       {
         id: 'jump-atlas',
-        label: 'Jump to the overlap atlas',
-        section: 'Journey',
+        label: t('palette.jumpAtlas'),
+        section: t('palette.section'),
         keywords: 'overlap atlas bars concurrent grid gantt',
         perform: () => jumpTo('journey-atlas'),
       },
       {
         id: 'open-cv',
-        label: 'Open the CV (PDF)',
-        hint: 'the paper version',
-        section: 'Journey',
+        label: t('palette.openCv'),
+        hint: t('palette.openCvHint'),
+        section: t('palette.section'),
         keywords: 'resume résumé cv paper download pdf',
         // noreferrer as well as noopener — the same policy as the repo's
         // rel="noopener noreferrer" anchors, so the opened page is not sent
@@ -72,7 +80,7 @@ export default function JourneyPalette() {
       },
       ...routeActions(routesExcept('/journey'), go),
     ];
-  }, [navigate, router]);
+  }, [navigate, router, t, locale]);
 
   return <CommandPalette actions={actions} />;
 }

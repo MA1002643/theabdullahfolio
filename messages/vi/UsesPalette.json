@@ -1,0 +1,20 @@
+{
+  "section": "Công cụ tôi dùng",
+  "preferences": "Tùy chọn",
+  "jumpPlate": "Chuyển đến {ordinal} {label}",
+  "plates": {
+    "machine": "Chiếc máy",
+    "bench": "Bàn làm việc",
+    "stack": "Bộ công nghệ",
+    "pipeline": "Quy trình tự động",
+    "instruments": "Các thước đo",
+    "bom": "Bảng vật tư"
+  },
+  "copySettings": "Sao chép cài đặt trình soạn thảo của tôi",
+  "openRepos": "Xem các repository trên GitHub",
+  "toggleMotion": "Bật/tắt chuyển động",
+  "motionOn": "bật",
+  "motionOff": "tắt",
+  "copied": "Đã sao chép cài đặt trình soạn thảo",
+  "clipboardUnavailable": "Không dùng được bộ nhớ tạm — hãy chọn khung để sao chép"
+}

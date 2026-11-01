@@ -1,0 +1,15 @@
+{
+  "dialog": "命令面板",
+  "search": "搜索命令",
+  "placeholder": "输入命令或目的地…",
+  "list": "命令",
+  "empty": "没有匹配项",
+  "sections": {
+    "navigate": "导航",
+    "language": "语言"
+  },
+  "keywords": {
+    "navigate": "前往 跳转 导航 路由 页面 go jump route page",
+    "language": "语言 翻译 切换 区域 本地化 language translate locale"
+  }
+}

@@ -29,12 +29,14 @@
 
 import { projectsData } from '@/app/data';
 import { readNotes } from '@/lib/notes/readNotes';
-import { absoluteUrl } from '@/lib/seo/canonical';
+import { LOCALES } from '@/i18n/locales';
+import { absoluteUrl, alternatesFor } from '@/lib/seo/canonical';
 import { lastModifiedFor } from '@/lib/seo/lastModified';
 import {
   ROUTES,
   SHARED_ROUTE_SOURCES,
   SUB_PAGE_SHARED_SOURCES,
+  isTranslated,
 } from '@/lib/seo/site';
 
 // Static: the registry and the project data are both build-time constants, and
@@ -77,7 +79,7 @@ export const dynamic = 'force-static';
 // Pinned by the `project detail sources` cases in tests/unit/sitemapDrift.test.js,
 // which resolve this route's real import graph off disk.
 export const PROJECT_SOURCES = [
-  'src/app/(sub pages)/projects/[id]/page.js',
+  'src/app/[locale]/(sub pages)/projects/[id]/page.js',
   'src/app/data.js',
   'src/components/project-detail',
   // Detail-only, and therefore listed here rather than in either shared set:
@@ -102,8 +104,8 @@ export const PROJECT_SOURCES = [
   // edit to either redraws every project preview on the site. Nothing else
   // watches them, because a page does not import its `opengraph-image.js`;
   // Next composes the two, so no dependency walk can reach them.
-  'src/app/(sub pages)/projects/[id]/opengraph-image.js',
-  'src/app/(sub pages)/projects/[id]/twitter-image.js',
+  'src/app/[locale]/(sub pages)/projects/[id]/opengraph-image.js',
+  'src/app/[locale]/(sub pages)/projects/[id]/twitter-image.js',
   // The 3D scene's environment map. `project-detail/scene.jsx` loads it by URL
   // string (`<Environment files="/hdri/…">`), so no import walk reaches it, and
   // replacing it relights the scene on all eleven pages. Self-hosted in #92
@@ -122,7 +124,7 @@ export const PROJECT_SOURCES = [
 // document by its own history while still moving all of them when the template
 // or the parser changes — which genuinely does rewrite every note.
 export const NOTE_SHARED_SOURCES = [
-  'src/app/(sub pages)/notes/[slug]/page.js',
+  'src/app/[locale]/(sub pages)/notes/[slug]/page.js',
   'src/lib/notes/readNotes.js',
   // The description composer and the window it measures against. `readNotes`
   // attaches the finished string to every record, so a change to either one
@@ -142,35 +144,65 @@ export const NOTE_SHARED_SOURCES = [
   // crawler and unfurler DISPLAYS for the document changes, while the markup
   // does not move (the `<meta>` tag keeps the same URL), so `<lastmod>` is the
   // only signal there is — and it was swearing the documents were unchanged.
-  'src/app/(sub pages)/notes/[slug]/opengraph-image.js',
-  'src/app/(sub pages)/notes/[slug]/twitter-image.js',
+  'src/app/[locale]/(sub pages)/notes/[slug]/opengraph-image.js',
+  'src/app/[locale]/(sub pages)/notes/[slug]/twitter-image.js',
   ...SHARED_ROUTE_SOURCES,
   ...SUB_PAGE_SHARED_SOURCES,
 ];
+
+// ── Locales (issue #82) ─────────────────────────────────────────────────────
+// A translated page is twenty documents, one per locale, and each is listed as
+// its own <url> — Google's sitemap form of hreflang. Every entry in a cluster
+// carries the SAME `xhtml:link` alternates set (all twenty plus `x-default`),
+// built by the same `alternatesFor()` that writes the <head> tags, so the
+// sitemap and the documents cannot disagree about which URLs are siblings.
+//
+// English-only documents (the notes, the privacy policy) are listed ONCE, at
+// their English URL, with no alternates: their locale URLs canonicalise to the
+// English one, and a sitemap may list only canonical URLs.
+//
+// `lastModified` is shared across a cluster: the twenty documents are rendered
+// from the same sources, plus their catalogues — which is why `messages/` is a
+// source of every translated route (MESSAGE_SOURCES below).
+export const MESSAGE_SOURCES = ['messages'];
+
+const localized = (path, base) =>
+  LOCALES.map((locale) => {
+    const { canonical, languages } = alternatesFor(path, { locale: locale.code });
+    return { ...base, url: canonical, alternates: { languages } };
+  });
 
 export default function sitemap() {
   // `lastModified` is omitted (undefined) wherever git cannot answer — see the
   // module note in src/lib/seo/lastModified.js. Next drops undefined fields, so
   // no URL ever carries a fabricated date (P4).
-  const routeEntries = ROUTES.filter((route) => route.indexable).map(
-    (route) => ({
-      url: absoluteUrl(route.path),
-      lastModified: lastModifiedFor(route.sources),
-      changeFrequency: route.changeFrequency,
-      priority: route.priority,
-    }),
+  const routeEntries = ROUTES.filter((route) => route.indexable).flatMap(
+    (route) => {
+      const translated = isTranslated(route.path);
+      const base = {
+        lastModified: lastModifiedFor(
+          translated ? [...route.sources, ...MESSAGE_SOURCES] : route.sources,
+        ),
+        changeFrequency: route.changeFrequency,
+        priority: route.priority,
+      };
+      return translated
+        ? localized(route.path, base)
+        : [{ ...base, url: absoluteUrl(route.path) }];
+    },
   );
 
-  const projectLastModified = lastModifiedFor(PROJECT_SOURCES);
-  const projectEntries = projectsData.map((project) => ({
-    url: absoluteUrl(`/projects/${project.id}`),
-    lastModified: projectLastModified,
-    changeFrequency: 'monthly',
-    // Below the /projects listing (0.9) that collects them, above /my-past.
-    // These are the pages carrying the most specific, most rankable content on
-    // the site, so they sit high.
-    priority: 0.7,
-  }));
+  const projectLastModified = lastModifiedFor([...PROJECT_SOURCES, ...MESSAGE_SOURCES]);
+  const projectEntries = projectsData.flatMap((project) =>
+    localized(`/projects/${project.id}`, {
+      lastModified: projectLastModified,
+      changeFrequency: 'monthly',
+      // Below the /projects listing (0.9) that collects them, above /my-past.
+      // These are the pages carrying the most specific, most rankable content
+      // on the site, so they sit high.
+      priority: 0.7,
+    }),
+  );
 
   // The engineering notes (W8), one URL per document in `docs/`. Generated from
   // the SAME `readNotes()` call that `generateStaticParams()` enumerates in

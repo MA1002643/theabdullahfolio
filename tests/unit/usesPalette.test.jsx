@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SITE_ROUTES, routesExcept } from '@/components/commandPalette/routes';
+import { waitFor } from '@testing-library/react';
+import { createTranslator } from 'next-intl';
+import { SITE_ROUTES, routeActions, routesExcept } from '@/components/commandPalette/routes';
+import paletteMessages from '../../messages/en/UsesPalette.json';
+import { renderWithIntl } from '../support/intl.jsx';
 
 // /uses' ⌘K action set (issue #37). The builder is pure, so the shape is
 // pinned directly; the plate jump reads prefers-reduced-motion AT PERFORM
@@ -8,11 +12,24 @@ import { SITE_ROUTES, routesExcept } from '@/components/commandPalette/routes';
 // itself is exercised through the builder because everything it adds is
 // wiring (router, transition provider, clipboard, toast).
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+// The palette routes through the locale-aware navigation (issue #82).
+vi.mock('@/i18n/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/components/pageTransition/PageTransitionProvider', () => ({
   usePageTransition: () => ({ navigate: null }),
 }));
 vi.mock('sonner', () => ({ toast: vi.fn() }));
+// The shared palette, reduced to the action list it was handed.
+vi.mock('@/components/commandPalette/CommandPalette', () => ({
+  default: ({ actions }) => (
+    <ul>
+      {actions.map((a) => (
+        <li key={a.id} data-id={a.id}>
+          {a.label}
+        </li>
+      ))}
+    </ul>
+  ),
+}));
 
 const setReducedMotion = (matches) => {
   vi.stubGlobal('matchMedia', (query) => ({
@@ -41,9 +58,18 @@ afterEach(() => {
 
 const LINES = ['{', '  "editor.formatOnSave": true', '}'];
 
+// The REAL English catalogue (issue #82), never a mock translator: the
+// labels asserted below are the ones a visitor reads.
+const t = createTranslator({
+  locale: 'en',
+  messages: { UsesPalette: paletteMessages },
+  namespace: 'UsesPalette',
+});
+
 async function build(overrides = {}) {
   const { buildUsesActions } = await import('@/components/uses/UsesPalette');
   const deps = {
+    t,
     frameLines: LINES,
     motionOn: true,
     go: vi.fn(),
@@ -143,5 +169,21 @@ describe('plate jumps — reduced motion is read when the action runs', () => {
     const { actions } = await build();
     expect(() => actions.find((a) => a.id === 'jump-bom').perform()).not.toThrow();
     expect(scrollSpy).not.toHaveBeenCalled();
+  });
+});
+
+// The palette's copy is fetched at mount, not shipped with the page (issue
+// #82, the 8 kB budget). Until it lands the palette still offers every route
+// jump; the page's own actions then arrive in the locale's words.
+describe('UsesPalette — deferred copy', () => {
+  it('offers the route jumps at once and its own actions once the locale’s copy is in', async () => {
+    const { default: UsesPalette } = await import('@/components/uses/UsesPalette');
+    const fa = (await import('../../messages/fa/UsesPalette.json')).default;
+    const { container } = renderWithIntl(<UsesPalette frame={{ lines: LINES }} />, { locale: 'fa' });
+    const ids = () => [...container.querySelectorAll('li')].map((li) => li.dataset.id);
+    expect(ids()).toEqual(routeActions(routesExcept('/uses'), () => {}).map((a) => a.id));
+    expect(ids()).not.toContain('copy-settings');
+    await waitFor(() => expect(ids()).toContain('copy-settings'));
+    expect(container.querySelector('[data-id="copy-settings"]').textContent).toBe(fa.copySettings);
   });
 });

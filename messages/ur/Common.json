@@ -1,0 +1,14 @@
+{
+  "loadingProject": "پراجیکٹ لوڈ ہو رہا ہے",
+  "emblem": "Muhammad Abdullah کا نشان",
+  "notifications": "اطلاعات",
+  "sound": {
+    "turnOn": "گٹار کی آواز چلائیں",
+    "turnOff": "گٹار کی آواز بند کریں"
+  },
+  "owner": {
+    "given": "محمد",
+    "family": "عبداللہ",
+    "full": "محمد عبداللہ"
+  }
+}

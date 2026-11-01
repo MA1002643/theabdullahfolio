@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "목차",
+    "elsewhere": "다른 곳에서"
+  },
+  "siteNav": "사이트",
+  "identity": {
+    "role": "소프트웨어 엔지니어",
+    "statement": "잉글랜드 북부에서 빠르고 세심한 웹 경험을 만듭니다."
+  },
+  "availability": "새로운 기회를 찾고 있어요",
+  "githubCta": {
+    "label": "GitHub에서 이 프로젝트 보기",
+    "newTab": "(새 탭에서 열림)",
+    "commits": "{count, plural, one {<num>{formatted}</num>개 커밋} other {<num>{formatted}</num>개 커밋}}",
+    "pushed": "{when} 푸시"
+  },
+  "manifest": {
+    "departures": "출발",
+    "nowBoarding": "탑승 중",
+    "onTime": "정시",
+    "links": {
+      "about": {
+        "label": "소개",
+        "desc": "저는 이런 사람이에요"
+      },
+      "journey": {
+        "label": "여정",
+        "desc": "지금까지 걸어온 길"
+      },
+      "qualifications": {
+        "label": "자격",
+        "desc": "학력과 자격 사항"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "전체 이력"
+      },
+      "projects": {
+        "label": "프로젝트",
+        "desc": "엄선한 작업"
+      },
+      "uses": {
+        "label": "사용 도구",
+        "desc": "제가 쓰는 도구"
+      },
+      "notes": {
+        "label": "노트",
+        "desc": "이렇게 만든 이유"
+      },
+      "contact": {
+        "label": "연락처",
+        "desc": "인사를 건네 보세요"
+      },
+      "guestbook": {
+        "label": "방명록",
+        "desc": "흔적을 남겨 주세요"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHub 프로필 (새 탭에서 열림)",
+    "linkedin": "LinkedIn 프로필 (새 탭에서 열림)",
+    "resume": "전체 CV 읽기",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {{town} 현지 시각 {period} {time}} other {{town} 현지 시각 {time}}}",
+    "placeLabel": "위치: {town}",
+    "live": "실시간"
+  },
+  "sound": {
+    "label": "사운드",
+    "on": "켜짐",
+    "off": "꺼짐",
+    "turnOn": "푸터 기타 사운드 켜기",
+    "turnOff": "푸터 기타 사운드 끄기",
+    "hoverLines": "줄 위에 마우스를 올려 보세요",
+    "nowPlaying": "재생 중 — 차분한 기타 연주",
+    "turnOnPrompt": "사운드를 켜고 차분한 기타 연주를 들어 보세요"
+  },
+  "privacy": {
+    "policy": "개인정보 처리방침",
+    "choices": "개인정보 선택권"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/다른-곳",
+    "cmd": {
+      "github": "github 열기",
+      "linkedin": "linkedin 열기",
+      "resume": "이력서 열기"
+    }
+  }
+}

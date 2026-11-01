@@ -3,6 +3,9 @@ import { createElement } from 'react';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import StackPlate from '@/components/uses/StackPlate';
+// StackPlate reads its copy through next-intl (issue #82): render it inside
+// the real English catalogue.
+import { IntlWrapper } from '../support/intl.jsx';
 import { groupStack } from '@/lib/uses/stack';
 import {
   SKILLS_CACHE_KEY,
@@ -148,7 +151,7 @@ describe('StackPlate — a fresh cache entry is only served when it holds tools'
 
   it('a fresh entry holding a real crawl is served: verified, and no fetch', async () => {
     writeCache(LIVE_CATEGORIES);
-    const { container } = render(createElement(StackPlate, { fallback: FALLBACK }));
+    const { container } = render(createElement(StackPlate, { fallback: FALLBACK }), { wrapper: IntlWrapper });
 
     await waitFor(() => expect(status(container)).toBe('Stack verified against GitHub.'));
     expect(fetchMock).not.toHaveBeenCalled();
@@ -159,7 +162,7 @@ describe('StackPlate — a fresh cache entry is only served when it holds tools'
 
   it('a fresh but EMPTY entry is a miss: nothing is announced, and the live fetch still runs', async () => {
     writeCache(emptyCategories());
-    const { container } = render(createElement(StackPlate, { fallback: FALLBACK }));
+    const { container } = render(createElement(StackPlate, { fallback: FALLBACK }), { wrapper: IntlWrapper });
 
     // The regression: this used to read as a cache HIT.
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
@@ -178,7 +181,7 @@ describe('StackPlate — a fresh cache entry is only served when it holds tools'
   ])('a fresh entry that parses to %s is a miss, not a crash', async (_label, raw) => {
     window.localStorage.setItem(SKILLS_CACHE_KEY, raw);
     window.localStorage.setItem(SKILLS_LAST_FETCHED_KEY, String(Date.now()));
-    const { container } = render(createElement(StackPlate, { fallback: FALLBACK }));
+    const { container } = render(createElement(StackPlate, { fallback: FALLBACK }), { wrapper: IntlWrapper });
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(status(container)).toBe('');
@@ -191,7 +194,7 @@ describe('StackPlate — only a verified crawl is announced and persisted', () =
   const mountWith = (payload) => {
     fetchMock = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(payload) }));
     vi.stubGlobal('fetch', fetchMock);
-    return render(createElement(StackPlate, { fallback: FALLBACK }));
+    return render(createElement(StackPlate, { fallback: FALLBACK }), { wrapper: IntlWrapper });
   };
 
   beforeEach(() => {

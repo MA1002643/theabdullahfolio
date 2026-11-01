@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   AnimatePresence,
@@ -16,6 +17,7 @@ import {
   useTransform,
 } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useDirection } from '@/i18n/useDirection';
 
 import FireInput from './FireInput';
 import FireTextarea from './FireTextarea';
@@ -86,7 +88,6 @@ const SENDING_DIM = 'rgba(228, 228, 228, 0.32)';
 // The dots are rendered SEPARATELY from the word (not "SENDING...") so each can
 // bounce on its own: in SVG text, shifting one glyph's offset cascades to every
 // glyph after it, so an in-string dot can't lift without dragging its siblings.
-const SENDING_WORD = 'SENDING';
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -95,7 +96,10 @@ const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const DOT_KEYTIMES = '0;0.3;0.6;1';
 const DOT_KEYSPLINES = '0.3 0 0.3 1;0.3 0 0.3 1;0.3 0 0.3 1';
 
-function SendingLabel({ fill, reduced }) {
+// `word` is the localised "SENDING" (issue #82). The sweep and the dots are
+// laid out in SVG user space, left → right, whatever the reading direction —
+// the SVG text itself is pinned `direction="ltr"` so x=0 stays its left edge.
+function SendingLabel({ fill, reduced, word }) {
   // useId keeps the filter/mask/gradient ids unique per instance; strip the
   // colons React emits so they're safe inside url(#...) references.
   const uid = useId().replace(/:/g, '');
@@ -301,8 +305,8 @@ function SendingLabel({ fill, reduced }) {
       )}
 
       {/* 1 — dim, un-lit base word (also the element we measure). */}
-      <text ref={baseRef} x="0" y="0" fill={SENDING_DIM}>
-        {SENDING_WORD}
+      <text ref={baseRef} x="0" y="0" fill={SENDING_DIM} direction="ltr">
+        {word}
       </text>
 
       {/* 2 — molten body, revealed up to the turbulent sweep front. */}
@@ -312,16 +316,17 @@ function SendingLabel({ fill, reduced }) {
           y="0"
           fill={`url(#${id.fillGrad})`}
           mask={`url(#${id.body})`}
+          direction="ltr"
         >
-          {SENDING_WORD}
+          {word}
         </text>
       )}
 
       {/* 3 — white-hot leading edge, flickering as it advances. */}
       {ready && !reduced && (
         <motion.g style={{ opacity: tipOpacity }}>
-          <text x="0" y="0" fill="#ffe7c0" mask={`url(#${id.tip})`}>
-            {SENDING_WORD}
+          <text x="0" y="0" fill="#ffe7c0" mask={`url(#${id.tip})`} direction="ltr">
+            {word}
             <animate
               attributeName="fill-opacity"
               dur="0.45s"
@@ -401,7 +406,7 @@ const STATE_OVERLAY = {
 // accent as the rest of the CTA — so success stays on-palette and on-story, one
 // continuous object rather than a swap to a different shape/colour. Reduced
 // motion renders the finished mark with no drawing or slide.
-function SentLabel({ reduced }) {
+function SentLabel({ reduced, label, sign }) {
   return (
     <span
       style={{
@@ -432,11 +437,11 @@ function SentLabel({ reduced }) {
         />
       </svg>
       <motion.span
-        initial={reduced ? { opacity: 1 } : { opacity: 0, x: -5 }}
+        initial={reduced ? { opacity: 1 } : { opacity: 0, x: -5 * sign }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.32, ease: 'easeOut', delay: 0.28 }}
       >
-        SENT
+        {label}
       </motion.span>
     </span>
   );
@@ -447,7 +452,7 @@ function SentLabel({ reduced }) {
 // (delivered), HELD draws a clock face (awaiting). Same ember palette so it
 // stays on-story — the message is safe, just not gone yet. Reduced motion
 // renders the finished mark with no drawing or slide.
-function HeldLabel({ reduced }) {
+function HeldLabel({ reduced, label, sign }) {
   return (
     <span
       style={{
@@ -488,11 +493,11 @@ function HeldLabel({ reduced }) {
         />
       </svg>
       <motion.span
-        initial={reduced ? { opacity: 1 } : { opacity: 0, x: -5 }}
+        initial={reduced ? { opacity: 1 } : { opacity: 0, x: -5 * sign }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.32, ease: 'easeOut', delay: 0.3 }}
       >
-        HELD
+        {label}
       </motion.span>
     </span>
   );
@@ -514,6 +519,10 @@ function NotchedOutline({ label }) {
 
 function FormContent({ onReset, queue }) {
   const reduced = useReducedMotion();
+  const t = useTranslations('Contact');
+  const tc = useTranslations('Composer');
+  // The "slide in after the tick" offset follows the reading direction.
+  const { sign } = useDirection();
   const fill = useMotionValue(0);
   const [launch, setLaunch] = useState('idle');
   const timersRef = useRef([]);
@@ -595,7 +604,7 @@ function FormContent({ onReset, queue }) {
     // Already offline → don't spin the send animation against a wall; hold the
     // message immediately and let the queue deliver it on reconnect.
     if (!queue.online) {
-      toast('Saved — it will send when you reconnect.', { icon: '✦' });
+      toast(t('toast.savedOffline'), { icon: '✦' });
       holdForLater(params);
       return;
     }
@@ -616,7 +625,7 @@ function FormContent({ onReset, queue }) {
       // Complete the fill exactly as it submits, with a brief beat so the full
       // colour is visible before the success tick lands.
       await animate(fill, 1, { duration: 0.35, ease: 'easeOut' }).finished;
-      toast.success('Message sent successfully!', { icon: '✅' });
+      toast.success(t('toast.sent'), { icon: '✅' });
       draft.clearStored();
       // Remount the entire form component to get a fresh useForm() instance.
       // This avoids the known issue where reset() inside handleSubmit's
@@ -629,16 +638,20 @@ function FormContent({ onReset, queue }) {
       // Either way the queue holds it; only WHEN it drains differs — on reconnect
       // vs. the online auto-drain's backoff — so the copy reflects that.
       toast(
-        queue.online
-          ? 'Saved — retrying shortly…'
-          : 'Saved — it will send when you reconnect.',
+        queue.online ? t('toast.savedRetrying') : t('toast.savedOffline'),
         { icon: '✦' },
       );
       holdForLater(params);
     } else if (!result.aborted) {
+      // Each error in the visitor's language when the route sent its code
+      // (issue #82), else the server's English sentence at the same index.
       const messages = result.errors?.length
-        ? result.errors
-        : ['Failed to send message'];
+        ? result.errors.map((text, i) => {
+            const issue = result.issues?.[i];
+            const key = issue?.code ? `errors.${issue.code}` : null;
+            return key && t.has(key) ? t(key, issue.values) : text;
+          })
+        : [t('toast.failed')];
       messages.forEach((msg) => toast.error(msg, { icon: '⚠️' }));
       fill.set(0);
       setLaunch('idle');
@@ -685,7 +698,7 @@ function FormContent({ onReset, queue }) {
                 <span aria-hidden="true" className="refine-spark">
                   ✦
                 </span>
-                Restored your unsent message
+                {tc('draft.restored')}
               </span>
               <span className="draft-restored__actions">
                 <button
@@ -693,14 +706,14 @@ function FormContent({ onReset, queue }) {
                   className="refine-btn refine-btn--ghost"
                   onClick={draft.dismissRestored}
                 >
-                  Keep
+                  {tc('draft.keep')}
                 </button>
                 <button
                   type="button"
                   className="refine-btn refine-btn--ghost"
                   onClick={draft.clearDraft}
                 >
-                  Clear
+                  {tc('draft.clear')}
                 </button>
               </span>
             </motion.div>
@@ -720,26 +733,29 @@ function FormContent({ onReset, queue }) {
               id="name"
               name="name"
               type="text"
+              // Typed text follows its own script (an Arabic name on the
+              // English form lays out right-to-left), issue #82.
+              dir="auto"
               autoComplete="name"
               placeholder=" "
               aria-invalid={Boolean(errors.name)}
               aria-describedby={errors.name ? 'name-error' : undefined}
               {...register('name', {
-                required: 'Full Name is required!',
+                required: t('validation.nameRequired'),
                 minLength: {
                   value: LIMITS.name.min,
-                  message: `Name should be at least ${LIMITS.name.min} characters long.`,
+                  message: t('validation.nameMin', { min: LIMITS.name.min }),
                 },
                 maxLength: {
                   value: LIMITS.name.max,
-                  message: `Name should be at most ${LIMITS.name.max} characters long.`,
+                  message: t('validation.nameMax', { max: LIMITS.name.max }),
                 },
               })}
               className="custom-bg-2 w-full rounded-md p-2 shadow-lg hover:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(192,132,252,0.5),0_0_22px_rgba(124,58,237,0.42),inset_0_0_10px_rgba(192,132,252,0.1)] focus:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_10px_rgba(216,180,254,0.65),0_0_24px_rgba(168,85,247,0.5),inset_0_0_12px_rgba(192,132,252,0.14)] focus:outline-none"
             />
-            <NotchedOutline label="Full Name" />
+            <NotchedOutline label={t('fields.name')} />
             <label htmlFor="name" className="float-label">
-              Full Name
+              {t('fields.name')}
             </label>
           </div>
         </motion.div>
@@ -775,17 +791,17 @@ function FormContent({ onReset, queue }) {
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? 'email-error' : undefined}
               {...register('email', {
-                required: 'Email is required!',
+                required: t('validation.emailRequired'),
                 maxLength: {
                   value: LIMITS.email.max,
-                  message: `Email should be at most ${LIMITS.email.max} characters long.`,
+                  message: t('validation.emailMax', { max: LIMITS.email.max }),
                 },
               })}
               className="custom-bg-2 w-full rounded-md p-2 shadow-lg hover:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(192,132,252,0.5),0_0_22px_rgba(124,58,237,0.42),inset_0_0_10px_rgba(192,132,252,0.1)] focus:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_10px_rgba(216,180,254,0.65),0_0_24px_rgba(168,85,247,0.5),inset_0_0_12px_rgba(192,132,252,0.14)] focus:outline-none"
             />
-            <NotchedOutline label="Email" />
+            <NotchedOutline label={t('fields.email')} />
             <label htmlFor="email" className="float-label">
-              Email
+              {t('fields.email')}
             </label>
           </div>
         </motion.div>
@@ -812,22 +828,23 @@ function FormContent({ onReset, queue }) {
               id="subject"
               name="subject"
               type="text"
+              dir="auto"
               placeholder=" "
               aria-invalid={Boolean(errors.subject)}
               aria-describedby={errors.subject ? 'subject-error' : undefined}
               {...register('subject', {
-                required: 'Subject is required!',
+                required: t('validation.subjectRequired'),
                 maxLength: {
                   // Shared with the send-mail route via lib/contactLimits.js.
                   value: LIMITS.subject.max,
-                  message: `Subject should be at most ${LIMITS.subject.max} characters long.`,
+                  message: t('validation.subjectMax', { max: LIMITS.subject.max }),
                 },
               })}
               className="custom-bg-2 w-full rounded-md p-2 shadow-lg hover:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(192,132,252,0.5),0_0_22px_rgba(124,58,237,0.42),inset_0_0_10px_rgba(192,132,252,0.1)] focus:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_10px_rgba(216,180,254,0.65),0_0_24px_rgba(168,85,247,0.5),inset_0_0_12px_rgba(192,132,252,0.14)] focus:outline-none"
             />
-            <NotchedOutline label="Subject" />
+            <NotchedOutline label={t('fields.subject')} />
             <label htmlFor="subject" className="float-label">
-              Subject
+              {t('fields.subject')}
             </label>
           </div>
         </motion.div>
@@ -854,25 +871,26 @@ function FormContent({ onReset, queue }) {
               id="message"
               name="message"
               rows={5}
+              dir="auto"
               placeholder=" "
               aria-invalid={Boolean(errors.message)}
               aria-describedby={errors.message ? 'message-error' : undefined}
               {...register('message', {
-                required: 'Message is required!',
+                required: t('validation.messageRequired'),
                 maxLength: {
                   value: LIMITS.message.max,
-                  message: `Message should be at most ${LIMITS.message.max} characters long.`,
+                  message: t('validation.messageMax', { max: LIMITS.message.max }),
                 },
                 minLength: {
                   value: LIMITS.message.min,
-                  message: `Message should be at least ${LIMITS.message.min} characters long.`,
+                  message: t('validation.messageMin', { min: LIMITS.message.min }),
                 },
               })}
               className="custom-bg-2 w-full resize-y rounded-md p-2 shadow-lg hover:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_8px_rgba(192,132,252,0.5),0_0_22px_rgba(124,58,237,0.42),inset_0_0_10px_rgba(192,132,252,0.1)] focus:shadow-[0_6px_16px_rgba(0,0,0,0.5),0_0_10px_rgba(216,180,254,0.65),0_0_24px_rgba(168,85,247,0.5),inset_0_0_12px_rgba(192,132,252,0.14)] focus:outline-none"
             />
-            <NotchedOutline label="Message" />
+            <NotchedOutline label={t('fields.message')} />
             <label htmlFor="message" className="float-label">
-              Message
+              {t('fields.message')}
             </label>
           </div>
         </motion.div>
@@ -923,7 +941,7 @@ function FormContent({ onReset, queue }) {
             id="submit-btn"
             name="submit"
             type="submit"
-            aria-label="Send message"
+            aria-label={t('submit.ariaLabel')}
             disabled={launch !== 'idle'}
             aria-busy={launch === 'sending'}
             // Flat #ff6d05 (matches the "4+" years-card digit) — the same vivid
@@ -975,7 +993,7 @@ function FormContent({ onReset, queue }) {
                 hovered AND idle. */}
             <span style={launch === 'idle' ? undefined : { visibility: 'hidden' }}>
               <SliceLabel
-                text="SEND MESSAGE!"
+                text={t('submit.label')}
                 hovered={hovered && launch === 'idle'}
               />
             </span>
@@ -1010,7 +1028,7 @@ function FormContent({ onReset, queue }) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.25 }}
                 >
-                  <SendingLabel fill={fill} reduced={reduced} />
+                  <SendingLabel fill={fill} reduced={reduced} word={t('submit.sending')} />
                 </motion.span>
               )}
               {launch === 'check' && (
@@ -1023,7 +1041,7 @@ function FormContent({ onReset, queue }) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <SentLabel reduced={reduced} />
+                  <SentLabel reduced={reduced} label={t('submit.sent')} sign={sign} />
                 </motion.span>
               )}
               {queued && (
@@ -1036,7 +1054,7 @@ function FormContent({ onReset, queue }) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <HeldLabel reduced={reduced} />
+                  <HeldLabel reduced={reduced} label={t('submit.held')} sign={sign} />
                 </motion.span>
               )}
             </AnimatePresence>
@@ -1048,9 +1066,7 @@ function FormContent({ onReset, queue }) {
             normal online case. */}
         {(queued || !queue.online || queue.pending > 0) && (
           <p className="contact-conn-status" role="status" aria-live="polite">
-            {queued || queue.pending > 0
-              ? 'Held — your message will send itself the moment you’re back online.'
-              : 'You’re offline — your message will be held and sent automatically when you reconnect.'}
+            {queued || queue.pending > 0 ? t('status.held') : t('status.offline')}
           </p>
         )}
       </motion.form>

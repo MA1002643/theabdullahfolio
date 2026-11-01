@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "À propos",
+    "projects": "Projets",
+    "qualifications": "Qualifications",
+    "contact": "Contact",
+    "journey": "Parcours",
+    "past": "Mon passé",
+    "guestbook": "Livre d’or",
+    "uses": "Outils"
+  },
+  "routes": {
+    "home": "Accueil",
+    "about": "À propos",
+    "projects": "Projets",
+    "qualifications": "Qualifications",
+    "contact": "Contact",
+    "myPast": "Mon passé",
+    "journey": "Parcours",
+    "guestbook": "Livre d’or",
+    "uses": "Outils",
+    "cv": "CV",
+    "notes": "Notes",
+    "privacy": "Confidentialité"
+  },
+  "homeButton": {
+    "tooltip": "Accueil",
+    "srLabel": "Aller à la page d’accueil"
+  },
+  "projectsButton": {
+    "label": "Projets",
+    "tooltip": "Projets",
+    "srLabel": "Aller à la page des projets"
+  }
+}

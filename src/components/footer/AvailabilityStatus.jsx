@@ -17,6 +17,7 @@
 // under prefers-reduced-motion only the steady core remains.
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ import { availability } from './footer-data';
 // `className` lets the caller place the line — it lives inline in the footer's
 // full-width reach strip (no top margin), but the prop keeps it reusable.
 export default function AvailabilityStatus({ className }) {
+  const t = useTranslations('Footer');
   const rawReduced = useReducedMotion();
 
   // useReducedMotion is null on the server; gate behind a mounted flag so SSR
@@ -57,7 +59,7 @@ export default function AvailabilityStatus({ className }) {
         <span className="relative h-[7px] w-[7px] rounded-full bg-[#ff6d05] shadow-[0_0_6px_rgba(255,109,5,0.9)]" />
       </span>
 
-      <span className="font-medium text-foreground">{availability.label}</span>
+      <span className="font-medium text-foreground">{t('availability')}</span>
     </p>
   );
 }

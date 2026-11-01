@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Yazılım Mühendisi. Muhammad Abdullah mührü ve canlı portfolyo durumunu içeren koyu kızıl köz rengi kart.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Yazılım Mühendisi. Muhammad Abdullah mührü ve canlı portfolyo durumunu içeren kare, koyu kızıl köz rengi kart.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Yazılım Mühendisi",
+      "description": "Bolton'da Next.js, React ve TypeScript ile hızlı ve özenle tasarlanmış web uygulamaları geliştiren bir yazılım mühendisi. Projeler, yetkinlikler ve arkasındaki araçlar."
+    },
+    "about": {
+      "title": "Hakkımda",
+      "description": "Közün arkasındaki mühendis — hikâye, teknoloji yığını ve şu anda üzerinde çalışılanlara dair canlı GitHub telemetrisi."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "Tüm kayıt — her görev, nitelik ve yayına alınan proje, HTML olarak. Zaman çizelgesinin kullandığı verilerle yazıldı; PDF tek tık uzakta."
+    },
+    "notes": {
+      "title": "Notlar",
+      "description": "Mühendislik karar kayıtları — bu sitedeki her tercihin neden yapıldığı, hangi alternatiflerin elendiği ve her birinin bedeli."
+    },
+    "projects": {
+      "title": "Projeler",
+      "description": "{countWord} yapım — web, sistemler, mobil ve yapay zekâ — her biri kendi GitHub panosundan canlı izleniyor; her kartta teknoloji yığını ve tamamlanma durumu yer alıyor."
+    },
+    "qualifications": {
+      "title": "Nitelikler",
+      "description": "Dereceler, sertifikalar ve mesleki yetkinlikler — pratiğin arkasındaki doğrulanmış belge izi; her sertifika görüntülenebilir."
+    },
+    "journey": {
+      "title": "Yolculuk",
+      "description": "Her görev, nitelik ve gönüllülük görevi, kaydırmayla ilerleyen tek bir zaman çizelgesinde — 2018'de Bolton College'dan bugün üretim yazılımı yayınlamaya kadar."
+    },
+    "uses": {
+      "title": "Kullandıklarım",
+      "description": "Makine, tezgâh, teknoloji yığını ve boru hattı — bu sayfadaki her araç, depolara ve onu yayınlayan derlemeye karşı doğrulandı."
+    },
+    "contact": {
+      "title": "İletişim",
+      "description": "Bir rol ya da proje hakkında konuşmaya başla — sen yazarken mesajını iyileştiren ve hiçbir taslağı kaybetmeyen bir iletişim formu."
+    },
+    "myPast": {
+      "title": "Geçmişim",
+      "description": "Her şeyin başladığı üniversite dönemi portfolyosu — yalnızca HTML, CSS ve JavaScript ile elle yazıldı, dürüst bir \"önceki hâl\" görüntüsü olarak çevrimiçi tutuluyor."
+    },
+    "guestbook": {
+      "title": "Ziyaretçi Defteri",
+      "description": "Duvara izini bırak — ziyaretçilerin GitHub veya Google ile imzaladığı bir neon mesaj panosu; canlı varlık göstergesi ve tepkilerle."
+    },
+    "privacy": {
+      "title": "Gizlilik",
+      "description": "Bu sitenin kullandığı her çerez, depolama anahtarı ve üçüncü taraf, her birinin neden var olduğu ve isteğe bağlı olanların nasıl kapatılacağı. Şablon değil, denetlenmiş içerik."
+    }
+  },
+  "notFound": {
+    "title": "404 — Sayfa Bulunamadı",
+    "description": "Boşluğa sürüklendin. Bu sayfa mevcut değil — henüz."
+  }
+}

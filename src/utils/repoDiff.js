@@ -1,3 +1,5 @@
+import { englishAbout } from "@/i18n/sourceTranslator";
+
 /**
  * Compute a human-readable change message for the most-active repo sub-object.
  *
@@ -14,10 +16,14 @@
  * @param {object|null} prev - previous repo snapshot, or null on first load
  * @param {object|null} next - latest repo data, or null when the API reports
  *                             no qualifying activity for this poll
+ * @param {(key: string, values?: object) => string} t - `useTranslations('About')`.
+ *                             Every sentence is one catalogue message
+ *                             (`About.changes.repo.*`, issue #82), so the
+ *                             number can sit wherever a language wants it.
  * @returns {string|null}    - message to display, or null when there's
  *                             nothing to announce
  */
-export function computeRepoDiff(prev, next) {
+export function computeRepoDiff(prev, next, t = englishAbout) {
   if (!prev || !next) return null;
 
   // When the most-active repo itself changes, prev/next counts belong to
@@ -45,7 +51,7 @@ export function computeRepoDiff(prev, next) {
     // can be ambiguous — "Most active repository changed to next.js" reads
     // identically whether the new repo is acme/next.js or vercel/next.js,
     // which is the precise ambiguity nameWithOwner exists to resolve.
-    return `Most active repository changed to "${nextId}"`;
+    return t("changes.repo.switched", { name: nextId });
   }
 
   // Normalize every numeric field through `Number(... ?? 0)` so the deltas
@@ -68,16 +74,26 @@ export function computeRepoDiff(prev, next) {
 
   // Stars and forks can legitimately move either direction (unstar, repo
   // ownership transfer, fork deletion), so report increases and decreases.
+  // `direction` is an ICU select, not two English words spliced in, because
+  // "increased"/"decreased" agree with the noun in gendered languages.
   if (prevStars !== nextStars) {
     const delta = nextStars - prevStars;
     messages.push(
-      `Stars ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)} (now ${nextStars})`
+      t("changes.repo.stars", {
+        direction: delta > 0 ? "increased" : "decreased",
+        amount: Math.abs(delta),
+        total: nextStars,
+      }),
     );
   }
   if (prevForks !== nextForks) {
     const delta = nextForks - prevForks;
     messages.push(
-      `Forks ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)} (now ${nextForks})`
+      t("changes.repo.forks", {
+        direction: delta > 0 ? "increased" : "decreased",
+        amount: Math.abs(delta),
+        total: nextForks,
+      }),
     );
   }
 
@@ -87,11 +103,11 @@ export function computeRepoDiff(prev, next) {
   // "-5 new commits pushed" is misleading; suppress decreases entirely.
   if (nextCommits > prevCommits) {
     const delta = nextCommits - prevCommits;
-    messages.push(`${delta} new commit${delta !== 1 ? "s" : ""} pushed`);
+    messages.push(t("changes.repo.commits", { count: delta }));
   }
   if (nextMergedPRs > prevMergedPRs) {
     const delta = nextMergedPRs - prevMergedPRs;
-    messages.push(`${delta} PR${delta !== 1 ? "s" : ""} merged`);
+    messages.push(t("changes.repo.mergedPrs", { count: delta }));
   }
 
   // Activity score is a derived metric (weighted recent commits/issues/PRs/
@@ -105,7 +121,11 @@ export function computeRepoDiff(prev, next) {
   if (prevScore !== nextScore) {
     const delta = nextScore - prevScore;
     messages.push(
-      `Activity score ${delta > 0 ? "increased" : "decreased"} by ${Math.abs(delta)} (now ${nextScore})`
+      t("changes.repo.activityScore", {
+        direction: delta > 0 ? "increased" : "decreased",
+        amount: Math.abs(delta),
+        total: nextScore,
+      }),
     );
   }
 
@@ -122,10 +142,10 @@ export function computeRepoDiff(prev, next) {
     nextLang !== "Unknown" &&
     prevLang !== nextLang
   ) {
-    messages.push(`Primary language changed to "${nextLang}"`);
+    messages.push(t("changes.repo.language", { language: nextLang }));
   }
 
-  return messages.length > 0 ? messages.join(" · ") : null;
+  return messages.length > 0 ? messages.join(t("changes.dot")) : null;
 }
 
 /**

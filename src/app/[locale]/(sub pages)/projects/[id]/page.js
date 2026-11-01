@@ -1,13 +1,17 @@
 import Image from "next/image"
-import Link from "next/link"
+import { getTranslations, setRequestLocale } from "next-intl/server"
+import { Link } from "@/i18n/navigation"
+import IntlScope from "@/i18n/IntlScope"
 import { notFound } from "next/navigation"
 import { projectsData } from "@/app/data"
 import { sectionMetadata } from "@/lib/og/meta"
 import JsonLd from "@/components/seo/JsonLd"
 import { projectPage } from "@/lib/seo/schema"
 import { languagesFor } from "@/lib/seo/projectLanguages"
-import { projectMetaDescription } from "@/lib/seo/projectMeta"
-import bg from "../../../../../public/background/home-bg.webp"
+import { localizedProjectMetaDescription } from "@/lib/seo/projectMeta"
+import { getDataT } from "@/i18n/getDataT"
+import { localizeProject } from "@/i18n/data"
+import bg from "../../../../../../public/background/home-bg.webp"
 import LanternSweep from "@/components/project-detail/lantern-sweep"
 import ProjectIntro from "@/components/project-detail/project-intro"
 import SceneLoader from "@/components/project-detail/scene-loader"
@@ -44,10 +48,11 @@ export const dynamicParams = false
 // restated wholesale via the shared helper so siteName/type/locale
 // survive the page-level override.
 export async function generateMetadata({ params }) {
-    const { id } = await params
+    const { id, locale } = await params
     const project = projectsData.find((p) => String(p.id) === String(id))
     if (!project) return {}
     return sectionMetadata({
+        locale,
         title: project.name,
         // COMPOSED, not `project.description` (issue #32, W7). That field is a
         // four-word card subtitle — ~36 characters — which as a SERP
@@ -56,14 +61,21 @@ export async function generateMetadata({ params }) {
         // the /projects card subtitle AND the ProjectIntro headline subtitle
         // below, both sized around four words. So the meta description is built
         // from the record's own facts instead. See src/lib/seo/projectMeta.js.
-        description: projectMetaDescription(project),
+        // Non-English locales (issue #82) compose the same facts through a
+        // ProjectDetail template; English is the unchanged sentence.
+        description: localizedProjectMetaDescription(project, {
+            locale,
+            t: await getTranslations({ locale, namespace: "ProjectDetail" }),
+            dataT: await getDataT(locale),
+        }),
         path: `/projects/${project.id}`,
     })
 }
 
 export default async function ProjectDetailPage({ params }) {
     // `params` is a Promise from Next 15.
-    const { id } = await params
+    const { id, locale } = await params
+    setRequestLocale(locale)
     // Strict integer-string check before lookup. Two reasons:
     //   1. parseInt was permissive — parseInt("1abc", 10) === 1,
     //      so /projects/1abc would silently resolve to project 1
@@ -123,13 +135,20 @@ export default async function ProjectDetailPage({ params }) {
         demo: project.demoLink && project.demoLink !== repoUrl ? project.demoLink : null,
     }
 
+    // Translated copy (issue #82). The project NAME is a proper name and is
+    // never translated; the four-word description is, through the generated
+    // Data catalogue (English returns the data.js literal untouched).
+    const t = await getTranslations({ locale, namespace: "ProjectDetail" })
+    const dataT = await getDataT(locale)
+    const description = localizeProject(project, dataT).description
+
     const index = projectsData.findIndex((p) => p.id === project.id)
     const previous =
         projectsData[(index - 1 + projectsData.length) % projectsData.length]
     const next = projectsData[(index + 1) % projectsData.length]
 
     return (
-        <>
+        <IntlScope locale={locale} route="/projects/[id]">
             {/* ── SoftwareSourceCode + BreadcrumbList (issue #32, W2) ───────
                 `SoftwareSourceCode` rather than `SoftwareApplication`: these are
                 repositories, and `codeRepository` — the property carrying the
@@ -150,6 +169,12 @@ export default async function ProjectDetailPage({ params }) {
                 id="ld-project"
                 data={projectPage(project, {
                     programmingLanguage: languagesFor(project),
+                    locale,
+                    description,
+                    crumbs: {
+                        home: t("breadcrumbs.home"),
+                        projects: t("breadcrumbs.projects"),
+                    },
                 })}
             />
 
@@ -178,7 +203,7 @@ export default async function ProjectDetailPage({ params }) {
                 gives each link a visible focus ring — see the rule in
                 globals.css for why it must be `fixed` rather than `static`. */}
             <nav
-                aria-label="Project navigation"
+                aria-label={t("siblingNav.label")}
                 className="project-sibling-nav sr-only custom-bg"
             >
                 {/* `prefetch={false}` on all three: this panel is `sr-only`
@@ -194,13 +219,13 @@ export default async function ProjectDetailPage({ params }) {
                     viewport prefetch, so hover and touch still warm the route
                     on intent. Same call as HomeBtn/ProjectsBtn/ReturnPortal. */}
                 <Link href="/projects" prefetch={false}>
-                    All projects
+                    {t("siblingNav.all")}
                 </Link>
                 <Link href={`/projects/${previous.id}`} prefetch={false}>
-                    Previous project: {previous.name}
+                    {t("siblingNav.previous", { name: previous.name })}
                 </Link>
                 <Link href={`/projects/${next.id}`} prefetch={false}>
-                    Next project: {next.name}
+                    {t("siblingNav.next", { name: next.name })}
                 </Link>
             </nav>
 
@@ -251,9 +276,9 @@ export default async function ProjectDetailPage({ params }) {
                 <SceneLoader links={links} />
 
                 {/* Overlay UI */}
-                <ProjectIntro name={project.name} description={project.description} links={links} />
+                <ProjectIntro name={project.name} description={description} links={links} />
             </div>
 
-        </>
+        </IntlScope>
     )
 }

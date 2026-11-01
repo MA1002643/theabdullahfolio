@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Informativa sulla privacy",
+    "heading": "Privacy",
+    "announce": "In fondo alla pagina è comparsa un'informativa sulla privacy. Puoi accettare o rifiutare le statistiche, oppure aprire le preferenze.",
+    "body": "Questo sito conserva un po' di dati sul tuo dispositivo per ricordare le tue preferenze e — solo se lo consenti — per contare quali pagine vengono lette. Nessun cookie pubblicitario, nessun tracciamento, nessuna profilazione di terze parti. <link>Scopri cosa significa</link>.",
+    "accept": "Accetta",
+    "decline": "Rifiuta",
+    "preferences": "Preferenze"
+  },
+  "prefs": {
+    "title": "Scelte sulla privacy",
+    "intro": "Due categorie, perché due è il numero reale. Tutti i dettagli sono nella <link>pagina sulla privacy</link>.",
+    "close": "Chiudi le scelte sulla privacy",
+    "alwaysOn": "Sempre attivo",
+    "reloadNote": "Disattivarlo ricarica la pagina: è l'unico modo per scaricare davvero uno script che il browser ha già eseguito, invece di lasciarlo caricato e chiedergli gentilmente di fermarsi.",
+    "declineAll": "Rifiuta tutto",
+    "acceptAnalytics": "Accetta le statistiche",
+    "on": "Attivo",
+    "off": "Disattivo",
+    "switchLabel": "Consenti statistiche anonime"
+  },
+  "categories": {
+    "essential": {
+      "name": "Essenziali",
+      "summary": "Sempre attivi. Restano sul tuo dispositivo e servono solo a far funzionare il sito per te.",
+      "detail": "Il sito ricorda alcune cose in locale, così si comporta come un sito che hai già usato: un messaggio scritto a metà sopravvive a un aggiornamento, l'intro viene mostrata una sola volta, un suggerimento chiuso resta chiuso. Tutto questo viene scritto nel tuo browser e riletto dal tuo browser, e nulla viene usato per riconoscerti. Due elementi lasciano il tuo dispositivo. Un messaggio di contatto che invii mentre sei offline viene conservato qui finché la rete non torna, poi mi viene recapitato come qualsiasi altro messaggio. Nella pagina del guestbook viene inviato un ID casuale per scheda, per contare chi è presente in questo momento; non è collegato a te e il server lo dimentica entro pochi minuti. Le bozze che non hai inviato non vengono mai trasmesse."
+    },
+    "analytics": {
+      "name": "Statistiche",
+      "summary": "Disattivate, a meno che tu non le attivi. Contano quali pagine vengono lette, mai chi le legge.",
+      "detail": "Tre script di misurazione, trattati come un'unica decisione perché rispondono a una sola domanda: quali pagine vale la pena tenere. Nessuno imposta un cookie pubblicitario, nessuno costruisce un profilo e nessuno viene caricato finché non dici di sì: né caricato e inattivo, né caricato e negato. Prima di una decisione, il tuo browser non fa alcuna richiesta a nessuno di essi."
+    }
+  },
+  "status": {
+    "heading": "La tua scelta attuale",
+    "noScript": "Le statistiche non sono attive. Con JavaScript disattivato non possono esserlo.",
+    "allowed": "Le statistiche anonime sono consentite.",
+    "off": "Le statistiche sono disattivate. Non viene misurato nulla.",
+    "notAsked": "Non ti è ancora stato chiesto, quindi la risposta è no.",
+    "decidedOn": "Hai deciso il {date}.",
+    "stored": "La tua decisione è salvata su questo dispositivo.",
+    "change": "Modifica"
+  }
+}

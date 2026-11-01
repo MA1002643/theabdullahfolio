@@ -1,8 +1,14 @@
 // @vitest-environment jsdom
 import { createElement } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import CommandPalette from '@/components/commandPalette/CommandPalette';
+import { IntlWrapper } from '../support/intl.jsx';
+
+vi.mock('@/i18n/navigation', () => ({
+  usePathname: () => '/',
+  useRouter: () => ({ replace: () => {}, push: () => {} }),
+}));
 
 // The palette's combobox has a name of its own (code review). The dialog is
 // labelled "Command palette", but a dialog's label names the dialog, not an
@@ -27,7 +33,7 @@ afterEach(() => {
 
 describe('CommandPalette — the search input is named', () => {
   it('the combobox is "Search commands", independent of the dialog and the placeholder', () => {
-    const utils = render(createElement(CommandPalette, { actions: ACTIONS }));
+    const utils = render(createElement(CommandPalette, { actions: ACTIONS }), { wrapper: IntlWrapper });
     act(() => hotkey());
 
     const input = utils.getByRole('combobox', { name: 'Search commands' });

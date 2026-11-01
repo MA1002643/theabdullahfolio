@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "전체 이력"
+  },
+  "identity": {
+    "role": "소프트웨어 엔지니어"
+  },
+  "downloadPdf": "PDF 다운로드",
+  "sections": {
+    "experience": "경력",
+    "education": "학력",
+    "representation": "대표 활동",
+    "skills": "기술",
+    "projects": "주요 프로젝트"
+  },
+  "skillGroups": {
+    "languages": "언어",
+    "frameworks": "프레임워크",
+    "libraries": "라이브러리",
+    "tools": "도구",
+    "software": "소프트웨어"
+  },
+  "allProjects": "모든 프로젝트",
+  "asTimeline": "같은 이력을 타임라인으로 보기"
+}

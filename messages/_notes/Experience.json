@@ -1,0 +1,10 @@
+{
+  "card.unit": "Follows a large animated number with a '+' (e.g. '4+ years of experience'). {unit} chooses years or months; {count} is the number for plural agreement.",
+  "card.percent": "<n></n> is replaced by an animated number; place the % sign as your language does.",
+  "label.ready": "Screen-reader name of a clickable card. It must contain the card's visible words in order (eyebrow, figure, legend, 'View breakdown'). {split} is a following sentence, already including its leading space.",
+  "label.degraded": "As label.ready, for when part of the data could not be loaded. The parenthesis is spoken but is not visible text.",
+  "modal.totalUnit": "Very short label under a ring's number: abbreviations of years/months ('yrs'/'mo').",
+  "modal.roleDuration": "<n></n> is an animated number; 'yrs' / 'mo' are abbreviations and the '+' means 'at least'.",
+  "modal.roleAt": "{role} is a job title and {company} an employer, both from a résumé (not translated). <muted> styles the company part.",
+  "duration": "'At least N years/months' — the '+' means 'at least'. Used inside the change banner ('4+ years → 5+ years')."
+}

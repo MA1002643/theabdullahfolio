@@ -5,9 +5,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Briefcase, GraduationCap, History, Phone, Route, User, Wrench } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { track } from '@vercel/analytics';
+import { useLocale, useTranslations } from 'next-intl';
+import { localePrefix } from '@/i18n/locales';
 
 import bg from '../../../public/background/contact-bg.png';
 import AuroraDustMount from '@/components/AuroraDustMount';
@@ -19,13 +21,8 @@ import { claimEscape } from '@/lib/escapeKey';
 import { ROUTES } from './routes';
 import { suggestRoute } from './suggestRoute';
 
-const ROTATING_MESSAGES = [
-  "You've drifted into the void.",
-  'This page is in another dimension.',
-  "Even my 3D skills couldn't render this page.",
-  '404: page not found, vibes still immaculate.',
-  "You've reached the edge of the portfolio.",
-];
+// Catalogue keys (`NotFound.messages.<key>`, issue #82), in rotation order.
+const ROTATING_MESSAGES = ['void', 'dimension', 'render', 'vibes', 'edge'];
 
 // Suggestion chips, derived from the shared ROUTES registry so they can't drift
 // from the typo matcher. Icons are a UI-only concern, mapped here by segment.
@@ -38,8 +35,8 @@ const SUGGESTION_ICONS = {
   uses: Wrench,
   'my-past': History,
 };
-const SUGGESTIONS = ROUTES.map(({ segment, href, label }) => ({
-  label,
+const SUGGESTIONS = ROUTES.map(({ segment, href, navKey }) => ({
+  navKey,
   href,
   Icon: SUGGESTION_ICONS[segment],
 }));
@@ -60,6 +57,9 @@ const MESSAGE_ROTATION_MS = 5000;
  */
 export default function NotFoundClient() {
   const router = useRouter();
+  const t = useTranslations('NotFound');
+  const tNav = useTranslations('Nav');
+  const locale = useLocale();
   const [messageIndex, setMessageIndex] = useState(0);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [hasHover, setHasHover] = useState(false);
@@ -178,6 +178,13 @@ export default function NotFoundClient() {
   // common typos worth a real redirect vs. genuinely unknown paths.
   useEffect(() => {
     const path = window.location.pathname;
+    // The matcher compares URL SEGMENTS, so the locale prefix comes off first:
+    // `/ar/projcts` must be read as `/projcts`, not as a typo of `/about`.
+    const prefix = localePrefix(locale);
+    const routePath =
+      prefix && (path === prefix || path.startsWith(`${prefix}/`))
+        ? path.slice(prefix.length) || '/'
+        : path;
     let referrer = '(direct)';
     if (document.referrer) {
       try {
@@ -187,9 +194,11 @@ export default function NotFoundClient() {
         referrer = '(invalid)';
       }
     }
-    const match = suggestRoute(path);
+    const match = suggestRoute(routePath);
     setSuggestion(match);
     track('404_hit', { path, referrer, suggestion: match?.href ?? '(none)' });
+    // Mount-only, as before: `locale` is fixed for the life of this page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Console easter egg — devs who inspect the page get a nod and a
@@ -215,9 +224,9 @@ export default function NotFoundClient() {
         alt=""
         priority
         sizes="100vw"
-        className="-z-50 fixed top-0 left-0 w-full h-full object-cover object-center opacity-50"
+        className="-z-50 fixed inset-0 w-full h-full object-cover object-center opacity-50"
       />
-      <div className="-z-40 fixed top-0 left-0 w-full h-full bg-black/70" />
+      <div className="-z-40 fixed inset-0 w-full h-full bg-black/70" />
       <AuroraDustMount />
 
       <div className="relative z-10 flex flex-col items-center gap-6">
@@ -257,7 +266,7 @@ export default function NotFoundClient() {
                 }
                 className="text-base text-fire-amber sm:text-lg"
               >
-                {ROTATING_MESSAGES[messageIndex]}
+                {t(`messages.${ROTATING_MESSAGES[messageIndex]}`)}
               </motion.p>
             </AnimatePresence>
           </div>
@@ -273,14 +282,18 @@ export default function NotFoundClient() {
             className="text-sm sm:text-base"
             style={{ color: "#ffaa2a", textShadow: "none" }}
           >
-            This page doesn&apos;t exist — yet.
+            {t('subtitle')}
           </motion.p>
         </div>
 
         {/* Contextual recovery — only renders when the mistyped path
             is a confident near-miss of a real route. Sits in the
             stagger between the subtitles and the portal. */}
-        <DidYouMean suggestion={suggestion} />
+        <DidYouMean
+          suggestion={
+            suggestion ? { ...suggestion, label: tNav(`routes.${suggestion.navKey}`) } : null
+          }
+        />
 
         <ReturnPortal />
 
@@ -294,7 +307,7 @@ export default function NotFoundClient() {
           }
           className="mt-4 flex flex-wrap items-center justify-center gap-3"
         >
-          {SUGGESTIONS.map(({ label, href, Icon }) => (
+          {SUGGESTIONS.map(({ navKey, href, Icon }) => (
             <Link
               key={href}
               href={href}
@@ -302,7 +315,7 @@ export default function NotFoundClient() {
               className="group custom-bg inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-wider transition-all duration-300 hover:border-[#ff6d05]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05]"
             >
               <Icon className="elite-cta-icon h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
-              <span className="elite-cta-text">{label}</span>
+              <span className="elite-cta-text">{tNav(`routes.${navKey}`)}</span>
             </Link>
           ))}
         </motion.div>
@@ -332,7 +345,7 @@ export default function NotFoundClient() {
           className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em]"
           style={{ color: "rgba(255, 170, 42, 0.55)", textShadow: "none" }}
         >
-          Press H to go home
+          {t('keyHint', { key: 'H' })}
         </motion.p>
       )}
     </main>

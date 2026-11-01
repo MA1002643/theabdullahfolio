@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import TypeOnChunks from "./typeon-chunks";
 
-const bootMessages = [
+// English fallback for the boot lines. The live copy arrives translated as
+// `messages` (ProjectDetail `screen.boot.*`, via useScreenCopy in
+// scene-loader.jsx) because this renders inside drei's separate <Html> root.
+const BOOT_MESSAGES = [
     "Initializing BIOS...",
     "Detecting hardware...",
     // "Memory test: OK",
@@ -13,7 +16,8 @@ const bootMessages = [
     "Loading operating system...",
 ];
 
-export default function LaptopBootSequence({ onComplete }) {
+export default function LaptopBootSequence({ onComplete, messages, rtl = false }) {
+    const bootMessages = messages ?? BOOT_MESSAGES;
     const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
@@ -25,7 +29,7 @@ export default function LaptopBootSequence({ onComplete }) {
         } else {
             if (onComplete) onComplete(); // callback after boot complete
         }
-    }, [currentIndex]);
+    }, [currentIndex, bootMessages.length]);
 
     return (
         <motion.div
@@ -35,7 +39,7 @@ export default function LaptopBootSequence({ onComplete }) {
         >
             {bootMessages.slice(0, currentIndex).map((msg, i) => (
                 <p key={i}>
-                    <TypeOnChunks text={msg} speed={20} />
+                    <TypeOnChunks text={msg} speed={20} rtl={rtl} />
                 </p>
             ))}
             {currentIndex < bootMessages.length && <p className="blinking-cursor">_</p>}

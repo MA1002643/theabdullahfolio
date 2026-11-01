@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "tüm özgeçmiş"
+  },
+  "identity": {
+    "role": "Yazılım Mühendisi"
+  },
+  "downloadPdf": "PDF'i indir",
+  "sections": {
+    "experience": "Deneyim",
+    "education": "Eğitim",
+    "representation": "Temsil",
+    "skills": "Yetenekler",
+    "projects": "Seçili projeler"
+  },
+  "skillGroups": {
+    "languages": "diller",
+    "frameworks": "framework'ler",
+    "libraries": "kütüphaneler",
+    "tools": "araçlar",
+    "software": "yazılımlar"
+  },
+  "allProjects": "Tüm projeler",
+  "asTimeline": "Aynı geçmiş, zaman çizelgesi olarak"
+}

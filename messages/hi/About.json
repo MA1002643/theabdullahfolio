@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "मेरे बारे में",
+    "subtitle": "मैं कौन हूँ"
+  },
+  "intro": {
+    "heading": "मंत्रमुग्ध करने वाली रचनाओं का शिल्पकार",
+    "paragraph": "वेब डेवलपमेंट की मेरी यात्रा रहस्यमयी औज़ारों और भाषाओं की एक पूरी शृंखला से संचालित है, जिसमें JavaScript मेरे जादुई मंत्रों का मूल आधार है। मैं React.js और Next.js जैसे फ्रेमवर्क को पूरी सटीकता से साधता हूँ और ऐसे सहज पोर्टल (वेबसाइटें) गढ़ता हूँ, जो डिजिटल ब्रह्मांड में फैले लोकों (यूज़र्स) को आपस में जोड़ते हैं। Jamstack की प्राचीन विद्याएँ मुझे तेज़, सुरक्षित और गतिशील अनुभव रचने की शक्ति देती हैं, और मेरा डिज़ाइन-कौशल यह सुनिश्चित करता है कि हर रचना केवल उपयोगी ही नहीं, बल्कि देखने में भी मोहक हो। दिखने वाले जादू से परे, मैं छिपी हुई मशीनरी की भी देखभाल करता हूँ — मज़बूत API और डेटाबेस रचता हूँ (वे तिजोरियाँ जहाँ हर लोक की स्मृति सुरक्षित रहती है) और स्वचालित पाइपलाइनें बुनता हूँ, जो मेरी रचनाओं को कार्यशाला से क्लाउड तक पहुँचाती हैं (वह असीम आकाश-तत्त्व जहाँ वे अंततः जाग उठती हैं)। मैं परफ़ॉर्मेंस और एक्सेसिबिलिटी को पवित्र प्रतिज्ञा मानता हूँ, ताकि हर पोर्टल हर यात्री के लिए, किसी भी डिवाइस पर और लोक के किसी भी दूर-दराज़ कोने में तेज़ी से खुले। जिज्ञासा मेरी सबसे सच्ची दिशासूचक है, जो मुझे हमेशा नए ग्रिमोयर, पैनी सूझ-बूझ और ऐसे साहसी विचारों की ओर खींचती रहती है जो जीवंत, साँस लेते अनुभव बन सकें। मेरे साथ जुड़िए, क्योंकि मैं वेब का भविष्य गढ़ने के लिए नए मंत्रों और तकनीकों की खोज जारी रखे हुए हूँ।"
+  },
+  "projectsCard": {
+    "eyebrow": "पूरे किए गए प्रोजेक्ट",
+    "unit": "{count, plural, one {पूर्ण प्रोजेक्ट} other {पूर्ण प्रोजेक्ट}}",
+    "viewProgress": "प्रगति देखें →",
+    "ariaLabel": "पूरे किए गए प्रोजेक्ट: {count, number, ::group-off} पूर्ण प्रोजेक्ट। {legend}। प्रगति देखें: लाइव प्रोजेक्ट प्रगति खुलती है।",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "श्रेणी के अनुसार पूर्ण प्रोजेक्ट — {summary}।",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, one {प्रोजेक्ट} other {प्रोजेक्ट}}",
+    "srPrefix": "प्रोजेक्ट अपडेट: "
+  },
+  "statsCard": {
+    "title": "{name} के GitHub आँकड़े",
+    "defaultUser": "GitHub यूज़र",
+    "live": "लाइव GitHub मेट्रिक्स",
+    "rank": "रैंक",
+    "updated": "GitHub आँकड़े अपडेट हुए",
+    "srPrefix": "आँकड़ों का अपडेट: ",
+    "metrics": {
+      "stars": "कुल अर्जित स्टार",
+      "commits": "कुल कमिट (पिछले साल)",
+      "prs": "कुल PR",
+      "issues": "कुल इश्यू",
+      "contributedTo": "योगदान दिया (पिछले साल)"
+    }
+  },
+  "languagesCard": {
+    "title": "सबसे ज़्यादा इस्तेमाल की गई भाषाएँ",
+    "count": "{count, number, ::group-off} {count, plural, one {भाषा} other {भाषाएँ}}",
+    "live": "GitHub से लाइव",
+    "primary": "मुख्य",
+    "percent": "<n></n>%",
+    "srPrefix": "भाषाओं का अपडेट: ",
+    "popover": {
+      "eyebrow": "रिपॉज़िटरी का ब्योरा",
+      "ariaLabel": "{language} का उपयोग करने वाली रिपॉज़िटरी",
+      "privateRepos": "{count, number, ::group-off} निजी {count, plural, one {रिपॉज़िटरी} other {रिपॉज़िटरी}}"
+    }
+  },
+  "streakCard": {
+    "title": "योगदान की लगातार शृंखलाएँ",
+    "subtitle": "GitHub गतिविधि",
+    "srPrefix": "शृंखला का अपडेट: ",
+    "total": "कुल योगदान",
+    "current": "मौजूदा शृंखला",
+    "longest": "सबसे लंबी शृंखला",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, one {दिन} other {दिन}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, one {दिन} other {दिन}}, आपकी सबसे लंबी शृंखला का {percent, number, ::group-off} प्रतिशत"
+  },
+  "repoCard": {
+    "badge": "सबसे सक्रिय रिपॉज़िटरी",
+    "srPrefix": "रिपॉज़िटरी अपडेट: ",
+    "metrics": {
+      "stars": "स्टार",
+      "forks": "फ़ोर्क",
+      "mergedPrs": "मर्ज किए गए PR",
+      "commits": "कुल कमिट",
+      "lastPushed": "आख़िरी पुश"
+    },
+    "score": "स्कोर",
+    "activityScore": "गतिविधि स्कोर"
+  },
+  "skillsCard": {
+    "title": "स्किल्स और टेक्नोलॉजी",
+    "categories": {
+      "languages": "भाषाएँ",
+      "frameworks": "फ्रेमवर्क",
+      "libraries": "लाइब्रेरी",
+      "tools": "टूल्स",
+      "software": "सॉफ़्टवेयर"
+    },
+    "count": "<n></n> {count, plural, one {टेक्नोलॉजी} other {टेक्नोलॉजी}}",
+    "live": "GitHub से लाइव",
+    "syncing": "GitHub से सिंक हो रहा है…",
+    "noneDetected": "कोई स्किल नहीं मिली",
+    "noneInRepos": "आपकी रिपॉज़िटरी में कोई स्किल नहीं मिली",
+    "fetching": "GitHub से स्किल्स लाई जा रही हैं…",
+    "srPrefix": "स्किल्स अपडेट: ",
+    "popover": {
+      "eyebrow": "इन रिपॉज़िटरी में उपयोग",
+      "ariaLabel": "{name} का उपयोग करने वाली रिपॉज़िटरी",
+      "label": "रिपॉज़िटरी:",
+      "publicSr": "{count, number, ::group-off} सार्वजनिक",
+      "privateSr": "{count, number, ::group-off} निजी",
+      "publicCount": "<n></n> सार्वजनिक",
+      "privateCount": "<n></n> निजी",
+      "slash": "/",
+      "allPrivate": "सभी रिपॉज़िटरी निजी हैं"
+    }
+  },
+  "progress": {
+    "eyebrow": "डिलीवरी टेलीमेट्री",
+    "title": "प्रोजेक्ट की प्रगति",
+    "close": "प्रोजेक्ट प्रगति बंद करें",
+    "failed": "अभी प्रगति सिंक तक पहुँचा नहीं जा सका।",
+    "retry": "सिंक दोबारा करें",
+    "ringLineOne": "बोर्ड आइटम",
+    "ringLineTwo": "पूर्ण",
+    "percent": "<n></n>%",
+    "itemsDone": "पूर्ण आइटम",
+    "ofTotal": "कुल {total, number, ::group-off} में से",
+    "boardsLive": "लाइव बोर्ड",
+    "allProjects": "{count, plural, one {प्रोजेक्ट} other {प्रोजेक्ट}}",
+    "ofProjects": "कुल {total, number, ::group-off} प्रोजेक्ट में से",
+    "unavailable": "लाइव सिंक अभी उपलब्ध नहीं है — पोर्टफ़ोलियो की संरचना दिखाई जा रही है; अगले सफल रिफ़्रेश के साथ प्रतिशत वापस आ जाएँगे।",
+    "byCategory": "श्रेणी के अनुसार",
+    "projectCount": "{count, number, ::group-off} प्रोजेक्ट",
+    "perProject": "प्रति प्रोजेक्ट",
+    "liveFrom": "GitHub Projects से लाइव",
+    "footer": "GitHub Projects से अपने-आप सिंक · दिन में दो बार",
+    "lastSync": "पिछला सिंक",
+    "awaiting": "पहले सिंक की प्रतीक्षा है",
+    "row": {
+      "tracked": "{percent, number, ::group-off}% पूर्ण, {total, number, ::group-off} में से {done, number, ::group-off} बोर्ड आइटम पूरे",
+      "syncUnavailable": "प्रगति सिंक उपलब्ध नहीं है",
+      "notTracked": "ट्रैक नहीं किया जा रहा",
+      "ariaLabel": "{name}, {category}। {status}। बोर्ड का ब्योरा खोलें/बंद करें।",
+      "syncUnavailableTag": "· सिंक उपलब्ध नहीं",
+      "total": "कुल",
+      "couldNotSync": "इस बोर्ड को अभी सिंक नहीं किया जा सका — लाइव गिनती अगले रिफ़्रेश के साथ वापस आ जाएगी।",
+      "noBoard": "इस प्रोजेक्ट से कोई GitHub प्रोजेक्ट बोर्ड नहीं जुड़ा है।",
+      "viewBoard": "प्रोजेक्ट बोर्ड देखें →"
+    },
+    "age": {
+      "seconds": "{s} सेकंड पहले",
+      "minutes": "{m} मि {s} से पहले",
+      "hours": "{h} घं {m} मि पहले",
+      "days": "{d} दिन {h} घं पहले"
+    },
+    "columns": {
+      "todo": "करने के लिए",
+      "backlog": "बैकलॉग",
+      "ready": "तैयार",
+      "inProgress": "प्रगति में",
+      "inReview": "समीक्षा में",
+      "done": "पूर्ण",
+      "noStatus": "कोई स्थिति नहीं",
+      "blocked": "अवरुद्ध",
+      "onHold": "रुका हुआ"
+    }
+  },
+  "wire": {
+    "present": "वर्तमान",
+    "noCurrent": "कोई वर्तमान स्ट्रीक नहीं",
+    "noneFound": "कोई स्ट्रीक नहीं मिली",
+    "noData": "कोई डेटा नहीं",
+    "notAvailable": "उपलब्ध नहीं",
+    "noDescription": "कोई विवरण नहीं",
+    "unknown": "अज्ञात",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "सबसे सक्रिय रिपॉज़िटरी बदलकर \"{name}\" हो गई",
+      "stars": "स्टार {amount, number, ::group-off} {direction, select, increased {बढ़े} other {घटे}} (अब कुल {total, number, ::group-off})",
+      "forks": "फ़ोर्क {amount, number, ::group-off} {direction, select, increased {बढ़े} other {घटे}} (अब कुल {total, number, ::group-off})",
+      "commits": "{count, number, ::group-off} नए {count, plural, one {कमिट} other {कमिट}} पुश किए गए",
+      "mergedPrs": "{count, number, ::group-off} {count, plural, one {PR} other {PR}} मर्ज हुए",
+      "activityScore": "एक्टिविटी स्कोर {amount, number, ::group-off} {direction, select, increased {बढ़ा} other {घटा}} (अब {total, number, ::group-off})",
+      "language": "मुख्य भाषा बदलकर \"{language}\" हो गई"
+    },
+    "stats": {
+      "stars": "कुल Stars {delta, number, ::sign-always group-off}",
+      "commits": "कुल Commits {delta, number, ::sign-always group-off}",
+      "prs": "कुल PR {delta, number, ::sign-always group-off}",
+      "issues": "कुल Issues {delta, number, ::sign-always group-off}",
+      "contributedTo": "योगदान दिया {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "कुल योगदान {delta, number, ::sign-always group-off}",
+      "currentStreak": "मौजूदा स्ट्रीक {delta, number, ::sign-always group-off}",
+      "longestStreak": "सबसे लंबी स्ट्रीक {delta, number, ::sign-always group-off}",
+      "currentDates": "मौजूदा स्ट्रीक की तारीखें बदलीं",
+      "longestDates": "सबसे लंबी स्ट्रीक की तारीखें बदलीं"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language} शीर्ष भाषाओं में जुड़ गई है।",
+      "addedMany": "{count, number, ::group-off} नई {count, plural, one {भाषा} other {भाषाएँ}} शीर्ष सूची में शामिल हुईं।",
+      "removedOne": "{language} शीर्ष भाषाओं की सूची से बाहर हो गई।",
+      "removedMany": "{count, number, ::group-off} {count, plural, one {भाषा} other {भाषाएँ}} शीर्ष सूची से बाहर हो गईं।",
+      "percentage": "{language} में {delta, number, ::.0 group-off}% की {direction, select, increased {बढ़ोतरी} other {गिरावट}} हुई।",
+      "rank": "{language} {direction, select, up {ऊपर चढ़कर} other {नीचे आकर}} #{rank, number, ::group-off} पर पहुँची।"
+    },
+    "skills": {
+      "added": "जोड़े गए: {items}",
+      "removed": "हटाए गए: {items}",
+      "moved": "स्थानांतरित: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, number, ::group-off} नया पूर्ण {delta, plural, one {प्रोजेक्ट} other {प्रोजेक्ट}} जोड़ा गया — अब {count, number, ::group-off}",
+      "updated": "पूर्ण प्रोजेक्ट अपडेट हुए — अब {count, number, ::group-off}"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "title": "项目",
+  "subtitle": "我的作品",
+  "filters": {
+    "label": "项目类别",
+    "all": "全部",
+    "empty": "“{category}”下暂无项目。",
+    "fallback": "“{category}”下暂无项目，已改为显示全部项目。"
+  },
+  "list": {
+    "empty": "未找到任何项目！"
+  }
+}

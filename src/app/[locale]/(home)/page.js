@@ -1,14 +1,17 @@
 'use client';
 import Image from 'next/image';
-import Link from 'next/link';
-import bg from '../../public/background/home-hero.webp';
-import laptop from '../../public/background/laptop.png';
+import { Link } from '@/i18n/navigation';
+import bg from '../../../../public/background/home-hero.webp';
+import laptop from '../../../../public/background/laptop.png';
 import Navigation from '@/components/navigation';
 import OrbitTip from '@/components/navigation/OrbitTip';
 import LiveMaintenanceHeader from '@/components/home/LiveMaintenanceHeader';
 import HomeSceneWater from '@/components/home/HomeSceneWater';
 import HomeSceneGlow from '@/components/home/HomeSceneGlow';
 import HomeRoleLatent from '@/components/home/HomeRoleLatent';
+import LanguageSelector from '@/components/i18n/LanguageSelector';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatNumber } from '@/i18n/format';
 // Both feed the `sr-only` summary's project count. `@/app/data` is already in
 // this route's bundle (Navigation reads `BtnList` from it), and
 // `@/lib/numberWords` is a bare lookup table — see the comment above that
@@ -278,6 +281,20 @@ export default function Home() {
     };
   }, [measureBase]);
 
+  const t = useTranslations('Home');
+  const tCommon = useTranslations('Common');
+  const locale = useLocale();
+  // The summary's project count (issue #82). English keeps the spelled-out
+  // word the prose has always used ("eleven"), still DERIVED from
+  // projectsData — tests/unit/projectCountDrift.test.js guards both halves.
+  // `countWord` is an English lookup table, so every other locale gets the
+  // number in its own digits instead; a pre-formatted value, because the
+  // catalogue's `{count}` is a plain slot shared by both forms.
+  const projectCount =
+    locale === 'en'
+      ? countWord(projectsData.length).toLowerCase()
+      : formatNumber(projectsData.length, locale);
+
   return (
     // `home-shell` carries almost no styling of its own — it exists so the
     // portrait-phone block in globals.css can swap `min-h-screen` (100vh, which
@@ -421,8 +438,35 @@ export default function Home() {
             Top padding combines the safe-area inset (for notched/dynamic-island
             devices) with the breakpoint baseline so the responsive spacing
             still applies on devices without a safe area. */}
+        {/* The language selector (issue #82) sits BESIDE the header, never
+            above or below it. The hero's ring-fit (measureBase above) and the
+            orbit (navigation/index.jsx) both size themselves from the room
+            left under this row, so a selector that added a line of height
+            would quietly shrink the rings and the orbit on every viewport.
+            Side by side, the row is exactly as tall as the header already is:
+            `items-stretch` pulls the tile to the header's height (its trigger
+            is `h-full`), and the tile's own 2.5rem floor sits under the
+            header's height at every width — including the three-row
+            sub-640px header, which is the TALLEST variant, so the ≤479px
+            layout is unchanged vertically and only gives up the tile's width
+            (the tile shows the two-letter code below `sm`, not the endonym).
+            `min-w-0 flex-1` lets the header keep shrinking its FOCUS field
+            exactly as it did at full width. The 1400px cap moved from the
+            header to the row so header + tile together keep the old
+            footprint. In RTL the row mirrors and the tile lands top-left —
+            still the reading END, which is where the issue places it. */}
         <div className="z-50 w-full px-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] max-[479px]:pt-[calc(env(safe-area-inset-top)+1.75rem)] sm:px-4 sm:pt-[calc(env(safe-area-inset-top)+0.75rem)] md:px-8 md:pt-[calc(env(safe-area-inset-top)+1rem)] lg:px-12">
-          <LiveMaintenanceHeader />
+          <div className="mx-auto flex w-full max-w-[min(100%,1400px)] items-stretch gap-x-[clamp(0.35rem,1vw,0.6rem)]">
+            <div className="min-w-0 flex-1">
+              <LiveMaintenanceHeader />
+            </div>
+            <LanguageSelector
+              source="home"
+              placement="down"
+              variant="tile"
+              className="shrink-0"
+            />
+          </div>
         </div>
 
         {/* HEADLINE */}
@@ -457,8 +501,11 @@ export default function Home() {
             className="home-title text-glow-stroke-neon text-center font-[500] uppercase leading-none text-transparent"
             style={{ color: '#000e1700' }}
           >
-            Muhammad
-            <br /> Abdullah
+            {/* The name in the reader's script (issue #82): transliterated by
+                hand per locale in `Common.owner`, never machine-translated
+                (محمد عبدالله, ムハンマド・アブドゥッラー, Muhammed in Turkish). */}
+            {tCommon('owner.given')}
+            <br /> {tCommon('owner.family')}
           </h1>
 
           {/* The role line, printed on a security plate (issue #11). Still an
@@ -502,8 +549,10 @@ export default function Home() {
               `.hero-role`; what moved is where they are declared, not what
               they are. The plate re-prints off its own ResizeObserver, so a
               height-driven change trips it exactly like a width-driven one. */}
+          {/* One plain text node, as HomeRoleLatent requires (it measures the
+              heading's first child). */}
           <HomeRoleLatent className="font-light uppercase leading-snug">
-            Software Engineer
+            {t('role')}
           </HomeRoleLatent>
         </div>
 
@@ -597,30 +646,29 @@ export default function Home() {
             user can reach. The hrefs stay server-rendered, so the crawlability
             this paragraph exists for is untouched, and hover/touch still warm
             the route on intent. Same call as the project sibling nav. */}
+        {/* One catalogue message (`Home.summary`, issue #82) with the three
+            links as rich-text tags, so a translation can put them wherever its
+            grammar wants them. The English renders byte-identical to the
+            paragraph that used to be written inline here. */}
         <p className="home-intro-summary sr-only">
-          Muhammad Abdullah is a software engineer based in Bolton, Greater
-          Manchester, building fast, considered web applications with Next.js,
-          React, TypeScript and Node.js. This site collects{' '}
-          {countWord(projectsData.length).toLowerCase()} projects — web,
-          systems, mobile and AI — each tracked live from its own GitHub board,
-          alongside the degrees and roles behind them, a timeline of the route
-          from college to production, and the tools the work is actually built
-          with. Every section is reachable from the ring below apart from
-          three: the full record is on the{' '}
-          <Link href="/cv" prefetch={false}>
-            CV page
-          </Link>{' '}
-          and as a PDF, the reasoning behind how this site is built is written
-          up in the{' '}
-          <Link href="/notes" prefetch={false}>
-            engineering notes
-          </Link>
-          , and what this site collects — with the switch that turns the
-          optional part off — is set out on the{' '}
-          <Link href="/privacy" prefetch={false}>
-            privacy page
-          </Link>
-          .
+          {t.rich('summary', {
+            count: projectCount,
+            cv: (chunks) => (
+              <Link href="/cv" prefetch={false}>
+                {chunks}
+              </Link>
+            ),
+            notes: (chunks) => (
+              <Link href="/notes" prefetch={false}>
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link href="/privacy" prefetch={false}>
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
 
         {/* `hero-row` is only a hook for the `div.hero-row` block in

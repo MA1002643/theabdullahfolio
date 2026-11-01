@@ -1,18 +1,24 @@
 "use client";
 import { motion } from "framer-motion";
 
-export default function TypeOnChunks({ text }) {
+// `rtl` reveals from the right edge instead (issue #82): the type-on should
+// start where the line starts. A prop, not useDirection(): this renders inside
+// drei's <Html> root, which has no intl context to read the locale from.
+const inset = (amount, rtl) =>
+    rtl ? `inset(0 0 0 ${amount})` : `inset(0 ${amount} 0 0)`
+
+export default function TypeOnChunks({ text, rtl = false }) {
     return (
         <motion.span
             initial={{
-                clipPath: "inset(0 100% 0 0)", // fully hidden
+                clipPath: inset("100%", rtl), // fully hidden
             }}
             animate={{
                 clipPath: [
-                    "inset(0 100% 0 0)", // hidden
-                    "inset(0 66% 0 0)",  // chunk 1
-                    "inset(0 33% 0 0)",  // chunk 2
-                    "inset(0 0% 0 0)",   // fully revealed
+                    inset("100%", rtl), // hidden
+                    inset("66%", rtl),  // chunk 1
+                    inset("33%", rtl),  // chunk 2
+                    inset("0%", rtl),   // fully revealed
                 ],
             }}
             transition={{

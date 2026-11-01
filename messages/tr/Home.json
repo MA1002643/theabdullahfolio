@@ -1,0 +1,16 @@
+{
+  "role": "Yazılım Mühendisi",
+  "summary": "Muhammad Abdullah, Greater Manchester'ın Bolton şehrinde yaşayan bir yazılım mühendisi; Next.js, React, TypeScript ve Node.js ile hızlı ve özenle tasarlanmış web uygulamaları geliştiriyor. Bu site, web, sistem, mobil ve yapay zekâ alanlarından {count} projeyi bir araya getiriyor; her biri kendi GitHub panosundan canlı olarak takip ediliyor. Bunların yanında projelerin arkasındaki dereceler ve roller, kolejden canlı ortama uzanan yolun zaman çizelgesi ve işlerin gerçekte hangi araçlarla yapıldığı da yer alıyor. Aşağıdaki halkadan üç bölüm dışında her bölüme ulaşabilirsin: tam özgeçmiş <cv>CV sayfasında</cv> ve PDF olarak duruyor, bu sitenin nasıl kurulduğunun gerekçeleri <notes>mühendislik notlarında</notes> anlatılıyor, sitenin neleri topladığı ise isteğe bağlı kısmı kapatan anahtarla birlikte <privacy>gizlilik sayfasında</privacy> açıklanıyor.",
+  "orbitTip": {
+    "hover": {
+      "lead": "İmleci dizüstü bilgisayarın üzerinde beklet, sonra yukarı aşağı hareket ettir ya da kaydır; halka seninle birlikte döner.",
+      "keys": "Halkayı sürükleyebilir ya da odaktaki bir düğmedeyken <key>←</key> <key>→</key> tuşlarına basabilirsin.",
+      "sr": "İpucu: gezinme halkası döndürülebilir. İşaretçiyi dizüstü bilgisayarın üzerinde beklet ve döndürmek için yukarı aşağı hareket ettir ya da kaydır; ayrıca halkayı sürükleyebilir veya bir gezinme düğmesine odaklanmışken sol ve sağ ok tuşlarına basabilirsin."
+    },
+    "touch": {
+      "lead": "Gezinmeyi döndürmek için dizüstü bilgisayarın üzerinde yukarı aşağı kaydır ya da halkayı sürükle.",
+      "sr": "İpucu: gezinme halkası döndürülebilir. Döndürmek için dizüstü bilgisayarın üzerinde yukarı aşağı kaydır ya da halkanın kendisini sürükle."
+    },
+    "dismiss": "Gezinme ipucunu kapat"
+  }
+}

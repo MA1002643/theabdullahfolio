@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "ノート",
+    "subtitle": "決定の記録",
+    "intro": "このサイトの自明ではない判断は、すべて記録しています。選んだ案、退けた代替案、そしてそれぞれの代償です。リポジトリ内の作業用ドキュメントを、ツリーに埋もれさせず、ここで公開しています。",
+    "lines": "{count, plural, other {行}}"
+  },
+  "note": {
+    "title": "ノート",
+    "breadcrumb": "パンくずリスト",
+    "allNotes": "すべてのノート",
+    "source": "ソース: {source} · {count, plural, other {{n} 行}}"
+  }
+}

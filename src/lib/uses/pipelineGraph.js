@@ -11,8 +11,9 @@
 // word), 404 tall. A main rail of four nodes at RAIL_Y, the cron above the
 // last one, and the services in a row below, fed from the runtime node by an
 // orthogonal bus — a trunk drops to BUS_Y, runs along it, and a rounded
-// corner drops into each service (circuit-schematic routing, not five
-// crossing béziers).
+// corner drops into each service (circuit-schematic routing, not seven
+// crossing béziers). The GitHub webhook runs its own lane at HOOK_Y, under
+// the rail and above the bus, from the source straight into the runtime.
 
 export const VB_MIN_W = 1000;
 export const VB_H = 404;
@@ -23,6 +24,7 @@ export const RAIL_Y = 176;
 export const MAIN_H = 78;
 export const CRON_Y = 30;
 export const CRON_H = 58;
+export const HOOK_Y = 240;
 export const BUS_Y = 262;
 export const SERVICE_Y = 318;
 export const SERVICE_H = 66;
@@ -68,6 +70,42 @@ export function scheduleWindow(schedule) {
 
 const cronName = (c) => c.path.replace(/^\/api\//, '');
 
+// The schematic's PROSE, as a swappable dictionary (issue #82). The plate
+// passes the reader's language; the default is the English the schematic has
+// always drawn, so every caller that passes nothing — the unit suite, any
+// script — gets exactly today's labels. Product names (GitHub, Vercel build,
+// Fluid compute, Upstash Redis…), command vocabulary ("git push · main",
+// "next build", "refine-message") and the comet tags stay literal: they name
+// things, they do not describe them.
+export const DEFAULT_LABELS = {
+  kinds: {
+    source: 'SOURCE',
+    ci: 'CI',
+    build: 'BUILD',
+    runtime: 'RUNTIME',
+    schedule: 'SCHEDULE',
+    store: 'STORE',
+    gateway: 'GATEWAY',
+    graphql: 'GRAPHQL',
+    rest: 'REST',
+    mail: 'MAIL',
+    auth: 'AUTH',
+    search: 'SEARCH',
+  },
+  workflows: (n) => `${n} workflows`,
+  apiRoutes: (n) => `${n} API routes`,
+  apiRoutesBare: 'API routes',
+  locales: (n) => `${n} locales`,
+  crons: (n) => (n === 1 ? 'cron' : `${n} crons`),
+  describeSchedule,
+  services: {
+    redis: 'guestbook · location · SEO · dedupe',
+    graphql: 'stats · skills · progress',
+    spotify: 'now playing',
+    mail: 'contact · Abstract verify',
+  },
+};
+
 // Baselines for the three text rows inside a node of height h.
 const textRows = (h) =>
   h === MAIN_H
@@ -99,10 +137,13 @@ export function orthogonalRoute(x0, y0, x1, y1) {
   );
 }
 
-export function buildGraph(facts, measure = null) {
+export function buildGraph(facts, measure = null, labels = DEFAULT_LABELS) {
+  const L = labels;
   const workflows = facts?.pipeline?.workflows ?? null;
   const crons = facts?.pipeline?.crons ?? null;
   const apiRoutes = facts?.instruments?.apiRoutes ?? null;
+  const proxy = facts?.pipeline?.proxy === true;
+  const locales = facts?.pipeline?.locales ?? null;
   const vercelMajor = facts?.node?.vercelMajor ?? null;
   const nextVersion =
     facts?.bom?.groups?.flatMap((g) => g.items).find((i) => i.name === 'next')?.version ?? null;
@@ -111,28 +152,50 @@ export function buildGraph(facts, measure = null) {
     : 'Next';
 
   const mainSpecs = [
-    { id: 'github', kind: 'SOURCE', title: 'GitHub', sub: 'git push · main' },
+    { id: 'github', kind: L.kinds.source, title: 'GitHub', sub: 'git push · main', subLiteral: true },
     {
       id: 'actions',
-      kind: 'CI',
+      kind: L.kinds.ci,
       title: 'GitHub Actions',
+      // `subLiteral`: the line is mostly job and command names, so the plate
+      // marks it translate="no" (the counts in it come from the catalogue).
+      subLiteral: true,
+      // `i18n` is the catalogue audit (issue #82): CI fails on a locale missing
+      // a key or a translation older than its English.
       sub: workflows
-        ? `${workflows.length} workflows · lint · unit · build · e2e`
-        : 'lint · unit · build · e2e',
+        ? `${L.workflows(workflows.length)} · lint · unit · i18n · build · e2e`
+        : 'lint · unit · i18n · build · e2e',
     },
     {
       id: 'build',
-      kind: 'BUILD',
+      kind: L.kinds.build,
       title: 'Vercel build',
+      subLiteral: true,
       // Vercel deploys the newest supported major inside package.json
-      // `engines.node` — never the .nvmrc pin, which is local-dev only.
-      sub: vercelMajor ? `next build · Node ${vercelMajor}.x` : 'next build',
+      // `engines.node` — never the .nvmrc pin, which is local-dev only. The
+      // build prerenders every page once per locale (issue #82).
+      sub: [
+        'next build',
+        locales > 1 ? L.locales(locales) : null,
+        vercelMajor ? `Node ${vercelMajor}.x` : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
     },
     {
       id: 'serve',
-      kind: 'RUNTIME',
+      kind: L.kinds.runtime,
       title: 'Fluid compute',
-      sub: apiRoutes != null ? `${apiRoutes} API routes · ${nextLabel}` : `API routes · ${nextLabel}`,
+      subLiteral: true,
+      // `proxy` is src/proxy.js, the locale router every request passes
+      // through before it reaches a page (issue #82) — a file name, so literal.
+      sub: [
+        proxy ? 'proxy' : null,
+        apiRoutes != null ? L.apiRoutes(apiRoutes) : L.apiRoutesBare,
+        nextLabel,
+      ]
+        .filter(Boolean)
+        .join(' · '),
     },
   ];
 
@@ -140,29 +203,40 @@ export function buildGraph(facts, measure = null) {
     crons && crons.length > 0
       ? {
           id: 'cron',
-          kind: 'SCHEDULE',
-          title: crons.length === 1 ? 'cron' : `${crons.length} crons`,
+          kind: L.kinds.schedule,
+          title: L.crons(crons.length),
+          subLiteral: true,
           sub:
             crons.length === 1
               ? `${cronName(crons[0])} · ${
-                  scheduleWindow(crons[0].schedule) ?? describeSchedule(crons[0].schedule)
+                  scheduleWindow(crons[0].schedule) ?? L.describeSchedule(crons[0].schedule)
                 }`
               : crons.map(cronName).join(' · '),
         }
       : null;
 
-  // Every external system the API routes talk to, left to right. Redis
-  // backs the guestbook (messages, presence, reactions), the live-location
-  // store and the contact form's send dedupe; the AI Gateway serves the
-  // refine endpoint; GitHub's GraphQL API feeds stats, skills, progress and
-  // work status; Spotify the now-playing card; the contact form goes out
-  // over SMTP after an Abstract email-reputation check.
+  // Every external system the API routes talk to, left to right. Auth.js
+  // signs guestbook visitors in through GitHub or Google OAuth; Redis backs
+  // the guestbook (messages, presence, reactions), the live-location store,
+  // the Search Console snapshots and the contact form's send dedupe; the AI
+  // Gateway serves the refine endpoint; GitHub's GraphQL API feeds stats,
+  // skills, progress and work status; Search Console answers /api/seo-report;
+  // Spotify the now-playing card; the contact form goes out over SMTP after an
+  // Abstract email-reputation check. GraphQL and Search Console sit side by
+  // side because the daily cron reaches exactly those two.
+  //
+  // Not drawn, deliberately: the optional OpenAI rewrite inside work-status
+  // (off unless OPENAI_API_KEY is set) and the keyless reverse geocoder the
+  // location ingest calls — a step inside one route, not a system the
+  // runtime is built on.
   const serviceSpecs = [
-    { id: 'redis', kind: 'STORE', title: 'Upstash Redis', sub: 'guestbook · location · dedupe' },
-    { id: 'gateway', kind: 'GATEWAY', title: 'AI Gateway', sub: 'refine-message' },
-    { id: 'graphql', kind: 'GRAPHQL', title: 'GitHub GraphQL', sub: 'stats · skills · progress' },
-    { id: 'spotify', kind: 'REST', title: 'Spotify', sub: 'now playing' },
-    { id: 'mail', kind: 'MAIL', title: 'SMTP', sub: 'contact · Abstract verify' },
+    { id: 'oauth', kind: L.kinds.auth, title: 'Auth.js', sub: 'GitHub · Google', subLiteral: true },
+    { id: 'redis', kind: L.kinds.store, title: 'Upstash Redis', sub: L.services.redis },
+    { id: 'gateway', kind: L.kinds.gateway, title: 'AI Gateway', sub: 'refine-message', subLiteral: true },
+    { id: 'graphql', kind: L.kinds.graphql, title: 'GitHub GraphQL', sub: L.services.graphql },
+    { id: 'gsc', kind: L.kinds.search, title: 'Search Console', sub: 'seo-report', subLiteral: true },
+    { id: 'spotify', kind: L.kinds.rest, title: 'Spotify', sub: L.services.spotify },
+    { id: 'mail', kind: L.kinds.mail, title: 'SMTP', sub: L.services.mail },
   ];
 
   // ── Widths, then the viewBox they need ─────────────────────────────
@@ -183,6 +257,7 @@ export function buildGraph(facts, measure = null) {
     x += mainW[i] + railGap;
     return node;
   });
+  const github = main[0];
   const serve = main[3];
   const fanX = serve.x + serve.w / 2;
 
@@ -236,6 +311,28 @@ export function buildGraph(facts, measure = null) {
           },
         ]
       : []),
+    // The webhook: GitHub calls the runtime directly on every push, PR and
+    // issue event (/api/github-webhook busts the work-status cache), so it
+    // never waits on CI. Down out of the source, along its own lane under the
+    // rail, and up into the runtime's lower-left — clear of the trunk at fanX.
+    (() => {
+      const r = CORNER_R;
+      const x0 = github.x + github.w / 2;
+      const x1 = serve.x + Math.min(28, serve.w / 4);
+      const y1 = mainBottom + HEAD_GAP;
+      return {
+        id: 'e-webhook',
+        from: 'github',
+        to: 'serve',
+        d:
+          `M${x0} ${mainBottom} V${HOOK_Y - r} Q${x0} ${HOOK_Y} ${x0 + r} ${HOOK_Y} ` +
+          `H${x1 - r} Q${x1} ${HOOK_Y} ${x1} ${HOOK_Y - r} V${y1}`,
+        head: { x: x1, y: y1, dir: 'up' },
+        visible: true,
+        dashed: true,
+        drawDelay: 0.3,
+      };
+    })(),
     ...services.map((s) => ({
       id: `e-${s.id}`,
       from: 'serve',
@@ -323,9 +420,10 @@ export function buildGraph(facts, measure = null) {
     mainBottom,
     workflows,
     cron,
-    // What the daily cron actually reaches: work-status and repo-refresh,
-    // both GitHub GraphQL consumers.
-    cronTarget: 'graphql',
+    // What the daily cron actually reaches: work-status and repo-refresh
+    // (GitHub GraphQL consumers) and seo-report (Search Console). All three
+    // run concurrently inside /api/daily-warmup.
+    cronTargets: ['graphql', 'gsc'],
     services,
     fanOrder: fanOrder.map((s) => s.id),
     laneBox,
@@ -357,6 +455,18 @@ export function buildTimeline(graph) {
   // The source lights as it emits — a push leaves GitHub.
   hots.push({ node: 'github', t0: t, dur: 0.5, at: rightMid(byId.github) });
   comets.push({ edge: 'e-github', t0: t, dur: FLOW.hop, dir: 1, tone: 'ember', tag: 'push' });
+  // The same push fires the webhook, which reaches the runtime long before
+  // the deploy does — the two paths run in parallel, not in sequence.
+  const hook = graph.edges.find((e) => e.id === 'e-webhook');
+  if (hook) {
+    comets.push({ edge: 'e-webhook', t0: t + 0.15, dur: FLOW.compile, dir: 1, tone: 'amber', tag: 'webhook' });
+    hots.push({
+      node: 'serve',
+      t0: t + 0.15 + FLOW.compile,
+      dur: 0.4,
+      at: { x: hook.head.x, y: hook.head.y - HEAD_GAP },
+    });
+  }
   t += FLOW.hop;
   hots.push({ node: 'actions', t0: t, dur: 0.6, at: leftMid(byId.actions) });
   const lanes = { t0: t, dur: laneCount ? FLOW.run : 0.6, count: laneCount };
@@ -395,7 +505,8 @@ export function buildTimeline(graph) {
   });
   t += (fan.length - 1) * FLOW.stagger + FLOW.fan + 0.7;
 
-  // The daily cron: down into the runtime, out to GraphQL, and back.
+  // The daily cron: down into the runtime, out to its targets together (the
+  // warm-up runs its steps concurrently), and back.
   if (graph.cron && edgeIds.has('e-cron')) {
     // The schedule fires: the cron lights as its packet leaves.
     hots.push({ node: 'cron', t0: t, dur: 0.5, at: bottomMid(byId.cron) });
@@ -403,13 +514,13 @@ export function buildTimeline(graph) {
     t += 0.7;
     hots.push({ node: 'serve', t0: t, dur: 0.5, at: topMid(byId.serve) });
     t += 0.25;
-    const target = graph.cronTarget;
-    if (target && edgeIds.has(`e-${target}`) && byId[target]) {
-      comets.push({ edge: `e-${target}`, t0: t, dur: FLOW.fan, dir: 1, tone: 'amber' });
+    const targets = (graph.cronTargets || []).filter((id) => edgeIds.has(`e-${id}`) && byId[id]);
+    if (targets.length) {
+      targets.forEach((id) => comets.push({ edge: `e-${id}`, t0: t, dur: FLOW.fan, dir: 1, tone: 'amber' }));
       t += FLOW.fan;
-      hots.push({ node: target, t0: t, dur: 0.5, at: topMid(byId[target]) });
+      targets.forEach((id) => hots.push({ node: id, t0: t, dur: 0.5, at: topMid(byId[id]) }));
       t += 0.3;
-      comets.push({ edge: `e-${target}`, t0: t, dur: FLOW.fan, dir: -1, tone: 'gold' });
+      targets.forEach((id) => comets.push({ edge: `e-${id}`, t0: t, dur: FLOW.fan, dir: -1, tone: 'gold' }));
       t += FLOW.fan;
       hots.push({ node: 'serve', t0: t, dur: 0.4, at: bottomMid(byId.serve) });
     }

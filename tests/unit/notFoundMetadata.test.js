@@ -21,6 +21,24 @@ vi.mock('@/components/not-found/NotFoundClient', () => ({
   default: () => null,
 }));
 
+// Since issue #82 the title and description come from the catalogue through
+// `generateMetadata`. The translator is the REAL English catalogue
+// (messages/en/NotFound.json) behind next-intl's own `createTranslator`, so
+// these cases still pin the exact English a browser tab shows.
+vi.mock('next-intl/server', async () => {
+  const { createTranslator } = await import('next-intl');
+  const { default: messages } = await import('../../messages/en/NotFound.json');
+  return {
+    getTranslations: async (namespace) =>
+      createTranslator({ locale: 'en', messages: { NotFound: messages }, namespace }),
+  };
+});
+
+async function loadMetadata() {
+  const { generateMetadata } = await import('@/app/[locale]/not-found');
+  return generateMetadata();
+}
+
 // Mirrors src/app/layout.js — kept literal so a change to the real
 // template has to be made here too, deliberately.
 const TEMPLATE = '%s · Muhammad Abdullah';
@@ -28,13 +46,13 @@ const compose = (title) => TEMPLATE.replace('%s', title);
 
 describe('404 metadata', () => {
   it('composes to a single, correctly separated title', async () => {
-    const { metadata } = await import('@/app/not-found');
+    const metadata = await loadMetadata();
 
     expect(compose(metadata.title)).toBe('404 — Page Not Found · Muhammad Abdullah');
   });
 
   it('leaves the site name to the template rather than restating it', async () => {
-    const { metadata } = await import('@/app/not-found');
+    const metadata = await loadMetadata();
 
     expect(metadata.title).not.toMatch(/Muhammad Abdullah/);
     // The repository is named theabdullahfolio; the SITE is not. It must
@@ -46,13 +64,13 @@ describe('404 metadata', () => {
   });
 
   it('still describes the page', async () => {
-    const { metadata } = await import('@/app/not-found');
+    const metadata = await loadMetadata();
 
     expect(metadata.description).toBeTruthy();
   });
 
   it("declares no openGraph, twitter or robots key — the root card is inherited whole, and noindex stays Next's to set", async () => {
-    const { metadata } = await import('@/app/not-found');
+    const metadata = await loadMetadata();
 
     // Shallow merge: any object here REPLACES the root layout's, dropping
     // the images array (both the 1200x630 card and the square WhatsApp

@@ -60,7 +60,8 @@ export function newIdempotencyKey() {
 // POST a contact message. Returns a discriminated result instead of toasting so
 // callers (the live form vs. the background queue flush) can react differently:
 //   { ok: true }                     — delivered
-//   { ok: false, errors: [...] }     — server rejected it (validation etc.)
+//   { ok: false, errors: [...], issues? } — server rejected it (validation
+//                                      etc.); `issues` = [{ code, values }]
 //   { ok: false, network: true }     — transient: the request never reached the
 //                                      server (offline / DNS / connection reset),
 //                                      OR the server is mid-send for this key and
@@ -116,6 +117,14 @@ export async function postContactMessage(params, signal) {
     // 4xx stays a hard rejection below (validation etc. fails the same on retry).
     if (res.status >= 500) return { ok: false, network: true };
     const errors = data?.errors ?? (data?.error ? [data.error] : ['Failed to send message']);
+    // `issues` (issue #82): the route's machine code per error, index-aligned
+    // with `errors`, so the form can word each in the visitor's language and
+    // fall back to the English entry. Passed through only when the server
+    // sent them; the fallback sentence above gets its own code.
+    if (Array.isArray(data?.issues)) return { ok: false, errors, issues: data.issues };
+    if (!data?.errors && !data?.error) {
+      return { ok: false, errors, issues: [{ code: 'send_failed' }] };
+    }
     return { ok: false, errors };
   } catch (err) {
     if (err?.name === 'AbortError') {

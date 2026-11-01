@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "אינדקס",
+    "elsewhere": "במקומות אחרים"
+  },
+  "siteNav": "האתר",
+  "identity": {
+    "role": "מהנדס תוכנה",
+    "statement": "בונה חוויות אינטרנט מהירות ומוקפדות מצפון אנגליה."
+  },
+  "availability": "פתוח להצעות תפקיד חדשות",
+  "githubCta": {
+    "label": "צפייה בפרויקט ב-GitHub",
+    "newTab": "(נפתח בלשונית חדשה)",
+    "commits": "{count, plural, one {<num>{formatted}</num> קומיט} other {<num>{formatted}</num> קומיטים}}",
+    "pushed": "עודכן {when}"
+  },
+  "manifest": {
+    "departures": "יציאות",
+    "nowBoarding": "עלייה למטוס",
+    "onTime": "בזמן",
+    "links": {
+      "about": {
+        "label": "אודות",
+        "desc": "מי אני"
+      },
+      "journey": {
+        "label": "המסע",
+        "desc": "הדרך עד כה"
+      },
+      "qualifications": {
+        "label": "הסמכות",
+        "desc": "תעודות והכשרה"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "התיעוד המלא"
+      },
+      "projects": {
+        "label": "פרויקטים",
+        "desc": "עבודות נבחרות"
+      },
+      "uses": {
+        "label": "כלים",
+        "desc": "במה אני בונה"
+      },
+      "notes": {
+        "label": "הערות",
+        "desc": "למה זה בנוי כך"
+      },
+      "contact": {
+        "label": "יצירת קשר",
+        "desc": "לומר שלום"
+      },
+      "guestbook": {
+        "label": "ספר אורחים",
+        "desc": "השאירו חותם"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "פרופיל GitHub (נפתח בלשונית חדשה)",
+    "linkedin": "פרופיל LinkedIn (נפתח בלשונית חדשה)",
+    "resume": "לקריאת ה-CV המלא",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {השעה המקומית ב{town}: {time} {period}} other {השעה המקומית ב{town}: {time}}}",
+    "placeLabel": "מיקום: {town}",
+    "live": "חי"
+  },
+  "sound": {
+    "label": "צליל",
+    "on": "פעיל",
+    "off": "כבוי",
+    "turnOn": "הפעלת צליל הגיטרה בתחתית העמוד",
+    "turnOff": "כיבוי צליל הגיטרה בתחתית העמוד",
+    "hoverLines": "העבירו את העכבר מעל הקווים",
+    "nowPlaying": "מתנגנת כעת גיטרה מרגיעה",
+    "turnOnPrompt": "הפעילו את הצליל לגיטרה מרגיעה"
+  },
+  "privacy": {
+    "policy": "פרטיות",
+    "choices": "אפשרויות פרטיות"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/במקומות-אחרים",
+    "cmd": {
+      "github": "פתח github",
+      "linkedin": "פתח linkedin",
+      "resume": "פתח קורות-חיים"
+    }
+  }
+}

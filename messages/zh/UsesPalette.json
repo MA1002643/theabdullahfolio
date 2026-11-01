@@ -1,0 +1,20 @@
+{
+  "section": "装备",
+  "preferences": "偏好设置",
+  "jumpPlate": "跳转到{ordinal}{label}",
+  "plates": {
+    "machine": "机器",
+    "bench": "工作台",
+    "stack": "技术栈",
+    "pipeline": "流水线",
+    "instruments": "检测仪表",
+    "bom": "物料清单"
+  },
+  "copySettings": "复制我的编辑器设置",
+  "openRepos": "在 GitHub 上查看代码仓库",
+  "toggleMotion": "切换动效",
+  "motionOn": "开",
+  "motionOff": "关",
+  "copied": "编辑器设置已复制",
+  "clipboardUnavailable": "剪贴板不可用——请选中代码框后复制"
+}

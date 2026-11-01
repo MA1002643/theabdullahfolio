@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "NOW PLAYING",
+  "lastPlayed": "LAST PLAYED",
+  "cardLabel": "{state, select, playing {now playing} other {last played}}: {title} by {artist}.",
+  "cardLabelLink": "{state, select, playing {now playing} other {last played}}: {title} by {artist}. Open on Spotify.",
+  "openOnSpotify": "Open on Spotify"
+}

@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "इस क्षेत्र में वर्ष",
+    "unit": "{unit, select, years {{count, plural, other {साल का अनुभव}}} other {{count, plural, other {महीने का अनुभव}}}}",
+    "unavailable": "अनुभव उपलब्ध नहीं",
+    "loadingAria": "अनुभव के वर्ष लोड हो रहे हैं",
+    "viewBreakdown": "ब्रेकडाउन देखें →",
+    "srPrefix": "अनुभव अपडेट: ",
+    "personal": "व्यक्तिगत",
+    "employment": "रोज़गार",
+    "splitUnavailable": "उपलब्ध नहीं",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "अनुभव का सारांश लोड हो रहा है",
+    "degraded": "इस क्षेत्र में वर्ष: अनुभव उपलब्ध नहीं (सारांश का GitHub वाला हिस्सा गायब या अधूरा है)।{split} ब्रेकडाउन देखें: जो जानकारी उपलब्ध है उसका ब्रेकडाउन खुलता है।",
+    "ready": "इस क्षेत्र में वर्ष: {count, number, ::group-off}+ {unit, select, years {साल} other {महीने}} का अनुभव।{split} ब्रेकडाउन देखें: श्रेणी के अनुसार ब्रेकडाउन खुलता है।",
+    "split": "व्यक्तिगत {personal}, रोज़गार {employment}।",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "उपलब्ध नहीं"
+  },
+  "modal": {
+    "eyebrow": "करियर एक नज़र में",
+    "title": "श्रेणी के अनुसार अनुभव",
+    "close": "अनुभव ब्रेकडाउन बंद करें",
+    "personalProjects": "व्यक्तिगत प्रोजेक्ट",
+    "employment": "रोज़गार",
+    "unavailable": "उपलब्ध नहीं",
+    "unitWord": "{unit, select, years {{count, plural, one {साल} other {साल}}} other {{count, plural, one {महीना} other {महीने}}}}",
+    "totalUnavailable": "कुल उपलब्ध नहीं",
+    "totalUnit": "कुल {unit, select, years {वर्ष} other {माह}}",
+    "ownedRepos": "<n></n> स्वामित्व वाली {count, plural, one {रिपॉज़िटरी} other {रिपॉज़िटरी}}",
+    "roles": "<n></n> {count, plural, one {भूमिका} other {भूमिकाएँ}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ वर्ष} other { माह}}",
+    "newestFirst": "सबसे नया पहले",
+    "showFewer": "कम दिखाएँ",
+    "showAll": "सभी {count, number, ::group-off} रिपॉज़िटरी दिखाएँ →",
+    "noRepos": "अभी तक स्वामित्व वाली कोई रिपॉज़िटरी नहीं मिली।",
+    "personalFailed": "व्यक्तिगत प्रोजेक्ट का डेटा अभी लोड नहीं हो सका।",
+    "relativeDuration": "अवधि की तुलना",
+    "noRoles": "अभी तक सॉफ़्टवेयर इंजीनियरिंग की कोई भूमिका नहीं मिली।",
+    "employmentFailed": "रोज़गार का डेटा अभी लोड नहीं हो सका।"
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {साल} other {साल}}} other {{count, plural, one {महीना} other {महीने}}}}",
+  "changes": {
+    "newRole": "रिज़्यूमे से नई भूमिका मिली: {company}",
+    "years": "अनुभव के वर्ष अपडेट हुए: {from} → {to}",
+    "employment": "रोज़गार का अनुभव अपडेट हुआ: +{count, number, ::group-off} {count, plural, one {महीना} other {महीने}}",
+    "newRepo": "नई रिपॉज़िटरी मिली: {name}",
+    "newRepos": "GitHub पर {count, number, ::group-off} नई {count, plural, one {रिपॉज़िटरी मिली} other {रिपॉज़िटरी मिलीं}}",
+    "timeline": "व्यक्तिगत प्रोजेक्ट की टाइमलाइन अपडेट हुई"
+  }
+}

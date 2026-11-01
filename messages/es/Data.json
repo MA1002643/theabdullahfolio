@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "Rediseño cinematográfico de portfolio guiado por el scroll"
+    },
+    "2": {
+      "description": "Plataforma multiinquilino de gestión empresarial"
+    },
+    "3": {
+      "description": "Plataforma de descubrimiento de recetas con IA"
+    },
+    "4": {
+      "description": "Portfolio inmersivo basado en el movimiento"
+    },
+    "5": {
+      "description": "Plataforma multiplataforma de publicación con IA"
+    },
+    "6": {
+      "description": "Plataforma multiplataforma de streaming musical"
+    },
+    "7": {
+      "description": "Plataforma educativa de participación en tiempo real"
+    },
+    "8": {
+      "description": "Plataforma de entrenamiento físico con IA"
+    },
+    "9": {
+      "description": "Navegación y cumplimiento normativo para camiones"
+    },
+    "10": {
+      "description": "Llamadas automáticas de control cada hora"
+    },
+    "11": {
+      "description": "Búsqueda y adaptación de empleo con IA"
+    }
+  },
+  "categories": {
+    "Web": "Web",
+    "System": "Sistemas",
+    "AI": "IA",
+    "Mobile": "Móvil"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "Responsable del equipo de conserjería · Adullam Homes Housing Association",
+      "description": "Responsable a nivel de zona de los servicios de conserjería en ocho centros de alojamiento con apoyo en Bolton: dirigí tres equipos de dos organizaciones, contraté personal para la región, gestioné incidentes y sustituí dos turnos en hojas de cálculo independientes por una herramienta de gestión de turnos en Microsoft Teams que ofrece los turnos libres directamente al personal.",
+      "tags": {
+        "team-leadership": "Liderazgo de equipos",
+        "hiring-manager": "Responsable de contratación",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "Ingeniero de software · Proyectos independientes",
+      "description": "Diseño, desarrollo y lanzamiento de proyectos full-stack de principio a fin: una API REST documentada con Swagger y pruebas con Mocha/Chai, Colophon (publicación con IA: Vue 3, Express, PostgreSQL + pgvector), AfaaqX y un perfil de GitHub que se regenera a diario mediante pipelines programados de Actions.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "Agente de seguridad · Constant Security Services",
+      "description": "Con licencia SIA en instalaciones científicas y universitarias críticas, entre ellas el Observatorio de Jodrell Bank: rondas, CCTV, respuesta ante incidentes e informes de sala de control, mientras buscaba mi siguiente puesto de ingeniería.",
+      "tags": {
+        "sia-licensed": "Licencia SIA",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "Ingeniero DevOps · C365Cloud",
+      "description": "Mantuve en marcha las entregas de una plataforma de cumplimiento normativo: pipelines de CI/CD, administración de Microsoft SQL Server y MySQL, y funcionalidades de plataforma en .NET (Blazor) para equipos internos en Wakefield.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "Conserje · Adullam Homes Housing Association",
+      "description": "Punto de contacto fuera del horario laboral en alojamiento con apoyo: escalado de casos de protección, gestión de incidentes y registro electrónico preciso para residentes vulnerables.",
+      "tags": {
+        "safeguarding": "Protección de personas vulnerables"
+      }
+    },
+    "j-showsec": {
+      "title": "Agente de seguridad / Operador de CCTV · Showsec",
+      "description": "Monitorización por CCTV, control de multitudes y respuesta ante incidentes en eventos de gran relevancia, con coordinación en tiempo real con equipos de seguridad y fuerzas del orden.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "Respuesta ante incidentes"
+      }
+    },
+    "j-lidl": {
+      "title": "Dependiente · Lidl GB",
+      "description": "Tienda de alto volumen durante toda la carrera: caja, entregas y stock. Formé parte del equipo que subió la tienda del puesto 14 al 10 en el ranking de ventas y aumentó un 18 % la satisfacción de los clientes en cuatro meses.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "3 años y 8 meses compaginado con los estudios"
+      }
+    },
+    "j-unisys": {
+      "title": "Ingeniero de software · Unisys",
+      "description": "Prácticas industriales de 16 meses en Manchester: desarrollé funcionalidades full-stack en C# / .NET (Blazor) que mejoraron la eficiencia del sistema en torno a un 20 %, reduje un 30 % las incidencias en producción al encargarme del triaje de soporte y pasé a liderar un equipo de proyecto que entregó a tiempo y logró nuevos contratos con el cliente.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "Embajador estudiantil · MMU",
+      "description": "Representé a la universidad en jornadas de puertas abiertas, visitas y eventos de captación por todo Greater Manchester.",
+      "tags": {
+        "community": "Comunidad"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "Técnico de soporte informático · MMU",
+      "description": "Soporte de primer nivel para personal y estudiantes: problemas de hardware, software y acceso, haciendo de puente entre TI y los departamentos colaboradores. Varios departamentos me felicitaron durante la primera semana.",
+      "tags": {
+        "first-line-support": "Soporte de primer nivel"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "Desarrollador de software · MMU",
+      "description": "Funcionalidad de front-end y back-end en un equipo universitario multidisciplinar: resolví más de 50 errores, mejoré un 25 % la velocidad de carga y reduje un 15 % el tiempo de desarrollo al traducir los requisitos de las partes interesadas en funcionalidades operativas.",
+      "tags": {
+        "full-stack": "Full-stack",
+        "50-bugs-resolved": "Más de 50 errores resueltos"
+      }
+    },
+    "j-course-rep": {
+      "title": "Representante de curso · MMU",
+      "description": "Voz elegida de la promoción: negoció el calendario de evaluaciones en torno a las festividades religiosas y amplió las sesiones con ponentes invitados del departamento.",
+      "tags": {
+        "learner-voice-award": "Premio Learner Voice",
+        "volunteering-award": "Premio al Voluntariado"
+      }
+    },
+    "j-bsc": {
+      "title": "BSc (Hons) en Ingeniería de Software · MMU",
+      "description": "Manchester Metropolitan University — acreditado por la BCS, con matrícula de honor de primera clase prevista. El primer chapuzón en lo más hondo, en formato académico.",
+      "tags": {
+        "bcs-accredited": "Acreditado por la BCS",
+        "first-class-predicted": "First-Class (prevista)"
+      }
+    },
+    "j-kfc": {
+      "title": "Miembro del equipo · KFC",
+      "description": "Todas las estaciones, de la cocina al mostrador — nombrado Mejor Empleado seis meses consecutivos, en el equipo que subió el puesto regional del local del 5.º al 2.º.",
+      "tags": {
+        "best-employee-6": "Mejor Empleado ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC Level 3 Extended Diploma en TI",
+      "description": "Bolton College — Triple Distinction (DDD). Dos años que convirtieron la curiosidad en disciplina.",
+      "tags": {
+        "triple-distinction": "Triple Distinction"
+      }
+    },
+    "j-ocnlr": {
+      "title": "Certificado OCNLR en Competencias Digitales",
+      "description": "Bolton College — el primer paso formal en la informática y la puerta de entrada a todo lo demás.",
+      "tags": {
+        "digital-skills": "Competencias digitales"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "Equipo",
+        "value": "MacBook Pro de 13 pulgadas · Apple M1 · 16 GB de memoria unificada"
+      },
+      "display": {
+        "label": "Pantalla",
+        "value": "Retina de 2560 × 1600 · 1440 × 900 lógicos",
+        "note": "El viewport de unidad de escala fluida: cada subpágina se diseña a escala 1 exactamente con este ancho y luego respira a partir de un único factor."
+      },
+      "os": {
+        "label": "SO",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "Teléfono",
+        "value": "iPhone, con OwnTracks en modo HTTP",
+        "note": "Envía una posición a /api/location; la localidad y la hora local del pie de página provienen de este dispositivo.",
+        "hrefLabel": "ver la localidad que alimenta"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "Editor",
+        "detail": "Tema Dracula · vscode-icons · Prettier al guardar"
+      },
+      "agentic-pair": {
+        "role": "Pareja agéntica",
+        "detail": "Extensión de VS Code + CLI: skills, subagentes y servidores MCP (Chrome DevTools, Playwright) controlan el navegador durante la verificación"
+      },
+      "terminal-and-shell": {
+        "role": "Terminal y shell",
+        "detail": "Node fijado con .nvmrc mediante nvm · Homebrew para todo lo demás"
+      },
+      "formatting-and-lint": {
+        "role": "Formato y lint",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "Tipografía",
+        "detail": "next/font/google — alojadas en local durante la compilación, para que las fuentes nunca desplacen el diseño"
+      },
+      "browser-tooling": {
+        "role": "Herramientas del navegador",
+        "detail": "Las sondas de píxeles, la emulación de movimiento reducido y la barrera e2e se ejecutan sobre Chromium real"
+      }
+    }
+  }
+}

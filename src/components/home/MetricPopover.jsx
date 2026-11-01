@@ -14,7 +14,8 @@ import HoverHint from './HoverHint';
 import { useStaggeredScrollReveal } from '@/hooks/useStaggeredScrollReveal';
 import { animateToTarget } from '@/utils/animationCurves';
 import { useNow } from './useNow';
-import { formatAge } from '@/utils/formatAge';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatAgeFor, localDigits, localNumber } from './localeFormat';
 import { claimEscape } from '@/lib/escapeKey';
 
 // Per-metric breakdown popover for the maintenance header (issue #94).
@@ -110,13 +111,17 @@ const focusablesIn = (panel) =>
 // the panel being positioned so the count never burns off-screen. The
 // visible digits are aria-hidden; the sr-only summary carries the final
 // value for assistive tech.
+//
+// Digits are written in the locale's own digit set (issue #82) — identity
+// for English and for every Latin-digit locale.
 function MetricCount({ count, play, prefersReducedMotion }) {
+  const locale = useLocale();
   const ref = useRef(null);
   useEffect(() => {
     const node = ref.current;
     if (!node) return undefined;
     if (prefersReducedMotion || !play) {
-      node.textContent = `${count}`;
+      node.textContent = localDigits(count, locale);
       return undefined;
     }
     return animateToTarget({
@@ -124,11 +129,13 @@ function MetricCount({ count, play, prefersReducedMotion }) {
       to: count,
       duration: 2000,
       onUpdate: (v) => {
-        node.textContent = `${Math.round(v)}`;
+        node.textContent = localDigits(Math.round(v), locale);
       },
     });
-  }, [count, play, prefersReducedMotion]);
-  return <span ref={ref}>{prefersReducedMotion ? count : 0}</span>;
+  }, [count, play, prefersReducedMotion, locale]);
+  return (
+    <span ref={ref}>{localDigits(prefersReducedMotion ? count : 0, locale)}</span>
+  );
 }
 
 // `panel` swaps the metric-breakdown content for arbitrary panel JSX
@@ -157,6 +164,8 @@ export default function MetricPopover({
   underline = true,
   children,
 }) {
+  const t = useTranslations('LiveHeader');
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [pos, setPos] = useState(null);
@@ -441,7 +450,11 @@ export default function MetricPopover({
 
   const summary =
     (count ?? 0) > 0
-      ? `${metricLabel} · ${count} across ${projectCount} ${projectCount === 1 ? 'project' : 'projects'}`
+      ? t('popover.summary', {
+          metric: metricLabel,
+          count: localNumber(count, locale),
+          projects: projectCount,
+        })
       : emptyLabel;
 
   const panelV = reduceMotion ? noMotionVariants : panelVariants;
@@ -454,7 +467,11 @@ export default function MetricPopover({
       key="panel"
       id={id}
       role="dialog"
-      aria-label={panelContent ? metricLabel : `${metricLabel} breakdown`}
+      aria-label={
+        panelContent
+          ? metricLabel
+          : t('popover.breakdown', { metric: metricLabel })
+      }
       variants={panelV}
       initial="hidden"
       animate={ready ? 'visible' : 'hidden'}
@@ -462,7 +479,7 @@ export default function MetricPopover({
       onMouseEnter={handlePanelEnter}
       onMouseLeave={handlePanelLeave}
       onKeyDown={handlePanelKeyDown}
-      className={`custom-bg-abt fixed z-[60] flex max-h-[min(60vh,22rem)] ${widthClass} flex-col rounded-xl text-left text-[0.78rem] leading-snug`}
+      className={`custom-bg-abt fixed z-[60] flex max-h-[min(60vh,22rem)] ${widthClass} flex-col rounded-xl text-start text-[0.78rem] leading-snug`}
       style={{
         filter: 'drop-shadow(0 16px 40px rgba(0, 0, 0, 0.55))',
         ...(pos
@@ -488,7 +505,7 @@ export default function MetricPopover({
               the visible count-up digits below are aria-hidden. */}
               <p aria-live="polite" className="sr-only">
                 {summary}
-                {stale ? ' Showing last known activity.' : ''}
+                {stale ? ` ${t('popover.stale')}` : ''}
               </p>
 
               {/* Header block slides up as one unit. */}
@@ -505,13 +522,18 @@ export default function MetricPopover({
                     className="mb-1 text-sm font-semibold sm:text-base"
                     style={{ color: '#ff6d05', textShadow: 'none' }}
                   >
-                    <MetricCount
-                      count={count}
-                      play={ready}
-                      prefersReducedMotion={reduceMotion}
-                    />{' '}
-                    across {projectCount}{' '}
-                    {projectCount === 1 ? 'project' : 'projects'}
+                    {/* One message, the animated count dropped in at its
+                        `<count>` slot — word order is the catalogue's. */}
+                    {t.rich('popover.heading', {
+                      projects: projectCount,
+                      count: () => (
+                        <MetricCount
+                          count={count}
+                          play={ready}
+                          prefersReducedMotion={reduceMotion}
+                        />
+                      ),
+                    })}
                   </h3>
                 ) : (
                   <p
@@ -526,7 +548,7 @@ export default function MetricPopover({
                     className="mb-1 text-[11px]"
                     style={{ color: 'rgba(255, 170, 42, 0.6)' }}
                   >
-                    Showing last known activity.
+                    {t('popover.stale')}
                   </p>
                 )}
                 <div aria-hidden="true" className="elite-divider mb-3 h-px" />
@@ -535,13 +557,13 @@ export default function MetricPopover({
               {/* Item list — its own scroll container AND the reveal observer's
               root: rows slide in from the left, staggered, and replay on
               every scroll re-entry. `overflow-x-hidden` clips the -16px
-              slide so it can't flash a horizontal scrollbar. `pr-3` +
-              thin scrollbar keep the right-aligned ages clear of the
+              slide so it can't flash a horizontal scrollbar. `pe-3` +
+              thin scrollbar keep the end-aligned ages clear of the
               thumb — overlay scrollbars (macOS) paint ON TOP of content,
               so the text needs real clearance, not a reserved gutter. */}
               <ul
                 ref={listScrollRef}
-                className="min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pr-3 [scrollbar-width:thin]"
+                className="min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pe-3 [scrollbar-width:thin]"
               >
                 {groups.map((group, groupIndex) => {
                   const isExpanded = expandedRepo === group.repo;
@@ -571,13 +593,17 @@ export default function MetricPopover({
                         aria-expanded={isExpanded}
                         aria-controls={sectionId}
                         onClick={() => toggleGroup(group.repo)}
-                        className="mt-1 flex w-full items-center gap-1.5 rounded-sm py-0.5 text-left text-[10px] uppercase tracking-[0.18em] first:mt-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
+                        className="mt-1 flex w-full items-center gap-1.5 rounded-sm py-0.5 text-start text-[10px] uppercase tracking-[0.18em] first:mt-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
                         style={{ color: 'rgba(255, 170, 42, 0.75)' }}
                       >
                         <svg
                           aria-hidden="true"
                           viewBox="0 0 8 8"
-                          className={`h-2 w-2 shrink-0 ${reduceMotion ? '' : 'transition-transform duration-200'} ${isExpanded ? 'rotate-90' : ''}`}
+                          // Disclosure chevron: points at the reading end
+                          // when collapsed (rotated half a turn in RTL), down
+                          // when open — in RTL it turns 180°→90°, the mirror
+                          // of LTR's 0°→90° (issue #82).
+                          className={`h-2 w-2 shrink-0 ${reduceMotion ? '' : 'transition-transform duration-200'} ${isExpanded ? 'rotate-90' : 'rtl:rotate-180'}`}
                         >
                           <path
                             d="M2.5 1l3 3-3 3"
@@ -589,7 +615,7 @@ export default function MetricPopover({
                           />
                         </svg>
                         <span className="min-w-0 flex-1 truncate">
-                          {group.repo}
+                          <bdi>{group.repo}</bdi>
                         </span>
                         {/* Per-project total counts up 0 → N alongside the
                         headline (same shared elite count-up, gated on the
@@ -607,7 +633,9 @@ export default function MetricPopover({
                               prefersReducedMotion={reduceMotion}
                             />
                           </span>
-                          <span className="sr-only">{groupTotal}</span>
+                          <span className="sr-only">
+                            {localNumber(groupTotal, locale)}
+                          </span>
                         </span>
                       </button>
                       <AnimatePresence initial={false}>
@@ -648,7 +676,7 @@ export default function MetricPopover({
                                   its z-[70] floats over this z-[60] panel,
                                   and the list's own scroll dismisses it. */}
                                   <HoverHint
-                                    label="Open on GitHub ↗"
+                                    label={t('popover.openOnGitHub')}
                                     content={item.title}
                                     reduceMotion={reduceMotion}
                                   >
@@ -667,6 +695,8 @@ export default function MetricPopover({
                                         }}
                                       />
                                       <span
+                                        // "#82" / a short SHA, never "82#".
+                                        dir="ltr"
                                         className="shrink-0 font-mono text-[0.7rem] font-semibold"
                                         style={{
                                           color: '#ff6d05',
@@ -692,10 +722,12 @@ export default function MetricPopover({
                                         )}
                                       </span>
                                       <span className="text-fire-amber min-w-0 flex-1 truncate underline-offset-2 transition-colors hover:underline">
-                                        {item.title}
+                                        {/* GitHub's own text — untranslated,
+                                            isolated for RTL. */}
+                                        <bdi>{item.title}</bdi>
                                       </span>
                                       <span className="shrink-0 whitespace-nowrap text-[0.7rem] tabular-nums text-[#f9d174]/90">
-                                        {formatAge(item.createdAt, now)}
+                                        {formatAgeFor(item.createdAt, now, locale)}
                                       </span>
                                     </a>
                                   </HoverHint>
@@ -710,7 +742,9 @@ export default function MetricPopover({
                                     className="inline-block rounded-sm underline-offset-2 transition-colors hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#ff6d05]"
                                     style={{ color: 'rgba(255, 170, 42, 0.6)' }}
                                   >
-                                    + {groupOverflow} more on GitHub
+                                    {t('popover.more', {
+                                      count: localNumber(groupOverflow, locale),
+                                    })}
                                   </a>
                                 </li>
                               )}
@@ -727,7 +761,9 @@ export default function MetricPopover({
                     className="pt-0.5 text-[11px]"
                     style={{ color: 'rgba(255, 170, 42, 0.6)' }}
                   >
-                    + {unattributedOverflow} more on GitHub
+                    {t('popover.more', {
+                      count: localNumber(unattributedOverflow, locale),
+                    })}
                   </li>
                 )}
               </ul>

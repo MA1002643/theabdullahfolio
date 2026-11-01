@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "HÀNH TRÌNH CỦA TÔI",
+    "subtitle": "từ dòng code đầu tiên đến production"
+  },
+  "timeline": {
+    "label": "Dòng thời gian hành trình"
+  },
+  "endCap": {
+    "est": "TỪ {year} · BOLTON, UK",
+    "tally": "{years, plural, other {# NĂM}} · {entries, plural, other {# MỤC}} · {tracks, plural, other {# MẢNG}}",
+    "paper": "BẢN GIẤY →",
+    "paperHint": "CV dạng PDF (mở trong tab mới)"
+  },
+  "spine": {
+    "now": "NAY"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# tháng}}} other {# năm{months, plural, =0 {} other { # tháng}}}}",
+    "tenureOngoing": "{tenure} đến nay",
+    "view": "XEM",
+    "viewLabel": "Xem {title} (mở trong tab mới)"
+  },
+  "eraRail": {
+    "label": "Các giai đoạn trên dòng thời gian",
+    "jump": "Chuyển đến {year}"
+  },
+  "atlas": {
+    "eyebrow": "Chế độ xem chồng lấn",
+    "title": "Atlas — ba mảng, một chiếc đồng hồ",
+    "live": {
+      "career": "{count, plural, other {# vai trò}}",
+      "education": "{count, plural, other {# bằng cấp}}",
+      "milestone": "{count, plural, other {# bài đăng cộng đồng}}",
+      "separator": " + ",
+      "sentence": "Đang diễn ra hôm nay: {parts}{total, plural, =1 {.} other { — song song.}}"
+    },
+    "tracks": {
+      "all": "Tất cả",
+      "career": "Sự nghiệp",
+      "education": "Học vấn",
+      "milestone": "Cộng đồng"
+    },
+    "chipsLabel": "Làm nổi bật một mảng",
+    "zoom": {
+      "group": "Thu phóng lưới",
+      "out": "Thu nhỏ lưới",
+      "outTitle": "Thu nhỏ",
+      "in": "Phóng to lưới",
+      "inTitle": "Phóng to",
+      "readoutLabel": "Thu phóng lưới {pct}. Đặt lại về {full}",
+      "readoutTitle": "Thu phóng lưới",
+      "resetTitle": "Đặt lại thu phóng về {full}",
+      "status": "Thu phóng lưới {pct}"
+    },
+    "region": "Atlas chồng lấn: mọi vai trò và khóa học dưới dạng các thanh song song trên một trục thời gian",
+    "entries": "{count, plural, other {# mục}}",
+    "now": "Nay",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Chuyển đến {org} · {role}, {dates}",
+    "spokenRange": "{start} đến {end}",
+    "spokenOpen": "{start} đến nay",
+    "key": {
+      "select": "Chọn một thanh bất kỳ để chuyển đến.",
+      "dashed": "Viền nét đứt = vẫn đang diễn ra.",
+      "stacked": "Thanh xếp chồng = diễn ra đồng thời."
+    }
+  },
+  "palette": {
+    "section": "Hành trình",
+    "jumpYear": "Chuyển đến {year}",
+    "eraHint": "giai đoạn",
+    "jumpAtlas": "Chuyển đến atlas chồng lấn",
+    "openCv": "Mở CV (PDF)",
+    "openCvHint": "bản giấy"
+  }
+}

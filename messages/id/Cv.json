@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "rekam jejak lengkap"
+  },
+  "identity": {
+    "role": "Software Engineer"
+  },
+  "downloadPdf": "Unduh PDF",
+  "sections": {
+    "experience": "Pengalaman",
+    "education": "Pendidikan",
+    "representation": "Representasi",
+    "skills": "Keahlian",
+    "projects": "Proyek pilihan"
+  },
+  "skillGroups": {
+    "languages": "bahasa",
+    "frameworks": "framework",
+    "libraries": "pustaka",
+    "tools": "alat",
+    "software": "perangkat lunak"
+  },
+  "allProjects": "Semua proyek",
+  "asTimeline": "Riwayat yang sama dalam bentuk linimasa"
+}

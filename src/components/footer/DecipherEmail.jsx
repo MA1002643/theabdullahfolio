@@ -28,6 +28,7 @@
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useFooterReveal } from './useFooterReveal';
+import { glyphUnits } from '@/components/ui/textSegments';
 
 // A non-breaking space keeps its width when a plain space would collapse inside
 // an inline-block char box (matches HoverText).
@@ -133,14 +134,23 @@ export default function DecipherEmail({ text, active }) {
     };
   }, [revealed, reduced]);
 
-  const chars = String(text).split('');
+  // Script-aware split (issue #82), the same as HoverText's. The address is
+  // ASCII today, so this is graphemes and byte-identical to `split('')`; it
+  // keeps the decode from shredding a joined script if one is ever passed.
+  const chars = glyphUnits(text);
 
   return (
     <>
+      {/* dir="ltr": an address is left to right in every language. Its
+          per-character inline-blocks are bidi-neutral, so in a right-to-left
+          footer they were laid out right to left and the address printed
+          backwards ("moc.liamg@…"). */}
       <span
         ref={ref}
         className="hover-text hover-text--decipher"
         aria-hidden="true"
+        dir="ltr"
+        translate="no"
       >
         {chars.map((char, i) => {
           const display = char === ' ' ? NBSP : char;
@@ -159,7 +169,10 @@ export default function DecipherEmail({ text, active }) {
           );
         })}
       </span>
-      <span className="sr-only">{text}</span>
+      {/* An address, not prose: never translated (translate="no"). */}
+      <span className="sr-only" translate="no">
+        {text}
+      </span>
     </>
   );
 }

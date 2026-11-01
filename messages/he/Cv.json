@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "התיעוד המלא"
+  },
+  "identity": {
+    "role": "מהנדס תוכנה"
+  },
+  "downloadPdf": "הורדת ה-PDF",
+  "sections": {
+    "experience": "ניסיון",
+    "education": "השכלה",
+    "representation": "ייצוג",
+    "skills": "כישורים",
+    "projects": "פרויקטים נבחרים"
+  },
+  "skillGroups": {
+    "languages": "שפות",
+    "frameworks": "פריימוורקים",
+    "libraries": "ספריות",
+    "tools": "כלים",
+    "software": "תוכנות"
+  },
+  "allProjects": "כל הפרויקטים",
+  "asTimeline": "אותה היסטוריה, כציר זמן"
+}

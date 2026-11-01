@@ -1,0 +1,13 @@
+{
+  "title": "PROJETS",
+  "subtitle": "MES RÉALISATIONS",
+  "filters": {
+    "label": "Catégories de projets",
+    "all": "Tous",
+    "empty": "Aucun projet dans « {category} » pour le moment.",
+    "fallback": "Aucun projet dans « {category} » pour le moment. Affichage de tous les projets à la place."
+  },
+  "list": {
+    "empty": "Aucun projet trouvé !"
+  }
+}

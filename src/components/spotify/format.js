@@ -1,6 +1,9 @@
 // Pure, dependency-free display helpers for the Now Playing widget (issue #42).
 // No React, no server imports — safe to use anywhere on the client.
 
+import { DEFAULT_LOCALE } from '@/i18n/locales';
+import { formatRelativeMs } from '@/i18n/format';
+
 // Milliseconds → "m:ss" (or "h:mm:ss" for the rare long track). Clamps negatives
 // to 0 so an over-run interpolation never prints "-0:01".
 export function formatTime(ms) {
@@ -16,11 +19,19 @@ export function formatTime(ms) {
 
 // "3 minutes ago" style relative label for a last-played timestamp. Coarse by
 // design — the widget only needs a human sense of recency, not precision.
-export function formatPlayedAgo(iso) {
+//
+// `locale` (issue #82): English keeps this compact hand-set form ("3 mins
+// ago", "1 hr ago") byte for byte; any other locale gets the platform's own
+// short relative time via `Intl.RelativeTimeFormat` — its grammar, plurals and
+// digits — with anything under a minute reading as that language's "now".
+export function formatPlayedAgo(iso, locale) {
   if (!iso) return null;
   const then = Date.parse(iso);
   if (Number.isNaN(then)) return null;
   const secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (locale && locale !== DEFAULT_LOCALE) {
+    return formatRelativeMs(secs < 60 ? 0 : secs * 1000, locale, { style: 'short' });
+  }
   if (secs < 60) return 'just now';
   const mins = Math.round(secs / 60);
   if (mins < 60) return `${mins} min${mins === 1 ? '' : 's'} ago`;

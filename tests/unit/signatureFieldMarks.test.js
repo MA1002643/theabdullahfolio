@@ -7,6 +7,11 @@ import {
   PRESET_MARKS,
   isValidSignaturePath,
 } from '@/lib/guestbook/signature';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The signature field's keyboard path. A canvas is not focusable and has no
 // keyboard model, so with drawing as the only input a keyboard-only visitor
@@ -95,7 +100,7 @@ afterEach(() => {
 
 function renderField(props = {}) {
   const onSignatureChange = vi.fn();
-  const view = render(
+  const view = renderIntl(
     createElement(SignatureField, { onSignatureChange, resetSignal: 0, ...props }),
   );
   return { onSignatureChange, ...view };

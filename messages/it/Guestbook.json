@@ -1,0 +1,124 @@
+{
+  "title": "LIBRO DEGLI OSPITI",
+  "subtitle": "LASCIA IL TUO SEGNO",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> segno rimasto} other {<n>{shown}</n> segni rimasti}}",
+    "commands": "{shortcut} · comandi",
+    "loading": "Caricamento del libro degli ospiti…",
+    "loadingMore": "Caricamento di altri messaggi…",
+    "loadFailed": "Impossibile caricare il libro degli ospiti",
+    "pageFailed": "Impossibile caricare questa pagina",
+    "retry": "Riprova",
+    "emptyTitle": "Ancora nessun messaggio",
+    "emptyInvite": "Sii il primo a lasciare il tuo segno"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> qui ora}}",
+  "announce": {
+    "one": "Nuovo messaggio da {name}: {message}",
+    "many": "{count, plural, one {# nuovo messaggio.} other {# nuovi messaggi.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Qualcuno"
+  },
+  "card": {
+    "sending": "invio…",
+    "guest": "Ospite",
+    "onGitHub": "{username} su GitHub (si apre in una nuova scheda)",
+    "copyLink": "Copia il link a questo messaggio",
+    "linkCopied": "Link copiato: punta dritto a questo segno",
+    "linkFailed": "Impossibile copiare il link",
+    "deleteOwn": "Elimina il tuo messaggio",
+    "deleteOther": "Elimina il messaggio di {name}",
+    "signature": "Firma di {name}",
+    "signatureAnon": "Firma"
+  },
+  "reactions": {
+    "fire": "Fuoco",
+    "rocket": "Razzo",
+    "heart": "Cuore",
+    "count": "{label} — {count}",
+    "signInToReact": "Accedi per reagire"
+  },
+  "composer": {
+    "label": "Il tuo messaggio",
+    "placeholder": "Lascia un messaggio…",
+    "send": "Invia messaggio",
+    "offline": "Sei offline: il tuo messaggio resta qui finché non torni online.",
+    "notSent": "Il tuo messaggio precedente non è stato inviato",
+    "restore": "Ripristinalo"
+  },
+  "signature": {
+    "add": "Aggiungi una firma (facoltativa)",
+    "discard": "Scarta la firma",
+    "clear": "Cancella",
+    "padLabel": "Area di disegno della firma: disegna con il mouse, il dito o la penna, oppure scegli un segno predefinito qui sotto.",
+    "padHint": "Disegna con il dito, il trackpad o il mouse: lo spessore del tratto segue la tua velocità",
+    "pickMark": "Scegli un segno",
+    "orPickMark": "Oppure scegli un segno",
+    "marks": {
+      "flourish": "Svolazzo",
+      "wave": "Onda",
+      "spark": "Scintilla",
+      "orbit": "Orbita"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Lascia un messaggio…",
+    "ghostRefine": "Migliora con l’IA",
+    "ghostSignature": "Aggiungi una firma (facoltativa)",
+    "ghostDrafts": "Le bozze si salvano da sole mentre scrivi",
+    "prompt": "Accedi per lasciare un messaggio",
+    "promptReauth": "Accedi di nuovo per lasciare un messaggio",
+    "reauthExplain": "Il tuo accesso attuale è precedente alle chiavi account della bacheca: può leggere ma non scrivere. Basta un nuovo accesso per risolvere.",
+    "github": "ACCEDI CON GITHUB",
+    "google": "ACCEDI CON GOOGLE"
+  },
+  "pagination": {
+    "nav": "Pagine del libro degli ospiti",
+    "previous": "Pagina precedente",
+    "next": "Pagina successiva",
+    "page": "PAGINA ",
+    "status": "Pagina {page} di {total}"
+  },
+  "palette": {
+    "leaveMessage": "Lascia un messaggio",
+    "leaveKeywords": "scrivere firmare pubblicare comporre messaggio",
+    "sectionGuestbook": "Guestbook",
+    "sectionPreferences": "Preferenze",
+    "signInToLeave": "Accedi per lasciare un messaggio",
+    "toggleSound": "Attiva/disattiva i suoni dell'interfaccia",
+    "soundKeywords": "audio suono bip muto silenzioso",
+    "toggleMotion": "Attiva/disattiva il movimento",
+    "motionKeywords": "animazione animazioni ridurre fermo movimento",
+    "on": "attivo",
+    "off": "disattivo"
+  },
+  "toast": {
+    "posted": "Messaggio pubblicato!",
+    "postFailed": "Impossibile pubblicare il messaggio",
+    "reactFailed": "Impossibile reagire",
+    "deleteFailed": "Impossibile eliminare il messaggio",
+    "removedOwn": "Il tuo messaggio è stato rimosso dal guestbook",
+    "removedOther": "Messaggio rimosso dal guestbook",
+    "you": "Tu"
+  },
+  "errors": {
+    "unauthorized": "Non autorizzato",
+    "too_large": "Il corpo della richiesta deve essere di al massimo {max, number, ::group-off} byte",
+    "invalid_body": "Corpo della richiesta non valido",
+    "message_required": "Il messaggio è obbligatorio",
+    "message_length": "Il messaggio deve contenere da {min} a {max} caratteri",
+    "invalid_characters": "Il messaggio contiene caratteri non validi",
+    "links_not_allowed": "I link non sono consentiti nei messaggi del guestbook",
+    "unfriendly": "Per favore, mantieni un tono cordiale",
+    "invalid_signature": "Firma non valida",
+    "rate_limited": "Un messaggio ogni 5 minuti — riprova tra {minutes, plural, one {# minuto} other {# minuti}}",
+    "invalid_reaction": "Reazione non valida",
+    "reaction_rate_limited": "Troppe reazioni — riprova tra {seconds}s",
+    "not_found": "Messaggio non trovato",
+    "id_required": "L'ID del messaggio è obbligatorio",
+    "invalid_id": "ID del messaggio non valido",
+    "forbidden": "Accesso negato",
+    "invalid_cursor": "Cursore non valido"
+  }
+}

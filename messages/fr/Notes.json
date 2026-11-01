@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "NOTES",
+    "subtitle": "les décisions, par écrit",
+    "intro": "Chaque décision non évidente derrière ce site est consignée : le choix retenu, les alternatives écartées et ce que chacune a coûté. Ce sont les documents de travail du dépôt, présentés ici plutôt que laissés dans l’arborescence.",
+    "lines": "{count, plural, one {ligne} many {lignes} other {lignes}}"
+  },
+  "note": {
+    "title": "NOTE",
+    "breadcrumb": "Fil d’Ariane",
+    "allNotes": "Toutes les notes",
+    "source": "Source\u00a0: {source} · {count, plural, one {{n} ligne} many {{n} lignes} other {{n} lignes}}"
+  }
+}

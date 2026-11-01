@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Jaren in het vak",
+    "unit": "{unit, select, years {{count, plural, one {jaar ervaring} other {jaar ervaring}}} other {{count, plural, one {maand ervaring} other {maanden ervaring}}}}",
+    "unavailable": "ervaring niet beschikbaar",
+    "loadingAria": "Jaren ervaring laden",
+    "viewBreakdown": "Bekijk uitsplitsing →",
+    "srPrefix": "Update ervaring: ",
+    "personal": "Persoonlijk",
+    "employment": "Werkervaring",
+    "splitUnavailable": "Niet beschikbaar",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "Samenvatting van ervaring laden",
+    "degraded": "Jaren in het vak: ervaring niet beschikbaar (het GitHub-deel van de samenvatting ontbreekt of is onvolledig).{split} Bekijk uitsplitsing: opent de uitsplitsing van wat beschikbaar is.",
+    "ready": "Jaren in het vak: {count, number, ::group-off}+ {unit, select, years {jaar} other {{count, plural, one {maand} other {maanden}}}} ervaring.{split} Bekijk uitsplitsing: opent de uitsplitsing per categorie.",
+    "split": "Persoonlijk {personal}, werkervaring {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "niet beschikbaar"
+  },
+  "modal": {
+    "eyebrow": "Loopbaan in het kort",
+    "title": "Ervaring per categorie",
+    "close": "Uitsplitsing van ervaring sluiten",
+    "personalProjects": "Persoonlijke projecten",
+    "employment": "Werkervaring",
+    "unavailable": "Niet beschikbaar",
+    "unitWord": "{unit, select, years {{count, plural, one {jaar} other {jaar}}} other {{count, plural, one {maand} other {maanden}}}}",
+    "totalUnavailable": "totaal niet beschikbaar",
+    "totalUnit": "totaal {unit, select, years {jr} other {mnd}}",
+    "ownedRepos": "<n></n> eigen {count, plural, one {repository} other {repositories}}",
+    "roles": "<n></n> {count, plural, one {functie} other {functies}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ jr} other { mnd}}",
+    "newestFirst": "Nieuwste eerst",
+    "showFewer": "Toon minder",
+    "showAll": "Toon alle {count, number, ::group-off} repositories →",
+    "noRepos": "Nog geen eigen repositories gevonden.",
+    "personalFailed": "Gegevens over persoonlijke projecten konden nu niet worden geladen.",
+    "relativeDuration": "Relatieve duur",
+    "noRoles": "Nog geen functies als software engineer gevonden.",
+    "employmentFailed": "Gegevens over werkervaring konden nu niet worden geladen."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {jaar} other {jaar}}} other {{count, plural, one {maand} other {maanden}}}}",
+  "changes": {
+    "newRole": "Nieuwe functie gevonden in cv: {company}",
+    "years": "Jaren ervaring bijgewerkt: {from} → {to}",
+    "employment": "Werkervaring bijgewerkt: +{count, number, ::group-off} {count, plural, one {maand} other {maanden}}",
+    "newRepo": "Nieuwe repository gevonden: {name}",
+    "newRepos": "{count, number, ::group-off} nieuwe {count, plural, one {repository} other {repositories}} gevonden op GitHub",
+    "timeline": "Tijdlijn van persoonlijke projecten bijgewerkt"
+  }
+}

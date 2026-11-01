@@ -58,6 +58,12 @@ export default defineConfig({
     lang: 'jsx',
   },
   test: {
+    // next-intl's ESM build imports `next/navigation` without an extension,
+    // which Node's strict ESM resolver rejects (Next itself ships no `exports`
+    // map for that subpath). Inlining it hands the import to Vite's resolver,
+    // which finds `next/navigation.js` exactly as the Next bundler does
+    // (issue #82). Every project inherits this through `extends: true`.
+    server: { deps: { inline: [/next-intl/] } },
     projects: [
       project('unit'),
       project('property', {
@@ -66,7 +72,15 @@ export default defineConfig({
         // longer than the 5 s default allows for one test.
         ...(process.env.FC_RUNS ? { testTimeout: 10 * 60 * 1000 } : {}),
       }),
-      project('fitness'),
+      // No on-disk module cache for the fitness rules. That cache is keyed on
+      // a file's own source, but a dynamic `import(`…/${locale}/…`)` compiles
+      // to the list of files that existed WHEN it was transformed — so after
+      // new catalogues landed, src/i18n/messages.js kept a compile from when
+      // only `en` existed, every locale "loaded" English, and the 8 kB budget
+      // passed locally while CI (no cache) failed it. A gate must not pass on
+      // stale input; the project is small enough that a cold transform is
+      // cheap.
+      project('fitness', { fsModuleCache: false }),
       project('component', {
         environment: 'jsdom',
         setupFiles: ['tests/support/setup-component.js'],

@@ -1,0 +1,58 @@
+{
+  "title": "KONTAKT",
+  "subtitle": "nimm Kontakt auf",
+  "intro": "Tritt ein in den Zauberkreis und webe deine Worte in das Gewebe des Kosmos. Ob du Kooperationen heraufbeschwören, Rätsel lüften oder einfach Abenteuergeschichten teilen willst: Deine Nachrichten sind in diesem Reich kostbare Schriftrollen. Sende deine Botschaft über das ätherische Netz, nutze dazu das Formular unten und lausche dann auf das Flüstern der Magie als Antwort.",
+  "fields": {
+    "name": "Vollständiger Name",
+    "email": "E-Mail",
+    "subject": "Betreff",
+    "message": "Nachricht"
+  },
+  "validation": {
+    "nameRequired": "Der vollständige Name ist erforderlich!",
+    "nameMin": "Der Name muss mindestens {min} Zeichen lang sein.",
+    "nameMax": "Der Name darf höchstens {max} Zeichen lang sein.",
+    "emailRequired": "Die E-Mail-Adresse ist erforderlich!",
+    "emailMax": "Die E-Mail-Adresse darf höchstens {max} Zeichen lang sein.",
+    "subjectRequired": "Der Betreff ist erforderlich!",
+    "subjectMax": "Der Betreff darf höchstens {max} Zeichen lang sein.",
+    "messageRequired": "Die Nachricht ist erforderlich!",
+    "messageMin": "Die Nachricht muss mindestens {min} Zeichen lang sein.",
+    "messageMax": "Die Nachricht darf höchstens {max} Zeichen lang sein."
+  },
+  "submit": {
+    "label": "ABSENDEN!",
+    "ariaLabel": "Nachricht senden",
+    "sending": "SENDET",
+    "sent": "GESENDET",
+    "held": "GEMERKT"
+  },
+  "toast": {
+    "sent": "Nachricht erfolgreich gesendet!",
+    "savedOffline": "Gespeichert – sie wird gesendet, sobald du wieder online bist.",
+    "savedRetrying": "Gespeichert – neuer Versuch in Kürze …",
+    "failed": "Nachricht konnte nicht gesendet werden",
+    "heldSent": "{count, plural, one {Deine zurückgehaltene Nachricht wurde gesendet ✦} other {# zurückgehaltene Nachrichten wurden gesendet ✦}}"
+  },
+  "status": {
+    "held": "Zurückgehalten – deine Nachricht sendet sich von selbst, sobald du wieder online bist.",
+    "offline": "Du bist offline – deine Nachricht wird zurückgehalten und automatisch gesendet, sobald du wieder verbunden bist."
+  },
+  "errors": {
+    "name_required": "Der vollständige Name ist erforderlich.",
+    "email_required": "Die E-Mail-Adresse ist erforderlich.",
+    "subject_required": "Der Betreff ist erforderlich.",
+    "message_required": "Die Nachricht ist erforderlich.",
+    "name_too_long": "Der vollständige Name überschreitet die maximal zulässige Länge ({max} Zeichen).",
+    "email_too_long": "Die E-Mail-Adresse überschreitet die maximal zulässige Länge ({max} Zeichen).",
+    "subject_too_long": "Der Betreff überschreitet die maximal zulässige Länge ({max} Zeichen).",
+    "message_too_long": "Die Nachricht überschreitet die maximal zulässige Länge ({max, number, ::group-off} Zeichen).",
+    "invalid_characters": "Die Eingabe enthält ungültige Zeichen.",
+    "invalid_email": "Ungültiges E-Mail-Format.",
+    "undeliverable_email": "Diese E-Mail-Adresse existiert nicht oder kann keine E-Mails empfangen.",
+    "disposable_email": "Wegwerf-E-Mail-Adressen sind nicht zulässig.",
+    "too_large": "Der Anfrage-Body darf höchstens {max, number, ::group-off} Bytes groß sein",
+    "invalid_body": "Ungültiger Anfrage-Body",
+    "send_failed": "Nachricht konnte nicht gesendet werden"
+  }
+}

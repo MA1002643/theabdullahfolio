@@ -129,7 +129,16 @@ test.describe('crawl control', () => {
     // testing strategy and runbook, publishes as a second note by the corpus
     // rule (every docs/*.md is a note) — indexable on purpose, for the same
     // reason /notes/discoverability is: the reasoning is the depth.
-    expect(urls).toHaveLength(25);
+    //
+    // 25 → 424 (#82, multilingual): every translated page is listed once per
+    // locale. 21 translated pages (12 routes + 11 projects, less /notes and
+    // /privacy, English by decision) × 20 locales = 420, plus 4 English-only
+    // pages listed once (/notes, /privacy and the two notes) = 424. Found
+    // stale on 2026-11-01 by the first full browser run after #82.
+    //
+    // 424 → 425 on 2026-11-01: `/notes/multilingual`, the engineering note on
+    // how the twenty languages were built (English-only, listed once).
+    expect(urls).toHaveLength(425);
     expect(new Set(urls).size).toBe(urls.length);
 
     // The acceptance criterion is "every URL in the sitemap returns 200,

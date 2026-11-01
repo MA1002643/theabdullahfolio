@@ -1,0 +1,15 @@
+{
+  "dialog": "Paleta de comandos",
+  "search": "Buscar comandos",
+  "placeholder": "Escribe un comando o un destino…",
+  "list": "Comandos",
+  "empty": "Sin coincidencias",
+  "sections": {
+    "navigate": "Navegar",
+    "language": "Idioma"
+  },
+  "keywords": {
+    "navigate": "ir saltar ruta página navegar ver abrir",
+    "language": "idioma traducir traducción configuración regional lengua locale"
+  }
+}

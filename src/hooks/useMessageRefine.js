@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 // useMessageRefine — drives the "polish my missive" feature on the contact form
 // and the guestbook composer. POSTs the visitor's rough message to
@@ -28,6 +29,17 @@ export function useMessageRefine({ mode } = {}) {
   const [suggestion, setSuggestion] = useState('');
   const [error, setError] = useState(null);
   const controllerRef = useRef(null);
+  // Copy through a ref (issue #82) so `refine` keeps its identity across a
+  // locale's renders. The route answers every error with a stable `error`
+  // code beside its English `message`; the code picks the visitor's
+  // language, the English is the fallback for a code this catalogue lacks.
+  const t = useTranslations('Composer');
+  const tRef = useRef(t);
+  // Synced after render, never during it (react-hooks/refs).
+  useEffect(() => {
+    tRef.current = t;
+  });
+  const failed = () => tRef.current('refine.errors.failed');
 
   const abort = useCallback(() => {
     controllerRef.current?.abort();
@@ -72,11 +84,13 @@ export function useMessageRefine({ mode } = {}) {
         if (!isCurrent()) return;
 
         if (!res.ok || !res.body) {
-          // The route returns JSON { message } on every error path; surface it
-          // verbatim so the copy stays on-voice ("Write a little more first…").
+          // The route returns JSON { error, message } on every error path;
+          // surface it in the visitor's language, on-voice ("Write a little
+          // more first…").
           const data = await res.json().catch(() => null);
           if (!isCurrent()) return;
-          setError(data?.message || 'Could not polish the message. Please try again.');
+          const key = typeof data?.error === 'string' ? `refine.errors.${data.error}` : null;
+          setError(key && tRef.current.has(key) ? tRef.current(key) : data?.message || failed());
           setStatus('error');
           return;
         }
@@ -107,7 +121,7 @@ export function useMessageRefine({ mode } = {}) {
 
         if (!isCurrent()) return;
         if (!acc) {
-          setError('Could not polish the message. Please try again.');
+          setError(failed());
           setStatus('error');
           return;
         }
@@ -117,7 +131,7 @@ export function useMessageRefine({ mode } = {}) {
         // An intentional abort (new refine / unmount) is not a user-facing error.
         if (err?.name === 'AbortError') return;
         if (!isCurrent()) return;
-        setError('Could not polish the message. Please try again.');
+        setError(failed());
         setStatus('error');
       } finally {
         if (controllerRef.current === controller) controllerRef.current = null;

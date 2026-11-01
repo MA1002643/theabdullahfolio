@@ -35,3 +35,26 @@ export const ALL_ROUTES = [...STATIC_ROUTES, ...DYNAMIC_SAMPLES];
 
 /** A path that must answer the site's own 404. */
 export const MISSING_ROUTE = '/this-route-does-not-exist-92';
+
+/**
+ * The locales the browser layers visit beyond English (issue #82 follow-up).
+ * Two, chosen for being the hardest, not the most read: Arabic is right to
+ * left in a joined script (bidi, mirrored layout, `dir="rtl"`), Japanese is
+ * CJK with no spaces between words (line breaking, the system font stack).
+ * Between them they exercise every code path a third locale would. Before
+ * this, every axe scan, render check and screenshot visited English only, and
+ * a reversed email address on the right-to-left footer was found by the owner
+ * rather than by CI.
+ */
+export const LOCALE_SAMPLES = [
+  { code: 'ar', dir: 'rtl' },
+  { code: 'ja', dir: 'ltr' },
+];
+
+/** A site path in a locale: `/about` + `ar` → `/ar/about`, `/` → `/ar`. */
+export const inLocale = (path, code) => (path === '/' ? `/${code}` : `/${code}${path}`);
+
+/** Every route of ALL_ROUTES in every sampled locale, with what it must declare. */
+export const LOCALIZED_ROUTES = LOCALE_SAMPLES.flatMap(({ code, dir }) =>
+  ALL_ROUTES.map((path) => ({ path: inLocale(path, code), code, dir })),
+);

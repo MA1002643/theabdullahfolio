@@ -125,7 +125,11 @@ const FireInput = forwardRef(function FireInput(
       {/* Overlay is decorative — the real <input> above it owns all
           interaction, focus, validation, and AT semantics. */}
       <div className="fire-input-overlay" aria-hidden="true">
-        <div ref={overlayRef} className="fire-input-overlay-text" />
+        {/* Same `dir` as the real input (issue #82): with dir="auto" an
+            Arabic value lays out right-to-left in the input, and the painted
+            copy has to resolve the same direction or the glyphs drift off
+            the caret. */}
+        <div ref={overlayRef} dir={rest.dir} className="fire-input-overlay-text" />
       </div>
     </div>
   );

@@ -1,0 +1,6 @@
+{
+  "draft.restored": "Banner shown when a half-written message from an earlier visit was put back into the form.",
+  "refine.affordance": "Link-style button that asks an AI to polish the visitor's message. ✦ is added separately.",
+  "refine.again": "Ask the AI for another rewrite.",
+  "refine.errors.too_short": "Voice of the site owner ('I can polish it'); friendly."
+}

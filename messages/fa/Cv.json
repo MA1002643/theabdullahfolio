@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "سابقهٔ کامل"
+  },
+  "identity": {
+    "role": "مهندس نرم‌افزار"
+  },
+  "downloadPdf": "دانلود PDF",
+  "sections": {
+    "experience": "سوابق کاری",
+    "education": "تحصیلات",
+    "representation": "نمایندگی",
+    "skills": "مهارت‌ها",
+    "projects": "پروژه‌های منتخب"
+  },
+  "skillGroups": {
+    "languages": "زبان‌ها",
+    "frameworks": "فریم‌ورک‌ها",
+    "libraries": "کتابخانه‌ها",
+    "tools": "ابزارها",
+    "software": "نرم‌افزارها"
+  },
+  "allProjects": "همهٔ پروژه‌ها",
+  "asTimeline": "همین سابقه، در قالب یک خط زمانی"
+}

@@ -5,8 +5,17 @@ import { describe, expect, it, vi } from 'vitest';
 // the shape the layout consumes (a `variable` class name) so its METADATA — the
 // thing under test at the bottom of this file — can be imported at all.
 vi.mock('next/font/google', () => {
-  const font = () => ({ variable: '', className: '' });
-  return { Inter: font, Montserrat: font, Varela_Round: font };
+  // `style.fontFamily` because src/i18n/fonts.js composes per-script font
+  // chains from it (issue #82), and the three Noto faces are those script fonts.
+  const font = () => ({ variable: '', className: '', style: { fontFamily: '' } });
+  return {
+    Inter: font,
+    Montserrat: font,
+    Varela_Round: font,
+    Noto_Sans_Arabic: font,
+    Noto_Sans_Hebrew: font,
+    Noto_Sans_Devanagari: font,
+  };
 });
 import { projectsData } from '@/app/data';
 import { readNotes } from '@/lib/notes/readNotes';
@@ -338,12 +347,16 @@ describe('metadata contract — note pages', () => {
 describe('metadata contract — advertised images stay fetchable', () => {
   it('disallows no path the site publishes as a share card', async () => {
     const { DISALLOWED_PATHS } = await import('@/lib/seo/site');
-    const { metadata } = await import('@/app/layout');
+    // The homepage's card arrays, from the same builder the locale layout's
+    // `generateMetadata` uses (issue #82 made the root metadata per-locale, so
+    // there is no static `metadata` object to read any more). The alt-text
+    // translator is an identity: only the URLs matter here.
+    const { homeShareImages } = await import('@/app/[locale]/layout');
+    const images = homeShareImages((key) => key);
 
-    const advertised = [
-      ...(metadata.openGraph?.images ?? []),
-      ...(metadata.twitter?.images ?? []),
-    ].map((image) => (typeof image === 'string' ? image : image.url));
+    const advertised = [...images.openGraph, ...images.twitter].map((image) =>
+      typeof image === 'string' ? image : image.url,
+    );
 
     // Guard on the guard: if the shape of `images` ever changes, an empty list
     // would make every assertion below pass without checking anything.

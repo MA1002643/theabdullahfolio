@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import ProjectLayout from "./ProjectLayout";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import PageTitle from "@/components/PageTitle";
 import ScrollHijackCategories from "@/components/shared/ScrollHijackCategories";
@@ -10,6 +11,8 @@ import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 import { normalizeCategory } from "@/lib/categories";
 import { consumeProjectFilterHandoff } from "@/lib/projectFilterHandoff";
 import { fluid, fluidText } from "@/lib/fluidScale";
+import { useDataT } from "@/i18n/useDataT";
+import { localizeCategory, localizeProject } from "@/i18n/data";
 
 // List reveal (issue #27 §3.2) — slowed from the original 0.15/0.3 so the
 // cards read as settling into place one at a time rather than racing in.
@@ -33,10 +36,11 @@ const reducedContainer = {
   show: { opacity: 1, transition: { duration: 0.3 } },
 };
 
-// §2.3 — the one place the empty-category wording lives: the disabled-tab
-// click toast, the disabled tab's tooltip, and the stored-filter fallback
-// note below all read from it.
-const emptyCategoryMessage = (category) => `No projects in "${category}" yet.`;
+// §2.3 — the empty-category wording lives in ONE place, now the Projects
+// catalogue (issue #82): `filters.empty` feeds the disabled-tab click toast
+// and the disabled tab's tooltip, and `filters.fallback` is the same sentence
+// plus "Showing all projects instead." as a single message — two translated
+// fragments glued together would fix English word order on every language.
 
 // Shared by both info toasts (empty-category click and stored-filter
 // fallback) so the two can never drift apart visually.
@@ -57,6 +61,16 @@ const INFO_TOAST_STYLE = {
 };
 
 const ProjectList = ({ projects }) => {
+  const t = useTranslations("Projects");
+  const dataT = useDataT();
+  // Tabs, counts and filtering all run on the English category KEYS from
+  // data.js ("Web", "AI"); only the label the visitor reads is translated.
+  // "All" is the page's own reset, not a data category, so it lives in this
+  // namespace rather than in Data's generated `categories` block.
+  const categoryLabel = (cat) =>
+    cat === "All" ? t("filters.all") : localizeCategory(cat, dataT);
+  const emptyCategoryMessage = (cat) =>
+    t("filters.empty", { category: categoryLabel(cat) });
   const [active, setActive] = useState("All");
   const prefersReducedMotion = useReducedMotion();
   // Track the id of the most recent "empty category" toast so we can
@@ -172,9 +186,12 @@ const ProjectList = ({ projects }) => {
     const saved = pendingFallbackNoteRef.current;
     pendingFallbackNoteRef.current = null;
     lastToastIdRef.current = toast.info(
-      `${emptyCategoryMessage(saved)} Showing all projects instead.`,
+      t("filters.fallback", { category: categoryLabel(saved) }),
       { style: INFO_TOAST_STYLE },
     );
+    // `t`/`categoryLabel` only change with the locale, which remounts the
+    // page; the effect must stay keyed to `revealed` alone or it would re-run.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealed]);
 
   // Dismiss any lingering empty-category toast on unmount — fires when
@@ -235,7 +252,7 @@ const ProjectList = ({ projects }) => {
           re-arms the headline ignite whenever the block scrolls out of
           view, so it replays alongside the category row's entrance
           instead of sitting static after the first load. */}
-      <PageTitle title="PROJECTS" subtitle="MY WORK" replayOnView />
+      <PageTitle title={t("title")} subtitle={t("subtitle")} replayOnView />
 
         {/* CATEGORY FILTERS — mirrors the qualifications carousel tab
             treatment: orange neon glow for the active tab, pink neon glow
@@ -253,8 +270,9 @@ const ProjectList = ({ projects }) => {
           // breathing with the page instead of sitting fixed while
           // everything around them scales.
           style={{ marginTop: fluid(2.5), marginBottom: fluid(1) }}
-          label="Project categories"
+          label={t("filters.label")}
           categories={categories}
+          formatLabel={categoryLabel}
           active={active}
           onSelect={handleSelect}
           isDisabled={isCategoryDisabled}
@@ -285,7 +303,9 @@ const ProjectList = ({ projects }) => {
         >
           {filteredProjects.length >= 1 ? (
             filteredProjects.map((project, index) => (
-              <ProjectLayout key={index} {...project} category={active}/>
+              // `category={active}` stays the English KEY — it is the
+              // filter handoff token, read back against the same keys.
+              <ProjectLayout key={index} {...localizeProject(project, dataT)} category={active}/>
             ))
           ) : (
             <div className="custom-bg-abt rounded-md" style={{ padding: fluid(0.75) }}>
@@ -293,7 +313,7 @@ const ProjectList = ({ projects }) => {
                 className="text-center font-semibold text-[#FFB627] tracking-wide relative z-10 drop-shadow-[0_0_5px_#ffb627]"
                 style={{ fontSize: fluidText(1.125, 0.85) }}
               >
-                No Projects Found !
+                {t("list.empty")}
               </h3>
             </div>
           )}

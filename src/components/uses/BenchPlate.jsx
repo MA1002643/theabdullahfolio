@@ -2,11 +2,16 @@
 
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useDataT } from '@/i18n/useDataT';
+import { localizeBenchRow } from '@/i18n/data';
+import { useDirection } from '@/i18n/useDirection';
 import FireText from '@/components/shared/FireText';
 import { USES_FLAGS } from '@/lib/flags';
 import { fluid } from '@/lib/fluidScale';
 import EditorFrame from './EditorFrame';
-import Plate, { Figure } from './Plate';
+import Plate, { figTag } from './Plate';
+import { useUsesFormat } from './useUsesFormat';
 import { riseProps, staged, useStagedReveal } from './useStagedReveal';
 
 // 01 · THE BENCH — the development environment: the six stations (editor,
@@ -34,6 +39,9 @@ const STATION_STEP_S = 0.1;
 const CHIP_SPRING = { type: 'spring', stiffness: 420, damping: 24 };
 
 function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
+  const t = useTranslations('Uses');
+  // The role label slides in from the reading-start side (issue #82).
+  const { sign } = useDirection();
   const { ref, on, delay } = useStagedReveal({
     revealed,
     reduceMotion,
@@ -63,8 +71,8 @@ function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
       <span className="uses-label font-mono uppercase text-[#ffaa2a]">
         <motion.span
           className="uses-anim inline-block"
-          initial={reduceMotion ? false : { opacity: 0, x: -12 }}
-          animate={on ? { opacity: 1, x: 0 } : { opacity: 0, x: reduceMotion ? 0 : -12 }}
+          initial={reduceMotion ? false : { opacity: 0, x: -12 * sign }}
+          animate={on ? { opacity: 1, x: 0 } : { opacity: 0, x: reduceMotion ? 0 : -12 * sign }}
           transition={at(0.02, 0.5)}
         >
           {item.role}
@@ -82,17 +90,23 @@ function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
               href={item.link}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`${item.name} (opens in a new tab)`}
+              aria-label={t('opensNewTab', { name: item.name })}
               className="inline-flex items-baseline gap-1 decoration-[#ff6d05] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
             >
-              <FireText text={item.name} />
+              <span translate="no">
+                <FireText text={item.name} />
+              </span>
               <ArrowUpRight
                 aria-hidden="true"
                 className="h-3 w-3 self-center text-[#ffaa2a]"
               />
             </a>
           ) : (
-            <FireText text={item.name} />
+            // A station is named for its tools: names, not prose (data.js
+            // keeps them so — prose belongs in the translated `detail`).
+            <span translate="no">
+              <FireText text={item.name} />
+            </span>
           )}
         </motion.span>
       </span>
@@ -109,6 +123,8 @@ function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
 }
 
 function Extensions({ extensions, index, revealed, reduceMotion, revealedAtRef }) {
+  const t = useTranslations('Uses');
+  const { sign } = useDirection();
   const { ref, on, delay } = useStagedReveal({
     revealed,
     reduceMotion,
@@ -126,13 +142,14 @@ function Extensions({ extensions, index, revealed, reduceMotion, revealedAtRef }
     >
       <motion.span
         className="uses-anim uses-label inline-block font-mono uppercase text-[#ffaa2a]"
-        initial={reduceMotion ? false : { opacity: 0, x: -12 }}
-        animate={on ? { opacity: 1, x: 0 } : { opacity: 0, x: reduceMotion ? 0 : -12 }}
+        initial={reduceMotion ? false : { opacity: 0, x: -12 * sign }}
+        animate={on ? { opacity: 1, x: 0 } : { opacity: 0, x: reduceMotion ? 0 : -12 * sign }}
         transition={staged(reduceMotion, delay, 0, 0.5)}
       >
-        Extensions I reach for
+        {t('bench.extensions')}
       </motion.span>
-      <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+      {/* Extension names, as the marketplace lists them: translate="no". */}
+      <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0" translate="no">
         {extensions.map((ext, i) => (
           <motion.li
             key={ext}
@@ -155,18 +172,24 @@ function Extensions({ extensions, index, revealed, reduceMotion, revealedAtRef }
   );
 }
 
-export default function BenchPlate({ bench, extensions, frame }) {
+export default function BenchPlate({ bench: source, extensions, frame }) {
+  const t = useTranslations('Uses');
+  const dataT = useDataT();
+  const { num, ord } = useUsesFormat();
+  // Roles and details translated; tool names, links and extension ids never.
+  const bench = source.map((item) => localizeBenchRow(item, dataT));
   return (
     <Plate
       slug="bench"
-      ordinal="01"
-      eyebrow="Environment · hand-set"
-      title="The bench"
-      provenance={
-        <>
-          <Figure>{bench.length}</Figure> stations · {frame.fileName} excerpt
-        </>
-      }
+      ordinal={ord(1)}
+      eyebrow={t('bench.eyebrow')}
+      title={t('bench.title')}
+      provenance={t.rich('bench.provenance', {
+        count: bench.length,
+        n: num(bench.length),
+        file: frame.fileName,
+        fig: figTag,
+      })}
     >
       {({ revealed, reduceMotion, revealedAtRef }) => (
         // One `minmax(0,1fr)` column with `min-w-0` items at EVERY width, not

@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "索引",
+    "elsewhere": "其他平台"
+  },
+  "siteNav": "站点",
+  "identity": {
+    "role": "软件工程师",
+    "statement": "在英格兰北部，打造快速而考究的网页体验。"
+  },
+  "availability": "欢迎新的职位机会",
+  "githubCta": {
+    "label": "在 GitHub 上查看此项目",
+    "newTab": "（在新标签页中打开）",
+    "commits": "{count, plural, one {<num>{formatted}</num> 次提交} other {<num>{formatted}</num> 次提交}}",
+    "pushed": "{when}推送"
+  },
+  "manifest": {
+    "departures": "出发",
+    "nowBoarding": "正在登机",
+    "onTime": "准点",
+    "links": {
+      "about": {
+        "label": "关于",
+        "desc": "我是谁"
+      },
+      "journey": {
+        "label": "历程",
+        "desc": "一路走来"
+      },
+      "qualifications": {
+        "label": "资历",
+        "desc": "资质证明"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "完整履历"
+      },
+      "projects": {
+        "label": "项目",
+        "desc": "精选作品"
+      },
+      "uses": {
+        "label": "工具",
+        "desc": "我用什么构建"
+      },
+      "notes": {
+        "label": "笔记",
+        "desc": "为何这样构建"
+      },
+      "contact": {
+        "label": "联系",
+        "desc": "打个招呼"
+      },
+      "guestbook": {
+        "label": "留言簿",
+        "desc": "留下你的足迹"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHub 主页（在新标签页中打开）",
+    "linkedin": "LinkedIn 主页（在新标签页中打开）",
+    "resume": "查看完整 CV",
+    "linkLabel": "{command}，{handle}：{description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {{town}当地时间：{period}{time}} other {{town}当地时间：{time}}}",
+    "placeLabel": "所在地：{town}",
+    "live": "实时"
+  },
+  "sound": {
+    "label": "声音",
+    "on": "开",
+    "off": "关",
+    "turnOn": "开启页脚吉他声音",
+    "turnOff": "关闭页脚吉他声音",
+    "hoverLines": "将鼠标悬停在琴弦上",
+    "nowPlaying": "正在播放 — 舒缓的吉他",
+    "turnOnPrompt": "开启声音，聆听舒缓的吉他"
+  },
+  "privacy": {
+    "policy": "隐私",
+    "choices": "隐私选择"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/其他平台",
+    "cmd": {
+      "github": "打开 github",
+      "linkedin": "打开 linkedin",
+      "resume": "打开简历"
+    }
+  }
+}

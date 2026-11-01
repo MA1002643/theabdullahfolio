@@ -1,0 +1,20 @@
+{
+  "section": "उपयोग",
+  "preferences": "पसंद",
+  "jumpPlate": "{ordinal} {label} पर जाएँ",
+  "plates": {
+    "machine": "मशीन",
+    "bench": "वर्कबेंच",
+    "stack": "स्टैक",
+    "pipeline": "पाइपलाइन",
+    "instruments": "मापक यंत्र",
+    "bom": "बिल ऑफ़ मैटेरियल्स"
+  },
+  "copySettings": "मेरी एडिटर सेटिंग्स कॉपी करें",
+  "openRepos": "GitHub पर रिपॉज़िटरी देखें",
+  "toggleMotion": "मोशन चालू/बंद करें",
+  "motionOn": "चालू",
+  "motionOff": "बंद",
+  "copied": "एडिटर सेटिंग्स कॉपी हो गईं",
+  "clipboardUnavailable": "क्लिपबोर्ड उपलब्ध नहीं — कॉपी करने के लिए फ़्रेम चुनें"
+}

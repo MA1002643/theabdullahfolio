@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "Binnenkort verschijnen er nieuwe functies. Deze website is volop in ontwikkeling.",
+    "shippingNone": "Zojuist {count, plural, one {# update} other {# updates}} naar deze website uitgerold.",
+    "shippingOne": "Zojuist uitgerold: <bdi>#{number} {title}</bdi>.",
+    "shippingMany": "Zojuist uitgerold: <bdi>#{number} {title}</bdi> (en nog {more, number} andere).",
+    "liveWithTop": "Live update: er worden nu wijzigingen uitgerold — op dit moment ligt de focus op <bdi>#{number} {title}</bdi>.",
+    "livePushes": "Live update: er worden nu nieuwe wijzigingen op deze website uitgerold.",
+    "liveActive": "Er wordt nu actief gewerkt{hasTop, select, yes { — op dit moment ligt de focus op <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "Bezig met {count, plural, one {# taak} other {# taken}}{hasTop, select, yes { — op dit moment ligt de focus op <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "Werk in uitvoering aan {prs, plural, one {# pull request} other {# pull requests}} en {issues, plural, one {# openstaande taak} other {# openstaande taken}}{hasTop, select, yes { — op dit moment ligt de focus op <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "Werk in uitvoering aan {prs, plural, one {# pull request} other {# pull requests}}{hasTop, select, yes { — op dit moment ligt de focus op <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "Werk in uitvoering aan {issues, plural, one {# openstaande taak} other {# openstaande taken}}{hasTop, select, yes { — op dit moment ligt de focus op <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "Er wordt gewerkt aan deze website.",
+    "planning": "Bezig met het plannen van de volgende verbeteringen{hasTop, select, yes { — op dit moment ligt de focus op <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "Bezig met {count, plural, one {# taak} other {# taken}} — focus op <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "Zojuist uitgerold",
+    "live": "Live ontwikkeling bezig",
+    "inProgress": "Werk in uitvoering",
+    "planning": "Volgende verbeteringen plannen",
+    "idle": "Onderhoud loopt"
+  },
+  "region": "Live onderhoudsstatus",
+  "state": {
+    "shipping": "UITGEROLD",
+    "live": "LIVE",
+    "inProgress": "IN UITVOERING",
+    "planning": "PLANNING",
+    "idle": "ONDERHOUD"
+  },
+  "stateSpoken": {
+    "shipping": "uitgerold",
+    "live": "live",
+    "inProgress": "in uitvoering",
+    "planning": "planning",
+    "idle": "onderhoud"
+  },
+  "pipeline": {
+    "planning": "Plan",
+    "inProgress": "Bouw",
+    "shipping": "Uitrol",
+    "live": "Live"
+  },
+  "legend": {
+    "title": "Leveringspipeline",
+    "srIdle": "Leveringspipeline. Buiten de pipeline: onderhoudsbewaking.",
+    "srStage": "Leveringspipeline. Huidige fase: {stage}, {index} van {total}.",
+    "headingIdle": "Onderhoud · buiten de pipeline",
+    "headingStage": "{stage} · fase {index} van {total}",
+    "maintenance": "Onderhoud",
+    "offPipeline": "Buiten de pipeline — bewaakt {count, plural, =0 {gevolgde repositories} one {# repo} other {# repo's}}",
+    "meaning": {
+      "planning": "Open issues in de wachtrij en afgebakend",
+      "inProgress": "Actief werk in branches en pull requests",
+      "shipping": "Samengevoegd werk dat de afgelopen 48 uur naar Done ging",
+      "live": "Commits of updates binnen de afgelopen 2 uur"
+    }
+  },
+  "fields": {
+    "state": "Status",
+    "focus": "Focus",
+    "focusPr": "Focus · PR",
+    "focusIssue": "Focus · Issue",
+    "prs": "PR's",
+    "issues": "Issues",
+    "pushes24h": "Pushes · 24u",
+    "pushes": "Pushes",
+    "activity": "Activiteit · {days}d",
+    "sync": "Sync",
+    "metered": "· beperkt"
+  },
+  "metric": {
+    "prs": "Actieve PR's",
+    "issues": "Open issues",
+    "pushes": "Pushes (24u)",
+    "emptyPrs": "Geen actieve PR's in de gevolgde projecten.",
+    "emptyIssues": "Geen open issues in gevolgde projecten.",
+    "emptyPushes": "Geen pushes in gevolgde projecten in de afgelopen 24 uur."
+  },
+  "popover": {
+    "breakdown": "Uitsplitsing van {metric}",
+    "summary": "{metric} · {count} in {projects, plural, one {# project} other {# projecten}}",
+    "heading": "<count></count> in {projects, plural, one {# project} other {# projecten}}",
+    "stale": "Laatst bekende activiteit wordt getoond.",
+    "more": "+ {count} meer op GitHub",
+    "openOnGitHub": "Openen op GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Issue}} #{number}",
+    "ariaOpen": "{type, select, pr {Pull request} other {Issue}} #{number} openen op GitHub: {title}",
+    "stepped": "{type, select, pr {Pull request} other {Issue}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {actief <age></age>} other {}}",
+    "monitoring": "{count, plural, one {# repository} other {# repositories}} in de gaten gehouden — geen actief focusitem",
+    "monitoringNone": "Gevolgde repositories in de gaten houden"
+  },
+  "queue": {
+    "label": "Focuswachtrij",
+    "hint": "Item {index} van {count} · ← → om te wisselen",
+    "sr": "Focuswachtrij met {count} items — wissel met de pijltjestoetsen links en rechts"
+  },
+  "activity": {
+    "label": "Commitverloop",
+    "summary": "{total, plural, one {# commit} other {# commits}} · afgelopen {days, plural, one {# dag} other {# dagen}}{truncated, select, yes { (oudste dagen onderschat)} other {}}"
+  },
+  "sync": {
+    "label": "Laatste sync",
+    "hint": "Betrouwbaarheid {confidence} · peilt elke {seconds}s{metered, select, yes { · beperkte verbinding} other {}}",
+    "detail": "{hasLast, select, yes {Laatste sync {last} · } other {}}Signaalbetrouwbaarheid {confidence} · peilt elke {seconds, plural, one {# seconde} other {# seconden}}{metered, select, yes { bij een beperkte verbinding} other {}}",
+    "stale": "Verouderd"
+  },
+  "announce": {
+    "status": "Status: {state}.",
+    "focus": "Huidige focus: {type, select, pr {pull request} other {issue}} {number}, {title}.",
+    "counts": "{prs, plural, one {# actieve pull request} other {# actieve pull requests}}, {issues, plural, one {# open issue} other {# open issues}} en {pushes, plural, one {# push} other {# pushes}} in de afgelopen 24 uur."
+  },
+  "error": {
+    "snapshot": "Live status tijdelijk niet beschikbaar. De meest recente momentopname wordt getoond.",
+    "fallback": "Live status tijdelijk niet beschikbaar. De onderhoudsweergave wordt getoond."
+  }
+}

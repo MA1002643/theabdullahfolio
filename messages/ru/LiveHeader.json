@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "Скоро выйдут новые возможности. Сайт активно разрабатывается.",
+    "shippingNone": "Только что на сайт выпущено: {count, plural, one {# обновление} few {# обновления} many {# обновлений} other {# обновления}}.",
+    "shippingOne": "Только что выпущено: <bdi>#{number} {title}</bdi>.",
+    "shippingMany": "Только что выпущено: <bdi>#{number} {title}</bdi> (и ещё {more, number}).",
+    "liveWithTop": "Обновление в реальном времени: изменения выходят прямо сейчас — сейчас в фокусе <bdi>#{number} {title}</bdi>.",
+    "livePushes": "Обновление в реальном времени: новые изменения на сайте выходят прямо сейчас.",
+    "liveActive": "Прямо сейчас идёт активная работа{hasTop, select, yes { — сейчас в фокусе <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "В работе {count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}{hasTop, select, yes { — сейчас в фокусе <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "В работе: {prs, plural, other {# PR}} и {issues, plural, one {# открытая задача} few {# открытые задачи} many {# открытых задач} other {# открытой задачи}}{hasTop, select, yes { — сейчас в фокусе <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "В работе: {prs, plural, other {# PR}}{hasTop, select, yes { — сейчас в фокусе <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "В работе: {issues, plural, one {# открытая задача} few {# открытые задачи} many {# открытых задач} other {# открытой задачи}}{hasTop, select, yes { — сейчас в фокусе <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "Над сайтом идёт работа.",
+    "planning": "Планирую следующие улучшения{hasTop, select, yes { — сейчас в фокусе <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "В работе {count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}} — сейчас в фокусе <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "Только что выпущено",
+    "live": "Идёт живая разработка",
+    "inProgress": "Работа в процессе",
+    "planning": "Планирую следующие улучшения",
+    "idle": "Идёт поддержка"
+  },
+  "region": "Статус поддержки сайта в реальном времени",
+  "state": {
+    "shipping": "РЕЛИЗ",
+    "live": "В ЭФИРЕ",
+    "inProgress": "В РАБОТЕ",
+    "planning": "ПЛАНЫ",
+    "idle": "ПОДДЕРЖКА"
+  },
+  "stateSpoken": {
+    "shipping": "релиз",
+    "live": "в эфире",
+    "inProgress": "в работе",
+    "planning": "планирование",
+    "idle": "поддержка"
+  },
+  "pipeline": {
+    "planning": "План",
+    "inProgress": "Сборка",
+    "shipping": "Релиз",
+    "live": "Онлайн"
+  },
+  "legend": {
+    "title": "Конвейер поставки",
+    "srIdle": "Конвейер поставки. Вне конвейера: наблюдение в режиме поддержки.",
+    "srStage": "Конвейер поставки. Текущий этап: {stage}, {index} из {total}.",
+    "headingIdle": "Поддержка · вне конвейера",
+    "headingStage": "{stage} · этап {index} из {total}",
+    "maintenance": "Поддержка",
+    "offPipeline": "Вне конвейера — наблюдение за {count, plural, =0 {отслеживаемыми репозиториями} one {# репозиторием} few {# репозиториями} many {# репозиториями} other {# репозитория}}",
+    "meaning": {
+      "planning": "Открытые задачи в очереди, объём определён",
+      "inProgress": "Активная работа в ветках и PR",
+      "shipping": "Принятые изменения, перенесённые в Done за последние 48 часов",
+      "live": "Коммиты или обновления за последние 2 часа"
+    }
+  },
+  "fields": {
+    "state": "Статус",
+    "focus": "Фокус",
+    "focusPr": "Фокус · PR",
+    "focusIssue": "Фокус · задача",
+    "prs": "PR",
+    "issues": "Задачи",
+    "pushes24h": "Пуши · 24 ч",
+    "pushes": "Пуши",
+    "activity": "Активность · {days} д",
+    "sync": "Синхр.",
+    "metered": "· с лимитом"
+  },
+  "metric": {
+    "prs": "Активные PR",
+    "issues": "Открытые задачи",
+    "pushes": "Пуши (24 ч)",
+    "emptyPrs": "Нет активных PR в отслеживаемых проектах.",
+    "emptyIssues": "В отслеживаемых проектах нет открытых задач.",
+    "emptyPushes": "За последние 24 часа в отслеживаемых проектах не было пушей."
+  },
+  "popover": {
+    "breakdown": "{metric}: подробности",
+    "summary": "{metric} · {count} в {projects, plural, one {# проекте} few {# проектах} many {# проектах} other {# проекта}}",
+    "heading": "<count></count> в {projects, plural, one {# проекте} few {# проектах} many {# проектах} other {# проекта}}",
+    "stale": "Показана последняя известная активность.",
+    "more": "+ ещё {count} на GitHub",
+    "openOnGitHub": "Открыть на GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Задача}} #{number}",
+    "ariaOpen": "Открыть {type, select, pr {pull request} other {задачу}} #{number}: {title} на GitHub",
+    "stepped": "{type, select, pr {Pull request} other {Задача}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {активность: <age></age>} other {}}",
+    "monitoring": "Отслеживается {count, plural, one {# репозиторий} few {# репозитория} many {# репозиториев} other {# репозитория}} — активных задач в фокусе нет",
+    "monitoringNone": "Отслеживание репозиториев"
+  },
+  "queue": {
+    "label": "Очередь фокуса",
+    "hint": "Элемент {index} из {count} · ← → для переключения",
+    "sr": "Очередь фокуса из {count} — переключение стрелками влево и вправо"
+  },
+  "activity": {
+    "label": "След коммитов",
+    "summary": "{total, plural, one {# коммит} few {# коммита} many {# коммитов} other {# коммита}} · за {days, plural, one {последний # день} few {последние # дня} many {последние # дней} other {последние # дня}}{truncated, select, yes { (самые старые дни учтены не полностью)} other {}}"
+  },
+  "sync": {
+    "label": "Последняя синхронизация",
+    "hint": "Достоверность {confidence} · опрос каждые {seconds} с{metered, select, yes { · лимитное соединение} other {}}",
+    "detail": "{hasLast, select, yes {Последняя синхронизация: {last} · } other {}}Достоверность сигнала {confidence} · опрос каждые {seconds, plural, one {# секунду} few {# секунды} many {# секунд} other {# секунды}}{metered, select, yes { при лимитном соединении} other {}}",
+    "stale": "Устарело"
+  },
+  "announce": {
+    "status": "Статус: {state}.",
+    "focus": "Сейчас в фокусе: {type, select, pr {pull request} other {задача}} {number}, {title}.",
+    "counts": "{prs, plural, one {# активный pull request} few {# активных pull request} many {# активных pull request} other {# активного pull request}}, {issues, plural, one {# открытая задача} few {# открытые задачи} many {# открытых задач} other {# открытой задачи}} и {pushes, plural, one {# пуш} few {# пуша} many {# пушей} other {# пуша}} за последние 24 часа."
+  },
+  "error": {
+    "snapshot": "Живой статус временно недоступен. Показан последний снимок.",
+    "fallback": "Живой статус временно недоступен. Показан резервный режим на время обслуживания."
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "میرے بارے میں",
+    "subtitle": "میں کون ہوں"
+  },
+  "intro": {
+    "heading": "جادوگری کا معمار",
+    "paragraph": "ویب ڈیولپمنٹ کا میرا سفر پراسرار اوزاروں اور زبانوں کے ایک ذخیرے سے چلتا ہے، جس میں JavaScript میرے منتروں کا مرکزی جوہر ہے۔ میں React.js اور Next.js جیسے فریم ورکس کو نہایت مہارت سے برتتا ہوں اور ایسے بے رکاوٹ دروازے (ویب سائٹس) تراشتا ہوں جو ڈیجیٹل کائنات میں بسی ہوئی سلطنتوں (صارفین) کو آپس میں جوڑتے ہیں۔ Jamstack کے قدیم فنون مجھے تیز، محفوظ اور متحرک تجربات بنانے کی قوت دیتے ہیں، جبکہ میری ڈیزائن کی مہارت یہ یقینی بناتی ہے کہ ہر تخلیق کارآمد ہونے کے ساتھ ساتھ دیکھنے میں بھی دل کو موہ لینے والی ہو۔ نظر آنے والے جادو سے پرے، میں پوشیدہ کل پرزوں کی بھی دیکھ بھال کرتا ہوں — مضبوط APIs اور ڈیٹابیس (وہ خزانے جہاں ہر سلطنت کی یادداشت محفوظ رہتی ہے) تیار کرتا ہوں اور خودکار پائپ لائنیں بُنتا ہوں جو میری تخلیقات کو کارگاہ سے کلاؤڈ تک پہنچاتی ہیں (وہ بے کراں فضا جہاں وہ آخرکار جاگ اٹھتی ہیں)۔ میں کارکردگی اور رسائی کو مقدس عہد سمجھتا ہوں، تاکہ ہر دروازہ ہر مسافر کے لیے، ہر آلے پر اور سلطنت کے ہر دور دراز گوشے میں تیزی سے کھلے۔ تجسس میرا سب سے سچا قطب نما ہے، جو مجھے ہمیشہ نئے جادوئی صحیفوں، تیز تر وجدان اور ایسے جری خیالات کی طرف کھینچتا ہے جو جیتے جاگتے تجربات میں ڈھل سکیں۔ میرے ساتھ شامل ہوں، جب میں نئے منتروں اور ٹیکنالوجیز کی کھوج جاری رکھتا ہوں تاکہ ویب کے مستقبل کو شکل دے سکوں۔"
+  },
+  "projectsCard": {
+    "eyebrow": "مکمل کیے گئے پروجیکٹس",
+    "unit": "{count, plural, one {مکمل پروجیکٹ} other {مکمل پروجیکٹس}}",
+    "viewProgress": "پیش رفت دیکھیں ←",
+    "ariaLabel": "مکمل کیے گئے پروجیکٹس: {count, number, ::group-off} مکمل پروجیکٹس۔ {legend}۔ پیش رفت دیکھیں: پروجیکٹس کی براہِ راست پیش رفت کھلتی ہے۔",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "زمرے کے لحاظ سے مکمل پروجیکٹس — {summary}۔",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, one {پروجیکٹ} other {پروجیکٹس}}",
+    "srPrefix": "پروجیکٹس کی تازہ کاری: "
+  },
+  "statsCard": {
+    "title": "{name} کے GitHub اعداد و شمار",
+    "defaultUser": "GitHub صارف",
+    "live": "GitHub کے براہِ راست میٹرکس",
+    "rank": "درجہ",
+    "updated": "GitHub اعداد و شمار اپ ڈیٹ ہو گئے",
+    "srPrefix": "اعداد و شمار کی تازہ کاری: ",
+    "metrics": {
+      "stars": "کل حاصل کردہ اسٹارز",
+      "commits": "کل کمٹس (پچھلے سال)",
+      "prs": "کل PRs",
+      "issues": "کل ایشوز",
+      "contributedTo": "شراکت کی (پچھلے سال)"
+    }
+  },
+  "languagesCard": {
+    "title": "سب سے زیادہ استعمال ہونے والی زبانیں",
+    "count": "{count, number, ::group-off} {count, plural, one {زبان} other {زبانیں}}",
+    "live": "GitHub سے براہِ راست",
+    "primary": "بنیادی",
+    "percent": "<n></n>%",
+    "srPrefix": "زبانوں کی تازہ کاری: ",
+    "popover": {
+      "eyebrow": "ریپازٹری کی تفصیل",
+      "ariaLabel": "{language} استعمال کرنے والی ریپازٹریز",
+      "privateRepos": "{count, number, ::group-off} نجی {count, plural, one {ریپازٹری} other {ریپازٹریز}}"
+    }
+  },
+  "streakCard": {
+    "title": "شراکت کے تسلسل",
+    "subtitle": "GitHub کی سرگرمی",
+    "srPrefix": "تسلسل کی تازہ کاری: ",
+    "total": "کل شراکتیں",
+    "current": "موجودہ تسلسل",
+    "longest": "طویل ترین تسلسل",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, one {دن} other {دن}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, one {دن} other {دن}}، آپ کے طویل ترین تسلسل کا {percent, number, ::group-off} فیصد"
+  },
+  "repoCard": {
+    "badge": "سب سے زیادہ فعال ریپازٹری",
+    "srPrefix": "ریپازٹری کی تازہ کاری: ",
+    "metrics": {
+      "stars": "اسٹارز",
+      "forks": "فورکس",
+      "mergedPrs": "مرج شدہ PRs",
+      "commits": "کل کمٹس",
+      "lastPushed": "آخری پش"
+    },
+    "score": "اسکور",
+    "activityScore": "سرگرمی کا اسکور"
+  },
+  "skillsCard": {
+    "title": "مہارتیں اور ٹیکنالوجیز",
+    "categories": {
+      "languages": "زبانیں",
+      "frameworks": "فریم ورکس",
+      "libraries": "لائبریریز",
+      "tools": "اوزار",
+      "software": "سافٹ ویئر"
+    },
+    "count": "<n></n> {count, plural, one {ٹیکنالوجی} other {ٹیکنالوجیز}}",
+    "live": "GitHub سے براہِ راست",
+    "syncing": "GitHub کے ساتھ ہم آہنگ ہو رہا ہے…",
+    "noneDetected": "کوئی مہارت نہیں ملی",
+    "noneInRepos": "آپ کی ریپازٹریز میں کوئی مہارت نہیں ملی",
+    "fetching": "GitHub سے مہارتیں حاصل کی جا رہی ہیں…",
+    "srPrefix": "مہارتوں کی تازہ کاری: ",
+    "popover": {
+      "eyebrow": "ریپوزٹریز میں استعمال شدہ",
+      "ariaLabel": "{name} استعمال کرنے والی ریپوزٹریز",
+      "label": "ریپوزٹریز:",
+      "publicSr": "{count, number, ::group-off} عوامی",
+      "privateSr": "{count, number, ::group-off} نجی",
+      "publicCount": "<n></n> عوامی",
+      "privateCount": "<n></n> نجی",
+      "slash": "/",
+      "allPrivate": "تمام ریپوزٹریز نجی ہیں"
+    }
+  },
+  "progress": {
+    "eyebrow": "ڈیلیوری ٹیلی میٹری",
+    "title": "پراجیکٹ کی پیش رفت",
+    "close": "پراجیکٹ کی پیش رفت بند کریں",
+    "failed": "اس وقت پیش رفت کی سنک تک رسائی نہیں ہو سکی۔",
+    "retry": "سنک دوبارہ آزمائیں",
+    "ringLineOne": "بورڈ آئٹمز",
+    "ringLineTwo": "مکمل",
+    "percent": "<n></n>%",
+    "itemsDone": "مکمل آئٹمز",
+    "ofTotal": "از {total, number, ::group-off}",
+    "boardsLive": "فعال بورڈز",
+    "allProjects": "{count, plural, one {پراجیکٹ} other {پراجیکٹس}}",
+    "ofProjects": "از {total, number, ::group-off} پراجیکٹس",
+    "unavailable": "لائیو سنک اس وقت دستیاب نہیں — پورٹ فولیو کا ڈھانچہ دکھایا جا رہا ہے؛ اگلی کامیاب تازہ کاری پر فیصد دوبارہ نظر آئیں گے۔",
+    "byCategory": "زمرے کے لحاظ سے",
+    "projectCount": "{count, number, ::group-off} پراجیکٹس",
+    "perProject": "فی پراجیکٹ",
+    "liveFrom": "GitHub Projects سے لائیو",
+    "footer": "GitHub Projects سے خودکار سنک · دن میں دو بار",
+    "lastSync": "آخری سنک",
+    "awaiting": "پہلی سنک کا انتظار",
+    "row": {
+      "tracked": "{percent, number, ::group-off}% مکمل، {total, number, ::group-off} میں سے {done, number, ::group-off} بورڈ آئٹمز مکمل",
+      "syncUnavailable": "پیش رفت کی سنک دستیاب نہیں",
+      "notTracked": "ٹریک نہیں کیا جا رہا",
+      "ariaLabel": "{name}، {category}۔ {status}۔ بورڈ کی تفصیل کھولیں یا بند کریں۔",
+      "syncUnavailableTag": "· سنک دستیاب نہیں",
+      "total": "کل",
+      "couldNotSync": "اس وقت یہ بورڈ سنک نہیں ہو سکا — لائیو گنتی اگلی تازہ کاری پر واپس آ جائے گی۔",
+      "noBoard": "اس پراجیکٹ سے کوئی GitHub پراجیکٹ بورڈ منسلک نہیں ہے۔",
+      "viewBoard": "پراجیکٹ بورڈ دیکھیں ←"
+    },
+    "age": {
+      "seconds": "{s}سیکنڈ پہلے",
+      "minutes": "{m}م {s}سیکنڈ پہلے",
+      "hours": "{h}گھنٹے {m}م پہلے",
+      "days": "{d}دن {h}گھنٹے پہلے"
+    },
+    "columns": {
+      "todo": "کرنے کے کام",
+      "backlog": "بیک لاگ",
+      "ready": "تیار",
+      "inProgress": "جاری",
+      "inReview": "زیرِ جائزہ",
+      "done": "مکمل",
+      "noStatus": "بلا حالت",
+      "blocked": "رکا ہوا",
+      "onHold": "موقوف"
+    }
+  },
+  "wire": {
+    "present": "حال",
+    "noCurrent": "کوئی موجودہ سلسلہ نہیں",
+    "noneFound": "کوئی سلسلہ نہیں ملا",
+    "noData": "کوئی ڈیٹا نہیں",
+    "notAvailable": "دستیاب نہیں",
+    "noDescription": "کوئی تفصیل نہیں",
+    "unknown": "نامعلوم",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "سب سے زیادہ فعال ریپوزٹری تبدیل ہو کر \"{name}\" ہو گئی",
+      "stars": "اسٹارز {amount, number, ::group-off} {direction, select, increased {بڑھ گئے} other {کم ہو گئے}} (اب {total, number, ::group-off})",
+      "forks": "فورکس {amount, number, ::group-off} {direction, select, increased {بڑھ گئے} other {کم ہو گئے}} (اب {total, number, ::group-off})",
+      "commits": "{count, number, ::group-off} نئی {count, plural, one {کمٹ} other {کمٹس}} پش کی گئیں",
+      "mergedPrs": "{count, number, ::group-off} {count, plural, one {PR} other {PRs}} مرج ہوئیں",
+      "activityScore": "سرگرمی اسکور {direction, select, increased {{amount, number, ::group-off} بڑھ گیا} other {{amount, number, ::group-off} گھٹ گیا}} (اب {total, number, ::group-off})",
+      "language": "بنیادی زبان تبدیل ہو کر \"{language}\" ہو گئی"
+    },
+    "stats": {
+      "stars": "کل اسٹارز {delta, number, ::sign-always group-off}",
+      "commits": "کل کمٹس {delta, number, ::sign-always group-off}",
+      "prs": "کل PRs {delta, number, ::sign-always group-off}",
+      "issues": "کل ایشوز {delta, number, ::sign-always group-off}",
+      "contributedTo": "شراکت کردہ منصوبے {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "کل شراکتیں {delta, number, ::sign-always group-off}",
+      "currentStreak": "موجودہ سلسلہ {delta, number, ::sign-always group-off}",
+      "longestStreak": "طویل ترین سلسلہ {delta, number, ::sign-always group-off}",
+      "currentDates": "موجودہ سلسلے کی تاریخیں تبدیل ہو گئیں",
+      "longestDates": "طویل ترین سلسلے کی تاریخیں تبدیل ہو گئیں"
+    },
+    "comma": "، ",
+    "languages": {
+      "addedOne": "{language} کو نمایاں ترین زبانوں میں شامل کر لیا گیا۔",
+      "addedMany": "{count, number, ::group-off} {count, plural, one {نئی زبان} other {نئی زبانیں}} نمایاں فہرست میں شامل ہوئیں۔",
+      "removedOne": "{language} نمایاں ترین زبانوں سے باہر ہو گئی۔",
+      "removedMany": "{count, number, ::group-off} {count, plural, one {زبان} other {زبانیں}} نمایاں فہرست سے باہر ہو گئیں۔",
+      "percentage": "{language} میں {delta, number, ::.0 group-off}% {direction, select, increased {اضافہ ہوا} other {کمی ہوئی}}۔",
+      "rank": "{language} {direction, select, up {اوپر آ کر} other {نیچے جا کر}} #{rank, number, ::group-off} پر پہنچ گئی۔"
+    },
+    "skills": {
+      "added": "شامل کیے گئے: {items}",
+      "removed": "ہٹائے گئے: {items}",
+      "moved": "منتقل کیے گئے: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} ← {to})"
+    },
+    "projects": {
+      "added": "{delta, number, ::group-off} نیا مکمل شدہ {delta, plural, one {منصوبہ} other {منصوبے}} شامل کیا گیا — اب کل {count, number, ::group-off}",
+      "updated": "مکمل شدہ منصوبے اپ ڈیٹ ہو گئے — اب کل {count, number, ::group-off}"
+    }
+  }
+}

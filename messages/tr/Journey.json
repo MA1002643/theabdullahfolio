@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "YOLCULUĞUM",
+    "subtitle": "ilk satırdan canlıya"
+  },
+  "timeline": {
+    "label": "Yolculuk zaman çizelgesi"
+  },
+  "endCap": {
+    "est": "KURULUŞ {year} · BOLTON, UK",
+    "tally": "{years, plural, other {# YIL}} · {entries, plural, other {# KAYIT}} · {tracks, plural, other {# HAT}}",
+    "paper": "KÂĞIT SÜRÜM →",
+    "paperHint": "CV'nin PDF hali (yeni sekmede açılır)"
+  },
+  "spine": {
+    "now": "ŞİMDİ"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# ay}}} other {# yıl{months, plural, =0 {} other { # ay}}}}",
+    "tenureOngoing": "şimdiye kadar {tenure}",
+    "view": "GÖR",
+    "viewLabel": "{title} kaydını görüntüle (yeni sekmede açılır)"
+  },
+  "eraRail": {
+    "label": "Zaman çizelgesi dönemleri",
+    "jump": "{year} yılına git"
+  },
+  "atlas": {
+    "eyebrow": "Örtüşme görünümü",
+    "title": "Atlas — üç hat, tek saat",
+    "live": {
+      "career": "{count, plural, other {# rol}}",
+      "education": "{count, plural, other {# derece}}",
+      "milestone": "{count, plural, other {# topluluk paylaşımı}}",
+      "separator": " + ",
+      "sentence": "Bugün devam eden: {parts}{total, plural, =1 {.} other { — paralel olarak.}}"
+    },
+    "tracks": {
+      "all": "Tümü",
+      "career": "Kariyer",
+      "education": "Eğitim",
+      "milestone": "Topluluk"
+    },
+    "chipsLabel": "Bir hattı vurgula",
+    "zoom": {
+      "group": "Izgara yakınlaştırma",
+      "out": "Izgarayı uzaklaştır",
+      "outTitle": "Uzaklaştır",
+      "in": "Izgarayı yakınlaştır",
+      "inTitle": "Yakınlaştır",
+      "readoutLabel": "Izgara yakınlaştırma {pct}. {full} değerine sıfırla",
+      "readoutTitle": "Izgara yakınlaştırma",
+      "resetTitle": "Yakınlaştırmayı {full} değerine sıfırla",
+      "status": "Izgara yakınlaştırma {pct}"
+    },
+    "region": "Örtüşme atlası: her rol ve ders, tek zaman ekseninde paralel çubuklar olarak",
+    "entries": "{count, plural, other {# kayıt}}",
+    "now": "Şimdi",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "{org} · {role}, {dates} kaydına git",
+    "spokenRange": "{start} ile {end} arası",
+    "spokenOpen": "{start} tarihinden bugüne",
+    "key": {
+      "select": "Atlamak için herhangi bir çubuğu seç.",
+      "dashed": "Kesikli kenar = hâlâ devam ediyor.",
+      "stacked": "Üst üste çubuklar = eş zamanlı."
+    }
+  },
+  "palette": {
+    "section": "Yolculuk",
+    "jumpYear": "{year} yılına git",
+    "eraHint": "dönem",
+    "jumpAtlas": "Örtüşme atlasına git",
+    "openCv": "CV'yi aç (PDF)",
+    "openCvHint": "kâğıt sürüm"
+  }
+}

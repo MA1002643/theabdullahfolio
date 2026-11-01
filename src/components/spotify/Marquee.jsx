@@ -16,6 +16,11 @@ export default function Marquee({ text, active = false, className = '' }) {
   const wrapRef = useRef(null);
   const textRef = useRef(null);
   const [overflow, setOverflow] = useState(0);
+  // Which way the tail hides (issue #82): a right-to-left title (Arabic,
+  // Hebrew) overflows on the LEFT, so its reveal slides the other way. Read
+  // from the span's own resolved direction — it carries dir="auto", so a Latin
+  // title on an Arabic page still scrolls left, and vice versa.
+  const [towardStart, setTowardStart] = useState(-1);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -28,6 +33,7 @@ export default function Marquee({ text, active = false, className = '' }) {
       // avoids a jittery 1px marquee on sub-pixel rounding.
       const diff = el.scrollWidth - wrap.clientWidth;
       setOverflow(diff > 4 ? diff : 0);
+      setTowardStart(getComputedStyle(el).direction === 'rtl' ? 1 : -1);
     };
     measure();
 
@@ -48,11 +54,12 @@ export default function Marquee({ text, active = false, className = '' }) {
     <div ref={wrapRef} className={`overflow-hidden ${className}`}>
       <motion.span
         ref={textRef}
+        dir="auto"
         className="inline-block whitespace-nowrap will-change-transform"
         // Hold at each end, then ease across — a calm reveal, not a ticker.
         animate={
           shouldScroll
-            ? { x: [0, 0, -overflow, -overflow, 0] }
+            ? { x: [0, 0, towardStart * overflow, towardStart * overflow, 0] }
             : { x: 0 }
         }
         transition={

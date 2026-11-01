@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "IL MIO SETUP",
+    "subtitle": "gli strumenti, verificati"
+  },
+  "opensNewTab": "{name} (si apre in una nuova scheda)",
+  "machine": {
+    "eyebrow": "Hardware · impostato a mano",
+    "title": "La macchina",
+    "provenance": "{count, plural, one {<fig>{n}</fig> riga} other {<fig>{n}</fig> righe}} · confermato dal proprietario",
+    "seeItLive": "guardalo dal vivo"
+  },
+  "bench": {
+    "eyebrow": "Ambiente · impostato a mano",
+    "title": "Il banco di lavoro",
+    "provenance": "{count, plural, one {<fig>{n}</fig> postazione} other {<fig>{n}</fig> postazioni}} · estratto di {file}",
+    "extensions": "Le estensioni che uso di più",
+    "editorCaption": "Un estratto del mio {file} di VS Code, mostrato con il tema {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · rilevato dai repository",
+    "eyebrowCurated": "Stack · selezione curata",
+    "title": "Lo stack",
+    "provenanceLive": "dal vivo · {count, plural, one {<fig>{n}</fig> strumento} other {<fig>{n}</fig> strumenti}}",
+    "provenanceCurated": "curato · {count, plural, one {<fig>{n}</fig> strumento} other {<fig>{n}</fig> strumenti}} · {state, select, unreachable {GitHub non raggiungibile} other {sincronizzazione con GitHub…}}",
+    "verifiedSr": "verificato su GitHub",
+    "verifiedStatus": "Stack verificato su GitHub.",
+    "cta": "VEDI I REPOSITORY",
+    "ctaLabel": "Vedi i repository su GitHub (si apre in una nuova scheda)",
+    "tally": "<count></count> di <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "repository pubblici",
+    "keyPrivate": "privati",
+    "keyRelative": "le barre sono relative allo strumento più usato",
+    "keyPending": "le barre si riempiono e i conteggi dei repository arrivano con la scansione dal vivo",
+    "repoCount": {
+      "public": "usato in {pub, plural, one {# repository pubblico} other {# repository pubblici}}",
+      "private": "usato in {priv, plural, one {# repository privato} other {# repository privati}}",
+      "mixed": "usato in {pub, plural, one {# repository pubblico} other {# repository pubblici}} · +{priv} privati"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: i conteggi dei repository arrivano con la scansione dal vivo",
+    "figure": {
+      "publicRepos": "{n, plural, one {repo pubblico} other {repo pubblici}}",
+      "privateRepos": "{n, plural, one {repo privato} other {repo privati}}",
+      "repos": "{n, plural, one {repo} other {repo}}",
+      "public": "pubblici",
+      "private": "privati"
+    },
+    "curated": "curato"
+  },
+  "liveAge": {
+    "verified": "verificato {age}",
+    "s": "{s} s fa",
+    "ms": "{m} min {s} s fa",
+    "hm": "{h} h {m} min fa",
+    "dh": "{d} g {h} h fa"
+  },
+  "pipeline": {
+    "eyebrow": "Rilascio · dal commit al calcolo",
+    "title": "La pipeline",
+    "provenance": "{count, plural, one {<fig>{n}</fig> workflow} other {<fig>{n}</fig> workflow}} · letti da .github in fase di build",
+    "provenanceHandSet": "schema · impostato a mano",
+    "region": "Diagramma della pipeline di build",
+    "svgTitle": "Pipeline di rilascio: un push passa da GitHub a GitHub Actions e alla build di Vercel, fino a Fluid compute; quest'ultimo riceve direttamente anche un webhook di GitHub e viene chiamato da un cron giornaliero. Da lì il compute si distribuisce, tramite un service bus, ai servizi elencati qui sotto.",
+    "fires": "si attiva <fig>{window}</fig> UTC (precisione Hobby)",
+    "kinds": {
+      "source": "SORGENTE",
+      "ci": "CI",
+      "build": "BUILD",
+      "runtime": "RUNTIME",
+      "schedule": "PIANIFICAZIONE",
+      "store": "ARCHIVIO",
+      "gateway": "GATEWAY",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "POSTA",
+      "auth": "AUTH",
+      "search": "RICERCA"
+    },
+    "workflows": "{count, plural, one {{n} workflow} other {{n} workflow}}",
+    "apiRoutes": "{count, plural, one {{n} route API} other {{n} route API}}",
+    "apiRoutesBare": "route API",
+    "locales": "{count, plural, one {{n} lingua} many {{n} di lingue} other {{n} lingue}}",
+    "crons": "{count, plural, one {cron} other {{n} cron}}",
+    "daily": "ogni giorno · {time} UTC",
+    "services": {
+      "redis": "guestbook · posizione · SEO · deduplica",
+      "graphql": "statistiche · competenze · progressi",
+      "spotify": "in riproduzione",
+      "mail": "contatti · verifica Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Qualità · conteggiata in fase di build",
+    "title": "Gli strumenti di misura",
+    "provenance": "conteggiato in fase di build · <fig>{date}</fig>",
+    "provenanceBare": "conteggiato in fase di build",
+    "unitLabel": "{count, plural, one {suite Vitest} other {suite Vitest}}",
+    "unitSub": "{count, plural, one {{n} caso di test} other {{n} casi di test}} · Vitest",
+    "e2eLabel": "{count, plural, one {suite nel browser} other {suite nel browser}}",
+    "e2eSub": "{count, plural, one {{n} scenario} other {{n} scenari}} · Playwright",
+    "apiLabel": "{count, plural, one {route API} other {route API}}",
+    "apiSub": "route handler · {methods}",
+    "apiSubBare": "route handler",
+    "tileLabel": "{figure} {label} — {sub} (apre la cartella su GitHub in una nuova scheda)"
+  },
+  "bom": {
+    "eyebrow": "Distinta base · questo sito",
+    "title": "Di cosa è fatto",
+    "provenance": "{source} · verificato in fase di build · <fig>{date}</fig>",
+    "provenanceBare": "{source} · verificato in fase di build",
+    "unreadable": "Non è stato possibile leggere il manifest durante la build, quindi non viene elencata alcuna versione.",
+    "packages": "{count, plural, one {<fig>{n}</fig> pacchetto} other {<fig>{n}</fig> pacchetti}}",
+    "packagesOf": "<fig>{n}</fig> di <fig>{all}</fig> pacchetti",
+    "built": "compilato <fig>{date}</fig>",
+    "groups": {
+      "core": "Core",
+      "3d-and-motion": "3D e movimento",
+      "data-and-services": "Dati e servizi",
+      "interface": "Interfaccia",
+      "platform": "Piattaforma",
+      "media": "Media",
+      "quality": "Qualità",
+      "build": "Build",
+      "runtime": "Runtime",
+      "tooling": "Strumenti"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Linguaggi",
+        "lay": "Il linguaggio in cui è scritto il codice stesso."
+      },
+      "frameworks": {
+        "label": "Framework",
+        "lay": "L'impalcatura su cui si costruisce un'applicazione: la sua struttura e le sue convenzioni."
+      },
+      "libraries": {
+        "label": "Librerie",
+        "lay": "Componenti già pronti, ognuno scelto per svolgere bene un solo compito."
+      },
+      "tools": {
+        "label": "Strumenti",
+        "lay": "Ciò che sta attorno al codice: test, formattazione, database e rilascio."
+      },
+      "software": {
+        "label": "Software",
+        "lay": "I servizi su cui vive il lavoro finito."
+      }
+    }
+  }
+}

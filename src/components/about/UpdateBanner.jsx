@@ -5,6 +5,7 @@ import { Fragment } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fluidText } from "@/lib/fluidScale";
+import { glyphUnits } from "@/components/ui/textSegments";
 
 // Visual variants. Each variant ships every token needed by the full
 // banner choreography (entrance flash, sweep, aurora drift, ember
@@ -139,7 +140,10 @@ function AnimatedMessage({ message, prefersReducedMotion }) {
       </span>
     );
   }
-  const chars = Array.from(message);
+  // Graphemes for most scripts, whole words for joining ones (Arabic, Urdu,
+  // Persian, Devanagari) whose letters must stay in one shaped run (issue #82).
+  // English is cut exactly as `Array.from` cut it.
+  const chars = glyphUnits(message);
   const container = {
     hidden: {},
     visible: {

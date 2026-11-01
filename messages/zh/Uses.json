@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "我的装备",
+    "subtitle": "经过验证的工具"
+  },
+  "opensNewTab": "{name}（在新标签页中打开）",
+  "machine": {
+    "eyebrow": "硬件 · 手工整理",
+    "title": "我的设备",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> 项} other {<fig>{n}</fig> 项}} · 机主确认",
+    "seeItLive": "查看实时效果"
+  },
+  "bench": {
+    "eyebrow": "环境 · 手工整理",
+    "title": "工作台",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> 个工位} other {<fig>{n}</fig> 个工位}} · {file} 节选",
+    "extensions": "我常用的扩展",
+    "editorCaption": "我的 VS Code {file} 节选，以 {theme} 主题显示。"
+  },
+  "stack": {
+    "eyebrowLive": "技术栈 · 从仓库中抓取",
+    "eyebrowCurated": "技术栈 · 精选集",
+    "title": "技术栈",
+    "provenanceLive": "实时 · {count, plural, =1 {<fig>{n}</fig> 个工具} other {<fig>{n}</fig> 个工具}}",
+    "provenanceCurated": "精选 · {count, plural, =1 {<fig>{n}</fig> 个工具} other {<fig>{n}</fig> 个工具}} · {state, select, unreachable {无法连接 GitHub} other {正在与 GitHub 同步…}}",
+    "verifiedSr": "已通过 GitHub 验证",
+    "verifiedStatus": "技术栈已通过 GitHub 验证。",
+    "cta": "查看仓库",
+    "ctaLabel": "在 GitHub 上查看仓库（在新标签页中打开）",
+    "tally": "<count></count> / <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "公开仓库",
+    "keyPrivate": "私有",
+    "keyRelative": "进度条以使用最多的工具为基准",
+    "keyPending": "进度条与仓库数量将在实时抓取完成后显示",
+    "repoCount": {
+      "public": "用于 {pub, plural, other {# 个公开仓库}}",
+      "private": "用于 {priv, plural, other {# 个私有仓库}}",
+      "mixed": "用于 {pub, plural, other {# 个公开仓库}} · 另有 {priv} 个私有"
+    },
+    "meterLabel": "{name}：{sentence}",
+    "meterPending": "{name}：仓库数量将在实时抓取完成后显示",
+    "figure": {
+      "publicRepos": "{n, plural, other {个公开仓库}}",
+      "privateRepos": "{n, plural, other {个私有仓库}}",
+      "repos": "{n, plural, other {个仓库}}",
+      "public": "公开",
+      "private": "私有"
+    },
+    "curated": "精选"
+  },
+  "liveAge": {
+    "verified": "{age}验证",
+    "s": "{s} 秒前",
+    "ms": "{m} 分 {s} 秒前",
+    "hm": "{h} 小时 {m} 分钟前",
+    "dh": "{d} 天 {h} 小时前"
+  },
+  "pipeline": {
+    "eyebrow": "交付 · 从提交到计算",
+    "title": "交付流水线",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> 个工作流} other {<fig>{n}</fig> 个工作流}} · 构建时读取自 .github",
+    "provenanceHandSet": "示意图 · 手工绘制",
+    "region": "构建流水线示意图",
+    "svgTitle": "交付流水线：代码推送从 GitHub 经由 GitHub Actions 和 Vercel 构建流向 Fluid compute；GitHub webhook 也会直接触达 Fluid compute，每日定时任务（cron）同样会调用它；随后计算层通过服务总线分发到下方列出的各项服务。",
+    "fires": "于 <fig>{window}</fig> UTC 触发（Hobby 档精度）",
+    "kinds": {
+      "source": "源码",
+      "ci": "CI",
+      "build": "构建",
+      "runtime": "运行时",
+      "schedule": "定时",
+      "store": "存储",
+      "gateway": "网关",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "邮件",
+      "auth": "认证",
+      "search": "搜索"
+    },
+    "workflows": "{count, plural, other {{n} 个工作流}}",
+    "apiRoutes": "{count, plural, other {{n} 个 API 路由}}",
+    "apiRoutesBare": "API 路由",
+    "locales": "{count, plural, other {{n} 种语言}}",
+    "crons": "{count, plural, other {{n} 个定时任务}}",
+    "daily": "每日 · {time} UTC",
+    "services": {
+      "redis": "留言簿 · 位置 · SEO · 去重",
+      "graphql": "统计 · 技能 · 进度",
+      "spotify": "正在播放",
+      "mail": "联系 · Abstract 验证"
+    }
+  },
+  "instruments": {
+    "eyebrow": "质量 · 构建时统计",
+    "title": "检测仪表",
+    "provenance": "构建时统计 · <fig>{date}</fig>",
+    "provenanceBare": "构建时统计",
+    "unitLabel": "{count, plural, other {Vitest 测试套件}}",
+    "unitSub": "{count, plural, other {{n} 个测试用例}} · Vitest",
+    "e2eLabel": "{count, plural, other {浏览器测试套件}}",
+    "e2eSub": "{count, plural, other {{n} 个场景}} · Playwright",
+    "apiLabel": "{count, plural, other {API 路由}}",
+    "apiSub": "路由处理器 · {methods}",
+    "apiSubBare": "路由处理器",
+    "tileLabel": "{figure} {label} — {sub}（在新标签页中打开 GitHub 上的文件夹）"
+  },
+  "bom": {
+    "eyebrow": "物料清单 · 本站",
+    "title": "它由什么构成",
+    "provenance": "{source} · 构建时校验 · <fig>{date}</fig>",
+    "provenanceBare": "{source} · 构建时校验",
+    "unreadable": "构建时无法读取清单文件，因此未列出版本。",
+    "packages": "{count, plural, one {<fig>{n}</fig> 个包} other {<fig>{n}</fig> 个包}}",
+    "packagesOf": "<fig>{n}</fig> / <fig>{all}</fig> 个包",
+    "built": "构建于 <fig>{date}</fig>",
+    "groups": {
+      "core": "核心",
+      "3d-and-motion": "3D 与动效",
+      "data-and-services": "数据与服务",
+      "interface": "界面",
+      "platform": "平台",
+      "media": "媒体",
+      "quality": "质量",
+      "build": "构建",
+      "runtime": "运行时",
+      "tooling": "工具链"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "语言",
+        "lay": "代码本身所用的语言。"
+      },
+      "frameworks": {
+        "label": "框架",
+        "lay": "应用赖以构建的脚手架：其结构与约定。"
+      },
+      "libraries": {
+        "label": "库",
+        "lay": "现成的构建模块，每一个只专注把一件事做好。"
+      },
+      "tools": {
+        "label": "工具",
+        "lay": "围绕代码运转的一切：测试、格式化、数据库与部署。"
+      },
+      "software": {
+        "label": "软件",
+        "lay": "成品作品所运行的服务。"
+      }
+    }
+  }
+}

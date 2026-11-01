@@ -34,7 +34,7 @@ describe('reduced-motion hook', () => {
   });
 
   it('the root layout keeps framer-motion honouring the OS preference', () => {
-    expect(read('src/app/layout.js')).toMatch(/<MotionPreferences>/);
+    expect(read('src/app/[locale]/layout.js')).toMatch(/<MotionPreferences>/);
     expect(read('src/components/MotionPreferences.jsx')).toMatch(/reducedMotion="user"/);
   });
 });

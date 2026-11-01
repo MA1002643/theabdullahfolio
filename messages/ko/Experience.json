@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "이 분야에서 쌓은 시간",
+    "unit": "{unit, select, years {{count, plural, other {년 경력}}} other {{count, plural, other {개월 경력}}}}",
+    "unavailable": "경력 정보 없음",
+    "loadingAria": "경력 연수를 불러오는 중",
+    "viewBreakdown": "상세 보기 →",
+    "srPrefix": "경력 업데이트: ",
+    "personal": "개인",
+    "employment": "직장",
+    "splitUnavailable": "확인 불가",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "경력 요약을 불러오는 중",
+    "degraded": "이 분야에서 쌓은 시간: 경력 정보 없음 (요약 중 GitHub 부분이 없거나 불완전해요).{split} 상세 보기: 확인 가능한 내용의 상세 내역을 열어요.",
+    "ready": "이 분야에서 쌓은 시간: {count, number, ::group-off}+ {unit, select, years {년} other {개월}} 경력.{split} 상세 보기: 카테고리별 상세 내역을 열어요.",
+    "split": "개인 {personal}, 직장 {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "확인 불가"
+  },
+  "modal": {
+    "eyebrow": "커리어 스냅샷",
+    "title": "카테고리별 경력",
+    "close": "경력 상세 내역 닫기",
+    "personalProjects": "개인 프로젝트",
+    "employment": "직장 경력",
+    "unavailable": "확인 불가",
+    "unitWord": "{unit, select, years {{count, plural, other {년}}} other {{count, plural, other {개월}}}}",
+    "totalUnavailable": "총 기간 확인 불가",
+    "totalUnit": "총 {unit, select, years {년} other {개월}}",
+    "ownedRepos": "<n></n>{count, plural, other {개의 소유 저장소}}",
+    "roles": "<n></n>{count, plural, other {개의 직무}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+년} other {개월}}",
+    "newestFirst": "최신순",
+    "showFewer": "일부만 보기",
+    "showAll": "저장소 {count, number, ::group-off}개 모두 보기 →",
+    "noRepos": "아직 확인된 소유 저장소가 없어요.",
+    "personalFailed": "지금은 개인 프로젝트 데이터를 불러올 수 없어요.",
+    "relativeDuration": "상대적 기간",
+    "noRoles": "아직 확인된 소프트웨어 엔지니어링 직무가 없어요.",
+    "employmentFailed": "지금은 직장 경력 데이터를 불러올 수 없어요."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, other {년}}} other {{count, plural, other {개월}}}}",
+  "changes": {
+    "newRole": "이력서에서 새로운 직무를 확인했어요: {company}",
+    "years": "경력 연수가 업데이트되었어요: {from} → {to}",
+    "employment": "직장 경력이 업데이트되었어요: +{count, number, ::group-off}{count, plural, other {개월}}",
+    "newRepo": "새 저장소를 확인했어요: {name}",
+    "newRepos": "GitHub에서 새 저장소 {count, number, ::group-off}{count, plural, other {개}}를 확인했어요",
+    "timeline": "개인 프로젝트 타임라인이 업데이트되었어요"
+  }
+}

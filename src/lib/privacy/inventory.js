@@ -206,6 +206,20 @@ export const COOKIES = [
       'tamper-evident. Both are consumed the moment you come back.',
     lifetime: 'A few minutes',
   },
+  {
+    // Issue #82. Written ONLY by the language selector, at the moment a visitor
+    // picks a language — never inferred from the browser's language and never
+    // set by visiting a translated URL (src/i18n/routing.js turns next-intl's
+    // automatic cookie off for exactly that reason). Strictly necessary in the
+    // ePrivacy sense: it stores nothing but the choice the visitor just made,
+    // so that choice is honoured on their next visit.
+    name: 'NEXT_LOCALE',
+    setWhen: 'You choose a language in the language menu',
+    purpose:
+      'Remembers the language you picked (a two-letter code such as "ar"), so ' +
+      'an English link opens in your language next time. Nothing else is in it.',
+    lifetime: 'One year, or until you pick English again',
+  },
 ];
 
 /**
@@ -474,6 +488,14 @@ export const STORAGE_KEYS = [
     purpose: 'Whether you have seen the intro animation, so it plays once.',
   },
   {
+    key: 'locale-suggestion:dismissed',
+    kind: 'localStorage',
+    group: 'interface',
+    purpose:
+      'Whether you dismissed the "this site is available in your language" ' +
+      'offer, so it is made once rather than on every visit.',
+  },
+  {
     key: 'nav-orbit-tip:dismissed',
     kind: 'localStorage',
     group: 'interface',
@@ -699,4 +721,4 @@ export const RIGHTS = [
  *
  * Bump it when the substance changes. Leave it alone for a reworded sentence.
  */
-export const POLICY_UPDATED = '2026-09-27';
+export const POLICY_UPDATED = '2026-10-25';
