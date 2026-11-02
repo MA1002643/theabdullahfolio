@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, useCallback, useEffect, useRef } from 'react';
+import { applyTypedDirection } from './typedDirection';
 
 // FireTextarea — multi-line <textarea> wrapper that paints the fire-amber
 // gradient on typed text without the rendering bugs of clipping the gradient
@@ -32,7 +33,7 @@ import { forwardRef, useCallback, useEffect, useRef } from 'react';
 // in for `<textarea {...register('message', {...})} />` usage without changing
 // the form's validation wiring.
 const FireTextarea = forwardRef(function FireTextarea(
-  { className = '', ...rest },
+  { className = '', dir, ...rest },
   forwardedRef,
 ) {
   const textareaRef = useRef(null);
@@ -74,12 +75,16 @@ const FireTextarea = forwardRef(function FireTextarea(
     const ta = textareaRef.current;
     const overlay = overlayRef.current;
     if (!ta || !overlay) return;
+    // Page direction while empty, the typed text's once it has some (see
+    // typedDirection.js). The overlay text is block-level, so `dir` on it
+    // sets its alignment directly.
+    applyTypedDirection(ta, overlay, dir);
     if (ta.selectionEnd === ta.value.length) {
       ta.scrollTop = ta.scrollHeight;
     }
     overlay.textContent = ta.value;
     overlay.style.transform = `translateY(${-ta.scrollTop}px)`;
-  }, []);
+  }, [dir]);
 
   useEffect(() => {
     const ta = textareaRef.current;
@@ -118,8 +123,8 @@ const FireTextarea = forwardRef(function FireTextarea(
       {/* Overlay is decorative — the real <textarea> above it owns all
           interaction, focus, validation, and AT semantics. */}
       <div className="fire-textarea-overlay" aria-hidden="true">
-        {/* Same `dir` as the real textarea (issue #82) — see FireInput. */}
-        <div ref={overlayRef} dir={rest.dir} className="fire-textarea-overlay-text" />
+        {/* `dir` set by sync(), the same as the real textarea's (issue #82). */}
+        <div ref={overlayRef} className="fire-textarea-overlay-text" />
       </div>
     </div>
   );

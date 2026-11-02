@@ -786,6 +786,10 @@ function FormContent({ onReset, queue }) {
               id="email"
               name="email"
               type="email"
+              // An address is always left to right, in every locale: in a
+              // right-to-left base its dots and @ jump as they are typed.
+              // Empty, it waits on the page's side like the other fields.
+              dir="ltr"
               autoComplete="email"
               placeholder=" "
               aria-invalid={Boolean(errors.email)}

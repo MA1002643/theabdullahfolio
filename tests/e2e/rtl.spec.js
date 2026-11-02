@@ -103,3 +103,41 @@ test.describe('left-to-right content in a right-to-left page', { tag: '@cross-br
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   });
 });
+
+// One rule for every contact field, in every locale: EMPTY, the caret waits on
+// the page's side; TYPED, the text follows its own direction (its script for a
+// name, subject or message; always left to right for an email address). On
+// /ur/contact the empty name, subject and message once started at the left
+// (an empty dir="auto" has no letters to go by and resolves ltr) while the
+// email started at the right, and an address typed there was laid out right to
+// left. The painted overlay must resolve exactly as its field does.
+test.describe('contact fields: reading direction', { tag: '@cross-browser' }, () => {
+  test.use({ contextOptions: { reducedMotion: 'reduce' } });
+
+  const FIELDS = ['name', 'email', 'subject', 'message'];
+  const typed = (id, script) => (id === 'email' || script === 'latin' ? 'ltr' : 'rtl');
+
+  for (const [path, pageDir] of [['/contact', 'ltr'], ['/ur/contact', 'rtl']]) {
+    test(`${path}: empty fields start on the page's side, typed text follows its own direction`, async ({ page }) => {
+      await page.goto(path);
+      await settle(page);
+      for (const id of FIELDS) {
+        const field = page.locator(`#${id}`);
+        await field.scrollIntoViewIfNeeded();
+        const read = () =>
+          field.evaluate((el) => {
+            const overlay = el.parentElement.querySelector('.fire-input-overlay-text, .fire-textarea-overlay-text');
+            return {
+              field: getComputedStyle(el).direction,
+              overlay: getComputedStyle(overlay).direction,
+            };
+          });
+        for (const [script, value] of [['empty', ''], ['urdu', 'اردو نام'], ['latin', 'Abdullah'], ['cleared', '']]) {
+          await field.fill(id === 'email' && value ? `${value.replace(/\s/g, '')}@example.com` : value);
+          const want = script === 'empty' || script === 'cleared' ? pageDir : typed(id, script);
+          expect(await read(), `${path} #${id} (${script})`).toEqual({ field: want, overlay: want });
+        }
+      }
+    });
+  }
+});
