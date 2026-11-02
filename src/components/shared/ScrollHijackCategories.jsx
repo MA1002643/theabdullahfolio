@@ -13,6 +13,7 @@ import { onMediaChange } from '@/lib/mediaQuery';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { useViewportCountUp } from '@/hooks/useViewportCountUp';
 import HoverText from '@/components/footer/HoverText';
+import { useDirection } from '@/i18n/useDirection';
 
 /* ── Scroll-driven category strip (issue #47) ──────────────────────────────
    A single horizontal row of category filters that never wraps to a second
@@ -178,6 +179,28 @@ const ArrowGlyph = () => (
   </svg>
 );
 
+/* ── Right-to-left (issue #82) ─────────────────────────────────────────────
+   Every scroll quantity in this file is PHYSICAL, on purpose: the edge mask
+   and the two arrows in globals.css are physical (`to right`, `--edge-l` on
+   the left), and a left arrow should page toward whatever is hidden on the
+   left whichever way the page reads. In a `dir="rtl"` scroller the browser
+   puts the scroll origin at the RIGHT edge and runs scrollLeft from 0 down to
+   −max (the CSSOM-View standard every current engine ships), so the only
+   things that change are the RANGE of scrollLeft and how far the row sits
+   from its left end. `scrollRange` / `fromLeft` hold that difference; nothing
+   else needs to know which way the page reads.
+
+   The one logical input is a vertical wheel: "scroll down" means "go toward
+   the end of the row", which is leftward in RTL — so deltaY alone is
+   multiplied by the direction sign. A horizontal trackpad swipe is already
+   physical and passes through untouched. */
+const scrollRange = (el, isRtl) => {
+  const max = el.scrollWidth - el.clientWidth;
+  return isRtl ? [-max, 0] : [0, max];
+};
+const fromLeft = (el, isRtl) =>
+  isRtl ? el.scrollWidth - el.clientWidth + el.scrollLeft : el.scrollLeft;
+
 /**
  * Smallest scrollLeft that brings the span [itemLeft, itemRight] fully inside
  * a window of `windowWidth`, given where the row currently sits.
@@ -237,6 +260,7 @@ const useVisibleSlots = (maxVisible) => {
  */
 const CategoryItem = ({
   label,
+  text,
   isActive,
   isDisabled,
   title,
@@ -325,9 +349,9 @@ const CategoryItem = ({
           : { scale: 0.97, transition: { duration: 0.12 } }
       }
     >
-      <HoverText text={label} />
+      <HoverText text={text ?? label} />
       {showCount && typeof count === 'number' && (
-        <span className="category-tab-count ml-1 align-middle tabular-nums opacity-40">
+        <span className="category-tab-count ms-1 align-middle tabular-nums opacity-40">
           {/* Only the digits carry the ref — useViewportCountUp writes straight
             to textContent, so the brackets have to live outside it. */}
           (<span ref={countRef}>0</span>)
@@ -351,6 +375,11 @@ const CategoryItem = ({
  * @param {(cat: string) => boolean} [props.isDisabled] Dim + title a tab.
  * @param {(cat: string) => string | undefined} [props.disabledTitle]
  *   Native tooltip for a disabled tab.
+ * @param {(cat: string) => string} [props.formatLabel]
+ *   Display text for a category (issue #82). `categories`, `active`, the
+ *   `onSelect` argument and `data-category` stay the caller's stable KEYS, so
+ *   filtering logic never sees a translated string; only what the visitor
+ *   reads goes through this. Defaults to the key itself.
  * @param {Record<string, number>} [props.counts]
  *   Per-category totals, rendered as small badges beside every label at every
  *   viewport. On a row that overflows they double as orientation aids.
@@ -368,6 +397,7 @@ const ScrollHijackCategories = ({
   onSelect,
   isDisabled,
   disabledTitle,
+  formatLabel,
   counts,
   maxVisible = 4,
   className = '',
@@ -381,6 +411,7 @@ const ScrollHijackCategories = ({
 
   const prefersReducedMotion = useReducedMotion();
   const slots = useVisibleSlots(maxVisible);
+  const { isRtl, sign } = useDirection();
 
   // Entrance gating — see the ROW_VARIANTS comment block. `once: false` is
   // what makes the entrance replay on every viewport return — it happens to
@@ -410,9 +441,17 @@ const ScrollHijackCategories = ({
     if (items.length === 0) return;
 
     const widths = items.map((item) => item.offsetWidth);
+    // Measured in whichever order the row runs: in RTL the second tab sits to
+    // the LEFT of the first, so the LTR-only difference would read negative
+    // and clamp the gap to 0. Taking both orientations keeps it direction-
+    // agnostic without asking which way the page reads.
     const gap =
       items.length > 1
-        ? Math.max(0, items[1].offsetLeft - (items[0].offsetLeft + widths[0]))
+        ? Math.max(
+            0,
+            items[1].offsetLeft - (items[0].offsetLeft + widths[0]),
+            items[0].offsetLeft - (items[1].offsetLeft + widths[1]),
+          )
         : 0;
     const styles = window.getComputedStyle(strip);
     const padX =
@@ -465,8 +504,10 @@ const ScrollHijackCategories = ({
     const wrapper = wrapperRef.current;
     if (!el || !wrapper) return;
     const max = el.scrollWidth - el.clientWidth;
-    const left = 1 - clamp(el.scrollLeft / FADE_RAMP, 0, 1);
-    const right = 1 - clamp((max - el.scrollLeft) / FADE_RAMP, 0, 1);
+    // Physical distance from the left end — see the RTL note above.
+    const travelled = fromLeft(el, isRtl);
+    const left = 1 - clamp(travelled / FADE_RAMP, 0, 1);
+    const right = 1 - clamp((max - travelled) / FADE_RAMP, 0, 1);
     wrapper.style.setProperty('--edge-l', String(left));
     wrapper.style.setProperty('--edge-r', String(right));
     // The arrows need the same information as booleans — thresholded, not
@@ -482,7 +523,7 @@ const ScrollHijackCategories = ({
       };
       return prev.left === next.left && prev.right === next.right ? prev : next;
     });
-  }, []);
+  }, [isRtl]);
 
   /**
    * Nudge the row by one window's worth. Gives the arrows something to do for
@@ -577,10 +618,12 @@ const ScrollHijackCategories = ({
     const onWheel = (event) => {
       // Trackpads report both axes; a mouse wheel reports deltaY alone. Follow
       // whichever axis the gesture actually favours.
+      // deltaX is physical already; deltaY is "toward the end of the row",
+      // which is leftward in RTL (see the RTL note above).
       const raw =
         Math.abs(event.deltaX) > Math.abs(event.deltaY)
           ? event.deltaX
-          : event.deltaY;
+          : event.deltaY * sign;
       // Chrome and trackpads deliver pixels (deltaMode 0), but a Firefox
       // mouse wheel delivers LINES (mode 1, ±3 per notch) and some Windows
       // setups deliver PAGES (mode 2). Taken as pixels, a line notch would
@@ -591,18 +634,18 @@ const ScrollHijackCategories = ({
       const delta = raw * unit;
       if (!delta) return;
 
-      const max = el.scrollWidth - el.clientWidth;
+      const [min, max] = scrollRange(el, isRtl);
       const canTravel =
-        (delta < 0 && el.scrollLeft > 0) || (delta > 0 && el.scrollLeft < max);
+        (delta < 0 && el.scrollLeft > min) || (delta > 0 && el.scrollLeft < max);
       if (!canTravel) return;
 
       event.preventDefault();
-      el.scrollLeft = clamp(el.scrollLeft + delta, 0, max);
+      el.scrollLeft = clamp(el.scrollLeft + delta, min, max);
     };
 
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [clipped, prefersReducedMotion]);
+  }, [clipped, prefersReducedMotion, isRtl, sign]);
 
   /** Scroll the row so the tab at `index` sits fully inside the window. */
   const scrollItemIntoView = useCallback(
@@ -611,6 +654,9 @@ const ScrollHijackCategories = ({
       const item = stripRef.current?.children?.[index];
       if (!el || !item || !clipped) return;
 
+      // offsetLeft and scrollLeft share one physical frame in both
+      // directions (an RTL row's overflow simply has negative offsets), so
+      // travelToReveal holds as written; only the clamp range differs.
       const travelled = el.scrollLeft;
       const target = clamp(
         travelToReveal(
@@ -619,8 +665,7 @@ const ScrollHijackCategories = ({
           travelled,
           windowWidth,
         ),
-        0,
-        el.scrollWidth - el.clientWidth,
+        ...scrollRange(el, isRtl),
       );
       if (Math.abs(target - travelled) < 1) return;
 
@@ -629,7 +674,7 @@ const ScrollHijackCategories = ({
         behavior: prefersReducedMotion ? 'auto' : 'smooth',
       });
     },
-    [clipped, windowWidth, prefersReducedMotion],
+    [clipped, windowWidth, prefersReducedMotion, isRtl],
   );
 
   // Selecting a tab that is only half in the window pulls it fully in. Keyed
@@ -692,6 +737,7 @@ const ScrollHijackCategories = ({
                 <CategoryItem
                   key={cat}
                   label={cat}
+                  text={formatLabel ? formatLabel(cat) : cat}
                   isActive={active === cat}
                   isDisabled={disabled}
                   title={

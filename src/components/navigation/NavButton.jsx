@@ -323,7 +323,7 @@ const NavButton = ({
               {getIcon(icon)}
             </span>
 
-            <span className="peer absolute left-0 top-0 h-full w-full bg-transparent" />
+            <span className="peer absolute start-0 top-0 h-full w-full bg-transparent" />
 
             {/* Label (hidden until hover or keyboard focus — `group-focus-visible`
               gives sighted keyboard users the same label hover gives pointer

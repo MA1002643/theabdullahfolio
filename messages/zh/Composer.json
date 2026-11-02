@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "已恢复你尚未发送的留言",
+    "keep": "保留",
+    "clear": "清除"
+  },
+  "refine": {
+    "affordance": "润色我的留言",
+    "panelLabel": "建议改写",
+    "polishing": "正在润色…",
+    "announcePolishing": "正在润色你的留言…",
+    "announceReady": "建议改写已就绪。",
+    "announceError": "无法润色留言。",
+    "use": "采用",
+    "again": "重新润色",
+    "discard": "放弃",
+    "retry": "重试",
+    "dismiss": "关闭",
+    "cancel": "取消",
+    "errors": {
+      "unconfigured": "留言润色功能暂时不可用。",
+      "unavailable": "留言润色功能暂时不可用。",
+      "rate_limited": "请求过于频繁，请稍后再试。",
+      "too_large": "请求内容过大。",
+      "bad_request": "请求无效。",
+      "too_short": "请先多写几句，我再来帮你润色。",
+      "too_long": "这条留言太长，无法润色。",
+      "budget": "留言润色功能目前已暂停。",
+      "failed": "无法润色留言，请重试。"
+    }
+  }
+}

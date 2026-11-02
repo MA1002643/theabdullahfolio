@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "تعارف",
+    "projects": "منصوبے",
+    "qualifications": "قابلیتیں",
+    "contact": "رابطہ",
+    "journey": "سفر",
+    "past": "میرا ماضی",
+    "guestbook": "مہمانوں کی کتاب",
+    "uses": "استعمال"
+  },
+  "routes": {
+    "home": "ہوم",
+    "about": "تعارف",
+    "projects": "منصوبے",
+    "qualifications": "قابلیتیں",
+    "contact": "رابطہ",
+    "myPast": "میرا ماضی",
+    "journey": "سفر",
+    "guestbook": "مہمانوں کی کتاب",
+    "uses": "استعمال",
+    "cv": "CV",
+    "notes": "نوٹس",
+    "privacy": "رازداری"
+  },
+  "homeButton": {
+    "tooltip": "ہوم",
+    "srLabel": "ہوم صفحے پر جائیں"
+  },
+  "projectsButton": {
+    "label": "منصوبے",
+    "tooltip": "منصوبے",
+    "srLabel": "منصوبوں کے صفحے پر جائیں"
+  }
+}

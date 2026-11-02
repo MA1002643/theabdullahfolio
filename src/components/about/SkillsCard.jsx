@@ -23,6 +23,10 @@ import {
 } from "@/utils/skillsIconUrl";
 import { claimEscape } from "@/lib/escapeKey";
 import { fluid, fluidText } from "@/lib/fluidScale";
+import { useTranslations } from "next-intl";
+import { glyphUnits } from "@/components/ui/textSegments";
+import { useAboutDigits } from "./aboutI18n";
+import { useDirection } from "@/i18n/useDirection";
 
 // How long the change banner lingers once the section scrolls into view —
 // matches the Languages / Streak cards (issue #20, acceptance #15).
@@ -43,13 +47,12 @@ const CACHE_KEY = SKILLS_CACHE_KEY;
 // and it breathes in lockstep with every other fluid dimension.
 const CELL_SIZE = fluidText(4, 2.5);
 
-// Visible category headings.
-const CATEGORY_LABELS = {
-  languages: "Languages",
-  frameworks: "Frameworks",
-  libraries: "Libraries",
-  tools: "Tools",
-  software: "Software",
+// Visible category headings live in `About.skillsCard.categories.<slug>`
+// (issue #82) — the same keys the "skills changed" banner names categories
+// with, so the two always agree. An unknown slug falls back to itself.
+const categoryLabel = (t, category) => {
+  const key = `skillsCard.categories.${category}`;
+  return t.has(key) ? t(key) : category;
 };
 
 // A skill's popover has something to disclose when it has PUBLIC repo names to
@@ -130,7 +133,7 @@ function AnimatedTitle({ text, play }) {
   const prefersReducedMotion = useReducedMotion();
   // `abt-title` re-derives the size from --fluid-scale under the /about
   // fluid scope (issue #25); the utilities stay as the out-of-scope base.
-  const className = "abt-title text-xl md:text-2xl text-left font-semibold mb-1 break-words leading-tight";
+  const className = "abt-title text-xl md:text-2xl text-start font-semibold mb-1 break-words leading-tight";
 
   if (prefersReducedMotion) {
     return (
@@ -139,7 +142,9 @@ function AnimatedTitle({ text, play }) {
       </h2>
     );
   }
-  const chars = Array.from(text);
+  // Per-glyph for most scripts, per-word for joining ones (issue #82; see
+  // @/components/ui/textSegments). English splits exactly as Array.from did.
+  const chars = glyphUnits(text);
   const container = { hidden: {}, visible: { transition: { staggerChildren: 0.025, delayChildren: 0.2 } } };
   const charVariant = {
     hidden: { opacity: 0, filter: "blur(6px)", y: 8 },
@@ -197,34 +202,37 @@ function CategoryCount({ nodeRef, initialValue }) {
    transition and is simpler to reason about. */
 function CategoryHeader({ label, count, heartbeat, prefersReducedMotion, isActive = false, settledInView = false }) {
   const countRef = useRef(null);
+  // Reader's digits on every painted frame (issue #82); English is `${n}`.
+  const digits = useAboutDigits();
+  const { isRtl } = useDirection();
 
   useEffect(() => {
     const node = countRef.current;
     if (!node) return undefined;
     if (!isActive || !settledInView) {
       if (prefersReducedMotion) {
-        node.textContent = `${count}`;
+        node.textContent = digits.int(count);
         return undefined;
       }
       // Debounced reset so a brief flicker doesn't blank a running animation.
       const t = setTimeout(() => {
-        if (countRef.current) countRef.current.textContent = "0";
+        if (countRef.current) countRef.current.textContent = digits.int(0);
       }, 300);
       return () => clearTimeout(t);
     }
     if (prefersReducedMotion) {
-      node.textContent = `${count}`;
+      node.textContent = digits.int(count);
       return undefined;
     }
-    node.textContent = "0";
+    node.textContent = digits.int(0);
     const controls = animate(0, count, {
       duration: 2,
       onUpdate(v) {
-        if (countRef.current) countRef.current.textContent = `${Math.round(v)}`;
+        if (countRef.current) countRef.current.textContent = digits.int(Math.round(v));
       },
     });
     return () => controls.stop();
-  }, [isActive, settledInView, count, prefersReducedMotion]);
+  }, [isActive, settledInView, count, prefersReducedMotion, digits]);
 
   const pulse = heartbeat && !prefersReducedMotion ? "skill-heartbeat" : "";
   return (
@@ -246,12 +254,13 @@ function CategoryHeader({ label, count, heartbeat, prefersReducedMotion, isActiv
           9px digits — with the default inline line-height the count rode the
           taller line box's baseline and sat visibly below the label's centre. */}
       <span className={`inline-flex items-center leading-none ${pulse}`}>
-        <CategoryCount nodeRef={countRef} initialValue={prefersReducedMotion ? count : 0} />
+        <CategoryCount nodeRef={countRef} initialValue={digits.int(prefersReducedMotion ? count : 0)} />
       </span>
       <span
         aria-hidden="true"
-        className="ml-1 h-px flex-1"
-        style={{ background: "linear-gradient(to right, rgba(255,170,42,0.35), rgba(255,170,42,0))" }}
+        className="ms-1 h-px flex-1"
+        // Fades toward the reading end, so the gradient mirrors in RTL.
+        style={{ background: `linear-gradient(to ${isRtl ? "left" : "right"}, rgba(255,170,42,0.35), rgba(255,170,42,0))` }}
       />
     </div>
   );
@@ -269,7 +278,12 @@ function CategoryHeader({ label, count, heartbeat, prefersReducedMotion, isActiv
    this clip and the sticky stage. */
 function IconStrip({ items, rowRef, pulsingIcons, activeSlug, iconHandlers }) {
   return (
-    <div className="mt-2 overflow-hidden py-2.5">
+    // `dir="ltr"` (issue #82): the scrub engine below is physical — it
+    // translates the row by a NEGATIVE x and reads offsetLeft to reveal icons
+    // from the right edge. A row of logos carries no reading order, so in an
+    // RTL locale the strip stays left-to-right rather than the engine being
+    // mirrored; the category header above it still follows the page direction.
+    <div dir="ltr" className="mt-2 overflow-hidden py-2.5">
       <div
         ref={rowRef}
         className="flex w-max flex-nowrap gap-3 sm:gap-4 will-change-transform"
@@ -341,6 +355,7 @@ function SkillsStage({
   bannerVisible,
   canHover,
 }) {
+  const t = useTranslations("About");
   const scrollerRef = useRef(null);
   const rowRefs = useRef([]);
 
@@ -889,13 +904,13 @@ function SkillsStage({
           />
         )}
         <div
-          className="relative max-h-[14rem] overflow-y-auto pr-2"
+          className="relative max-h-[14rem] overflow-y-auto pe-2"
           style={{ scrollbarWidth: "thin", scrollbarColor: "#ff6d05 transparent" }}
         >
           {groups.map((g) => (
             <div key={g.category} data-skill-cat className="mb-3">
               <CategoryHeader
-                label={CATEGORY_LABELS[g.category] ?? g.category}
+                label={categoryLabel(t, g.category)}
                 count={g.items.length}
                 prefersReducedMotion
                 isActive
@@ -974,7 +989,7 @@ function SkillsStage({
                 }}
               >
                 <CategoryHeader
-                  label={CATEGORY_LABELS[g.category] ?? g.category}
+                  label={categoryLabel(t, g.category)}
                   count={g.items.length}
                   heartbeat={pulsingHeaders.has(i)}
                   prefersReducedMotion={false}
@@ -1000,6 +1015,8 @@ function SkillsStage({
 }
 
 export default function SkillsCard({ username }) {
+  const t = useTranslations("About");
+  const digits = useAboutDigits();
   const cardRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
   // Hover-capable (mouse / iPad+trackpad) → hover morphs; touch-only → tap morphs.
@@ -1223,6 +1240,7 @@ export default function SkillsCard({ username }) {
     to: skillCount,
     inView: isInView,
     prefersReducedMotion,
+    format: digits.int,
   });
 
   return (
@@ -1239,24 +1257,26 @@ export default function SkillsCard({ username }) {
       <UpdateBanner
         message={bannerMessage}
         visible={Boolean(bannerMessage)}
-        srPrefix="Skills update: "
+        srPrefix={t("skillsCard.srPrefix")}
         variant="orange"
         onExitComplete={() => setBannerExiting(false)}
       />
 
       <motion.div variants={headerV} className="mb-4">
-        <AnimatedTitle text="Skills & Technologies" play={settledInView} />
+        <AnimatedTitle text={t("skillsCard.title")} play={settledInView} />
         <p
           className="abt-micro-md flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.18em]"
           style={{ color: "rgba(255, 170, 42, 0.6)", textShadow: "none" }}
         >
           {!loaded ? (
-            <span>Syncing with GitHub…</span>
+            <span>{t("skillsCard.syncing")}</span>
           ) : skillCount > 0 ? (
             <>
               <span>
-                <span ref={countRef}>{prefersReducedMotion ? skillCount : 0}</span>{" "}
-                {skillCount === 1 ? "technology" : "technologies"}
+                {t.rich("skillsCard.count", {
+                  count: skillCount,
+                  n: () => <span ref={countRef}>{digits.int(prefersReducedMotion ? skillCount : 0)}</span>,
+                })}
               </span>
               {isLive && (
                 <>
@@ -1272,12 +1292,12 @@ export default function SkillsCard({ username }) {
                       prefersReducedMotion ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }
                     }
                   />
-                  <span>live from GitHub</span>
+                  <span>{t("skillsCard.live")}</span>
                 </>
               )}
             </>
           ) : (
-            <span>No skills detected</span>
+            <span>{t("skillsCard.noneDetected")}</span>
           )}
         </p>
       </motion.div>
@@ -1296,7 +1316,7 @@ export default function SkillsCard({ username }) {
             animate={prefersReducedMotion ? undefined : { opacity: [0.4, 1, 0.4], scale: [0.85, 1.15, 0.85] }}
             transition={prefersReducedMotion ? undefined : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
           />
-          {loaded ? "No skills detected in your repositories" : "Fetching skills from GitHub…"}
+          {loaded ? t("skillsCard.noneInRepos") : t("skillsCard.fetching")}
         </div>
       ) : (
         <SkillsStage

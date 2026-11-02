@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "보내지 않은 메시지를 복원했어요",
+    "keep": "유지",
+    "clear": "지우기"
+  },
+  "refine": {
+    "affordance": "메시지 다듬기",
+    "panelLabel": "추천 수정안",
+    "polishing": "다듬는 중…",
+    "announcePolishing": "메시지를 다듬고 있어요…",
+    "announceReady": "추천 수정안이 준비되었어요.",
+    "announceError": "메시지를 다듬지 못했어요.",
+    "use": "이 내용 사용",
+    "again": "다시 다듬기",
+    "discard": "버리기",
+    "retry": "다시 시도",
+    "dismiss": "닫기",
+    "cancel": "취소",
+    "errors": {
+      "unconfigured": "지금은 메시지 다듬기를 사용할 수 없어요.",
+      "unavailable": "지금은 메시지 다듬기를 사용할 수 없어요.",
+      "rate_limited": "요청이 너무 많아요. 잠시 후에 다시 시도해 주세요.",
+      "too_large": "요청이 너무 커요.",
+      "bad_request": "잘못된 요청이에요.",
+      "too_short": "내용을 조금만 더 적어 주세요. 그러면 제가 다듬어 드릴게요.",
+      "too_long": "메시지가 너무 길어서 다듬을 수 없어요.",
+      "budget": "메시지 다듬기가 현재 일시 중지되어 있어요.",
+      "failed": "메시지를 다듬지 못했어요. 다시 시도해 주세요."
+    }
+  }
+}

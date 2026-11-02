@@ -1,0 +1,20 @@
+{
+  "section": "Outils",
+  "preferences": "Préférences",
+  "jumpPlate": "Aller à {ordinal} {label}",
+  "plates": {
+    "machine": "La machine",
+    "bench": "L'établi",
+    "stack": "La pile technique",
+    "pipeline": "La chaîne de production",
+    "instruments": "Les instruments",
+    "bom": "Nomenclature"
+  },
+  "copySettings": "Copier mes réglages d'éditeur",
+  "openRepos": "Voir les dépôts sur GitHub",
+  "toggleMotion": "Activer ou désactiver les animations",
+  "motionOn": "activées",
+  "motionOff": "désactivées",
+  "copied": "Réglages de l'éditeur copiés",
+  "clipboardUnavailable": "Presse-papiers indisponible — sélectionnez le cadre pour copier"
+}

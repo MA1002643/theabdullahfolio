@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "MÓJ ZESTAW",
+    "subtitle": "narzędzia, zweryfikowane"
+  },
+  "opensNewTab": "{name} (otwiera się w nowej karcie)",
+  "machine": {
+    "eyebrow": "Sprzęt · ustawione ręcznie",
+    "title": "Maszyna",
+    "provenance": "{count, plural, one {<fig>{n}</fig> wiersz} other {<fig>{n}</fig> {count, plural, few {wiersze} many {wierszy} other {wiersza}}}} · potwierdzone przez właściciela",
+    "seeItLive": "zobacz na żywo"
+  },
+  "bench": {
+    "eyebrow": "Środowisko · ustawione ręcznie",
+    "title": "Warsztat",
+    "provenance": "{count, plural, one {<fig>{n}</fig> stanowisko} other {<fig>{n}</fig> {count, plural, few {stanowiska} many {stanowisk} other {stanowiska}}}} · fragment {file}",
+    "extensions": "Rozszerzenia, po które sięgam",
+    "editorCaption": "Fragment mojego pliku {file} z VS Code, pokazany w motywie {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · pobrany z repozytoriów",
+    "eyebrowCurated": "Stack · wybrany zestaw",
+    "title": "Stos technologiczny",
+    "provenanceLive": "na żywo · {count, plural, one {<fig>{n}</fig> narzędzie} other {<fig>{n}</fig> {count, plural, few {narzędzia} many {narzędzi} other {narzędzia}}}}",
+    "provenanceCurated": "wybrane ręcznie · {count, plural, one {<fig>{n}</fig> narzędzie} other {<fig>{n}</fig> {count, plural, few {narzędzia} many {narzędzi} other {narzędzia}}}} · {state, select, unreachable {GitHub niedostępny} other {synchronizacja z GitHub…}}",
+    "verifiedSr": "zweryfikowano w GitHub",
+    "verifiedStatus": "Stack zweryfikowany w GitHub.",
+    "cta": "ZOBACZ REPOZYTORIA",
+    "ctaLabel": "Zobacz repozytoria na GitHub (otwiera się w nowej karcie)",
+    "tally": "<count></count> z <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "repozytoria publiczne",
+    "keyPrivate": "prywatne",
+    "keyRelative": "słupki są względem najczęściej używanego narzędzia",
+    "keyPending": "słupki i liczba repozytoriów pojawią się po pobraniu danych na żywo",
+    "repoCount": {
+      "public": "używane w {pub, plural, one {# publicznym repozytorium} few {# publicznych repozytoriach} many {# publicznych repozytoriach} other {# publicznego repozytorium}}",
+      "private": "używane w {priv, plural, one {# prywatnym repozytorium} few {# prywatnych repozytoriach} many {# prywatnych repozytoriach} other {# prywatnego repozytorium}}",
+      "mixed": "używane w {pub, plural, one {# publicznym repozytorium} few {# publicznych repozytoriach} many {# publicznych repozytoriach} other {# publicznego repozytorium}} · +{priv} prywatnych"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: liczba repozytoriów pojawi się po pobraniu danych na żywo",
+    "figure": {
+      "publicRepos": "{n, plural, one {publiczne repozytorium} few {publiczne repozytoria} many {publicznych repozytoriów} other {publicznego repozytorium}}",
+      "privateRepos": "{n, plural, one {prywatne repozytorium} few {prywatne repozytoria} many {prywatnych repozytoriów} other {prywatnego repozytorium}}",
+      "repos": "{n, plural, one {repozytorium} few {repozytoria} many {repozytoriów} other {repozytorium}}",
+      "public": "publiczne",
+      "private": "prywatne"
+    },
+    "curated": "wybrane ręcznie"
+  },
+  "liveAge": {
+    "verified": "zweryfikowano {age}",
+    "s": "{s} s temu",
+    "ms": "{m} min {s} s temu",
+    "hm": "{h} godz. {m} min temu",
+    "dh": "{d} d {h} godz. temu"
+  },
+  "pipeline": {
+    "eyebrow": "Dostarczanie · od commita do obliczeń",
+    "title": "Potok wdrożeniowy",
+    "provenance": "{count, plural, one {<fig>{n}</fig> workflow} other {<fig>{n}</fig> {count, plural, few {workflowy} many {workflowów} other {workflowa}}}} · odczytane z .github podczas builda",
+    "provenanceHandSet": "schemat · ustawiony ręcznie",
+    "region": "Diagram pipeline'u budowania",
+    "svgTitle": "Potok dostarczania: push trafia z GitHub przez GitHub Actions i build na Vercel do Fluid compute, do którego bezpośrednio dociera także webhook z GitHub, a który codziennie wywołuje cron; stamtąd ruch rozchodzi się przez szynę usług do usług wymienionych poniżej.",
+    "fires": "uruchamia się <fig>{window}</fig> UTC (precyzja planu Hobby)",
+    "kinds": {
+      "source": "ŹRÓDŁO",
+      "ci": "CI",
+      "build": "BUILD",
+      "runtime": "RUNTIME",
+      "schedule": "HARMONOGRAM",
+      "store": "BAZA",
+      "gateway": "BRAMA",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "POCZTA",
+      "auth": "UWIERZYTELNIANIE",
+      "search": "WYSZUKIWANIE"
+    },
+    "workflows": "{count, plural, one {{n} workflow} few {{n} workflowy} many {{n} workflowów} other {{n} workflowu}}",
+    "apiRoutes": "{count, plural, one {{n} trasa API} few {{n} trasy API} many {{n} tras API} other {{n} trasy API}}",
+    "apiRoutesBare": "trasy API",
+    "locales": "{count, plural, one {{n} język} few {{n} języki} many {{n} języków} other {{n} języka}}",
+    "crons": "{count, plural, one {cron} few {{n} crony} many {{n} cronów} other {{n} crona}}",
+    "daily": "codziennie · {time} UTC",
+    "services": {
+      "redis": "księga gości · lokalizacja · SEO · deduplikacja",
+      "graphql": "statystyki · umiejętności · postępy",
+      "spotify": "teraz gra",
+      "mail": "kontakt · weryfikacja Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Jakość · liczone przy buildzie",
+    "title": "Przyrządy pomiarowe",
+    "provenance": "liczone przy buildzie · <fig>{date}</fig>",
+    "provenanceBare": "liczone przy buildzie",
+    "unitLabel": "{count, plural, one {zestaw Vitest} few {zestawy Vitest} many {zestawów Vitest} other {zestawu Vitest}}",
+    "unitSub": "{count, plural, one {{n} przypadek testowy} few {{n} przypadki testowe} many {{n} przypadków testowych} other {{n} przypadku testowego}} · Vitest",
+    "e2eLabel": "{count, plural, one {zestaw testów w przeglądarce} few {zestawy testów w przeglądarce} many {zestawów testów w przeglądarce} other {zestawu testów w przeglądarce}}",
+    "e2eSub": "{count, plural, one {{n} scenariusz} few {{n} scenariusze} many {{n} scenariuszy} other {{n} scenariusza}} · Playwright",
+    "apiLabel": "{count, plural, one {trasa API} few {trasy API} many {tras API} other {trasy API}}",
+    "apiSub": "route handlery · {methods}",
+    "apiSubBare": "route handlery",
+    "tileLabel": "{figure} {label} — {sub} (otwiera folder na GitHubie w nowej karcie)"
+  },
+  "bom": {
+    "eyebrow": "Zestawienie materiałów · ta strona",
+    "title": "Z czego jest zbudowana",
+    "provenance": "{source} · zweryfikowano przy buildzie · <fig>{date}</fig>",
+    "provenanceBare": "{source} · zweryfikowano przy buildzie",
+    "unreadable": "Nie udało się odczytać manifestu przy buildzie, więc wersje nie są wyświetlane.",
+    "packages": "{count, plural, one {pakiet: <fig>{n}</fig>} other {pakiety: <fig>{n}</fig>}}",
+    "packagesOf": "<fig>{n}</fig> z <fig>{all}</fig> pakietów",
+    "built": "zbudowano <fig>{date}</fig>",
+    "groups": {
+      "core": "Rdzeń",
+      "3d-and-motion": "3D i ruch",
+      "data-and-services": "Dane i usługi",
+      "interface": "Interfejs",
+      "platform": "Platforma",
+      "media": "Media",
+      "quality": "Jakość",
+      "build": "Build",
+      "runtime": "Środowisko uruchomieniowe",
+      "tooling": "Narzędzia"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Języki",
+        "lay": "To, w czym napisany jest sam kod."
+      },
+      "frameworks": {
+        "label": "Frameworki",
+        "lay": "Szkielet, na którym zbudowana jest aplikacja: jej struktura i konwencje."
+      },
+      "libraries": {
+        "label": "Biblioteki",
+        "lay": "Gotowe klocki, z których każdy został dołączony, by dobrze wykonać jedno zadanie."
+      },
+      "tools": {
+        "label": "Narzędzia",
+        "lay": "To, co działa wokół kodu: testowanie, formatowanie, bazy danych i wdrażanie."
+      },
+      "software": {
+        "label": "Oprogramowanie",
+        "lay": "Usługi, na których działa gotowa praca."
+      }
+    }
+  }
+}

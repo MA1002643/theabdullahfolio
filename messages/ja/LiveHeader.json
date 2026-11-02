@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "まもなく新機能を公開します。このサイトは現在も活発に開発中です。",
+    "shippingNone": "このサイトに{count, plural, other {#件の更新}}を公開しました。",
+    "shippingOne": "<bdi>#{number} {title}</bdi> を公開しました。",
+    "shippingMany": "<bdi>#{number} {title}</bdi> ほか{more, number}件を公開しました。",
+    "liveWithTop": "ライブ更新：現在、変更をリアルタイムで公開中です。注力しているのは <bdi>#{number} {title}</bdi> です。",
+    "livePushes": "ライブ更新：このサイトへの新しい変更をリアルタイムで公開中です。",
+    "liveActive": "現在、作業を進めています{hasTop, select, yes {。注力しているのは <bdi>#{number} {title}</bdi> です} other {}}。",
+    "inProgressBoard": "現在{count, plural, other {#件のタスク}}に取り組んでいます{hasTop, select, yes {。注力しているのは <bdi>#{number} {title}</bdi> です} other {}}。",
+    "inProgressPrsAndIssues": "{prs, plural, other {#件のプルリクエスト}}と{issues, plural, other {未完了のタスク#件}}に取り組み中です{hasTop, select, yes {。注力しているのは <bdi>#{number} {title}</bdi> です} other {}}。",
+    "inProgressPrs": "{prs, plural, other {#件のプルリクエスト}}に取り組み中です{hasTop, select, yes {。注力しているのは <bdi>#{number} {title}</bdi> です} other {}}。",
+    "inProgressIssues": "{issues, plural, other {未完了のタスク#件}}に取り組み中です{hasTop, select, yes {。注力しているのは <bdi>#{number} {title}</bdi> です} other {}}。",
+    "inProgressFallback": "このサイトの作業を進めています。",
+    "planning": "次の改善を計画中です{hasTop, select, yes {。注力しているのは <bdi>#{number} {title}</bdi> です} other {}}。",
+    "secondary": "{count, plural, other {#件のタスク}}に取り組み中。注力: <bdi>#{number} {title}</bdi>"
+  },
+  "headline": {
+    "shipping": "公開したばかり",
+    "live": "ライブ開発中",
+    "inProgress": "作業中",
+    "planning": "次の改善を計画中",
+    "idle": "メンテナンス中"
+  },
+  "region": "メンテナンス状況（ライブ）",
+  "state": {
+    "shipping": "公開中",
+    "live": "ライブ",
+    "inProgress": "作業中",
+    "planning": "計画中",
+    "idle": "保守"
+  },
+  "stateSpoken": {
+    "shipping": "公開中",
+    "live": "ライブ",
+    "inProgress": "作業中",
+    "planning": "計画中",
+    "idle": "メンテナンス"
+  },
+  "pipeline": {
+    "planning": "計画",
+    "inProgress": "開発",
+    "shipping": "公開",
+    "live": "ライブ"
+  },
+  "legend": {
+    "title": "デリバリーパイプライン",
+    "srIdle": "デリバリーパイプライン。パイプライン外：メンテナンス監視中です。",
+    "srStage": "デリバリーパイプライン。現在のステージ：{stage}（{total}段階中{index}段階目）。",
+    "headingIdle": "メンテナンス · パイプライン外",
+    "headingStage": "{stage} · ステージ {index}/{total}",
+    "maintenance": "メンテナンス",
+    "offPipeline": "パイプライン外 — {count, plural, =0 {追跡中のリポジトリ} other {#件のリポジトリ}}を監視中",
+    "meaning": {
+      "planning": "未完了のIssueを整理し、スコープを定めた状態",
+      "inProgress": "ブランチとプルリクエストで進行中の作業",
+      "shipping": "過去48時間以内にマージされ、Doneへ移った作業",
+      "live": "過去2時間以内のコミットまたは更新"
+    }
+  },
+  "fields": {
+    "state": "状態",
+    "focus": "注力",
+    "focusPr": "注力 · PR",
+    "focusIssue": "注力 · Issue",
+    "prs": "PR",
+    "issues": "Issue",
+    "pushes24h": "プッシュ · 24時間",
+    "pushes": "プッシュ",
+    "activity": "アクティビティ · {days}日",
+    "sync": "同期",
+    "metered": "· 制限中"
+  },
+  "metric": {
+    "prs": "アクティブなPR",
+    "issues": "未解決のIssue",
+    "pushes": "プッシュ（24時間）",
+    "emptyPrs": "追跡中のプロジェクトにアクティブなPRはありません。",
+    "emptyIssues": "追跡中のプロジェクトに未解決のIssueはありません。",
+    "emptyPushes": "追跡中のプロジェクトで、過去24時間のプッシュはありません。"
+  },
+  "popover": {
+    "breakdown": "{metric}の内訳",
+    "summary": "{metric} · {projects, plural, other {#件のプロジェクト}}で{count}件",
+    "heading": "{projects, plural, other {#件のプロジェクト}}で<count></count>件",
+    "stale": "最後に確認できたアクティビティを表示しています。",
+    "more": "GitHubでさらに{count}件",
+    "openOnGitHub": "GitHubで開く ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {プルリクエスト} other {Issue}} #{number}",
+    "ariaOpen": "{type, select, pr {プルリクエスト} other {Issue}} #{number}「{title}」をGitHubで開く",
+    "stepped": "{type, select, pr {プルリクエスト} other {Issue}} {number}:{title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {<age></age>にアクティブ} other {}}",
+    "monitoring": "{count, plural, other {#件のリポジトリ}}を監視中 — アクティブなフォーカス項目はありません",
+    "monitoringNone": "追跡中のリポジトリを監視中"
+  },
+  "queue": {
+    "label": "フォーカスキュー",
+    "hint": "{count}件中{index}件目 · ← → で切り替え",
+    "sr": "{count}件のフォーカスキュー — 左右の矢印キーで切り替えます"
+  },
+  "activity": {
+    "label": "コミットの軌跡",
+    "summary": "{total, plural, other {#件のコミット}} · 過去{days, plural, other {#日間}}{truncated, select, yes {(古い日の分は少なく集計されています)} other {}}"
+  },
+  "sync": {
+    "label": "最終同期",
+    "hint": "信頼度 {confidence} · {seconds}秒ごとにポーリング{metered, select, yes { · 従量制} other {}}",
+    "detail": "{hasLast, select, yes {最終同期 {last} · } other {}}シグナル信頼度 {confidence} · {seconds, plural, other {#秒}}ごとにポーリング{metered, select, yes {(従量制接続時)} other {}}",
+    "stale": "古い情報"
+  },
+  "announce": {
+    "status": "ステータス:{state}。",
+    "focus": "現在のフォーカス:{type, select, pr {プルリクエスト} other {Issue}} {number}、{title}。",
+    "counts": "過去24時間で、アクティブなプルリクエストが{prs, plural, other {#件}}、未解決のIssueが{issues, plural, other {#件}}、プッシュが{pushes, plural, other {#件}}あります。"
+  },
+  "error": {
+    "snapshot": "ライブステータスを一時的に利用できません。最新のスナップショットを表示しています。",
+    "fallback": "ライブステータスを一時的に利用できません。メンテナンス用の代替表示になっています。"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Đã khôi phục tin nhắn chưa gửi của bạn",
+    "keep": "Giữ lại",
+    "clear": "Xóa"
+  },
+  "refine": {
+    "affordance": "Trau chuốt tin nhắn",
+    "panelLabel": "Bản viết lại gợi ý",
+    "polishing": "Đang trau chuốt…",
+    "announcePolishing": "Đang trau chuốt tin nhắn của bạn…",
+    "announceReady": "Bản viết lại gợi ý đã sẵn sàng.",
+    "announceError": "Không thể trau chuốt tin nhắn.",
+    "use": "Dùng bản này",
+    "again": "Trau chuốt lại",
+    "discard": "Bỏ",
+    "retry": "Thử lại",
+    "dismiss": "Đóng",
+    "cancel": "Hủy",
+    "errors": {
+      "unconfigured": "Tính năng trau chuốt tin nhắn hiện chưa khả dụng.",
+      "unavailable": "Tính năng trau chuốt tin nhắn hiện chưa khả dụng.",
+      "rate_limited": "Quá nhiều yêu cầu — vui lòng thử lại sau giây lát.",
+      "too_large": "Yêu cầu quá lớn.",
+      "bad_request": "Yêu cầu không hợp lệ.",
+      "too_short": "Bạn hãy viết thêm một chút nhé, rồi mình sẽ giúp trau chuốt.",
+      "too_long": "Tin nhắn này quá dài để trau chuốt.",
+      "budget": "Tính năng trau chuốt tin nhắn đang tạm dừng.",
+      "failed": "Không thể trau chuốt tin nhắn. Vui lòng thử lại."
+    }
+  }
+}

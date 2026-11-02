@@ -1,0 +1,14 @@
+{
+  "loadingProject": "در حال بارگذاری پروژه",
+  "emblem": "نشان Muhammad Abdullah",
+  "notifications": "اعلان‌ها",
+  "sound": {
+    "turnOn": "روشن کردن صدای گیتار",
+    "turnOff": "خاموش کردن صدای گیتار"
+  },
+  "owner": {
+    "given": "محمد",
+    "family": "عبدالله",
+    "full": "محمد عبدالله"
+  }
+}

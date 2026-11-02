@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "KURULUMUM",
+    "subtitle": "araçlar, doğrulanmış"
+  },
+  "opensNewTab": "{name} (yeni sekmede açılır)",
+  "machine": {
+    "eyebrow": "Donanım · elle girildi",
+    "title": "Makine",
+    "provenance": "{count, plural, one {<fig>{n}</fig> satır} other {<fig>{n}</fig> satır}} · sahibi onayladı",
+    "seeItLive": "canlı gör"
+  },
+  "bench": {
+    "eyebrow": "Ortam · elle girildi",
+    "title": "Çalışma masası",
+    "provenance": "{count, plural, one {<fig>{n}</fig> istasyon} other {<fig>{n}</fig> istasyon}} · {file} alıntısı",
+    "extensions": "Sık başvurduğum eklentiler",
+    "editorCaption": "VS Code {file} dosyamdan bir alıntı, {theme} temasıyla gösteriliyor."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · depolardan taranarak çıkarıldı",
+    "eyebrowCurated": "Stack · seçilmiş set",
+    "title": "Teknoloji yığını",
+    "provenanceLive": "canlı · {count, plural, one {<fig>{n}</fig> araç} other {<fig>{n}</fig> araç}}",
+    "provenanceCurated": "seçilmiş · {count, plural, one {<fig>{n}</fig> araç} other {<fig>{n}</fig> araç}} · {state, select, unreachable {GitHub'a ulaşılamıyor} other {GitHub ile eşitleniyor…}}",
+    "verifiedSr": "GitHub ile doğrulandı",
+    "verifiedStatus": "Stack, GitHub ile doğrulandı.",
+    "cta": "DEPOLARI GÖR",
+    "ctaLabel": "GitHub'daki depoları gör (yeni sekmede açılır)",
+    "tally": "<count></count> / <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "herkese açık depolar",
+    "keyPrivate": "özel",
+    "keyRelative": "çubuklar en çok kullanılan araca göre orantılıdır",
+    "keyPending": "çubuklar ve depo sayıları canlı taramayla birlikte gelir",
+    "repoCount": {
+      "public": "{pub, plural, one {# herkese açık depoda kullanılıyor} other {# herkese açık depoda kullanılıyor}}",
+      "private": "{priv, plural, one {# özel depoda kullanılıyor} other {# özel depoda kullanılıyor}}",
+      "mixed": "{pub, plural, one {# herkese açık depoda kullanılıyor} other {# herkese açık depoda kullanılıyor}} · +{priv} özel"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: depo sayıları canlı taramayla birlikte gelir",
+    "figure": {
+      "publicRepos": "{n, plural, one {herkese açık depo} other {herkese açık depo}}",
+      "privateRepos": "{n, plural, one {özel depo} other {özel depo}}",
+      "repos": "{n, plural, one {depo} other {depo}}",
+      "public": "herkese açık",
+      "private": "özel"
+    },
+    "curated": "seçilmiş"
+  },
+  "liveAge": {
+    "verified": "{age} doğrulandı",
+    "s": "{s} sn önce",
+    "ms": "{m} dk {s} sn önce",
+    "hm": "{h} sa {m} dk önce",
+    "dh": "{d} g {h} sa önce"
+  },
+  "pipeline": {
+    "eyebrow": "Teslimat · commit'ten işlem gücüne",
+    "title": "Teslimat hattı",
+    "provenance": "{count, plural, one {<fig>{n}</fig> iş akışı} other {<fig>{n}</fig> iş akışı}} · derleme sırasında .github'dan okundu",
+    "provenanceHandSet": "şema · elle çizildi",
+    "region": "Derleme pipeline diyagramı",
+    "svgTitle": "Teslim hattı: bir push, GitHub'dan GitHub Actions ve Vercel derlemesi üzerinden Fluid compute'a akar; Fluid compute'a bir GitHub webhook'u da doğrudan ulaşır ve günlük bir cron onu çağırır; compute, bir servis veri yolu üzerinden aşağıda listelenen servislere dağılır.",
+    "fires": "<fig>{window}</fig> UTC'de çalışır (Hobby hassasiyeti)",
+    "kinds": {
+      "source": "KAYNAK",
+      "ci": "CI",
+      "build": "DERLEME",
+      "runtime": "ÇALIŞMA ZAMANI",
+      "schedule": "ZAMANLAMA",
+      "store": "DEPOLAMA",
+      "gateway": "AĞ GEÇİDİ",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "POSTA",
+      "auth": "KİMLİK DOĞRULAMA",
+      "search": "ARAMA"
+    },
+    "workflows": "{count, plural, other {{n} iş akışı}}",
+    "apiRoutes": "{count, plural, other {{n} API rotası}}",
+    "apiRoutesBare": "API rotaları",
+    "locales": "{count, plural, other {{n} dil}}",
+    "crons": "{count, plural, other {{n} cron}}",
+    "daily": "her gün · {time} UTC",
+    "services": {
+      "redis": "ziyaretçi defteri · konum · SEO · tekilleştirme",
+      "graphql": "istatistikler · beceriler · ilerleme",
+      "spotify": "şu an çalıyor",
+      "mail": "iletişim · Abstract doğrulaması"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Kalite · derleme sırasında sayıldı",
+    "title": "Ölçüm aletleri",
+    "provenance": "derleme sırasında sayıldı · <fig>{date}</fig>",
+    "provenanceBare": "derleme sırasında sayıldı",
+    "unitLabel": "{count, plural, other {Vitest paketi}}",
+    "unitSub": "{count, plural, other {{n} test durumu}} · Vitest",
+    "e2eLabel": "{count, plural, other {tarayıcı test paketi}}",
+    "e2eSub": "{count, plural, other {{n} senaryo}} · Playwright",
+    "apiLabel": "{count, plural, other {API rotası}}",
+    "apiSub": "rota işleyicileri · {methods}",
+    "apiSubBare": "rota işleyicileri",
+    "tileLabel": "{figure} {label} — {sub} (klasörü GitHub'da yeni sekmede açar)"
+  },
+  "bom": {
+    "eyebrow": "Malzeme listesi · bu site",
+    "title": "Neyden yapıldı",
+    "provenance": "{source} · derleme sırasında doğrulandı · <fig>{date}</fig>",
+    "provenanceBare": "{source} · derleme sırasında doğrulandı",
+    "unreadable": "Manifest derleme sırasında okunamadı, bu yüzden sürüm listelenmiyor.",
+    "packages": "{count, plural, one {<fig>{n}</fig> paket} other {<fig>{n}</fig> paket}}",
+    "packagesOf": "<fig>{all}</fig> paketten <fig>{n}</fig> tanesi",
+    "built": "<fig>{date}</fig> tarihinde derlendi",
+    "groups": {
+      "core": "Çekirdek",
+      "3d-and-motion": "3D ve hareket",
+      "data-and-services": "Veri ve servisler",
+      "interface": "Arayüz",
+      "platform": "Platform",
+      "media": "Medya",
+      "quality": "Kalite",
+      "build": "Derleme",
+      "runtime": "Çalışma zamanı",
+      "tooling": "Araçlar"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Diller",
+        "lay": "Kodun kendisinin yazıldığı dil."
+      },
+      "frameworks": {
+        "label": "Framework'ler",
+        "lay": "Bir uygulamanın üzerine kurulduğu iskele: yapısı ve gelenekleri."
+      },
+      "libraries": {
+        "label": "Kütüphaneler",
+        "lay": "Hazır yapı taşları; her biri tek bir işi iyi yapmak için projeye dahil edildi."
+      },
+      "tools": {
+        "label": "Araçlar",
+        "lay": "Kodun çevresinde çalışanlar: test, biçimlendirme, veritabanları ve yayına alma."
+      },
+      "software": {
+        "label": "Yazılımlar",
+        "lay": "Tamamlanan işlerin üzerinde yaşadığı servisler."
+      }
+    }
+  }
+}

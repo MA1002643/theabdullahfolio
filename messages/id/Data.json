@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "Pembangunan ulang portofolio sinematik berbasis gulir"
+    },
+    "2": {
+      "description": "Platform manajemen bisnis multi-tenant"
+    },
+    "3": {
+      "description": "Platform penemuan resep berbasis AI"
+    },
+    "4": {
+      "description": "Portofolio imersif berbasis gerak"
+    },
+    "5": {
+      "description": "Platform penerbitan lintas platform berbasis AI"
+    },
+    "6": {
+      "description": "Platform streaming musik lintas platform"
+    },
+    "7": {
+      "description": "Platform keterlibatan edukasi secara real-time"
+    },
+    "8": {
+      "description": "Platform pelatihan kebugaran berbasis AI"
+    },
+    "9": {
+      "description": "Navigasi dan kepatuhan yang sesuai aturan truk"
+    },
+    "10": {
+      "description": "Panggilan check-in otomatis setiap jam"
+    },
+    "11": {
+      "description": "Penemuan & penyesuaian lowongan kerja berbasis AI"
+    }
+  },
+  "categories": {
+    "Web": "Web",
+    "System": "Sistem",
+    "AI": "AI",
+    "Mobile": "Seluler"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "Concierge Team Leader · Adullam Homes Housing Association",
+      "description": "Pemimpin tingkat area untuk layanan concierge di delapan lokasi akomodasi terdukung di Bolton — memimpin tiga tim di dua organisasi, merekrut untuk wilayah tersebut, menangani insiden, dan mengganti dua jadwal jaga berbasis spreadsheet dengan alat manajemen shift di Microsoft Teams yang menawarkan shift terbuka langsung kepada staf.",
+      "tags": {
+        "team-leadership": "Kepemimpinan tim",
+        "hiring-manager": "Manajer perekrutan",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "Software Engineer · Proyek Independen",
+      "description": "Merancang, membangun, dan merilis karya full-stack secara menyeluruh: REST API terdokumentasi Swagger dengan pengujian Mocha/Chai, Colophon (penerbitan AI — Vue 3, Express, PostgreSQL + pgvector), AfaaqX, dan profil GitHub yang diperbarui setiap hari melalui pipeline Actions terjadwal.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "Petugas Keamanan · Constant Security Services",
+      "description": "Berlisensi SIA di lokasi sains dan universitas yang kritis, termasuk Jodrell Bank Observatory — patroli, CCTV, penanganan insiden, dan pelaporan ruang kendali sambil mengejar peran engineering berikutnya.",
+      "tags": {
+        "sia-licensed": "Berlisensi SIA",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "DevOps Engineer · C365Cloud",
+      "description": "Menjaga platform kepatuhan tetap terus dirilis: pipeline CI/CD, administrasi Microsoft SQL Server dan MySQL, serta fitur platform .NET (Blazor) untuk tim internal di Wakefield.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "Concierge · Adullam Homes Housing Association",
+      "description": "Titik kontak di luar jam kerja di akomodasi terdukung — eskalasi perlindungan (safeguarding), manajemen insiden, dan pencatatan elektronik yang akurat bagi penghuni rentan.",
+      "tags": {
+        "safeguarding": "Safeguarding"
+      }
+    },
+    "j-showsec": {
+      "title": "Petugas Keamanan / Operator CCTV · Showsec",
+      "description": "Pemantauan CCTV, pengelolaan massa, dan penanganan insiden di acara-acara besar, berkoordinasi secara real-time dengan tim keamanan dan aparat penegak hukum.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "Penanganan insiden"
+      }
+    },
+    "j-lidl": {
+      "title": "Customer Assistant · Lidl GB",
+      "description": "Toko dengan volume tinggi selama seluruh masa kuliah — kasir, penerimaan barang, stok; bagian dari tim yang menaikkan peringkat penjualan toko dari ke-14 ke ke-10 dan kepuasan pelanggan sebesar 18% dalam empat bulan.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "3 thn 8 bln sambil kuliah"
+      }
+    },
+    "j-unisys": {
+      "title": "Software Engineer · Unisys",
+      "description": "Penempatan industri 16 bulan di Manchester: merilis fitur full-stack C# / .NET (Blazor) yang meningkatkan efisiensi sistem ~20%, menurunkan masalah produksi 30% dengan memegang triase dukungan, dan naik menjadi pemimpin tim proyek yang menyelesaikan pengiriman tepat waktu hingga meraih kontrak lanjutan dari klien.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "Student Ambassador · MMU",
+      "description": "Mewakili universitas dalam open day, tur kampus, dan acara perekrutan di seluruh Greater Manchester.",
+      "tags": {
+        "community": "Komunitas"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "Teknisi IT Help Desk · MMU",
+      "description": "Dukungan llini pertama bagi staf dan mahasiswa — masalah perangkat keras, perangkat lunak, dan akses, menjembatani IT dengan departemen mitra; dipuji oleh beberapa departemen pada minggu pertama.",
+      "tags": {
+        "first-line-support": "Dukungan lini pertama"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "Software Developer · MMU",
+      "description": "Fungsionalitas front-end dan back-end dalam tim universitas multidisiplin — menyelesaikan 50+ bug, meningkatkan kecepatan muat 25%, dan memangkas waktu pengembangan 15% dalam menerjemahkan kebutuhan pemangku kepentingan menjadi fitur yang berfungsi.",
+      "tags": {
+        "full-stack": "Full-stack",
+        "50-bugs-resolved": "50+ bug terselesaikan"
+      }
+    },
+    "j-course-rep": {
+      "title": "Perwakilan Mata Kuliah · MMU",
+      "description": "Suara terpilih bagi angkatan — menegosiasikan jadwal asesmen yang menghormati hari-hari keagamaan dan memperluas sesi pembicara tamu di tingkat departemen.",
+      "tags": {
+        "learner-voice-award": "Learner Voice Award",
+        "volunteering-award": "Volunteering Award"
+      }
+    },
+    "j-bsc": {
+      "title": "BSc (Hons) Software Engineering · MMU",
+      "description": "Manchester Metropolitan University — terakreditasi BCS, diprediksi lulus dengan First-Class Honours. Langsung terjun ke kolam yang dalam.",
+      "tags": {
+        "bcs-accredited": "Terakreditasi BCS",
+        "first-class-predicted": "First-Class (prediksi)"
+      }
+    },
+    "j-kfc": {
+      "title": "Anggota Tim · KFC",
+      "description": "Menguasai setiap stasiun, dari depan hingga belakang — dinobatkan sebagai Karyawan Terbaik enam bulan berturut-turut, bersama tim yang mengangkat peringkat regional gerai dari ke-5 ke ke-2.",
+      "tags": {
+        "best-employee-6": "Karyawan Terbaik ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC Level 3 Extended Diploma in IT",
+      "description": "Bolton College — Triple Distinction (DDD). Dua tahun yang mengubah rasa ingin tahu menjadi sebuah disiplin.",
+      "tags": {
+        "triple-distinction": "Triple Distinction"
+      }
+    },
+    "j-ocnlr": {
+      "title": "OCNLR Certificate in Digital Skills",
+      "description": "Bolton College — langkah formal pertama ke dunia komputasi, sekaligus pintu menuju semua yang ada di atasnya.",
+      "tags": {
+        "digital-skills": "Keterampilan Digital"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "Perangkat",
+        "value": "MacBook Pro 13 inci · Apple M1 · memori terpadu 16 GB"
+      },
+      "display": {
+        "label": "Layar",
+        "value": "Retina 2560 × 1600 · logis 1440 × 900",
+        "note": "Viewport unity dengan skala fluid — setiap subhalaman dirancang pada skala 1 tepat di lebar ini, lalu menyesuaikan diri dari satu faktor."
+      },
+      "os": {
+        "label": "OS",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "Ponsel",
+        "value": "iPhone, menjalankan OwnTracks dalam mode HTTP",
+        "note": "Ponsel ini mengirim titik lokasi ke /api/location; kota dan waktu setempat di footer berasal dari perangkat ini.",
+        "hrefLabel": "lihat kota yang diperbarui"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "Editor",
+        "detail": "Tema Dracula · vscode-icons · Prettier saat disimpan"
+      },
+      "agentic-pair": {
+        "role": "Pasangan agentik",
+        "detail": "Ekstensi VS Code + CLI — skill, subagent, dan server MCP (Chrome DevTools, Playwright) mengendalikan browser selama verifikasi"
+      },
+      "terminal-and-shell": {
+        "role": "Terminal & shell",
+        "detail": "Node dikunci oleh .nvmrc melalui nvm · Homebrew untuk yang lainnya"
+      },
+      "formatting-and-lint": {
+        "role": "Pemformatan & lint",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "Tipografi",
+        "detail": "next/font/google — di-host sendiri saat build, sehingga font tidak pernah menggeser tata letak"
+      },
+      "browser-tooling": {
+        "role": "Perangkat browser",
+        "detail": "Probe piksel, emulasi reduced-motion, dan gerbang e2e semuanya dijalankan pada Chromium asli"
+      }
+    }
+  }
+}

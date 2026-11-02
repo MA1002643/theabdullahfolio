@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "जल्द ही नई सुविधाएँ जारी की जाएँगी। इस वेबसाइट पर सक्रिय रूप से काम चल रहा है।",
+    "shippingNone": "इस वेबसाइट पर अभी-अभी {count, plural, one {# अपडेट} other {# अपडेट}} शिप किए गए।",
+    "shippingOne": "अभी-अभी शिप किया गया: <bdi>#{number} {title}</bdi>।",
+    "shippingMany": "अभी-अभी शिप किया गया: <bdi>#{number} {title}</bdi> (और {more, number} अन्य)।",
+    "liveWithTop": "लाइव अपडेट: अभी बदलाव शिप हो रहे हैं — फ़िलहाल ध्यान <bdi>#{number} {title}</bdi> पर है।",
+    "livePushes": "लाइव अपडेट: इस वेबसाइट पर अभी नए बदलाव शिप हो रहे हैं।",
+    "liveActive": "अभी सक्रिय रूप से काम चल रहा है{hasTop, select, yes { — फ़िलहाल ध्यान <bdi>#{number} {title}</bdi> पर है} other {}}।",
+    "inProgressBoard": "अभी {count, plural, one {# टास्क} other {# टास्क}} पर सक्रिय रूप से काम चल रहा है{hasTop, select, yes { — फ़िलहाल ध्यान <bdi>#{number} {title}</bdi> पर है} other {}}।",
+    "inProgressPrsAndIssues": "{prs, plural, one {# पुल रिक्वेस्ट} other {# पुल रिक्वेस्ट}} और {issues, plural, one {# खुले टास्क} other {# खुले टास्क}} पर काम जारी है{hasTop, select, yes { — फ़िलहाल ध्यान <bdi>#{number} {title}</bdi> पर है} other {}}।",
+    "inProgressPrs": "{prs, plural, one {# पुल रिक्वेस्ट} other {# पुल रिक्वेस्ट}} पर काम जारी है{hasTop, select, yes { — फ़िलहाल ध्यान <bdi>#{number} {title}</bdi> पर है} other {}}।",
+    "inProgressIssues": "{issues, plural, one {# खुले टास्क} other {# खुले टास्क}} पर काम जारी है{hasTop, select, yes { — फ़िलहाल ध्यान <bdi>#{number} {title}</bdi> पर है} other {}}।",
+    "inProgressFallback": "इस वेबसाइट पर काम जारी है।",
+    "planning": "अगले सुधारों की योजना बन रही है{hasTop, select, yes { — फ़िलहाल ध्यान <bdi>#{number} {title}</bdi> पर है} other {}}।",
+    "secondary": "{count, plural, one {# टास्क} other {# टास्क}} पर काम जारी — फ़िलहाल ध्यान <bdi>#{number} {title}</bdi> पर।"
+  },
+  "headline": {
+    "shipping": "अभी-अभी शिप किया गया",
+    "live": "लाइव डेवलपमेंट जारी है",
+    "inProgress": "काम जारी है",
+    "planning": "अगले सुधारों की योजना",
+    "idle": "रखरखाव जारी है"
+  },
+  "region": "रखरखाव की लाइव स्थिति",
+  "state": {
+    "shipping": "शिपिंग",
+    "live": "लाइव",
+    "inProgress": "जारी है",
+    "planning": "योजना",
+    "idle": "रखरखाव"
+  },
+  "stateSpoken": {
+    "shipping": "शिपिंग",
+    "live": "लाइव",
+    "inProgress": "जारी है",
+    "planning": "योजना",
+    "idle": "रखरखाव"
+  },
+  "pipeline": {
+    "planning": "योजना",
+    "inProgress": "निर्माण",
+    "shipping": "शिप",
+    "live": "लाइव"
+  },
+  "legend": {
+    "title": "डिलीवरी पाइपलाइन",
+    "srIdle": "डिलीवरी पाइपलाइन। पाइपलाइन से बाहर: रखरखाव की निगरानी।",
+    "srStage": "डिलीवरी पाइपलाइन। मौजूदा चरण: {stage}, {total} में से {index}।",
+    "headingIdle": "रखरखाव · पाइपलाइन से बाहर",
+    "headingStage": "{stage} · चरण {index}/{total}",
+    "maintenance": "रखरखाव",
+    "offPipeline": "पाइपलाइन से बाहर — {count, plural, =0 {ट्रैक किए गए रिपॉज़िटरी} one {# रिपो} other {# रिपो}} की निगरानी",
+    "meaning": {
+      "planning": "खुले इश्यू, जो कतार में हैं और जिनका दायरा तय है",
+      "inProgress": "ब्रांच और पुल रिक्वेस्ट पर सक्रिय काम",
+      "shipping": "पिछले 48 घंटों में मर्ज होकर Done में गया काम",
+      "live": "पिछले 2 घंटों के भीतर के कमिट या अपडेट"
+    }
+  },
+  "fields": {
+    "state": "स्थिति",
+    "focus": "फ़ोकस",
+    "focusPr": "फ़ोकस · PR",
+    "focusIssue": "फ़ोकस · इश्यू",
+    "prs": "PR",
+    "issues": "इश्यू",
+    "pushes24h": "पुश · 24 घंटे",
+    "pushes": "पुश",
+    "activity": "गतिविधि · {days} दिन",
+    "sync": "सिंक",
+    "metered": "· सीमित"
+  },
+  "metric": {
+    "prs": "सक्रिय PR",
+    "issues": "खुले इश्यू",
+    "pushes": "पुश (24 घंटे)",
+    "emptyPrs": "ट्रैक किए गए प्रोजेक्ट में कोई सक्रिय PR नहीं है।",
+    "emptyIssues": "ट्रैक किए गए प्रोजेक्ट्स में कोई ओपन issue नहीं है।",
+    "emptyPushes": "पिछले 24 घंटों में ट्रैक किए गए प्रोजेक्ट्स में कोई push नहीं हुआ।"
+  },
+  "popover": {
+    "breakdown": "{metric} का ब्योरा",
+    "summary": "{metric} · {projects, plural, one {# प्रोजेक्ट} other {# प्रोजेक्ट्स}} में {count}",
+    "heading": "{projects, plural, one {# प्रोजेक्ट} other {# प्रोजेक्ट्स}} में <count></count>",
+    "stale": "आख़िरी ज्ञात गतिविधि दिखाई जा रही है।",
+    "more": "GitHub पर {count} और",
+    "openOnGitHub": "GitHub पर खोलें ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Issue}} #{number}",
+    "ariaOpen": "GitHub पर {type, select, pr {pull request} other {issue}} #{number} खोलें: {title}",
+    "stepped": "{type, select, pr {Pull request} other {Issue}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {सक्रिय: <age></age>} other {}}",
+    "monitoring": "{count, plural, one {# repository} other {# repositories}} की निगरानी जारी है — कोई सक्रिय फ़ोकस आइटम नहीं",
+    "monitoringNone": "ट्रैक की गई repositories की निगरानी जारी है"
+  },
+  "queue": {
+    "label": "फ़ोकस क्यू",
+    "hint": "आइटम {index} / {count} · ← → से बदलें",
+    "sr": "{count} आइटम की फ़ोकस क्यू — बाएँ और दाएँ ऐरो कुंजियों से बदलें"
+  },
+  "activity": {
+    "label": "कमिट ट्रेस",
+    "summary": "{total, plural, one {# कमिट} other {# कमिट}} · पिछले {days, plural, one {# दिन} other {# दिन}}{truncated, select, yes { (सबसे पुराने दिनों की गिनती कम है)} other {}}"
+  },
+  "sync": {
+    "label": "पिछला सिंक",
+    "hint": "विश्वसनीयता {confidence} · हर {seconds} सेकंड में पोल{metered, select, yes { · मीटर्ड} other {}}",
+    "detail": "{hasLast, select, yes {पिछला सिंक {last} · } other {}}सिग्नल विश्वसनीयता {confidence} · हर {seconds, plural, one {# सेकंड} other {# सेकंड}} में पोल{metered, select, yes { (मीटर्ड कनेक्शन पर)} other {}}",
+    "stale": "पुराना"
+  },
+  "announce": {
+    "status": "स्थिति: {state}।",
+    "focus": "मौजूदा फ़ोकस: {type, select, pr {pull request} other {issue}} {number}, {title}।",
+    "counts": "पिछले 24 घंटों में {prs, plural, one {# सक्रिय pull request} other {# सक्रिय pull requests}}, {issues, plural, one {# ओपन issue} other {# ओपन issues}} और {pushes, plural, one {# push} other {# push}}।"
+  },
+  "error": {
+    "snapshot": "लाइव स्थिति अभी उपलब्ध नहीं है। नवीनतम स्नैपशॉट दिखाया जा रहा है।",
+    "fallback": "लाइव स्थिति अभी उपलब्ध नहीं है। मेंटेनेंस फ़ॉलबैक दिखाया जा रहा है।"
+  }
+}

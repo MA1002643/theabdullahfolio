@@ -1,0 +1,20 @@
+{
+  "section": "Uses",
+  "preferences": "Preferences",
+  "jumpPlate": "Jump to {ordinal} {label}",
+  "plates": {
+    "machine": "The machine",
+    "bench": "The bench",
+    "stack": "The stack",
+    "pipeline": "The pipeline",
+    "instruments": "The instruments",
+    "bom": "Bill of materials"
+  },
+  "copySettings": "Copy my editor settings",
+  "openRepos": "See the repositories on GitHub",
+  "toggleMotion": "Toggle motion",
+  "motionOn": "on",
+  "motionOff": "off",
+  "copied": "Editor settings copied",
+  "clipboardUnavailable": "Clipboard unavailable — select the frame to copy"
+}

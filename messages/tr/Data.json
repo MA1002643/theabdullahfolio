@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "Kaydırmayla ilerleyen, sinematik bir portfolyo yeniden yapımı"
+    },
+    "2": {
+      "description": "Çok kiracılı iş yönetimi platformu"
+    },
+    "3": {
+      "description": "Yapay zekâ destekli tarif keşif platformu"
+    },
+    "4": {
+      "description": "Hareket odaklı, sürükleyici bir portfolyo"
+    },
+    "5": {
+      "description": "Çok platformlu, yapay zekâ destekli yayıncılık platformu"
+    },
+    "6": {
+      "description": "Çok platformlu müzik akışı platformu"
+    },
+    "7": {
+      "description": "Gerçek zamanlı eğitim etkileşimi platformu"
+    },
+    "8": {
+      "description": "Yapay zekâ destekli fitness koçluğu platformu"
+    },
+    "9": {
+      "description": "Kamyonlara uygun navigasyon ve mevzuat uyumu"
+    },
+    "10": {
+      "description": "Otomatik saatlik check-in aramaları"
+    },
+    "11": {
+      "description": "Yapay zekâ destekli iş keşfi ve başvuru uyarlama"
+    }
+  },
+  "categories": {
+    "Web": "Web",
+    "System": "Sistem",
+    "AI": "Yapay Zekâ",
+    "Mobile": "Mobil"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "Konsiyerj Ekip Lideri · Adullam Homes Housing Association",
+      "description": "Bolton'daki sekiz destekli konaklama biriminde konsiyerj hizmetlerinin bölge düzeyindeki lideri — iki kuruma bağlı üç ekibi yönetti, bölge için işe alım yaptı, olayları yönetti ve iki ayrı elektronik tablo vardiya çizelgesinin yerine, açık vardiyaları doğrudan personele sunan bir Microsoft Teams vardiya yönetim aracı getirdi.",
+      "tags": {
+        "team-leadership": "Ekip liderliği",
+        "hiring-manager": "İşe alım sorumlusu",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "Yazılım Mühendisi · Bağımsız Projeler",
+      "description": "Uçtan uca tam yığın işleri tasarlayıp geliştirdim ve yayına aldım: Swagger ile belgelenmiş, Mocha/Chai testli bir REST API, Colophon (yapay zekâ destekli yayıncılık — Vue 3, Express, PostgreSQL + pgvector), AfaaqX ve zamanlanmış Actions işlem hatlarıyla her gün yeniden oluşturulan bir GitHub profili.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "Güvenlik Görevlisi · Constant Security Services",
+      "description": "Jodrell Bank Gözlemevi dahil kritik bilim ve üniversite sahalarında SIA lisanslı görev — devriyeler, CCTV, olay müdahalesi ve kontrol odası raporlaması; bir sonraki mühendislik rolünü bulana kadar.",
+      "tags": {
+        "sia-licensed": "SIA lisanslı",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "DevOps Mühendisi · C365Cloud",
+      "description": "Bir uyumluluk platformunun aksamadan yayın yapmasını sağladım: CI/CD işlem hatları, Microsoft SQL Server ve MySQL yönetimi ile Wakefield'daki iç ekipler için .NET (Blazor) platform özellikleri.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "Konsiyerj · Adullam Homes Housing Association",
+      "description": "Destekli konaklamada mesai dışı iletişim noktası — korunma amaçlı yükseltmeler, olay yönetimi ve savunmasız sakinler için doğru elektronik kayıt tutma.",
+      "tags": {
+        "safeguarding": "Korunma (safeguarding)"
+      }
+    },
+    "j-showsec": {
+      "title": "Güvenlik Görevlisi / CCTV Operatörü · Showsec",
+      "description": "Yüksek profilli etkinliklerde CCTV izleme, kalabalık yönetimi ve olay müdahalesi; güvenlik ekipleri ve kolluk kuvvetleriyle gerçek zamanlı koordinasyon.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "Olay müdahalesi"
+      }
+    },
+    "j-lidl": {
+      "title": "Müşteri Asistanı · Lidl GB",
+      "description": "Lisans boyunca yoğun bir mağazada çalıştım — kasa, teslimatlar, stok; mağazanın satış sıralamasını 14.'den 10.'ya, müşteri memnuniyetini dört ayda %18 yükselten ekibin parçasıydım.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "Okurken 3 yıl 8 ay"
+      }
+    },
+    "j-unisys": {
+      "title": "Yazılım Mühendisi · Unisys",
+      "description": "Manchester'da 16 aylık endüstriyel staj: sistem verimliliğini yaklaşık %20 artıran tam yığın C# / .NET (Blazor) özellikleri geliştirdim, destek triyajını üstlenerek üretim sorunlarını %30 azalttım ve bir proje ekibine liderlik edip zamanında teslimatla yeni müşteri sözleşmeleri kazandırdım.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "Öğrenci Elçisi · MMU",
+      "description": "Greater Manchester genelinde tanıtım günlerinde, kampüs turlarında ve öğrenci kazanma etkinliklerinde üniversiteyi temsil ettim.",
+      "tags": {
+        "community": "Topluluk"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "BT Yardım Masası Teknisyeni · MMU",
+      "description": "Personel ve öğrenciler için ilk kademe destek — donanım, yazılım ve erişim sorunları; BT ile iş ortağı birimler arasında köprü; ilk haftada birçok birimden övgü aldım.",
+      "tags": {
+        "first-line-support": "İlk kademe destek"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "Yazılım Geliştirici · MMU",
+      "description": "Çok disiplinli bir üniversite ekibinde ön yüz ve arka yüz işlevleri — paydaş gereksinimlerini çalışan özelliklere dönüştürürken 50'den fazla hatayı çözdüm, yükleme hızını %25 artırdım ve geliştirme süresini %15 kısalttım.",
+      "tags": {
+        "full-stack": "Tam yığın",
+        "50-bugs-resolved": "50+ hata çözüldü"
+      }
+    },
+    "j-course-rep": {
+      "title": "Ders Temsilcisi · MMU",
+      "description": "Dönemin seçilmiş sesi — değerlendirme takvimini dini vecibelere göre düzenlemek için müzakere yürüttü ve bölümün konuk konuşmacı oturumlarını genişletti.",
+      "tags": {
+        "learner-voice-award": "Öğrenci Sesi Ödülü",
+        "volunteering-award": "Gönüllülük Ödülü"
+      }
+    },
+    "j-bsc": {
+      "title": "Yazılım Mühendisliği Lisansı (BSc Hons) · MMU",
+      "description": "Manchester Metropolitan University — BCS akreditasyonlu, tahmini birincilik derecesi (First-Class Honours). Resmi eğitimin derin ucu.",
+      "tags": {
+        "bcs-accredited": "BCS Akreditasyonlu",
+        "first-class-predicted": "First-Class (tahmini)"
+      }
+    },
+    "j-kfc": {
+      "title": "Ekip Üyesi · KFC",
+      "description": "Önden arkaya her istasyonda çalıştı — art arda altı ay Ayın Çalışanı seçildi ve mağazanın bölgesel sıralamasını 5.'likten 2.'liğe çıkaran ekibin parçasıydı.",
+      "tags": {
+        "best-employee-6": "Ayın Çalışanı ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC Seviye 3 Bilişim Teknolojileri Genişletilmiş Diploması",
+      "description": "Bolton College — Üçlü Distinction (DDD). Merakı bir disipline dönüştüren iki yıl.",
+      "tags": {
+        "triple-distinction": "Üçlü Distinction"
+      }
+    },
+    "j-ocnlr": {
+      "title": "OCNLR Dijital Beceriler Sertifikası",
+      "description": "Bolton College — bilgisayar dünyasına atılan ilk resmi adım ve yukarıdaki her şeyin kapısı.",
+      "tags": {
+        "digital-skills": "Dijital Beceriler"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "Bilgisayar",
+        "value": "13 inç MacBook Pro · Apple M1 · 16 GB birleşik bellek"
+      },
+      "display": {
+        "label": "Ekran",
+        "value": "2560 × 1600 Retina · 1440 × 900 mantıksal",
+        "note": "Akışkan ölçekli birlik görünüm alanı — her alt sayfa tam bu genişlikte 1 ölçeğinde tasarlanır, sonra tek bir çarpanla nefes alır."
+      },
+      "os": {
+        "label": "İşletim sistemi",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "Telefon",
+        "value": "iPhone, OwnTracks HTTP modunda çalışıyor",
+        "note": "/api/location adresine bir konum bilgisi gönderir; alt bilgideki şehir ve yerel saat bu cihazdan gelir.",
+        "hrefLabel": "beslediği şehri gör"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "Editör",
+        "detail": "Dracula teması · vscode-icons · kaydederken Prettier"
+      },
+      "agentic-pair": {
+        "role": "Ajan eşlikçi",
+        "detail": "VS Code eklentisi + CLI — yetenekler, alt ajanlar ve MCP sunucuları (Chrome DevTools, Playwright) doğrulama sırasında tarayıcıyı yönetir"
+      },
+      "terminal-and-shell": {
+        "role": "Terminal ve kabuk",
+        "detail": "Node sürümü nvm üzerinden .nvmrc ile sabitlenir · gerisi için Homebrew"
+      },
+      "formatting-and-lint": {
+        "role": "Biçimlendirme ve lint",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "Yazı tipi",
+        "detail": "next/font/google — derleme sırasında kendi sunucumuzda barındırılır, bu yüzden yazı tipleri düzeni asla kaydırmaz"
+      },
+      "browser-tooling": {
+        "role": "Tarayıcı araçları",
+        "detail": "Piksel sondaları, azaltılmış hareket emülasyonu ve uçtan uca kapısı gerçek Chromium üzerinde çalışır"
+      }
+    }
+  }
+}

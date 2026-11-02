@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "le parcours complet"
+  },
+  "identity": {
+    "role": "Ingénieur logiciel"
+  },
+  "downloadPdf": "Télécharger le PDF",
+  "sections": {
+    "experience": "Expérience",
+    "education": "Formation",
+    "representation": "Représentation",
+    "skills": "Compétences",
+    "projects": "Projets choisis"
+  },
+  "skillGroups": {
+    "languages": "langages",
+    "frameworks": "frameworks",
+    "libraries": "bibliothèques",
+    "tools": "outils",
+    "software": "logiciels"
+  },
+  "allProjects": "Tous les projets",
+  "asTimeline": "Le même parcours sous forme de chronologie"
+}

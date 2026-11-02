@@ -28,6 +28,9 @@ const APP_DIR = path.join(process.cwd(), 'src', 'app');
 // indistinguishable from an oversight, which is the failure this test exists to
 // catch. Adding a key here is a reviewable decision.
 const EXCLUDED = {
+  '/[...rest]':
+    'The catch-all that turns an unknown path inside a locale into the localised ' +
+    '404 (issue #82). It only ever calls notFound(), so it has no URL of its own.',
   '/not-found':
     "Next's 404 boundary. It is not a URL anyone can navigate to, and Next " +
     'marks it noindex on its own (pinned by notFoundMetadata.test.js).',
@@ -52,7 +55,11 @@ function routePathFor(relativeDir) {
     .split(path.sep)
     .filter(Boolean)
     // A route group is any segment wrapped in parentheses.
-    .filter((segment) => !(segment.startsWith('(') && segment.endsWith(')')));
+    .filter((segment) => !(segment.startsWith('(') && segment.endsWith(')')))
+    // The LOCALE segment (issue #82) is the language prefix, not a path: the
+    // registry describes `/about`, and `/ar/about` is the same route in
+    // another language. English is served unprefixed by the proxy.
+    .filter((segment) => segment !== '[locale]');
   return segments.length === 0 ? '/' : `/${segments.join('/')}`;
 }
 
@@ -420,8 +427,10 @@ const covers = (source, specifier) =>
 // it, because the homepage's own directory IS `src/app` — so it looked reachable
 // and watched while being invisible from every other route, which is how it
 // stayed in the homepage's per-route list for so long.
-const ROOT_LAYOUT = 'src/app/layout.js';
-const SUB_PAGE_LAYOUT = 'src/app/(sub pages)/layout.js';
+// The DOCUMENT shell, which since issue #82 lives in the locale segment; the
+// root `src/app/layout.js` is a pass-through that renders nothing.
+const ROOT_LAYOUT = 'src/app/[locale]/layout.js';
+const SUB_PAGE_LAYOUT = 'src/app/[locale]/(sub pages)/layout.js';
 
 /**
  * Everything Next renders for a route: its own page/layout, plus the ancestor
@@ -460,7 +469,7 @@ function imageHandlersFor(routePath) {
     routePath === '/'
       ? HOME_CARD_ROUTES
       : ['opengraph-image.js', 'twitter-image.js'].map(
-          (file) => `src/app/(sub pages)${routePath}/${file}`,
+          (file) => `src/app/[locale]/(sub pages)${routePath}/${file}`,
         );
   return candidates.filter((file) => {
     try {
@@ -474,13 +483,15 @@ function imageHandlersFor(routePath) {
 function renderedEntriesFor(routePath) {
   const entries = [...entryFilesFor(routePath), ...imageHandlersFor(routePath)];
   return routePath === '/'
-    ? entries
+    ? [...entries, ROOT_LAYOUT]
     : [...entries, ROOT_LAYOUT, SUB_PAGE_LAYOUT];
 }
 
 function entryFilesFor(routePath) {
   const directory =
-    routePath === '/' ? 'src/app' : `src/app/(sub pages)${routePath}`;
+    routePath === '/'
+      ? 'src/app/[locale]/(home)'
+      : `src/app/[locale]/(sub pages)${routePath}`;
   return ['page.js', 'layout.js']
     .map((file) => `${directory}/${file}`)
     .filter((file) => {
@@ -629,7 +640,11 @@ describe('sitemap drift', () => {
       'A dynamic route exists on disk that this case cannot date — add it to ' +
         '`dynamicSources` with the list sitemap.js expands it against, or its ' +
         'share cards go unwatched the way /notes/[slug] did.',
-    ).toEqual(discovered.filter((route) => route.includes('[')).sort());
+    ).toEqual(
+      discovered
+        .filter((route) => route.includes('[') && !(route in EXCLUDED))
+        .sort(),
+    );
 
     for (const [route, sources] of Object.entries(dynamicSources)) {
       const handlers = imageHandlersFor(route);
@@ -694,9 +709,17 @@ describe('sitemap contents', () => {
     // Computed from the same sources the sitemap reads rather than typed, for
     // the reason the whole file exists: a hardcoded total is a second place to
     // update, and the update that gets forgotten is the one that matters.
+    //
+    // Since issue #82 a TRANSLATED page is one <url> per locale (Google's
+    // sitemap form of hreflang); an English-only document — the notes, the
+    // privacy policy — is one <url>, at its English address.
+    const { LOCALES } = await import('@/i18n/locales');
+    const { isTranslated } = await import('@/lib/seo/site');
+    const indexable = ROUTES.filter((route) => route.indexable);
     const expectedCount =
-      ROUTES.filter((route) => route.indexable).length +
-      projectsData.length +
+      indexable.filter((route) => isTranslated(route.path)).length * LOCALES.length +
+      indexable.filter((route) => !isTranslated(route.path)).length +
+      projectsData.length * LOCALES.length +
       notes.length;
     expect(urls).toHaveLength(expectedCount);
 
@@ -735,8 +758,9 @@ describe('sitemap contents', () => {
   });
 
   it('takes every lastModified from git, never from the clock (P4)', async () => {
-    const { default: sitemap } = await import('@/app/sitemap');
+    const { default: sitemap, MESSAGE_SOURCES } = await import('@/app/sitemap');
     const { lastModifiedFor } = await import('@/lib/seo/lastModified');
+    const { isTranslated } = await import('@/lib/seo/site');
 
     // Absent is allowed and expected on Vercel, where the build has no `.git`
     // — see src/lib/seo/lastModified.js. What is NOT allowed is a date stamped
@@ -758,7 +782,12 @@ describe('sitemap contents', () => {
     for (const route of ROUTES) {
       if (!route.indexable) continue;
       const entry = byUrl.get(absoluteUrl(route.path));
-      expect(entry.lastModified).toBe(lastModifiedFor(route.sources));
+      // A translated route also renders its catalogues, so `messages/` is one
+      // of its sources (MESSAGE_SOURCES in sitemap.js) — the same list here.
+      const sources = isTranslated(route.path)
+        ? [...route.sources, ...MESSAGE_SOURCES]
+        : route.sources;
+      expect(entry.lastModified).toBe(lastModifiedFor(sources));
     }
 
     // All eleven project pages share ONE lookup by design (they are one
@@ -819,12 +848,12 @@ describe('project detail sources', () => {
   // Written with forward slashes, not `path.join`, because it is compared by
   // string equality against a PROJECT_SOURCES entry — and those are repo paths
   // in git's spelling, which is `/` on every platform.
-  const DETAIL_PAGE = 'src/app/(sub pages)/projects/[id]/page.js';
+  const DETAIL_PAGE = 'src/app/[locale]/(sub pages)/projects/[id]/page.js';
   // The detail route's file-convention card renderers — composed by Next, so
   // they are entries to the walk rather than anything it can reach.
   const DETAIL_CARDS = [
-    'src/app/(sub pages)/projects/[id]/opengraph-image.js',
-    'src/app/(sub pages)/projects/[id]/twitter-image.js',
+    'src/app/[locale]/(sub pages)/projects/[id]/opengraph-image.js',
+    'src/app/[locale]/(sub pages)/projects/[id]/twitter-image.js',
   ];
 
   // Component directories the detail route imports from that are deliberately
@@ -1178,7 +1207,7 @@ describe('registry as a source', () => {
     const uses = ROUTES.find((route) => route.path === '/uses');
     expect(uses.sources).toEqual(
       expect.arrayContaining([
-        'src/app/(sub pages)/uses',
+        'src/app/[locale]/(sub pages)/uses',
         'src/lib/uses',
         'src/components/uses',
       ]),
@@ -1187,7 +1216,7 @@ describe('registry as a source', () => {
     const projects = ROUTES.find((route) => route.path === '/projects');
     expect(projects.sources).toEqual(
       expect.arrayContaining([
-        'src/app/(sub pages)/projects/page.js',
+        'src/app/[locale]/(sub pages)/projects/page.js',
         'src/app/data.js',
         'src/components/projects',
       ]),
@@ -1230,7 +1259,7 @@ describe('the non-home shared surface', () => {
     // above: emptied or trimmed, every check below passes while watching less.
     expect(SUB_PAGE_SHARED_SOURCES).toEqual(
       expect.arrayContaining([
-        'src/app/(sub pages)/layout.js',
+        'src/app/[locale]/(sub pages)/layout.js',
         'src/components/footer',
         'src/lib/og/meta.js',
       ]),
@@ -1399,7 +1428,7 @@ describe('narrowly shared sources', () => {
   const PAGE_TITLE = 'src/components/PageTitle.jsx';
   const COUNT_HELPER = 'src/lib/numberWords.js';
   const FOOTER_DATA = 'src/components/footer/footer-data.js';
-  const DETAIL_PAGE = 'src/app/(sub pages)/projects/[id]/page.js';
+  const DETAIL_PAGE = 'src/app/[locale]/(sub pages)/projects/[id]/page.js';
   const REGISTRY = 'src/lib/seo/site.js';
 
   /** Whether any of a route's `sources` entries accounts for a module. */

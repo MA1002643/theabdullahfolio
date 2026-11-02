@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "Filmowa przebudowa portfolio sterowana przewijaniem"
+    },
+    "2": {
+      "description": "Wielodostępna platforma do zarządzania firmą"
+    },
+    "3": {
+      "description": "Platforma do odkrywania przepisów oparta na AI"
+    },
+    "4": {
+      "description": "Wciągające portfolio oparte na ruchu"
+    },
+    "5": {
+      "description": "Wieloplatformowa platforma wydawnicza oparta na AI"
+    },
+    "6": {
+      "description": "Wieloplatformowa platforma do strumieniowania muzyki"
+    },
+    "7": {
+      "description": "Platforma angażująca uczniów i studentów w czasie rzeczywistym"
+    },
+    "8": {
+      "description": "Platforma trenerska fitness oparta na AI"
+    },
+    "9": {
+      "description": "Nawigacja i zgodność z przepisami dla ciężarówek"
+    },
+    "10": {
+      "description": "Automatyczne cogodzinne telefony kontrolne"
+    },
+    "11": {
+      "description": "Wyszukiwanie ofert pracy i dopasowywanie CV z AI"
+    }
+  },
+  "categories": {
+    "Web": "Web",
+    "System": "System",
+    "AI": "AI",
+    "Mobile": "Mobile"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "Lider zespołu concierge · Adullam Homes Housing Association",
+      "description": "Lider na poziomie obszaru odpowiedzialny za usługi concierge w ośmiu placówkach mieszkalnictwa wspomaganego w Bolton — kierowałem trzema zespołami w dwóch organizacjach, prowadziłem rekrutację w regionie, zarządzałem incydentami i zastąpiłem dwa osobne grafiki w arkuszach kalkulacyjnych narzędziem do zarządzania zmianami w Microsoft Teams, które oferuje wolne zmiany bezpośrednio pracownikom.",
+      "tags": {
+        "team-leadership": "Przywództwo zespołu",
+        "hiring-manager": "Rekrutacja",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "Inżynier oprogramowania · Projekty niezależne",
+      "description": "Projektowanie, budowanie i wdrażanie rozwiązań full-stack od początku do końca: REST API udokumentowane w Swaggerze z testami Mocha/Chai, Colophon (publikowanie z AI — Vue 3, Express, PostgreSQL + pgvector), AfaaqX oraz profil na GitHub odświeżany codziennie przez zaplanowane potoki Actions.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "Pracownik ochrony · Constant Security Services",
+      "description": "Licencja SIA i praca w kluczowych obiektach naukowych i uniwersyteckich, w tym w obserwatorium Jodrell Bank — patrole, monitoring CCTV, reagowanie na incydenty i raportowanie z centrum kontroli, w czasie gdy szukałem kolejnej roli inżynierskiej.",
+      "tags": {
+        "sia-licensed": "Licencja SIA",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "Inżynier DevOps · C365Cloud",
+      "description": "Dbałem o ciągłość wydawania platformy do zarządzania zgodnością: potoki CI/CD, administrowanie Microsoft SQL Server i MySQL oraz funkcje platformy w .NET (Blazor) dla wewnętrznych zespołów w Wakefield.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "Concierge · Adullam Homes Housing Association",
+      "description": "Punkt kontaktowy po godzinach pracy w mieszkalnictwie wspomaganym — eskalacja spraw dotyczących ochrony podopiecznych, zarządzanie incydentami i rzetelne prowadzenie elektronicznej dokumentacji dla bezbronnych mieszkańców.",
+      "tags": {
+        "safeguarding": "Ochrona podopiecznych"
+      }
+    },
+    "j-showsec": {
+      "title": "Pracownik ochrony / operator CCTV · Showsec",
+      "description": "Monitoring CCTV, zarządzanie tłumem i reagowanie na incydenty podczas głośnych wydarzeń, we współpracy w czasie rzeczywistym z zespołami ochrony i organami ścigania.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "Reagowanie na incydenty"
+      }
+    },
+    "j-lidl": {
+      "title": "Pracownik obsługi klienta · Lidl GB",
+      "description": "Sklep o dużym natężeniu ruchu przez cały okres studiów — kasa, dostawy, towar; część zespołu, który w cztery miesiące podniósł sklep z 14. na 10. miejsce w rankingu sprzedaży i poprawił zadowolenie klientów o 18%.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "3 lata i 8 mies. równolegle ze studiami"
+      }
+    },
+    "j-unisys": {
+      "title": "Inżynier oprogramowania · Unisys",
+      "description": "16-miesięczny staż przemysłowy w Manchesterze: wdrażałem funkcje full-stack w C# / .NET (Blazor), które zwiększyły wydajność systemu o ok. 20%, zmniejszyłem liczbę problemów produkcyjnych o 30% dzięki przejęciu triage’u zgłoszeń, a następnie poprowadziłem zespół projektowy do terminowego wdrożenia, które przyniosło kolejne kontrakty z klientem.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "Ambasador studentów · MMU",
+      "description": "Reprezentowałem uczelnię podczas dni otwartych, wycieczek i wydarzeń rekrutacyjnych w całym Greater Manchester.",
+      "tags": {
+        "community": "Społeczność"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "Technik help desku IT · MMU",
+      "description": "Wsparcie pierwszej linii dla pracowników i studentów — problemy ze sprzętem, oprogramowaniem i dostępem, łączenie IT z działami partnerskimi; już w pierwszym tygodniu doceniony przez kilka działów.",
+      "tags": {
+        "first-line-support": "Wsparcie pierwszej linii"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "Programista · MMU",
+      "description": "Funkcje front-endu i back-endu w multidyscyplinarnym zespole uczelni — naprawiłem ponad 50 błędów, przyspieszyłem ładowanie o 25% i skróciłem czas tworzenia o 15%, przekładając wymagania interesariuszy na działające funkcje.",
+      "tags": {
+        "full-stack": "Full-stack",
+        "50-bugs-resolved": "Ponad 50 naprawionych błędów"
+      }
+    },
+    "j-course-rep": {
+      "title": "Przedstawiciel kierunku · MMU",
+      "description": "Wybrany głos swojego rocznika — wynegocjowane terminy egzaminów i zaliczeń z uwzględnieniem świąt religijnych oraz więcej wykładów gościnnych na wydziale.",
+      "tags": {
+        "learner-voice-award": "Learner Voice Award",
+        "volunteering-award": "Volunteering Award"
+      }
+    },
+    "j-bsc": {
+      "title": "BSc (Hons) Software Engineering · MMU",
+      "description": "Manchester Metropolitan University — kierunek akredytowany przez BCS, przewidywany dyplom z wyróżnieniem First-Class Honours. Formalne rzucenie na głęboką wodę.",
+      "tags": {
+        "bcs-accredited": "Akredytacja BCS",
+        "first-class-predicted": "First-Class (prognoza)"
+      }
+    },
+    "j-kfc": {
+      "title": "Członek zespołu · KFC",
+      "description": "Każde stanowisko, od kuchni po obsługę gości — sześć miesięcy z rzędu wyróżniany tytułem Najlepszego Pracownika, w załodze, która awansowała lokal w regionalnym rankingu z 5. na 2. miejsce.",
+      "tags": {
+        "best-employee-6": "Najlepszy pracownik ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC Level 3 Extended Diploma in IT",
+      "description": "Bolton College — Triple Distinction (DDD). Dwa lata, w których ciekawość stała się dyscypliną.",
+      "tags": {
+        "triple-distinction": "Triple Distinction"
+      }
+    },
+    "j-ocnlr": {
+      "title": "OCNLR Certificate in Digital Skills",
+      "description": "Bolton College — pierwszy formalny krok w świat informatyki i drzwi do wszystkiego, co nastąpiło potem.",
+      "tags": {
+        "digital-skills": "Umiejętności cyfrowe"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "Komputer",
+        "value": "13-calowy MacBook Pro · Apple M1 · 16 GB pamięci współdzielonej"
+      },
+      "display": {
+        "label": "Ekran",
+        "value": "2560 × 1600 Retina · 1440 × 900 logicznie",
+        "note": "Płynnie skalowany viewport „unity” — każda podstrona jest projektowana w skali 1 dokładnie na tej szerokości, a potem oddycha jednym współczynnikiem."
+      },
+      "os": {
+        "label": "System",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "Telefon",
+        "value": "iPhone z OwnTracks działającym w trybie HTTP",
+        "note": "Wysyła pozycję na /api/location; miasto i czas lokalny w stopce pochodzą z tego urządzenia.",
+        "hrefLabel": "zobacz miasto, które zasila"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "Edytor",
+        "detail": "Motyw Dracula · vscode-icons · Prettier przy zapisie"
+      },
+      "agentic-pair": {
+        "role": "Agentowy partner",
+        "detail": "Rozszerzenie VS Code + CLI — skille, subagenci i serwery MCP (Chrome DevTools, Playwright) sterują przeglądarką podczas weryfikacji"
+      },
+      "terminal-and-shell": {
+        "role": "Terminal i powłoka",
+        "detail": "Node przypięty przez .nvmrc i nvm · Homebrew do całej reszty"
+      },
+      "formatting-and-lint": {
+        "role": "Formatowanie i lintowanie",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "Typografia",
+        "detail": "next/font/google — hostowane lokalnie podczas builda, więc fonty nigdy nie przesuwają układu"
+      },
+      "browser-tooling": {
+        "role": "Narzędzia przeglądarkowe",
+        "detail": "Sondy pikseli, emulacja ograniczonego ruchu i bramka e2e działają na prawdziwym Chromium"
+      }
+    }
+  }
+}

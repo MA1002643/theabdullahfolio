@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "MEIN SETUP",
+    "subtitle": "die Werkzeuge, überprüft"
+  },
+  "opensNewTab": "{name} (öffnet in einem neuen Tab)",
+  "machine": {
+    "eyebrow": "Hardware · von Hand gepflegt",
+    "title": "Die Maschine",
+    "provenance": "{count, plural, one {<fig>{n}</fig> Eintrag} other {<fig>{n}</fig> Einträge}} · vom Inhaber bestätigt",
+    "seeItLive": "live ansehen"
+  },
+  "bench": {
+    "eyebrow": "Umgebung · von Hand gepflegt",
+    "title": "Die Werkbank",
+    "provenance": "{count, plural, one {<fig>{n}</fig> Station} other {<fig>{n}</fig> Stationen}} · Auszug aus {file}",
+    "extensions": "Erweiterungen, zu denen ich greife",
+    "editorCaption": "Ein Auszug aus meiner VS Code-Datei {file}, dargestellt im Theme {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · aus den Repositories ausgelesen",
+    "eyebrowCurated": "Stack · kuratierte Auswahl",
+    "title": "Der Stack",
+    "provenanceLive": "live · {count, plural, one {<fig>{n}</fig> Tool} other {<fig>{n}</fig> Tools}}",
+    "provenanceCurated": "kuratiert · {count, plural, one {<fig>{n}</fig> Tool} other {<fig>{n}</fig> Tools}} · {state, select, unreachable {GitHub nicht erreichbar} other {Abgleich mit GitHub läuft…}}",
+    "verifiedSr": "mit GitHub abgeglichen",
+    "verifiedStatus": "Stack mit GitHub abgeglichen.",
+    "cta": "ZU DEN REPOSITORIES",
+    "ctaLabel": "Die Repositories auf GitHub ansehen (öffnet in einem neuen Tab)",
+    "tally": "<count></count> von <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "öffentliche Repositories",
+    "keyPrivate": "privat",
+    "keyRelative": "Balken beziehen sich auf das am häufigsten genutzte Tool",
+    "keyPending": "Balken und Repository-Zahlen erscheinen mit dem Live-Abruf",
+    "repoCount": {
+      "public": "genutzt in {pub, plural, one {# öffentlichen Repo} other {# öffentlichen Repos}}",
+      "private": "genutzt in {priv, plural, one {# privaten Repo} other {# privaten Repos}}",
+      "mixed": "genutzt in {pub, plural, one {# öffentlichen Repo} other {# öffentlichen Repos}} · +{priv} privat"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: Repository-Zahlen erscheinen mit dem Live-Abruf",
+    "figure": {
+      "publicRepos": "{n, plural, one {öffentliches Repo} other {öffentliche Repos}}",
+      "privateRepos": "{n, plural, one {privates Repo} other {private Repos}}",
+      "repos": "{n, plural, one {Repo} other {Repos}}",
+      "public": "öffentlich",
+      "private": "privat"
+    },
+    "curated": "kuratiert"
+  },
+  "liveAge": {
+    "verified": "geprüft {age}",
+    "s": "vor {s} s",
+    "ms": "vor {m} min {s} s",
+    "hm": "vor {h} h {m} min",
+    "dh": "vor {d} d {h} h"
+  },
+  "pipeline": {
+    "eyebrow": "Auslieferung · vom Commit bis zur Rechenleistung",
+    "title": "Die Pipeline",
+    "provenance": "{count, plural, one {<fig>{n}</fig> Workflow} other {<fig>{n}</fig> Workflows}} · beim Build aus .github gelesen",
+    "provenanceHandSet": "Schema · von Hand gesetzt",
+    "region": "Diagramm der Build-Pipeline",
+    "svgTitle": "Delivery-Pipeline: Ein Push läuft von GitHub über GitHub Actions und den Vercel-Build zu Fluid Compute. Dorthin gelangt auch ein GitHub-Webhook direkt, und ein täglicher Cron-Job ruft es auf. Von dort verteilt sich die Last über einen Service-Bus auf die unten aufgeführten Dienste.",
+    "fires": "startet <fig>{window}</fig> UTC (Hobby-Genauigkeit)",
+    "kinds": {
+      "source": "QUELLE",
+      "ci": "CI",
+      "build": "BUILD",
+      "runtime": "LAUFZEIT",
+      "schedule": "ZEITPLAN",
+      "store": "SPEICHER",
+      "gateway": "GATEWAY",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "MAIL",
+      "auth": "AUTH",
+      "search": "SUCHE"
+    },
+    "workflows": "{count, plural, one {{n} Workflow} other {{n} Workflows}}",
+    "apiRoutes": "{count, plural, one {{n} API-Route} other {{n} API-Routen}}",
+    "apiRoutesBare": "API-Routen",
+    "locales": "{count, plural, one {{n} Sprache} other {{n} Sprachen}}",
+    "crons": "{count, plural, one {Cron-Job} other {{n} Cron-Jobs}}",
+    "daily": "täglich · {time} UTC",
+    "services": {
+      "redis": "Gästebuch · Standort · SEO · Deduplizierung",
+      "graphql": "Statistiken · Skills · Fortschritt",
+      "spotify": "läuft gerade",
+      "mail": "Kontakt · Abstract-Prüfung"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Qualität · beim Build gezählt",
+    "title": "Die Instrumente",
+    "provenance": "beim Build gezählt · <fig>{date}</fig>",
+    "provenanceBare": "beim Build gezählt",
+    "unitLabel": "{count, plural, one {Vitest-Suite} other {Vitest-Suites}}",
+    "unitSub": "{count, plural, one {{n} Testfall} other {{n} Testfälle}} · Vitest",
+    "e2eLabel": "{count, plural, one {Browser-Suite} other {Browser-Suites}}",
+    "e2eSub": "{count, plural, one {{n} Szenario} other {{n} Szenarien}} · Playwright",
+    "apiLabel": "{count, plural, one {API-Route} other {API-Routen}}",
+    "apiSub": "Route-Handler · {methods}",
+    "apiSubBare": "Route-Handler",
+    "tileLabel": "{figure} {label} — {sub} (öffnet den Ordner auf GitHub in einem neuen Tab)"
+  },
+  "bom": {
+    "eyebrow": "Stückliste · diese Website",
+    "title": "Woraus sie besteht",
+    "provenance": "{source} · beim Build geprüft · <fig>{date}</fig>",
+    "provenanceBare": "{source} · beim Build geprüft",
+    "unreadable": "Das Manifest konnte beim Build nicht gelesen werden, daher werden keine Versionen aufgeführt.",
+    "packages": "{count, plural, one {<fig>{n}</fig> Paket} other {<fig>{n}</fig> Pakete}}",
+    "packagesOf": "<fig>{n}</fig> von <fig>{all}</fig> Paketen",
+    "built": "gebaut am <fig>{date}</fig>",
+    "groups": {
+      "core": "Kern",
+      "3d-and-motion": "3D & Bewegung",
+      "data-and-services": "Daten & Dienste",
+      "interface": "Oberfläche",
+      "platform": "Plattform",
+      "media": "Medien",
+      "quality": "Qualität",
+      "build": "Build",
+      "runtime": "Laufzeit",
+      "tooling": "Werkzeuge"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Sprachen",
+        "lay": "Die Sprache, in der der Code selbst geschrieben ist."
+      },
+      "frameworks": {
+        "label": "Frameworks",
+        "lay": "Das Gerüst, auf dem eine Anwendung aufbaut: ihre Struktur und ihre Konventionen."
+      },
+      "libraries": {
+        "label": "Bibliotheken",
+        "lay": "Fertige Bausteine, die jeweils eine Aufgabe gut erledigen."
+      },
+      "tools": {
+        "label": "Tools",
+        "lay": "Alles, was rund um den Code läuft: Tests, Formatierung, Datenbanken und Deployment."
+      },
+      "software": {
+        "label": "Software",
+        "lay": "Die Dienste, auf denen die fertige Arbeit läuft."
+      }
+    }
+  }
+}

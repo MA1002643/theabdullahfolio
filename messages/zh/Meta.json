@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — 软件工程师。深色余烬风格卡片，印有 Muhammad Abdullah 印章，并显示作品集的实时状态。",
+  "homeSquareCardAlt": "Muhammad Abdullah — 软件工程师。方形深色余烬风格卡片，印有 Muhammad Abdullah 印章，并显示作品集的实时状态。",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — 软件工程师",
+      "description": "常驻 Bolton 的软件工程师，使用 Next.js、React 和 TypeScript 构建快速而周全的 Web 应用。这里有项目、资历证明，以及背后的工具。"
+    },
+    "about": {
+      "title": "关于",
+      "description": "余烬背后的工程师——他的故事、技术栈，以及此刻正在构建内容的 GitHub 实时数据。"
+    },
+    "cv": {
+      "title": "CV",
+      "description": "完整履历——每一段任职、每一项资质、每一个已交付的项目，均以 HTML 呈现。内容与时间线使用同一份数据，PDF 版本一键即可获取。"
+    },
+    "notes": {
+      "title": "笔记",
+      "description": "工程决策记录——本站每个选择为何如此，哪些备选方案被否决，以及每个决定付出了什么代价。"
+    },
+    "projects": {
+      "title": "项目",
+      "description": "{countWord} 个作品——涵盖 Web、系统、移动端与 AI——每个都通过各自的 GitHub 看板实时追踪，卡片上标明技术栈和完成状态。"
+    },
+    "qualifications": {
+      "title": "资历认证",
+      "description": "学位、证书和职业资格——实践背后经过核实的凭证记录，每份证书均可查看。"
+    },
+    "journey": {
+      "title": "历程",
+      "description": "每一段任职、资质和志愿服务经历，汇成一条滚动式时间线——从 2018 年的 Bolton College，到如今交付生产级软件。"
+    },
+    "uses": {
+      "title": "工具",
+      "description": "设备、工作台、技术栈与流水线——本页的每一款工具，都已对照代码仓库和负责发布的构建流程逐一核实。"
+    },
+    "contact": {
+      "title": "联系",
+      "description": "就职位或项目开启一场对话——联系表单会在你书写时帮你润色留言，并且绝不丢失草稿。"
+    },
+    "myPast": {
+      "title": "我的过去",
+      "description": "一切开始的大学时期作品集——用纯 HTML、CSS 和 JavaScript 手工搭建，保留在线上，作为一张坦诚的“之前”对照。"
+    },
+    "guestbook": {
+      "title": "留言墙",
+      "description": "在墙上留下你的印记——一块霓虹留言板，访客可通过 GitHub 或 Google 签名留言，并支持实时在线状态和表情回应。"
+    },
+    "privacy": {
+      "title": "隐私",
+      "description": "本站涉及的每一个 Cookie、存储键和第三方，它们存在的原因，以及如何关闭可选项。经过逐项审查，而非套用模板。"
+    }
+  },
+  "notFound": {
+    "title": "404 — 页面未找到",
+    "description": "你漂进了虚空。这个页面并不存在——暂时还没有。"
+  }
+}

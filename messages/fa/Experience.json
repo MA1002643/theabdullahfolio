@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "سال‌ها در این حرفه",
+    "unit": "{unit, select, years {{count, plural, other {سال سابقه کار}}} other {{count, plural, other {ماه سابقه کار}}}}",
+    "unavailable": "سابقه کار در دسترس نیست",
+    "loadingAria": "در حال بارگذاری سال‌های سابقه کار",
+    "viewBreakdown": "مشاهده جزئیات →",
+    "srPrefix": "به‌روزرسانی سابقه کار: ",
+    "personal": "شخصی",
+    "employment": "شغلی",
+    "splitUnavailable": "در دسترس نیست",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "در حال بارگذاری خلاصه سابقه کار",
+    "degraded": "سال‌ها در این حرفه: سابقه کار در دسترس نیست (بخش مربوط به GitHub در خلاصه وجود ندارد یا ناقص است).{split} مشاهده جزئیات: جزئیات داده‌های موجود را باز می‌کند.",
+    "ready": "سال‌ها در این حرفه: {count, number, ::group-off}+ {unit, select, years {سال} other {ماه}} سابقه کار.{split} مشاهده جزئیات: جزئیات دسته‌بندی را باز می‌کند.",
+    "split": "شخصی {personal}، شغلی {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "در دسترس نیست"
+  },
+  "modal": {
+    "eyebrow": "نمای کلی مسیر حرفه‌ای",
+    "title": "سابقه کار به تفکیک دسته",
+    "close": "بستن جزئیات سابقه کار",
+    "personalProjects": "پروژه‌های شخصی",
+    "employment": "سوابق شغلی",
+    "unavailable": "در دسترس نیست",
+    "unitWord": "{unit, select, years {{count, plural, one {سال} other {سال}}} other {{count, plural, one {ماه} other {ماه}}}}",
+    "totalUnavailable": "مجموع در دسترس نیست",
+    "totalUnit": "مجموع {unit, select, years {سال} other {ماه}}",
+    "ownedRepos": "<n></n> {count, plural, one {مخزن شخصی} other {مخزن شخصی}}",
+    "roles": "<n></n> {count, plural, one {نقش شغلی} other {نقش شغلی}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ سال} other { ماه}}",
+    "newestFirst": "جدیدترین‌ها اول",
+    "showFewer": "نمایش کمتر",
+    "showAll": "نمایش همه {count, number, ::group-off} مخزن →",
+    "noRepos": "هنوز مخزن شخصی‌ای شناسایی نشده است.",
+    "personalFailed": "بارگذاری داده‌های پروژه‌های شخصی در حال حاضر ممکن نشد.",
+    "relativeDuration": "مدت‌زمان نسبی",
+    "noRoles": "هنوز هیچ نقش مهندسی نرم‌افزاری شناسایی نشده است.",
+    "employmentFailed": "بارگذاری داده‌های سوابق شغلی در حال حاضر ممکن نشد."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {سال} other {سال}}} other {{count, plural, one {ماه} other {ماه}}}}",
+  "changes": {
+    "newRole": "نقش جدید از روی رزومه شناسایی شد: {company}",
+    "years": "سابقه کار به‌روزرسانی شد: {from} → {to}",
+    "employment": "سابقه شغلی به‌روزرسانی شد: +{count, number, ::group-off} {count, plural, one {ماه} other {ماه}}",
+    "newRepo": "مخزن جدید شناسایی شد: {name}",
+    "newRepos": "{count, number, ::group-off} {count, plural, one {مخزن جدید} other {مخزن جدید}} در GitHub شناسایی شد",
+    "timeline": "جدول زمانی پروژه‌های شخصی به‌روزرسانی شد"
+  }
+}

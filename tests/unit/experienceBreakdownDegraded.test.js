@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ExperienceBreakdownModal } from '@/components/about/ExperienceBreakdownModal';
+import { IntlWrapper } from '../support/intl';
 
 // ── The false total, one click in ──────────────────────────────────────────
 // The years card's headline was the visible half of this defect; the breakdown
@@ -134,6 +135,8 @@ const open = (data) =>
       data,
       onClose: () => {},
     }),
+    // The modal reads its copy from the real Experience catalogue (issue #82).
+    { wrapper: IntlWrapper },
   );
 
 describe('ExperienceBreakdownModal — a degraded payload', () => {

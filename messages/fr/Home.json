@@ -1,0 +1,16 @@
+{
+  "role": "Ingénieur logiciel",
+  "summary": "Muhammad Abdullah est ingénieur logiciel à Bolton, dans le Greater Manchester. Il conçoit des applications web rapides et soignées avec Next.js, React, TypeScript et Node.js. Ce site rassemble {count} projets (web, systèmes, mobile et IA), chacun suivi en direct depuis son propre tableau GitHub, ainsi que les diplômes et les postes qui les sous-tendent, une chronologie du parcours entre l’université et la production, et les outils avec lesquels le travail est réellement construit. Toutes les sections sont accessibles depuis l’anneau ci-dessous, à l’exception de trois : le parcours complet figure sur la <cv>page du CV</cv> et au format PDF, les choix qui sous-tendent la construction de ce site sont exposés dans les <notes>notes d’ingénierie</notes>, et les données que ce site collecte, avec l’interrupteur qui désactive la partie facultative, sont détaillées sur la <privacy>page de confidentialité</privacy>.",
+  "orbitTip": {
+    "hover": {
+      "lead": "Placez votre curseur sur l’ordinateur portable, puis déplacez-le ou faites défiler vers le haut et vers le bas : l’anneau tourne avec vous.",
+      "keys": "Vous pouvez aussi faire glisser l’anneau, ou appuyer sur <key>←</key> <key>→</key> lorsqu’un bouton a le focus.",
+      "sr": "Astuce : l’anneau de navigation peut pivoter. Placez le pointeur sur l’ordinateur portable, puis déplacez-le ou faites défiler vers le haut et vers le bas pour le faire tourner. Vous pouvez aussi faire glisser l’anneau, ou appuyer sur les flèches gauche et droite lorsqu’un bouton de navigation a le focus."
+    },
+    "touch": {
+      "lead": "Faites glisser votre doigt vers le haut et vers le bas sur l’ordinateur portable, ou faites glisser l’anneau, pour faire tourner la navigation.",
+      "sr": "Astuce : l’anneau de navigation peut pivoter. Faites glisser votre doigt vers le haut et vers le bas sur l’ordinateur portable, ou faites glisser l’anneau lui-même, pour le faire tourner."
+    },
+    "dismiss": "Fermer l’astuce de navigation"
+  }
+}

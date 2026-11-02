@@ -1,0 +1,124 @@
+{
+  "title": "ゲストブック",
+  "subtitle": "あなたのマークを残しましょう",
+  "wall": {
+    "marksLeft": "{count, plural, one {残り<n>{shown}</n>件のマーク} other {残り<n>{shown}</n>件のマーク}}",
+    "commands": "{shortcut} · コマンド",
+    "loading": "ゲストブックを読み込み中…",
+    "loadingMore": "ゲストブックをさらに読み込み中…",
+    "loadFailed": "ゲストブックを読み込めませんでした",
+    "pageFailed": "このページを読み込めませんでした",
+    "retry": "もう一度試す",
+    "emptyTitle": "まだメッセージはありません",
+    "emptyInvite": "最初のマークを残してみませんか"
+  },
+  "presence": "{count, plural, other {現在<n>{shown}</n>人が閲覧中}}",
+  "announce": {
+    "one": "{name}さんから新しいメッセージ：{message}",
+    "many": "{count, plural, other {新しいメッセージが#件あります。}} {lines}",
+    "line": "{name}：{message}",
+    "separator": "。",
+    "someone": "どなたか"
+  },
+  "card": {
+    "sending": "送信中…",
+    "guest": "ゲスト",
+    "onGitHub": "GitHubの{username}（新しいタブで開きます）",
+    "copyLink": "このメッセージへのリンクをコピー",
+    "linkCopied": "リンクをコピーしました — このマークに直接移動します",
+    "linkFailed": "リンクをコピーできませんでした",
+    "deleteOwn": "自分のメッセージを削除",
+    "deleteOther": "{name}さんのメッセージを削除",
+    "signature": "{name}さんの署名",
+    "signatureAnon": "署名"
+  },
+  "reactions": {
+    "fire": "炎",
+    "rocket": "ロケット",
+    "heart": "ハート",
+    "count": "{label} — {count}",
+    "signInToReact": "リアクションするにはサインインしてください"
+  },
+  "composer": {
+    "label": "メッセージ",
+    "placeholder": "メッセージを残す…",
+    "send": "メッセージを送信",
+    "offline": "オフラインです。オンラインに戻るまで、メッセージはここに保存されます。",
+    "notSent": "以前のメッセージは送信されませんでした",
+    "restore": "復元する"
+  },
+  "signature": {
+    "add": "署名を追加（任意）",
+    "discard": "署名を破棄",
+    "clear": "消去",
+    "padLabel": "署名の描画エリア — マウス、指、ペンで描くか、下のプリセットマークを選んでください。",
+    "padHint": "指、トラックパッド、マウスで描いてください。線の太さは描く速さに応じて変わります",
+    "pickMark": "マークを選ぶ",
+    "orPickMark": "またはマークを選ぶ",
+    "marks": {
+      "flourish": "フローリッシュ",
+      "wave": "ウェーブ",
+      "spark": "スパーク",
+      "orbit": "オービット"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "メッセージを残す…",
+    "ghostRefine": "AIで推敲する",
+    "ghostSignature": "署名を追加（任意）",
+    "ghostDrafts": "下書きは入力中に自動で保存されます",
+    "prompt": "メッセージを残すにはサインインしてください",
+    "promptReauth": "メッセージを残すには再度サインインしてください",
+    "reauthExplain": "現在のサインインはウォールのアカウントキー導入前のものなので、閲覧のみ可能で書き込みはできません。もう一度サインインすれば解決します。",
+    "github": "GitHubでサインイン",
+    "google": "Googleでサインイン"
+  },
+  "pagination": {
+    "nav": "ゲストブックのページ",
+    "previous": "前のページ",
+    "next": "次のページ",
+    "page": "ページ ",
+    "status": "{total}ページ中{page}ページ目"
+  },
+  "palette": {
+    "leaveMessage": "メッセージを残す",
+    "leaveKeywords": "書く 署名 投稿 作成 write sign post compose",
+    "sectionGuestbook": "ゲストブック",
+    "sectionPreferences": "環境設定",
+    "signInToLeave": "サインインしてメッセージを残す",
+    "toggleSound": "UIサウンドを切り替え",
+    "soundKeywords": "音 オーディオ ミュート 効果音 audio blip mute",
+    "toggleMotion": "モーションを切り替え",
+    "motionKeywords": "アニメーション 軽減 静止 animation reduce still",
+    "on": "オン",
+    "off": "オフ"
+  },
+  "toast": {
+    "posted": "メッセージを投稿しました!",
+    "postFailed": "メッセージを投稿できませんでした",
+    "reactFailed": "リアクションできませんでした",
+    "deleteFailed": "メッセージを削除できませんでした",
+    "removedOwn": "あなたのメッセージはゲストブックから削除されました",
+    "removedOther": "メッセージがゲストブックから削除されました",
+    "you": "あなた"
+  },
+  "errors": {
+    "unauthorized": "認証されていません",
+    "too_large": "リクエストボディは{max, number, ::group-off}バイト以内にしてください",
+    "invalid_body": "リクエストボディが正しくありません",
+    "message_required": "メッセージを入力してください",
+    "message_length": "メッセージは{min}~{max}文字で入力してください",
+    "invalid_characters": "メッセージに使用できない文字が含まれています",
+    "links_not_allowed": "ゲストブックのメッセージにはリンクを含められません",
+    "unfriendly": "やさしい言葉でお願いします",
+    "invalid_signature": "署名が正しくありません",
+    "rate_limited": "投稿は5分に1件までです。{minutes, plural, other {#分}}後にもう一度お試しください",
+    "invalid_reaction": "リアクションが正しくありません",
+    "reaction_rate_limited": "リアクションが多すぎます。{seconds}秒後にもう一度お試しください",
+    "not_found": "メッセージが見つかりません",
+    "id_required": "メッセージIDが必要です",
+    "invalid_id": "メッセージIDが正しくありません",
+    "forbidden": "アクセスが許可されていません",
+    "invalid_cursor": "カーソルが正しくありません"
+  }
+}

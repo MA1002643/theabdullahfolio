@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Navegação entre projetos",
+    "all": "Todos os projetos",
+    "previous": "Projeto anterior: {name}",
+    "next": "Próximo projeto: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Início",
+    "projects": "Projetos"
+  },
+  "loading": "Carregando projeto",
+  "intro": {
+    "fallbackName": "Nome do projeto",
+    "fallbackDescription": "Soluções web inovadoras, rápidas e futuristas.",
+    "linksLabel": "Links de {name}",
+    "liveDemo": "Demo ao vivo<sr> (abre em uma nova aba)</sr>",
+    "source": "Código-fonte no GitHub<sr> (abre em uma nova aba)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "Inicializando a BIOS...",
+      "hardware": "Detectando o hardware...",
+      "os": "Carregando o sistema operacional..."
+    },
+    "tagline": "Dando força às suas ideias com artesanato digital de nova geração.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Ferramentas e frameworks",
+    "overview": "Visão geral do projeto",
+    "overviewLead": "Esta plataforma simplifica os fluxos de trabalho de e-commerce com um painel unificado e análises em tempo real.",
+    "overviewBody": "Ela resolve a complexidade de gerenciar várias ferramentas ao oferecer uma interface centralizada e intuitiva.",
+    "features": "Recursos",
+    "feature": {
+      "auth": {
+        "title": "Autenticação",
+        "desc": "Login seguro e acesso de usuários."
+      },
+      "payments": {
+        "title": "Pagamentos",
+        "desc": "Gateway de pagamento integrado."
+      },
+      "chat": {
+        "title": "Chat ao vivo",
+        "desc": "Comunicação instantânea com o usuário."
+      },
+      "admin": {
+        "title": "Painel administrativo",
+        "desc": "Controle de conteúdo simplificado."
+      }
+    },
+    "liveDemo": "Demo ao vivo",
+    "github": "GitHub",
+    "demoLabel": "Abrir a demo ao vivo de {name}",
+    "sourceLabel": "Ver o código-fonte de {name} no GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. Projeto {category}, iniciado em {when}. {visibility, select, private {Repositório privado} other {Repositório público}}, acompanhado ao vivo pelo quadro do GitHub.",
+    "undated": "{name} — {description}. Projeto {category}. {visibility, select, private {Repositório privado} other {Repositório público}}, acompanhado ao vivo pelo quadro do GitHub."
+  }
+}

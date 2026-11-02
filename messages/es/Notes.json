@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "NOTAS",
+    "subtitle": "decisiones, por escrito",
+    "intro": "Cada decisión no evidente detrás de este sitio queda registrada: la opción elegida, las alternativas descartadas y lo que costó cada una. Son los documentos de trabajo del repositorio, publicados aquí en lugar de quedarse en el árbol de archivos.",
+    "lines": "{count, plural, one {línea} many {líneas} other {líneas}}"
+  },
+  "note": {
+    "title": "NOTA",
+    "breadcrumb": "Ruta de navegación",
+    "allNotes": "Todas las notas",
+    "source": "Fuente: {source} · {count, plural, one {{n} línea} many {{n} líneas} other {{n} líneas}}"
+  }
+}

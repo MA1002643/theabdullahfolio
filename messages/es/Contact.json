@@ -1,0 +1,58 @@
+{
+  "title": "CONTACTO",
+  "subtitle": "ponte en contacto",
+  "intro": "Entra en el círculo del encantamiento y teje tus palabras en la trama del cosmos. Ya sea que busques conjurar colaboraciones, desvelar misterios o simplemente compartir relatos de aventuras, tus mensajes son pergaminos preciados en este reino. Usa el formulario de abajo para enviar tus misivas a través de la red etérea y espera el susurro de la magia como respuesta.",
+  "fields": {
+    "name": "Nombre completo",
+    "email": "Correo electrónico",
+    "subject": "Asunto",
+    "message": "Mensaje"
+  },
+  "validation": {
+    "nameRequired": "¡El nombre completo es obligatorio!",
+    "nameMin": "El nombre debe tener al menos {min} caracteres.",
+    "nameMax": "El nombre debe tener como máximo {max} caracteres.",
+    "emailRequired": "¡El correo electrónico es obligatorio!",
+    "emailMax": "El correo electrónico debe tener como máximo {max} caracteres.",
+    "subjectRequired": "¡El asunto es obligatorio!",
+    "subjectMax": "El asunto debe tener como máximo {max} caracteres.",
+    "messageRequired": "¡El mensaje es obligatorio!",
+    "messageMin": "El mensaje debe tener al menos {min} caracteres.",
+    "messageMax": "El mensaje debe tener como máximo {max} caracteres."
+  },
+  "submit": {
+    "label": "¡ENVIAR MENSAJE!",
+    "ariaLabel": "Enviar mensaje",
+    "sending": "ENVIANDO",
+    "sent": "ENVIADO",
+    "held": "EN ESPERA"
+  },
+  "toast": {
+    "sent": "¡Mensaje enviado correctamente!",
+    "savedOffline": "Guardado: se enviará cuando vuelvas a conectarte.",
+    "savedRetrying": "Guardado: reintentando en breve…",
+    "failed": "No se pudo enviar el mensaje",
+    "heldSent": "{count, plural, one {Tu mensaje en espera se ha enviado ✦} many {# mensajes en espera se han enviado ✦} other {# mensajes en espera se han enviado ✦}}"
+  },
+  "status": {
+    "held": "En espera: tu mensaje se enviará solo en cuanto vuelvas a tener conexión.",
+    "offline": "Estás sin conexión: tu mensaje quedará en espera y se enviará automáticamente cuando te reconectes."
+  },
+  "errors": {
+    "name_required": "El nombre completo es obligatorio.",
+    "email_required": "El correo electrónico es obligatorio.",
+    "subject_required": "El asunto es obligatorio.",
+    "message_required": "El mensaje es obligatorio.",
+    "name_too_long": "El nombre completo supera la longitud máxima permitida ({max} caracteres).",
+    "email_too_long": "El correo electrónico supera la longitud máxima permitida ({max} caracteres).",
+    "subject_too_long": "El asunto supera la longitud máxima permitida ({max} caracteres).",
+    "message_too_long": "El mensaje supera la longitud máxima permitida ({max, number, ::group-off} caracteres).",
+    "invalid_characters": "El texto contiene caracteres no válidos.",
+    "invalid_email": "Formato de correo electrónico no válido.",
+    "undeliverable_email": "Esta dirección de correo electrónico no existe o no puede recibir mensajes.",
+    "disposable_email": "No se permiten direcciones de correo electrónico desechables.",
+    "too_large": "El cuerpo de la solicitud debe tener como máximo {max, number, ::group-off} bytes",
+    "invalid_body": "Cuerpo de la solicitud no válido",
+    "send_failed": "No se pudo enviar el mensaje"
+  }
+}

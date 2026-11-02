@@ -1,0 +1,13 @@
+{
+  "title": "PROGETTI",
+  "subtitle": "I MIEI LAVORI",
+  "filters": {
+    "label": "Categorie dei progetti",
+    "all": "Tutti",
+    "empty": "Ancora nessun progetto in \"{category}\".",
+    "fallback": "Ancora nessun progetto in \"{category}\". Ti mostro invece tutti i progetti."
+  },
+  "list": {
+    "empty": "Nessun progetto trovato!"
+  }
+}

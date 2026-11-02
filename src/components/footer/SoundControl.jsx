@@ -10,6 +10,7 @@
 // also unlocks the AudioContext from the click gesture); see index.jsx.
 
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -57,14 +58,15 @@ function Equalizer({ active }) {
 //   • touch-only (phone, keyboard-less iPad) → there is no hover to pluck the
 //     strings, so the sound is a recorded calming-guitar track; the copy points
 //     at the sound toggle, in the footer's restrained-editorial voice.
-function instructionFor(canHover, soundOn) {
-  if (canHover) return 'Hover the lines';
-  return soundOn ? 'Now playing — a calming guitar' : 'Turn the sound on for a calming guitar';
+function instructionKey(canHover, soundOn) {
+  if (canHover) return 'sound.hoverLines';
+  return soundOn ? 'sound.nowPlaying' : 'sound.turnOnPrompt';
 }
 
 export default function SoundControl({ soundOn, onToggle, canHover = true, revealMode = false }) {
   const reduce = useReducedMotion();
-  const instruction = instructionFor(canHover, soundOn);
+  const t = useTranslations('Footer');
+  const instruction = t(instructionKey(canHover, soundOn));
 
   // The interactive speaker button — identical markup in both modes; in
   // revealMode it is wrapped in a FlapItem below so it joins the cascade.
@@ -73,7 +75,7 @@ export default function SoundControl({ soundOn, onToggle, canHover = true, revea
       type="button"
       onClick={onToggle}
       aria-pressed={soundOn}
-      aria-label={soundOn ? 'Turn footer guitar sound off' : 'Turn footer guitar sound on'}
+      aria-label={soundOn ? t('sound.turnOff') : t('sound.turnOn')}
       className={cn(
         'group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-300',
         soundOn
@@ -113,7 +115,7 @@ export default function SoundControl({ soundOn, onToggle, canHover = true, revea
           : 'text-[#ff6d05]/55',
       )}
     >
-      {soundOn ? 'On' : 'Off'}
+      {soundOn ? t('sound.on') : t('sound.off')}
     </span>
   );
 
@@ -122,7 +124,7 @@ export default function SoundControl({ soundOn, onToggle, canHover = true, revea
   // Classes shared by the trailing instruction in both modes: on a phone it drops
   // to its own full-width, centred line (basis-full) beneath the button + state
   // cluster; from `sm` up it flows back inline and left-aligned.
-  const instructionClass = 'basis-full text-center sm:basis-auto sm:text-left';
+  const instructionClass = 'basis-full text-center sm:basis-auto sm:text-start';
 
   // The button, state and equalizer live together in one wrapping flex line; the
   // "·" divider and the instruction only re-join that line from `sm` up (the
@@ -135,7 +137,7 @@ export default function SoundControl({ soundOn, onToggle, canHover = true, revea
       {revealMode ? (
         <>
           <FlapItem>{button}</FlapItem>
-          <SplitFlapText text="Sound" />
+          <SplitFlapText text={t('sound.label')} />
           <FlapItem>{state}</FlapItem>
           <FlapItem>
             <Equalizer active={soundOn} />
@@ -148,7 +150,7 @@ export default function SoundControl({ soundOn, onToggle, canHover = true, revea
       ) : (
         <>
           {button}
-          <span>Sound</span>
+          <span>{t('sound.label')}</span>
           {state}
           <Equalizer active={soundOn} />
           <span className="hidden sm:inline-block">{divider}</span>

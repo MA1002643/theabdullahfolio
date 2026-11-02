@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 // The instrument panel, rebuilt as a clock: the years sit on the rim of a
 // 300px-radius dial whose CENTRE is parked off-screen right, so only the
@@ -54,6 +55,13 @@ const DEPTH = 80; // how far the rim reaches into the viewport, px
 const TICKS_PER_YEAR = 4; // minute-style graduations per year of scale
 const TAB_WINDOW = 40; // degrees from the needle within which a year is tabbable
 
+// RTL (issue #82): the dial is a PHYSICAL instrument — its geometry is a
+// rotation about a centre parked off the right edge — and it stays there in
+// every language, sharing that gutter with the ghost year. Both faces carry
+// `dir="ltr"` so an RTL document cannot reverse the numeral/tick flex rows
+// (which would put each graduation inside the numeral rather than on the
+// rim). Only the year GLYPHS and the accessible names change per locale.
+
 // One year on the rim. Opacity tracks the LIVE rotor angle (not just the
 // elected era), so labels dim continuously while the bezel is mid-swing.
 // `interactive` picks the element: a real button on the lg+ instrument, an
@@ -67,6 +75,8 @@ const DialYear = ({
   interactive,
   reduceMotion,
   onJump,
+  formatYear,
+  jumpLabel,
 }) => {
   const opacity = useTransform(rotor, (r) => {
     const away = Math.abs(beta + r);
@@ -94,7 +104,7 @@ const DialYear = ({
             ? {
                 type: 'button',
                 onClick: onJump,
-                'aria-label': `Jump to ${year}`,
+                'aria-label': jumpLabel,
                 'aria-current': isActive ? 'true' : undefined,
                 tabIndex: canTab ? 0 : -1,
               }
@@ -132,7 +142,7 @@ const DialYear = ({
                 : 'text-[#ffbb55]/45 group-hover:text-[#ffbb55]/90',
             )}
           >
-            {year}
+            {formatYear(year)}
           </span>
           {/* Radial tick — crosses the bezel ring at the rim, clock-mark
               style, and stretches when its year is on the needle. Resting
@@ -166,6 +176,8 @@ const DialFace = ({
   maxYear,
   reduceMotion,
   onJump,
+  formatYear,
+  jumpLabel,
 }) => (
   <>
     {/* The dial. Everything below is ornament except the interactive face's
@@ -233,6 +245,8 @@ const DialFace = ({
             interactive={interactive}
             reduceMotion={reduceMotion}
             onJump={() => onJump(year)}
+            formatYear={formatYear}
+            jumpLabel={jumpLabel(year)}
           />
         ))}
       </motion.div>
@@ -270,7 +284,9 @@ const EraRail = ({
   height,
   anchors,
   reduceMotion,
+  formatYear = String,
 }) => {
+  const t = useTranslations('Journey');
   const maxYear = years[0];
   const rotorFor = (year) => (maxYear - year) * STEP;
 
@@ -341,13 +357,16 @@ const EraRail = ({
     maxYear,
     reduceMotion,
     onJump: jump,
+    formatYear,
+    jumpLabel: (year) => t('eraRail.jump', { year: formatYear(year) }),
   };
 
   return (
     <>
       {/* lg+ — the interactive instrument. */}
       <motion.nav
-        aria-label="Timeline eras"
+        aria-label={t('eraRail.label')}
+        dir="ltr"
         className="pointer-events-none fixed right-0 top-1/2 z-30 hidden lg:block"
         initial={false}
         animate={{ opacity: visible ? 1 : 0 }}
@@ -362,6 +381,7 @@ const EraRail = ({
           A div, not a nav — it navigates nothing. */}
       <motion.div
         aria-hidden
+        dir="ltr"
         className="pointer-events-none fixed right-0 top-1/2 -z-10 select-none lg:hidden"
         initial={false}
         animate={{ opacity: visible ? 0.5 : 0 }}

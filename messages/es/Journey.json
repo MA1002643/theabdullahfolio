@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "MI TRAYECTORIA",
+    "subtitle": "de la primera línea a producción"
+  },
+  "timeline": {
+    "label": "Línea de tiempo de la trayectoria"
+  },
+  "endCap": {
+    "est": "DESDE {year} · BOLTON, REINO UNIDO",
+    "tally": "{years, plural, one {# AÑO} other {# AÑOS}} · {entries, plural, one {# ENTRADA} other {# ENTRADAS}} · {tracks, plural, one {# LÍNEA} other {# LÍNEAS}}",
+    "paper": "LA VERSIÓN EN PAPEL →",
+    "paperHint": "el CV en PDF (se abre en una pestaña nueva)"
+  },
+  "spine": {
+    "now": "AHORA"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, one {# mes} other {# meses}}} one {# año{months, plural, =0 {} one { # mes} other { # meses}}} other {# años{months, plural, =0 {} one { # mes} other { # meses}}}}",
+    "tenureOngoing": "{tenure} hasta ahora",
+    "view": "VER",
+    "viewLabel": "Ver {title} (se abre en una pestaña nueva)"
+  },
+  "eraRail": {
+    "label": "Épocas de la línea de tiempo",
+    "jump": "Ir a {year}"
+  },
+  "atlas": {
+    "eyebrow": "Vista de solapamiento",
+    "title": "El atlas: tres líneas, un solo reloj",
+    "live": {
+      "career": "{count, plural, one {# puesto} other {# puestos}}",
+      "education": "{count, plural, one {# titulación} other {# titulaciones}}",
+      "milestone": "{count, plural, one {# publicación de la comunidad} other {# publicaciones de la comunidad}}",
+      "separator": " + ",
+      "sentence": "En marcha hoy: {parts}{total, plural, =1 {.} other { — en paralelo.}}"
+    },
+    "tracks": {
+      "all": "Todo",
+      "career": "Carrera",
+      "education": "Formación",
+      "milestone": "Comunidad"
+    },
+    "chipsLabel": "Resaltar una línea",
+    "zoom": {
+      "group": "Zoom de la cuadrícula",
+      "out": "Alejar la cuadrícula",
+      "outTitle": "Alejar",
+      "in": "Acercar la cuadrícula",
+      "inTitle": "Acercar",
+      "readoutLabel": "Zoom de la cuadrícula {pct}. Restablecer a {full}",
+      "readoutTitle": "Zoom de la cuadrícula",
+      "resetTitle": "Restablecer el zoom a {full}",
+      "status": "Zoom de la cuadrícula {pct}"
+    },
+    "region": "Atlas de solapamiento: cada puesto y cada curso como barras paralelas en un mismo eje temporal",
+    "entries": "{count, plural, one {# entrada} other {# entradas}}",
+    "now": "Ahora",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Ir a {org} · {role}, {dates}",
+    "spokenRange": "de {start} a {end}",
+    "spokenOpen": "de {start} a hoy",
+    "key": {
+      "select": "Selecciona cualquier barra para ir a ella.",
+      "dashed": "Borde discontinuo = sigue en curso.",
+      "stacked": "Barras apiladas = simultáneas."
+    }
+  },
+  "palette": {
+    "section": "Trayectoria",
+    "jumpYear": "Ir a {year}",
+    "eraHint": "época",
+    "jumpAtlas": "Ir al atlas de solapamiento",
+    "openCv": "Abrir el CV (PDF)",
+    "openCvHint": "la versión en papel"
+  }
+}

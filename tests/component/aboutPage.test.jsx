@@ -1,0 +1,82 @@
+import { http, HttpResponse } from 'msw';
+import { describe, expect, it, vi } from 'vitest';
+
+import { projectsData } from '@/app/data';
+import { server } from '../support/msw/server.js';
+import { githubStatsApiHandler } from '../support/msw/handlers.js';
+import { renderWithIntl } from '../support/intl';
+
+// The /about page body and its Project Progress dialog, rendered against the
+// real English catalogue (issue #82). The copy moved from JSX literals into
+// About.json / Experience.json; these assert the English a visitor sees and the
+// accessible names a screen reader hears are what they were.
+
+vi.mock('@/hooks/useProjectProgress', () => ({
+  useProjectProgress: () => ({
+    failed: false,
+    refetch: () => {},
+    data: {
+      schemaVersion: 2,
+      overallCompletion: 50,
+      doneItems: 5,
+      totalItems: 10,
+      trackedCount: 1,
+      totalProjects: 2,
+      lastSynced: null,
+      categoryBreakdown: [{ label: 'Web', count: 2 }],
+      projects: [
+        { id: 1, name: 'culina', category: 'Web', tracked: true, completionPercent: 50, doneItems: 5, totalItems: 10, columns: [{ name: 'Done', count: 5 }, { name: 'Todo', count: 5 }] },
+        { id: 2, name: 'auxo', category: 'Web', tracked: false, repo: null, completionPercent: 0, doneItems: 0, totalItems: 0, columns: [] },
+      ],
+    },
+  }),
+}));
+
+const failAll = () =>
+  server.use(
+    githubStatsApiHandler(),
+    http.get('*/api/experience-summary', () => new HttpResponse(null, { status: 503 })),
+    http.get('*/api/github-skills', () => new HttpResponse(null, { status: 503 })),
+  );
+
+describe('About page body', () => {
+  // The page module is large (every card, framer-motion, the fluid scale), so
+  // its first import alone can outlast the default 5s on a loaded machine.
+  it('renders the moved copy and the projects card name unchanged', { timeout: 60_000 }, async () => {
+    failAll();
+    const { default: AboutDetails } = await import('@/components/about');
+    const { getByText, container } = renderWithIntl(<AboutDetails />);
+    expect(getByText('Architect of Enchantment')).toBeTruthy();
+    expect(container.textContent).toContain('My journey in web development is powered by an array of mystical tools');
+    expect(getByText('Projects shipped')).toBeTruthy();
+    expect(getByText('Years in the craft')).toBeTruthy();
+    expect(getByText('completed projects')).toBeTruthy();
+
+    const button = container.querySelector('[aria-haspopup="dialog"]');
+    const label = button.getAttribute('aria-label');
+    expect(label).toMatch(new RegExp(`^Projects shipped: ${projectsData.length} completed projects\\. `));
+    expect(label).toMatch(/\. View progress: opens live project progress\.$/);
+    // The legend is folded in as "Label N, Label N" — the words the card shows.
+    expect(label).toMatch(/(Web|System|AI|Mobile) \d+(, (Web|System|AI|Mobile) \d+)*\./);
+  });
+});
+
+describe('Project Progress dialog', () => {
+  it('renders its copy, row names and the plural/percent messages', async () => {
+    const { default: ProjectProgressPopup } = await import('@/components/about/ProjectProgressPopup');
+    const { getByText, getByRole } = renderWithIntl(
+      <ProjectProgressPopup open onClose={() => {}} triggerRef={{ current: null }} />,
+    );
+    expect(getByRole('dialog', { name: 'Project progress' })).toBeTruthy();
+    expect(getByRole('button', { name: 'Close project progress' })).toBeTruthy();
+    expect(getByText('Delivery telemetry')).toBeTruthy();
+    expect(getByText('2 projects')).toBeTruthy();
+    expect(getByText('Awaiting first sync')).toBeTruthy();
+    expect(
+      getByRole('button', {
+        name: 'culina, Web. 50% complete, 5 of 10 board items done. Toggle board breakdown.',
+      }),
+    ).toBeTruthy();
+    expect(getByRole('button', { name: 'auxo, Web. not tracked. Toggle board breakdown.' })).toBeTruthy();
+  });
+});

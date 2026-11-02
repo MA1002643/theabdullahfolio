@@ -2,6 +2,11 @@
 import { createElement } from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The reaction count's roll must obey the page-wide motion verdict (code
 // review): RollingCount now reads the shared useReducedMotion — the OS
@@ -50,7 +55,7 @@ async function mountBar(fire, { motionOff }) {
     createElement(ReactionBar, { message: message(n), canReact: true, onReact: async () => {} });
   const wrap = (n) =>
     motionOff ? createElement(MotionConfig, { reducedMotion: 'always' }, bar(n)) : bar(n);
-  const utils = render(wrap(fire));
+  const utils = renderIntl(wrap(fire));
   return { ...utils, update: (n) => utils.rerender(wrap(n)) };
 }
 

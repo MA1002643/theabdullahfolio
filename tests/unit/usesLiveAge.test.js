@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { createElement } from 'react';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LiveAge, { nextAgeDelay, splitAge } from '@/components/uses/LiveAge';
+import { renderWithIntl } from '../support/intl';
 
 // The Stack plate's "verified 3m 25s ago" readout (owner correction,
 // 2026-09-05): it must count up second by second, its digits must wear the
@@ -32,7 +33,7 @@ const digits = () =>
 
 describe('LiveAge — the verified age counts up, digits in ember', () => {
   it('renders the age in formatAge grammar with every digit run in the ember', () => {
-    render(createElement(LiveAge, { fetchedAt: iso(205) }));
+    renderWithIntl(createElement(LiveAge, { fetchedAt: iso(205) }));
     expect(readout().textContent).toBe('verified 3m 25s ago');
     expect(digits()).toEqual([
       { text: '3', className: 'font-semibold text-[#ff6d05]' },
@@ -47,7 +48,7 @@ describe('LiveAge — the verified age counts up, digits in ember', () => {
   });
 
   it('ticks every second while the format shows seconds', () => {
-    render(createElement(LiveAge, { fetchedAt: iso(205) }));
+    renderWithIntl(createElement(LiveAge, { fetchedAt: iso(205) }));
     expect(readout().textContent).toBe('verified 3m 25s ago');
     act(() => vi.advanceTimersByTime(1000));
     expect(readout().textContent).toBe('verified 3m 26s ago');
@@ -67,7 +68,7 @@ describe('LiveAge — the verified age counts up, digits in ember', () => {
   });
 
   it('holds still in a hidden tab and re-syncs when the tab returns', () => {
-    render(createElement(LiveAge, { fetchedAt: iso(10) }));
+    renderWithIntl(createElement(LiveAge, { fetchedAt: iso(10) }));
     expect(readout().textContent).toBe('verified 10s ago');
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
@@ -86,10 +87,10 @@ describe('LiveAge — the verified age counts up, digits in ember', () => {
   });
 
   it('renders nothing without a timestamp and cleans its timer up on unmount', () => {
-    const { unmount } = render(createElement(LiveAge, { fetchedAt: null }));
+    const { unmount } = renderWithIntl(createElement(LiveAge, { fetchedAt: null }));
     expect(readout()).toBeNull();
     unmount();
-    const view = render(createElement(LiveAge, { fetchedAt: iso(5) }));
+    const view = renderWithIntl(createElement(LiveAge, { fetchedAt: iso(5) }));
     view.unmount();
     expect(vi.getTimerCount()).toBe(0);
   });

@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "프로젝트 탐색",
+    "all": "모든 프로젝트",
+    "previous": "이전 프로젝트: {name}",
+    "next": "다음 프로젝트: {name}"
+  },
+  "breadcrumbs": {
+    "home": "홈",
+    "projects": "프로젝트"
+  },
+  "loading": "프로젝트를 불러오는 중",
+  "intro": {
+    "fallbackName": "프로젝트 이름",
+    "fallbackDescription": "혁신적이고 빠르며 미래지향적인 웹 솔루션.",
+    "linksLabel": "{name} 링크",
+    "liveDemo": "라이브 데모<sr>(새 탭에서 열림)</sr>",
+    "source": "GitHub 소스<sr>(새 탭에서 열림)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "BIOS 초기화 중...",
+      "hardware": "하드웨어 감지 중...",
+      "os": "운영 체제 불러오는 중..."
+    },
+    "tagline": "차세대 디지털 장인정신으로 여러분의 아이디어에 힘을 더합니다.",
+    "badgeFullstack": "풀스택",
+    "tools": "도구 및 프레임워크",
+    "overview": "프로젝트 개요",
+    "overviewLead": "이 플랫폼은 통합 대시보드와 실시간 분석으로 이커머스 업무 흐름을 간소화합니다.",
+    "overviewBody": "여러 도구를 따로 관리해야 하는 번거로움을 중앙화된 직관적인 인터페이스로 해결합니다.",
+    "features": "주요 기능",
+    "feature": {
+      "auth": {
+        "title": "인증",
+        "desc": "안전한 로그인과 사용자 접근 관리."
+      },
+      "payments": {
+        "title": "결제",
+        "desc": "통합 결제 게이트웨이."
+      },
+      "chat": {
+        "title": "실시간 채팅",
+        "desc": "사용자와 즉시 소통."
+      },
+      "admin": {
+        "title": "관리자 패널",
+        "desc": "간편한 콘텐츠 관리."
+      }
+    },
+    "liveDemo": "라이브 데모",
+    "github": "GitHub",
+    "demoLabel": "{name} 라이브 데모 열기",
+    "sourceLabel": "GitHub에서 {name} 소스 보기"
+  },
+  "meta": {
+    "dated": "{name} — {description}. {category} 프로젝트이며 {when}에 시작했어요. {visibility, select, private {비공개 저장소} other {공개 저장소}}이며, GitHub 보드에서 실시간으로 진행 상황을 확인할 수 있어요.",
+    "undated": "{name} — {description}. {category} 프로젝트예요. {visibility, select, private {비공개 저장소} other {공개 저장소}}이며, GitHub 보드에서 실시간으로 진행 상황을 확인할 수 있어요."
+  }
+}

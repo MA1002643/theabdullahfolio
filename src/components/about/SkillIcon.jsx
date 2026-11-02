@@ -9,6 +9,8 @@ import { useStaggeredScrollReveal } from "@/hooks/useStaggeredScrollReveal";
 import { animateToTarget } from "@/utils/animationCurves";
 import { getIconUrl } from "@/utils/skillsIconUrl";
 import { fluid, fluidText } from "@/lib/fluidScale";
+import { useTranslations } from "next-intl";
+import { useAboutDigits } from "./aboutI18n";
 
 // ── "Used in repositories" popover reveal — the Most Active Repository card's
 // entrance, applied to this floating panel. The panel springs up as a unit
@@ -58,11 +60,13 @@ const repoNoMotion = {
    value, so assistive tech never hears the intermediate numbers. */
 function RepoCount({ count, play, prefersReducedMotion }) {
   const ref = useRef(null);
+  // Reader's digits per frame (issue #82); English is `${n}`.
+  const digits = useAboutDigits();
   useEffect(() => {
     const node = ref.current;
     if (!node) return undefined;
     if (prefersReducedMotion || !play) {
-      node.textContent = `${count}`;
+      node.textContent = digits.int(count);
       return undefined;
     }
     return animateToTarget({
@@ -70,11 +74,11 @@ function RepoCount({ count, play, prefersReducedMotion }) {
       to: count,
       duration: 2000,
       onUpdate: (v) => {
-        node.textContent = `${Math.round(v)}`;
+        node.textContent = digits.int(Math.round(v));
       },
     });
-  }, [count, play, prefersReducedMotion]);
-  return <span ref={ref}>{prefersReducedMotion ? count : 0}</span>;
+  }, [count, play, prefersReducedMotion, digits]);
+  return <span ref={ref}>{digits.int(prefersReducedMotion ? count : 0)}</span>;
 }
 
 /* The grid icon. The hover / active state is a clean RISE — a few-px lift with a
@@ -89,6 +93,8 @@ function IconImg({ slug, displayName, source }) {
     <img
       src={getIconUrl(slug, source)}
       alt={displayName}
+      // A skill's name, not prose: translate="no" (the pseudo-locale gate).
+      translate="no"
       loading="lazy"
       draggable={false}
       onError={(e) => {
@@ -170,6 +176,7 @@ export function SkillIcon({
    skill was detected in. Hidden until measured so it never flashes at its
    pre-positioned coordinates. */
 export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerLeave }) {
+  const t = useTranslations("About");
   const ref = useRef(null);
   const [pos, setPos] = useState(null);
   const prefersReducedMotion = useReducedMotion();
@@ -232,7 +239,7 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
       initial="hidden"
       animate={pos ? "visible" : "hidden"}
       role="group"
-      aria-label={`Repositories using ${skill.displayName}`}
+      aria-label={t("skillsCard.popover.ariaLabel", { name: skill.displayName })}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
       onFocus={onPointerEnter}
@@ -274,7 +281,7 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
         >
           {/* Header block slides up as one unit (the card's childVariants). */}
           <motion.div variants={sectionV} className="shrink-0">
-            <p className="abt-micro text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">Used in repositories</p>
+            <p className="abt-micro text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">{t("skillsCard.popover.eyebrow")}</p>
             <h3
               className="text-sm sm:text-base font-semibold mb-1 flex items-center gap-2"
               style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(1, 0.875) }}
@@ -298,29 +305,29 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
                   reads as the word "slash" in most screen readers); the visible
                   digits count up. */}
               <span className="sr-only">
-                Repositories:{" "}
+                {t("skillsCard.popover.label")}{" "}
                 {[
-                  publicCount > 0 ? `${publicCount} public` : null,
-                  privateCount > 0 ? `${privateCount} private` : null,
+                  publicCount > 0 ? t("skillsCard.popover.publicSr", { count: publicCount }) : null,
+                  privateCount > 0 ? t("skillsCard.popover.privateSr", { count: privateCount }) : null,
                 ]
                   .filter(Boolean)
-                  .join(", ")}
+                  .join(t("changes.comma"))}
               </span>
               <span aria-hidden="true">
-                Repositories:{" "}
-                {publicCount > 0 && (
-                  <>
-                    <RepoCount count={publicCount} play={Boolean(pos)} prefersReducedMotion={prefersReducedMotion} />{" "}
-                    public
-                  </>
-                )}
-                {publicCount > 0 && privateCount > 0 && "/"}
-                {privateCount > 0 && (
-                  <>
-                    <RepoCount count={privateCount} play={Boolean(pos)} prefersReducedMotion={prefersReducedMotion} />{" "}
-                    private
-                  </>
-                )}
+                {t("skillsCard.popover.label")}{" "}
+                {publicCount > 0 &&
+                  t.rich("skillsCard.popover.publicCount", {
+                    n: () => (
+                      <RepoCount count={publicCount} play={Boolean(pos)} prefersReducedMotion={prefersReducedMotion} />
+                    ),
+                  })}
+                {publicCount > 0 && privateCount > 0 && t("skillsCard.popover.slash")}
+                {privateCount > 0 &&
+                  t.rich("skillsCard.popover.privateCount", {
+                    n: () => (
+                      <RepoCount count={privateCount} play={Boolean(pos)} prefersReducedMotion={prefersReducedMotion} />
+                    ),
+                  })}
               </span>
             </p>
             <div aria-hidden="true" className="h-px elite-divider mb-3" />
@@ -331,7 +338,7 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
               horizontal scrollbar. */}
           <ul
             ref={listScrollRef}
-            className="space-y-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5"
+            className="space-y-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pe-0.5"
           >
             {repos.map((r) => (
               <li
@@ -374,7 +381,7 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
                   style={{ background: "rgba(255, 170, 42, 0.45)" }}
                 />
                 <span className="truncate italic" style={{ color: "rgba(255, 170, 42, 0.6)" }}>
-                  All repositories are private
+                  {t("skillsCard.popover.allPrivate")}
                 </span>
               </li>
             )}

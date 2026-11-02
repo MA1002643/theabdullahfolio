@@ -6,6 +6,7 @@ import { usePointerCapability } from '@/hooks/usePointerCapability';
 import { onMediaChange } from '@/lib/mediaQuery';
 import { flicker } from './homeSceneLights';
 import { createEngraving, meanCoverage, restSeparations } from './homeRoleEngraving';
+import { glyphUnits } from '@/components/ui/textSegments';
 
 // The homepage role line, set on a security plate.
 //
@@ -207,6 +208,12 @@ const transformChar = (ch, mode) => {
   return ch;
 };
 
+// Strong right-to-left characters (Hebrew, Arabic and its presentation forms).
+// The latent word is laid out unit by unit from the left, so a right-to-left
+// line has to be laid out in VISUAL order — its units reversed — or the ghost
+// would spell the word backwards (issue #82).
+const RTL_TEXT = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+
 const smoothstep = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 const clamp01 = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t);
 
@@ -364,16 +371,26 @@ const HomeRoleLatent = ({ children, className = '' }) => {
       // Per-character boxes straight from layout, so the reserve lands on the
       // DOM text to the pixel at any tracking, family or size — no font-metric
       // arithmetic, and no letter-spacing drift accumulating across the line.
+      //
+      // "Character" means a `glyphUnits` unit (issue #82): a grapheme for
+      // Latin, Cyrillic, Hebrew and CJK — identical to the old per-index loop
+      // for the English line — but a whole WORD for Arabic-script and
+      // Devanagari text, whose letters only take their joined forms when
+      // shaped together. Drawn one letter at a time they would reserve the
+      // wrong ink. Each unit is still placed at its own measured box.
       const raw = node.nodeValue || '';
       const mode = cs.textTransform;
       const glyphs = [];
-      for (let i = 0; i < raw.length; i += 1) {
-        if (!raw[i].trim()) continue;
-        range.setStart(node, i);
-        range.setEnd(node, i + 1);
+      let offset = 0;
+      for (const unit of glyphUnits(raw)) {
+        const start = offset;
+        offset += unit.length;
+        if (!unit.trim()) continue;
+        range.setStart(node, start);
+        range.setEnd(node, offset);
         const r = range.getBoundingClientRect();
         if (r.width < 0.01) continue;
-        glyphs.push({ ch: transformChar(raw[i], mode), x: r.left - inkRect.left });
+        glyphs.push({ ch: transformChar(unit, mode), x: r.left - inkRect.left });
       }
       range.detach?.();
       if (!glyphs.length) return;
@@ -394,11 +411,19 @@ const HomeRoleLatent = ({ children, className = '' }) => {
       // is a proportion of the thing it sits behind, whatever that measures.
       const lines = latentLines(raw);
       if (!lines.length) return;
+      // The units each latent line is set in, left to right on the plate —
+      // reversed for right-to-left text so the ghost reads correctly.
+      const rtlLine = cs.direction === 'rtl' && RTL_TEXT.test(raw);
+      const unitsOf = (line) => {
+        const units = glyphUnits(line);
+        return rtlLine ? units.reverse() : units;
+      };
       const lineWidth = (line, size, track) => {
         maskCtx.font = `${LATENT_WEIGHT} ${size}px ${family}`;
+        const units = unitsOf(line);
         let w = 0;
-        for (let i = 0; i < line.length; i += 1) w += maskCtx.measureText(line[i]).width;
-        return w + track * Math.max(0, line.length - 1);
+        for (const unit of units) w += maskCtx.measureText(unit).width;
+        return w + track * Math.max(0, units.length - 1);
       };
       let size = fontPx * 1.6;
       for (let pass = 0; pass < 2; pass += 1) {
@@ -440,9 +465,9 @@ const HomeRoleLatent = ({ children, className = '' }) => {
       for (const line of lines) {
         let x = (cssW - lineWidth(line, size, track)) / 2;
         maskCtx.font = `${LATENT_WEIGHT} ${size}px ${family}`;
-        for (let i = 0; i < line.length; i += 1) {
-          maskCtx.fillText(line[i], x, baseline);
-          x += maskCtx.measureText(line[i]).width + track;
+        for (const unit of unitsOf(line)) {
+          maskCtx.fillText(unit, x, baseline);
+          x += maskCtx.measureText(unit).width + track;
         }
         baseline += capH + gap;
       }

@@ -20,6 +20,11 @@
 // a `'use client'` importer would start shipping `projectsData` to browsers.
 import { projectsData } from '@/app/data';
 import { countWord } from '@/lib/numberWords';
+// Titles and descriptions are the ENGLISH CATALOGUE's (issue #82): one source
+// for the English `<title>`, the translation pipeline's input and every
+// locale's metadata. Imported as JSON so this module stays server-safe and
+// synchronous — every existing consumer reads `route.title` unchanged.
+import META from '../../../messages/en/Meta.json';
 
 // ── Origin ──────────────────────────────────────────────────────────────────
 // The production apex is the canonical host. `www.ma.codes` answers too (it is
@@ -143,6 +148,12 @@ export function legalOrgName(label) {
 // The rule, and it is the one the test enforces: a route lists the data module
 // when its graph reaches it by SOME PATH THAT DOES NOT PASS THROUGH THIS FILE.
 
+// `translated` (issue #82) defaults to true. A route marked `false` serves its
+// content in English at every locale URL: `alternatesFor` canonicalises those
+// URLs to the English one and declares no hreflang, and the sitemap lists only
+// the English URL. Read by `isTranslated()` below — never compare the field
+// directly, so the default lives in one place.
+
 // ── The shared headline ─────────────────────────────────────────────────────
 // `PageTitle` renders each section's `<h1>` and `<h2>` — the strongest heading
 // signal on the page, and real crawlable text in the server-rendered HTML
@@ -170,14 +181,14 @@ const ROUTE_DEFINITIONS = [
     // intent had nothing in the snippet to match. Brand still leads — this is
     // a personal site and the name is the primary query — with the role as an
     // em-dashed qualifier rather than a keyword list (W7, P7).
-    title: 'Muhammad Abdullah — Software Engineer',
-    description:
-      'Software engineer in Bolton building fast, considered web applications with Next.js, React and TypeScript. Projects, credentials and the tools behind them.',
+    key: 'home',
+    title: META.routes.home.title,
+    description: META.routes.home.description,
     changeFrequency: 'weekly',
     priority: 1,
     indexable: true,
     sources: [
-      'src/app/page.js',
+      'src/app/[locale]/(home)/page.js',
       // `src/app/layout.js` is NOT here: it wraps every route, so it lives in
       // `SHARED_ROUTE_SOURCES` below. Listing it again would be a duplicate
       // pathspec and, worse, would read as though it were homepage-specific —
@@ -228,14 +239,14 @@ const ROUTE_DEFINITIONS = [
   },
   {
     path: '/about',
-    title: 'About',
-    description:
-      'The engineer behind the ember — the story, the stack, and live GitHub telemetry on what is being built right now.',
+    key: 'about',
+    title: META.routes.about.title,
+    description: META.routes.about.description,
     changeFrequency: 'monthly',
     priority: 0.9,
     indexable: true,
     sources: [
-      'src/app/(sub pages)/about',
+      'src/app/[locale]/(sub pages)/about',
       'src/components/about',
       // about/layout.js reads `usesData.stack` to build the `knowsAbout` array
       // in this page's ProfilePage JSON-LD, so adding a tool to /uses changes
@@ -263,9 +274,9 @@ const ROUTE_DEFINITIONS = [
   },
   {
     path: '/cv',
-    title: 'CV',
-    description:
-      'The full record — every role, qualification and shipped project, in HTML. Written from the same data the timeline renders, with the PDF one click away.',
+    key: 'cv',
+    title: META.routes.cv.title,
+    description: META.routes.cv.description,
     // The array it derives from is hand-edited a few times a year, and each
     // edit is a real change to the document — so this tracks `/journey` rather
     // than the weekly cadence the live-data routes carry.
@@ -276,7 +287,7 @@ const ROUTE_DEFINITIONS = [
     priority: 0.9,
     indexable: true,
     sources: [
-      'src/app/(sub pages)/cv',
+      'src/app/[locale]/(sub pages)/cv',
       'src/components/cv',
       // The derivation, and the array it derives from. `buildCv` reads
       // `journeyData` (every role and award), `usesData.stack` (the skills
@@ -290,15 +301,19 @@ const ROUTE_DEFINITIONS = [
   },
   {
     path: '/notes',
-    title: 'Notes',
-    description:
-      'Engineering decision records — why each choice on this site was made, which alternatives were rejected, and what each one cost.',
+    key: 'notes',
+    title: META.routes.notes.title,
+    description: META.routes.notes.description,
     changeFrequency: 'monthly',
     // Below the pages a recruiter is looking for and above /my-past. This is
     // supporting evidence rather than a destination: valuable to the reader who
     // goes looking, not the page anyone should land on first.
     priority: 0.6,
     indexable: true,
+    // English-only by decision (issue #82): the engineering decision records
+    // in docs/ are not translated, so every locale's /notes URL canonicalises
+    // here and the sitemap lists no locale alternates for it.
+    translated: false,
     sources: [
       // Named as FILES rather than as `src/app/(sub pages)/notes`, for the
       // reason the `/projects` entry above gives: the note detail routes live
@@ -308,9 +323,9 @@ const ROUTE_DEFINITIONS = [
       // same fabrication `new Date()` would commit, arrived at by aliasing.
       // The index's own two handlers are named here because narrowing is what
       // put them outside every list (again, exactly as on `/projects`).
-      'src/app/(sub pages)/notes/page.js',
-      'src/app/(sub pages)/notes/opengraph-image.js',
-      'src/app/(sub pages)/notes/twitter-image.js',
+      'src/app/[locale]/(sub pages)/notes/page.js',
+      'src/app/[locale]/(sub pages)/notes/opengraph-image.js',
+      'src/app/[locale]/(sub pages)/notes/twitter-image.js',
       // The index itself — the titles, summaries and line counts a crawler
       // reads on this URL are rendered here, not in page.js, which only reads
       // the corpus and hands it over.
@@ -327,16 +342,17 @@ const ROUTE_DEFINITIONS = [
   },
   {
     path: '/projects',
-    title: 'Projects',
-    description:
-      `${countWord(projectsData.length)} builds — web, systems, mobile and AI — ` +
-      'each tracked live from its own GitHub board, with the stack and ' +
-      'completion state on every card.',
+    key: 'projects',
+    title: META.routes.projects.title,
+    description: META.routes.projects.description.replace(
+      '{countWord}',
+      countWord(projectsData.length),
+    ),
     changeFrequency: 'weekly',
     priority: 0.9,
     indexable: true,
     sources: [
-      'src/app/(sub pages)/projects/page.js',
+      'src/app/[locale]/(sub pages)/projects/page.js',
       'src/app/data.js',
       'src/components/projects',
       // This route's own description interpolates `countWord(projectsData.length)`
@@ -360,20 +376,20 @@ const ROUTE_DEFINITIONS = [
       // would stamp the listing for every project-page edit. That narrowing is
       // deliberate and it is what left these two — the listing's own card
       // handlers, siblings of its `page.js` — outside every list.
-      'src/app/(sub pages)/projects/opengraph-image.js',
-      'src/app/(sub pages)/projects/twitter-image.js',
+      'src/app/[locale]/(sub pages)/projects/opengraph-image.js',
+      'src/app/[locale]/(sub pages)/projects/twitter-image.js',
     ],
   },
   {
     path: '/qualifications',
-    title: 'Qualifications',
-    description:
-      'Degrees, certificates and professional credentials — the verified paper trail behind the practice, with every certificate viewable.',
+    key: 'qualifications',
+    title: META.routes.qualifications.title,
+    description: META.routes.qualifications.description,
     changeFrequency: 'monthly',
     priority: 0.8,
     indexable: true,
     sources: [
-      'src/app/(sub pages)/qualifications',
+      'src/app/[locale]/(sub pages)/qualifications',
       'src/components/qualifications',
       // qualifications/layout.js derives the page's
       // `EducationalOccupationalCredential[]` from `journeyData` — the
@@ -384,14 +400,14 @@ const ROUTE_DEFINITIONS = [
   },
   {
     path: '/journey',
-    title: 'Journey',
-    description:
-      'Every role, qualification and volunteering post as one scroll-driven timeline — from Bolton College in 2018 to shipping production software today.',
+    key: 'journey',
+    title: META.routes.journey.title,
+    description: META.routes.journey.description,
     changeFrequency: 'monthly',
     priority: 0.8,
     indexable: true,
     sources: [
-      'src/app/(sub pages)/journey',
+      'src/app/[locale]/(sub pages)/journey',
       'src/app/data.js',
       'src/components/journey',
       PAGE_TITLE_SOURCE,
@@ -399,16 +415,16 @@ const ROUTE_DEFINITIONS = [
   },
   {
     path: '/uses',
-    title: 'Uses',
-    description:
-      'The machine, the bench, the stack and the pipeline — every tool on this page verified against the repositories and the build that ships it.',
+    key: 'uses',
+    title: META.routes.uses.title,
+    description: META.routes.uses.description,
     changeFrequency: 'monthly',
     priority: 0.7,
     indexable: true,
     // The longest list in the registry, and it has to be. This page's premise
     // is that every claim on it is verified against the repository at build
     // time, so the repository IS its content: `readBuildFacts()` opens the
-    // eight paths below and prints what it finds — the Node version off
+    // paths below and prints what it finds — the Node version off
     // `.nvmrc`, dependency versions and counts off the manifest and lockfile,
     // the cron schedule off `vercel.json`, the schematic's stage labels off the
     // workflow files' own `name:` fields, the test counts off the two files the
@@ -430,7 +446,7 @@ const ROUTE_DEFINITIONS = [
     // the repository more often than any other, which is also why it is the one
     // route where the reader and the read must both be listed.
     sources: [
-      'src/app/(sub pages)/uses',
+      'src/app/[locale]/(sub pages)/uses',
       'src/lib/uses',
       'src/components/uses',
       // `usesData` is this page — the machine rows, the bench, the extensions
@@ -450,32 +466,38 @@ const ROUTE_DEFINITIONS = [
       'tests/vitest-cases.json',
       'tests/browser-cases.json',
       'src/app/api',
+      // The pipeline schematic's locale facts (issue #82): `proxy` on the
+      // runtime node comes from src/proxy.js existing, the per-locale build
+      // count from the catalogue directories under messages/. Coarse — any
+      // catalogue edit re-stamps /uses — for the reason given above.
+      'src/proxy.js',
+      'messages',
       PAGE_TITLE_SOURCE,
     ],
   },
   {
     path: '/contact',
-    title: 'Contact',
-    description:
-      'Start a conversation about a role or a project — a contact form that refines your message as you write it and never loses a draft.',
+    key: 'contact',
+    title: META.routes.contact.title,
+    description: META.routes.contact.description,
     changeFrequency: 'yearly',
     priority: 0.7,
     indexable: true,
     sources: [
-      'src/app/(sub pages)/contact',
+      'src/app/[locale]/(sub pages)/contact',
       'src/components/contact',
       PAGE_TITLE_SOURCE,
     ],
   },
   {
     path: '/my-past',
-    title: 'My Past',
-    description:
-      'The university-era portfolio where this began — hand-built with plain HTML, CSS and JavaScript, kept online as an honest before picture.',
+    key: 'myPast',
+    title: META.routes.myPast.title,
+    description: META.routes.myPast.description,
     changeFrequency: 'yearly',
     priority: 0.5,
     indexable: true,
-    sources: ['src/app/(sub pages)/my-past', PAGE_TITLE_SOURCE],
+    sources: ['src/app/[locale]/(sub pages)/my-past', PAGE_TITLE_SOURCE],
   },
   {
     path: '/guestbook',
@@ -490,14 +512,14 @@ const ROUTE_DEFINITIONS = [
     // vouching for text it did not write — and would feed user input into the
     // JSON-LD serialiser, which is the threat model JsonLd.jsx's escaping
     // exists for.
-    title: 'Guestbook',
-    description:
-      'Leave your mark on the wall — a neon message board signed by visitors through GitHub or Google, with live presence and reactions.',
+    key: 'guestbook',
+    title: META.routes.guestbook.title,
+    description: META.routes.guestbook.description,
     changeFrequency: 'daily',
     priority: 0.4,
     indexable: true,
     sources: [
-      'src/app/(sub pages)/guestbook',
+      'src/app/[locale]/(sub pages)/guestbook',
       'src/components/guestbook',
       'src/lib/guestbook',
       PAGE_TITLE_SOURCE,
@@ -505,15 +527,14 @@ const ROUTE_DEFINITIONS = [
   },
   {
     path: '/privacy',
-    title: 'Privacy',
+    key: 'privacy',
+    title: META.routes.privacy.title,
     // Written to be read in a SERP by someone deciding whether this developer
     // is careful, because that is who reads a privacy description on a
     // portfolio. "Audited, not templated" is the claim the page then has to
     // earn, and `src/lib/privacy/inventory.js` plus its drift test are what
     // earn it.
-    description:
-      'Every cookie, storage key and third party this site touches, why each ' +
-      'exists, and how to turn the optional ones off. Audited, not templated.',
+    description: META.routes.privacy.description,
     changeFrequency: 'yearly',
     // The lowest priority in the registry, below /guestbook's 0.4. It is
     // small print and should be findable rather than promoted — but it is
@@ -522,11 +543,15 @@ const ROUTE_DEFINITIONS = [
     // that wrote it, and being checkable is most of its value.
     priority: 0.3,
     indexable: true,
+    // English-only by decision (issue #82): a legal policy should have ONE
+    // authoritative text. The consent notice and preference centre ARE
+    // translated; the policy body renders in English in every locale.
+    translated: false,
     sources: [
       // The directory, which also covers both card handlers. Safe to watch
       // whole, unlike /notes and /projects: nothing nests under this route, so
       // there is no child page whose commits could re-stamp this one.
-      'src/app/(sub pages)/privacy',
+      'src/app/[locale]/(sub pages)/privacy',
       // The inventory IS the page. Every table, every disclosure and every
       // retention statement is rendered from this module, so a commit to it
       // rewrites the published document even though nothing under the route
@@ -651,7 +676,12 @@ export const SHARED_ROUTE_SOURCES = [
   // watched, and the entry naming it was a route-specific list, so a root-layout
   // commit moved `/` and left the other nineteen `<lastmod>` values untouched.
   // Composition is invisible to an import graph, which is why nothing caught it.
-  'src/app/layout.js',
+  'src/app/[locale]/layout.js',
+  // The i18n core every page renders through (issue #82): the request config
+  // that picks a catalogue, the scope that hands it to the client, the font
+  // chain and the locale registry. A change here can change the text, the
+  // direction or the typeface of every URL on the site.
+  'src/i18n',
   'src/lib/seo/site.js',
   'src/lib/seo/canonical.js',
   'src/lib/seo/schema.js',
@@ -746,7 +776,7 @@ export const SHARED_ROUTE_SOURCES = [
 // time the footer changed — the over-stamp the note above is careful about,
 // applied to the page that can least afford it.
 export const SUB_PAGE_SHARED_SOURCES = [
-  'src/app/(sub pages)/layout.js',
+  'src/app/[locale]/(sub pages)/layout.js',
   'src/components/footer',
   'src/components/HomeBtn.jsx',
   'src/components/ProjectsBtn.jsx',
@@ -991,6 +1021,19 @@ export function credentialsFromJourney(journey) {
             ? 'certificate'
             : undefined,
     }));
+}
+
+/**
+ * How many projects the site lists, for localised copy that states it (issue
+ * #82: the /projects description in every non-English locale). Exported from
+ * HERE, not read from data.js by each consumer, because this module is already
+ * where route copy computes the count — see the `/projects` entry above.
+ */
+export const PROJECT_COUNT = projectsData.length;
+
+/** Whether a registry route publishes translated content (issue #82). */
+export function isTranslated(path) {
+  return routeFor(path)?.translated !== false;
 }
 
 /** Every indexable route path in the registry. */

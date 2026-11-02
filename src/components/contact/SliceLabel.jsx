@@ -15,6 +15,7 @@ import {
 } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { onMediaChange } from '@/lib/mediaQuery';
+import { glyphUnits } from '@/components/ui/textSegments';
 
 // SliceLabel — the button's "sliced" hover label, re-built so the cutting line
 // and the text run on ONE timeline instead of two independent CSS transitions
@@ -90,7 +91,11 @@ export default function SliceLabel({ text, hovered }) {
   const reduced = useReducedMotion();
   const [enabled, setEnabled] = useState(false);
   const containerRef = useRef(null);
-  const chars = useMemo(() => [...text], [text]);
+  // Units, not code points (issue #82): graphemes for Latin (identical to the
+  // old `[...text]` for the English label), whole words for scripts whose
+  // letters shape across each other (Arabic, Devanagari) — a per-letter box
+  // would break their joining. The "letters" below are those units.
+  const chars = useMemo(() => glyphUnits(text), [text]);
   // Geometry derived from measurement: where the blade rests (edgeRest, at the
   // button's right edge), its full travel (span), the distance from the text to
   // the button edge (padPx, for the rest stub's right anchor), and each letter's
@@ -185,9 +190,13 @@ export default function SliceLabel({ text, hovered }) {
   }
 
   return (
+    // dir="auto": a row of inline-block units is bidi-neutral, so on an RTL
+    // page an untranslated (English) label would lay its letters out
+    // backwards. The units' own text resolves the run's direction instead.
     <span
       ref={containerRef}
       aria-hidden="true"
+      dir="auto"
       style={{
         position: 'relative',
         display: 'inline-block',

@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "اس فن میں سال",
+    "unit": "{unit, select, years {{count, plural, other {سال کا تجربہ}}} other {{count, plural, other {ماہ کا تجربہ}}}}",
+    "unavailable": "تجربہ دستیاب نہیں",
+    "loadingAria": "تجربے کے سال لوڈ ہو رہے ہیں",
+    "viewBreakdown": "تفصیل دیکھیں →",
+    "srPrefix": "تجربے کی تازہ کاری: ",
+    "personal": "ذاتی",
+    "employment": "ملازمت",
+    "splitUnavailable": "دستیاب نہیں",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "تجربے کا خلاصہ لوڈ ہو رہا ہے",
+    "degraded": "اس فن میں سال: تجربہ دستیاب نہیں (خلاصے کا GitHub والا حصہ غائب یا نامکمل ہے)۔{split} تفصیل دیکھیں: جو معلومات دستیاب ہیں ان کی تفصیل کھولتا ہے۔",
+    "ready": "اس فن میں سال: {count, number, ::group-off}+ {unit, select, years {سال} other {ماہ}} کا تجربہ۔{split} تفصیل دیکھیں: زمرہ وار تفصیل کھولتا ہے۔",
+    "split": "ذاتی {personal}، ملازمت {employment}۔",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "دستیاب نہیں"
+  },
+  "modal": {
+    "eyebrow": "کیریئر پر ایک نظر",
+    "title": "زمروں کے لحاظ سے تجربہ",
+    "close": "تجربے کی تفصیل بند کریں",
+    "personalProjects": "ذاتی پروجیکٹس",
+    "employment": "ملازمت",
+    "unavailable": "دستیاب نہیں",
+    "unitWord": "{unit, select, years {{count, plural, one {سال} other {سال}}} other {{count, plural, one {ماہ} other {ماہ}}}}",
+    "totalUnavailable": "کل دستیاب نہیں",
+    "totalUnit": "کل {unit, select, years {سال} other {ماہ}}",
+    "ownedRepos": "<n></n> اپنی {count, plural, one {ریپوزیٹری} other {ریپوزیٹریاں}}",
+    "roles": "<n></n> {count, plural, one {عہدہ} other {عہدے}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ سال} other { ماہ}}",
+    "newestFirst": "نئے پہلے",
+    "showFewer": "کم دکھائیں",
+    "showAll": "تمام {count, number, ::group-off} ریپوزیٹریاں دکھائیں →",
+    "noRepos": "ابھی تک کوئی اپنی ریپوزیٹری نہیں ملی۔",
+    "personalFailed": "ذاتی پروجیکٹس کا ڈیٹا اس وقت لوڈ نہیں ہو سکا۔",
+    "relativeDuration": "نسبتی مدت",
+    "noRoles": "ابھی تک سافٹ ویئر انجینئرنگ کا کوئی عہدہ نہیں ملا۔",
+    "employmentFailed": "ملازمت کا ڈیٹا اس وقت لوڈ نہیں ہو سکا۔"
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {سال} other {سال}}} other {{count, plural, one {ماہ} other {ماہ}}}}",
+  "changes": {
+    "newRole": "ریزیومے سے نیا عہدہ ملا: {company}",
+    "years": "تجربے کے سال اپ ڈیٹ ہوئے: {from} → {to}",
+    "employment": "ملازمت کا تجربہ اپ ڈیٹ ہوا: +{count, number, ::group-off} {count, plural, one {ماہ} other {ماہ}}",
+    "newRepo": "نئی ریپوزیٹری ملی: {name}",
+    "newRepos": "GitHub پر {count, number, ::group-off} نئی {count, plural, one {ریپوزیٹری} other {ریپوزیٹریاں}} ملیں",
+    "timeline": "ذاتی پروجیکٹس کی ٹائم لائن اپ ڈیٹ ہو گئی"
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "VỀ TÔI",
+    "subtitle": "TÔI LÀ AI"
+  },
+  "intro": {
+    "heading": "Kiến trúc sư của phép màu",
+    "paragraph": "Hành trình phát triển web của tôi được tiếp sức bởi một kho công cụ và ngôn ngữ huyền bí, với JavaScript là hạt nhân trong mọi phép thuật của tôi. Tôi sử dụng các framework như React.js và Next.js một cách chính xác, tạo nên những cánh cổng (website) liền mạch nối các cõi (người dùng) trong vũ trụ số. Nghệ thuật cổ xưa của Jamstack giúp tôi tạo ra những trải nghiệm nhanh, an toàn và sống động, còn kỹ năng thiết kế bảo đảm mỗi sáng tạo không chỉ hữu dụng mà còn cuốn hút về thị giác. Ngoài những phép màu hiển hiện, tôi còn chăm chút cỗ máy ẩn phía sau — triệu hồi các API và cơ sở dữ liệu bền bỉ (những hầm kho nơi ký ức của mỗi cõi được giữ an toàn) và dệt nên các quy trình tự động đưa sáng tạo của tôi từ xưởng thủ công lên đám mây (tầng không gian vô biên nơi chúng cuối cùng thức tỉnh). Tôi xem hiệu năng và khả năng tiếp cận là những lời thề thiêng liêng, để mọi cánh cổng đều mở ra nhanh chóng cho mọi lữ khách, trên mọi thiết bị và ở bất kỳ góc xa xôi nào của vương quốc. Sự tò mò vẫn là chiếc la bàn chân thật nhất của tôi, luôn dẫn tôi đến những cuốn grimoire mới, những trực giác sắc bén hơn và những ý tưởng đủ táo bạo để trở thành trải nghiệm sống động, có hơi thở. Hãy cùng tôi tiếp tục khám phá những phép thuật và công nghệ mới để định hình tương lai của web."
+  },
+  "projectsCard": {
+    "eyebrow": "Dự án đã phát hành",
+    "unit": "{count, plural, other {dự án hoàn thành}}",
+    "viewProgress": "Xem tiến độ →",
+    "ariaLabel": "Dự án đã phát hành: {count, number, ::group-off} dự án hoàn thành. {legend}. Xem tiến độ: mở tiến độ dự án trực tiếp.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "Dự án hoàn thành theo danh mục — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, other {dự án}}",
+    "srPrefix": "Cập nhật dự án: "
+  },
+  "statsCard": {
+    "title": "Thống kê GitHub của {name}",
+    "defaultUser": "Người dùng GitHub",
+    "live": "Chỉ số GitHub trực tiếp",
+    "rank": "Hạng",
+    "updated": "Thống kê GitHub đã cập nhật",
+    "srPrefix": "Cập nhật thống kê: ",
+    "metrics": {
+      "stars": "Tổng số sao nhận được",
+      "commits": "Tổng commit (năm qua)",
+      "prs": "Tổng số PR",
+      "issues": "Tổng số issue",
+      "contributedTo": "Đã đóng góp cho (năm qua)"
+    }
+  },
+  "languagesCard": {
+    "title": "Ngôn ngữ dùng nhiều nhất",
+    "count": "{count, number, ::group-off} {count, plural, other {ngôn ngữ}}",
+    "live": "trực tiếp từ GitHub",
+    "primary": "Chính",
+    "percent": "<n></n>%",
+    "srPrefix": "Cập nhật ngôn ngữ: ",
+    "popover": {
+      "eyebrow": "Phân bổ theo kho mã",
+      "ariaLabel": "Các kho mã dùng {language}",
+      "privateRepos": "{count, number, ::group-off} {count, plural, other {kho mã riêng tư}}"
+    }
+  },
+  "streakCard": {
+    "title": "Chuỗi đóng góp",
+    "subtitle": "Hoạt động GitHub",
+    "srPrefix": "Cập nhật chuỗi: ",
+    "total": "Tổng đóng góp",
+    "current": "Chuỗi hiện tại",
+    "longest": "Chuỗi dài nhất",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, other {ngày}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, other {ngày}}, {percent, number, ::group-off} phần trăm so với chuỗi dài nhất của bạn"
+  },
+  "repoCard": {
+    "badge": "Kho mã hoạt động nhiều nhất",
+    "srPrefix": "Cập nhật kho mã: ",
+    "metrics": {
+      "stars": "Sao",
+      "forks": "Fork",
+      "mergedPrs": "PR đã merge",
+      "commits": "Tổng commit",
+      "lastPushed": "Lần push gần nhất"
+    },
+    "score": "điểm",
+    "activityScore": "Điểm hoạt động"
+  },
+  "skillsCard": {
+    "title": "Kỹ năng & công nghệ",
+    "categories": {
+      "languages": "Ngôn ngữ",
+      "frameworks": "Framework",
+      "libraries": "Thư viện",
+      "tools": "Công cụ",
+      "software": "Phần mềm"
+    },
+    "count": "<n></n> {count, plural, other {công nghệ}}",
+    "live": "trực tiếp từ GitHub",
+    "syncing": "Đang đồng bộ với GitHub…",
+    "noneDetected": "Chưa phát hiện kỹ năng nào",
+    "noneInRepos": "Không phát hiện kỹ năng nào trong các kho mã của bạn",
+    "fetching": "Đang lấy kỹ năng từ GitHub…",
+    "srPrefix": "Cập nhật kỹ năng: ",
+    "popover": {
+      "eyebrow": "Được dùng trong các kho mã",
+      "ariaLabel": "Các kho mã sử dụng {name}",
+      "label": "Kho mã:",
+      "publicSr": "{count, number, ::group-off} công khai",
+      "privateSr": "{count, number, ::group-off} riêng tư",
+      "publicCount": "<n></n> công khai",
+      "privateCount": "<n></n> riêng tư",
+      "slash": "/",
+      "allPrivate": "Tất cả kho mã đều ở chế độ riêng tư"
+    }
+  },
+  "progress": {
+    "eyebrow": "Số liệu bàn giao",
+    "title": "Tiến độ dự án",
+    "close": "Đóng tiến độ dự án",
+    "failed": "Hiện chưa thể kết nối đến bộ đồng bộ tiến độ.",
+    "retry": "Thử đồng bộ lại",
+    "ringLineOne": "mục bảng",
+    "ringLineTwo": "hoàn tất",
+    "percent": "<n></n>%",
+    "itemsDone": "Mục hoàn tất",
+    "ofTotal": "trên {total, number, ::group-off}",
+    "boardsLive": "Bảng đang hoạt động",
+    "allProjects": "{count, plural, other {dự án}}",
+    "ofProjects": "trên {total, number, ::group-off} dự án",
+    "unavailable": "Hiện không thể đồng bộ trực tiếp — đang hiển thị cấu trúc danh mục dự án; tỷ lệ phần trăm sẽ quay lại sau lần làm mới thành công tiếp theo.",
+    "byCategory": "Theo danh mục",
+    "projectCount": "{count, number, ::group-off} dự án",
+    "perProject": "Theo từng dự án",
+    "liveFrom": "Trực tiếp từ GitHub Projects",
+    "footer": "Tự động đồng bộ từ GitHub Projects · hai lần mỗi ngày",
+    "lastSync": "Lần đồng bộ gần nhất",
+    "awaiting": "Đang chờ lần đồng bộ đầu tiên",
+    "row": {
+      "tracked": "Hoàn thành {percent, number, ::group-off}%, đã xong {done, number, ::group-off} trên {total, number, ::group-off} mục bảng",
+      "syncUnavailable": "không thể đồng bộ tiến độ",
+      "notTracked": "không theo dõi",
+      "ariaLabel": "{name}, {category}. {status}. Bật/tắt chi tiết bảng.",
+      "syncUnavailableTag": "· không thể đồng bộ",
+      "total": "Tổng",
+      "couldNotSync": "Hiện chưa thể đồng bộ bảng này — số liệu trực tiếp sẽ quay lại sau lần làm mới tiếp theo.",
+      "noBoard": "Dự án này chưa được liên kết với bảng dự án GitHub nào.",
+      "viewBoard": "Xem bảng dự án →"
+    },
+    "age": {
+      "seconds": "{s} giây trước",
+      "minutes": "{m}p {s}s trước",
+      "hours": "{h}g {m}p trước",
+      "days": "{d}n {h}g trước"
+    },
+    "columns": {
+      "todo": "Cần làm",
+      "backlog": "Tồn đọng",
+      "ready": "Sẵn sàng",
+      "inProgress": "Đang thực hiện",
+      "inReview": "Đang xem xét",
+      "done": "Hoàn thành",
+      "noStatus": "Chưa có trạng thái",
+      "blocked": "Bị chặn",
+      "onHold": "Tạm dừng"
+    }
+  },
+  "wire": {
+    "present": "Hiện tại",
+    "noCurrent": "Không có chuỗi hiện tại",
+    "noneFound": "Không tìm thấy chuỗi nào",
+    "noData": "Không có dữ liệu",
+    "notAvailable": "Không có",
+    "noDescription": "Không có mô tả",
+    "unknown": "Không rõ",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "Kho mã hoạt động nhiều nhất đã đổi sang \"{name}\"",
+      "stars": "Số sao {direction, select, increased {tăng} other {giảm}} {amount, number, ::group-off} (hiện là {total, number, ::group-off})",
+      "forks": "Số fork {direction, select, increased {tăng} other {giảm}} {amount, number, ::group-off} (hiện là {total, number, ::group-off})",
+      "commits": "Đã đẩy {count, number, ::group-off} {count, plural, other {commit}} mới",
+      "mergedPrs": "Đã hợp nhất {count, number, ::group-off} {count, plural, other {PR}}",
+      "activityScore": "Điểm hoạt động đã {direction, select, increased {tăng} other {giảm}} {amount, number, ::group-off} (hiện là {total, number, ::group-off})",
+      "language": "Ngôn ngữ chính đã đổi thành \"{language}\""
+    },
+    "stats": {
+      "stars": "Tổng số Star {delta, number, ::sign-always group-off}",
+      "commits": "Tổng số Commit {delta, number, ::sign-always group-off}",
+      "prs": "Tổng số PR {delta, number, ::sign-always group-off}",
+      "issues": "Tổng số Issue {delta, number, ::sign-always group-off}",
+      "contributedTo": "Đã đóng góp cho {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "Tổng số đóng góp {delta, number, ::sign-always group-off}",
+      "currentStreak": "Chuỗi hiện tại {delta, number, ::sign-always group-off}",
+      "longestStreak": "Chuỗi dài nhất {delta, number, ::sign-always group-off}",
+      "currentDates": "Ngày của chuỗi hiện tại đã thay đổi",
+      "longestDates": "Ngày của chuỗi dài nhất đã thay đổi"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language} đã được thêm vào danh sách ngôn ngữ hàng đầu.",
+      "addedMany": "{count, number, ::group-off} {count, plural, other {ngôn ngữ}} mới đã vào danh sách hàng đầu.",
+      "removedOne": "{language} đã rời khỏi danh sách ngôn ngữ hàng đầu.",
+      "removedMany": "{count, number, ::group-off} {count, plural, other {ngôn ngữ}} đã rời khỏi danh sách hàng đầu.",
+      "percentage": "{language} đã {direction, select, increased {tăng} other {giảm}} {delta, number, ::.0 group-off}%.",
+      "rank": "{language} đã {direction, select, up {lên} other {xuống}} vị trí #{rank, number, ::group-off}."
+    },
+    "skills": {
+      "added": "Đã thêm: {items}",
+      "removed": "Đã xóa: {items}",
+      "moved": "Đã chuyển: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "Đã thêm {delta, number, ::group-off} {delta, plural, other {dự án}} hoàn thành mới — hiện có {count, number, ::group-off}",
+      "updated": "Số dự án hoàn thành đã được cập nhật — hiện có {count, number, ::group-off}"
+    }
+  }
+}

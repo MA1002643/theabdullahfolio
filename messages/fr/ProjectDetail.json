@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Navigation entre les projets",
+    "all": "Tous les projets",
+    "previous": "Projet précédent : {name}",
+    "next": "Projet suivant : {name}"
+  },
+  "breadcrumbs": {
+    "home": "Accueil",
+    "projects": "Projets"
+  },
+  "loading": "Chargement du projet",
+  "intro": {
+    "fallbackName": "Nom du projet",
+    "fallbackDescription": "Des solutions web innovantes, rapides et résolument futuristes.",
+    "linksLabel": "Liens de {name}",
+    "liveDemo": "Démo en ligne<sr> (s’ouvre dans un nouvel onglet)</sr>",
+    "source": "Code source sur GitHub<sr> (s’ouvre dans un nouvel onglet)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "Initialisation du BIOS...",
+      "hardware": "Détection du matériel...",
+      "os": "Chargement du système d’exploitation..."
+    },
+    "tagline": "Donner vie à vos idées grâce à un savoir-faire numérique de nouvelle génération.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Outils et frameworks",
+    "overview": "Présentation du projet",
+    "overviewLead": "Cette plateforme simplifie les flux de travail e-commerce grâce à un tableau de bord unifié et à des analyses en temps réel.",
+    "overviewBody": "Elle élimine la complexité liée à la gestion de multiples outils en proposant une interface centralisée et intuitive.",
+    "features": "Fonctionnalités",
+    "feature": {
+      "auth": {
+        "title": "Authentification",
+        "desc": "Connexion sécurisée et gestion des accès utilisateurs."
+      },
+      "payments": {
+        "title": "Paiements",
+        "desc": "Passerelle de paiement intégrée."
+      },
+      "chat": {
+        "title": "Chat en direct",
+        "desc": "Communication instantanée avec les utilisateurs."
+      },
+      "admin": {
+        "title": "Panneau d’administration",
+        "desc": "Gestion simplifiée des contenus."
+      }
+    },
+    "liveDemo": "Démo en ligne",
+    "github": "GitHub",
+    "demoLabel": "Ouvrir la démo en ligne de {name}",
+    "sourceLabel": "Voir le code source de {name} sur GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. Projet {category}, démarré {when}. {visibility, select, private {Dépôt privé} other {Dépôt public}}, suivi en direct depuis son tableau GitHub.",
+    "undated": "{name} — {description}. Projet {category}. {visibility, select, private {Dépôt privé} other {Dépôt public}}, suivi en direct depuis son tableau GitHub."
+  }
+}

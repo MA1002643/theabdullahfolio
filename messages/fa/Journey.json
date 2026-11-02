@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "سفر من",
+    "subtitle": "از نخستین خط کد تا محیط عملیاتی"
+  },
+  "timeline": {
+    "label": "خط زمانی سفر"
+  },
+  "endCap": {
+    "est": "از {year} · Bolton، بریتانیا",
+    "tally": "{years, plural, one {# سال} other {# سال}} · {entries, plural, one {# مورد} other {# مورد}} · {tracks, plural, one {# مسیر} other {# مسیر}}",
+    "paper": "نسخهٔ کاغذی →",
+    "paperHint": "رزومه (CV) به‌صورت PDF (در زبانه‌ای جدید باز می‌شود)"
+  },
+  "spine": {
+    "now": "اکنون"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# ماه}}} one {# سال{months, plural, =0 {} other { و # ماه}}} other {# سال{months, plural, =0 {} other { و # ماه}}}}",
+    "tenureOngoing": "تاکنون {tenure}",
+    "view": "مشاهده",
+    "viewLabel": "مشاهدهٔ {title} (در برگهٔ جدید باز می‌شود)"
+  },
+  "eraRail": {
+    "label": "دوره‌های خط زمانی",
+    "jump": "رفتن به {year}"
+  },
+  "atlas": {
+    "eyebrow": "نمای هم‌پوشانی",
+    "title": "اطلس — سه مسیر، یک ساعت",
+    "live": {
+      "career": "{count, plural, one {# نقش} other {# نقش}}",
+      "education": "{count, plural, one {# مدرک} other {# مدرک}}",
+      "milestone": "{count, plural, one {# پست انجمن} other {# پست انجمن}}",
+      "separator": " + ",
+      "sentence": "امروز فعال: {parts}{total, plural, =1 {.} other { — به‌موازات هم.}}"
+    },
+    "tracks": {
+      "all": "همه",
+      "career": "شغلی",
+      "education": "تحصیلی",
+      "milestone": "اجتماعی"
+    },
+    "chipsLabel": "برجسته‌کردن یک مسیر",
+    "zoom": {
+      "group": "بزرگ‌نمایی شبکه",
+      "out": "کوچک‌کردن شبکه",
+      "outTitle": "کوچک‌نمایی",
+      "in": "بزرگ‌کردن شبکه",
+      "inTitle": "بزرگ‌نمایی",
+      "readoutLabel": "بزرگ‌نمایی شبکه {pct}. بازنشانی به {full}",
+      "readoutTitle": "بزرگ‌نمایی شبکه",
+      "resetTitle": "بازنشانی بزرگ‌نمایی به {full}",
+      "status": "بزرگ‌نمایی شبکه {pct}"
+    },
+    "region": "اطلس هم‌پوشانی: همهٔ نقش‌ها و دوره‌ها به‌صورت میله‌های موازی روی یک محور زمان",
+    "entries": "{count, plural, one {# مورد} other {# مورد}}",
+    "now": "اکنون",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "رفتن به {org} · {role}، {dates}",
+    "spokenRange": "{start} تا {end}",
+    "spokenOpen": "{start} تا اکنون",
+    "key": {
+      "select": "برای رفتن به هر میله، آن را انتخاب کنید.",
+      "dashed": "لبهٔ خط‌چین = هنوز ادامه دارد.",
+      "stacked": "میله‌های روی هم = هم‌زمان."
+    }
+  },
+  "palette": {
+    "section": "سفر",
+    "jumpYear": "رفتن به {year}",
+    "eraHint": "دوره",
+    "jumpAtlas": "رفتن به اطلس هم‌پوشانی",
+    "openCv": "باز کردن CV (PDF)",
+    "openCvHint": "نسخهٔ کاغذی"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Điều hướng dự án",
+    "all": "Tất cả dự án",
+    "previous": "Dự án trước: {name}",
+    "next": "Dự án tiếp theo: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Trang chủ",
+    "projects": "Dự án"
+  },
+  "loading": "Đang tải dự án",
+  "intro": {
+    "fallbackName": "Tên dự án",
+    "fallbackDescription": "Giải pháp web đổi mới, nhanh và hướng tới tương lai.",
+    "linksLabel": "Liên kết của {name}",
+    "liveDemo": "Bản demo trực tiếp<sr> (mở trong tab mới)</sr>",
+    "source": "Mã nguồn trên GitHub<sr> (mở trong tab mới)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "Đang khởi tạo BIOS...",
+      "hardware": "Đang dò tìm phần cứng...",
+      "os": "Đang tải hệ điều hành..."
+    },
+    "tagline": "Hiện thực hóa ý tưởng của bạn bằng tay nghề số thế hệ mới.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Công cụ & Framework",
+    "overview": "Tổng quan dự án",
+    "overviewLead": "Nền tảng này tinh gọn quy trình thương mại điện tử thông qua một bảng điều khiển thống nhất và phân tích theo thời gian thực.",
+    "overviewBody": "Nền tảng giải quyết sự phức tạp khi phải quản lý nhiều công cụ bằng một giao diện tập trung, trực quan.",
+    "features": "Tính năng",
+    "feature": {
+      "auth": {
+        "title": "Xác thực",
+        "desc": "Đăng nhập an toàn và kiểm soát quyền truy cập của người dùng."
+      },
+      "payments": {
+        "title": "Thanh toán",
+        "desc": "Tích hợp cổng thanh toán."
+      },
+      "chat": {
+        "title": "Trò chuyện trực tiếp",
+        "desc": "Liên lạc với người dùng tức thì."
+      },
+      "admin": {
+        "title": "Trang quản trị",
+        "desc": "Quản lý nội dung đơn giản hơn."
+      }
+    },
+    "liveDemo": "Demo trực tiếp",
+    "github": "GitHub",
+    "demoLabel": "Mở bản demo trực tiếp của {name}",
+    "sourceLabel": "Xem mã nguồn {name} trên GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. Bản dựng {category}, bắt đầu {when}. {visibility, select, private {Kho lưu trữ riêng tư} other {Kho lưu trữ công khai}}, được theo dõi trực tiếp từ bảng GitHub của dự án.",
+    "undated": "{name} — {description}. Bản dựng {category}. {visibility, select, private {Kho lưu trữ riêng tư} other {Kho lưu trữ công khai}}, được theo dõi trực tiếp từ bảng GitHub của dự án."
+  }
+}

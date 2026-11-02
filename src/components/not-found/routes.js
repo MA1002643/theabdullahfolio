@@ -14,12 +14,17 @@
 // Keep in sync with `src/app/(sub pages)/*`. Icons are a UI-only concern and
 // live with the chips in NotFoundClient (keyed by `segment`), out of this pure
 // data module.
+//
+// `label` is the English name the matcher's callers and tests read; `navKey`
+// is where the visitor's-language name lives (`Nav.routes.<navKey>`, issue
+// #82) — the chips and the "did you mean" line render that. The matcher still
+// works on URL SEGMENTS, which are English in every locale.
 export const ROUTES = [
-  { segment: 'about', href: '/about', label: 'About' },
-  { segment: 'projects', href: '/projects', label: 'Projects' },
-  { segment: 'qualifications', href: '/qualifications', label: 'Qualifications' },
-  { segment: 'contact', href: '/contact', label: 'Contact' },
-  { segment: 'journey', href: '/journey', label: 'Journey' },
-  { segment: 'uses', href: '/uses', label: 'Uses' },
-  { segment: 'my-past', href: '/my-past', label: 'My Past' },
+  { segment: 'about', href: '/about', label: 'About', navKey: 'about' },
+  { segment: 'projects', href: '/projects', label: 'Projects', navKey: 'projects' },
+  { segment: 'qualifications', href: '/qualifications', label: 'Qualifications', navKey: 'qualifications' },
+  { segment: 'contact', href: '/contact', label: 'Contact', navKey: 'contact' },
+  { segment: 'journey', href: '/journey', label: 'Journey', navKey: 'journey' },
+  { segment: 'uses', href: '/uses', label: 'Uses', navKey: 'uses' },
+  { segment: 'my-past', href: '/my-past', label: 'My Past', navKey: 'myPast' },
 ];

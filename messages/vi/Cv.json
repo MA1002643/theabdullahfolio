@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "toàn bộ hồ sơ"
+  },
+  "identity": {
+    "role": "Kỹ sư phần mềm"
+  },
+  "downloadPdf": "Tải bản PDF",
+  "sections": {
+    "experience": "Kinh nghiệm",
+    "education": "Học vấn",
+    "representation": "Hoạt động đại diện",
+    "skills": "Kỹ năng",
+    "projects": "Dự án tiêu biểu"
+  },
+  "skillGroups": {
+    "languages": "ngôn ngữ",
+    "frameworks": "framework",
+    "libraries": "thư viện",
+    "tools": "công cụ",
+    "software": "phần mềm"
+  },
+  "allProjects": "Tất cả dự án",
+  "asTimeline": "Cùng hành trình ấy, dưới dạng dòng thời gian"
+}

@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Halaman Tidak Ditemukan",
+    "description": "Anda tersesat ke dalam kehampaan. Halaman ini tidak ada — belum."
+  },
+  "messages": {
+    "void": "Anda tersesat ke dalam kehampaan.",
+    "dimension": "Halaman ini berada di dimensi lain.",
+    "render": "Bahkan kemampuan 3D saya tak sanggup merender halaman ini.",
+    "vibes": "404: halaman tidak ditemukan, tapi suasananya tetap oke banget.",
+    "edge": "Anda telah sampai di ujung portofolio ini."
+  },
+  "subtitle": "Halaman ini tidak ada — belum.",
+  "didYouMean": "Maksud Anda <link>{label}</link>?",
+  "takeMeBack": "BAWA SAYA KEMBALI",
+  "keyHint": "Tekan {key} untuk kembali ke beranda"
+}

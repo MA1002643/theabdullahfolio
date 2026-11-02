@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "Cinematic scroll-driven portfolio rebuild"
+    },
+    "2": {
+      "description": "Multi-tenant business management platform"
+    },
+    "3": {
+      "description": "AI-powered recipe discovery platform"
+    },
+    "4": {
+      "description": "Immersive motion-driven portfolio"
+    },
+    "5": {
+      "description": "Cross-platform AI-powered publishing platform"
+    },
+    "6": {
+      "description": "Cross-platform music streaming platform"
+    },
+    "7": {
+      "description": "Real-time educational engagement platform"
+    },
+    "8": {
+      "description": "AI-powered fitness coaching platform"
+    },
+    "9": {
+      "description": "Truck-legal navigation and compliance"
+    },
+    "10": {
+      "description": "Automated hourly check-in calls"
+    },
+    "11": {
+      "description": "AI-powered job discovery & tailoring"
+    }
+  },
+  "categories": {
+    "Web": "Web",
+    "System": "System",
+    "AI": "AI",
+    "Mobile": "Mobile"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "Concierge Team Leader · Adullam Homes Housing Association",
+      "description": "Area-level lead for concierge services across eight supported-accommodation sites in Bolton — leading three teams across two organisations, hiring for the region, managing incidents, and replacing two separate spreadsheet rotas with a Microsoft Teams shift-management tool that offers open shifts to staff directly.",
+      "tags": {
+        "team-leadership": "Team leadership",
+        "hiring-manager": "Hiring manager",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "Software Engineer · Independent Projects",
+      "description": "Designing, building and shipping full-stack work end-to-end: a Swagger-documented REST API with Mocha/Chai tests, Colophon (AI publishing — Vue 3, Express, PostgreSQL + pgvector), AfaaqX, and a GitHub profile regenerated daily by scheduled Actions pipelines.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "Security Officer · Constant Security Services",
+      "description": "SIA-licensed across critical science and university sites, including Jodrell Bank Observatory — patrols, CCTV, incident response and control-room reporting while landing the next engineering role.",
+      "tags": {
+        "sia-licensed": "SIA-licensed",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "DevOps Engineer · C365Cloud",
+      "description": "Kept a compliance platform shipping: CI/CD pipelines, Microsoft SQL Server and MySQL administration, and .NET (Blazor) platform features for internal teams in Wakefield.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "Concierge · Adullam Homes Housing Association",
+      "description": "Out-of-hours point of contact in supported accommodation — safeguarding escalations, incident management and accurate electronic record-keeping for vulnerable residents.",
+      "tags": {
+        "safeguarding": "Safeguarding"
+      }
+    },
+    "j-showsec": {
+      "title": "Security Officer / CCTV Operator · Showsec",
+      "description": "CCTV monitoring, crowd management and incident response at high-profile events, coordinating in real time with security teams and law enforcement.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "Incident response"
+      }
+    },
+    "j-lidl": {
+      "title": "Customer Assistant · Lidl GB",
+      "description": "High-volume store through the whole degree — till, deliveries, stock; part of the team that lifted the store’s sales ranking from 14th to 10th and customer satisfaction 18% in four months.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "3 yrs 8 mo alongside study"
+      }
+    },
+    "j-unisys": {
+      "title": "Software Engineer · Unisys",
+      "description": "16-month industrial placement in Manchester: shipped full-stack C# / .NET (Blazor) features that lifted system efficiency ~20%, cut production issues 30% owning support triage, and stepped up to lead a project team to an on-time delivery that won follow-on client contracts.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "Student Ambassador · MMU",
+      "description": "Represented the university at open days, tours and recruitment events across Greater Manchester.",
+      "tags": {
+        "community": "Community"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "IT Help Desk Technician · MMU",
+      "description": "First-line support for staff and students — hardware, software and access issues, bridging IT and partner departments; praised by multiple departments in the first week.",
+      "tags": {
+        "first-line-support": "First-line support"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "Software Developer · MMU",
+      "description": "Front-end and back-end functionality in a multidisciplinary university team — resolved 50+ bugs, improved load speed 25% and cut development time 15% translating stakeholder requirements into working features.",
+      "tags": {
+        "full-stack": "Full-stack",
+        "50-bugs-resolved": "50+ bugs resolved"
+      }
+    },
+    "j-course-rep": {
+      "title": "Course Representative · MMU",
+      "description": "Elected voice for the cohort — negotiated assessment scheduling around religious observances and expanded departmental guest-speaker sessions.",
+      "tags": {
+        "learner-voice-award": "Learner Voice Award",
+        "volunteering-award": "Volunteering Award"
+      }
+    },
+    "j-bsc": {
+      "title": "BSc (Hons) Software Engineering · MMU",
+      "description": "Manchester Metropolitan University — BCS-accredited, predicted First-Class Honours. The formal deep end.",
+      "tags": {
+        "bcs-accredited": "BCS Accredited",
+        "first-class-predicted": "First-Class (predicted)"
+      }
+    },
+    "j-kfc": {
+      "title": "Team Member · KFC",
+      "description": "Every station, front to back — named Best Employee six consecutive months, in the crew that lifted the store’s regional ranking from 5th to 2nd.",
+      "tags": {
+        "best-employee-6": "Best Employee ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC Level 3 Extended Diploma in IT",
+      "description": "Bolton College — Triple Distinction (DDD). Two years that turned curiosity into a discipline.",
+      "tags": {
+        "triple-distinction": "Triple Distinction"
+      }
+    },
+    "j-ocnlr": {
+      "title": "OCNLR Certificate in Digital Skills",
+      "description": "Bolton College — the first formal step into computing, and the doorway to everything above it.",
+      "tags": {
+        "digital-skills": "Digital Skills"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "Machine",
+        "value": "13-inch MacBook Pro · Apple M1 · 16 GB unified memory"
+      },
+      "display": {
+        "label": "Display",
+        "value": "2560 × 1600 Retina · 1440 × 900 logical",
+        "note": "The fluid-scale unity viewport — every sub-page is authored at scale 1 on exactly this width, then breathes from one factor."
+      },
+      "os": {
+        "label": "OS",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "Phone",
+        "value": "iPhone, running OwnTracks in HTTP mode",
+        "note": "It posts a location fix to /api/location; the town and local time in the footer come from this device.",
+        "hrefLabel": "see the town it feeds"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "Editor",
+        "detail": "Dracula theme · vscode-icons · Prettier on save"
+      },
+      "agentic-pair": {
+        "role": "Agentic pair",
+        "detail": "VS Code extension + CLI — skills, subagents and MCP servers (Chrome DevTools, Playwright) drive the browser during verification"
+      },
+      "terminal-and-shell": {
+        "role": "Terminal & shell",
+        "detail": "Node pinned by .nvmrc through nvm · Homebrew for everything else"
+      },
+      "formatting-and-lint": {
+        "role": "Formatting & lint",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "Type",
+        "detail": "next/font/google — self-hosted at build, so the fonts never shift layout"
+      },
+      "browser-tooling": {
+        "role": "Browser tooling",
+        "detail": "Pixel probes, reduced-motion emulation and the e2e gate all run against real Chromium"
+      }
+    }
+  }
+}

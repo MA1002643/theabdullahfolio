@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Softwareentwickler. Dunkle Ember-Karte mit dem Siegel von Muhammad Abdullah und dem Live-Status des Portfolios.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Softwareentwickler. Quadratische dunkle Ember-Karte mit dem Siegel von Muhammad Abdullah und dem Live-Status des Portfolios.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Softwareentwickler",
+      "description": "Softwareentwickler in Bolton, der schnelle, durchdachte Webanwendungen mit Next.js, React und TypeScript baut. Projekte, Qualifikationen und die Werkzeuge dahinter."
+    },
+    "about": {
+      "title": "Über mich",
+      "description": "Der Entwickler hinter der Glut — die Geschichte, der Stack und Live-Telemetrie von GitHub zu dem, was gerade entsteht."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "Die vollständige Übersicht — jede Station, jede Qualifikation und jedes ausgelieferte Projekt, als HTML. Erstellt aus denselben Daten wie die Zeitleiste, das PDF ist einen Klick entfernt."
+    },
+    "notes": {
+      "title": "Notizen",
+      "description": "Dokumentierte Engineering-Entscheidungen — warum jede Wahl auf dieser Website getroffen wurde, welche Alternativen verworfen wurden und was jede davon gekostet hat."
+    },
+    "projects": {
+      "title": "Projekte",
+      "description": "{countWord} Projekte — Web, Systeme, Mobile und KI — jedes live über das eigene GitHub-Board verfolgt, mit Stack und Fertigstellungsstand auf jeder Karte."
+    },
+    "qualifications": {
+      "title": "Qualifikationen",
+      "description": "Abschlüsse, Zertifikate und berufliche Nachweise — die belegte Grundlage hinter der Praxis, jedes Zertifikat einsehbar."
+    },
+    "journey": {
+      "title": "Werdegang",
+      "description": "Jede Station, jede Qualifikation und jedes Ehrenamt als eine scrollgesteuerte Zeitleiste — vom Bolton College 2018 bis zur Auslieferung von Produktivsoftware heute."
+    },
+    "uses": {
+      "title": "Setup",
+      "description": "Der Rechner, die Werkbank, der Stack und die Pipeline — jedes Werkzeug auf dieser Seite wurde gegen die Repositories und den Build geprüft, der sie ausliefert."
+    },
+    "contact": {
+      "title": "Kontakt",
+      "description": "Starte ein Gespräch über eine Stelle oder ein Projekt — ein Kontaktformular, das deine Nachricht beim Schreiben verfeinert und keinen Entwurf verliert."
+    },
+    "myPast": {
+      "title": "Meine Vergangenheit",
+      "description": "Das Portfolio aus der Studienzeit, mit dem alles begann — von Hand mit reinem HTML, CSS und JavaScript gebaut und als ehrliches Vorher-Bild online belassen."
+    },
+    "guestbook": {
+      "title": "Gästebuch",
+      "description": "Hinterlasse deine Spur an der Wand — eine Neon-Pinnwand, in die sich Besucher per GitHub oder Google eintragen, mit Live-Präsenz und Reaktionen."
+    },
+    "privacy": {
+      "title": "Datenschutz",
+      "description": "Jedes Cookie, jeder Speicherschlüssel und jeder Drittanbieter, den diese Website berührt, warum es sie gibt und wie du die optionalen abschaltest. Geprüft, nicht aus der Vorlage."
+    }
+  },
+  "notFound": {
+    "title": "404 — Seite nicht gefunden",
+    "description": "Du bist ins Leere abgedriftet. Diese Seite existiert nicht — noch nicht."
+  }
+}

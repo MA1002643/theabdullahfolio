@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "MI CONFIGURACIÓN",
+    "subtitle": "las herramientas, verificadas"
+  },
+  "opensNewTab": "{name} (se abre en una pestaña nueva)",
+  "machine": {
+    "eyebrow": "Hardware · configurado a mano",
+    "title": "La máquina",
+    "provenance": "{count, plural, one {<fig>{n}</fig> fila} other {<fig>{n}</fig> filas}} · confirmadas por el propietario",
+    "seeItLive": "verlo en vivo"
+  },
+  "bench": {
+    "eyebrow": "Entorno · configurado a mano",
+    "title": "El banco de trabajo",
+    "provenance": "{count, plural, one {<fig>{n}</fig> estación} other {<fig>{n}</fig> estaciones}} · extracto de {file}",
+    "extensions": "Las extensiones que más uso",
+    "editorCaption": "Un extracto de mi {file} de VS Code, mostrado con el tema {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · extraído de los repositorios",
+    "eyebrowCurated": "Stack · selección curada",
+    "title": "El stack",
+    "provenanceLive": "en vivo · {count, plural, one {<fig>{n}</fig> herramienta} other {<fig>{n}</fig> herramientas}}",
+    "provenanceCurated": "curado · {count, plural, one {<fig>{n}</fig> herramienta} other {<fig>{n}</fig> herramientas}} · {state, select, unreachable {GitHub no disponible} other {sincronizando con GitHub…}}",
+    "verifiedSr": "verificado con GitHub",
+    "verifiedStatus": "Stack verificado con GitHub.",
+    "cta": "VER LOS REPOSITORIOS",
+    "ctaLabel": "Ver los repositorios en GitHub (se abre en una pestaña nueva)",
+    "tally": "<count></count> de <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "repositorios públicos",
+    "keyPrivate": "privados",
+    "keyRelative": "las barras son relativas a la herramienta más usada",
+    "keyPending": "las barras se llenan y los recuentos de repositorios llegan con el rastreo en vivo",
+    "repoCount": {
+      "public": "usado en {pub, plural, one {# repo público} other {# repos públicos}}",
+      "private": "usado en {priv, plural, one {# repo privado} other {# repos privados}}",
+      "mixed": "usado en {pub, plural, one {# repo público} other {# repos públicos}} · +{priv} privados"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: los recuentos de repositorios llegan con el rastreo en vivo",
+    "figure": {
+      "publicRepos": "{n, plural, one {repo público} other {repos públicos}}",
+      "privateRepos": "{n, plural, one {repo privado} other {repos privados}}",
+      "repos": "{n, plural, one {repo} other {repos}}",
+      "public": "públicos",
+      "private": "privados"
+    },
+    "curated": "curado"
+  },
+  "liveAge": {
+    "verified": "verificado {age}",
+    "s": "hace {s} s",
+    "ms": "hace {m} min {s} s",
+    "hm": "hace {h} h {m} min",
+    "dh": "hace {d} d {h} h"
+  },
+  "pipeline": {
+    "eyebrow": "Entrega · del commit al cómputo",
+    "title": "El pipeline",
+    "provenance": "{count, plural, one {<fig>{n}</fig> workflow} other {<fig>{n}</fig> workflows}} · leídos de .github durante la compilación",
+    "provenanceHandSet": "esquema · trazado a mano",
+    "region": "Diagrama del pipeline de compilación",
+    "svgTitle": "Pipeline de entrega: un push viaja desde GitHub, pasa por GitHub Actions y la compilación de Vercel, y llega a Fluid compute, al que también accede directamente un webhook de GitHub y que un cron diario invoca; desde ahí, el cómputo se distribuye por un bus de servicios hacia los servicios que se enumeran a continuación.",
+    "fires": "se ejecuta <fig>{window}</fig> UTC (precisión Hobby)",
+    "kinds": {
+      "source": "ORIGEN",
+      "ci": "CI",
+      "build": "BUILD",
+      "runtime": "EJECUCIÓN",
+      "schedule": "PROGRAMACIÓN",
+      "store": "ALMACÉN",
+      "gateway": "GATEWAY",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "CORREO",
+      "auth": "AUTENTICACIÓN",
+      "search": "BÚSQUEDA"
+    },
+    "workflows": "{count, plural, one {{n} workflow} other {{n} workflows}}",
+    "apiRoutes": "{count, plural, one {{n} ruta de API} other {{n} rutas de API}}",
+    "apiRoutesBare": "rutas de API",
+    "locales": "{count, plural, one {{n} idioma} many {{n} idiomas} other {{n} idiomas}}",
+    "crons": "{count, plural, one {tarea cron} other {{n} tareas cron}}",
+    "daily": "cada día · {time} UTC",
+    "services": {
+      "redis": "libro de visitas · ubicación · SEO · deduplicación",
+      "graphql": "estadísticas · habilidades · progreso",
+      "spotify": "reproduciendo ahora",
+      "mail": "contacto · verificación con Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Calidad · contado en la compilación",
+    "title": "Los instrumentos",
+    "provenance": "contado en la compilación · <fig>{date}</fig>",
+    "provenanceBare": "contado en la compilación",
+    "unitLabel": "{count, plural, one {suite de Vitest} other {suites de Vitest}}",
+    "unitSub": "{count, plural, one {{n} caso de prueba} other {{n} casos de prueba}} · Vitest",
+    "e2eLabel": "{count, plural, one {suite de navegador} other {suites de navegador}}",
+    "e2eSub": "{count, plural, one {{n} escenario} other {{n} escenarios}} · Playwright",
+    "apiLabel": "{count, plural, one {ruta de API} other {rutas de API}}",
+    "apiSub": "manejadores de ruta · {methods}",
+    "apiSubBare": "manejadores de ruta",
+    "tileLabel": "{figure} {label} — {sub} (abre la carpeta en GitHub en una pestaña nueva)"
+  },
+  "bom": {
+    "eyebrow": "Lista de materiales · este sitio",
+    "title": "De qué está hecho",
+    "provenance": "{source} · verificado en la compilación · <fig>{date}</fig>",
+    "provenanceBare": "{source} · verificado en la compilación",
+    "unreadable": "No se pudo leer el manifiesto durante la compilación, así que no se muestran versiones.",
+    "packages": "{count, plural, one {<fig>{n}</fig> paquete} other {<fig>{n}</fig> paquetes}}",
+    "packagesOf": "<fig>{n}</fig> de <fig>{all}</fig> paquetes",
+    "built": "compilado <fig>{date}</fig>",
+    "groups": {
+      "core": "Núcleo",
+      "3d-and-motion": "3D y movimiento",
+      "data-and-services": "Datos y servicios",
+      "interface": "Interfaz",
+      "platform": "Plataforma",
+      "media": "Multimedia",
+      "quality": "Calidad",
+      "build": "Compilación",
+      "runtime": "Entorno de ejecución",
+      "tooling": "Herramientas"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Lenguajes",
+        "lay": "El lenguaje en el que está escrito el propio código."
+      },
+      "frameworks": {
+        "label": "Frameworks",
+        "lay": "El andamiaje sobre el que se construye una aplicación: su estructura y sus convenciones."
+      },
+      "libraries": {
+        "label": "Librerías",
+        "lay": "Piezas ya hechas, cada una incorporada para hacer bien una sola tarea."
+      },
+      "tools": {
+        "label": "Herramientas",
+        "lay": "Lo que rodea al código: pruebas, formato, bases de datos y despliegue."
+      },
+      "software": {
+        "label": "Software",
+        "lay": "Los servicios en los que vive el trabajo terminado."
+      }
+    }
+  }
+}

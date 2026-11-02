@@ -1,0 +1,8 @@
+{
+  "notice.body": "First-visit privacy notice. Keep <link></link> around the phrase that links to the privacy policy. The words are coloured one by one, so keep normal spacing between words.",
+  "notice.decline": "Must carry the same weight as Accept — a plain, equal word, never softened ('Maybe later').",
+  "prefs.intro": "Keep <link></link> around the words that link to the privacy page.",
+  "categories.essential.detail": "Must stay factually identical to the English: it is a legal disclosure of what is stored.",
+  "categories.analytics.detail": "Must stay factually identical to the English: it is a legal disclosure of what is measured.",
+  "status.decidedOn": "{date} is a full date, already formatted for the language."
+}

@@ -1,0 +1,15 @@
+{
+  "dialog": "कमांड पैलेट",
+  "search": "कमांड खोजें",
+  "placeholder": "कोई कमांड या गंतव्य टाइप करें…",
+  "list": "कमांड",
+  "empty": "कुछ भी मेल नहीं खाता",
+  "sections": {
+    "navigate": "नेविगेट करें",
+    "language": "भाषा"
+  },
+  "keywords": {
+    "navigate": "जाएँ पेज रूट नेविगेट go jump route page",
+    "language": "भाषा अनुवाद लोकेल language translate locale"
+  }
+}

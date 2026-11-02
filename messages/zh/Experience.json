@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "深耕年限",
+    "unit": "{unit, select, years {{count, plural, other {年经验}}} other {{count, plural, other {个月经验}}}}",
+    "unavailable": "暂无经验数据",
+    "loadingAria": "正在加载从业年限",
+    "viewBreakdown": "查看明细 →",
+    "srPrefix": "经验更新：",
+    "personal": "个人项目",
+    "employment": "工作经历",
+    "splitUnavailable": "暂无",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "正在加载经验概览",
+    "degraded": "深耕年限：暂无经验数据（概览中的 GitHub 部分缺失或不完整）。{split}查看明细：打开现有数据的明细。",
+    "ready": "深耕年限：{count, number, ::group-off}+ {unit, select, years {年} other {个月}}经验。{split}查看明细：打开分类明细。",
+    "split": "个人项目 {personal}，工作经历 {employment}。",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "暂无"
+  },
+  "modal": {
+    "eyebrow": "职业概览",
+    "title": "按类别划分的经验",
+    "close": "关闭经验明细",
+    "personalProjects": "个人项目",
+    "employment": "工作经历",
+    "unavailable": "暂无",
+    "unitWord": "{unit, select, years {{count, plural, other {年}}} other {{count, plural, other {个月}}}}",
+    "totalUnavailable": "总计暂无",
+    "totalUnit": "{unit, select, years {总年数} other {总月数}}",
+    "ownedRepos": "<n></n> 个自有{count, plural, other {仓库}}",
+    "roles": "<n></n> 个{count, plural, other {职位}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ 年} other { 个月}}",
+    "newestFirst": "最新优先",
+    "showFewer": "收起",
+    "showAll": "显示全部 {count, number, ::group-off} 个仓库 →",
+    "noRepos": "尚未检测到自有仓库。",
+    "personalFailed": "暂时无法加载个人项目数据。",
+    "relativeDuration": "相对时长",
+    "noRoles": "尚未检测到软件工程职位。",
+    "employmentFailed": "暂时无法加载工作经历数据。"
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, other {年}}} other {{count, plural, other {个月}}}}",
+  "changes": {
+    "newRole": "根据简历检测到新职位：{company}",
+    "years": "经验年限已更新：{from} → {to}",
+    "employment": "工作经验已更新：+{count, number, ::group-off} {count, plural, other {个月}}",
+    "newRepo": "检测到新仓库：{name}",
+    "newRepos": "在 GitHub 上检测到 {count, number, ::group-off} 个新{count, plural, other {仓库}}",
+    "timeline": "个人项目时间线已更新"
+  }
+}

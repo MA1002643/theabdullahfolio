@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "Cinematische, scrollgestuurde herbouw van een portfolio"
+    },
+    "2": {
+      "description": "Multi-tenant platform voor bedrijfsbeheer"
+    },
+    "3": {
+      "description": "AI-platform voor het ontdekken van recepten"
+    },
+    "4": {
+      "description": "Meeslepend portfolio, aangedreven door beweging"
+    },
+    "5": {
+      "description": "Platformonafhankelijk publicatieplatform met AI"
+    },
+    "6": {
+      "description": "Platformonafhankelijk platform voor muziekstreaming"
+    },
+    "7": {
+      "description": "Realtime platform voor betrokkenheid in het onderwijs"
+    },
+    "8": {
+      "description": "Fitnesscoachingplatform met AI"
+    },
+    "9": {
+      "description": "Navigatie en naleving van regels voor vrachtwagens"
+    },
+    "10": {
+      "description": "Geautomatiseerde incheckgesprekken ieder uur"
+    },
+    "11": {
+      "description": "Banen vinden en cv's op maat maken met AI"
+    }
+  },
+  "categories": {
+    "Web": "Web",
+    "System": "Systeem",
+    "AI": "AI",
+    "Mobile": "Mobiel"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "Teamleider conciërgedienst · Adullam Homes Housing Association",
+      "description": "Leidinggevende op regioniveau voor conciërgediensten op acht locaties voor begeleid wonen in Bolton: ik stuurde drie teams aan binnen twee organisaties, nam mensen aan voor de regio, handelde incidenten af en verving twee losse roosters in spreadsheets door een shiftplanningtool in Microsoft Teams die open diensten direct aan medewerkers aanbiedt.",
+      "tags": {
+        "team-leadership": "Teamleiding",
+        "hiring-manager": "Aannemend manager",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "Software engineer · Eigen projecten",
+      "description": "Full-stackwerk van ontwerp tot oplevering, volledig zelf gedaan: een REST API met Swagger-documentatie en Mocha/Chai-tests, Colophon (publiceren met AI — Vue 3, Express, PostgreSQL + pgvector), AfaaqX en een GitHub-profiel dat dagelijks wordt vernieuwd door geplande Actions-pipelines.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "Beveiliger · Constant Security Services",
+      "description": "SIA-gelicentieerd op kritieke wetenschaps- en universiteitslocaties, waaronder Jodrell Bank Observatory — surveillance, cameratoezicht, incidentafhandeling en rapportage vanuit de controlekamer, terwijl ik werkte aan mijn volgende stap als engineer.",
+      "tags": {
+        "sia-licensed": "SIA-gelicentieerd",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "DevOps-engineer · C365Cloud",
+      "description": "Hield een compliance-platform doorlopend in de lucht: CI/CD-pipelines, beheer van Microsoft SQL Server en MySQL en platformfuncties in .NET (Blazor) voor interne teams in Wakefield.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "Conciërge · Adullam Homes Housing Association",
+      "description": "Aanspreekpunt buiten kantoortijden in begeleid wonen — opschaling bij zorgen over veiligheid, incidentbeheer en nauwkeurige elektronische dossiervoering voor kwetsbare bewoners.",
+      "tags": {
+        "safeguarding": "Safeguarding"
+      }
+    },
+    "j-showsec": {
+      "title": "Beveiliger / cameraoperator · Showsec",
+      "description": "Cameratoezicht, menigtebeheersing en incidentafhandeling bij grote evenementen, met realtime afstemming met beveiligingsteams en politie.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "Incidentafhandeling"
+      }
+    },
+    "j-lidl": {
+      "title": "Winkelmedewerker · Lidl GB",
+      "description": "Drukke winkel tijdens mijn hele studie — kassa, leveringen, voorraad; onderdeel van het team dat de verkoopranking van de winkel van de 14e naar de 10e plaats bracht en de klanttevredenheid in vier maanden met 18% liet stijgen.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "3 jaar en 8 maanden naast mijn studie"
+      }
+    },
+    "j-unisys": {
+      "title": "Software engineer · Unisys",
+      "description": "Stage van 16 maanden in Manchester: leverde full-stackfuncties in C# / .NET (Blazor) op die de systeemefficiëntie met ~20% verhoogden, verminderde productieproblemen met 30% door de triage van support te beheren, en nam de leiding over een projectteam dat op tijd opleverde, wat leidde tot vervolgopdrachten van klanten.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "Studentambassadeur · MMU",
+      "description": "Vertegenwoordigde de universiteit tijdens open dagen, rondleidingen en wervingsevenementen in heel Greater Manchester.",
+      "tags": {
+        "community": "Community"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "IT-helpdeskmedewerker · MMU",
+      "description": "Eerstelijnsondersteuning voor medewerkers en studenten — problemen met hardware, software en toegang, als brug tussen IT en partnerafdelingen; in de eerste week geprezen door meerdere afdelingen.",
+      "tags": {
+        "first-line-support": "Eerstelijnsondersteuning"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "Softwareontwikkelaar · MMU",
+      "description": "Front-end- en back-endfunctionaliteit in een multidisciplinair universiteitsteam — loste 50+ bugs op, verbeterde de laadsnelheid met 25% en verkortte de ontwikkeltijd met 15% door de eisen van stakeholders te vertalen naar werkende functies.",
+      "tags": {
+        "full-stack": "Full-stack",
+        "50-bugs-resolved": "50+ bugs opgelost"
+      }
+    },
+    "j-course-rep": {
+      "title": "Opleidingsvertegenwoordiger · MMU",
+      "description": "Gekozen vertegenwoordiger van de jaargroep — regelde dat toetsmomenten rekening houden met religieuze feestdagen en breidde de gastsprekersessies van de opleiding uit.",
+      "tags": {
+        "learner-voice-award": "Learner Voice Award",
+        "volunteering-award": "Volunteering Award"
+      }
+    },
+    "j-bsc": {
+      "title": "BSc (Hons) Software Engineering · MMU",
+      "description": "Manchester Metropolitan University — BCS-geaccrediteerd, met een verwacht First-Class Honours-diploma. Het formele diepe water.",
+      "tags": {
+        "bcs-accredited": "BCS-geaccrediteerd",
+        "first-class-predicted": "First-Class (verwacht)"
+      }
+    },
+    "j-kfc": {
+      "title": "Teamlid · KFC",
+      "description": "Elk station, van voor tot achter — zes maanden op rij uitgeroepen tot Beste Medewerker, in het team dat de regionale ranking van de vestiging van de 5e naar de 2e plaats bracht.",
+      "tags": {
+        "best-employee-6": "Beste Medewerker ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC Level 3 Extended Diploma in IT",
+      "description": "Bolton College — Triple Distinction (DDD). Twee jaar waarin nieuwsgierigheid een vak werd.",
+      "tags": {
+        "triple-distinction": "Triple Distinction"
+      }
+    },
+    "j-ocnlr": {
+      "title": "OCNLR Certificate in Digital Skills",
+      "description": "Bolton College — de eerste formele stap de informatica in, en de deur naar alles wat daarna kwam.",
+      "tags": {
+        "digital-skills": "Digitale vaardigheden"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "Machine",
+        "value": "13-inch MacBook Pro · Apple M1 · 16 GB uniform geheugen"
+      },
+      "display": {
+        "label": "Scherm",
+        "value": "2560 × 1600 Retina · 1440 × 900 logisch",
+        "note": "De viewport van de fluid-scale unity — elke subpagina is op precies deze breedte ontworpen op schaal 1 en schaalt daarna mee vanuit één factor."
+      },
+      "os": {
+        "label": "Besturingssysteem",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "Telefoon",
+        "value": "iPhone met OwnTracks in HTTP-modus",
+        "note": "Hij stuurt een locatiebepaling naar /api/location; de plaatsnaam en lokale tijd in de footer komen van dit apparaat.",
+        "hrefLabel": "bekijk de plaats die hij voedt"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "Editor",
+        "detail": "Dracula-thema · vscode-icons · Prettier bij opslaan"
+      },
+      "agentic-pair": {
+        "role": "Agentische partner",
+        "detail": "VS Code-extensie + CLI — skills, subagents en MCP-servers (Chrome DevTools, Playwright) besturen de browser tijdens verificatie"
+      },
+      "terminal-and-shell": {
+        "role": "Terminal & shell",
+        "detail": "Node vastgezet via .nvmrc met nvm · Homebrew voor al het andere"
+      },
+      "formatting-and-lint": {
+        "role": "Opmaak & lint",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "Lettertype",
+        "detail": "next/font/google — tijdens de build zelf gehost, zodat lettertypen de layout nooit laten verspringen"
+      },
+      "browser-tooling": {
+        "role": "Browsertools",
+        "detail": "Pixelmetingen, emulatie van beperkte beweging en de e2e-gate draaien allemaal op echte Chromium"
+      }
+    }
+  }
+}

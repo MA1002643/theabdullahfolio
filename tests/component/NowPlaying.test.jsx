@@ -1,7 +1,12 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import NowPlaying from '@/components/spotify/NowPlaying';
+import { renderWithIntl } from '../support/intl.jsx';
+
+// Rendered inside the real catalogue (issue #82): the card's labels come from
+// messages/en/Spotify.json, and the assertions below read that English.
+const render = (ui) => renderWithIntl(ui);
 
 // The Now Playing card's Escape (issue #92). Escape is shared: anything that
 // acts on it claims it (src/lib/escapeKey.js), and the privacy notice declines
@@ -18,7 +23,8 @@ import NowPlaying from '@/components/spotify/NowPlaying';
 // `fireEvent` returns false when a handler called preventDefault(), which is
 // exactly what claimEscape() does, so its return value IS the claim.
 
-vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
+// NowPlaying reads the pathname through the locale-aware navigation (#82).
+vi.mock('@/i18n/navigation', () => ({ usePathname: () => '/' }));
 vi.mock('next/image', () => ({
   // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
   default: ({ fill, priority, placeholder, blurDataURL, sizes, ...props }) => <img {...props} />,

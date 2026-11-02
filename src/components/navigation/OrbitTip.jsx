@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { usePointerCapability } from '@/hooks/usePointerCapability';
 import { claimEscape } from '@/lib/escapeKey';
@@ -140,6 +141,8 @@ const ScrubPictogram = ({ animate }) => (
 );
 
 const OrbitTip = ({ interacted }) => {
+  // `Home`: the tip renders only on the landing page (issue #82).
+  const t = useTranslations('Home');
   const reduceMotion = useReducedMotion();
   const revealed = useLoaderRevealed();
   const canHover = usePointerCapability();
@@ -266,7 +269,7 @@ const OrbitTip = ({ interacted }) => {
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="pointer-events-auto mx-auto flex w-fit items-center gap-3 rounded-2xl border border-[#ffaa2a]/25 bg-[#050b12]/85 py-2.5 pl-3.5 pr-2 shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur-md"
+            className="pointer-events-auto mx-auto flex w-fit items-center gap-3 rounded-2xl border border-[#ffaa2a]/25 bg-[#050b12]/85 py-2.5 ps-3.5 pe-2 shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur-md"
           >
             {mode === 'hover' && (
               <span aria-hidden className="shrink-0">
@@ -278,33 +281,25 @@ const OrbitTip = ({ interacted }) => {
                 announcement. */}
             {mode === 'hover' ? (
               <>
-                <span aria-hidden className="flex min-w-0 flex-col gap-0.5 text-left">
+                <span aria-hidden className="flex min-w-0 flex-col gap-0.5 text-start">
                   <span className="text-fire-amber text-xs font-normal leading-snug sm:text-[0.8rem]">
-                    Rest your cursor on the laptop, then move or scroll up and
-                    down — the ring spins with you.
+                    {t('orbitTip.hover.lead')}
                   </span>
                   <span className="text-[0.7rem] font-light leading-[1.6] text-[#f9d174]/70">
-                    You can also drag the ring, or press {kbd('←')} {kbd('→')}{' '}
-                    on a focused button.
+                    {/* The key caps stay ← → in every language: they name
+                        the physical keys (the ring's arrows are physical in
+                        RTL too — see onRingKeyDown). */}
+                    {t.rich('orbitTip.hover.keys', { key: (chunks) => kbd(chunks) })}
                   </span>
                 </span>
-                <span className="sr-only">
-                  Tip: the navigation ring can be rotated. Rest your pointer on
-                  the laptop and move or scroll up and down to spin it; you can
-                  also drag the ring, or press the left and right arrow keys
-                  while a navigation button is focused.
-                </span>
+                <span className="sr-only">{t('orbitTip.hover.sr')}</span>
               </>
             ) : (
               <>
                 <span aria-hidden className="text-fire-amber text-xs font-normal leading-snug sm:text-[0.8rem]">
-                  Slide up and down on the laptop — or drag the ring — to spin
-                  the navigation.
+                  {t('orbitTip.touch.lead')}
                 </span>
-                <span className="sr-only">
-                  Tip: the navigation ring can be rotated. Slide up and down on
-                  the laptop, or drag the ring itself, to spin it.
-                </span>
+                <span className="sr-only">{t('orbitTip.touch.sr')}</span>
               </>
             )}
             {/* Focusable in the natural tab order, never autofocused — the
@@ -313,7 +308,7 @@ const OrbitTip = ({ interacted }) => {
             <button
               type="button"
               onClick={dismiss}
-              aria-label="Dismiss navigation tip"
+              aria-label={t('orbitTip.dismiss')}
               className="grid h-6 w-6 shrink-0 place-items-center self-start rounded-full text-white/50 transition-colors duration-300 hover:text-[#ff6d05] focus-visible:text-[#ff6d05]"
             >
               <X size={13} strokeWidth={2} />

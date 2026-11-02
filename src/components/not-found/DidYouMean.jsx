@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useTranslations } from 'next-intl';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 
 /**
@@ -31,6 +32,7 @@ import TransitionLink from '@/components/pageTransition/TransitionLink';
  */
 export default function DidYouMean({ suggestion }) {
   const prefersReducedMotion = useReducedMotion();
+  const t = useTranslations('NotFound');
 
   if (!suggestion) return null;
 
@@ -44,16 +46,22 @@ export default function DidYouMean({ suggestion }) {
       className="text-sm sm:text-base"
       style={{ color: '#ffaa2a', textShadow: 'none' }}
     >
-      Did you mean{' '}
-      <TransitionLink
-        href={suggestion.href}
-        transitionLabel={suggestion.label}
-        prefetch={false}
-        className="font-semibold text-[#ff6d05] underline-offset-4 transition-colors duration-200 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05]"
-      >
-        {suggestion.label}
-      </TransitionLink>
-      ?
+      {/* One message with the link inside it (issue #82): where the route
+          name falls in the question, and the question mark itself (؟ in
+          Arabic), belong to the language. */}
+      {t.rich('didYouMean', {
+        label: suggestion.label,
+        link: (chunks) => (
+          <TransitionLink
+            href={suggestion.href}
+            transitionLabel={suggestion.label}
+            prefetch={false}
+            className="font-semibold text-[#ff6d05] underline-offset-4 transition-colors duration-200 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05]"
+          >
+            {chunks}
+          </TransitionLink>
+        ),
+      })}
     </motion.p>
   );
 }

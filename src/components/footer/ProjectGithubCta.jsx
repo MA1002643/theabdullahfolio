@@ -27,6 +27,9 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ArrowUpRight, createLucideIcon } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
+import { formatNumber, formatRelativeMs, intlTag } from '@/i18n/format';
 import { useMagneticPull } from '@/hooks/useMagneticPull';
 import { useFooterReveal } from './useFooterReveal';
 import { cn } from '@/lib/utils';
@@ -64,10 +67,21 @@ const NODES = [
 // Compact, honest relative time. Computed on the client only (depends on "now",
 // so it must never run during SSR or it desyncs at hydration). Falls back to an
 // absolute month/day for anything older than a month.
-function relativeTime(iso) {
+//
+// The compact "5m ago" form is ENGLISH typography (issue #82): it is kept
+// byte-for-byte for English, and every other locale gets the platform's own
+// short relative time ("hace 5 min", "قبل ٥ دقائق") and its own date format.
+function relativeTime(iso, locale) {
   if (!iso) return null;
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return null;
+  if (locale && locale !== DEFAULT_LOCALE) {
+    const delta = Date.now() - then;
+    if (delta < 30 * 24 * 3600 * 1000) {
+      return formatRelativeMs(delta < 60_000 ? 0 : delta, locale, { style: 'short' });
+    }
+    return new Date(iso).toLocaleDateString(intlTag(locale), { month: 'short', day: 'numeric' });
+  }
   const secs = Math.round((Date.now() - then) / 1000);
   if (secs < 60) return 'just now';
   const mins = Math.round(secs / 60);
@@ -82,13 +96,21 @@ function relativeTime(iso) {
   });
 }
 
-// Group digits so a real commit count reads cleanly (1,204 not 1204).
-const formatCount = (n) =>
-  typeof n === 'number' ? n.toLocaleString('en-US') : null;
+// Group digits so a real commit count reads cleanly (1,204 not 1204) — in the
+// locale's own digits and separators; English keeps the en-US grouping it
+// always had (identical to en-GB's for integers).
+const formatCount = (n, locale) =>
+  typeof n === 'number'
+    ? locale && locale !== DEFAULT_LOCALE
+      ? formatNumber(n, locale)
+      : n.toLocaleString('en-US')
+    : null;
 
 export default function ProjectGithubCta() {
   const rawReduced = useReducedMotion();
   const magnet = useMagneticPull();
+  const t = useTranslations('Footer');
+  const locale = useLocale();
 
   const ref = useRef(null);
   // Draw the graph when the CTA scrolls into view (amount:'some' → as soon as any
@@ -143,15 +165,15 @@ export default function ProjectGithubCta() {
   // like "59m ago" can't sit stale on the persistent footer.
   const [pushedLabel, setPushedLabel] = useState(null);
   useEffect(() => {
-    const update = () => setPushedLabel(relativeTime(repo.pushedAt));
+    const update = () => setPushedLabel(relativeTime(repo.pushedAt, locale));
     update();
     // No timestamp yet → nothing to keep fresh; skip the interval.
     if (!repo.pushedAt) return undefined;
     const id = setInterval(update, 60_000);
     return () => clearInterval(id);
-  }, [repo.pushedAt]);
+  }, [repo.pushedAt, locale]);
 
-  const commitsLabel = formatCount(repo.commits);
+  const commitsLabel = formatCount(repo.commits, locale);
 
   // Draw choreography. Reduced motion → everything is shown final and still.
   const play = reduced || revealed;
@@ -232,8 +254,10 @@ export default function ProjectGithubCta() {
         </span>
 
         <Github className="gh-cta__mark" strokeWidth={1.75} aria-hidden="true" />
-        <span className="gh-cta__label">View this project on GitHub</span>
-        <span className="sr-only"> (opens in a new tab)</span>
+        <span className="gh-cta__label">{t('githubCta.label')}</span>
+        <span className="sr-only"> {t('githubCta.newTab')}</span>
+        {/* ↗ is not a reading-direction arrow (it means "leaves the site"),
+            so it is NOT mirrored under RTL. */}
         <ArrowUpRight
           className="gh-cta__arrow"
           strokeWidth={2}
@@ -248,19 +272,27 @@ export default function ProjectGithubCta() {
           live detail. */}
       <span className="gh-cta__meta" aria-hidden="true">
         <span className="gh-cta__prompt">❯</span>
-        <span className="gh-cta__branchname">{repo.branch}</span>
+        <span className="gh-cta__branchname" translate="no">
+          {repo.branch}
+        </span>
         {commitsLabel && (
           <>
             <span className="gh-cta__sep">·</span>
+            {/* One ICU plural, so "1 commit" / "5 commits" (and every
+                language's own plural forms) come from the catalogue. */}
             <span>
-              <span className="gh-cta__num">{commitsLabel}</span> commits
+              {t.rich('githubCta.commits', {
+                count: repo.commits,
+                formatted: commitsLabel,
+                num: (chunks) => <span className="gh-cta__num">{chunks}</span>,
+              })}
             </span>
           </>
         )}
         {pushedLabel && (
           <>
             <span className="gh-cta__sep">·</span>
-            <span>pushed {pushedLabel}</span>
+            <span>{t('githubCta.pushed', { when: pushedLabel })}</span>
           </>
         )}
         {!reduced && <span className="gh-cta__caret" />}

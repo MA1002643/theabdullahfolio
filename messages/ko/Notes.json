@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "노트",
+    "subtitle": "기록으로 남긴 결정",
+    "intro": "이 사이트에 담긴 자명하지 않은 결정은 모두 기록해 두었습니다. 어떤 선택을 했는지, 어떤 대안을 버렸는지, 그리고 각각 어떤 대가를 치렀는지를 적었습니다. 저장소 안에만 두지 않고 이곳에 그대로 공개한 작업 문서입니다.",
+    "lines": "{count, plural, other {줄}}"
+  },
+  "note": {
+    "title": "노트",
+    "breadcrumb": "탐색 경로",
+    "allNotes": "모든 노트",
+    "source": "출처: {source} · {count, plural, other {{n}줄}}"
+  }
+}

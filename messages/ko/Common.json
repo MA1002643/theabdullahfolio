@@ -1,0 +1,14 @@
+{
+  "loadingProject": "프로젝트를 불러오는 중이에요",
+  "emblem": "Muhammad Abdullah 엠블럼",
+  "notifications": "알림",
+  "sound": {
+    "turnOn": "기타 소리 켜기",
+    "turnOff": "기타 소리 끄기"
+  },
+  "owner": {
+    "given": "무함마드",
+    "family": "압둘라",
+    "full": "무함마드 압둘라"
+  }
+}

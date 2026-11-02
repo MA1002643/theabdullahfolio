@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useDirection } from '@/i18n/useDirection';
 import MilestoneMarker from './MilestoneMarker';
 import FireText from '@/components/shared/FireText';
 import { accentFor } from './accents';
@@ -25,13 +27,13 @@ const toMonths = (ym) => {
   return y * 12 + (m - 1);
 };
 
-const tenureLabel = (months) => {
-  const y = Math.floor(months / 12);
-  const m = months % 12;
-  if (!y) return `${m} mo`;
-  const yrs = `${y} yr${y > 1 ? 's' : ''}`;
-  return m ? `${yrs} ${m} mo` : yrs;
-};
+// The split is arithmetic; the words are the catalogue's (issue #82) — one
+// ICU message per tenure, plurals and all, so "1 yr 4 mo" stays exactly that
+// in English and every other language composes its own.
+const tenureParts = (months) => ({
+  years: Math.floor(months / 12),
+  months: months % 12,
+});
 
 // One milestone: marker on the spine, a connector that draws outward, and the
 // card. Alternating left/right from md up; below md the spine is a left rail
@@ -80,7 +82,10 @@ const TimelineNode = ({
   revealed,
   reduceMotion,
   dimmed,
+  formatYear = String,
 }) => {
+  const t = useTranslations('Journey');
+  const { isRtl, sign } = useDirection();
   const { color: accent, Icon } = accentFor(milestone.type);
   const liRef = useRef(null);
 
@@ -93,7 +98,9 @@ const TimelineNode = ({
   }, []);
   const endM = milestone.end ? toMonths(milestone.end) : nowM;
   const tenure =
-    endM === null ? null : tenureLabel(endM - toMonths(milestone.start) + 1);
+    endM === null
+      ? null
+      : t('node.tenure', tenureParts(endM - toMonths(milestone.start) + 1));
 
   // Live viewport tracking for the entrance; margin pulls the trigger line in
   // so a card is decently on screen before it commits to animating.
@@ -144,7 +151,7 @@ const TimelineNode = ({
               Anchoring at 8px (axis − amplitude − 2px) puts the line behind
               EVERY pill whatever the sway, on every width — the same
               on-the-timeline read as md+'s centred straddle. */}
-          <div className="absolute left-[0.5rem] top-1/2 -translate-y-1/2 md:left-1/2 md:-translate-x-1/2">
+          <div className="absolute start-[0.5rem] top-1/2 -translate-y-1/2 md:start-1/2 md:-translate-x-1/2 md:rtl:translate-x-1/2">
             <motion.span
               // Year in the page-title ember (owner correction — the era
               // labels belong to the same voice as MY JOURNEY itself).
@@ -159,7 +166,7 @@ const TimelineNode = ({
                   : { duration: 0.4, ease: 'easeOut' }
               }
             >
-              {milestone.year}
+              {formatYear(milestone.year)}
             </motion.span>
           </div>
         </div>
@@ -185,7 +192,7 @@ const TimelineNode = ({
             exactly through every marker. */}
         <div
           data-spine-marker
-          className="absolute left-[1.375rem] top-[2.15rem] z-10 -translate-x-1/2 md:left-1/2"
+          className="absolute start-[1.375rem] top-[2.15rem] z-10 -translate-x-1/2 rtl:translate-x-1/2 md:start-1/2"
         >
           <MilestoneMarker
             accent={accent}
@@ -206,15 +213,20 @@ const TimelineNode = ({
             // journey-connector: the card-hover energise hook in globals.css
             // (brightens via CSS `filter` only — framer owns this element's
             // transform for the scaleX draw, and filter never touches it).
-            'journey-connector absolute top-[3.35rem] h-[2px] left-[1.375rem] w-[1.625rem] origin-left',
+            // Logical insets + an origin that flips with the direction: the
+            // connector always draws FROM the spine toward its card, and in
+            // RTL both the rail and the alternation are mirrored (issue #82).
+            'journey-connector absolute top-[3.35rem] h-[2px] start-[1.375rem] w-[1.625rem] origin-left rtl:origin-right',
             isLeft
-              ? 'md:left-auto md:right-1/2 md:w-16 md:origin-right'
-              : 'md:left-1/2 md:w-16 md:origin-left',
+              ? 'md:start-auto md:end-1/2 md:w-16 md:origin-right md:rtl:origin-left'
+              : 'md:start-1/2 md:w-16 md:origin-left md:rtl:origin-right',
           )}
           style={{
+            // Both gradients put the accent on the physical left; mirrored,
+            // it belongs on the right.
             background: isLeft
-              ? `linear-gradient(to left, transparent, ${accent})`
-              : `linear-gradient(to right, ${accent}, transparent)`,
+              ? `linear-gradient(to ${isRtl ? 'right' : 'left'}, transparent, ${accent})`
+              : `linear-gradient(to ${isRtl ? 'left' : 'right'}, ${accent}, transparent)`,
           }}
           initial={false}
           animate={{ scaleX: show ? 1 : 0 }}
@@ -231,10 +243,11 @@ const TimelineNode = ({
             wrapper. */}
         <motion.div
           className={clsx(
-            'relative ml-12 md:ml-0 md:w-[calc(50%-4rem)]',
-            isLeft ? 'md:mr-auto' : 'md:ml-auto',
+            'relative ms-12 md:ms-0 md:w-[calc(50%-4rem)]',
+            isLeft ? 'md:me-auto' : 'md:ms-auto',
           )}
-          variants={wrapVariants(reduceMotion ? 0 : isLeft ? -56 : 56)}
+          // `sign`: the card slides in from its own side in both directions.
+          variants={wrapVariants(reduceMotion ? 0 : (isLeft ? -56 : 56) * sign)}
           initial={false}
           animate={show ? 'visible' : 'hidden'}
           style={reduceMotion ? undefined : { y: parallax }}
@@ -265,8 +278,9 @@ const TimelineNode = ({
                     className="journey-tag whitespace-nowrap font-mono"
                     style={{ color: accent, opacity: 0.7 }}
                   >
-                    {tenure}
-                    {milestone.end ? '' : ' so far'}
+                    {milestone.end
+                      ? tenure
+                      : t('node.tenureOngoing', { tenure })}
                   </span>
                 )}
                 {milestone.link && (
@@ -276,10 +290,10 @@ const TimelineNode = ({
                     rel="noopener noreferrer"
                     // Starts with the visible word ("VIEW"), WCAG 2.5.3: a
                     // voice-control user says "view" to follow it.
-                    aria-label={`View ${milestone.title} (opens in a new tab)`}
-                    className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] tracking-widest text-white/50 transition-colors duration-300 hover:text-[color:var(--jn-accent)]"
+                    aria-label={t('node.viewLabel', { title: milestone.title })}
+                    className="ms-auto inline-flex items-center gap-1 font-mono text-[11px] tracking-widest text-white/50 transition-colors duration-300 hover:text-[color:var(--jn-accent)]"
                   >
-                    VIEW
+                    {t('node.view')}
                     <ExternalLink className="h-3.5 w-3.5" strokeWidth={2} />
                   </a>
                 )}

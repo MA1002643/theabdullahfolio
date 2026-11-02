@@ -1,0 +1,28 @@
+{
+  "label": "Bahasa",
+  "triggerLabel": "Bahasa: {language}",
+  "searchLabel": "Cari bahasa",
+  "searchPlaceholder": "Cari di 20 bahasa…",
+  "noResults": "Tidak ada bahasa yang cocok dengan “{query}”.",
+  "tier1": "Tingkat 1",
+  "tier2": "Tingkat 2",
+  "current": "Saat ini",
+  "machineBadge": "Mesin",
+  "machineBadgeLabel": "Diterjemahkan oleh mesin",
+  "switching": "Beralih ke {language}…",
+  "notice": {
+    "title": "Diterjemahkan oleh mesin",
+    "body": "Terjemahan ini dibuat oleh mesin dan belum ditinjau oleh penutur asli.",
+    "cta": "Usulkan terjemahan yang lebih baik"
+  },
+  "suggestion": {
+    "region": "Saran bahasa",
+    "message": "Situs ini juga tersedia dalam bahasa {language}.",
+    "switch": "Beralih ke {language}",
+    "dismiss": "Tetap gunakan {current}"
+  },
+  "englishOnly": {
+    "label": "Diterbitkan dalam bahasa Inggris",
+    "body": "Dokumen ini hanya diterbitkan dalam bahasa Inggris. Navigasi dan kontrol tetap menggunakan bahasa Anda."
+  }
+}

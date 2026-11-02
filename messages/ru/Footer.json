@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Указатель",
+    "elsewhere": "В других местах"
+  },
+  "siteNav": "Сайт",
+  "identity": {
+    "role": "Инженер-программист",
+    "statement": "Создаю быстрые, продуманные веб-сервисы на севере Англии."
+  },
+  "availability": "Открыт к новым предложениям",
+  "githubCta": {
+    "label": "Открыть проект на GitHub",
+    "newTab": "(откроется в новой вкладке)",
+    "commits": "{count, plural, one {<num>{formatted}</num> коммит} other {<num>{formatted}</num> {count, plural, few {коммита} other {коммитов}}}}",
+    "pushed": "отправлено {when}"
+  },
+  "manifest": {
+    "departures": "Вылеты",
+    "nowBoarding": "Посадка",
+    "onTime": "Вовремя",
+    "links": {
+      "about": {
+        "label": "Обо мне",
+        "desc": "Кто я"
+      },
+      "journey": {
+        "label": "Путь",
+        "desc": "Дорога до сегодняшнего дня"
+      },
+      "qualifications": {
+        "label": "Квалификации",
+        "desc": "Дипломы и сертификаты"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Полное резюме"
+      },
+      "projects": {
+        "label": "Проекты",
+        "desc": "Избранные работы"
+      },
+      "uses": {
+        "label": "Инструменты",
+        "desc": "С чем я работаю"
+      },
+      "notes": {
+        "label": "Заметки",
+        "desc": "Почему всё устроено именно так"
+      },
+      "contact": {
+        "label": "Контакты",
+        "desc": "Напишите мне"
+      },
+      "guestbook": {
+        "label": "Гостевая книга",
+        "desc": "Оставьте свой след"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "Профиль на GitHub (откроется в новой вкладке)",
+    "linkedin": "Профиль в LinkedIn (откроется в новой вкладке)",
+    "resume": "Читать полное CV",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Местное время {time} {period}, {town}} other {Местное время {time}, {town}}}",
+    "placeLabel": "Местоположение: {town}",
+    "live": "ОНЛАЙН"
+  },
+  "sound": {
+    "label": "Звук",
+    "on": "Вкл.",
+    "off": "Выкл.",
+    "turnOn": "Включить гитарный звук в подвале сайта",
+    "turnOff": "Выключить гитарный звук в подвале сайта",
+    "hoverLines": "Проведите курсором по струнам",
+    "nowPlaying": "Играет умиротворяющая гитара",
+    "turnOnPrompt": "Включите звук ради умиротворяющей гитары"
+  },
+  "privacy": {
+    "policy": "Конфиденциальность",
+    "choices": "Настройки конфиденциальности"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/в-других-местах",
+    "cmd": {
+      "github": "открыть github",
+      "linkedin": "открыть linkedin",
+      "resume": "открыть резюме"
+    }
+  }
+}

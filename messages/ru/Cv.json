@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "полная картина"
+  },
+  "identity": {
+    "role": "Инженер-программист"
+  },
+  "downloadPdf": "Скачать PDF",
+  "sections": {
+    "experience": "Опыт работы",
+    "education": "Образование",
+    "representation": "Представительство",
+    "skills": "Навыки",
+    "projects": "Избранные проекты"
+  },
+  "skillGroups": {
+    "languages": "языки",
+    "frameworks": "фреймворки",
+    "libraries": "библиотеки",
+    "tools": "инструменты",
+    "software": "программы"
+  },
+  "allProjects": "Все проекты",
+  "asTimeline": "Та же история в виде хронологии"
+}

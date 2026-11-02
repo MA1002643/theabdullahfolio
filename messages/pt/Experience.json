@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Anos de ofício",
+    "unit": "{unit, select, years {{count, plural, one {ano de experiência} other {anos de experiência}}} other {{count, plural, one {mês de experiência} other {meses de experiência}}}}",
+    "unavailable": "experiência indisponível",
+    "loadingAria": "Carregando anos de experiência",
+    "viewBreakdown": "Ver detalhamento →",
+    "srPrefix": "Atualização de experiência: ",
+    "personal": "Pessoal",
+    "employment": "Profissional",
+    "splitUnavailable": "Indisponível",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "Carregando resumo de experiência",
+    "degraded": "Anos de ofício: experiência indisponível (a parte do GitHub do resumo está ausente ou incompleta).{split} Ver detalhamento: abre o detalhamento do que está disponível.",
+    "ready": "Anos de ofício: {count, number, ::group-off}+ {unit, select, years {{count, plural, one {ano} other {anos}}} other {{count, plural, one {mês} other {meses}}}} de experiência.{split} Ver detalhamento: abre o detalhamento por categoria.",
+    "split": "Pessoal {personal}, Profissional {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "indisponível"
+  },
+  "modal": {
+    "eyebrow": "Panorama da carreira",
+    "title": "Experiência por categoria",
+    "close": "Fechar detalhamento da experiência",
+    "personalProjects": "Projetos pessoais",
+    "employment": "Experiência profissional",
+    "unavailable": "Indisponível",
+    "unitWord": "{unit, select, years {{count, plural, one {ano} other {anos}}} other {{count, plural, one {mês} other {meses}}}}",
+    "totalUnavailable": "total indisponível",
+    "totalUnit": "total {unit, select, years {anos} other {meses}}",
+    "ownedRepos": "<n></n> {count, plural, one {repositório próprio} other {repositórios próprios}}",
+    "roles": "<n></n> {count, plural, one {função} other {funções}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ anos} other { meses}}",
+    "newestFirst": "Mais recentes primeiro",
+    "showFewer": "Mostrar menos",
+    "showAll": "Mostrar todos os {count, number, ::group-off} repositórios →",
+    "noRepos": "Nenhum repositório próprio detectado ainda.",
+    "personalFailed": "Não foi possível carregar os dados dos projetos pessoais agora.",
+    "relativeDuration": "Duração relativa",
+    "noRoles": "Nenhuma função de engenharia de software detectada ainda.",
+    "employmentFailed": "Não foi possível carregar os dados profissionais agora."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {ano} other {anos}}} other {{count, plural, one {mês} other {meses}}}}",
+  "changes": {
+    "newRole": "Nova função detectada no currículo: {company}",
+    "years": "Anos de experiência atualizados: {from} → {to}",
+    "employment": "Experiência profissional atualizada: +{count, number, ::group-off} {count, plural, one {mês} other {meses}}",
+    "newRepo": "Novo repositório detectado: {name}",
+    "newRepos": "{count, number, ::group-off} {count, plural, one {novo repositório detectado} other {novos repositórios detectados}} no GitHub",
+    "timeline": "Linha do tempo dos projetos pessoais atualizada"
+  }
+}

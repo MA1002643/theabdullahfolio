@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Years in the craft",
+    "unit": "{unit, select, years {{count, plural, other {years of experience}}} other {{count, plural, other {months of experience}}}}",
+    "unavailable": "experience unavailable",
+    "loadingAria": "Loading years of experience",
+    "viewBreakdown": "View breakdown →",
+    "srPrefix": "Experience update: ",
+    "personal": "Personal",
+    "employment": "Employment",
+    "splitUnavailable": "Unavailable",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "Loading experience summary",
+    "degraded": "Years in the craft: experience unavailable (the GitHub half of the summary is missing or incomplete).{split} View breakdown: opens the breakdown of what is available.",
+    "ready": "Years in the craft: {count, number, ::group-off}+ {unit, select, years {years} other {months}} of experience.{split} View breakdown: opens the category breakdown.",
+    "split": "Personal {personal}, Employment {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "unavailable"
+  },
+  "modal": {
+    "eyebrow": "Career snapshot",
+    "title": "Experience by category",
+    "close": "Close experience breakdown",
+    "personalProjects": "Personal Projects",
+    "employment": "Employment",
+    "unavailable": "Unavailable",
+    "unitWord": "{unit, select, years {{count, plural, one {year} other {years}}} other {{count, plural, one {month} other {months}}}}",
+    "totalUnavailable": "total unavailable",
+    "totalUnit": "total {unit, select, years {yrs} other {mo}}",
+    "ownedRepos": "<n></n> owned {count, plural, one {repository} other {repositories}}",
+    "roles": "<n></n> {count, plural, one {role} other {roles}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ yrs} other { mo}}",
+    "newestFirst": "Newest first",
+    "showFewer": "Show fewer",
+    "showAll": "Show all {count, number, ::group-off} repositories →",
+    "noRepos": "No owned repositories detected yet.",
+    "personalFailed": "Personal project data couldn’t be loaded right now.",
+    "relativeDuration": "Relative duration",
+    "noRoles": "No software-engineering roles detected yet.",
+    "employmentFailed": "Employment data couldn’t be loaded right now."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {year} other {years}}} other {{count, plural, one {month} other {months}}}}",
+  "changes": {
+    "newRole": "New role detected from resume: {company}",
+    "years": "Years of experience updated: {from} → {to}",
+    "employment": "Employment experience updated: +{count, number, ::group-off} {count, plural, one {month} other {months}}",
+    "newRepo": "New repository detected: {name}",
+    "newRepos": "{count, number, ::group-off} new {count, plural, one {repository} other {repositories}} detected on GitHub",
+    "timeline": "Personal projects timeline updated"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Index",
+    "elsewhere": "Elders"
+  },
+  "siteNav": "Site",
+  "identity": {
+    "role": "Software engineer",
+    "statement": "Snelle, weloverwogen webervaringen, vanuit het noorden van Engeland."
+  },
+  "availability": "Open voor nieuwe functies",
+  "githubCta": {
+    "label": "Bekijk dit project op GitHub",
+    "newTab": "(opent in een nieuw tabblad)",
+    "commits": "{count, plural, one {<num>{formatted}</num> commit} other {<num>{formatted}</num> commits}}",
+    "pushed": "gepusht {when}"
+  },
+  "manifest": {
+    "departures": "Vertrek",
+    "nowBoarding": "Instappen",
+    "onTime": "Op tijd",
+    "links": {
+      "about": {
+        "label": "Over mij",
+        "desc": "Wie ik ben"
+      },
+      "journey": {
+        "label": "Traject",
+        "desc": "De weg tot nu toe"
+      },
+      "qualifications": {
+        "label": "Kwalificaties",
+        "desc": "Diploma's en bewijzen"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Het volledige overzicht"
+      },
+      "projects": {
+        "label": "Projecten",
+        "desc": "Uitgelicht werk"
+      },
+      "uses": {
+        "label": "Uses",
+        "desc": "Waar ik mee bouw"
+      },
+      "notes": {
+        "label": "Notities",
+        "desc": "Waarom het zo is gebouwd"
+      },
+      "contact": {
+        "label": "Contact",
+        "desc": "Zeg hallo"
+      },
+      "guestbook": {
+        "label": "Gastenboek",
+        "desc": "Laat een berichtje achter"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHub-profiel (opent in een nieuw tabblad)",
+    "linkedin": "LinkedIn-profiel (opent in een nieuw tabblad)",
+    "resume": "Lees het volledige CV",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Lokale tijd {time} {period} in {town}} other {Lokale tijd {time} in {town}}}",
+    "placeLabel": "Locatie: {town}",
+    "live": "LIVE"
+  },
+  "sound": {
+    "label": "Geluid",
+    "on": "Aan",
+    "off": "Uit",
+    "turnOn": "Gitaargeluid in de footer aanzetten",
+    "turnOff": "Gitaargeluid in de footer uitzetten",
+    "hoverLines": "Beweeg over de lijnen",
+    "nowPlaying": "Nu te horen — rustgevende gitaar",
+    "turnOnPrompt": "Zet het geluid aan voor rustgevende gitaar"
+  },
+  "privacy": {
+    "policy": "Privacy",
+    "choices": "Privacykeuzes"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/elders",
+    "cmd": {
+      "github": "open github",
+      "linkedin": "open linkedin",
+      "resume": "open cv"
+    }
+  }
+}

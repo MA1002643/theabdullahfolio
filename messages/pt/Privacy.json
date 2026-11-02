@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Aviso de privacidade",
+    "heading": "Privacidade",
+    "announce": "Um aviso de privacidade apareceu na parte inferior da página. Você pode aceitar ou recusar a análise de uso, ou abrir as preferências.",
+    "body": "Este site guarda um pouco de estado no seu dispositivo para lembrar suas preferências e — somente se você permitir — contar quais páginas são lidas. Sem cookies de publicidade, sem rastreamento, sem criação de perfis por terceiros. <link>Entenda o que isso significa</link>.",
+    "accept": "Aceitar",
+    "decline": "Recusar",
+    "preferences": "Preferências"
+  },
+  "prefs": {
+    "title": "Escolhas de privacidade",
+    "intro": "Duas categorias, porque dois é o número real. Os detalhes completos estão na <link>página de privacidade</link>.",
+    "close": "Fechar escolhas de privacidade",
+    "alwaysOn": "Sempre ativo",
+    "reloadNote": "Desativar isso recarrega a página — é a única forma de realmente descarregar um script que o navegador já executou, em vez de deixá-lo carregado e pedir educadamente que pare.",
+    "declineAll": "Recusar tudo",
+    "acceptAnalytics": "Aceitar análise de uso",
+    "on": "Ativado",
+    "off": "Desativado",
+    "switchLabel": "Permitir análise anônima de uso"
+  },
+  "categories": {
+    "essential": {
+      "name": "Essenciais",
+      "summary": "Sempre ativos. Ficam no seu dispositivo e servem apenas para fazer o site funcionar para você.",
+      "detail": "O site lembra algumas coisas localmente para se comportar como um site que você já usou — uma mensagem digitada pela metade sobrevive a uma atualização, a introdução é exibida uma só vez, uma dica dispensada continua dispensada. Isso é gravado no seu próprio navegador e lido de volta pelo seu próprio navegador, e nada disso é usado para reconhecer você. Dois itens saem do seu dispositivo. Uma mensagem de contato enviada enquanto você está offline fica guardada aqui até a rede voltar e, então, é entregue a mim como qualquer outra mensagem. Na página do livro de visitas, um ID aleatório por aba é enviado para contar quem está aqui agora; ele não é vinculado a você, e o servidor o esquece em poucos minutos. Rascunhos que você não enviou nunca são transmitidos."
+    },
+    "analytics": {
+      "name": "Análise de uso",
+      "summary": "Desativada, a menos que você ative. Conta quais páginas são lidas — nunca quem as leu.",
+      "detail": "Três scripts de medição, tratados como uma única decisão porque respondem a uma só pergunta: quais páginas vale a pena manter. Nenhum deles define um cookie de publicidade, nenhum cria um perfil, e nenhum é carregado antes de você dizer sim — nem carregado e inativo, nem carregado e bloqueado. Antes de uma decisão, seu navegador não faz nenhuma requisição a nenhum deles."
+    }
+  },
+  "status": {
+    "heading": "Sua escolha atual",
+    "noScript": "A análise de uso não está em execução. Com o JavaScript desativado, ela não tem como rodar.",
+    "allowed": "A análise anônima de uso está permitida.",
+    "off": "A análise de uso está desativada. Nada está sendo medido.",
+    "notAsked": "Você ainda não foi consultado, então a resposta é não.",
+    "decidedOn": "Você decidiu isso em {date}.",
+    "stored": "Sua decisão está armazenada neste dispositivo.",
+    "change": "Alterar"
+  }
+}

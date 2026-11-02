@@ -40,6 +40,15 @@ const tooLarge = (maxBytes) => ({
 });
 const notJson = { ok: false, status: 400, error: 'Invalid request body' };
 
+// The JSON error body a route answers a failed read with: the English
+// `error` it always carried, plus a stable `code` (and the ceiling as a
+// value) so a client can word it in the visitor's language (issue #82).
+export function bodyError(read, maxBytes) {
+  return read.status === PAYLOAD_TOO_LARGE
+    ? { error: read.error, code: 'too_large', values: { max: maxBytes } }
+    : { error: read.error, code: 'invalid_body' };
+}
+
 export async function readJsonBody(request, { maxBytes }) {
   const declared = Number(request.headers.get('content-length'));
   if (Number.isFinite(declared) && declared > maxBytes) return tooLarge(maxBytes);

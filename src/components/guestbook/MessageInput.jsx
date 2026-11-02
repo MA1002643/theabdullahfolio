@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatNumber } from '@/i18n/format';
 import FireInput from '@/components/contact/FireInput';
 import MessageRefine from '@/components/contact/MessageRefine';
 import { useCardTilt } from '@/hooks/useCardTilt';
@@ -65,6 +67,9 @@ const REFINE_MIN_LEN = 12;
 
 export default function MessageInput({ user, onSubmit, submitting }) {
   const play = useUiSound();
+  const t = useTranslations('Guestbook');
+  const tc = useTranslations('Composer');
+  const locale = useLocale();
   const [text, setText] = useState('');
   const [signature, setSignature] = useState(null);
   // Bumped after a confirmed send so SignatureField folds itself away.
@@ -146,7 +151,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
     // Offline → don't spend the optimistic card on a post that cannot land;
     // the text stays in the field, which keeps it in the autosaved draft too.
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      toast('You’re offline — your message is kept here until you’re back.', {
+      toast(t('composer.offline'), {
         icon: '✦',
       });
       return;
@@ -175,10 +180,10 @@ export default function MessageInput({ user, onSubmit, submitting }) {
     // A new draft is in the field. It must not be overwritten — but the failed
     // words must not vanish either, so offer them back; taking the offer is
     // the visitor's explicit choice to replace what they have typed since.
-    toast('Your earlier message wasn’t sent', {
+    toast(t('composer.notSent'), {
       icon: '✦',
       description: sent.text,
-      action: { label: 'Restore it', onClick: () => writeField(sent.text) },
+      action: { label: t('composer.restore'), onClick: () => writeField(sent.text) },
     });
   };
 
@@ -206,7 +211,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
               <span aria-hidden="true" className="refine-spark">
                 ✦
               </span>
-              Restored your unsent message
+              {tc('draft.restored')}
             </span>
             <span className="draft-restored__actions">
               <button
@@ -214,14 +219,14 @@ export default function MessageInput({ user, onSubmit, submitting }) {
                 className="refine-btn refine-btn--ghost"
                 onClick={draftLayer.dismissRestored}
               >
-                Keep
+                {tc('draft.keep')}
               </button>
               <button
                 type="button"
                 className="refine-btn refine-btn--ghost"
                 onClick={draftLayer.clearDraft}
               >
-                Clear
+                {tc('draft.clear')}
               </button>
             </span>
           </motion.div>
@@ -255,7 +260,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
         )}
 
         <label htmlFor="guestbook-message" className="sr-only">
-          Your message
+          {t('composer.label')}
         </label>
         {/* font-mono/text-sm live on this wrapper, not the input: FireInput's
             gradient overlay inherits its font from here, so the amber glyphs
@@ -266,10 +271,12 @@ export default function MessageInput({ user, onSubmit, submitting }) {
             ref={inputRef}
             id="guestbook-message"
             type="text"
+            // The mark follows its own script as it is typed (issue #82).
+            dir="auto"
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, MESSAGE_MAX))}
             onFocus={() => play('focus')}
-            placeholder="Leave a message…"
+            placeholder={t('composer.placeholder')}
             autoComplete="off"
             maxLength={MESSAGE_MAX}
             className="w-full rounded-md border border-transparent bg-transparent p-2 outline-none"
@@ -290,7 +297,8 @@ export default function MessageInput({ user, onSubmit, submitting }) {
               : ''
           }`}
         >
-          {text.length}/{MESSAGE_MAX}
+          {formatNumber(text.length, locale, { useGrouping: false })}/
+          {formatNumber(MESSAGE_MAX, locale, { useGrouping: false })}
         </span>
 
         {/* h-12/w-12 = a 48px tap target on touch screens (checklist §15).
@@ -302,7 +310,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
         <motion.button
           type="submit"
           disabled={!canSend}
-          aria-label="Send message"
+          aria-label={t('composer.send')}
           style={magnetOn ? magnet.style : undefined}
           {...(magnetOn ? magnet.handlers : {})}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#ff6d05]/30 transition-[border-color,box-shadow] duration-300 enabled:hover:border-[#ff6d05]/70 enabled:hover:shadow-[0_0_8px_rgba(255,109,5,0.65),0_0_20px_rgba(255,109,5,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05] disabled:opacity-30 sm:h-10 sm:w-10"
@@ -310,7 +318,8 @@ export default function MessageInput({ user, onSubmit, submitting }) {
           {/* Ember, not gold (owner call, second pass): send is the page's
               primary ACTION, and actions speak in #ff6d05 — the same vivid
               orange the contact form's SEND MESSAGE! CTA carries. */}
-          <Send aria-hidden="true" className="h-4 w-4 text-[#ff6d05]" />
+          {/* The paper plane points "forward": mirrored in RTL. */}
+          <Send aria-hidden="true" className="h-4 w-4 text-[#ff6d05] rtl:-scale-x-100" />
         </motion.button>
       </div>
 

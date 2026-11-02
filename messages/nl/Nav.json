@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "Over mij",
+    "projects": "Projecten",
+    "qualifications": "Kwalificaties",
+    "contact": "Contact",
+    "journey": "Mijn reis",
+    "past": "Mijn verleden",
+    "guestbook": "Gastenboek",
+    "uses": "Uses"
+  },
+  "routes": {
+    "home": "Home",
+    "about": "Over mij",
+    "projects": "Projecten",
+    "qualifications": "Kwalificaties",
+    "contact": "Contact",
+    "myPast": "Mijn verleden",
+    "journey": "Mijn reis",
+    "guestbook": "Gastenboek",
+    "uses": "Uses",
+    "cv": "CV",
+    "notes": "Notities",
+    "privacy": "Privacy"
+  },
+  "homeButton": {
+    "tooltip": "Home",
+    "srLabel": "Ga naar de homepagina"
+  },
+  "projectsButton": {
+    "label": "Projecten",
+    "tooltip": "Projecten",
+    "srLabel": "Ga naar de projectenpagina"
+  }
+}

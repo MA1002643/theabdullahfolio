@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "NOTATKI",
+    "subtitle": "decyzje, spisane",
+    "intro": "Każda nieoczywista decyzja stojąca za tą stroną jest zapisana — dokonany wybór, odrzucone alternatywy i cena każdej z nich. To robocze dokumenty z repozytorium, udostępnione tutaj zamiast pozostawione w drzewie plików.",
+    "lines": "{count, plural, one {linia} few {linie} many {linii} other {linii}}"
+  },
+  "note": {
+    "title": "NOTATKA",
+    "breadcrumb": "Ścieżka nawigacji",
+    "allNotes": "Wszystkie notatki",
+    "source": "Źródło: {source} · {count, plural, one {{n} linia} few {{n} linie} many {{n} linii} other {{n} linii}}"
+  }
+}

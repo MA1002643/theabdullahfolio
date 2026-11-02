@@ -143,27 +143,34 @@ function normaliseForProfanity(text) {
     .replace(/(.)\1{2,}/g, '$1');
 }
 
-// Returns { ok: true, value } with the trimmed message, or { ok: false, error }
-// with a message safe to show the user.
+// Returns { ok: true, value } with the trimmed message, or { ok: false, error,
+// code, values? } — `error` is English safe to show the user, `code` the
+// stable key the client words in the visitor's language (issue #82).
 export function validateMessage(raw) {
   if (typeof raw !== 'string') {
-    return { ok: false, error: 'Message is required' };
+    return { ok: false, error: 'Message is required', code: 'message_required' };
   }
   const value = raw.trim().replace(/\s+/g, ' ');
   if (value.length < MESSAGE_MIN || value.length > MESSAGE_MAX) {
     return {
       ok: false,
       error: `Message must be ${MESSAGE_MIN}–${MESSAGE_MAX} characters`,
+      code: 'message_length',
+      values: { min: MESSAGE_MIN, max: MESSAGE_MAX },
     };
   }
   if (CONTROL_CHARS.test(raw)) {
-    return { ok: false, error: 'Message contains invalid characters' };
+    return { ok: false, error: 'Message contains invalid characters', code: 'invalid_characters' };
   }
   if (containsUrl(value)) {
-    return { ok: false, error: 'Links are not allowed in guestbook messages' };
+    return {
+      ok: false,
+      error: 'Links are not allowed in guestbook messages',
+      code: 'links_not_allowed',
+    };
   }
   if (PROFANITY_RE.test(normaliseForProfanity(value))) {
-    return { ok: false, error: 'Please keep it friendly' };
+    return { ok: false, error: 'Please keep it friendly', code: 'unfriendly' };
   }
   return { ok: true, value };
 }

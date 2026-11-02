@@ -1,0 +1,58 @@
+{
+  "title": "CONTATTAMI",
+  "subtitle": "mettiti in contatto",
+  "intro": "Entra nel cerchio dell'incanto e intreccia le tue parole nella trama del cosmo. Che tu voglia evocare collaborazioni, sciogliere misteri o semplicemente raccontare storie d'avventura, i tuoi messaggi sono pergamene preziose in questo regno. Usa il modulo qui sotto per inviare le tue missive attraverso la rete eterea, e attendi il sussurro della magia in risposta.",
+  "fields": {
+    "name": "Nome completo",
+    "email": "Email",
+    "subject": "Oggetto",
+    "message": "Messaggio"
+  },
+  "validation": {
+    "nameRequired": "Il nome completo è obbligatorio!",
+    "nameMin": "Il nome deve contenere almeno {min} caratteri.",
+    "nameMax": "Il nome deve contenere al massimo {max} caratteri.",
+    "emailRequired": "L'email è obbligatoria!",
+    "emailMax": "L'email deve contenere al massimo {max} caratteri.",
+    "subjectRequired": "L'oggetto è obbligatorio!",
+    "subjectMax": "L'oggetto deve contenere al massimo {max} caratteri.",
+    "messageRequired": "Il messaggio è obbligatorio!",
+    "messageMin": "Il messaggio deve contenere almeno {min} caratteri.",
+    "messageMax": "Il messaggio deve contenere al massimo {max} caratteri."
+  },
+  "submit": {
+    "label": "INVIA MESSAGGIO!",
+    "ariaLabel": "Invia messaggio",
+    "sending": "INVIO",
+    "sent": "INVIATO",
+    "held": "IN ATTESA"
+  },
+  "toast": {
+    "sent": "Messaggio inviato con successo!",
+    "savedOffline": "Salvato: verrà inviato appena ti riconnetti.",
+    "savedRetrying": "Salvato: nuovo tentativo a breve…",
+    "failed": "Invio del messaggio non riuscito",
+    "heldSent": "{count, plural, one {Il messaggio in attesa è stato inviato ✦} many {# messaggi in attesa sono stati inviati ✦} other {# messaggi in attesa sono stati inviati ✦}}"
+  },
+  "status": {
+    "held": "In attesa: il tuo messaggio partirà da solo non appena sarai di nuovo online.",
+    "offline": "Sei offline: il tuo messaggio verrà trattenuto e inviato automaticamente quando ti riconnetti."
+  },
+  "errors": {
+    "name_required": "Il nome completo è obbligatorio.",
+    "email_required": "L'email è obbligatoria.",
+    "subject_required": "L'oggetto è obbligatorio.",
+    "message_required": "Il messaggio è obbligatorio.",
+    "name_too_long": "Il nome completo supera la lunghezza massima consentita ({max} caratteri).",
+    "email_too_long": "L'email supera la lunghezza massima consentita ({max} caratteri).",
+    "subject_too_long": "L'oggetto supera la lunghezza massima consentita ({max} caratteri).",
+    "message_too_long": "Il messaggio supera la lunghezza massima consentita ({max, number, ::group-off} caratteri).",
+    "invalid_characters": "Il testo contiene caratteri non validi.",
+    "invalid_email": "Formato email non valido.",
+    "undeliverable_email": "Questo indirizzo email non esiste o non può ricevere email.",
+    "disposable_email": "Gli indirizzi email usa e getta non sono consentiti.",
+    "too_large": "Il corpo della richiesta deve essere di al massimo {max, number, ::group-off} byte",
+    "invalid_body": "Corpo della richiesta non valido",
+    "send_failed": "Invio del messaggio non riuscito"
+  }
+}

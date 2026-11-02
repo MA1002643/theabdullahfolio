@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Index",
+    "elsewhere": "Elsewhere"
+  },
+  "siteNav": "Site",
+  "identity": {
+    "role": "Software Engineer",
+    "statement": "Crafting fast, considered web experiences from the North of England."
+  },
+  "availability": "Open to new roles",
+  "githubCta": {
+    "label": "View this project on GitHub",
+    "newTab": "(opens in a new tab)",
+    "commits": "{count, plural, one {<num>{formatted}</num> commit} other {<num>{formatted}</num> commits}}",
+    "pushed": "pushed {when}"
+  },
+  "manifest": {
+    "departures": "Departures",
+    "nowBoarding": "Now boarding",
+    "onTime": "On time",
+    "links": {
+      "about": {
+        "label": "About",
+        "desc": "Who I am"
+      },
+      "journey": {
+        "label": "Journey",
+        "desc": "The road so far"
+      },
+      "qualifications": {
+        "label": "Qualifications",
+        "desc": "Credentials"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "The full record"
+      },
+      "projects": {
+        "label": "Projects",
+        "desc": "Selected work"
+      },
+      "uses": {
+        "label": "Uses",
+        "desc": "What I build with"
+      },
+      "notes": {
+        "label": "Notes",
+        "desc": "Why it is built this way"
+      },
+      "contact": {
+        "label": "Contact",
+        "desc": "Say hello"
+      },
+      "guestbook": {
+        "label": "Guestbook",
+        "desc": "Leave your mark"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHub profile (opens in a new tab)",
+    "linkedin": "LinkedIn profile (opens in a new tab)",
+    "resume": "Read the full CV",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Local time {time} {period} in {town}} other {Local time {time} in {town}}}",
+    "placeLabel": "Location: {town}",
+    "live": "LIVE"
+  },
+  "sound": {
+    "label": "Sound",
+    "on": "On",
+    "off": "Off",
+    "turnOn": "Turn footer guitar sound on",
+    "turnOff": "Turn footer guitar sound off",
+    "hoverLines": "Hover the lines",
+    "nowPlaying": "Now playing — a calming guitar",
+    "turnOnPrompt": "Turn the sound on for a calming guitar"
+  },
+  "privacy": {
+    "policy": "Privacy",
+    "choices": "Privacy choices"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/elsewhere",
+    "cmd": {
+      "github": "open github",
+      "linkedin": "open linkedin",
+      "resume": "open résumé"
+    }
+  }
+}

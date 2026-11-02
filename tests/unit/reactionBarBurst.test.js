@@ -3,6 +3,11 @@ import { createElement } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ReactionBar from '@/components/guestbook/ReactionBar';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The ember burst against a canvas that cannot draw. `getContext('2d')` is
 // nullable — a browser with canvas disabled by policy, a headless or
@@ -28,7 +33,7 @@ const MESSAGE = {
 };
 
 function renderBar(props) {
-  return render(
+  return renderIntl(
     createElement(ReactionBar, {
       message: MESSAGE,
       canReact: true,

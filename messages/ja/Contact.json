@@ -1,0 +1,58 @@
+{
+  "title": "お問い合わせ",
+  "subtitle": "ご連絡はこちらから",
+  "intro": "魔法の輪の中へどうぞ。あなたの言葉を、宇宙の織物に編み込んでください。協力の召喚も、謎の解明も、冒険譚の語らいも大歓迎です。ここに届くメッセージは、どれも大切な巻物として受け取ります。下のフォームから、幽玄のネットワークを通じて書簡をお送りください。やがて返ってくる魔法のささやきを、お待ちください。",
+  "fields": {
+    "name": "お名前",
+    "email": "メールアドレス",
+    "subject": "件名",
+    "message": "メッセージ"
+  },
+  "validation": {
+    "nameRequired": "お名前を入力してください。",
+    "nameMin": "お名前は{min}文字以上で入力してください。",
+    "nameMax": "お名前は{max}文字以内で入力してください。",
+    "emailRequired": "メールアドレスを入力してください。",
+    "emailMax": "メールアドレスは{max}文字以内で入力してください。",
+    "subjectRequired": "件名を入力してください。",
+    "subjectMax": "件名は{max}文字以内で入力してください。",
+    "messageRequired": "メッセージを入力してください。",
+    "messageMin": "メッセージは{min}文字以上で入力してください。",
+    "messageMax": "メッセージは{max}文字以内で入力してください。"
+  },
+  "submit": {
+    "label": "送信する！",
+    "ariaLabel": "メッセージを送信",
+    "sending": "送信中",
+    "sent": "送信済み",
+    "held": "保留中"
+  },
+  "toast": {
+    "sent": "メッセージを送信しました。",
+    "savedOffline": "保存しました。再接続すると送信されます。",
+    "savedRetrying": "保存しました。まもなく再試行します…",
+    "failed": "メッセージを送信できませんでした",
+    "heldSent": "{count, plural, other {保留中のメッセージ#件を送信しました ✦}}"
+  },
+  "status": {
+    "held": "保留中です。オンラインに戻りしだい、自動で送信されます。",
+    "offline": "オフラインです。メッセージは保留され、再接続すると自動で送信されます。"
+  },
+  "errors": {
+    "name_required": "お名前は必須です。",
+    "email_required": "メールアドレスは必須です。",
+    "subject_required": "件名は必須です。",
+    "message_required": "メッセージは必須です。",
+    "name_too_long": "お名前が上限の文字数（{max}文字）を超えています。",
+    "email_too_long": "メールアドレスが上限の文字数（{max}文字）を超えています。",
+    "subject_too_long": "件名が上限の文字数（{max}文字）を超えています。",
+    "message_too_long": "メッセージが上限の文字数（{max, number, ::group-off}文字）を超えています。",
+    "invalid_characters": "使用できない文字が含まれています。",
+    "invalid_email": "メールアドレスの形式が正しくありません。",
+    "undeliverable_email": "このメールアドレスは存在しないか、メールを受信できません。",
+    "disposable_email": "使い捨てメールアドレスはご利用いただけません。",
+    "too_large": "リクエスト本文は{max, number, ::group-off}バイト以内にしてください",
+    "invalid_body": "リクエスト本文が無効です",
+    "send_failed": "メッセージを送信できませんでした"
+  }
+}

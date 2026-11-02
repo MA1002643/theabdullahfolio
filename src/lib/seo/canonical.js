@@ -13,6 +13,7 @@
 // so canonicals must not carry one either — except at the root, where `/` IS
 // the path and `https://ma.codes` with no path is the correct form.
 
+import { LOCALES, localizePath } from '@/i18n/locales';
 import { ORIGIN } from './site';
 
 /**
@@ -69,14 +70,34 @@ export function absoluteUrl(path = '/') {
  * page that needs to add `languages` later therefore has to build the whole
  * block, and having one builder makes that a change in one place.
  *
- * The `languages` seam is left deliberately open for #82 (multilingual): the
- * shape below is what `alternates.languages` slots into without a rewrite,
- * which is the "design for it, do not build it" instruction from that issue's
- * coordination note.
+ * ── Languages (issue #82) ───────────────────────────────────────────────────
+ * The seam this function left open for #82 is now filled. A TRANSLATED page
+ * declares itself canonical in its own locale (`/ar/about` is the canonical of
+ * the Arabic document, not a duplicate of `/about`) and lists every locale's
+ * URL under `languages`, keyed by hreflang, plus `x-default` → the English
+ * URL. Every locale's page carries the SAME full set, which is what makes the
+ * hreflang cluster reciprocal; Google ignores an alternate that does not link
+ * back.
  *
- * @param {string} path Site-relative route path.
- * @returns {{canonical: string}} Metadata `alternates` block.
+ * An UNTRANSLATED page (`translated: false` — the English-only engineering
+ * notes) is the opposite case. Its `/ar/...` URL renders the English document
+ * inside Arabic chrome, so it canonicalises to the English URL and declares no
+ * alternates: claiming an Arabic version of a document that has none would be
+ * a false hreflang, and Search Console reports those.
+ *
+ * Without a `locale` it behaves exactly as it did before #82 — the English
+ * canonical alone — so callers that predate the feature are unchanged.
+ *
+ * @param {string} path Site-relative route path, unprefixed (`/about`).
+ * @param {{locale?: string, translated?: boolean}} [options]
+ * @returns {{canonical: string, languages?: Record<string, string>}}
  */
-export function alternatesFor(path) {
-  return { canonical: absoluteUrl(path) };
+export function alternatesFor(path, { locale, translated = true } = {}) {
+  if (!locale) return { canonical: absoluteUrl(path) };
+  if (!translated) return { canonical: absoluteUrl(path) };
+  const languages = Object.fromEntries(
+    LOCALES.map((l) => [l.hreflang, absoluteUrl(localizePath(path, l.code))]),
+  );
+  languages['x-default'] = absoluteUrl(path);
+  return { canonical: absoluteUrl(localizePath(path, locale)), languages };
 }

@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "فهرست",
+    "elsewhere": "جاهای دیگر"
+  },
+  "siteNav": "سایت",
+  "identity": {
+    "role": "مهندس نرم‌افزار",
+    "statement": "ساخت تجربه‌های وب سریع و سنجیده، از شمال انگلستان."
+  },
+  "availability": "آماده همکاری در موقعیت‌های تازه",
+  "githubCta": {
+    "label": "مشاهدهٔ این پروژه در GitHub",
+    "newTab": "(در تب جدید باز می‌شود)",
+    "commits": "{count, plural, one {<num>{formatted}</num> کامیت} other {<num>{formatted}</num> کامیت}}",
+    "pushed": "آخرین ارسال: {when}"
+  },
+  "manifest": {
+    "departures": "پروازهای خروجی",
+    "nowBoarding": "در حال سوار شدن",
+    "onTime": "سر وقت",
+    "links": {
+      "about": {
+        "label": "درباره",
+        "desc": "من کیستم"
+      },
+      "journey": {
+        "label": "مسیر",
+        "desc": "راهی که آمده‌ام"
+      },
+      "qualifications": {
+        "label": "مدارک",
+        "desc": "صلاحیت‌ها"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "سوابق کامل"
+      },
+      "projects": {
+        "label": "پروژه‌ها",
+        "desc": "کارهای منتخب"
+      },
+      "uses": {
+        "label": "ابزارها",
+        "desc": "با چه می‌سازم"
+      },
+      "notes": {
+        "label": "یادداشت‌ها",
+        "desc": "چرا این‌گونه ساخته شده"
+      },
+      "contact": {
+        "label": "تماس",
+        "desc": "سلامی بگویید"
+      },
+      "guestbook": {
+        "label": "دفتر یادبود",
+        "desc": "ردی بگذارید"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "پروفایل GitHub (در تب جدید باز می‌شود)",
+    "linkedin": "پروفایل LinkedIn (در تب جدید باز می‌شود)",
+    "resume": "مطالعهٔ CV کامل",
+    "linkLabel": "{command}، {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {ساعت محلی {time} {period} در {town}} other {ساعت محلی {time} در {town}}}",
+    "placeLabel": "مکان: {town}",
+    "live": "زنده"
+  },
+  "sound": {
+    "label": "صدا",
+    "on": "روشن",
+    "off": "خاموش",
+    "turnOn": "روشن کردن صدای گیتار پاورقی",
+    "turnOff": "خاموش کردن صدای گیتار پاورقی",
+    "hoverLines": "نشانگر را روی خط‌ها ببرید",
+    "nowPlaying": "در حال پخش — گیتاری آرام‌بخش",
+    "turnOnPrompt": "برای شنیدن گیتاری آرام‌بخش، صدا را روشن کنید"
+  },
+  "privacy": {
+    "policy": "حریم خصوصی",
+    "choices": "انتخاب‌های حریم خصوصی"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/جای-دیگر",
+    "cmd": {
+      "github": "github را باز کن",
+      "linkedin": "linkedin را باز کن",
+      "resume": "رزومه را باز کن"
+    }
+  }
+}

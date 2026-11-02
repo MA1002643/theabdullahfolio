@@ -3,6 +3,14 @@ import { createElement } from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CommandPalette from '@/components/commandPalette/CommandPalette';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// The palette reads its copy through next-intl and switches language through
+// the locale-aware router (issue #82); neither router call is exercised here.
+vi.mock('@/i18n/navigation', () => ({
+  usePathname: () => '/',
+  useRouter: () => ({ replace: () => {}, push: () => {} }),
+}));
 
 // The shared ⌘K palette keeps focus on its input and drives the listbox with
 // aria-activedescendant — which scrolls nothing by itself. With more actions
@@ -51,7 +59,11 @@ afterEach(() => {
 const rowOf = (id) => document.getElementById(`palette-opt-${id}`).closest('li');
 
 function openPalette() {
-  const utils = render(createElement(CommandPalette, { actions: ACTIONS }));
+  // `includeLanguages: false`: these cases count rows (the wrap lands on
+  // act-29), so the palette's own Language group is left out.
+  const utils = render(createElement(CommandPalette, { actions: ACTIONS, includeLanguages: false }), {
+    wrapper: IntlWrapper,
+  });
   act(() => hotkey());
   // By accessible name, so every case here also holds the input to its
   // label (the dialog's name does not reach a nested input).

@@ -1,0 +1,58 @@
+{
+  "title": "联系我",
+  "subtitle": "取得联系",
+  "intro": "步入魔法之环，将你的话语织进宇宙的经纬。无论你想缔结合作的契约、解开未解之谜，还是只想分享一段冒险的故事，你的每一封来信，在这片天地里都是珍贵的卷轴。请用下方的表单，让信笺穿过缥缈的以太之网，然后静候魔法的低语回响。",
+  "fields": {
+    "name": "姓名",
+    "email": "邮箱",
+    "subject": "主题",
+    "message": "留言"
+  },
+  "validation": {
+    "nameRequired": "请填写姓名！",
+    "nameMin": "姓名至少需要 {min} 个字符。",
+    "nameMax": "姓名最多只能有 {max} 个字符。",
+    "emailRequired": "请填写邮箱！",
+    "emailMax": "邮箱最多只能有 {max} 个字符。",
+    "subjectRequired": "请填写主题！",
+    "subjectMax": "主题最多只能有 {max} 个字符。",
+    "messageRequired": "请填写留言！",
+    "messageMin": "留言至少需要 {min} 个字符。",
+    "messageMax": "留言最多只能有 {max} 个字符。"
+  },
+  "submit": {
+    "label": "发送信笺！",
+    "ariaLabel": "发送留言",
+    "sending": "发送中",
+    "sent": "已发送",
+    "held": "已暂存"
+  },
+  "toast": {
+    "sent": "留言发送成功！",
+    "savedOffline": "已保存，重新联网后将自动发送。",
+    "savedRetrying": "已保存，稍后将自动重试…",
+    "failed": "留言发送失败",
+    "heldSent": "{count, plural, other {# 条暂存的留言已发送 ✦}}"
+  },
+  "status": {
+    "held": "已暂存，一旦恢复联网，你的留言会自动发出。",
+    "offline": "你当前处于离线状态，留言会先暂存，待重新联网后自动发送。"
+  },
+  "errors": {
+    "name_required": "请填写姓名。",
+    "email_required": "请填写邮箱。",
+    "subject_required": "请填写主题。",
+    "message_required": "请填写留言。",
+    "name_too_long": "姓名超出允许的最大长度（{max} 个字符）。",
+    "email_too_long": "邮箱超出允许的最大长度（{max} 个字符）。",
+    "subject_too_long": "主题超出允许的最大长度（{max} 个字符）。",
+    "message_too_long": "留言超出允许的最大长度（{max, number, ::group-off} 个字符）。",
+    "invalid_characters": "输入内容包含无效字符。",
+    "invalid_email": "邮箱格式无效。",
+    "undeliverable_email": "该邮箱地址不存在或无法接收邮件。",
+    "disposable_email": "不允许使用一次性邮箱地址。",
+    "too_large": "请求正文最大为 {max, number, ::group-off} 字节",
+    "invalid_body": "请求正文无效",
+    "send_failed": "留言发送失败"
+  }
+}

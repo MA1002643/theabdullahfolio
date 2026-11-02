@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — 소프트웨어 엔지니어. Muhammad Abdullah 인장과 실시간 포트폴리오 상태를 담은 짙은 엠버빛 카드.",
+  "homeSquareCardAlt": "Muhammad Abdullah — 소프트웨어 엔지니어. Muhammad Abdullah 인장과 실시간 포트폴리오 상태를 담은 정사각형 짙은 엠버빛 카드.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — 소프트웨어 엔지니어",
+      "description": "Bolton에서 Next.js, React, TypeScript로 빠르고 사려 깊은 웹 애플리케이션을 만드는 소프트웨어 엔지니어입니다. 프로젝트와 자격, 그리고 그 뒤에 있는 도구를 소개합니다."
+    },
+    "about": {
+      "title": "소개",
+      "description": "엠버 뒤에 있는 엔지니어 이야기입니다. 걸어온 길과 기술 스택, 그리고 지금 만들고 있는 것을 보여 주는 GitHub 실시간 데이터를 만나 보세요."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "모든 경력과 자격, 완성한 프로젝트를 담은 전체 기록을 HTML로 정리했습니다. 타임라인과 같은 데이터로 작성했으며, PDF도 한 번의 클릭으로 받을 수 있습니다."
+    },
+    "notes": {
+      "title": "노트",
+      "description": "엔지니어링 의사결정 기록입니다. 이 사이트의 각 선택을 왜 했는지, 어떤 대안을 배제했는지, 그리고 각각 어떤 대가가 따랐는지 담았습니다."
+    },
+    "projects": {
+      "title": "프로젝트",
+      "description": "웹, 시스템, 모바일, AI 분야의 {countWord}개 프로젝트를 각자의 GitHub 보드에서 실시간으로 추적합니다. 모든 카드에서 기술 스택과 진행 상태를 확인할 수 있어요."
+    },
+    "qualifications": {
+      "title": "자격",
+      "description": "학위와 수료증, 전문 자격을 모았습니다. 실무의 밑바탕이 되는 검증된 이력이며, 모든 증명서를 직접 볼 수 있어요."
+    },
+    "journey": {
+      "title": "여정",
+      "description": "모든 경력과 자격, 봉사 활동을 스크롤로 따라가는 하나의 타임라인으로 담았습니다. 2018년 Bolton College에서 시작해 오늘 프로덕션 소프트웨어를 출시하기까지의 이야기입니다."
+    },
+    "uses": {
+      "title": "사용 도구",
+      "description": "장비와 작업 환경, 기술 스택, 파이프라인까지. 이 페이지의 모든 도구는 저장소와 실제 배포 빌드를 기준으로 확인했습니다."
+    },
+    "contact": {
+      "title": "연락처",
+      "description": "채용이나 프로젝트에 관한 대화를 시작해 보세요. 작성하는 동안 메시지를 다듬어 주고, 임시 저장본도 잃지 않는 문의 양식입니다."
+    },
+    "myPast": {
+      "title": "나의 과거",
+      "description": "모든 것이 시작된 대학 시절의 포트폴리오입니다. 순수 HTML, CSS, JavaScript로 직접 만들었고, 솔직한 비포 사진으로 온라인에 남겨 두었어요."
+    },
+    "guestbook": {
+      "title": "방명록",
+      "description": "벽에 흔적을 남겨 주세요. GitHub 또는 Google로 방문자가 서명하는 네온 메시지 보드이며, 실시간 접속 현황과 리액션을 볼 수 있어요."
+    },
+    "privacy": {
+      "title": "개인정보",
+      "description": "이 사이트가 다루는 모든 쿠키와 저장 키, 외부 서비스를 소개하고, 각각이 왜 필요한지와 선택 항목을 끄는 방법을 안내합니다. 템플릿이 아닌 직접 점검한 내용입니다."
+    }
+  },
+  "notFound": {
+    "title": "404 — 페이지를 찾을 수 없어요",
+    "description": "허공 속을 떠돌고 계시네요. 이 페이지는 존재하지 않아요. 아직은요."
+  }
+}

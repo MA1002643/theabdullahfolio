@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "我的历程",
+    "subtitle": "从第一行代码到生产环境"
+  },
+  "timeline": {
+    "label": "历程时间线"
+  },
+  "endCap": {
+    "est": "始于 {year} 年 · Bolton, UK",
+    "tally": "{years, plural, other {#年}} · {entries, plural, other {#条记录}} · {tracks, plural, other {#条轨道}}",
+    "paper": "纸质版 →",
+    "paperHint": "PDF 版 CV（在新标签页中打开）"
+  },
+  "spine": {
+    "now": "至今"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {#个月}}} other {#年{months, plural, =0 {} other {#个月}}}}",
+    "tenureOngoing": "迄今 {tenure}",
+    "view": "查看",
+    "viewLabel": "查看 {title}（在新标签页中打开）"
+  },
+  "eraRail": {
+    "label": "时间线年代",
+    "jump": "跳转至 {year}"
+  },
+  "atlas": {
+    "eyebrow": "重叠视图",
+    "title": "全景图 — 三条轨道，同一时钟",
+    "live": {
+      "career": "{count, plural, other {#个职位}}",
+      "education": "{count, plural, other {#个学位}}",
+      "milestone": "{count, plural, other {#篇社区帖子}}",
+      "separator": " + ",
+      "sentence": "当前同时进行：{parts}{total, plural, =1 {。} other {——并行推进。}}"
+    },
+    "tracks": {
+      "all": "全部",
+      "career": "职业",
+      "education": "教育",
+      "milestone": "社区"
+    },
+    "chipsLabel": "突出显示一条轨道",
+    "zoom": {
+      "group": "网格缩放",
+      "out": "缩小网格",
+      "outTitle": "缩小",
+      "in": "放大网格",
+      "inTitle": "放大",
+      "readoutLabel": "网格缩放 {pct}。重置为 {full}",
+      "readoutTitle": "网格缩放",
+      "resetTitle": "将缩放重置为 {full}",
+      "status": "网格缩放 {pct}"
+    },
+    "region": "重叠全景图：所有职位与课程以并行条形显示在同一时间轴上",
+    "entries": "{count, plural, other {#条记录}}",
+    "now": "至今",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "跳转至 {org} · {role}，{dates}",
+    "spokenRange": "{start}至{end}",
+    "spokenOpen": "{start}至今",
+    "key": {
+      "select": "选择任意条形即可跳转。",
+      "dashed": "虚线边缘＝仍在进行。",
+      "stacked": "堆叠条形＝同时进行。"
+    }
+  },
+  "palette": {
+    "section": "历程",
+    "jumpYear": "跳转至 {year}",
+    "eraHint": "年代",
+    "jumpAtlas": "跳转至重叠全景图",
+    "openCv": "打开 CV（PDF）",
+    "openCvHint": "纸质版"
+  }
+}

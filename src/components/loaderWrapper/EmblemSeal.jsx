@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useLocale, useTranslations } from 'next-intl';
+import { localeInfo } from '@/i18n/locales';
 import { useEmblemPointer } from '@/hooks/useEmblemPointer';
 import { MONO_D } from '@/components/emblem/monogram';
 import { IGNITE_MS } from './constants';
@@ -62,6 +64,18 @@ const SOFT_OUT = [0.22, 1, 0.36, 1];
 const INK = [0.65, 0, 0.35, 1];
 
 export default function EmblemSeal({ phase, reduced }) {
+  const t = useTranslations('Common');
+  const locale = useLocale();
+  // The engraved name in the reader's script (issue #82), from the same
+  // hand-set `Common.owner` as the homepage <h1>. Uppercased per locale (a
+  // no-op for scripts without case). The seal's wide tracking is only for
+  // scripts whose letters stand apart: spacing Arabic-script or Devanagari
+  // letters breaks the joins that make them legible.
+  const nameCase = (s) => s.toLocaleUpperCase(localeInfo(locale).hreflang);
+  const given = nameCase(t('owner.given'));
+  const family = nameCase(t('owner.family'));
+  const joined = ['arabic', 'devanagari'].includes(localeInfo(locale).script);
+  const tracking = joined ? 0 : 26;
   const { sealStyle, flameStyle, handlers } = useEmblemPointer();
 
   // Once lit, the flame fill stays lit through reveal/done.
@@ -82,7 +96,7 @@ export default function EmblemSeal({ phase, reduced }) {
         viewBox="0 0 1024 1024"
         className="h-full w-full overflow-visible"
         role="img"
-        aria-label="Muhammad Abdullah emblem"
+        aria-label={t('emblem')}
       >
         <defs>
           <linearGradient id="emblem-flameText" x1="0" y1="0" x2="0" y2="1">
@@ -150,7 +164,7 @@ export default function EmblemSeal({ phase, reduced }) {
             fill="url(#emblem-flameText)"
             fontWeight="800"
             fontSize="88"
-            letterSpacing="26"
+            letterSpacing={tracking}
             style={{
               fontFamily:
                 "var(--font-montserrat), 'Helvetica Neue', Helvetica, Arial, sans-serif",
@@ -160,14 +174,14 @@ export default function EmblemSeal({ phase, reduced }) {
             transition={{ delay: reduced ? 0 : 0.85, duration: reduced ? 0 : 0.55, ease: SOFT_OUT }}
           >
             <textPath href="#emblem-topArc" startOffset="50%" textAnchor="middle">
-              MUHAMMAD
+              {given}
             </textPath>
           </motion.text>
           <motion.text
             fill="url(#emblem-flameText)"
             fontWeight="800"
             fontSize="88"
-            letterSpacing="26"
+            letterSpacing={tracking}
             style={{
               fontFamily:
                 "var(--font-montserrat), 'Helvetica Neue', Helvetica, Arial, sans-serif",
@@ -177,7 +191,7 @@ export default function EmblemSeal({ phase, reduced }) {
             transition={{ delay: reduced ? 0 : 1.0, duration: reduced ? 0 : 0.55, ease: SOFT_OUT }}
           >
             <textPath href="#emblem-botArc" startOffset="50%" textAnchor="middle">
-              ABDULLAH
+              {family}
             </textPath>
           </motion.text>
 

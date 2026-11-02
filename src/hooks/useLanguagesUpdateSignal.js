@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   diffLanguages,
@@ -74,6 +75,10 @@ function writeStored(value) {
  */
 export function useLanguagesUpdateSignal(languages) {
   const [pendingMessage, setPendingMessage] = useState(null);
+  // The banner sentence is worded in the reader's language (issue #82). Read
+  // inside the fingerprint-keyed effect below; a locale switch remounts the
+  // page, so the captured `t` can never be a stale language.
+  const t = useTranslations("About");
   // The language NAMES that rose this change cycle (moved up or % increased) and
   // the repo KEYS (`"<language>::<repo>"`) that rose within a language's
   // breakdown — surfaced so the card can heartbeat exactly those rows (and the
@@ -108,7 +113,7 @@ export function useLanguagesUpdateSignal(languages) {
     }
     if (stored.fingerprint === fingerprint) return; // nothing changed
 
-    const diff = diffLanguages(stored.languages, current);
+    const diff = diffLanguages(stored.languages, current, t);
     // Advance the baseline immediately so a reload before the user scrolls
     // doesn't replay the same banner indefinitely. The message lives in
     // React state until the section becomes visible and the consumer

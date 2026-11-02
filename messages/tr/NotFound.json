@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Sayfa Bulunamadı",
+    "description": "Boşluğa savruldun. Bu sayfa mevcut değil — henüz."
+  },
+  "messages": {
+    "void": "Boşluğa savruldun.",
+    "dimension": "Bu sayfa başka bir boyutta.",
+    "render": "3D yeteneklerim bile bu sayfayı oluşturamadı.",
+    "vibes": "404: sayfa bulunamadı ama hava hâlâ pırıl pırıl.",
+    "edge": "Portfolyonun sınırına ulaştın."
+  },
+  "subtitle": "Bu sayfa mevcut değil — henüz.",
+  "didYouMean": "<link>{label}</link> sayfasını mı demek istedin?",
+  "takeMeBack": "BENİ GERİ GÖTÜR",
+  "keyHint": "Ana sayfaya dönmek için {key} tuşuna bas"
+}

@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "完整履历"
+  },
+  "identity": {
+    "role": "软件工程师"
+  },
+  "downloadPdf": "下载 PDF",
+  "sections": {
+    "experience": "工作经历",
+    "education": "教育背景",
+    "representation": "代表经历",
+    "skills": "技能",
+    "projects": "精选项目"
+  },
+  "skillGroups": {
+    "languages": "语言",
+    "frameworks": "框架",
+    "libraries": "库",
+    "tools": "工具",
+    "software": "软件"
+  },
+  "allProjects": "全部项目",
+  "asTimeline": "以时间线查看同一段经历"
+}

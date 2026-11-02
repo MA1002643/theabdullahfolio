@@ -1,0 +1,14 @@
+{
+  "loadingProject": "プロジェクトを読み込み中",
+  "emblem": "Muhammad Abdullah のエンブレム",
+  "notifications": "通知",
+  "sound": {
+    "turnOn": "ギターの音をオンにする",
+    "turnOff": "ギターの音をオフにする"
+  },
+  "owner": {
+    "given": "ムハンマド",
+    "family": "アブドゥッラー",
+    "full": "ムハンマド・アブドゥッラー"
+  }
+}

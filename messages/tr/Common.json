@@ -1,0 +1,14 @@
+{
+  "loadingProject": "Proje yükleniyor",
+  "emblem": "Muhammad Abdullah amblemi",
+  "notifications": "Bildirimler",
+  "sound": {
+    "turnOn": "Gitar sesini aç",
+    "turnOff": "Gitar sesini kapat"
+  },
+  "owner": {
+    "given": "Muhammed",
+    "family": "Abdullah",
+    "full": "Muhammed Abdullah"
+  }
+}

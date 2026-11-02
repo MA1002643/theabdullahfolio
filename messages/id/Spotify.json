@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "SEDANG DIPUTAR",
+  "lastPlayed": "TERAKHIR DIPUTAR",
+  "cardLabel": "{state, select, playing {sedang diputar} other {terakhir diputar}}: {title} oleh {artist}.",
+  "cardLabelLink": "{state, select, playing {sedang diputar} other {terakhir diputar}}: {title} oleh {artist}. Buka di Spotify.",
+  "openOnSpotify": "Buka di Spotify"
+}

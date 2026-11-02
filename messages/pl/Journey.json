@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "MOJA DROGA",
+    "subtitle": "od pierwszej linijki do produkcji"
+  },
+  "timeline": {
+    "label": "Oś czasu mojej drogi"
+  },
+  "endCap": {
+    "est": "OD {year} · BOLTON, UK",
+    "tally": "{years, plural, one {# ROK} few {# LATA} many {# LAT} other {# LATA}} · {entries, plural, one {# WPIS} few {# WPISY} many {# WPISÓW} other {# WPISU}} · {tracks, plural, one {# ŚCIEŻKA} few {# ŚCIEŻKI} many {# ŚCIEŻEK} other {# ŚCIEŻKI}}",
+    "paper": "WERSJA PAPIEROWA →",
+    "paperHint": "CV w formacie PDF (otworzy się w nowej karcie)"
+  },
+  "spine": {
+    "now": "TERAZ"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# mies.}}} one {# rok{months, plural, =0 {} other { # mies.}}} few {# lata{months, plural, =0 {} other { # mies.}}} many {# lat{months, plural, =0 {} other { # mies.}}} other {# lat{months, plural, =0 {} other { # mies.}}}}",
+    "tenureOngoing": "{tenure} do tej pory",
+    "view": "ZOBACZ",
+    "viewLabel": "Zobacz: {title} (otwiera się w nowej karcie)"
+  },
+  "eraRail": {
+    "label": "Epoki na osi czasu",
+    "jump": "Przejdź do {year}"
+  },
+  "atlas": {
+    "eyebrow": "Widok nakładania się",
+    "title": "Atlas — trzy ścieżki, jeden zegar",
+    "live": {
+      "career": "{count, plural, one {# rola} few {# role} many {# ról} other {# roli}}",
+      "education": "{count, plural, one {# kierunek} few {# kierunki} many {# kierunków} other {# kierunku}}",
+      "milestone": "{count, plural, one {# wpis w społeczności} few {# wpisy w społeczności} many {# wpisów w społeczności} other {# wpisu w społeczności}}",
+      "separator": " + ",
+      "sentence": "Dziś w toku: {parts}{total, plural, =1 {.} other { — równolegle.}}"
+    },
+    "tracks": {
+      "all": "Wszystko",
+      "career": "Kariera",
+      "education": "Edukacja",
+      "milestone": "Społeczność"
+    },
+    "chipsLabel": "Wyróżnij jedną ścieżkę",
+    "zoom": {
+      "group": "Powiększenie siatki",
+      "out": "Pomniejsz siatkę",
+      "outTitle": "Pomniejsz",
+      "in": "Powiększ siatkę",
+      "inTitle": "Powiększ",
+      "readoutLabel": "Powiększenie siatki {pct}. Przywróć {full}",
+      "readoutTitle": "Powiększenie siatki",
+      "resetTitle": "Przywróć powiększenie {full}",
+      "status": "Powiększenie siatki {pct}"
+    },
+    "region": "Atlas nakładania się: każda rola i kurs jako równoległe paski na jednej osi czasu",
+    "entries": "{count, plural, one {# wpis} few {# wpisy} many {# wpisów} other {# wpisu}}",
+    "now": "Teraz",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Przejdź do: {org} · {role}, {dates}",
+    "spokenRange": "od {start} do {end}",
+    "spokenOpen": "od {start} do teraz",
+    "key": {
+      "select": "Wybierz dowolny pasek, by do niego przejść.",
+      "dashed": "Przerywana krawędź = wciąż trwa.",
+      "stacked": "Piętrowe paski = równoległe."
+    }
+  },
+  "palette": {
+    "section": "Droga",
+    "jumpYear": "Przejdź do {year}",
+    "eraHint": "epoka",
+    "jumpAtlas": "Przejdź do atlasu nakładania się",
+    "openCv": "Otwórz CV (PDF)",
+    "openCvHint": "wersja papierowa"
+  }
+}

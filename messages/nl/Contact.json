@@ -1,0 +1,58 @@
+{
+  "title": "CONTACT",
+  "subtitle": "neem contact op",
+  "intro": "Stap de betoverde kring in en weef je woorden door het weefsel van de kosmos. Of je nu samenwerkingen wilt oproepen, mysteries wilt ontsluiten of gewoon verhalen over avontuur wilt delen: elk bericht is een gekoesterde perkamentrol in dit rijk. Gebruik het formulier hieronder om je boodschap over het etherische netwerk te sturen, en wacht op het gefluister van magie als antwoord.",
+  "fields": {
+    "name": "Volledige naam",
+    "email": "E-mailadres",
+    "subject": "Onderwerp",
+    "message": "Bericht"
+  },
+  "validation": {
+    "nameRequired": "Volledige naam is verplicht!",
+    "nameMin": "Je naam moet minstens {min} tekens lang zijn.",
+    "nameMax": "Je naam mag maximaal {max} tekens lang zijn.",
+    "emailRequired": "E-mailadres is verplicht!",
+    "emailMax": "Je e-mailadres mag maximaal {max} tekens lang zijn.",
+    "subjectRequired": "Onderwerp is verplicht!",
+    "subjectMax": "Het onderwerp mag maximaal {max} tekens lang zijn.",
+    "messageRequired": "Bericht is verplicht!",
+    "messageMin": "Je bericht moet minstens {min} tekens lang zijn.",
+    "messageMax": "Je bericht mag maximaal {max} tekens lang zijn."
+  },
+  "submit": {
+    "label": "VERSTUUR!",
+    "ariaLabel": "Bericht versturen",
+    "sending": "VERSTUREN",
+    "sent": "VERSTUURD",
+    "held": "BEWAARD"
+  },
+  "toast": {
+    "sent": "Bericht succesvol verstuurd!",
+    "savedOffline": "Opgeslagen — het wordt verstuurd zodra je weer online bent.",
+    "savedRetrying": "Opgeslagen — we proberen het zo opnieuw…",
+    "failed": "Bericht versturen mislukt",
+    "heldSent": "{count, plural, one {Je bewaarde bericht is verstuurd ✦} other {# bewaarde berichten zijn verstuurd ✦}}"
+  },
+  "status": {
+    "held": "Bewaard — je bericht verstuurt zichzelf zodra je weer online bent.",
+    "offline": "Je bent offline — je bericht wordt bewaard en automatisch verstuurd zodra je weer verbinding hebt."
+  },
+  "errors": {
+    "name_required": "Volledige naam is verplicht.",
+    "email_required": "E-mailadres is verplicht.",
+    "subject_required": "Onderwerp is verplicht.",
+    "message_required": "Bericht is verplicht.",
+    "name_too_long": "Volledige naam is langer dan toegestaan (maximaal {max} tekens).",
+    "email_too_long": "E-mailadres is langer dan toegestaan (maximaal {max} tekens).",
+    "subject_too_long": "Onderwerp is langer dan toegestaan (maximaal {max} tekens).",
+    "message_too_long": "Bericht is langer dan toegestaan (maximaal {max, number, ::group-off} tekens).",
+    "invalid_characters": "De invoer bevat ongeldige tekens.",
+    "invalid_email": "Ongeldig e-mailadres.",
+    "undeliverable_email": "Dit e-mailadres bestaat niet of kan geen e-mails ontvangen.",
+    "disposable_email": "Wegwerp-e-mailadressen zijn niet toegestaan.",
+    "too_large": "De aanvraag mag maximaal {max, number, ::group-off} bytes groot zijn",
+    "invalid_body": "Ongeldige aanvraagbody",
+    "send_failed": "Bericht versturen mislukt"
+  }
+}

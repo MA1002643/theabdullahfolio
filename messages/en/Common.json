@@ -1,0 +1,14 @@
+{
+  "loadingProject": "Loading project",
+  "emblem": "Muhammad Abdullah emblem",
+  "notifications": "Notifications",
+  "sound": {
+    "turnOn": "Turn the guitar sound on",
+    "turnOff": "Turn the guitar sound off"
+  },
+  "owner": {
+    "given": "Muhammad",
+    "family": "Abdullah",
+    "full": "Muhammad Abdullah"
+  }
+}

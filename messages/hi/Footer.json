@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "सूची",
+    "elsewhere": "अन्यत्र"
+  },
+  "siteNav": "साइट",
+  "identity": {
+    "role": "सॉफ़्टवेयर इंजीनियर",
+    "statement": "नॉर्थ ऑफ़ इंग्लैंड से तेज़, सोच-समझकर बनाए गए वेब अनुभव।"
+  },
+  "availability": "नई भूमिकाओं के लिए उपलब्ध",
+  "githubCta": {
+    "label": "इस प्रोजेक्ट को GitHub पर देखें",
+    "newTab": "(नए टैब में खुलता है)",
+    "commits": "{count, plural, one {<num>{formatted}</num> कमिट} other {<num>{formatted}</num> कमिट}}",
+    "pushed": "{when} पुश किया गया"
+  },
+  "manifest": {
+    "departures": "प्रस्थान",
+    "nowBoarding": "बोर्डिंग जारी",
+    "onTime": "समय पर",
+    "links": {
+      "about": {
+        "label": "परिचय",
+        "desc": "मैं कौन हूँ"
+      },
+      "journey": {
+        "label": "सफ़र",
+        "desc": "अब तक का रास्ता"
+      },
+      "qualifications": {
+        "label": "योग्यताएँ",
+        "desc": "प्रमाण-पत्र"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "पूरा ब्यौरा"
+      },
+      "projects": {
+        "label": "प्रोजेक्ट",
+        "desc": "चुने हुए काम"
+      },
+      "uses": {
+        "label": "टूलकिट",
+        "desc": "मैं किससे बनाता हूँ"
+      },
+      "notes": {
+        "label": "नोट्स",
+        "desc": "इसे ऐसे क्यों बनाया गया"
+      },
+      "contact": {
+        "label": "संपर्क",
+        "desc": "नमस्ते कहें"
+      },
+      "guestbook": {
+        "label": "अतिथि-पुस्तिका",
+        "desc": "अपनी छाप छोड़ें"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHub प्रोफ़ाइल (नए टैब में खुलता है)",
+    "linkedin": "LinkedIn प्रोफ़ाइल (नए टैब में खुलता है)",
+    "resume": "पूरा CV पढ़ें",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {{town} में स्थानीय समय {time} {period}} other {{town} में स्थानीय समय {time}}}",
+    "placeLabel": "स्थान: {town}",
+    "live": "लाइव"
+  },
+  "sound": {
+    "label": "ध्वनि",
+    "on": "चालू",
+    "off": "बंद",
+    "turnOn": "फ़ुटर की गिटार ध्वनि चालू करें",
+    "turnOff": "फ़ुटर की गिटार ध्वनि बंद करें",
+    "hoverLines": "तारों पर कर्सर ले जाएँ",
+    "nowPlaying": "अब बज रहा है — सुकून भरी गिटार",
+    "turnOnPrompt": "सुकून भरी गिटार सुनने के लिए ध्वनि चालू करें"
+  },
+  "privacy": {
+    "policy": "गोपनीयता",
+    "choices": "गोपनीयता विकल्प"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/कहीं-और",
+    "cmd": {
+      "github": "github खोलो",
+      "linkedin": "linkedin खोलो",
+      "resume": "रिज़्यूमे खोलो"
+    }
+  }
+}

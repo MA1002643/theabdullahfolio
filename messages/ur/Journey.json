@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "میرا سفر",
+    "subtitle": "پہلی لائن سے پروڈکشن تک"
+  },
+  "timeline": {
+    "label": "سفر کی ٹائم لائن"
+  },
+  "endCap": {
+    "est": "قائم {year} · BOLTON، برطانیہ",
+    "tally": "{years, plural, one {# سال} other {# سال}} · {entries, plural, one {# اندراج} other {# اندراجات}} · {tracks, plural, one {# ٹریک} other {# ٹریک}}",
+    "paper": "کاغذی نسخہ →",
+    "paperHint": "CV بصورت PDF (نئے ٹیب میں کھلتا ہے)"
+  },
+  "spine": {
+    "now": "اب"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# ماہ}}} one {# سال{months, plural, =0 {} other { # ماہ}}} other {# سال{months, plural, =0 {} other { # ماہ}}}}",
+    "tenureOngoing": "اب تک {tenure}",
+    "view": "دیکھیں",
+    "viewLabel": "{title} دیکھیں (نئے ٹیب میں کھلتا ہے)"
+  },
+  "eraRail": {
+    "label": "ٹائم لائن کے ادوار",
+    "jump": "{year} پر جائیں"
+  },
+  "atlas": {
+    "eyebrow": "باہم مطابقت کا منظر",
+    "title": "اٹلس — تین راستے، ایک گھڑی",
+    "live": {
+      "career": "{count, plural, one {# کردار} other {# کردار}}",
+      "education": "{count, plural, one {# ڈگری} other {# ڈگریاں}}",
+      "milestone": "{count, plural, one {# کمیونٹی پوسٹ} other {# کمیونٹی پوسٹس}}",
+      "separator": " + ",
+      "sentence": "آج جاری: {parts}{total, plural, =1 {۔} other { — بیک وقت۔}}"
+    },
+    "tracks": {
+      "all": "سب",
+      "career": "کیریئر",
+      "education": "تعلیم",
+      "milestone": "کمیونٹی"
+    },
+    "chipsLabel": "ایک ٹریک نمایاں کریں",
+    "zoom": {
+      "group": "گرڈ زوم",
+      "out": "گرڈ کو چھوٹا کریں",
+      "outTitle": "زوم آؤٹ",
+      "in": "گرڈ کو بڑا کریں",
+      "inTitle": "زوم اِن",
+      "readoutLabel": "گرڈ زوم {pct}۔ {full} پر ری سیٹ کریں",
+      "readoutTitle": "گرڈ زوم",
+      "resetTitle": "زوم کو {full} پر ری سیٹ کریں",
+      "status": "گرڈ زوم {pct}"
+    },
+    "region": "اوورلیپ اٹلس: ہر کردار اور کورس ایک ہی وقتی محور پر متوازی بارز کی صورت میں",
+    "entries": "{count, plural, one {# اندراج} other {# اندراجات}}",
+    "now": "اب",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "{org} · {role}، {dates} پر جائیں",
+    "spokenRange": "{start} سے {end} تک",
+    "spokenOpen": "{start} سے اب تک",
+    "key": {
+      "select": "کسی بھی بار کو منتخب کر کے وہاں پہنچیں۔",
+      "dashed": "ڈیشڈ کنارہ = ابھی جاری ہے۔",
+      "stacked": "اوپر تلے بارز = بیک وقت۔"
+    }
+  },
+  "palette": {
+    "section": "سفر",
+    "jumpYear": "{year} پر جائیں",
+    "eraHint": "دور",
+    "jumpAtlas": "اوورلیپ اٹلس پر جائیں",
+    "openCv": "CV کھولیں (PDF)",
+    "openCvHint": "کاغذی نسخہ"
+  }
+}

@@ -21,6 +21,10 @@ import { fastStartSlowFinish } from "@/utils/animationCurves";
 import { onMediaChange } from "@/lib/mediaQuery";
 import { claimEscape } from "@/lib/escapeKey";
 import { fluid, fluidText } from "@/lib/fluidScale";
+import { useTranslations } from "next-intl";
+import { glyphUnits } from "@/components/ui/textSegments";
+import { useAboutDigits } from "./aboutI18n";
+import { useDirection } from "@/i18n/useDirection";
 
 // Shared count-up window. Every row animates over the same duration with no
 // per-row stagger so all percentages reach their targets *simultaneously*
@@ -78,10 +82,12 @@ const metricContainerVariants = {
   visible: { transition: { staggerChildren: 0.06 } },
 };
 
-const metricRowVariants = {
-  hidden: { opacity: 0, x: -16 },
+// `sign` (useDirection, issue #82) makes the slide start from the reading-
+// start edge, so RTL rows enter from the right.
+const metricRowVariantsFor = (sign) => ({
+  hidden: { opacity: 0, x: -16 * sign },
   visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
-};
+});
 
 // Reduced-motion no-op: hidden === visible at the resting state with no tween,
 // so the card simply appears (no spring, slide, or staggered replay) for users
@@ -102,7 +108,7 @@ function AnimatedTitle({ text, play }) {
   // `abt-title` re-derives the size from --fluid-scale under the /about
   // fluid scope (issue #25); the utilities stay as the out-of-scope base.
   const className =
-    "abt-title text-xl md:text-2xl text-left font-semibold mb-1 break-words leading-tight";
+    "abt-title text-xl md:text-2xl text-start font-semibold mb-1 break-words leading-tight";
 
   if (prefersReducedMotion) {
     return (
@@ -112,7 +118,9 @@ function AnimatedTitle({ text, play }) {
     );
   }
 
-  const chars = Array.from(text);
+  // Per-glyph for most scripts, per-word for joining ones (issue #82; see
+  // @/components/ui/textSegments). English splits exactly as Array.from did.
+  const chars = glyphUnits(text);
   const container = {
     hidden: {},
     visible: { transition: { staggerChildren: 0.025, delayChildren: 0.2 } },
@@ -150,6 +158,8 @@ function AnimatedTitle({ text, play }) {
 }
 
 export default function LanguagesCard({ data, isLive = false }) {
+  const t = useTranslations("About");
+  const { sign } = useDirection();
   const cardRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
 
@@ -171,7 +181,7 @@ export default function LanguagesCard({ data, isLive = false }) {
   const listContainerV = prefersReducedMotion
     ? noMotionVariants
     : metricContainerVariants;
-  const rowV = prefersReducedMotion ? noMotionVariants : metricRowVariants;
+  const rowV = prefersReducedMotion ? noMotionVariants : metricRowVariantsFor(sign);
 
   const languages = Array.isArray(data) ? data : [];
   // Denominator for the stacked bar. The normalized list sums to ~100, but
@@ -515,7 +525,7 @@ export default function LanguagesCard({ data, isLive = false }) {
       <UpdateBanner
         message={bannerMessage}
         visible={Boolean(bannerMessage)}
-        srPrefix="Languages update: "
+        srPrefix={t("languagesCard.srPrefix")}
         variant="elite"
         onExitComplete={() => setBannerExiting(false)}
       />
@@ -525,7 +535,7 @@ export default function LanguagesCard({ data, isLive = false }) {
         {/* Title — per-character blur-in in vivid orange (#ff6d05), the exact
             treatment + hue the "… GitHub Stats" card uses, so the side-by-side
             pair share one headline animation and colour. */}
-        <AnimatedTitle text="Most Used Languages" play={settledInView} />
+        <AnimatedTitle text={t("languagesCard.title")} play={settledInView} />
         {/* Meta line — frames the card as a live data widget. Count is
             pluralised; the "· live from GitHub" suffix (with a pulsing dot
             matching the GitHub Stats card's "Live GitHub Metrics" indicator) is
@@ -538,10 +548,7 @@ export default function LanguagesCard({ data, isLive = false }) {
           className="abt-micro-md flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.18em]"
           style={{ color: "rgba(255, 170, 42, 0.6)", textShadow: "none" }}
         >
-          <span>
-            {visibleLanguageCount}{" "}
-            {visibleLanguageCount === 1 ? "language" : "languages"}
-          </span>
+          <span>{t("languagesCard.count", { count: visibleLanguageCount })}</span>
           {isLive && (
             <>
               <span aria-hidden="true">·</span>
@@ -562,7 +569,7 @@ export default function LanguagesCard({ data, isLive = false }) {
                     : { duration: 2, repeat: Infinity, ease: "easeInOut" }
                 }
               />
-              <span>live from GitHub</span>
+              <span>{t("languagesCard.live")}</span>
             </>
           )}
         </p>
@@ -739,7 +746,8 @@ function AnimatedBarSegment({
         // Crisp divider between colours. border-box (Tailwind default) keeps
         // the border *inside* the animated width, so it reads as a thin gap
         // without pushing the sum past 100% and clipping the last segment.
-        borderRight: showDivider ? "1.5px solid rgba(1, 5, 11, 0.55)" : undefined,
+        // Logical side: the flex bar mirrors in RTL, so the divider must too.
+        borderInlineEnd: showDivider ? "1.5px solid rgba(1, 5, 11, 0.55)" : undefined,
         opacity: dimmed ? 0.3 : 1,
         filter: dimmed ? "saturate(0.5)" : "none",
         transition: "opacity 0.25s ease, filter 0.25s ease",
@@ -774,6 +782,9 @@ function AnimatedLangLabel({
   onRepoClose,
 }) {
   const numRef = useRef(null);
+  const t = useTranslations("About");
+  const digits = useAboutDigits();
+  const { sign } = useDirection();
   const target = parseFloat(lang.percentage || 0);
   // Popover affordance (cursor + aria-haspopup) — mirrors the parent's
   // hasBreakdown: public repo rows OR a private-usage aggregate both mean
@@ -790,22 +801,22 @@ function AnimatedLangLabel({
     const node = numRef.current;
     if (!node) return;
     if (prefersReducedMotion) {
-      node.textContent = target.toFixed(2);
+      node.textContent = digits.fixed(target, 2);
       return;
     }
     if (playToken === 0) {
-      node.textContent = "0.00";
+      node.textContent = digits.fixed(0, 2);
       return;
     }
     const controls = animate(0, target, {
       duration: COUNT_UP_DURATION,
       ease: fastStartSlowFinish,
       onUpdate: (v) => {
-        node.textContent = v.toFixed(2);
+        node.textContent = digits.fixed(v, 2);
       },
     });
     return () => controls.stop();
-  }, [playToken, target, prefersReducedMotion]);
+  }, [playToken, target, prefersReducedMotion, digits]);
 
   return (
     // Two layers, deliberately separated so two animation systems don't fight
@@ -876,7 +887,7 @@ function AnimatedLangLabel({
         }`}
         style={{
           opacity: dimmed ? 0.4 : 1,
-          transform: active ? "translateX(2px)" : "none",
+          transform: active ? `translateX(${2 * sign}px)` : "none",
         }}
       >
       {/* Rank index — monospaced, dim, fixed-width so the dots/names align
@@ -891,7 +902,7 @@ function AnimatedLangLabel({
         className="abt-micro-md font-mono tabular-nums text-[10px] md:text-xs select-none w-5 shrink-0 xl:hidden"
         style={{ color: "rgba(255, 170, 42, 0.45)", textShadow: "none" }}
       >
-        {String(rank).padStart(2, "0")}
+        {digits.pad2(rank)}
       </span>
       <span
         aria-hidden="true"
@@ -905,7 +916,10 @@ function AnimatedLangLabel({
       />
       {/* Language name — fire-amber gradient, matching the "Personal" /
           "Employment" labels in the Years-in-the-craft split bar. */}
-      <span className={`text-fire-amber truncate${pulseClass}`}>{lang.language}</span>
+      {/* A language's name, as GitHub reports it: translate="no". */}
+      <span className={`text-fire-amber truncate${pulseClass}`} translate="no">
+        {lang.language}
+      </span>
       {/* PRIMARY tag on the dominant language — a restrained amber pill that
           marks the headline figure without competing with the percentage.
           Hidden at `xl`+ (the two-column view), where it would otherwise push
@@ -915,7 +929,7 @@ function AnimatedLangLabel({
       {isPrimary && (
         <span
           aria-hidden="true"
-          className="ml-1 shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider xl:hidden"
+          className="ms-1 shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider xl:hidden"
           style={{
             color: "#ffd27d",
             background: "rgba(255, 170, 42, 0.08)",
@@ -923,17 +937,22 @@ function AnimatedLangLabel({
             textShadow: "none",
           }}
         >
-          Primary
+          {t("languagesCard.primary")}
         </span>
       )}
       {/* Percentage — flat vivid orange, normal weight + tabular-nums,
           matching the Personal/Employment numbers in the Years-in-the-craft
           split bar (size unchanged — inherited from the list). */}
       <span
-        className={`ml-auto tabular-nums shrink-0${pulseClass}`}
+        className={`ms-auto tabular-nums shrink-0${pulseClass}`}
         style={{ color: "#ff6d05", textShadow: "none" }}
       >
-        <span ref={numRef}>{prefersReducedMotion ? target.toFixed(2) : "0.00"}</span>%
+        {/* The percent sign's side is the catalogue's (Turkish writes "%40"). */}
+        {t.rich("languagesCard.percent", {
+          n: () => (
+            <span ref={numRef}>{digits.fixed(prefersReducedMotion ? target : 0, 2)}</span>
+          ),
+        })}
       </span>
       </div>
     </motion.li>
@@ -994,6 +1013,8 @@ function LanguageRepoPopover({
   onPointerLeave,
 }) {
   const ref = useRef(null);
+  const t = useTranslations("About");
+  const { isRtl } = useDirection();
   const [pos, setPos] = useState(null);
   // The repo list scrolls internally when it overflows; this ref is the
   // IntersectionObserver root so each row's reveal RE-TRIGGERS as it scrolls into
@@ -1053,16 +1074,19 @@ function LanguageRepoPopover({
     const h = el.offsetHeight;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    // Prefer to the right of the row; flip to the left if it would overflow;
-    // pin to the right edge as a last resort on very narrow viewports.
-    let left = anchorRect.right + GAP;
-    if (left + w > vw - MARGIN) left = anchorRect.left - GAP - w;
-    if (left < MARGIN) left = Math.max(MARGIN, vw - w - MARGIN);
+    // Prefer the row's reading-END side (right in LTR, left in RTL — issue
+    // #82); flip to the other side if it would overflow; pin to the right edge
+    // as a last resort on very narrow viewports.
+    const after = anchorRect.right + GAP;
+    const before = anchorRect.left - GAP - w;
+    let left = isRtl ? before : after;
+    if (isRtl ? left < MARGIN : left + w > vw - MARGIN) left = isRtl ? after : before;
+    if (left < MARGIN || left + w > vw - MARGIN) left = Math.max(MARGIN, vw - w - MARGIN);
     // Vertically centre on the row, clamped into the viewport.
     let top = anchorRect.top + anchorRect.height / 2 - h / 2;
     top = Math.min(Math.max(MARGIN, top), vh - h - MARGIN);
     setPos({ left, top });
-  }, [anchorRect]);
+  }, [anchorRect, isRtl]);
 
   const repos = Array.isArray(lang.repos) ? lang.repos : [];
   // Private usage arrives as a bare COUNT plus the COMBINED share of this
@@ -1096,7 +1120,7 @@ function LanguageRepoPopover({
       initial="hidden"
       animate={pos ? "visible" : "hidden"}
       role="group"
-      aria-label={`Repositories using ${lang.language}`}
+      aria-label={t("languagesCard.popover.ariaLabel", { language: lang.language })}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
       // Keyboard equivalents of pointer enter/leave (React onFocus/onBlur bubble
@@ -1152,7 +1176,7 @@ function LanguageRepoPopover({
             {/* Eyebrow — same microlabel treatment as the modal's "Career
                 snapshot". */}
             <p className="abt-micro text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">
-              Repository breakdown
+              {t("languagesCard.popover.eyebrow")}
             </p>
             <h3
               className="text-sm sm:text-base font-semibold mb-3 flex items-center gap-2"
@@ -1176,7 +1200,7 @@ function LanguageRepoPopover({
               long breakdown never pushes the popover off-screen. */}
           <ul
             ref={listScrollRef}
-            className="space-y-2.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5"
+            className="space-y-2.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pe-0.5"
           >
             {privateCount > 0 && (
               // Private aggregate — ALWAYS the first row, above every public
@@ -1192,8 +1216,7 @@ function LanguageRepoPopover({
                     className="truncate"
                     style={{ color: "rgba(255, 170, 42, 0.6)" }}
                   >
-                    {privateCount} private{" "}
-                    {privateCount === 1 ? "repository" : "repositories"}
+                    {t("languagesCard.popover.privateRepos", { count: privateCount })}
                   </span>
                   <AnimatedRepoPercent
                     value={privatePercentage}
@@ -1232,11 +1255,14 @@ function LanguageRepoPopover({
                       // as the Career snapshot's Personal Projects repo rows
                       // (`underline-offset-2 hover:underline transition-colors`).
                       className={`text-fire-amber truncate underline-offset-2 hover:underline transition-colors${rowPulseClass}`}
+                      translate="no"
                     >
                       {r.name}
                     </a>
                   ) : (
-                    <span className={`text-fire-amber truncate${rowPulseClass}`}>{r.name}</span>
+                    <span className={`text-fire-amber truncate${rowPulseClass}`} translate="no">
+                      {r.name}
+                    </span>
                   )}
                   {/* Percentage counts up 0 → target with the card's curve the
                       moment the popover opens; it's killed if the popover
@@ -1281,32 +1307,36 @@ function LanguageRepoPopover({
    the final value immediately. */
 function AnimatedRepoPercent({ value, prefersReducedMotion, pulse = false }) {
   const ref = useRef(null);
+  const t = useTranslations("About");
+  const digits = useAboutDigits();
   const target = parseFloat(value) || 0;
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
     if (prefersReducedMotion) {
-      node.textContent = target.toFixed(2);
+      node.textContent = digits.fixed(target, 2);
       return;
     }
-    node.textContent = "0.00";
+    node.textContent = digits.fixed(0, 2);
     const controls = animate(0, target, {
       duration: COUNT_UP_DURATION,
       ease: fastStartSlowFinish,
       onUpdate: (v) => {
-        node.textContent = v.toFixed(2);
+        node.textContent = digits.fixed(v, 2);
       },
     });
     return () => controls.stop();
-  }, [target, prefersReducedMotion]);
+  }, [target, prefersReducedMotion, digits]);
 
   return (
     <span
-      className={`ml-auto tabular-nums shrink-0${pulse && !prefersReducedMotion ? " skill-heartbeat" : ""}`}
+      className={`ms-auto tabular-nums shrink-0${pulse && !prefersReducedMotion ? " skill-heartbeat" : ""}`}
       style={{ color: "#ff6d05", textShadow: "none" }}
     >
-      <span ref={ref}>{prefersReducedMotion ? target.toFixed(2) : "0.00"}</span>%
+      {t.rich("languagesCard.percent", {
+        n: () => <span ref={ref}>{digits.fixed(prefersReducedMotion ? target : 0, 2)}</span>,
+      })}
     </span>
   );
 }

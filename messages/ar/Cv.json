@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "السجلّ الكامل"
+  },
+  "identity": {
+    "role": "مهندس برمجيات"
+  },
+  "downloadPdf": "تنزيل ملف PDF",
+  "sections": {
+    "experience": "الخبرة",
+    "education": "التعليم",
+    "representation": "التمثيل",
+    "skills": "المهارات",
+    "projects": "مشاريع مختارة"
+  },
+  "skillGroups": {
+    "languages": "اللغات",
+    "frameworks": "الأطر",
+    "libraries": "المكتبات",
+    "tools": "الأدوات",
+    "software": "البرامج"
+  },
+  "allProjects": "جميع المشاريع",
+  "asTimeline": "المسار نفسه على شكل خط زمني"
+}

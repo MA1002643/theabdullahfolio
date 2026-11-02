@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "مکمل ریکارڈ"
+  },
+  "identity": {
+    "role": "سافٹ ویئر انجینئر"
+  },
+  "downloadPdf": "PDF ڈاؤن لوڈ کریں",
+  "sections": {
+    "experience": "تجربہ",
+    "education": "تعلیم",
+    "representation": "نمائندگی",
+    "skills": "مہارتیں",
+    "projects": "منتخب منصوبے"
+  },
+  "skillGroups": {
+    "languages": "زبانیں",
+    "frameworks": "فریم ورکس",
+    "libraries": "لائبریریاں",
+    "tools": "ٹولز",
+    "software": "سافٹ ویئر"
+  },
+  "allProjects": "تمام منصوبے",
+  "asTimeline": "یہی سفر ایک ٹائم لائن کی صورت میں"
+}

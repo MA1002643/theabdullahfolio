@@ -6,6 +6,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { useScramble } from '@/hooks/useScramble';
 import { NEW_MESSAGE_EVENT } from '@/lib/guestbook/events';
+import { breaksWhenSplit, glyphUnits } from '@/components/ui/textSegments';
 
 // The guestbook headline (issue #40 Phase 4): visually IDENTICAL to the
 // shared PageTitle — same .page-title-* semantic classes, same
@@ -56,10 +57,16 @@ export default function GuestbookTitle({ title, subtitle, id }) {
     return () => window.removeEventListener(NEW_MESSAGE_EVENT, replay);
   }, []);
 
-  const chars = useScramble(title, {
+  // A joining script (Arabic, Devanagari — issue #82) cannot be decoded a
+  // code point at a time: each letter in its own box loses its shaping, and
+  // the Latin churn glyphs would replace letters mid-word. Such a title skips
+  // the scramble and renders in whole-word units (textSegments.js).
+  const shaped = breaksWhenSplit(title);
+  const scrambled = useScramble(title, {
     playKey,
-    enabled: revealed && !prefersReducedMotion,
+    enabled: revealed && !prefersReducedMotion && !shaped,
   });
+  const chars = shaped ? glyphUnits(title) : scrambled;
 
   const play = prefersReducedMotion || revealed;
 
@@ -67,6 +74,9 @@ export default function GuestbookTitle({ title, subtitle, id }) {
     <div id={id} className="page-title-block z-50 text-center">
       <motion.h1
         aria-label={title}
+        // Inline-block units are bidi-neutral: let the title's own text pick
+        // its direction, or an English title on an RTL page reads backwards.
+        dir="auto"
         initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
         animate={{ opacity: play ? 1 : 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}

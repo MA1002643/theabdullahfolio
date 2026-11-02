@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "МОЙ ПУТЬ",
+    "subtitle": "от первой строки до продакшена"
+  },
+  "timeline": {
+    "label": "Таймлайн пути"
+  },
+  "endCap": {
+    "est": "С {year} · BOLTON, UK",
+    "tally": "{years, plural, one {# ГОД} few {# ГОДА} many {# ЛЕТ} other {# ГОДА}} · {entries, plural, one {# ЗАПИСЬ} few {# ЗАПИСИ} many {# ЗАПИСЕЙ} other {# ЗАПИСИ}} · {tracks, plural, one {# НАПРАВЛЕНИЕ} few {# НАПРАВЛЕНИЯ} many {# НАПРАВЛЕНИЙ} other {# НАПРАВЛЕНИЯ}}",
+    "paper": "БУМАЖНАЯ ВЕРСИЯ →",
+    "paperHint": "резюме в формате PDF (откроется в новой вкладке)"
+  },
+  "spine": {
+    "now": "СЕЙЧАС"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# мес.}}} one {# год{months, plural, =0 {} other { # мес.}}} few {# года{months, plural, =0 {} other { # мес.}}} many {# лет{months, plural, =0 {} other { # мес.}}} other {# года{months, plural, =0 {} other { # мес.}}}}",
+    "tenureOngoing": "{tenure} и продолжается",
+    "view": "СМОТРЕТЬ",
+    "viewLabel": "Открыть: {title} (откроется в новой вкладке)"
+  },
+  "eraRail": {
+    "label": "Эпохи таймлайна",
+    "jump": "Перейти к {year}"
+  },
+  "atlas": {
+    "eyebrow": "Вид с наложением",
+    "title": "Атлас — три направления, одни часы",
+    "live": {
+      "career": "{count, plural, one {# должность} few {# должности} many {# должностей} other {# должности}}",
+      "education": "{count, plural, one {# степень} few {# степени} many {# степеней} other {# степени}}",
+      "milestone": "{count, plural, one {# пост в сообществе} few {# поста в сообществе} many {# постов в сообществе} other {# поста в сообществе}}",
+      "separator": " + ",
+      "sentence": "Идёт сейчас: {parts}{total, plural, =1 {.} other { — параллельно.}}"
+    },
+    "tracks": {
+      "all": "Все",
+      "career": "Карьера",
+      "education": "Образование",
+      "milestone": "Сообщество"
+    },
+    "chipsLabel": "Выделить одно направление",
+    "zoom": {
+      "group": "Масштаб сетки",
+      "out": "Уменьшить масштаб сетки",
+      "outTitle": "Уменьшить",
+      "in": "Увеличить масштаб сетки",
+      "inTitle": "Увеличить",
+      "readoutLabel": "Масштаб сетки: {pct}. Сбросить до {full}",
+      "readoutTitle": "Масштаб сетки",
+      "resetTitle": "Сбросить масштаб до {full}",
+      "status": "Масштаб сетки: {pct}"
+    },
+    "region": "Атлас наложения: все должности и курсы параллельными полосами на одной временной шкале",
+    "entries": "{count, plural, one {# запись} few {# записи} many {# записей} other {# записи}}",
+    "now": "Сейчас",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Перейти к: {org} · {role}, {dates}",
+    "spokenRange": "с {start} по {end}",
+    "spokenOpen": "с {start} по настоящее время",
+    "key": {
+      "select": "Выберите любую полосу, чтобы перейти к ней.",
+      "dashed": "Пунктирный край — всё ещё продолжается.",
+      "stacked": "Полосы друг над другом — идут одновременно."
+    }
+  },
+  "palette": {
+    "section": "Путь",
+    "jumpYear": "Перейти к {year}",
+    "eraHint": "эпоха",
+    "jumpAtlas": "Перейти к атласу наложения",
+    "openCv": "Открыть CV (PDF)",
+    "openCvHint": "бумажная версия"
+  }
+}

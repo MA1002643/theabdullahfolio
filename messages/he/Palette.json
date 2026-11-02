@@ -1,0 +1,15 @@
+{
+  "dialog": "לוח פקודות",
+  "search": "חיפוש פקודות",
+  "placeholder": "הקלידו פקודה או יעד…",
+  "list": "פקודות",
+  "empty": "אין תוצאות מתאימות",
+  "sections": {
+    "navigate": "ניווט",
+    "language": "שפה"
+  },
+  "keywords": {
+    "navigate": "מעבר ניווט נתיב עמוד דף יעד לך go",
+    "language": "שפה תרגום לוקאל שפות שינוי language"
+  }
+}

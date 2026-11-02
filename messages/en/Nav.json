@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "About",
+    "projects": "Projects",
+    "qualifications": "Qualifications",
+    "contact": "Contact",
+    "journey": "Journey",
+    "past": "My Past",
+    "guestbook": "Guestbook",
+    "uses": "Uses"
+  },
+  "routes": {
+    "home": "Home",
+    "about": "About",
+    "projects": "Projects",
+    "qualifications": "Qualifications",
+    "contact": "Contact",
+    "myPast": "My Past",
+    "journey": "Journey",
+    "guestbook": "Guestbook",
+    "uses": "Uses",
+    "cv": "CV",
+    "notes": "Notes",
+    "privacy": "Privacy"
+  },
+  "homeButton": {
+    "tooltip": "Home",
+    "srLabel": "Go to Home Page"
+  },
+  "projectsButton": {
+    "label": "Projects",
+    "tooltip": "Projects",
+    "srLabel": "Go to Projects Page"
+  }
+}

@@ -1,4 +1,4 @@
-import { ALL_ROUTES, MISSING_ROUTE } from '../support/routes.js';
+import { ALL_ROUTES, LOCALIZED_ROUTES, MISSING_ROUTE } from '../support/routes.js';
 import { expect, settle, test } from '../support/test.js';
 
 // Every route, on every engine and device (issue #92, L5). Tagged
@@ -23,6 +23,38 @@ test.describe('every route renders', { tag: '@cross-browser' }, () => {
       await settle(page);
       // A horizontal scrollbar on a phone is the most common responsive
       // regression, and invisible on the desktop where it is written.
+      const overflow = await page.evaluate(() => {
+        const root = document.scrollingElement;
+        return root.scrollWidth - root.clientWidth;
+      });
+      expect(overflow, `${path} is ${overflow}px wider than the viewport`).toBeLessThanOrEqual(1);
+    });
+  }
+});
+
+// Every route again in Arabic and Japanese (tests/support/routes.js). Not
+// tagged @cross-browser: 30 more routes on five engines is minutes the repo
+// pays for, and what breaks per locale (a missing key, a wrong `dir`, a
+// right-to-left layout that overflows) breaks on Chromium too. The phone
+// width runs here instead, because a mirrored layout overflows sideways on a
+// phone long before it does on a desktop.
+test.describe('every localized route renders', () => {
+  for (const { path, code, dir } of LOCALIZED_ROUTES) {
+    test(`${path} — 200, one <h1>, lang="${code}" dir="${dir}", and no errors`, async ({ page }) => {
+      const response = await page.goto(path);
+      expect(response.status()).toBe(200);
+      await settle(page);
+      await expect(page.locator('h1')).toHaveCount(1);
+      await expect(page).toHaveTitle(/\S/);
+      await expect(page.locator('html')).toHaveAttribute('lang', code);
+      await expect(page.locator('html')).toHaveAttribute('dir', dir);
+      await expect(page.locator('main')).toHaveCount(1);
+    });
+
+    test(`${path} — never scrolls sideways on a phone`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(path);
+      await settle(page);
       const overflow = await page.evaluate(() => {
         const root = document.scrollingElement;
         return root.scrollWidth - root.clientWidth;

@@ -1,9 +1,20 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { describe, expect, it, vi } from 'vitest';
 
 import CommandPalette from '@/components/commandPalette/CommandPalette';
+import { routeActions } from '@/components/commandPalette/routes';
+import { renderWithIntl } from '../support/intl.jsx';
+
+// The Language group switches locale through the locale-aware router
+// (useLocaleSwitch → @/i18n/navigation, issue #82). Mocked so a test can
+// assert WHERE a switch goes without an app router mounted.
+const router = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
+vi.mock('@/i18n/navigation', () => ({
+  usePathname: () => '/journey',
+  useRouter: () => router,
+}));
 
 // The ⌘K command palette's keyboard model (issue #92, L3).
 //
@@ -24,12 +35,14 @@ const actions = (perform = vi.fn()) => [
   { id: 'cv', label: 'Download CV', section: 'Actions', perform: () => perform('cv') },
 ];
 
-function setup(perform) {
+// The keyboard model is asserted over a known, short list, so these cases
+// leave the palette's own Language group out; the group has its own suite.
+function setup(perform, { includeLanguages = false, extra = [] } = {}) {
   const user = userEvent.setup();
-  const utils = render(
+  const utils = renderWithIntl(
     <>
       <button type="button">Somewhere on the page</button>
-      <CommandPalette actions={actions(perform)} />
+      <CommandPalette actions={[...actions(perform), ...extra]} includeLanguages={includeLanguages} />
     </>,
   );
   return { user, ...utils };
@@ -151,5 +164,62 @@ describe('CommandPalette', () => {
     expect(screen.getByText('Nothing matches')).toBeInTheDocument();
     expect(input()).not.toHaveAttribute('aria-activedescendant');
     expect(await axeViolations(container)).toEqual([]);
+  });
+});
+
+// Issue #82: every palette ends with a Language group, one command per
+// locale. The label is the ENDONYM, rendered in its own language (so a screen
+// reader pronounces it correctly); it is findable by English name and by
+// code; running it switches the CURRENT page to that locale.
+describe('CommandPalette — the Language group', () => {
+  const open = async (user) => {
+    await user.keyboard('{Meta>}k{/Meta}');
+    await waitFor(() => expect(input()).toHaveFocus());
+  };
+
+  it('lists every locale by endonym, in its own lang and dir', async () => {
+    const { user } = setup(undefined, { includeLanguages: true });
+    await open(user);
+    const spanish = screen.getByRole('option', { name: /Español/ });
+    expect(within(spanish).getByText('Español')).toHaveAttribute('lang', 'es');
+    const arabic = screen.getByRole('option', { name: /العربية/ });
+    expect(within(arabic).getByText('العربية')).toHaveAttribute('dir', 'rtl');
+    expect(screen.getByText('Language')).toBeInTheDocument();
+    // The current locale is marked as such.
+    expect(screen.getByRole('option', { name: /English/ })).toHaveTextContent('en · Current');
+  });
+
+  it('is searchable by English name and by code', async () => {
+    const { user } = setup(undefined, { includeLanguages: true });
+    await open(user);
+    await user.type(input(), 'spanish');
+    const found = screen.getAllByRole('option');
+    expect(found).toHaveLength(1);
+    expect(within(found[0]).getByText('Español')).toBeInTheDocument();
+    await user.clear(input());
+    await user.type(input(), 'ja');
+    expect(screen.getAllByRole('option').some((o) => o.textContent.startsWith('日本語'))).toBe(true);
+  });
+
+  it('switches the current page to the chosen locale', async () => {
+    router.replace.mockClear();
+    const { user } = setup(undefined, { includeLanguages: true });
+    await open(user);
+    await user.type(input(), 'german');
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(router.replace).toHaveBeenCalledTimes(1));
+    expect(router.replace.mock.calls[0][0]).toBe('/journey');
+    expect(router.replace.mock.calls[0][1]).toMatchObject({ locale: 'de' });
+  });
+
+  it('translates the shared Navigate group from the catalogue, keeping English search terms', async () => {
+    const go = vi.fn();
+    const { user } = setup(undefined, { extra: routeActions([{ label: 'My Past', href: '/my-past', navKey: 'myPast' }], go) });
+    await open(user);
+    await user.type(input(), 'my past');
+    const option = screen.getByRole('option', { name: /My Past/ });
+    expect(option).toHaveTextContent('My Past');
+    await user.keyboard('{Enter}');
+    expect(go).toHaveBeenCalledWith('/my-past', 'My Past');
   });
 });

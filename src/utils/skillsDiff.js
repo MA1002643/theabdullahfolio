@@ -11,6 +11,7 @@
 // category shape the API and SkillsCard pass around.
 
 import { CATEGORY_ORDER, isRenderableSkill } from "./skillsIconUrl";
+import { englishAbout } from "@/i18n/sourceTranslator";
 
 /**
  * Flatten the category map into one ordered list. Categories are walked in
@@ -192,26 +193,33 @@ export function diffSkills(prev, next) {
 // CATEGORY_ORDER values are single lowercase words, so capitalising the first
 // letter is sufficient. Returns null for a missing/invalid category so the entry
 // falls back to just its name.
-function categoryLabel(category) {
+//
+// The label is the SAME heading the card prints (`About.skillsCard.categories.
+// <slug>`, issue #82), so the banner and the grid name a category alike in
+// every language. A slug the catalogue doesn't know (a category added to
+// CATEGORY_ORDER before its translation) keeps the title-cased slug.
+function categoryLabel(category, t) {
   if (typeof category !== "string" || category.length === 0) return null;
+  const key = `skillsCard.categories.${category}`;
+  if (t.has?.(key)) return t(key);
   return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
 // One added/removed entry → "Name (Category)", or just "Name" if the category
 // is unknown (e.g. a legacy baseline saved without one).
-function formatEntry(entry) {
+function formatEntry(entry, t) {
   if (!entry || typeof entry !== "object") return String(entry ?? "");
-  const label = categoryLabel(entry.category);
-  return label ? `${entry.name} (${label})` : entry.name;
+  const label = categoryLabel(entry.category, t);
+  return label ? t("changes.skills.entry", { name: entry.name, category: label }) : entry.name;
 }
 
 // One moved entry → "Name (From → To)", or just "Name" if either label is
 // missing (shouldn't happen — diffSkills only emits moves with both known).
-function formatMove(entry) {
+function formatMove(entry, t) {
   if (!entry || typeof entry !== "object") return String(entry ?? "");
-  const from = categoryLabel(entry.from);
-  const to = categoryLabel(entry.to);
-  return from && to ? `${entry.name} (${from} → ${to})` : entry.name;
+  const from = categoryLabel(entry.from, t);
+  const to = categoryLabel(entry.to, t);
+  return from && to ? t("changes.skills.move", { name: entry.name, from, to }) : entry.name;
 }
 
 /**
@@ -222,12 +230,18 @@ function formatMove(entry) {
  * Returns null when nothing changed so the caller can suppress the banner.
  *
  * @param {{ added?: Array<{ name: string, category: string|null }>, removed?: Array<{ name: string, category: string|null }>, moved?: Array<{ name: string, from: string, to: string }> }} diff
+ * Every word is a catalogue message (`About.changes.skills.*`, issue #82); `t`
+ * is `useTranslations('About')`, defaulting to the English catalogue. Skill
+ * names are product names and pass through untranslated.
+ *
+ * @param {(key: string, values?: object) => string} [t]
  * @returns {string|null}
  */
-export function buildBannerMessage({ added = [], removed = [], moved = [] } = {}) {
+export function buildBannerMessage({ added = [], removed = [], moved = [] } = {}, t = englishAbout) {
+  const list = (items, format) => items.map((item) => format(item, t)).join(t("changes.comma"));
   const parts = [];
-  if (added.length > 0) parts.push(`Added: ${added.map(formatEntry).join(", ")}`);
-  if (removed.length > 0) parts.push(`Removed: ${removed.map(formatEntry).join(", ")}`);
-  if (moved.length > 0) parts.push(`Moved: ${moved.map(formatMove).join(", ")}`);
-  return parts.length > 0 ? parts.join(" · ") : null;
+  if (added.length > 0) parts.push(t("changes.skills.added", { items: list(added, formatEntry) }));
+  if (removed.length > 0) parts.push(t("changes.skills.removed", { items: list(removed, formatEntry) }));
+  if (moved.length > 0) parts.push(t("changes.skills.moved", { items: list(moved, formatMove) }));
+  return parts.length > 0 ? parts.join(t("changes.dot")) : null;
 }

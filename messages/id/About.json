@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "TENTANG SAYA",
+    "subtitle": "SIAPA SAYA"
+  },
+  "intro": {
+    "heading": "Arsitek Sihir Digital",
+    "paragraph": "Perjalanan saya di dunia pengembangan web ditenagai oleh beragam perkakas dan bahasa mistis, dengan JavaScript sebagai inti dari setiap mantra saya. Saya menguasai kerangka kerja seperti React.js dan Next.js dengan presisi, merancang portal (situs web) yang mulus untuk menghubungkan para penghuni alam (pengguna) di seluruh semesta digital. Seni kuno Jamstack membantu saya menciptakan pengalaman yang cepat, aman, dan dinamis, sementara kemampuan desain saya memastikan setiap karya tidak hanya fungsional, tetapi juga memikat secara visual. Di balik sihir yang tampak, saya merawat mesin tersembunyi — merapal API dan basis data yang tangguh (brankas tempat ingatan setiap alam tersimpan dengan aman) serta merajut jalur otomatis yang membawa ciptaan saya dari bengkel kerja ke awan (eter tanpa batas tempat semuanya akhirnya terjaga). Saya memegang kinerja dan aksesibilitas sebagai sumpah suci, sehingga setiap portal terbuka dengan cepat bagi setiap pengembara, di perangkat apa pun dan di sudut terpencil mana pun di penjuru alam. Rasa ingin tahu tetap menjadi kompas sejati saya, selalu menuntun saya menuju grimoire baru, naluri yang lebih tajam, dan gagasan yang cukup berani untuk menjelma menjadi pengalaman yang hidup dan bernapas. Bergabunglah bersama saya saat saya terus menjelajahi mantra dan teknologi baru untuk membentuk masa depan web."
+  },
+  "projectsCard": {
+    "eyebrow": "Proyek dirilis",
+    "unit": "{count, plural, other {proyek selesai}}",
+    "viewProgress": "Lihat progres →",
+    "ariaLabel": "Proyek dirilis: {count, number, ::group-off} proyek selesai. {legend}. Lihat progres: membuka progres proyek secara langsung.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "Proyek selesai menurut kategori — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, other {proyek}}",
+    "srPrefix": "Pembaruan proyek: "
+  },
+  "statsCard": {
+    "title": "Statistik GitHub {name}",
+    "defaultUser": "Pengguna GitHub",
+    "live": "Metrik GitHub Langsung",
+    "rank": "Peringkat",
+    "updated": "Statistik GitHub diperbarui",
+    "srPrefix": "Pembaruan statistik: ",
+    "metrics": {
+      "stars": "Total Bintang Diperoleh",
+      "commits": "Total Commit (tahun lalu)",
+      "prs": "Total PR",
+      "issues": "Total Issue",
+      "contributedTo": "Berkontribusi pada (tahun lalu)"
+    }
+  },
+  "languagesCard": {
+    "title": "Bahasa Paling Sering Digunakan",
+    "count": "{count, number, ::group-off} {count, plural, other {bahasa}}",
+    "live": "langsung dari GitHub",
+    "primary": "Utama",
+    "percent": "<n></n>%",
+    "srPrefix": "Pembaruan bahasa: ",
+    "popover": {
+      "eyebrow": "Rincian repositori",
+      "ariaLabel": "Repositori yang menggunakan {language}",
+      "privateRepos": "{count, number, ::group-off} {count, plural, other {repositori}} privat"
+    }
+  },
+  "streakCard": {
+    "title": "Rentetan Kontribusi",
+    "subtitle": "Aktivitas GitHub",
+    "srPrefix": "Pembaruan rentetan: ",
+    "total": "Total Kontribusi",
+    "current": "Rentetan Saat Ini",
+    "longest": "Rentetan Terpanjang",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, other {hari}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, other {hari}}, {percent, number, ::group-off} persen dari rentetan terpanjang Anda"
+  },
+  "repoCard": {
+    "badge": "Repositori Paling Aktif",
+    "srPrefix": "Pembaruan repositori: ",
+    "metrics": {
+      "stars": "Bintang",
+      "forks": "Fork",
+      "mergedPrs": "PR Digabung",
+      "commits": "Total Commit",
+      "lastPushed": "Terakhir Di-push"
+    },
+    "score": "skor",
+    "activityScore": "Skor Aktivitas"
+  },
+  "skillsCard": {
+    "title": "Keahlian & Teknologi",
+    "categories": {
+      "languages": "Bahasa",
+      "frameworks": "Kerangka Kerja",
+      "libraries": "Pustaka",
+      "tools": "Perkakas",
+      "software": "Perangkat Lunak"
+    },
+    "count": "<n></n> {count, plural, other {teknologi}}",
+    "live": "langsung dari GitHub",
+    "syncing": "Menyinkronkan dengan GitHub…",
+    "noneDetected": "Tidak ada keahlian terdeteksi",
+    "noneInRepos": "Tidak ada keahlian terdeteksi di repositori Anda",
+    "fetching": "Mengambil keahlian dari GitHub…",
+    "srPrefix": "Pembaruan keahlian: ",
+    "popover": {
+      "eyebrow": "Digunakan di repositori",
+      "ariaLabel": "Repositori yang menggunakan {name}",
+      "label": "Repositori:",
+      "publicSr": "{count, number, ::group-off} publik",
+      "privateSr": "{count, number, ::group-off} privat",
+      "publicCount": "<n></n> publik",
+      "privateCount": "<n></n> privat",
+      "slash": "/",
+      "allPrivate": "Semua repositori bersifat privat"
+    }
+  },
+  "progress": {
+    "eyebrow": "Telemetri pengiriman",
+    "title": "Progres proyek",
+    "close": "Tutup progres proyek",
+    "failed": "Saat ini tidak dapat terhubung ke sinkronisasi progres.",
+    "retry": "Coba sinkron lagi",
+    "ringLineOne": "item papan",
+    "ringLineTwo": "selesai",
+    "percent": "<n></n>%",
+    "itemsDone": "Item selesai",
+    "ofTotal": "dari {total, number, ::group-off}",
+    "boardsLive": "Papan aktif",
+    "allProjects": "{count, plural, other {proyek}}",
+    "ofProjects": "dari {total, number, ::group-off} proyek",
+    "unavailable": "Sinkronisasi langsung sedang tidak tersedia — menampilkan struktur portofolio; persentase akan kembali setelah penyegaran berikutnya berhasil.",
+    "byCategory": "Menurut kategori",
+    "projectCount": "{count, number, ::group-off} proyek",
+    "perProject": "Per proyek",
+    "liveFrom": "Langsung dari GitHub Projects",
+    "footer": "Disinkronkan otomatis dari GitHub Projects · dua kali sehari",
+    "lastSync": "Sinkron terakhir",
+    "awaiting": "Menunggu sinkronisasi pertama",
+    "row": {
+      "tracked": "{percent, number, ::group-off}% selesai, {done, number, ::group-off} dari {total, number, ::group-off} item papan selesai",
+      "syncUnavailable": "sinkronisasi progres tidak tersedia",
+      "notTracked": "tidak dilacak",
+      "ariaLabel": "{name}, {category}. {status}. Buka/tutup rincian papan.",
+      "syncUnavailableTag": "· sinkronisasi tidak tersedia",
+      "total": "Total",
+      "couldNotSync": "Papan ini tidak dapat disinkronkan saat ini — hitungan langsung akan kembali pada penyegaran berikutnya.",
+      "noBoard": "Tidak ada papan proyek GitHub yang terhubung ke proyek ini.",
+      "viewBoard": "Lihat papan proyek →"
+    },
+    "age": {
+      "seconds": "{s}d lalu",
+      "minutes": "{m}m {s}d lalu",
+      "hours": "{h}j {m}m lalu",
+      "days": "{d}h {h}j lalu"
+    },
+    "columns": {
+      "todo": "Yang akan dikerjakan",
+      "backlog": "Backlog",
+      "ready": "Siap",
+      "inProgress": "Sedang dikerjakan",
+      "inReview": "Dalam peninjauan",
+      "done": "Selesai",
+      "noStatus": "Tanpa status",
+      "blocked": "Terblokir",
+      "onHold": "Ditunda"
+    }
+  },
+  "wire": {
+    "present": "Sekarang",
+    "noCurrent": "Tidak ada rentetan saat ini",
+    "noneFound": "Rentetan tidak ditemukan",
+    "noData": "Tidak ada data",
+    "notAvailable": "T/A",
+    "noDescription": "Tanpa deskripsi",
+    "unknown": "Tidak diketahui",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "Repositori paling aktif berubah menjadi \"{name}\"",
+      "stars": "Bintang {direction, select, increased {bertambah} other {berkurang}} {amount, number, ::group-off} (kini {total, number, ::group-off})",
+      "forks": "Fork {direction, select, increased {bertambah} other {berkurang}} {amount, number, ::group-off} (kini {total, number, ::group-off})",
+      "commits": "{count, number, ::group-off} {count, plural, other {commit}} baru di-push",
+      "mergedPrs": "{count, number, ::group-off} {count, plural, other {PR}} digabungkan",
+      "activityScore": "Skor aktivitas {direction, select, increased {naik} other {turun}} sebesar {amount, number, ::group-off} (kini {total, number, ::group-off})",
+      "language": "Bahasa utama diubah menjadi \"{language}\""
+    },
+    "stats": {
+      "stars": "Total Bintang {delta, number, ::sign-always group-off}",
+      "commits": "Total Commit {delta, number, ::sign-always group-off}",
+      "prs": "Total PR {delta, number, ::sign-always group-off}",
+      "issues": "Total Issue {delta, number, ::sign-always group-off}",
+      "contributedTo": "Berkontribusi pada {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "Total Kontribusi {delta, number, ::sign-always group-off}",
+      "currentStreak": "Rentetan Saat Ini {delta, number, ::sign-always group-off}",
+      "longestStreak": "Rentetan Terpanjang {delta, number, ::sign-always group-off}",
+      "currentDates": "Tanggal Rentetan Saat Ini berubah",
+      "longestDates": "Tanggal Rentetan Terpanjang berubah"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language} ditambahkan ke daftar bahasa teratas.",
+      "addedMany": "{count, number, ::group-off} {count, plural, other {bahasa}} baru masuk ke daftar teratas.",
+      "removedOne": "{language} keluar dari daftar bahasa teratas.",
+      "removedMany": "{count, number, ::group-off} {count, plural, other {bahasa}} keluar dari daftar teratas.",
+      "percentage": "{language} {direction, select, increased {naik} other {turun}} sebesar {delta, number, ::.0 group-off}%.",
+      "rank": "{language} {direction, select, up {naik} other {turun}} ke peringkat #{rank, number, ::group-off}."
+    },
+    "skills": {
+      "added": "Ditambahkan: {items}",
+      "removed": "Dihapus: {items}",
+      "moved": "Dipindahkan: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, number, ::group-off} {delta, plural, other {proyek}} selesai baru ditambahkan — kini {count, number, ::group-off}",
+      "updated": "Proyek selesai diperbarui — kini {count, number, ::group-off}"
+    }
+  }
+}

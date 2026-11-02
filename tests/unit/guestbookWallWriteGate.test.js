@@ -2,6 +2,11 @@
 import { createElement } from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The wall's write gate (GuestbookWall): the composer and the reaction bars
 // are offered only to a session that can actually write — one carrying an
@@ -110,7 +115,7 @@ afterEach(() => {
 async function renderWall(state) {
   sessionState = state;
   const { default: GuestbookWall } = await import('@/components/guestbook/GuestbookWall');
-  return render(createElement(GuestbookWall));
+  return renderIntl(createElement(GuestbookWall));
 }
 
 const cardsCanReact = (utils) =>

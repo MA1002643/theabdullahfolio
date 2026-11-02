@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "Fitur-fitur baru akan segera dirilis. Situs web ini sedang aktif dikembangkan.",
+    "shippingNone": "Baru saja merilis {count, plural, other {# pembaruan}} untuk situs web ini.",
+    "shippingOne": "Baru saja merilis <bdi>#{number} {title}</bdi>.",
+    "shippingMany": "Baru saja merilis <bdi>#{number} {title}</bdi> (dan {more, number} lainnya).",
+    "liveWithTop": "Pembaruan langsung: perubahan sedang dirilis saat ini — fokus saat ini pada <bdi>#{number} {title}</bdi>.",
+    "livePushes": "Pembaruan langsung: perubahan baru untuk situs web ini sedang dirilis saat ini.",
+    "liveActive": "Pekerjaan aktif sedang berlangsung{hasTop, select, yes { — fokus saat ini pada <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "Sedang aktif mengerjakan {count, plural, other {# tugas}}{hasTop, select, yes { — fokus saat ini pada <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "Sedang dikerjakan: {prs, plural, other {# pull request}} dan {issues, plural, other {# tugas terbuka}}{hasTop, select, yes { — fokus saat ini pada <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "Sedang dikerjakan: {prs, plural, other {# pull request}}{hasTop, select, yes { — fokus saat ini pada <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "Sedang dikerjakan: {issues, plural, other {# tugas terbuka}}{hasTop, select, yes { — fokus saat ini pada <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "Situs web ini sedang dalam pengerjaan.",
+    "planning": "Merencanakan peningkatan berikutnya{hasTop, select, yes { — fokus saat ini pada <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "Sedang mengerjakan {count, plural, other {# tugas}} — fokus pada <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "Baru dirilis",
+    "live": "Pengembangan langsung sedang berlangsung",
+    "inProgress": "Sedang dikerjakan",
+    "planning": "Merencanakan peningkatan berikutnya",
+    "idle": "Pemeliharaan berkelanjutan"
+  },
+  "region": "Status pemeliharaan langsung",
+  "state": {
+    "shipping": "DIRILIS",
+    "live": "LANGSUNG",
+    "inProgress": "DIKERJAKAN",
+    "planning": "PERENCANAAN",
+    "idle": "PEMELIHARAAN"
+  },
+  "stateSpoken": {
+    "shipping": "dirilis",
+    "live": "langsung",
+    "inProgress": "sedang dikerjakan",
+    "planning": "perencanaan",
+    "idle": "pemeliharaan"
+  },
+  "pipeline": {
+    "planning": "Rencana",
+    "inProgress": "Bangun",
+    "shipping": "Rilis",
+    "live": "Live"
+  },
+  "legend": {
+    "title": "Alur pengiriman",
+    "srIdle": "Alur pengiriman. Di luar alur: pemantauan pemeliharaan.",
+    "srStage": "Alur pengiriman. Tahap saat ini: {stage}, {index} dari {total}.",
+    "headingIdle": "Pemeliharaan · di luar alur",
+    "headingStage": "{stage} · tahap {index} dari {total}",
+    "maintenance": "Pemeliharaan",
+    "offPipeline": "Di luar alur — memantau {count, plural, =0 {repositori yang dilacak} other {# repo}}",
+    "meaning": {
+      "planning": "Isu terbuka yang telah diantrekan dan dirinci",
+      "inProgress": "Pekerjaan aktif pada branch dan pull request",
+      "shipping": "Pekerjaan yang digabungkan dan dipindahkan ke Done dalam 48 jam terakhir",
+      "live": "Commit atau pembaruan dalam 2 jam terakhir"
+    }
+  },
+  "fields": {
+    "state": "Status",
+    "focus": "Fokus",
+    "focusPr": "Fokus · PR",
+    "focusIssue": "Fokus · Isu",
+    "prs": "PR",
+    "issues": "Isu",
+    "pushes24h": "Push · 24j",
+    "pushes": "Push",
+    "activity": "Aktivitas · {days}h",
+    "sync": "Sinkron",
+    "metered": "· dibatasi"
+  },
+  "metric": {
+    "prs": "PR aktif",
+    "issues": "Isu terbuka",
+    "pushes": "Push (24j)",
+    "emptyPrs": "Tidak ada PR aktif di seluruh proyek yang dilacak.",
+    "emptyIssues": "Tidak ada isu terbuka di seluruh proyek yang dipantau.",
+    "emptyPushes": "Tidak ada push di seluruh proyek yang dipantau dalam 24 jam terakhir."
+  },
+  "popover": {
+    "breakdown": "Rincian {metric}",
+    "summary": "{metric} · {count} di {projects, plural, other {# proyek}}",
+    "heading": "<count></count> di {projects, plural, other {# proyek}}",
+    "stale": "Menampilkan aktivitas terakhir yang diketahui.",
+    "more": "+ {count} lainnya di GitHub",
+    "openOnGitHub": "Buka di GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Isu}} #{number}",
+    "ariaOpen": "Buka {type, select, pr {pull request} other {isu}} #{number}: {title} di GitHub",
+    "stepped": "{type, select, pr {Pull request} other {Isu}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {aktif <age></age>} other {}}",
+    "monitoring": "Memantau {count, plural, other {# repositori}} — tidak ada item fokus aktif",
+    "monitoringNone": "Memantau repositori yang dilacak"
+  },
+  "queue": {
+    "label": "Antrean fokus",
+    "hint": "Item {index} dari {count} · ← → untuk berganti",
+    "sr": "Antrean fokus berisi {count} item — tombol panah kiri dan kanan untuk berganti"
+  },
+  "activity": {
+    "label": "Jejak commit",
+    "summary": "{total, plural, other {# commit}} · {days, plural, other {# hari}} terakhir{truncated, select, yes { (hari-hari terlama terhitung kurang)} other {}}"
+  },
+  "sync": {
+    "label": "Sinkronisasi terakhir",
+    "hint": "Keyakinan {confidence} · polling setiap {seconds} dtk{metered, select, yes { · berkuota} other {}}",
+    "detail": "{hasLast, select, yes {Sinkronisasi terakhir {last} · } other {}}Keyakinan sinyal {confidence} · polling setiap {seconds, plural, other {# detik}}{metered, select, yes { saat koneksi berkuota} other {}}",
+    "stale": "Usang"
+  },
+  "announce": {
+    "status": "Status: {state}.",
+    "focus": "Fokus saat ini: {type, select, pr {pull request} other {isu}} {number}, {title}.",
+    "counts": "{prs, plural, other {# pull request aktif}}, {issues, plural, other {# isu terbuka}}, dan {pushes, plural, other {# push}} dalam 24 jam terakhir."
+  },
+  "error": {
+    "snapshot": "Status langsung sementara tidak tersedia. Menampilkan cuplikan terbaru.",
+    "fallback": "Status langsung sementara tidak tersedia. Menampilkan tampilan cadangan pemeliharaan."
+  }
+}

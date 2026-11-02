@@ -1,0 +1,20 @@
+{
+  "section": "Używam",
+  "preferences": "Preferencje",
+  "jumpPlate": "Przejdź do: {ordinal} {label}",
+  "plates": {
+    "machine": "Maszyna",
+    "bench": "Warsztat",
+    "stack": "Stos technologiczny",
+    "pipeline": "Potok",
+    "instruments": "Przyrządy pomiarowe",
+    "bom": "Zestawienie materiałów"
+  },
+  "copySettings": "Skopiuj moje ustawienia edytora",
+  "openRepos": "Zobacz repozytoria na GitHubie",
+  "toggleMotion": "Przełącz animacje",
+  "motionOn": "włączone",
+  "motionOff": "wyłączone",
+  "copied": "Skopiowano ustawienia edytora",
+  "clipboardUnavailable": "Schowek niedostępny — zaznacz ramkę, aby skopiować"
+}

@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Projektnavigation",
+    "all": "Alle Projekte",
+    "previous": "Vorheriges Projekt: {name}",
+    "next": "Nächstes Projekt: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Startseite",
+    "projects": "Projekte"
+  },
+  "loading": "Projekt wird geladen",
+  "intro": {
+    "fallbackName": "Projektname",
+    "fallbackDescription": "Innovative, schnelle und zukunftsweisende Weblösungen.",
+    "linksLabel": "Links zu {name}",
+    "liveDemo": "Live-Demo<sr> (öffnet in einem neuen Tab)</sr>",
+    "source": "Quellcode auf GitHub<sr> (öffnet in einem neuen Tab)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "BIOS wird initialisiert ...",
+      "hardware": "Hardware wird erkannt ...",
+      "os": "Betriebssystem wird geladen ..."
+    },
+    "tagline": "Deine Ideen, getragen von digitalem Handwerk der nächsten Generation.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Tools & Frameworks",
+    "overview": "Projektübersicht",
+    "overviewLead": "Diese Plattform vereinfacht E-Commerce-Abläufe mit einem zentralen Dashboard und Live-Analysen.",
+    "overviewBody": "Sie nimmt die Komplexität, mehrere Tools parallel zu verwalten, und bietet stattdessen eine zentrale, intuitive Oberfläche.",
+    "features": "Funktionen",
+    "feature": {
+      "auth": {
+        "title": "Authentifizierung",
+        "desc": "Sicherer Login und Benutzerzugriff."
+      },
+      "payments": {
+        "title": "Zahlungen",
+        "desc": "Integriertes Zahlungs-Gateway."
+      },
+      "chat": {
+        "title": "Live-Chat",
+        "desc": "Direkte Kommunikation mit Nutzern."
+      },
+      "admin": {
+        "title": "Admin-Bereich",
+        "desc": "Vereinfachte Verwaltung von Inhalten."
+      }
+    },
+    "liveDemo": "Live-Demo",
+    "github": "GitHub",
+    "demoLabel": "Live-Demo von {name} öffnen",
+    "sourceLabel": "Quellcode von {name} auf GitHub ansehen"
+  },
+  "meta": {
+    "dated": "{name} — {description}. {category}-Projekt, gestartet {when}. {visibility, select, private {Privates Repository} other {Öffentliches Repository}}, live über das GitHub-Board nachverfolgt.",
+    "undated": "{name} — {description}. {category}-Projekt. {visibility, select, private {Privates Repository} other {Öffentliches Repository}}, live über das GitHub-Board nachverfolgt."
+  }
+}

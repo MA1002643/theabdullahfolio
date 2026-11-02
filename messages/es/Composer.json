@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Hemos recuperado tu mensaje sin enviar",
+    "keep": "Conservar",
+    "clear": "Borrar"
+  },
+  "refine": {
+    "affordance": "Mejorar mi mensaje",
+    "panelLabel": "Reescritura sugerida",
+    "polishing": "Puliendo…",
+    "announcePolishing": "Puliendo tu mensaje…",
+    "announceReady": "La reescritura sugerida está lista.",
+    "announceError": "No se pudo pulir el mensaje.",
+    "use": "Usar este",
+    "again": "Pulir de nuevo",
+    "discard": "Descartar",
+    "retry": "Reintentar",
+    "dismiss": "Cerrar",
+    "cancel": "Cancelar",
+    "errors": {
+      "unconfigured": "La mejora de mensajes no está disponible en este momento.",
+      "unavailable": "La mejora de mensajes no está disponible en este momento.",
+      "rate_limited": "Demasiadas solicitudes — inténtalo de nuevo en un momento.",
+      "too_large": "La solicitud es demasiado grande.",
+      "bad_request": "Solicitud no válida.",
+      "too_short": "Escribe un poco más primero y así podré pulirlo.",
+      "too_long": "Ese mensaje es demasiado largo para pulirlo.",
+      "budget": "La mejora de mensajes está en pausa por ahora.",
+      "failed": "No se pudo pulir el mensaje. Inténtalo de nuevo."
+    }
+  }
+}

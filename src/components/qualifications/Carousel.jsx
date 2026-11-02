@@ -7,6 +7,8 @@ import React, {
   useRef,
 } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
+import { useDirection } from '@/i18n/useDirection';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { toast } from 'sonner';
 import ScrollHijackCategories from '@/components/shared/ScrollHijackCategories';
@@ -69,7 +71,12 @@ const aspectFor = (img) => {
 // right after the CARDS array (it can't live up here: `const CARDS` is in
 // its temporal dead zone until the array literal below runs).
 
-const CARDS = [
+// Exported for tests/unit/qualificationsCatalogue.test.js only, which pins
+// every title below to `messages/en/Qualifications.json` (`cards.<id>`): the
+// carousel renders the catalogue string, so a title edited here and not
+// there would silently keep showing the old wording. Still a client module —
+// a Server Component importing this would get a client reference, not data.
+export const CARDS = [
   // Education > School
   {
     id: 25,
@@ -608,6 +615,22 @@ const FitOneLineTitle = ({ text }) => {
 };
 
 const Carousel3D = () => {
+  const t = useTranslations('Qualifications');
+  // Reading direction (issue #82). The wheel is laid out by translateX, which
+  // CSS cannot mirror, so the card AFTER the centre must sit on the reading-
+  // END side: right in LTR, left in RTL. Multiplying the offset by `sign`
+  // flips the slot and the inward tilt together, so "Next" still brings in
+  // the card from the end side and the row reads start → end both ways.
+  const { sign } = useDirection();
+  // Category keys stay the English data labels (filtering, counts and the
+  // tree all compare those); only what the visitor reads is translated, with
+  // the key itself as the fallback for a label the catalogue doesn't carry.
+  const categoryLabel = (cat) =>
+    t.has(`categories.${cat}`) ? t(`categories.${cat}`) : cat;
+  const cardTitle = (card) =>
+    t.has(`cards.${card.id}`) ? t(`cards.${card.id}`) : card.title;
+  const emptyMessage = (cat) =>
+    t('filters.empty', { category: categoryLabel(cat) });
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeSub, setActiveSub] = useState(null);
 
@@ -783,7 +806,7 @@ const Carousel3D = () => {
     // Replace any earlier message so consecutive empty clicks don't stack.
     dismissEmptyToast();
     lastToastIdRef.current = toast.info(
-      `No qualifications in ${label} yet`,
+      emptyMessage(label),
       {
         style: {
           color: '#ff6d05',
@@ -845,12 +868,13 @@ const Carousel3D = () => {
         // rides the scope via the shared .category-tab/.category-strip-track
         // rules from issue #50; only these page-level margins live here.
         style={{ marginTop: fluid(2.5), marginBottom: fluid(1) }}
-        label="Qualification categories"
+        label={t('filters.label')}
         categories={PARENT_CATEGORIES}
+        formatLabel={categoryLabel}
         active={activeCategory}
         onSelect={handleParentClick}
         isDisabled={isParentEmpty}
-        disabledTitle={(cat) => `No qualifications in ${cat} yet`}
+        disabledTitle={emptyMessage}
         counts={parentCounts}
       />
 
@@ -858,12 +882,13 @@ const Carousel3D = () => {
       {subCategories && (
         <ScrollHijackCategories
           style={{ marginBottom: fluid(2) }}
-          label={`${activeCategory} sub-categories`}
+          label={t('filters.subLabel', { category: categoryLabel(activeCategory) })}
           categories={subCategories}
+          formatLabel={categoryLabel}
           active={activeSub}
           onSelect={handleSubClick}
           isDisabled={isSubEmpty}
-          disabledTitle={(sub) => `No qualifications in ${sub} yet`}
+          disabledTitle={emptyMessage}
           counts={subCounts}
         />
       )}
@@ -958,7 +983,7 @@ const Carousel3D = () => {
             // its own width, and because --slot-vh scales with
             // --cert-cap, the gap-to-card ratio is identical on
             // mobile, tablet and desktop.
-            const translateX = `calc(${offset} * var(--slot-vh))`;
+            const translateX = `calc(${offset * sign} * var(--slot-vh))`;
             // Coverflow depth/tilt to match the reference Swiper
             // config (depth: 200, rotate: 20). Side cards recede
             // ~200px per step and tilt 20° inward — this is what
@@ -969,7 +994,7 @@ const Carousel3D = () => {
             // translateZ(), so no JS scale number is ever needed.
             // rotateY stays static: degrees are viewport-independent.
             const translateZ = `calc(${-absOffset} * var(--card-depth))`;
-            const rotateY = offset * -20;
+            const rotateY = offset * sign * -20;
             const scale = offset === 0 ? 1 : 0.85;
 
             // Centre-out ripple (issue #52): absOffset — the wrapped wheel
@@ -984,6 +1009,8 @@ const Carousel3D = () => {
             const entranceDelayMs = absOffset * ENTRANCE_STAGGER_MS;
             const isHidden = entrancePhase === 'hidden';
             const isEntering = entrancePhase === 'entering';
+
+            const title = cardTitle(card);
 
             return (
               <div
@@ -1066,7 +1093,7 @@ const Carousel3D = () => {
                       href={card.img}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`Open ${card.title} in a new tab`}
+                      aria-label={t('carousel.open', { title })}
                       tabIndex={absOffset === 0 ? undefined : -1}
                       aria-hidden={absOffset === 0 ? undefined : true}
                       className="relative block h-full w-full cursor-pointer"
@@ -1074,7 +1101,7 @@ const Carousel3D = () => {
                     >
                       <Image
                         src={card.img}
-                        alt={card.title}
+                        alt={title}
                         fill
                         sizes={imgSizes}
                         // Only the centered card is eager. Neighbours are
@@ -1143,7 +1170,7 @@ const Carousel3D = () => {
                         : `opacity ${BANNER_MS}ms ${ENTRANCE_EASE}, transform ${BANNER_MS}ms ${ENTRANCE_EASE}`,
                     }}
                   >
-                    <FitOneLineTitle text={card.title} />
+                    <FitOneLineTitle text={title} />
                   </div>
                 </div>
               </div>
@@ -1154,7 +1181,7 @@ const Carousel3D = () => {
             className="font-semibold text-[#FFB627] drop-shadow-[0_0_5px_#ffb627]"
             style={{ fontSize: fluidText(1.125, 0.875) }}
           >
-            No items found in this category!
+            {t('carousel.empty')}
           </div>
         )}
       </div>
@@ -1182,7 +1209,7 @@ const Carousel3D = () => {
                 fontSize: fluidText(1, 0.875),
               }}
             >
-              Prev
+              {t('carousel.prev')}
             </button>
             <button
               type="button"
@@ -1195,7 +1222,7 @@ const Carousel3D = () => {
                 fontSize: fluidText(1, 0.875),
               }}
             >
-              Next
+              {t('carousel.next')}
             </button>
           </div>
         </div>

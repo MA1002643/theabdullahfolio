@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Página no encontrada",
+    "description": "Te has perdido en el vacío. Esta página no existe… todavía."
+  },
+  "messages": {
+    "void": "Te has perdido en el vacío.",
+    "dimension": "Esta página está en otra dimensión.",
+    "render": "Ni siquiera mis habilidades en 3D lograron renderizar esta página.",
+    "vibes": "404: página no encontrada, pero el buen rollo sigue intacto.",
+    "edge": "Has llegado al borde del portfolio."
+  },
+  "subtitle": "Esta página no existe… todavía.",
+  "didYouMean": "¿Querías ir a <link>{label}</link>?",
+  "takeMeBack": "LLÉVAME DE VUELTA",
+  "keyHint": "Pulsa {key} para volver al inicio"
+}

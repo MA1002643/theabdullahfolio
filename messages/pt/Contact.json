@@ -1,0 +1,58 @@
+{
+  "title": "FALE COMIGO",
+  "subtitle": "entre em contato",
+  "intro": "Entre no círculo do encantamento e teça suas palavras no tecido do cosmos. Seja para conjurar parcerias, desvendar mistérios ou simplesmente compartilhar histórias de aventura, suas mensagens são pergaminhos preciosos neste reino. Use o formulário abaixo para enviar seus recados pela rede etérea e aguarde o sussurro da magia em resposta.",
+  "fields": {
+    "name": "Nome completo",
+    "email": "E-mail",
+    "subject": "Assunto",
+    "message": "Mensagem"
+  },
+  "validation": {
+    "nameRequired": "O nome completo é obrigatório!",
+    "nameMin": "O nome deve ter pelo menos {min} caracteres.",
+    "nameMax": "O nome deve ter no máximo {max} caracteres.",
+    "emailRequired": "O e-mail é obrigatório!",
+    "emailMax": "O e-mail deve ter no máximo {max} caracteres.",
+    "subjectRequired": "O assunto é obrigatório!",
+    "subjectMax": "O assunto deve ter no máximo {max} caracteres.",
+    "messageRequired": "A mensagem é obrigatória!",
+    "messageMin": "A mensagem deve ter pelo menos {min} caracteres.",
+    "messageMax": "A mensagem deve ter no máximo {max} caracteres."
+  },
+  "submit": {
+    "label": "ENVIAR!",
+    "ariaLabel": "Enviar mensagem",
+    "sending": "ENVIANDO",
+    "sent": "ENVIADA",
+    "held": "RETIDA"
+  },
+  "toast": {
+    "sent": "Mensagem enviada com sucesso!",
+    "savedOffline": "Salva — será enviada quando você se reconectar.",
+    "savedRetrying": "Salva — tentando novamente em instantes…",
+    "failed": "Não foi possível enviar a mensagem",
+    "heldSent": "{count, plural, one {Sua mensagem retida foi enviada ✦} many {# de mensagens retidas foram enviadas ✦} other {# mensagens retidas foram enviadas ✦}}"
+  },
+  "status": {
+    "held": "Retida — sua mensagem será enviada sozinha assim que você voltar a ficar online.",
+    "offline": "Você está offline — sua mensagem ficará retida e será enviada automaticamente quando você se reconectar."
+  },
+  "errors": {
+    "name_required": "O nome completo é obrigatório.",
+    "email_required": "O e-mail é obrigatório.",
+    "subject_required": "O assunto é obrigatório.",
+    "message_required": "A mensagem é obrigatória.",
+    "name_too_long": "O nome completo excede o tamanho máximo permitido ({max} caracteres).",
+    "email_too_long": "O e-mail excede o tamanho máximo permitido ({max} caracteres).",
+    "subject_too_long": "O assunto excede o tamanho máximo permitido ({max} caracteres).",
+    "message_too_long": "A mensagem excede o tamanho máximo permitido ({max, number, ::group-off} caracteres).",
+    "invalid_characters": "O texto contém caracteres inválidos.",
+    "invalid_email": "Formato de e-mail inválido.",
+    "undeliverable_email": "Este endereço de e-mail não existe ou não pode receber mensagens.",
+    "disposable_email": "Endereços de e-mail descartáveis não são permitidos.",
+    "too_large": "O corpo da requisição deve ter no máximo {max, number, ::group-off} bytes",
+    "invalid_body": "Corpo da requisição inválido",
+    "send_failed": "Não foi possível enviar a mensagem"
+  }
+}

@@ -1,7 +1,9 @@
 'use client';
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCountUp } from '@/hooks/useCountUp';
+import { formatNumber } from '@/i18n/format';
 
 // The "N here now" pill (issue #40 Phase 4) — the live-presence slot of the
 // header meta strip (see GuestbookWall). Purple side of the palette on
@@ -19,6 +21,8 @@ export default function PresencePill({ count, active = true }) {
   // `active` is the strip's in-view state (GuestbookWall) — the figure
   // re-climbs on every scroll back into view, with the strip's rise.
   const shown = useCountUp(count ?? 0, { active });
+  const t = useTranslations('Guestbook');
+  const locale = useLocale();
   if (!count || count < 1) return null;
 
   return (
@@ -29,8 +33,14 @@ export default function PresencePill({ count, active = true }) {
         ) : null}
         <span className="relative inline-flex h-2 w-2 rounded-full bg-[#fc83ff]" />
       </span>
+      {/* ICU plural on the real count (issue #82; English has one form, other
+          languages inflect "here"), the rolling figure in the locale's digits. */}
       <span>
-        <span className="font-semibold tabular-nums">{shown}</span> here now
+        {t.rich('presence', {
+          count,
+          shown: formatNumber(shown, locale, { useGrouping: false }),
+          n: (chunks) => <span className="font-semibold tabular-nums">{chunks}</span>,
+        })}
       </span>
     </span>
   );

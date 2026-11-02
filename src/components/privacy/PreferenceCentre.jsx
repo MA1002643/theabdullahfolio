@@ -36,6 +36,7 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Check, Lock, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 import { fluid, fluidText } from '@/lib/fluidScale';
@@ -43,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { claimEscape } from '@/lib/escapeKey';
 import { ANALYTICS_SURFACES, CATEGORIES } from '@/lib/privacy/inventory';
 import { useConsent } from './ConsentProvider';
+import { PrivacyCopyScope, usePrivacyCopy } from './usePrivacyCopy';
 
 // Everything an assistive-technology user can Tab to. Element-level
 // `[tabindex="-1"]` is excluded so programmatic-only targets do not intercept
@@ -83,7 +85,21 @@ const DECISION_BUTTON =
  * skipped rather than dumping focus on `<body>`.
  */
 export default function PreferenceCentre() {
-  const { prefsOpen, closePrefs, analytics, set, triggerRef } = useConsent();
+  const { prefsOpen, status, hydrated } = useConsent();
+  // The dialog's copy is fetched, not shipped (see usePrivacyCopy.jsx), so it
+  // opens once the copy is in: a few milliseconds after the click at most,
+  // and usually not at all for the undecided visitor it was preloaded for.
+  const copy = usePrivacyCopy(prefsOpen || (hydrated && status === 'undecided'));
+  return (
+    <PrivacyCopyScope messages={copy.messages}>
+      <PreferenceDialog open={prefsOpen && copy.ready} />
+    </PrivacyCopyScope>
+  );
+}
+
+function PreferenceDialog({ open }) {
+  const t = useTranslations('Privacy');
+  const { closePrefs, analytics, set, triggerRef } = useConsent();
   const rawReduced = useReducedMotion();
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
@@ -98,7 +114,7 @@ export default function PreferenceCentre() {
   // the notice: this is a modal, so while it is open it genuinely owns the key,
   // and the listener has to fire regardless of which descendant holds focus.
   useEffect(() => {
-    if (!prefsOpen) return undefined;
+    if (!open) return undefined;
     const handler = (event) => {
       if (event.key !== 'Escape') return;
       event.stopPropagation();
@@ -107,23 +123,23 @@ export default function PreferenceCentre() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [prefsOpen, closePrefs]);
+  }, [open, closePrefs]);
 
   // Focus in on open, back out on close. The cleanup captures `trigger` at
   // effect time rather than reading the ref during teardown, because the notice
   // that owned the trigger may already have unmounted by then.
   useEffect(() => {
-    if (!prefsOpen) return undefined;
+    if (!open) return undefined;
     closeButtonRef.current?.focus();
     const trigger = triggerRef?.current;
     return () => {
       if (trigger && document.body.contains(trigger)) trigger.focus();
     };
-  }, [prefsOpen, triggerRef]);
+  }, [open, triggerRef]);
 
   // Focus trap. Re-queried on every Tab so it tolerates the row count changing.
   useEffect(() => {
-    if (!prefsOpen) return undefined;
+    if (!open) return undefined;
     const dialog = dialogRef.current;
     if (!dialog) return undefined;
     const handler = (event) => {
@@ -145,14 +161,14 @@ export default function PreferenceCentre() {
     };
     dialog.addEventListener('keydown', handler);
     return () => dialog.removeEventListener('keydown', handler);
-  }, [prefsOpen]);
+  }, [open]);
 
   // Background scroll lock, including the iOS case. `overflow: hidden` alone is
   // ignored by Safari for touch scrolling, so phone viewports also get
   // `position: fixed` with the offset restored on close — without which closing
   // the dialog silently returns the visitor to the top of the page.
   useEffect(() => {
-    if (!prefsOpen) return undefined;
+    if (!open) return undefined;
     const body = document.body;
     const scrollY = window.scrollY;
     const isMobile = window.matchMedia('(max-width: 640px)').matches;
@@ -175,14 +191,23 @@ export default function PreferenceCentre() {
       body.style.width = prev.width;
       if (isMobile) window.scrollTo(0, scrollY);
     };
-  }, [prefsOpen]);
+  }, [open]);
 
+  // Category names and explanations are read through the catalogue by id
+  // (`Privacy.categories.<id>`, issue #82): consent is only informed if it is
+  // asked in the visitor's language. The inventory's English stays the
+  // fallback, so a category added there without a catalogue entry still
+  // renders its real text rather than a key.
+  const categoryCopy = (category, field) =>
+    t.has(`categories.${category.id}.${field}`)
+      ? t(`categories.${category.id}.${field}`)
+      : category[field];
   const analyticsCategory = CATEGORIES.find((c) => c.gated);
   const essentialCategory = CATEGORIES.find((c) => !c.gated);
 
   return (
     <AnimatePresence>
-      {prefsOpen && (
+      {open && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -243,34 +268,35 @@ export default function PreferenceCentre() {
                     className="font-semibold uppercase tracking-[0.16em] text-[#ffaa2a]"
                     style={{ fontSize: fluidText(0.78, 0.72) }}
                   >
-                    Privacy choices
+                    {t('prefs.title')}
                   </h2>
                   <p
                     id="privacy-prefs-intro"
                     className="mt-2 max-w-[46ch] text-[#f7efff]"
                     style={{ fontSize: fluidText(0.85, 0.79), lineHeight: 1.5 }}
                   >
-                    Two categories, because two is the real number. The full
-                    detail is on the{' '}
-                    <TransitionLink
-                      href="/privacy"
-                      transitionLabel="Privacy"
-                      onClick={closePrefs}
-                      className={cn(
-                        'rounded-sm text-[#ff6d05] underline decoration-[#ff6d05]/40 underline-offset-[3px] hover:decoration-[#ff6d05]',
-                        FOCUS_RING,
-                      )}
-                    >
-                      privacy page
-                    </TransitionLink>
-                    .
+                    {t.rich('prefs.intro', {
+                      link: (chunks) => (
+                        <TransitionLink
+                          href="/privacy"
+                          transitionLabel={t('notice.heading')}
+                          onClick={closePrefs}
+                          className={cn(
+                            'rounded-sm text-[#ff6d05] underline decoration-[#ff6d05]/40 underline-offset-[3px] hover:decoration-[#ff6d05]',
+                            FOCUS_RING,
+                          )}
+                        >
+                          {chunks}
+                        </TransitionLink>
+                      ),
+                    })}
                   </p>
                 </div>
                 <button
                   ref={closeButtonRef}
                   type="button"
                   onClick={closePrefs}
-                  aria-label="Close privacy choices"
+                  aria-label={t('prefs.close')}
                   // The Delivery-telemetry popup's close button, class for
                   // class (ProjectProgressPopup.jsx): `.custom-bg` supplies
                   // the ember hairline and glow, so the two X buttons match
@@ -299,21 +325,21 @@ export default function PreferenceCentre() {
                       className="font-medium text-[#ff8a1e]"
                       style={{ fontSize: fluidText(0.93, 0.86) }}
                     >
-                      {essentialCategory.name}
+                      {categoryCopy(essentialCategory, 'name')}
                     </h3>
                     <span
                       className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#fc83ff]/40 bg-[#fc83ff]/[0.07] px-2.5 py-1 text-[#f3b0ff]"
                       style={{ fontSize: fluidText(0.7, 0.66) }}
                     >
                       <Lock className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
-                      Always on
+                      {t('prefs.alwaysOn')}
                     </span>
                   </div>
                   <p
                     className="mt-2 text-[#e4d6f7]"
                     style={{ fontSize: fluidText(0.83, 0.78), lineHeight: 1.55 }}
                   >
-                    {essentialCategory.detail}
+                    {categoryCopy(essentialCategory, 'detail')}
                   </p>
                 </section>
   
@@ -325,16 +351,20 @@ export default function PreferenceCentre() {
                         className="font-medium text-[#ff8a1e]"
                         style={{ fontSize: fluidText(0.93, 0.86) }}
                       >
-                        {analyticsCategory.name}
+                        {categoryCopy(analyticsCategory, 'name')}
                       </h3>
                       <p
                         className="mt-2 text-[#e4d6f7]"
                         style={{ fontSize: fluidText(0.83, 0.78), lineHeight: 1.55 }}
                       >
-                        {analyticsCategory.detail}
+                        {categoryCopy(analyticsCategory, 'detail')}
                       </p>
                     </div>
-                    <AnalyticsSwitch on={analytics} onToggle={() => set(!analytics)} />
+                    <AnalyticsSwitch
+                      on={analytics}
+                      onToggle={() => set(!analytics)}
+                      labels={{ on: t('prefs.on'), off: t('prefs.off'), name: t('prefs.switchLabel') }}
+                    />
                   </div>
   
                   {/* The three scripts, named. "We use analytics" tells a reader
@@ -369,9 +399,7 @@ export default function PreferenceCentre() {
                       className="mt-3 text-[#c8a6ee]"
                       style={{ fontSize: fluidText(0.74, 0.7), lineHeight: 1.5 }}
                     >
-                      Turning this off reloads the page — it is the only way to
-                      genuinely unload a script your browser has already run,
-                      rather than leaving it loaded and asking it politely to stop.
+                      {t('prefs.reloadNote')}
                     </p>
                   ) : null}
                 </section>
@@ -387,7 +415,7 @@ export default function PreferenceCentre() {
                   className={cn(DECISION_BUTTON, FOCUS_RING)}
                   style={{ fontSize: fluidText(0.86, 0.8) }}
                 >
-                  Decline all
+                  {t('prefs.declineAll')}
                 </button>
                 <button
                   type="button"
@@ -395,7 +423,7 @@ export default function PreferenceCentre() {
                   className={cn(DECISION_BUTTON, FOCUS_RING)}
                   style={{ fontSize: fluidText(0.86, 0.8) }}
                 >
-                  Accept analytics
+                  {t('prefs.acceptAnalytics')}
                 </button>
               </footer>
             </div>
@@ -420,25 +448,28 @@ export default function PreferenceCentre() {
  * cannot separate those hues, and it is the most common failure in exactly this
  * component.
  */
-function AnalyticsSwitch({ on, onToggle }) {
+//
+// Mirrored under RTL with logical properties (issue #82): the knob rests at
+// the reading START and travels to the END, so "on" is always the far side.
+function AnalyticsSwitch({ on, onToggle, labels }) {
   return (
     <span className="flex shrink-0 items-center gap-2.5">
       <span
         aria-hidden="true"
         className={cn(
-          'w-7 text-right font-medium uppercase tracking-[0.1em] transition-colors',
+          'min-w-7 text-end font-medium uppercase tracking-[0.1em] transition-colors',
           on ? 'text-[#ffb066]' : 'text-[#c8a6ee]',
         )}
         style={{ fontSize: '0.68rem' }}
       >
-        {on ? 'On' : 'Off'}
+        {on ? labels.on : labels.off}
       </span>
       <button
         type="button"
         role="switch"
         aria-checked={on}
         onClick={onToggle}
-        aria-label="Allow anonymous analytics"
+        aria-label={labels.name}
         className={cn(
           'relative h-6 w-11 shrink-0 rounded-full border transition-colors',
           FOCUS_RING,
@@ -455,8 +486,8 @@ function AnalyticsSwitch({ on, onToggle }) {
             // documented way this codebase has smeared GPU-driven movement
             // before. Here it would merely be redundant, but the habit is what
             // matters.
-            'absolute top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full transition-[left,background-color] duration-200',
-            on ? 'left-[1.55rem] bg-[#ff6d05]' : 'left-[0.2rem] bg-[#c8a6ee]',
+            'absolute top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full transition-[inset-inline-start,background-color] duration-200',
+            on ? 'start-[1.55rem] bg-[#ff6d05]' : 'start-[0.2rem] bg-[#c8a6ee]',
           )}
         >
           {on ? (

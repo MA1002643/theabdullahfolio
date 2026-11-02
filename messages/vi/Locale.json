@@ -1,0 +1,28 @@
+{
+  "label": "Ngôn ngữ",
+  "triggerLabel": "Ngôn ngữ: {language}",
+  "searchLabel": "Tìm ngôn ngữ",
+  "searchPlaceholder": "Tìm trong 20 ngôn ngữ…",
+  "noResults": "Không có ngôn ngữ nào khớp với “{query}”.",
+  "tier1": "Cấp 1",
+  "tier2": "Cấp 2",
+  "current": "Đang dùng",
+  "machineBadge": "Máy dịch",
+  "machineBadgeLabel": "Dịch bằng máy",
+  "switching": "Đang chuyển sang {language}…",
+  "notice": {
+    "title": "Dịch bằng máy",
+    "body": "Bản dịch này do máy thực hiện và chưa được người bản ngữ rà soát.",
+    "cta": "Đề xuất bản dịch tốt hơn"
+  },
+  "suggestion": {
+    "region": "Gợi ý ngôn ngữ",
+    "message": "Trang web này cũng có bản {language}.",
+    "switch": "Chuyển sang {language}",
+    "dismiss": "Giữ {current}"
+  },
+  "englishOnly": {
+    "label": "Chỉ có bản tiếng Anh",
+    "body": "Tài liệu này chỉ được xuất bản bằng tiếng Anh. Phần điều hướng và các nút điều khiển vẫn hiển thị bằng ngôn ngữ của bạn."
+  }
+}

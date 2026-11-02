@@ -2,11 +2,29 @@
 
 import { motion } from "framer-motion"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/i18n/navigation"
 import TransitionLink from "@/components/pageTransition/TransitionLink"
 import { warmProjectScene } from "@/components/project-detail/scene-loader"
 import { fluid, fluidText } from "@/lib/fluidScale"
 import { saveProjectFilterHandoff } from "@/lib/projectFilterHandoff"
+import { useLocale } from "next-intl"
+import { DEFAULT_LOCALE } from "@/i18n/locales"
+import { intlTag } from "@/i18n/format"
+
+// The card's date stamp. English keeps `toDateString()` ("Sun Jul 20 2025")
+// byte for byte — it is what the card has always printed. Every other locale
+// gets the same four parts (weekday, day, month, year) from Intl, so month
+// names, part order and digits follow the reader's language.
+export const formatCardDate = (date, locale) => {
+  const value = new Date(date)
+  if (!locale || locale === DEFAULT_LOCALE) return value.toDateString()
+  return new Intl.DateTimeFormat(intlTag(locale), {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(value)
+}
 
 // Per-card reveal (issue #27 §3.2): a short rise while the card pulls into
 // focus — replaces the original y:100 leap, whose full-viewport travel read
@@ -47,6 +65,7 @@ const isConstrainedConnection = () => {
 
 const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   const router = useRouter()
+  const locale = useLocale()
   const prefersReducedMotion = useReducedMotion()
 
   // Hand the current filter forward so that coming BACK from this project's
@@ -107,7 +126,11 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
       }}
     >
       <div className="flex min-w-0 items-center" style={{ gap: fluid(0.5) }}>
-        <h2 className="project-title shrink-0">{name}</h2>
+        {/* A repository name, and below an Intl-formatted date: neither is
+            prose, so translate="no" (the pseudo-locale gate reads it). */}
+        <h2 className="project-title shrink-0" translate="no">
+          {name}
+        </h2>
         <p className="project-meta project-card-desc">{description}</p>
       </div>
 
@@ -124,8 +147,8 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
         }}
       />
 
-      <p id="date" className="project-meta shrink-0">
-        {new Date(date).toDateString()}
+      <p id="date" className="project-meta shrink-0" translate="no">
+        {formatCardDate(date, locale)}
       </p>
     </ProjectLink>
   )

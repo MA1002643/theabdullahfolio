@@ -3,8 +3,10 @@
 import { BtnList } from '@/app/data';
 import NavButton from './NavButton';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { usePointerCapability } from '@/hooks/usePointerCapability';
+import { useDirection } from '@/i18n/useDirection';
 
 // ─── Orbit geometry ────────────────────────────────────────────────────────
 // The ring is ONE ellipse at every width now. Two constants describe it: how
@@ -269,6 +271,21 @@ const Navigation = ({
   onUserInteract,
 }) => {
   const angleIncrement = 360 / BtnList.length;
+  // Button labels from the catalogue (issue #82). `btn.label` stays the
+  // English identity key for the reveal bookkeeping and React keys; only
+  // what a visitor reads or hears is translated.
+  const t = useTranslations('Nav');
+  const labelOf = (btn) => t(`links.${btn.icon}`);
+
+  // Reading direction (issue #82). The ring is drawn MIRRORED in RTL — every
+  // button's x is multiplied by `sign` at render — so its rotation sense, the
+  // order the buttons sit in and the side the reveal starts from are all the
+  // reflection of the LTR composition, which is what a right-to-left reader
+  // expects of it. Nothing else in the geometry changes: `a`, `b`, the drop,
+  // the depth test and every size limit are symmetric about the centre line.
+  // The pointer maths below (angular drag, horizontal wheel) reads the same
+  // `sign` so a grab still stays under the finger in the mirrored ring.
+  const { sign } = useDirection();
 
   const [rotation, setRotation] = useState(0);
   // The orbit's SEMI-AXES in px: the button at angle t sits at
@@ -687,8 +704,13 @@ const Navigation = ({
     // that places every button. Rotation and this angle share an origin and
     // orientation, so a grab at angle θ dragged to θ' owes the ring exactly
     // (θ' − θ): the grabbed point stays under the finger.
+    //
+    // `sign` un-mirrors x first: in RTL a button at parameter t is drawn at
+    // (-a·cos t, b·sin t), so the pointer's own x has to be reflected for the
+    // recovered angle to be that same t.
     const paramAngleDeg = (x, y, g) =>
-      (Math.atan2((y - g.cy) / g.bEff, (x - g.cx) / g.aEff) * 180) / Math.PI;
+      (Math.atan2((y - g.cy) / g.bEff, (sign * (x - g.cx)) / g.aEff) * 180) /
+      Math.PI;
 
     const onWheel = (e) => {
       // Trackpad pinch-to-zoom arrives as a wheel event with ctrlKey=true
@@ -705,7 +727,11 @@ const Navigation = ({
       e.preventDefault();
       // Dominant axis: a trackpad's two-finger HORIZONTAL swipe is the most
       // literal "spin the ring" gesture there is, and it arrives as deltaX.
-      let d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      // A horizontal swipe is a PHYSICAL direction, so in the mirrored RTL
+      // ring it is reflected too — the near arc still follows the fingers.
+      // Vertical deltas have no side and stay as they are.
+      let d =
+        Math.abs(e.deltaX) > Math.abs(e.deltaY) ? sign * e.deltaX : e.deltaY;
       if (e.deltaMode === 1) d *= 16; // lines → px (Firefox mouse wheel)
       else if (e.deltaMode === 2) d *= window.innerHeight; // pages → px
       glideBy(clampStep(d * WHEEL_DEG_PER_PX, WHEEL_MAX_STEP_DEG));
@@ -802,7 +828,9 @@ const Navigation = ({
           // Geometry cached from the grab: the wrapper cannot move mid-drag
           // (page scroll is prevented for the gesture's duration below).
           const g = drag.g;
-          const nx = (e.clientX - g.cx) / g.aEff;
+          // Reflected like paramAngleDeg's x, so the delta below is
+          // measured in the ring's own (possibly mirrored) parameter space.
+          const nx = (sign * (e.clientX - g.cx)) / g.aEff;
           const ny = (e.clientY - g.cy) / g.bEff;
           if (nx * nx + ny * ny < DRAG_DEAD_RADIUS * DRAG_DEAD_RADIUS) return;
           const angle = (Math.atan2(ny, nx) * 180) / Math.PI;
@@ -923,6 +951,7 @@ const Navigation = ({
     isColumnLayout,
     canHover,
     reduceMotion,
+    sign,
     angleIncrement,
     laptopRef,
     orbitGeometry,
@@ -939,13 +968,19 @@ const Navigation = ({
   // Attached to the wrapper, so it hears every button's keydown by bubbling
   // and exists only in the orbital layout. preventDefault stops the arrows
   // ALSO panning a scrollable page under the ring.
+  //
+  // `sign` keeps the arrows PHYSICAL in the mirrored RTL ring (issue #82):
+  // ← still carries the near arc to the left. Because the ring itself is
+  // reflected, that is the logical opposite of LTR's ← — i.e. in RTL ← steps
+  // the ring the way → does in LTR, the WAI-ARIA convention for a mirrored
+  // horizontal widget.
   const onRingKeyDown = (e) => {
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      glideBy(angleIncrement);
+      glideBy(sign * angleIncrement);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      glideBy(-angleIncrement);
+      glideBy(-sign * angleIncrement);
     }
   };
 
@@ -978,8 +1013,10 @@ const Navigation = ({
     const rightBtns = BtnList.slice(4, 8);
     return (
       <>
-        {/* Left column: About, Projects, Qualifications, Contact.
-            `absolute` (not `fixed`) so the column centers vertically on
+        {/* Start column: About, Projects, Qualifications, Contact — the
+            LEFT column in LTR and the RIGHT one in RTL (`start-2.5`, issue
+            #82), so the first pair's first button reveals on the side the
+            reader starts from. `absolute` (not `fixed`) so the column centers vertically on
             the laptop's parent flex line rather than on the viewport —
             keeps the icons aligned with the laptop regardless of where
             the header/headline push the laptop on different screens. */}
@@ -989,7 +1026,7 @@ const Navigation = ({
           // good — a tap that raised it would burn the tip's one persisted
           // showing the moment a rotation into ≥480px re-ran the tip's
           // dismissal effect against the stale latch.
-          className="absolute left-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4"
+          className="absolute start-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4"
         >
           {/* Always render all 4 buttons so the column reserves its full
               height from t=0. The reveal is done via the `visible` prop,
@@ -1002,6 +1039,7 @@ const Navigation = ({
               x={0}
               y={0}
               {...btn}
+              label={labelOf(btn)}
               setHovered={setHovered}
               hovered={hovered}
               isMobileColumn
@@ -1010,12 +1048,12 @@ const Navigation = ({
             />
           ))}
         </div>
-        {/* Right column: Journey, My Past, Guestbook, Uses.
+        {/* End column: Journey, My Past, Guestbook, Uses.
             Mirrors the left column (also `absolute` so it tracks the
             laptop's vertical center, not the viewport's). */}
         <div
           // Same no-signal rule as the left column.
-          className="absolute right-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4"
+          className="absolute end-2.5 top-[calc(50%_-_2vh)] -translate-y-1/2 z-50 flex flex-col space-y-4"
         >
           {/* Same always-render pattern as the left column. */}
           {rightBtns.map((btn, idx) => (
@@ -1024,6 +1062,7 @@ const Navigation = ({
               x={0}
               y={0}
               {...btn}
+              label={labelOf(btn)}
               setHovered={setHovered}
               hovered={hovered}
               isMobileColumn
@@ -1066,7 +1105,8 @@ const Navigation = ({
           const angleDeg = index * angleIncrement + rotation;
           const angleRad = (angleDeg * Math.PI) / 180;
 
-          const x = axes.a * Math.cos(angleRad);
+          // `sign` mirrors the ring in RTL (see the note at the top).
+          const x = sign * axes.a * Math.cos(angleRad);
           // The orbit's own y, before the ring is dropped toward the ground
           // plane. Kept separate from the rendered y BECAUSE THE DEPTH TEST
           // BELOW READS IT: `yOrbit` is symmetric about 0, so its sign is
@@ -1149,6 +1189,7 @@ const Navigation = ({
               // same inert treatment as the two-column branch uses.
               visible={isVisible}
               {...btn}
+              label={labelOf(btn)}
             />
           );
         })}

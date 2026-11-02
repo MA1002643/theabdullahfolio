@@ -3,7 +3,7 @@ import { Redis } from '@upstash/redis';
 
 import { describeError } from '../_utils/redact';
 import { CONTACT_SERVER_LIMITS as LIMITS } from '@/lib/contactLimits';
-import { readJsonBody } from '@/lib/guestbook/body';
+import { PAYLOAD_TOO_LARGE, readJsonBody } from '@/lib/guestbook/body';
 
 // Pin the Node.js runtime, matching the repo's other API routes. Required here:
 // nodemailer relies on Node core modules (net/tls/stream) and cannot run on Edge.
@@ -115,9 +115,21 @@ export async function POST(req) {
   // have been queued and retried forever instead of rejected once.
   const parsed = await readJsonBody(req, { maxBytes: CONTACT_BODY_MAX_BYTES });
   if (!parsed.ok) {
-    return new Response(JSON.stringify({ errors: [parsed.error] }), {
-      status: parsed.status,
-    });
+    // `issues` rides beside `errors` (issue #82): a stable machine code per
+    // error, so the form can word it in the visitor's language and fall back
+    // to the English `errors` entry at the same index.
+    const tooLarge = parsed.status === PAYLOAD_TOO_LARGE;
+    return new Response(
+      JSON.stringify({
+        errors: [parsed.error],
+        issues: [
+          tooLarge
+            ? { code: 'too_large', values: { max: CONTACT_BODY_MAX_BYTES } }
+            : { code: 'invalid_body' },
+        ],
+      }),
+      { status: parsed.status },
+    );
   }
   const fields =
     parsed.body !== null && typeof parsed.body === 'object' ? parsed.body : {};
@@ -135,41 +147,57 @@ export async function POST(req) {
     const maxRawSubjectLength = LIMITS.subject.max;
     const maxSubjectLength = maxRawSubjectLength + subjectSuffix.length;
 
+    // Each error is recorded twice: the English sentence (`errors`, the
+    // shape every existing client reads) and a machine code with its values
+    // (`issues`, issue #82) that the form words in the visitor's language.
     const validationErrors = [];
-    if (!name) validationErrors.push('Full Name is required.');
-    if (!email) validationErrors.push('Email is required.');
-    if (!subject) validationErrors.push('Subject is required.');
-    if (!message) validationErrors.push('Message is required.');
+    const issues = [];
+    const fail = (text, code, values) => {
+      validationErrors.push(text);
+      issues.push(values ? { code, values } : { code });
+    };
+    if (!name) fail('Full Name is required.', 'name_required');
+    if (!email) fail('Email is required.', 'email_required');
+    if (!subject) fail('Subject is required.', 'subject_required');
+    if (!message) fail('Message is required.', 'message_required');
 
     if (name.length > LIMITS.name.max)
-      validationErrors.push(
+      fail(
         `Full Name exceeds maximum allowed length (${LIMITS.name.max} characters).`,
+        'name_too_long',
+        { max: LIMITS.name.max },
       );
     // Before the format check and the reputation lookup, and well before
     // nodemailer parses it as the reply-to (see lib/contactLimits.js).
     const emailTooLong = email.length > LIMITS.email.max;
     if (emailTooLong)
-      validationErrors.push(
+      fail(
         `Email exceeds maximum allowed length (${LIMITS.email.max} characters).`,
+        'email_too_long',
+        { max: LIMITS.email.max },
       );
     if (subject.length > maxRawSubjectLength)
-      validationErrors.push(
+      fail(
         `Subject exceeds maximum allowed length (${maxRawSubjectLength} characters).`,
+        'subject_too_long',
+        { max: maxRawSubjectLength },
       );
     if (message.length > LIMITS.message.max)
-      validationErrors.push(
+      fail(
         `Message exceeds maximum allowed length (${LIMITS.message.max} characters).`,
+        'message_too_long',
+        { max: LIMITS.message.max },
       );
 
     // Reject inputs containing CR/LF to prevent header injection
     if (/[\r\n]/.test(name) || /[\r\n]/.test(subject)) {
-      validationErrors.push('Input contains invalid characters.');
+      fail('Input contains invalid characters.', 'invalid_characters');
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      validationErrors.push('Invalid email format.');
+      fail('Invalid email format.', 'invalid_email');
     }
 
     // Verify email deliverability via Abstract Email Reputation API
@@ -188,14 +216,13 @@ export async function POST(req) {
         if (abstractRes.ok) {
           const validation = await abstractRes.json();
           if (validation.email_deliverability?.status === 'undeliverable') {
-            validationErrors.push(
+            fail(
               'This email address does not exist or cannot receive emails.',
+              'undeliverable_email',
             );
           }
           if (validation.email_quality?.is_disposable) {
-            validationErrors.push(
-              'Disposable email addresses are not allowed.',
-            );
+            fail('Disposable email addresses are not allowed.', 'disposable_email');
           }
         } else {
           console.warn('Abstract API non-ok:', abstractRes.status);
@@ -211,7 +238,7 @@ export async function POST(req) {
     }
 
     if (validationErrors.length > 0) {
-      return new Response(JSON.stringify({ errors: validationErrors }), {
+      return new Response(JSON.stringify({ errors: validationErrors, issues }), {
         status: 400,
       });
     }

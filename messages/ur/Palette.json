@@ -1,0 +1,15 @@
+{
+  "dialog": "کمانڈ پیلیٹ",
+  "search": "کمانڈز تلاش کریں",
+  "placeholder": "کوئی کمانڈ یا منزل لکھیں…",
+  "list": "کمانڈز",
+  "empty": "کوئی نتیجہ نہیں ملا",
+  "sections": {
+    "navigate": "رسائی",
+    "language": "زبان"
+  },
+  "keywords": {
+    "navigate": "جانا چلو کودنا راستہ صفحہ نیویگیٹ go jump route page",
+    "language": "زبان ترجمہ لوکیل language translate locale"
+  }
+}

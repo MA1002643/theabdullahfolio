@@ -8,8 +8,12 @@ import { useEffect, useRef, useState } from "react";
 import { useProjectProgress } from "@/hooks/useProjectProgress";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { PROJECT_CATEGORY_COLORS } from "@/lib/categories";
-import { formatAge } from "@/utils/formatAge";
 import { claimEscape } from "@/lib/escapeKey";
+import { useTranslations } from "next-intl";
+import { useDataT } from "@/i18n/useDataT";
+import { localizeCategory } from "@/i18n/data";
+import { useDirection } from "@/i18n/useDirection";
+import { useAboutDigits } from "./aboutI18n";
 
 // ── Scroll-reveal cascade — the SAME entrance grammar as the Experience
 // Breakdown modal (sections slide up, list rows slide in from the left,
@@ -24,12 +28,15 @@ const revealUp = {
 // one-shot container stagger would leave rows below the list's own fold
 // pre-revealed. `visible` takes a per-row delay via `custom`, recreating
 // the 0.06 cascade whenever a page of rows enters together.
+// `hidden` takes the reading direction through `custom` too, so rows slide in
+// from the reading-start edge in RTL (issue #82). `custom` is
+// `{ delay, sign }`; a bare number (the old shape) still works.
 const revealRow = {
-  hidden: { opacity: 0, x: -16 },
-  visible: (delay = 0) => ({
+  hidden: (c) => ({ opacity: 0, x: -16 * (c?.sign ?? 1) }),
+  visible: (c = 0) => ({
     opacity: 1,
     x: 0,
-    transition: { duration: 0.45, ease: "easeOut", delay },
+    transition: { duration: 0.45, ease: "easeOut", delay: typeof c === "number" ? c : (c?.delay ?? 0) },
   }),
 };
 // Reduced-motion no-op for every reveal variant above.
@@ -74,6 +81,26 @@ const STATUS_COLORS = new Map([
   ["backlog", "rgba(244, 227, 184, 0.18)"],
   ["no status", "rgba(244, 227, 184, 0.18)"],
 ]);
+// GitHub Projects' own column names (its board templates and the common
+// variants), filed under `About.progress.columns.<key>` (issue #82). A board's
+// columns are the owner's data, read live, so they cannot be translated ahead
+// of time in general — but these are the names GitHub itself proposes, which
+// covers every board on the site today. A custom column outside this map is
+// shown exactly as the board names it, in its own <bdi> run.
+const COLUMN_KEYS = new Map([
+  ["todo", "todo"],
+  ["to do", "todo"],
+  ["backlog", "backlog"],
+  ["ready", "ready"],
+  ["in progress", "inProgress"],
+  ["in review", "inReview"],
+  ["done", "done"],
+  ["no status", "noStatus"],
+  ["blocked", "blocked"],
+  ["on hold", "onHold"],
+]);
+export const columnKey = (name) => COLUMN_KEYS.get(String(name).trim().toLowerCase()) ?? null;
+
 const statusColor = (name) => STATUS_COLORS.get(name.toLowerCase()) ?? "#b8946a";
 // The faint parchment tones vanish as text — counts for those columns fall
 // back to the standard amber body colour instead.
@@ -89,30 +116,55 @@ function AnimatedNumber({ value }) {
   const nodeRef = useRef(null);
   const sectionRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
+  const digits = useAboutDigits();
   const { playToken } = useViewportCountTrigger(sectionRef, { amount: 0.3 });
 
   useEffect(() => {
     const node = nodeRef.current;
     if (!node) return;
     if (prefersReducedMotion) {
-      node.textContent = String(value);
+      node.textContent = digits.int(value);
       return;
     }
     if (playToken === 0) return;
     const controls = animate(0, value, {
       duration: 1.2,
       onUpdate: (v) => {
-        node.textContent = v.toFixed(0);
+        // Reader's digits (issue #82); English is the old v.toFixed(0).
+        node.textContent = digits.fixed(v, 0);
       },
     });
     return () => controls.stop();
-  }, [value, playToken, prefersReducedMotion]);
+  }, [value, playToken, prefersReducedMotion, digits]);
 
   return (
     <span ref={sectionRef} className="inline-block tabular-nums">
-      <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>
+      <span ref={nodeRef}>{digits.int(prefersReducedMotion ? value : 0)}</span>
     </span>
   );
+}
+
+// formatAge's grammar ("2m 04s ago") as catalogue messages (issue #82), so
+// the units and their order are translatable; the numbers come in the
+// reader's digits. English renders exactly what formatAge rendered.
+function syncAgeText(fromISO, now, t, digits) {
+  const fromMs = Date.parse(fromISO);
+  if (Number.isNaN(fromMs)) return "";
+  const sec = Math.max(0, Math.floor((now - fromMs) / 1000));
+  if (sec < 60) return t("progress.age.seconds", { s: digits.int(sec) });
+  if (sec < 3600) {
+    return t("progress.age.minutes", { m: digits.int(Math.floor(sec / 60)), s: digits.pad2(sec % 60) });
+  }
+  if (sec < 86400) {
+    return t("progress.age.hours", {
+      h: digits.int(Math.floor(sec / 3600)),
+      m: digits.pad2(Math.floor((sec % 3600) / 60)),
+    });
+  }
+  return t("progress.age.days", {
+    d: digits.int(Math.floor(sec / 86400)),
+    h: digits.pad2(Math.floor((sec % 86400) / 3600)),
+  });
 }
 
 // Footer sync age in the maintenance header's digit grammar (RelativeTime's
@@ -121,12 +173,15 @@ function AnimatedNumber({ value }) {
 // just with formatAge's two-part precision. The parts come from a fixed
 // split of a formatter this component owns, so index keys are stable.
 function SyncAge({ iso, now }) {
+  const t = useTranslations("About");
+  const digits = useAboutDigits();
+  // \p{Nd}, not \d: Arabic-Indic and Persian digits must light up too.
   return (
     <span className="tabular-nums">
-      {formatAge(iso, now)
-        .split(/(\d+)/)
+      {syncAgeText(iso, now, t, digits)
+        .split(/(\p{Nd}+)/u)
         .map((part, i) =>
-          /^\d+$/.test(part) ? (
+          /^\p{Nd}+$/u.test(part) ? (
             <span key={i} className="font-semibold" style={{ color: "#ff6d05", textShadow: "none" }}>
               {part}
             </span>
@@ -143,6 +198,7 @@ function SyncAge({ iso, now }) {
 // dialogs' hero rings are visually interchangeable; the stroke ramps soft
 // gold → vivid ember along the arc, echoing the page's fire gradient.
 function OverallRing({ percent }) {
+  const t = useTranslations("About");
   const prefersReducedMotion = useReducedMotion();
   const radius = 70;
   const strokeWidth = 14;
@@ -195,13 +251,13 @@ function OverallRing({ percent }) {
           className="text-3xl sm:text-4xl font-semibold tabular-nums"
           style={{ color: "#ff6d05", textShadow: "none" }}
         >
-          <AnimatedNumber value={percent} />%
+          {t.rich("progress.percent", { n: () => <AnimatedNumber value={percent} /> })}
         </span>
         {/* Stacked so the label stays inside the ring's inner hole — on one
             line it's wider than the hole and overlaps the arc. */}
         <span className="text-[10px] uppercase tracking-[0.18em] text-fire-amber mt-1 text-center leading-snug">
-          <span className="block">board items</span>
-          <span className="block">done</span>
+          <span className="block">{t("progress.ringLineOne")}</span>
+          <span className="block">{t("progress.ringLineTwo")}</span>
         </span>
       </div>
     </div>
@@ -259,6 +315,8 @@ function MiniRing({ percent, color, tracked, containerRef }) {
 // palette so this list and the card's split bar always agree.
 function CategoryRow({ label, count, total, color, index, containerRef }) {
   const prefersReducedMotion = useReducedMotion();
+  const { sign } = useDirection();
+  const dataT = useDataT();
   const pct = total > 0 ? (count / total) * 100 : 0;
 
   return (
@@ -267,7 +325,7 @@ function CategoryRow({ label, count, total, color, index, containerRef }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ root: containerRef, once: false, amount: 0.35 }}
-      custom={(index % 5) * 0.06}
+      custom={{ delay: (index % 5) * 0.06, sign }}
       className="grid gap-1.5 py-1.5"
       style={{ gridTemplateColumns: "minmax(0, 1fr) auto" }}
     >
@@ -277,7 +335,7 @@ function CategoryRow({ label, count, total, color, index, containerRef }) {
           className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
           style={{ background: color }}
         />
-        <span className="text-fire-amber">{label}</span>
+        <span className="text-fire-amber">{localizeCategory(label, dataT)}</span>
       </span>
       <span className="text-xs tabular-nums self-center" style={{ color: "#ff6d05", textShadow: "none" }}>
         <AnimatedNumber value={count} />
@@ -348,6 +406,12 @@ function PipelineBar({ project, containerRef }) {
 // own.
 function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
   const prefersReducedMotion = useReducedMotion();
+  const t = useTranslations("About");
+  const dataT = useDataT();
+  const { sign } = useDirection();
+  // Project names are proper names (untranslated); the category is a Data
+  // label, localised the same way the /projects grid localises it.
+  const category = localizeCategory(project.category, dataT);
   const color = tierColor(project.completionPercent);
   const { tracked } = project;
   // `boardUrl` arrives on the payload only for PUBLIC Projects v2 boards
@@ -356,10 +420,14 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
   const boardUrl = project.boardUrl ?? null;
 
   const statusLabel = tracked
-    ? `${project.completionPercent}% complete, ${project.doneItems} of ${project.totalItems} board items done`
+    ? t("progress.row.tracked", {
+        percent: project.completionPercent,
+        done: project.doneItems,
+        total: project.totalItems,
+      })
     : project.repo
-      ? "progress sync unavailable"
-      : "not tracked";
+      ? t("progress.row.syncUnavailable")
+      : t("progress.row.notTracked");
 
   return (
     <motion.li
@@ -367,13 +435,13 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ root: containerRef, once: false, amount: 0.35 }}
-      custom={(index % 5) * 0.06}
+      custom={{ delay: (index % 5) * 0.06, sign }}
     >
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        aria-label={`${project.name}, ${project.category}. ${statusLabel}. Toggle board breakdown.`}
+        aria-label={t("progress.row.ariaLabel", { name: project.name, category, status: statusLabel })}
         // Hover tint only while CLOSED — an open row is already the active
         // focus of the list, so re-tinting it on hover would double-signal.
         // Ember 5% — the same wash the Most Active Repository card's rows
@@ -381,7 +449,7 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
         className={`w-full flex items-center gap-3 py-2 px-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/40 transition-colors ${expanded ? "" : "hover:bg-[#ff6d05]/5"}`}
       >
         <MiniRing percent={project.completionPercent} color={color} tracked={tracked} containerRef={containerRef} />
-        <span className="flex-1 min-w-0 text-left">
+        <span className="flex-1 min-w-0 text-start">
           <span className="flex items-center gap-1.5 min-w-0">
             <span className="truncate text-sm text-fire-amber leading-snug">{project.name}</span>
             {project.private && (
@@ -389,15 +457,18 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
             )}
           </span>
           <span className="block text-[10px] uppercase tracking-[0.16em]" style={{ color: "#d4af7a" }}>
-            {project.category}
-            {!tracked && <span className="normal-case tracking-normal italic opacity-70"> · sync unavailable</span>}
+            {category}
+            {!tracked && (
+              <span className="normal-case tracking-normal italic opacity-70">
+                {" "}
+                {t("progress.row.syncUnavailableTag")}
+              </span>
+            )}
           </span>
         </span>
         <span className="text-sm font-semibold tabular-nums flex-shrink-0" style={{ color: tracked ? color : "#d4af7a", textShadow: "none" }}>
           {tracked ? (
-            <>
-              <AnimatedNumber value={project.completionPercent} />%
-            </>
+            t.rich("progress.percent", { n: () => <AnimatedNumber value={project.completionPercent} /> })
           ) : (
             "—"
           )}
@@ -418,7 +489,7 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
             transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="pl-[52px] pr-8 pb-3 space-y-2">
+            <div className="ps-[52px] pe-8 pb-3 space-y-2">
               {tracked ? (
                 <>
                   <PipelineBar project={project} containerRef={containerRef} />
@@ -436,7 +507,11 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
                           className="inline-block w-1.5 h-1.5 rounded-full"
                           style={{ background: statusColor(c.name) }}
                         />
-                        {c.name}{" "}
+                        {columnKey(c.name) ? (
+                          t(`progress.columns.${columnKey(c.name)}`)
+                        ) : (
+                          <bdi>{c.name}</bdi>
+                        )}{" "}
                         {statusCountColor(c.name) ? (
                           <span style={{ color: statusCountColor(c.name) }}>
                             <AnimatedNumber value={c.count} />
@@ -449,7 +524,7 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
                       </span>
                     ))}
                     <span>
-                      Total{" "}
+                      {t("progress.row.total")}{" "}
                       <span className="text-fire-amber">
                         <AnimatedNumber value={project.totalItems} />
                       </span>
@@ -458,9 +533,7 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
                 </>
               ) : (
                 <p className="text-xs text-fire-amber opacity-80">
-                  {project.repo
-                    ? "This board couldn’t be synced right now — live counts return with the next refresh."
-                    : "No GitHub project board is linked to this project."}
+                  {project.repo ? t("progress.row.couldNotSync") : t("progress.row.noBoard")}
                 </p>
               )}
               {boardUrl && (
@@ -470,7 +543,7 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
                   rel="noopener noreferrer"
                   className="inline-block text-xs text-[#ffd27d] hover:text-[#ff6d05] underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/40 rounded transition-colors"
                 >
-                  View project board →
+                  {t("progress.row.viewBoard")}
                 </a>
               )}
             </div>
@@ -539,6 +612,7 @@ const FOCUSABLE_SELECTOR = [
  * @param {React.RefObject<HTMLElement>} props.triggerRef - element that opened the popup
  */
 export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
+  const t = useTranslations("About");
   const prefersReducedMotion = useReducedMotion();
   const { data, failed, refetch } = useProjectProgress();
   const dialogRef = useRef(null);
@@ -778,21 +852,21 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
                 <header className="flex items-start justify-between gap-4 mb-6">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">
-                      Delivery telemetry
+                      {t("progress.eyebrow")}
                     </p>
                     <h2
                       id="project-progress-title"
                       className="text-xl sm:text-2xl font-semibold"
                       style={{ color: "#ff6d05", textShadow: "none" }}
                     >
-                      Project progress
+                      {t("progress.title")}
                     </h2>
                   </div>
                   <button
                     ref={closeButtonRef}
                     type="button"
                     onClick={onClose}
-                    aria-label="Close project progress"
+                    aria-label={t("progress.close")}
                     className="custom-bg flex-shrink-0 w-9 h-9 inline-flex items-center justify-center rounded-full text-[#d4af7a] hover:text-[#ff6d05] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50"
                   >
                     <X aria-hidden="true" className="w-4 h-4" strokeWidth={2} />
@@ -803,14 +877,14 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
                   failed ? (
                     <div className="py-10 text-center space-y-4">
                       <p className="text-sm text-fire-amber">
-                        Couldn’t reach the progress sync right now.
+                        {t("progress.failed")}
                       </p>
                       <button
                         type="button"
                         onClick={refetch}
                         className="custom-bg inline-flex items-center px-4 py-2 rounded-full text-xs uppercase tracking-[0.16em] text-[#ffd27d] hover:text-[#ff6d05] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50 transition-colors"
                       >
-                        Retry sync
+                        {t("progress.retry")}
                       </button>
                     </div>
                   ) : (
@@ -838,20 +912,23 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
                               divider elements because elite-divider(-v) are
                               custom classes responsive prefixes can't retarget. */}
                           <dl className="flex-1 w-full flex items-stretch justify-evenly gap-4 sm:block sm:space-y-4">
-                            <div className="text-center sm:text-left">
+                            <div className="text-center sm:text-start">
                               <dt className="text-[10px] uppercase tracking-[0.18em] text-[#ffaa2a] mb-1">
-                                Items done
+                                {t("progress.itemsDone")}
                               </dt>
                               <dd className="text-2xl sm:text-3xl font-semibold tabular-nums" style={{ color: "#ff6d05", textShadow: "none" }}>
                                 <AnimatedNumber value={data.doneItems} />
-                                <span className="text-sm sm:text-base text-fire-amber font-normal"> of {data.totalItems}</span>
+                                <span className="text-sm sm:text-base text-fire-amber font-normal">
+                                  {" "}
+                                  {t("progress.ofTotal", { total: data.totalItems })}
+                                </span>
                               </dd>
                             </div>
                             <div aria-hidden="true" className="w-px self-stretch elite-divider-v sm:hidden" />
                             <div aria-hidden="true" className="hidden sm:block h-px elite-divider" />
-                            <div className="text-center sm:text-left">
+                            <div className="text-center sm:text-start">
                               <dt className="text-[10px] uppercase tracking-[0.18em] text-[#ffaa2a] mb-1">
-                                Boards live
+                                {t("progress.boardsLive")}
                               </dt>
                               {/* "9 of 9" is redundant when every board is
                                   syncing — the fraction only carries
@@ -863,8 +940,8 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
                                 <span className="text-sm sm:text-base text-fire-amber font-normal">
                                   {" "}
                                   {data.trackedCount === data.totalProjects
-                                    ? `project${data.trackedCount === 1 ? "" : "s"}`
-                                    : `of ${data.totalProjects} projects`}
+                                    ? t("progress.allProjects", { count: data.trackedCount })
+                                    : t("progress.ofProjects", { total: data.totalProjects })}
                                 </span>
                               </dd>
                             </div>
@@ -872,9 +949,7 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
                         </>
                       ) : (
                         <p className="text-sm text-fire-amber opacity-80">
-                          Live sync is unavailable right now — showing the
-                          portfolio’s structure; percentages return with the
-                          next successful refresh.
+                          {t("progress.unavailable")}
                         </p>
                       )}
                     </motion.div>
@@ -890,10 +965,10 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
                         className="flex items-center justify-between mb-2"
                       >
                         <h3 className="text-[11px] uppercase tracking-[0.2em] text-[#ffaa2a]">
-                          By category
+                          {t("progress.byCategory")}
                         </h3>
                         <span className="text-[10px] uppercase tracking-[0.16em] text-[#d4af7a]">
-                          {data.totalProjects} projects
+                          {t("progress.projectCount", { count: data.totalProjects })}
                         </span>
                       </motion.header>
                       {/* Capped at ~5 rows: past that the list scrolls WITHIN
@@ -944,10 +1019,10 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
                         className="flex items-center justify-between mb-2"
                       >
                         <h3 className="text-[11px] uppercase tracking-[0.2em] text-[#ffaa2a]">
-                          Per project
+                          {t("progress.perProject")}
                         </h3>
                         <span className="text-[10px] uppercase tracking-[0.16em] text-[#d4af7a]">
-                          Live from GitHub Projects
+                          {t("progress.liveFrom")}
                         </span>
                       </motion.header>
                       {/* Same 5-row cap as the category list — with eleven
@@ -991,14 +1066,14 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
                       className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 mt-6 pt-3 text-[10px] uppercase tracking-[0.16em]"
                       style={{ color: "#d4af7a", borderTop: "1px solid rgba(244, 227, 184, 0.08)" }}
                     >
-                      <span>Auto-synced from GitHub Projects · twice daily</span>
+                      <span>{t("progress.footer")}</span>
                       <span className="tabular-nums">
                         {data.lastSynced ? (
                           <>
-                            Last sync <SyncAge iso={data.lastSynced} now={now} />
+                            {t("progress.lastSync")} <SyncAge iso={data.lastSynced} now={now} />
                           </>
                         ) : (
-                          "Awaiting first sync"
+                          t("progress.awaiting")
                         )}
                       </span>
                     </footer>

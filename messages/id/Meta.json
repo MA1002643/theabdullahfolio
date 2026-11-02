@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Software Engineer. Kartu gelap berwarna bara dengan segel Muhammad Abdullah dan status portofolio langsung.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Software Engineer. Kartu persegi gelap berwarna bara dengan segel Muhammad Abdullah dan status portofolio langsung.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Software Engineer",
+      "description": "Software engineer di Bolton yang membangun aplikasi web cepat dan matang dengan Next.js, React, dan TypeScript. Proyek, kredensial, dan perangkat di baliknya."
+    },
+    "about": {
+      "title": "Tentang",
+      "description": "Sosok engineer di balik bara ini — kisahnya, stack-nya, dan telemetri GitHub langsung tentang apa yang sedang dibangun saat ini."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "Rekam jejak lengkap — setiap peran, kualifikasi, dan proyek yang telah dirilis, dalam HTML. Disusun dari data yang sama dengan lini masa, dengan PDF hanya satu klik jauhnya."
+    },
+    "notes": {
+      "title": "Catatan",
+      "description": "Catatan keputusan rekayasa — mengapa setiap pilihan di situs ini dibuat, alternatif mana yang ditolak, dan apa harga dari masing-masing."
+    },
+    "projects": {
+      "title": "Proyek",
+      "description": "{countWord} karya — web, sistem, seluler, dan AI — masing-masing dipantau langsung dari papan GitHub-nya sendiri, lengkap dengan stack dan status penyelesaian di setiap kartu."
+    },
+    "qualifications": {
+      "title": "Kualifikasi",
+      "description": "Gelar, sertifikat, dan kredensial profesional — jejak dokumen terverifikasi di balik praktik kerja ini, dengan setiap sertifikat dapat dilihat."
+    },
+    "journey": {
+      "title": "Perjalanan",
+      "description": "Setiap peran, kualifikasi, dan posisi sukarelawan dalam satu lini masa yang digerakkan gulir — dari Bolton College pada 2018 hingga merilis perangkat lunak produksi hari ini."
+    },
+    "uses": {
+      "title": "Perangkat",
+      "description": "Mesin, meja kerja, stack, dan pipeline — setiap perangkat di halaman ini diverifikasi terhadap repositori dan build yang merilisnya."
+    },
+    "contact": {
+      "title": "Kontak",
+      "description": "Mulailah percakapan tentang sebuah peran atau proyek — formulir kontak yang menyempurnakan pesan Anda saat Anda menulis dan tidak pernah menghilangkan draf."
+    },
+    "myPast": {
+      "title": "Masa Lalu Saya",
+      "description": "Portofolio era kuliah tempat semuanya bermula — dibuat manual dengan HTML, CSS, dan JavaScript biasa, dipertahankan daring sebagai gambaran awal yang jujur."
+    },
+    "guestbook": {
+      "title": "Buku Tamu",
+      "description": "Tinggalkan jejak Anda di dinding — papan pesan neon yang ditandatangani pengunjung lewat GitHub atau Google, dengan kehadiran dan reaksi secara langsung."
+    },
+    "privacy": {
+      "title": "Privasi",
+      "description": "Setiap cookie, kunci penyimpanan, dan pihak ketiga yang disentuh situs ini, alasan keberadaannya, serta cara mematikan yang opsional. Diaudit, bukan sekadar templat."
+    }
+  },
+  "notFound": {
+    "title": "404 — Halaman Tidak Ditemukan",
+    "description": "Anda tersesat ke kehampaan. Halaman ini tidak ada — belum."
+  }
+}

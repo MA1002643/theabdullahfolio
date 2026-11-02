@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMessageRefine } from '@/hooks/useMessageRefine';
 import { CONTACT_REFINE_MIN_LEN } from '@/lib/refineLimits';
@@ -35,6 +36,9 @@ export default function MessageRefine({
   minLength = CONTACT_REFINE_MIN_LEN,
 }) {
   const reduced = useReducedMotion();
+  // Shared by /contact and /guestbook, so its copy lives in the Composer
+  // namespace both routes hand the client (issue #82).
+  const t = useTranslations('Composer');
   const { status, suggestion, error, refine, reset } = useMessageRefine({ mode });
 
   const trimmed = (message || '').trim();
@@ -64,11 +68,11 @@ export default function MessageRefine({
   // the live text node spamming an announcement on every token.
   const announce =
     status === 'loading' || status === 'streaming'
-      ? 'Polishing your message…'
+      ? t('refine.announcePolishing')
       : status === 'done'
-        ? 'Suggested rewrite ready.'
+        ? t('refine.announceReady')
         : status === 'error'
-          ? error || 'Could not polish the message.'
+          ? error || t('refine.announceError')
           : '';
 
   // Once the form is sending (`disabled`), the panel must go inert: accepting a
@@ -120,7 +124,7 @@ export default function MessageRefine({
             <span aria-hidden="true" className="refine-spark">
               ✦
             </span>
-            Refine my message
+            {t('refine.affordance')}
           </motion.button>
         )}
       </AnimatePresence>
@@ -131,15 +135,21 @@ export default function MessageRefine({
             key="panel"
             className="refine-panel"
             role="group"
-            aria-label="Suggested rewrite"
+            aria-label={t('refine.panelLabel')}
             {...panelMotion}
             transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
           >
             {status === 'error' ? (
               <p className="refine-error">{error}</p>
             ) : (
-              <p className="refine-suggestion" aria-hidden={busy ? 'true' : undefined}>
-                {suggestion || (status === 'loading' ? 'Polishing…' : '')}
+              // dir="auto": the rewrite comes back in the author's own
+              // language, which need not be the page's (issue #82).
+              <p
+                className="refine-suggestion"
+                dir="auto"
+                aria-hidden={busy ? 'true' : undefined}
+              >
+                {suggestion || (status === 'loading' ? t('refine.polishing') : '')}
                 {busy && !reduced && <span className="refine-caret" aria-hidden="true" />}
               </p>
             )}
@@ -153,7 +163,7 @@ export default function MessageRefine({
                     onClick={handleAccept}
                     disabled={disabled}
                   >
-                    Use this
+                    {t('refine.use')}
                   </button>
                   <button
                     type="button"
@@ -161,10 +171,10 @@ export default function MessageRefine({
                     onClick={startRefine}
                     disabled={disabled}
                   >
-                    Polish again
+                    {t('refine.again')}
                   </button>
                   <button type="button" className="refine-btn refine-btn--ghost" onClick={reset}>
-                    Discard
+                    {t('refine.discard')}
                   </button>
                 </>
               )}
@@ -176,16 +186,16 @@ export default function MessageRefine({
                     onClick={startRefine}
                     disabled={disabled}
                   >
-                    Try again
+                    {t('refine.retry')}
                   </button>
                   <button type="button" className="refine-btn refine-btn--ghost" onClick={reset}>
-                    Dismiss
+                    {t('refine.dismiss')}
                   </button>
                 </>
               )}
               {busy && (
                 <button type="button" className="refine-btn refine-btn--ghost" onClick={reset}>
-                  Cancel
+                  {t('refine.cancel')}
                 </button>
               )}
             </div>

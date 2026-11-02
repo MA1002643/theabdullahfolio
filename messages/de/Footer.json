@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Index",
+    "elsewhere": "Anderswo"
+  },
+  "siteNav": "Website",
+  "identity": {
+    "role": "Softwareentwickler",
+    "statement": "Schnelle, durchdachte Web-Erlebnisse aus dem Norden Englands."
+  },
+  "availability": "Offen für neue Rollen",
+  "githubCta": {
+    "label": "Dieses Projekt auf GitHub ansehen",
+    "newTab": "(öffnet in neuem Tab)",
+    "commits": "{count, plural, one {<num>{formatted}</num> Commit} other {<num>{formatted}</num> Commits}}",
+    "pushed": "gepusht {when}"
+  },
+  "manifest": {
+    "departures": "Abflüge",
+    "nowBoarding": "Einsteigen",
+    "onTime": "Pünktlich",
+    "links": {
+      "about": {
+        "label": "Über mich",
+        "desc": "Wer ich bin"
+      },
+      "journey": {
+        "label": "Werdegang",
+        "desc": "Der Weg bis hierher"
+      },
+      "qualifications": {
+        "label": "Qualifikationen",
+        "desc": "Abschlüsse und Nachweise"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Der vollständige Überblick"
+      },
+      "projects": {
+        "label": "Projekte",
+        "desc": "Ausgewählte Arbeiten"
+      },
+      "uses": {
+        "label": "Uses",
+        "desc": "Womit ich baue"
+      },
+      "notes": {
+        "label": "Notizen",
+        "desc": "Warum es so gebaut ist"
+      },
+      "contact": {
+        "label": "Kontakt",
+        "desc": "Sag Hallo"
+      },
+      "guestbook": {
+        "label": "Gästebuch",
+        "desc": "Hinterlasse deine Spur"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHub-Profil (öffnet in neuem Tab)",
+    "linkedin": "LinkedIn-Profil (öffnet in neuem Tab)",
+    "resume": "Den vollständigen CV lesen",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Ortszeit {time} {period} in {town}} other {Ortszeit {time} Uhr in {town}}}",
+    "placeLabel": "Standort: {town}",
+    "live": "LIVE"
+  },
+  "sound": {
+    "label": "Ton",
+    "on": "An",
+    "off": "Aus",
+    "turnOn": "Gitarrenklang im Footer einschalten",
+    "turnOff": "Gitarrenklang im Footer ausschalten",
+    "hoverLines": "Fahr über die Saiten",
+    "nowPlaying": "Jetzt läuft — eine beruhigende Gitarre",
+    "turnOnPrompt": "Schalte den Ton ein für eine beruhigende Gitarre"
+  },
+  "privacy": {
+    "policy": "Datenschutz",
+    "choices": "Datenschutzeinstellungen"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/anderswo",
+    "cmd": {
+      "github": "öffne github",
+      "linkedin": "öffne linkedin",
+      "resume": "öffne lebenslauf"
+    }
+  }
+}

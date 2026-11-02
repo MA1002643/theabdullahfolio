@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "در حال پخش",
+  "lastPlayed": "آخرین پخش",
+  "cardLabel": "{state, select, playing {در حال پخش} other {آخرین پخش}}: «{title}» از {artist}.",
+  "cardLabelLink": "{state, select, playing {در حال پخش} other {آخرین پخش}}: «{title}» از {artist}. باز کردن در Spotify.",
+  "openOnSpotify": "باز کردن در Spotify"
+}

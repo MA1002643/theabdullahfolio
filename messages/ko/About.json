@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "소개",
+    "subtitle": "저는 이런 사람이에요"
+  },
+  "intro": {
+    "heading": "마법을 설계하는 건축가",
+    "paragraph": "웹 개발을 향한 저의 여정은 다채로운 신비의 도구와 언어가 이끌어 가며, 그 마법의 중심에는 JavaScript가 있습니다. 저는 React.js와 Next.js 같은 프레임워크를 정교하게 다루며, 디지털 세계 곳곳의 영역(사용자)을 이어 주는 매끄러운 포털(웹사이트)을 빚어냅니다. 고대의 기술 Jamstack 덕분에 빠르고 안전하며 역동적인 경험을 만들 수 있고, 디자인 감각 덕분에 모든 창작물은 기능적일 뿐 아니라 시각적으로도 매혹적입니다. 눈에 보이는 마법 너머에서는 보이지 않는 기계 장치도 돌봅니다. 견고한 API와 데이터베이스(각 영역의 기억을 안전하게 간직하는 보물 창고)를 소환하고, 작업실에서 클라우드(창작물이 마침내 깨어나는 끝없는 에테르)까지 창작물을 실어 나르는 자동화 파이프라인을 엮어냅니다. 성능과 접근성은 신성한 서약으로 여기기에, 어떤 기기에서든 영역의 아무리 먼 구석에서든 모든 여행자에게 포털이 빠르게 열립니다. 호기심은 언제나 가장 믿음직한 나침반이 되어 저를 새로운 마법서와 더 날카로운 직관, 그리고 살아 숨 쉬는 경험이 될 만큼 대담한 아이디어로 이끕니다. 웹의 미래를 빚어낼 새로운 주문과 기술을 계속 탐험하는 여정에 함께해 주세요."
+  },
+  "projectsCard": {
+    "eyebrow": "출시한 프로젝트",
+    "unit": "{count, plural, other {완료한 프로젝트}}",
+    "viewProgress": "진행 상황 보기 →",
+    "ariaLabel": "출시한 프로젝트: 완료한 프로젝트 {count, number, ::group-off}개. {legend}. 진행 상황 보기: 실시간 프로젝트 진행 상황을 엽니다.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "카테고리별 완료한 프로젝트 — {summary}.",
+    "srItem": "{label}: {count, plural, other {프로젝트 {count, number, ::group-off}개}}",
+    "srPrefix": "프로젝트 업데이트: "
+  },
+  "statsCard": {
+    "title": "{name}님의 GitHub 통계",
+    "defaultUser": "GitHub 사용자",
+    "live": "실시간 GitHub 지표",
+    "rank": "랭크",
+    "updated": "GitHub 통계가 업데이트되었어요",
+    "srPrefix": "통계 업데이트: ",
+    "metrics": {
+      "stars": "받은 스타 총수",
+      "commits": "총 커밋 (최근 1년)",
+      "prs": "총 PR",
+      "issues": "총 이슈",
+      "contributedTo": "기여한 저장소 (최근 1년)"
+    }
+  },
+  "languagesCard": {
+    "title": "가장 많이 쓴 언어",
+    "count": "{count, plural, other {언어 {count, number, ::group-off}개}}",
+    "live": "GitHub 실시간 데이터",
+    "primary": "주 언어",
+    "percent": "<n></n>%",
+    "srPrefix": "언어 업데이트: ",
+    "popover": {
+      "eyebrow": "저장소 구성",
+      "ariaLabel": "{language}을(를) 사용하는 저장소",
+      "privateRepos": "{count, plural, other {비공개 저장소 {count, number, ::group-off}개}}"
+    }
+  },
+  "streakCard": {
+    "title": "기여 연속 기록",
+    "subtitle": "GitHub 활동",
+    "srPrefix": "연속 기록 업데이트: ",
+    "total": "총 기여 수",
+    "current": "현재 연속 기록",
+    "longest": "최장 연속 기록",
+    "ringSrDays": "{days, plural, other {{days, number, ::group-off}일}}",
+    "ringSrShare": "{days, plural, other {{days, number, ::group-off}일}}, 최장 연속 기록의 {percent, number, ::group-off}%"
+  },
+  "repoCard": {
+    "badge": "가장 활발한 저장소",
+    "srPrefix": "저장소 업데이트: ",
+    "metrics": {
+      "stars": "스타",
+      "forks": "포크",
+      "mergedPrs": "병합된 PR",
+      "commits": "총 커밋",
+      "lastPushed": "마지막 푸시"
+    },
+    "score": "점수",
+    "activityScore": "활동 점수"
+  },
+  "skillsCard": {
+    "title": "기술 및 스택",
+    "categories": {
+      "languages": "언어",
+      "frameworks": "프레임워크",
+      "libraries": "라이브러리",
+      "tools": "도구",
+      "software": "소프트웨어"
+    },
+    "count": "{count, plural, other {기술 <n></n>개}}",
+    "live": "GitHub 실시간 데이터",
+    "syncing": "GitHub와 동기화하는 중…",
+    "noneDetected": "감지된 기술이 없어요",
+    "noneInRepos": "저장소에서 감지된 기술이 없어요",
+    "fetching": "GitHub에서 기술 정보를 가져오는 중…",
+    "srPrefix": "기술 업데이트: ",
+    "popover": {
+      "eyebrow": "사용된 저장소",
+      "ariaLabel": "{name}을(를) 사용하는 저장소",
+      "label": "저장소:",
+      "publicSr": "공개 {count, number, ::group-off}개",
+      "privateSr": "비공개 {count, number, ::group-off}개",
+      "publicCount": "공개 <n></n>개",
+      "privateCount": "비공개 <n></n>개",
+      "slash": "/",
+      "allPrivate": "모든 저장소가 비공개예요"
+    }
+  },
+  "progress": {
+    "eyebrow": "전달 텔레메트리",
+    "title": "프로젝트 진행 상황",
+    "close": "프로젝트 진행 상황 닫기",
+    "failed": "지금은 진행 상황 동기화에 연결할 수 없어요.",
+    "retry": "동기화 재시도",
+    "ringLineOne": "보드 항목",
+    "ringLineTwo": "완료",
+    "percent": "<n></n>%",
+    "itemsDone": "완료한 항목",
+    "ofTotal": "전체 {total, number, ::group-off}개 중",
+    "boardsLive": "연동된 보드",
+    "allProjects": "{count, plural, other {프로젝트}}",
+    "ofProjects": "전체 {total, number, ::group-off}개 프로젝트 중",
+    "unavailable": "지금은 실시간 동기화를 사용할 수 없어요. 포트폴리오 구조만 표시하며, 비율은 다음 새로고침에 성공하면 다시 표시돼요.",
+    "byCategory": "카테고리별",
+    "projectCount": "프로젝트 {count, number, ::group-off}개",
+    "perProject": "프로젝트별",
+    "liveFrom": "GitHub Projects 실시간 데이터",
+    "footer": "GitHub Projects에서 하루 두 번 자동 동기화",
+    "lastSync": "마지막 동기화",
+    "awaiting": "첫 동기화 대기 중",
+    "row": {
+      "tracked": "{percent, number, ::group-off}% 완료, 보드 항목 {total, number, ::group-off}개 중 {done, number, ::group-off}개 완료",
+      "syncUnavailable": "진행 상황 동기화 불가",
+      "notTracked": "추적 안 함",
+      "ariaLabel": "{name}, {category}. {status}. 보드 상세 내역 열기/닫기.",
+      "syncUnavailableTag": "· 동기화 불가",
+      "total": "합계",
+      "couldNotSync": "지금은 이 보드를 동기화할 수 없어요. 실시간 집계는 다음 새로고침 때 다시 표시돼요.",
+      "noBoard": "이 프로젝트에 연결된 GitHub 프로젝트 보드가 없어요.",
+      "viewBoard": "프로젝트 보드 보기 →"
+    },
+    "age": {
+      "seconds": "{s}초 전",
+      "minutes": "{m}분 {s}초 전",
+      "hours": "{h}시간 {m}분 전",
+      "days": "{d}일 {h}시간 전"
+    },
+    "columns": {
+      "todo": "할 일",
+      "backlog": "백로그",
+      "ready": "준비됨",
+      "inProgress": "진행 중",
+      "inReview": "검토 중",
+      "done": "완료",
+      "noStatus": "상태 없음",
+      "blocked": "차단됨",
+      "onHold": "보류 중"
+    }
+  },
+  "wire": {
+    "present": "현재",
+    "noCurrent": "현재 진행 중인 연속 기록 없음",
+    "noneFound": "연속 기록 없음",
+    "noData": "데이터 없음",
+    "notAvailable": "해당 없음",
+    "noDescription": "설명 없음",
+    "unknown": "알 수 없음",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "가장 활발한 저장소가 \"{name}\"(으)로 바뀌었어요",
+      "stars": "스타가 {amount, number, ::group-off}개 {direction, select, increased {늘어} other {줄어}} 현재 {total, number, ::group-off}개예요",
+      "forks": "포크가 {amount, number, ::group-off}개 {direction, select, increased {늘어} other {줄어}} 현재 {total, number, ::group-off}개예요",
+      "commits": "{count, plural, other {새 커밋 #개를 푸시했어요}}",
+      "mergedPrs": "{count, plural, other {PR #개를 병합했어요}}",
+      "activityScore": "활동 점수가 {amount, number, ::group-off} {direction, select, increased {증가했어요} other {감소했어요}} (현재 {total, number, ::group-off})",
+      "language": "주요 언어가 \"{language}\"(으)로 변경되었어요"
+    },
+    "stats": {
+      "stars": "총 Stars {delta, number, ::sign-always group-off}",
+      "commits": "총 커밋 {delta, number, ::sign-always group-off}",
+      "prs": "총 PR {delta, number, ::sign-always group-off}",
+      "issues": "총 이슈 {delta, number, ::sign-always group-off}",
+      "contributedTo": "기여한 저장소 {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "총 기여 {delta, number, ::sign-always group-off}",
+      "currentStreak": "현재 연속 기록 {delta, number, ::sign-always group-off}",
+      "longestStreak": "최장 연속 기록 {delta, number, ::sign-always group-off}",
+      "currentDates": "현재 연속 기록의 날짜가 변경되었어요",
+      "longestDates": "최장 연속 기록의 날짜가 변경되었어요"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language}이(가) 상위 언어에 추가되었어요.",
+      "addedMany": "{count, number, ::group-off}개의 {count, plural, other {언어}}가 상위 목록에 새로 올랐어요.",
+      "removedOne": "{language}이(가) 상위 언어에서 빠졌어요.",
+      "removedMany": "{count, number, ::group-off}개의 {count, plural, other {언어}}가 상위 목록에서 빠졌어요.",
+      "percentage": "{language}의 비율이 {delta, number, ::.0 group-off}% {direction, select, increased {증가했어요} other {감소했어요}}.",
+      "rank": "{language}의 순위가 #{rank, number, ::group-off}위로 {direction, select, up {상승했어요} other {하락했어요}}."
+    },
+    "skills": {
+      "added": "추가: {items}",
+      "removed": "제거: {items}",
+      "moved": "이동: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "완료된 프로젝트 {delta, number, ::group-off}개가 {delta, plural, other {새로 추가되었어요}} — 현재 {count, number, ::group-off}개",
+      "updated": "완료된 프로젝트가 업데이트되었어요 — 현재 {count, number, ::group-off}개"
+    }
+  }
+}

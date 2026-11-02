@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Nie znaleziono strony",
+    "description": "Wpadasz w pustkę. Tej strony nie ma — jeszcze."
+  },
+  "messages": {
+    "void": "Wpadasz w pustkę.",
+    "dimension": "Ta strona jest w innym wymiarze.",
+    "render": "Nawet moje umiejętności 3D nie pozwoliły wyrenderować tej strony.",
+    "vibes": "404: strony brak, ale klimat nadal bez zarzutu.",
+    "edge": "Dotarłeś do krawędzi portfolio."
+  },
+  "subtitle": "Tej strony nie ma — jeszcze.",
+  "didYouMean": "Czy chodziło o <link>{label}</link>?",
+  "takeMeBack": "WRÓĆ DO STRONY GŁÓWNEJ",
+  "keyHint": "Naciśnij {key}, aby wrócić na stronę główną"
+}

@@ -6,7 +6,13 @@ import TypeOnChunks from "./typeon-chunks";
 import { GlowButton } from "./glow-button";
 import LaptopBootSequence from "./boot-on-sequence";
 
-export default function LaptopContent({ links }) {
+// `copy` is the translated screen text from useScreenCopy (scene-loader.jsx):
+// this component lives inside drei's <Html> root, out of reach of the intl
+// provider, so it cannot call useTranslations itself. `dir` is restated on
+// the root for the same reason — the portal's DOM inherits it from <html>
+// anyway, but stating it keeps the screen right even if drei ever mounts it
+// somewhere that doesn't.
+export default function LaptopContent({ links, copy }) {
     const [bootComplete, setBootComplete] = useState(false);
 
     // aria-hidden (issue #92): this is the 3D screen's VISUAL copy, projected
@@ -15,10 +21,14 @@ export default function LaptopContent({ links }) {
     // accessibility tree; otherwise axe sees a scrollable region with nothing
     // in it a keyboard can reach (scrollable-region-focusable).
     return (
-        <div className="w-full h-full" aria-hidden="true">
+        <div className="w-full h-full" aria-hidden="true" dir={copy?.dir}>
 
             {!bootComplete ? (
-                <LaptopBootSequence onComplete={() => setBootComplete(true)} />
+                <LaptopBootSequence
+                    onComplete={() => setBootComplete(true)}
+                    messages={copy?.boot}
+                    rtl={copy?.isRtl}
+                />
             ) : (
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
@@ -28,18 +38,19 @@ export default function LaptopContent({ links }) {
                 bg-gradient-to-b from-black/85 to-black/60 
                 backdrop-blur-md 
                 flex flex-row items-stretch justify-between p-4 text-gray-200 gap-4
-                text-left laptop-scroll rounded-xl pb-10"
+                text-start laptop-scroll rounded-xl pb-10"
                 >
                     {/* LEFT PANEL */}
                     <div className="w-[100%] sm:w-[60%] flex flex-col space-y-4">
                         <div>
                             <p className="text-[2rem] leading-snug text-shadow-neon-light-orange">
-                                <TypeOnChunks text="Empowering your ideas with next-gen digital craftsmanship." />
+                                <TypeOnChunks text={copy?.tagline ?? "Empowering your ideas with next-gen digital craftsmanship."} rtl={copy?.isRtl} />
                             </p>
                         </div>
 
                         <div className="flex flex-wrap gap-1">
-                            {["Next.js", "TailwindCSS", "Framer Motion", "Fullstack"].map((badge, i) => (
+                            {/* Product names stay as they are; only "Fullstack" is a word. */}
+                            {["Next.js", "TailwindCSS", "Framer Motion", copy?.badgeFullstack ?? "Fullstack"].map((badge, i) => (
                                 <span
                                     key={i}
                                     className="text-[1.4rem] border border-amber-500/50 px-2 py-[1px] rounded-full bg-black/30 text-amber-300"
@@ -51,7 +62,7 @@ export default function LaptopContent({ links }) {
 
                         <div>
                             <h3 className="text-amber-400 text-base font-semibold uppercase mb-1">
-                                Tools & Frameworks
+                                {copy?.tools ?? "Tools & Frameworks"}
                             </h3>
                             <div className="flex gap-2 text-base text-amber-200/80">
                                 <FaReact size={24} /> <FaNodeJs size={24} /> <FaDatabase size={24} /> <FaCog size={24} />
@@ -60,25 +71,25 @@ export default function LaptopContent({ links }) {
 
                         <div>
                             <h3 className="text-amber-400 text-base font-semibold uppercase mb-1">
-                                Project Overview
+                                {copy?.overview ?? "Project Overview"}
                             </h3>
                             <p className="text-[1.6rem] text-amber-100/80 mb-2">
-                                This platform streamlines e-commerce workflows through a unified dashboard and live analytics.
+                                {copy?.overviewLead ?? "This platform streamlines e-commerce workflows through a unified dashboard and live analytics."}
                             </p>
                             <p className="text-[1.6rem] text-amber-100/60">
-                                It solves the complexity of managing multiple tools by offering a centralized, intuitive interface.
+                                {copy?.overviewBody ?? "It solves the complexity of managing multiple tools by offering a centralized, intuitive interface."}
                             </p>
                         </div>
 
                         <div>
-                            <h3 className="text-amber-400 text-base font-semibold uppercase mb-2">Features</h3>
+                            <h3 className="text-amber-400 text-base font-semibold uppercase mb-2">{copy?.features ?? "Features"}</h3>
                             <div className="grid grid-cols-2 gap-2">
                                 {[
                                     { icon: <FaLock />, title: "Authentication", desc: "Secure login and user access." },
                                     { icon: <FaCreditCard />, title: "Payments", desc: "Integrated payment gateway." },
                                     { icon: <FaComments />, title: "Live Chat", desc: "Instant user communication." },
                                     { icon: <FaCog />, title: "Admin Panel", desc: "Simplified content control." },
-                                ].map((f, i) => (
+                                ].map((f, i) => ({ ...f, ...(copy?.featureList?.[i] ?? {}) })).map((f, i) => (
                                     <div key={i} className="flex items-start gap-2 text-[1.36rem]">
                                         {/* <div className="text-amber-400 mt-[2px]">{f.icon}</div> */}
                                         <div>
@@ -99,13 +110,13 @@ export default function LaptopContent({ links }) {
                                 paint; ProjectIntro carries the keyboard and
                                 screen-reader copies of the same two links. */}
                             {links?.demo ? (
-                                <GlowButton href={links.demo} label={`Open the ${links.name} live demo`} inert3d>
-                                    Live Demo
+                                <GlowButton href={links.demo} label={copy?.demoLabel ? copy.demoLabel(links.name) : `Open the ${links.name} live demo`} inert3d>
+                                    {copy?.liveDemo ?? "Live Demo"}
                                 </GlowButton>
                             ) : null}
                             {links?.source ? (
-                                <GlowButton href={links.source} label={`View ${links.name} source on GitHub`} inert3d>
-                                    GitHub
+                                <GlowButton href={links.source} label={copy?.sourceLabel ? copy.sourceLabel(links.name) : `View ${links.name} source on GitHub`} inert3d>
+                                    {copy?.github ?? "GitHub"}
                                 </GlowButton>
                             ) : null}
                         </div>

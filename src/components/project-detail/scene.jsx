@@ -27,7 +27,7 @@ function settleOnSoftware(state) {
     state.setFrameloop("demand")
 }
 
-function Scene({ links }) {
+function Scene({ links, copy }) {
     const cameraRef = useRef(null)
 
     useEffect(() => {
@@ -59,7 +59,7 @@ function Scene({ links }) {
 
             {/* Models */}
             <RealisticTree position={[0, -2.5, 0]} />
-            <LaptopModel position={[0, -1.1, 0]} links={links} />
+            <LaptopModel position={[0, -1.1, 0]} links={links} copy={copy} />
 
             {/* OrbitControls - Never go below floor */}
             <OrbitControls
@@ -85,7 +85,9 @@ function Scene({ links }) {
     )
 }
 
-export default function ProjectScene({ links }) {
+// `copy` is the laptop screen's translated text (see useScreenCopy in
+// scene-loader.jsx); it only passes through on its way to the <Html> root.
+export default function ProjectScene({ links, copy }) {
     return (
         <Canvas
             shadows
@@ -97,7 +99,7 @@ export default function ProjectScene({ links }) {
             className="absolute inset-0 w-full h-full overflow-hidden z-[0]"
             onCreated={settleOnSoftware}
         >
-            <Scene links={links} />
+            <Scene links={links} copy={copy} />
         </Canvas>
     )
 }

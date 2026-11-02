@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "ניווט בין פרויקטים",
+    "all": "כל הפרויקטים",
+    "previous": "הפרויקט הקודם: {name}",
+    "next": "הפרויקט הבא: {name}"
+  },
+  "breadcrumbs": {
+    "home": "בית",
+    "projects": "פרויקטים"
+  },
+  "loading": "טוען את הפרויקט",
+  "intro": {
+    "fallbackName": "שם הפרויקט",
+    "fallbackDescription": "פתרונות ווב חדשניים, מהירים ופוטוריסטיים.",
+    "linksLabel": "קישורים של {name}",
+    "liveDemo": "הדגמה חיה<sr> (נפתחת בלשונית חדשה)</sr>",
+    "source": "קוד המקור ב-GitHub<sr> (נפתח בלשונית חדשה)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "מאתחל BIOS...",
+      "hardware": "מזהה חומרה...",
+      "os": "טוען מערכת הפעלה..."
+    },
+    "tagline": "מעצימים את הרעיונות שלכם בעבודת מלאכה דיגיטלית מהדור הבא.",
+    "badgeFullstack": "Fullstack",
+    "tools": "כלים ופריימוורקים",
+    "overview": "סקירת הפרויקט",
+    "overviewLead": "הפלטפורמה הזו מייעלת תהליכי עבודה בקמעונאות מקוונת באמצעות לוח בקרה אחוד ונתוני ניתוח בזמן אמת.",
+    "overviewBody": "היא פותרת את המורכבות של ניהול כלים רבים בעזרת ממשק מרכזי ואינטואיטיבי.",
+    "features": "תכונות",
+    "feature": {
+      "auth": {
+        "title": "אימות זהות",
+        "desc": "התחברות מאובטחת וגישת משתמשים."
+      },
+      "payments": {
+        "title": "תשלומים",
+        "desc": "שער תשלומים משולב."
+      },
+      "chat": {
+        "title": "צ׳אט חי",
+        "desc": "תקשורת מיידית עם משתמשים."
+      },
+      "admin": {
+        "title": "פאנל ניהול",
+        "desc": "שליטה פשוטה בתוכן."
+      }
+    },
+    "liveDemo": "הדגמה חיה",
+    "github": "GitHub",
+    "demoLabel": "פתיחת ההדגמה החיה של {name}",
+    "sourceLabel": "צפייה בקוד המקור של {name} ב-GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. פרויקט {category}, שהחל ב-{when}. {visibility, select, private {מאגר פרטי} other {מאגר ציבורי}}, במעקב חי מלוח ה-GitHub שלו.",
+    "undated": "{name} — {description}. פרויקט {category}. {visibility, select, private {מאגר פרטי} other {מאגר ציבורי}}, במעקב חי מלוח ה-GitHub שלו."
+  }
+}

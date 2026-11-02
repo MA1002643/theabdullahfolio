@@ -1,0 +1,20 @@
+{
+  "section": "استعمال",
+  "preferences": "ترجیحات",
+  "jumpPlate": "{ordinal} {label} پر جائیں",
+  "plates": {
+    "machine": "مشین",
+    "bench": "ورک بینچ",
+    "stack": "اسٹیک",
+    "pipeline": "پائپ لائن",
+    "instruments": "پیمائشی آلات",
+    "bom": "بل آف میٹریلز"
+  },
+  "copySettings": "میری ایڈیٹر سیٹنگز کاپی کریں",
+  "openRepos": "GitHub پر ریپوزٹریز دیکھیں",
+  "toggleMotion": "حرکت آن/آف کریں",
+  "motionOn": "آن",
+  "motionOff": "آف",
+  "copied": "ایڈیٹر سیٹنگز کاپی ہو گئیں",
+  "clipboardUnavailable": "کلپ بورڈ دستیاب نہیں — کاپی کرنے کے لیے فریم منتخب کریں"
+}

@@ -1,0 +1,58 @@
+{
+  "title": "ÉCRIVEZ-MOI",
+  "subtitle": "prenons contact",
+  "intro": "Franchissez le cercle enchanté et tissez vos mots dans la trame du cosmos. Que vous cherchiez à invoquer des collaborations, à percer des mystères ou simplement à partager des récits d’aventure, vos messages sont des parchemins précieux en ces lieux. Utilisez le formulaire ci-dessous pour confier vos missives au réseau éthéré, puis guettez le murmure de la magie en retour.",
+  "fields": {
+    "name": "Nom complet",
+    "email": "E-mail",
+    "subject": "Objet",
+    "message": "Message"
+  },
+  "validation": {
+    "nameRequired": "Le nom complet est requis\u00a0!",
+    "nameMin": "Le nom doit comporter au moins {min} caractères.",
+    "nameMax": "Le nom doit comporter au plus {max} caractères.",
+    "emailRequired": "L’adresse e-mail est requise\u00a0!",
+    "emailMax": "L’adresse e-mail doit comporter au plus {max} caractères.",
+    "subjectRequired": "L’objet est requis\u00a0!",
+    "subjectMax": "L’objet doit comporter au plus {max} caractères.",
+    "messageRequired": "Le message est requis\u00a0!",
+    "messageMin": "Le message doit comporter au moins {min} caractères.",
+    "messageMax": "Le message doit comporter au plus {max} caractères."
+  },
+  "submit": {
+    "label": "ENVOYER\u00a0!",
+    "ariaLabel": "Envoyer le message",
+    "sending": "ENVOI",
+    "sent": "ENVOYÉ",
+    "held": "RETENU"
+  },
+  "toast": {
+    "sent": "Message envoyé avec succès\u00a0!",
+    "savedOffline": "Enregistré — il sera envoyé dès votre reconnexion.",
+    "savedRetrying": "Enregistré — nouvelle tentative dans un instant…",
+    "failed": "Échec de l’envoi du message",
+    "heldSent": "{count, plural, one {Votre message en attente a été envoyé ✦} many {# messages en attente ont été envoyés ✦} other {# messages en attente ont été envoyés ✦}}"
+  },
+  "status": {
+    "held": "En attente — votre message partira de lui-même dès que vous serez de nouveau en ligne.",
+    "offline": "Vous êtes hors ligne — votre message sera conservé, puis envoyé automatiquement à votre reconnexion."
+  },
+  "errors": {
+    "name_required": "Le nom complet est requis.",
+    "email_required": "L’adresse e-mail est requise.",
+    "subject_required": "L’objet est requis.",
+    "message_required": "Le message est requis.",
+    "name_too_long": "Le nom complet dépasse la longueur maximale autorisée ({max} caractères).",
+    "email_too_long": "L’adresse e-mail dépasse la longueur maximale autorisée ({max} caractères).",
+    "subject_too_long": "L’objet dépasse la longueur maximale autorisée ({max} caractères).",
+    "message_too_long": "Le message dépasse la longueur maximale autorisée ({max, number, ::group-off} caractères).",
+    "invalid_characters": "Le texte saisi contient des caractères non valides.",
+    "invalid_email": "Format d’adresse e-mail non valide.",
+    "undeliverable_email": "Cette adresse e-mail n’existe pas ou ne peut pas recevoir de messages.",
+    "disposable_email": "Les adresses e-mail jetables ne sont pas autorisées.",
+    "too_large": "Le corps de la requête ne doit pas dépasser {max, number, ::group-off} octets",
+    "invalid_body": "Corps de requête non valide",
+    "send_failed": "Échec de l’envoi du message"
+  }
+}

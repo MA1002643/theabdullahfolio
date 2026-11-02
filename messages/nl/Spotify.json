@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "NU AAN HET SPELEN",
+  "lastPlayed": "LAATST GESPEELD",
+  "cardLabel": "{state, select, playing {nu aan het spelen} other {laatst gespeeld}}: {title} van {artist}.",
+  "cardLabelLink": "{state, select, playing {nu aan het spelen} other {laatst gespeeld}}: {title} van {artist}. Openen in Spotify.",
+  "openOnSpotify": "Openen in Spotify"
+}

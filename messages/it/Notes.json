@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "NOTE",
+    "subtitle": "decisioni, messe per iscritto",
+    "intro": "Ogni decisione non ovvia dietro questo sito è documentata: la scelta fatta, le alternative scartate e il costo di ciascuna. Sono i documenti di lavoro del repository, pubblicati qui invece di restare nascosti tra i file.",
+    "lines": "{count, plural, one {riga} other {righe}}"
+  },
+  "note": {
+    "title": "NOTA",
+    "breadcrumb": "Percorso di navigazione",
+    "allNotes": "Tutte le note",
+    "source": "Fonte: {source} · {count, plural, one {{n} riga} other {{n} righe}}"
+  }
+}

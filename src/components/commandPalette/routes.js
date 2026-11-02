@@ -4,16 +4,21 @@
 // goes missing from one of them; now they all read from here and drop only
 // their own entry (`routesExcept`). The palette COMPONENT stays page-agnostic
 // — this is config the page configs share, not palette behaviour.
+//
+// `label` is the English name; `navKey` is where the visitor's-language name
+// lives (`Nav.routes.<navKey>`, issue #82). The palette translates any action
+// carrying a `navKey` at render time, so the three page configs that spread
+// `routeActions(...)` need no translator of their own.
 export const SITE_ROUTES = [
-  { label: 'Home', href: '/' },
-  { label: 'About', href: '/about' },
-  { label: 'Projects', href: '/projects' },
-  { label: 'Qualifications', href: '/qualifications' },
-  { label: 'Contact', href: '/contact' },
-  { label: 'Journey', href: '/journey' },
-  { label: 'Guestbook', href: '/guestbook' },
-  { label: 'Uses', href: '/uses' },
-  { label: 'My Past', href: '/my-past' },
+  { label: 'Home', href: '/', navKey: 'home' },
+  { label: 'About', href: '/about', navKey: 'about' },
+  { label: 'Projects', href: '/projects', navKey: 'projects' },
+  { label: 'Qualifications', href: '/qualifications', navKey: 'qualifications' },
+  { label: 'Contact', href: '/contact', navKey: 'contact' },
+  { label: 'Journey', href: '/journey', navKey: 'journey' },
+  { label: 'Guestbook', href: '/guestbook', navKey: 'guestbook' },
+  { label: 'Uses', href: '/uses', navKey: 'uses' },
+  { label: 'My Past', href: '/my-past', navKey: 'myPast' },
 ];
 
 // Every route except the page the palette is mounted on — nobody needs a
@@ -28,6 +33,12 @@ export const routeActions = (routes, go) =>
     label: r.label,
     hint: r.href,
     section: 'Navigate',
+    // Localisation hooks read by CommandPalette (issue #82): the label from
+    // `Nav.routes.<navKey>`, the group name from `Palette.sections.navigate`,
+    // and the search terms from `Palette.keywords.navigate` IN ADDITION to
+    // these English ones, so `about` still finds About in every language.
+    navKey: r.navKey,
+    sectionKey: 'navigate',
     keywords: 'go jump route page',
     perform: () => go(r.href, r.label),
   }));

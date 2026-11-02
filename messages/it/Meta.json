@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Software Engineer. Card scura color brace con il sigillo di Muhammad Abdullah e lo stato del portfolio in tempo reale.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Software Engineer. Card quadrata scura color brace con il sigillo di Muhammad Abdullah e lo stato del portfolio in tempo reale.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Software Engineer",
+      "description": "Software engineer a Bolton, realizzo applicazioni web veloci e ponderate con Next.js, React e TypeScript. Progetti, credenziali e gli strumenti che li rendono possibili."
+    },
+    "about": {
+      "title": "Chi sono",
+      "description": "L'ingegnere dietro la brace: la storia, lo stack e la telemetria GitHub in tempo reale su ciò che sto costruendo in questo momento."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "Il quadro completo: ogni ruolo, titolo e progetto rilasciato, in HTML. Generato dagli stessi dati che alimentano la timeline, con il PDF a un clic di distanza."
+    },
+    "notes": {
+      "title": "Note",
+      "description": "Registri delle decisioni tecniche: perché è stata fatta ogni scelta su questo sito, quali alternative sono state scartate e quanto è costata ciascuna."
+    },
+    "projects": {
+      "title": "Progetti",
+      "description": "{countWord} progetti — web, sistemi, mobile e AI — ognuno monitorato in tempo reale dalla propria board GitHub, con stack e stato di completamento su ogni card."
+    },
+    "qualifications": {
+      "title": "Titoli",
+      "description": "Lauree, certificati e credenziali professionali: la documentazione verificata che sta dietro al lavoro, con ogni certificato consultabile."
+    },
+    "journey": {
+      "title": "Percorso",
+      "description": "Ogni ruolo, titolo e incarico di volontariato in un'unica timeline da scorrere: dal Bolton College nel 2018 al rilascio di software in produzione oggi."
+    },
+    "uses": {
+      "title": "Strumenti",
+      "description": "La macchina, la postazione, lo stack e la pipeline: ogni strumento di questa pagina è verificato sui repository e sulla build che lo rilascia."
+    },
+    "contact": {
+      "title": "Contatti",
+      "description": "Avvia una conversazione su un ruolo o un progetto: un modulo di contatto che affina il messaggio mentre scrivi e non perde mai una bozza."
+    },
+    "myPast": {
+      "title": "Il mio passato",
+      "description": "Il portfolio dei tempi dell'università da cui tutto è iniziato: scritto a mano in puro HTML, CSS e JavaScript e lasciato online come onesta immagine del \"prima\"."
+    },
+    "guestbook": {
+      "title": "Guestbook",
+      "description": "Lascia il tuo segno sul muro: una bacheca al neon firmata dai visitatori tramite GitHub o Google, con presenze e reazioni in tempo reale."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Ogni cookie, chiave di archiviazione e terza parte con cui questo sito interagisce, perché esiste e come disattivare quelli facoltativi. Verificato, non copiato da un modello."
+    }
+  },
+  "notFound": {
+    "title": "404 — Pagina non trovata",
+    "description": "Sei finito alla deriva nel vuoto. Questa pagina non esiste, almeno per ora."
+  }
+}

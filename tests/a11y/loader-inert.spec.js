@@ -11,7 +11,9 @@ const LOADER = '.fixed.inset-0.z-\\[9999\\]';
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
 
-for (const path of ['/', '/about', '/projects/1']) {
+// Only a visit that ENTERS on the homepage gets the intro (LoaderWrapper,
+// 2026-10-31), so `/` and a localised home are the pages it can cover.
+for (const path of ['/', '/fr']) {
   test(`${path}: nothing outside the intro loader can take focus while it covers the page`, async ({ page }) => {
     // A fresh context is a first visit, so the loader shows.
     await page.goto(path, { waitUntil: 'domcontentloaded' });
@@ -43,7 +45,7 @@ for (const path of ['/', '/about', '/projects/1']) {
 // start of it, so Tab in that window reached controls still hidden behind it.
 // This samples every frame from hydration until the overlay is removed.
 test('the page stays inert until the intro loader is removed, through the reveal', async ({ page }) => {
-  await page.goto('/about', { waitUntil: 'domcontentloaded' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.locator(LOADER).waitFor({ state: 'attached' });
   await page.waitForFunction(() => document.querySelector('[inert]'));
 
@@ -66,3 +68,24 @@ test('the page stays inert until the intro loader is removed, through the reveal
   expect(result.frames, 'the loader was never sampled').toBeGreaterThan(0);
   expect(result.exposedFrames, 'frames where the overlay was up but the page was not inert').toBe(0);
 });
+
+// Entering on a sub-page skips the intro outright (2026-10-31): a first visit
+// straight to /qualifications held its LCP to the reveal, 4.6 s against 1.7 s
+// without the seal. The overlay must not be in the server HTML at all (an
+// overlay removed at hydration would still hide the page until JS ran), the
+// page must never go inert, the reveal signal must still fire so gated
+// entrances play, and `loaderSeen` stays unwritten so a later first landing on
+// `/` still gets the intro.
+for (const path of ['/about', '/qualifications', '/projects/1']) {
+  test(`${path}: a visit entering here gets no intro loader`, async ({ page }) => {
+    const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
+    const html = await response.text();
+    expect(html, 'the overlay was server-rendered').not.toContain('z-[9999]');
+    expect(html, 'the page shipped inert').not.toMatch(/\sinert=""/);
+
+    await page.waitForFunction(() => window.__loaderDone === true);
+    expect(await page.locator(LOADER).count()).toBe(0);
+    expect(await page.locator('[inert]').count()).toBe(0);
+    expect(await page.evaluate(() => localStorage.getItem('loaderSeen'))).toBeNull();
+  });
+}

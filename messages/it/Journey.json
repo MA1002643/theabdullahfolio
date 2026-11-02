@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "IL MIO PERCORSO",
+    "subtitle": "dalla prima riga alla produzione"
+  },
+  "timeline": {
+    "label": "Timeline del percorso"
+  },
+  "endCap": {
+    "est": "DAL {year} · BOLTON, UK",
+    "tally": "{years, plural, one {# ANNO} other {# ANNI}} · {entries, plural, one {# VOCE} other {# VOCI}} · {tracks, plural, one {# TRACCIA} other {# TRACCE}}",
+    "paper": "LA VERSIONE CARTACEA →",
+    "paperHint": "il CV in PDF (si apre in una nuova scheda)"
+  },
+  "spine": {
+    "now": "ORA"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, one {# mese} other {# mesi}}} one {# anno{months, plural, =0 {} one { # mese} other { # mesi}}} other {# anni{months, plural, =0 {} one { # mese} other { # mesi}}}}",
+    "tenureOngoing": "{tenure} finora",
+    "view": "VEDI",
+    "viewLabel": "Vedi {title} (si apre in una nuova scheda)"
+  },
+  "eraRail": {
+    "label": "Epoche della timeline",
+    "jump": "Vai al {year}"
+  },
+  "atlas": {
+    "eyebrow": "Vista sovrapposta",
+    "title": "L'atlante — tre tracce, un solo orologio",
+    "live": {
+      "career": "{count, plural, one {# ruolo} other {# ruoli}}",
+      "education": "{count, plural, one {# titolo di studio} other {# titoli di studio}}",
+      "milestone": "{count, plural, one {# post nella community} other {# post nella community}}",
+      "separator": " + ",
+      "sentence": "In corso oggi: {parts}{total, plural, =1 {.} other { — in parallelo.}}"
+    },
+    "tracks": {
+      "all": "Tutti",
+      "career": "Carriera",
+      "education": "Formazione",
+      "milestone": "Community"
+    },
+    "chipsLabel": "Evidenzia una traccia",
+    "zoom": {
+      "group": "Zoom della griglia",
+      "out": "Riduci lo zoom della griglia",
+      "outTitle": "Riduci zoom",
+      "in": "Ingrandisci la griglia",
+      "inTitle": "Ingrandisci",
+      "readoutLabel": "Zoom della griglia {pct}. Ripristina a {full}",
+      "readoutTitle": "Zoom della griglia",
+      "resetTitle": "Ripristina lo zoom a {full}",
+      "status": "Zoom della griglia {pct}"
+    },
+    "region": "Atlante delle sovrapposizioni: ogni ruolo e corso come barre parallele su un unico asse temporale",
+    "entries": "{count, plural, one {# voce} other {# voci}}",
+    "now": "Ora",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Vai a {org} · {role}, {dates}",
+    "spokenRange": "da {start} a {end}",
+    "spokenOpen": "da {start} a oggi",
+    "key": {
+      "select": "Seleziona una barra per andarci.",
+      "dashed": "Bordo tratteggiato = ancora in corso.",
+      "stacked": "Barre impilate = in contemporanea."
+    }
+  },
+  "palette": {
+    "section": "Percorso",
+    "jumpYear": "Vai al {year}",
+    "eraHint": "epoca",
+    "jumpAtlas": "Vai all'atlante delle sovrapposizioni",
+    "openCv": "Apri il CV (PDF)",
+    "openCvHint": "la versione cartacea"
+  }
+}

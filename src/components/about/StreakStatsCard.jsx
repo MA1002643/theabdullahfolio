@@ -10,6 +10,10 @@ import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { useStreakUpdateSignal } from "@/hooks/useStreakUpdateSignal";
 import { animateToTarget, fastStartSlowFinish } from "@/utils/animationCurves";
 import { fluid, fluidText } from "@/lib/fluidScale";
+import { useTranslations } from "next-intl";
+import { glyphUnits } from "@/components/ui/textSegments";
+import { useLocale } from "next-intl";
+import { localizeStreakRange, useAboutDigits } from "./aboutI18n";
 
 // ---------------------------------------------------------------------------
 // Palette — exact parity with the rest of the About design system:
@@ -62,7 +66,9 @@ function AnimatedTitle({ text, play }) {
     );
   }
 
-  const chars = Array.from(text);
+  // Per-glyph for most scripts, per-word for joining ones (issue #82; see
+  // @/components/ui/textSegments). English splits exactly as Array.from did.
+  const chars = glyphUnits(text);
   const container = {
     hidden: {},
     visible: { transition: { staggerChildren: 0.025, delayChildren: 0.2 } },
@@ -120,6 +126,8 @@ function StreakNumber({
   srLabel,
 }) {
   const ref = useRef(null);
+  // Reader's digits for every painted frame (issue #82); English is String(n).
+  const digits = useAboutDigits();
   // Coerce to a FINITE number. `Number(target) || 0` would catch NaN (falsy)
   // but let `Infinity`/`-Infinity` through (both truthy) — the reduced-motion
   // path writes `String(safe)` and would render the literal "Infinity", and the
@@ -133,35 +141,35 @@ function StreakNumber({
     const node = ref.current;
     if (!node) return undefined;
     if (prefersReducedMotion) {
-      node.textContent = String(safe);
+      node.textContent = digits.int(safe);
       return undefined;
     }
     if (playToken === 0) {
       // Pre-entry: hold at 0 so the first true entry plays a full sweep.
-      node.textContent = "0";
+      node.textContent = digits.int(0);
       return undefined;
     }
     // Reset to 0 SYNCHRONOUSLY before scheduling the tween. animateToTarget
     // paints its first value on the next rAF tick, so without this the node
     // would show its previous final value (e.g. the last streak count) for one
     // frame on a re-entry or data change before dropping to 0 — a visible flash.
-    node.textContent = "0";
+    node.textContent = digits.int(0);
     const cancel = animateToTarget({
       from: 0,
       to: safe,
       duration: COUNT_UP_MS,
       onUpdate: (v) => {
-        node.textContent = String(Math.round(v));
+        node.textContent = digits.int(Math.round(v));
       },
     });
     return cancel;
-  }, [playToken, safe, prefersReducedMotion]);
+  }, [playToken, safe, prefersReducedMotion, digits]);
 
   return (
     <span className={className} style={style}>
-      <span className="sr-only">{srLabel ?? safe}</span>
+      <span className="sr-only">{srLabel ?? digits.int(safe)}</span>
       <span ref={ref} aria-hidden="true">
-        {prefersReducedMotion ? safe : 0}
+        {digits.int(prefersReducedMotion ? safe : 0)}
       </span>
     </span>
   );
@@ -240,6 +248,8 @@ function Divider({ variants }) {
 }
 
 export default function StreakStatsCard({ data }) {
+  const t = useTranslations("About");
+  const locale = useLocale();
   const cardRef = useRef(null);
   // Latched, hysteresis-debounced viewport trigger: `playToken` re-fires the
   // count-ups + ring sweep on each TRUE re-entry (never loops while the card
@@ -374,10 +384,11 @@ export default function StreakStatsCard({ data }) {
   const filledOffset = RING_CIRCUMFERENCE * (1 - fraction);
   const ringSrLabel =
     longest > 0
-      ? `${current} day${current === 1 ? "" : "s"}, ${Math.round(
-          fraction * 100
-        )} percent of your longest streak`
-      : `${current} day${current === 1 ? "" : "s"}`;
+      ? t("streakCard.ringSrShare", { days: current, percent: Math.round(fraction * 100) })
+      : t("streakCard.ringSrDays", { days: current });
+  // The API pre-formats each range in English (see aboutI18n); non-English
+  // readers get it re-rendered, English gets the wire string untouched.
+  const range = (r) => localizeStreakRange(r, locale, t);
 
   // Stagger item variant set — motion when allowed, still under reduced motion.
   const itemVariants = prefersReducedMotion ? STAGGER_ITEM_STILL : STAGGER_ITEM;
@@ -401,7 +412,7 @@ export default function StreakStatsCard({ data }) {
       <UpdateBanner
         message={bannerMessage}
         visible={settledInView}
-        srPrefix="Streaks update: "
+        srPrefix={t("streakCard.srPrefix")}
         variant="orange"
       />
 
@@ -410,12 +421,12 @@ export default function StreakStatsCard({ data }) {
           share one headline treatment. Was a lone tiny eyebrow, which read too
           small against the other cards' titles. */}
       <div className="mb-4 sm:mb-5" style={{ marginBottom: fluid(1.25) }}>
-        <AnimatedTitle text="Contribution Streaks" play={settledInView} />
+        <AnimatedTitle text={t("streakCard.title")} play={settledInView} />
         <p
           className="abt-micro text-[10px] uppercase tracking-[0.22em] mt-1"
           style={{ color: AMBER, textShadow: "none" }}
         >
-          GitHub activity
+          {t("streakCard.subtitle")}
         </p>
       </div>
 
@@ -433,9 +444,9 @@ export default function StreakStatsCard({ data }) {
       >
         {/* Total Contributions */}
         <StatBlock
-          label="Total Contributions"
+          label={t("streakCard.total")}
           value={totalContributions?.value}
-          dateRange={totalContributions?.dateRange}
+          dateRange={range(totalContributions?.dateRange)}
           playToken={playToken}
           prefersReducedMotion={prefersReducedMotion}
           variants={itemVariants}
@@ -550,13 +561,13 @@ export default function StreakStatsCard({ data }) {
             }`}
             style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
           >
-            Current Streak
+            {t("streakCard.current")}
           </span>
           <span
             className="text-[10px] sm:text-xs md:text-sm font-light break-words"
             style={{ color: DATE_TONE, fontSize: fluidText(0.875, 0.625) }}
           >
-            {currentStreak?.dateRange}
+            {range(currentStreak?.dateRange)}
           </span>
         </motion.div>
 
@@ -564,9 +575,9 @@ export default function StreakStatsCard({ data }) {
 
         {/* Longest Streak */}
         <StatBlock
-          label="Longest Streak"
+          label={t("streakCard.longest")}
           value={longestStreak?.value}
-          dateRange={longestStreak?.dateRange}
+          dateRange={range(longestStreak?.dateRange)}
           playToken={playToken}
           prefersReducedMotion={prefersReducedMotion}
           variants={itemVariants}

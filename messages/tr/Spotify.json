@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "ŞU AN ÇALIYOR",
+  "lastPlayed": "SON ÇALINAN",
+  "cardLabel": "{state, select, playing {şu an çalıyor} other {son çalınan}}: {artist} sanatçısından {title}.",
+  "cardLabelLink": "{state, select, playing {şu an çalıyor} other {son çalınan}}: {artist} sanatçısından {title}. Spotify'da aç.",
+  "openOnSpotify": "Spotify'da aç"
+}

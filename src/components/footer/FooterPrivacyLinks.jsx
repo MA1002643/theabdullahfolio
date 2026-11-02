@@ -32,6 +32,7 @@
 // requirement, and the revocation takes effect immediately (see
 // ConsentedAnalytics).
 
+import { useTranslations } from 'next-intl';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 import { useConsent } from '@/components/privacy/ConsentProvider';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ const LINK_CLASS =
  */
 export default function FooterPrivacyLinks({ revealMode }) {
   const { reopen } = useConsent();
+  const t = useTranslations('Footer');
 
   const wrap = (node, key) =>
     revealMode ? <FlapItem key={key}>{node}</FlapItem> : node;
@@ -70,10 +72,10 @@ export default function FooterPrivacyLinks({ revealMode }) {
       {wrap(
         <TransitionLink
           href="/privacy"
-          transitionLabel="Privacy"
+          transitionLabel={t('privacy.policy')}
           className={cn(LINK_CLASS, 'hover-swap')}
         >
-          Privacy
+          {t('privacy.policy')}
         </TransitionLink>,
         'policy',
       )}
@@ -85,7 +87,7 @@ export default function FooterPrivacyLinks({ revealMode }) {
       )}
       {wrap(
         <button type="button" onClick={reopen} className={LINK_CLASS}>
-          Privacy choices
+          {t('privacy.choices')}
         </button>,
         'choices',
       )}

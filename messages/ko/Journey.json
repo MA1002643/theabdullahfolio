@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "나의 여정",
+    "subtitle": "첫 코드 한 줄에서 프로덕션까지"
+  },
+  "timeline": {
+    "label": "여정 타임라인"
+  },
+  "endCap": {
+    "est": "{year}년 시작 · BOLTON, UK",
+    "tally": "{years, plural, other {#년}} · {entries, plural, other {#개 항목}} · {tracks, plural, other {#개 트랙}}",
+    "paper": "종이 버전 →",
+    "paperHint": "PDF 형식의 CV (새 탭에서 열려요)"
+  },
+  "spine": {
+    "now": "현재"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {#개월}}} other {#년{months, plural, =0 {} other { #개월}}}}",
+    "tenureOngoing": "현재까지 {tenure}",
+    "view": "보기",
+    "viewLabel": "{title} 보기 (새 탭에서 열림)"
+  },
+  "eraRail": {
+    "label": "타임라인 시대",
+    "jump": "{year}년으로 이동"
+  },
+  "atlas": {
+    "eyebrow": "겹쳐 보기",
+    "title": "아틀라스 — 세 개의 트랙, 하나의 시계",
+    "live": {
+      "career": "{count, plural, other {직무 #개}}",
+      "education": "{count, plural, other {학위 #개}}",
+      "milestone": "{count, plural, other {커뮤니티 게시물 #개}}",
+      "separator": " + ",
+      "sentence": "현재 진행 중: {parts}{total, plural, =1 {.} other { — 병행하고 있어요.}}"
+    },
+    "tracks": {
+      "all": "전체",
+      "career": "커리어",
+      "education": "학력",
+      "milestone": "커뮤니티"
+    },
+    "chipsLabel": "트랙 하나 강조",
+    "zoom": {
+      "group": "그리드 확대/축소",
+      "out": "그리드 축소",
+      "outTitle": "축소",
+      "in": "그리드 확대",
+      "inTitle": "확대",
+      "readoutLabel": "그리드 배율 {pct}. 초기화: {full}",
+      "readoutTitle": "그리드 배율",
+      "resetTitle": "배율 초기화: {full}",
+      "status": "그리드 배율 {pct}"
+    },
+    "region": "겹침 아틀라스: 모든 직무와 과정을 하나의 시간 축에 나란한 막대로 표시",
+    "entries": "{count, plural, other {항목 #개}}",
+    "now": "현재",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "이동: {org} · {role}, {dates}",
+    "spokenRange": "{start}부터 {end}까지",
+    "spokenOpen": "{start}부터 현재까지",
+    "key": {
+      "select": "막대를 선택하면 해당 항목으로 이동해요.",
+      "dashed": "점선 가장자리 = 진행 중.",
+      "stacked": "쌓인 막대 = 동시 진행."
+    }
+  },
+  "palette": {
+    "section": "여정",
+    "jumpYear": "{year}년으로 이동",
+    "eraHint": "시대",
+    "jumpAtlas": "겹침 아틀라스로 이동",
+    "openCv": "CV 열기 (PDF)",
+    "openCvHint": "종이 버전"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "label": "שפה",
+  "triggerLabel": "שפה: {language}",
+  "searchLabel": "חיפוש שפות",
+  "searchPlaceholder": "חיפוש מבין 20 שפות…",
+  "noResults": "אין שפה שמתאימה ל־“{query}”.",
+  "tier1": "רמה 1",
+  "tier2": "רמה 2",
+  "current": "נוכחית",
+  "machineBadge": "מכונה",
+  "machineBadgeLabel": "תורגם במכונה",
+  "switching": "עובר ל{language}…",
+  "notice": {
+    "title": "תורגם במכונה",
+    "body": "התרגום הזה הופק במכונה ועדיין לא נבדק על ידי דובר שפת אם.",
+    "cta": "הציעו תרגום טוב יותר"
+  },
+  "suggestion": {
+    "region": "הצעת שפה",
+    "message": "האתר זמין גם ב{language}.",
+    "switch": "מעבר ל{language}",
+    "dismiss": "להישאר ב{current}"
+  },
+  "englishOnly": {
+    "label": "מפורסם באנגלית",
+    "body": "המסמך הזה מתפרסם באנגלית בלבד. הניווט ופקדי הממשק יישארו בשפה שלכם."
+  }
+}

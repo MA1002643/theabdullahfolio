@@ -1,0 +1,58 @@
+{
+  "title": "문의하기",
+  "subtitle": "연락하기",
+  "intro": "마법의 원 안으로 들어와 당신의 말을 우주의 직물에 엮어 보세요. 함께할 일을 소환하고 싶든, 수수께끼의 문을 열고 싶든, 모험담을 나누고 싶을 뿐이든, 이곳에서 당신의 메시지는 소중한 두루마리가 됩니다. 아래 양식으로 전갈을 신비의 네트워크에 실어 보내고, 마법 같은 속삭임이 돌아오기를 기다려 주세요.",
+  "fields": {
+    "name": "이름",
+    "email": "이메일",
+    "subject": "제목",
+    "message": "메시지"
+  },
+  "validation": {
+    "nameRequired": "이름을 입력해 주세요!",
+    "nameMin": "이름은 {min}자 이상이어야 해요.",
+    "nameMax": "이름은 {max}자 이하여야 해요.",
+    "emailRequired": "이메일을 입력해 주세요!",
+    "emailMax": "이메일은 {max}자 이하여야 해요.",
+    "subjectRequired": "제목을 입력해 주세요!",
+    "subjectMax": "제목은 {max}자 이하여야 해요.",
+    "messageRequired": "메시지를 입력해 주세요!",
+    "messageMin": "메시지는 {min}자 이상이어야 해요.",
+    "messageMax": "메시지는 {max}자 이하여야 해요."
+  },
+  "submit": {
+    "label": "메시지 보내기!",
+    "ariaLabel": "메시지 보내기",
+    "sending": "전송 중",
+    "sent": "전송됨",
+    "held": "보류됨"
+  },
+  "toast": {
+    "sent": "메시지를 보냈어요!",
+    "savedOffline": "저장했어요. 다시 연결되면 전송돼요.",
+    "savedRetrying": "저장했어요. 곧 다시 시도할게요…",
+    "failed": "메시지를 보내지 못했어요",
+    "heldSent": "{count, plural, other {보류된 메시지 #개를 보냈어요 ✦}}"
+  },
+  "status": {
+    "held": "보류됨 — 온라인으로 돌아오는 즉시 메시지가 자동으로 전송돼요.",
+    "offline": "오프라인 상태예요. 메시지는 보류되었다가 다시 연결되면 자동으로 전송돼요."
+  },
+  "errors": {
+    "name_required": "이름을 입력해 주세요.",
+    "email_required": "이메일을 입력해 주세요.",
+    "subject_required": "제목을 입력해 주세요.",
+    "message_required": "메시지를 입력해 주세요.",
+    "name_too_long": "이름이 허용된 최대 길이({max}자)를 초과했어요.",
+    "email_too_long": "이메일이 허용된 최대 길이({max}자)를 초과했어요.",
+    "subject_too_long": "제목이 허용된 최대 길이({max}자)를 초과했어요.",
+    "message_too_long": "메시지가 허용된 최대 길이({max, number, ::group-off}자)를 초과했어요.",
+    "invalid_characters": "입력에 사용할 수 없는 문자가 포함되어 있어요.",
+    "invalid_email": "이메일 형식이 올바르지 않아요.",
+    "undeliverable_email": "존재하지 않거나 메일을 받을 수 없는 이메일 주소예요.",
+    "disposable_email": "일회용 이메일 주소는 사용할 수 없어요.",
+    "too_large": "요청 본문은 {max, number, ::group-off}바이트 이하여야 해요",
+    "invalid_body": "요청 본문이 올바르지 않아요",
+    "send_failed": "메시지를 보내지 못했어요"
+  }
+}

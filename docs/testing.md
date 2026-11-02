@@ -73,6 +73,10 @@ unit test would think to check:
 | `routeSegmentConfig` | No file under `src/app` re-exports route segment config (`dynamicParams`, `revalidate`, …) from a sibling: Next 15 reads it only from the file itself and silently applies the default otherwise. |
 | `escapeOwnership` | Every source that acts on Escape claims it with `claimEscape` (`src/lib/escapeKey.js`), and the privacy notice decides only after dispatch, so one press never both closes something and declines analytics. |
 | `tailwindToolchain` | The installed Tailwind major is the one `package.json` declares, and `postcss.config.js` and `src/app/globals.css` are wired the way that major expects. A major bump that changes only the version fails here, not only in `next build`, and not at all on a Vercel deploy that restores a cached `node_modules`. |
+| `i18nCatalogues` | Every file in `messages/en/` is a namespace `src/i18n/namespaces.js` loads (and every loaded namespace has a file), every English message parses as ICU, and the content catalogues are in step with `src/app/data.js` (`scripts/i18n-data.mjs --check`). The cross-locale audit is a separate CI step, below. |
+| `logicalCss` | `src/app/globals.css`, parsed with postcss so comments never count, sets no physical inline-axis box property (`margin-left`, `padding-right`, `border-left`, `text-align: left`, `float`, `clear`) outside a short allowlist where each entry says why. A physical margin looks fine in English and sits on the wrong side of every right-to-left page, which nothing else would notice. Also: a `:dir()` selector never shares a selector list (an older browser would drop the whole rule), and `--inline-sign` is 1 and -1. |
+| `i18nBudget` | What each route's client message provider receives stays at or under 8 kB gzipped, for every locale × route, measured through the same `loadMessages` → `pickMessages` path the page serialises. `/uses` alone is allowed 9 kB (owner decision, 2026-11-01): it server-renders a description for each of its 42 curated stack tiles, and Russian measured 8,279 bytes after everything not on screen at first paint was deferred. The fitness project runs with Vitest's on-disk module cache off, because a cached compile of the catalogue loader once made every locale measure as English (defects table). |
+| `i18nCatalogueText` | No parsed catalogue string, in any locale, contains a literal escape sequence such as ` `: a real sentence never does, so one that does was double-escaped on its way into the JSON. |
 
 ### L2 · Unit and property-based tests
 
@@ -107,6 +111,16 @@ property out of the soak silently, so `testHygiene` fails on one. (Until
 one file. The first real soak of all of them found a test bug within seconds:
 see the defects table.)
 
+Two property suites guard the translation work (#82).
+`i18nCatalogue.property.test.js` checks the round-trip the translation script
+writes every locale through: flattening a catalogue and rebuilding it in
+English's shape (`shapeLike`) must lose, reorder and invent nothing, and any
+message must pass the ICU validator as a translation of itself.
+`textSegments.property.test.js` checks the splitter behind every per-letter
+animation: whatever the text, its pieces join back to the input, and for ASCII
+they are exactly the old `split('')` / `split(' ')`, which is what keeps the
+English pages unchanged.
+
 ### L3 · Component tests
 
 `tests/support/setup-component.js` adds jest-dom matchers, the smallest
@@ -114,12 +128,32 @@ possible polyfills for APIs jsdom lacks, and the shared MSW server. Framer
 Motion animations are skipped so a visibility assertion never depends on how
 far a tween had run.
 
+**Copy comes from the real catalogues.** Components read their text through
+next-intl, so a test renders them with `renderWithIntl` from
+`tests/support/intl.jsx`: a real provider holding the real
+`messages/<locale>/*.json`, never a mock translator. Assertions stay on the
+English a visitor reads, and a test that wants another locale (a right-to-left
+layout, Persian digits, an Arabic plural) passes `locale` and gets that
+catalogue with English filling any gap, as the site does at runtime. The
+English these refactored components render was pinned to the pre-#82 strings
+before the copy moved (`workSignal.test.js`, `aboutDiffs.test.js`,
+`projectMetaLocale.test.js` and others), so "unchanged in English" is a test
+result rather than a claim.
+
 ### L4 · API integration tests
 
 Route handlers are imported and called directly. Outbound HTTP goes to MSW.
 Redis is `tests/support/fakeRedis.js`, a stateful fake with an atomic
 `SET NX`, so the contact route's idempotency state machine runs against real
 state. Ten concurrent requests with one key produce exactly one email.
+
+Since #82 an error a visitor reads travels as a stable `code` (plus `values`)
+beside the English sentence, and the client words it in the visitor's
+language. `send-mail.route.test.js` and `contactGuestbookI18n.test.js` check
+that every code, rendered from the English catalogue, equals the sentence the
+route sends, so the two cannot drift. `work-status.descriptors.test.js` checks
+that the live header's payload carries its message descriptors beside the
+unchanged English sentence, on the fresh path and the no-token fallback.
 
 ### L5 · End-to-end
 
@@ -145,6 +179,23 @@ New specs import `test` from `tests/support/test.js`, which adds:
 Tags: `@cross-browser` specs run on every engine and device; everything else
 runs on Chromium. PRs run `chromium` and `mobile-chrome`; the nightly run adds
 `webkit`, `firefox` and `mobile-safari`.
+
+**Translated URLs (#82).** Besides the registry's English paths,
+`tests/support/routes.js` exports `LOCALE_SAMPLES` (Arabic, right to left in a
+joined script; Japanese, CJK with no spaces) and `LOCALIZED_ROUTES`, every
+route in both. Two were chosen for being the hardest, not the most read: between
+them they exercise every code path a third locale would. `navigation.spec.js`
+renders each one (200, one `<h1>`, `lang` and `dir` on `<html>`, the error
+sentinel armed, which is what catches a hydration mismatch) and checks it never
+scrolls sideways at 390 px. That block is Chromium-only rather than
+`@cross-browser`: what breaks per locale breaks on Chromium too, and 30 more
+routes on five engines is minutes the repository pays for. `rtl.spec.js` is
+the cross-browser part, because bidi resolution is each engine's own: it reads
+the footer email glyph by glyph in on-screen order on `/ar/about` and
+`/about` and compares it with the address. `routeRegistry.test.js` pins
+that the samples are real public locales and that one is right to left. The
+keyboard, motion and Web Vitals specs still visit English only; their findings
+do not depend on the language.
 
 **The image warm-up.** `chromium`, `mobile-chrome`, `a11y`, `security` and
 `perf` each depend on a warm-up
@@ -186,7 +237,22 @@ To iterate against a server you started yourself (with the same environment):
 ### L6 · Accessibility
 
 - `axe.spec.js`: every route plus the 404 page, at 1440 px and 390 px, under
-  WCAG 2.0/2.1/2.2 A and AA. Full results are attached to the report.
+  WCAG 2.0/2.1/2.2 A and AA, and every route again in Arabic and Japanese
+  (`LOCALIZED_ROUTES`, L5). Right to left and CJK change what axe measures:
+  contrast on another font stack, a mirrored focus order, `lang` on the
+  document and on every English island. Full results are attached to the
+  report. One axe heuristic does not survive Arabic: before checking label in
+  name (2.5.3) it discards text it takes for an icon-font ligature, judged by
+  drawing the first character alone, and an Arabic letter's isolated form is
+  not its joined form, so it discarded nearly every word and reported
+  `/ar/about`'s projects card although the name contains its visible words
+  verbatim. For Arabic-script locales the spec sets that check's
+  `pixelThreshold` to 1 (the heuristic off, the rule on); the site loads no
+  icon font, so nothing real is lost. A localized scan also waits for the language
+  suggestion: an English-preferring test browser is always offered English
+  there, after a chunk import that could land mid-scan and be measured
+  half-faded (an intermittent contrast failure that is not one at rest); waiting
+  for it to be fully opaque makes the card part of every localized scan.
 - `keyboard.spec.js`: Tabs through every page. At each stop it *measures*
   that the element looks different focused (2.4.7), is on screen and not
   covered (2.4.11), and that focus keeps moving (2.1.2).
@@ -199,8 +265,9 @@ inside `contextOptions`. A top-level `reducedMotion` key is silently ignored.
 ### L7 · Visual regression
 
 Screenshots of the views whose look is stable (`/cv`, `/privacy`, `/notes`,
-`/contact`, the 404 page), with animations off, reduced motion on and live
-regions masked.
+`/contact`, the 404 page, and `/ar/contact`, `/ar/cv` and `/ja/cv` for a
+mirrored form, a mirrored document and Japanese line breaking), with animations
+off, reduced motion on and live regions masked.
 
 **Rendered on every push, committed back automatically.**
 `.github/workflows/visual-baselines.yml` runs on each push to any branch: it
@@ -211,7 +278,7 @@ There are two directories, and the difference matters:
 | Directory | What it is | Updated |
 |---|---|---|
 | `tests/visual/__latest__/` | The current render of every view, plus a `README.md` gallery saying which views differ from their baseline. Open it on GitHub to see the site as the last commit renders it. | On **every push**, automatically. |
-| `tests/visual/__screenshots__/` | The **reviewed** baselines `ci.yml` compares against. | Seeded automatically the first time (which arms the layer). After that, only deliberately: run the workflow by hand with `promote: true`, or commit the PNGs in a PR. |
+| `tests/visual/__screenshots__/` | The **reviewed** baselines `ci.yml` compares against. | Seeded automatically the first time (which arms the layer), and per view: a view added since the last promotion has no baseline to protect, so its first render seeds one (`scripts/render-visual-latest.mjs`; the gallery marks it "new view"). Until that image commit lands, CI's visual step fails on the new view, and the checks the image commit dispatches pass. Reviewed baselines are only ever changed deliberately: run the workflow by hand with `promote: true`, or commit the PNGs in a PR. |
 
 Baselines are not overwritten on every push because a baseline that silently
 becomes whatever today's code renders could never catch a regression. The
@@ -338,7 +405,7 @@ the advisory.
 
 | Workflow | When | What |
 |---|---|---|
-| `ci.yml` | every push and PR, and dispatched onto each screenshot commit | lint + the browser-test count check · Vitest + coverage · build → bundle scan + budget · E2E (chromium, mobile-chrome) · browser quality (a11y, security, perf, then visual, each with its own report and summary) · burn-in |
+| `ci.yml` | every push and PR, and dispatched onto each screenshot commit | lint + the browser-test count check + the translation audit (`npm run i18n:audit`) · Vitest + coverage · build → bundle scan + budget · E2E (chromium, mobile-chrome) · browser quality (a11y, security, perf and the pseudo-locale `i18n` gate, then visual, each with its own report and summary) · burn-in |
 | `security.yml` | PRs, `main`, weekly | CodeQL · OSV · Gitleaks · audit gate |
 | `nightly.yml` | daily | WebKit, Firefox, iPhone 14 · quarantined tests · mutation testing · every property at ≥ 20,000 runs |
 | `lighthouse.yml` | `main`; a PR only while it carries the `lighthouse` label | Lighthouse CI budgets |
@@ -359,6 +426,50 @@ in loops, and on the Vitest side an `it.each` over a list built at collection
 time, or a table held in a variable, runs many cases from one line; a text
 count expands neither. The lint job fails a PR that changes either set of tests
 without regenerating its file.
+
+**The pseudo-locale gate** (`tests/i18n/pseudo.spec.js`, project `i18n`, run
+in the browser-quality job; locally `npm run test:i18n`). The audit above
+proves the catalogues are complete; it cannot see a string that never reached a
+catalogue. So CI's build job runs `npm run i18n:pseudo`, which writes
+`messages/en-XA/` from English (gitignored: it is a pure function of
+`messages/en`), and builds with `NEXT_PUBLIC_I18N_PSEUDO=1`, which routes one
+hidden locale, `en-XA`. There every catalogue string reads `[Ȧƀǿǿŭŭŧ ḿḗḗ]`:
+each ASCII letter swapped for an accented look-alike, each vowel doubled (about
+30% longer), the message bracketed, and its ICU arguments, plural keywords and
+tag names untouched (`pseudoMessage` in `scripts/i18n-lib.mjs`, which a unit
+test runs over every English string). The spec visits every route at
+`/en-XA/…` and reads the visible text, the accessible names
+(`aria-label`, `title`, `alt`, `placeholder`…) and the document title.
+**An ASCII word outside every bracket did not come from a catalogue**, and fails
+with the word and the element it sat in. Bracket depth carries across text
+nodes, because a message with rich text spans several; a value interpolated
+into a message sits inside its brackets and passes. Skipped, each for a stated
+reason: `translate="no"` subtrees (names, addresses, data: the HTML attribute
+that already means "not to be translated", which also stops a browser
+translator mangling them), `lang="en"` islands (English by decision, already
+announced), `code`/`pre`/`kbd`/`samp`, and `<time>`, whose words are
+`Intl`'s (CLDR has no pseudo-locale data, so they format as English here and
+correctly everywhere else). A title is checked without the site-name suffix
+(Latin by decision, `docs/seo.md` §18), and not at all on a page whose
+canonical points at its English URL, which is how an English-only page declares
+itself. `LITERAL_WORDS` in `tests/support/pseudo.js` allows one word (sonner's
+`alt` key name) and is meant to stay that short. The pseudo-locale is not in
+`LOCALES`, so the sitemap, hreflang, the selector, the audit and the
+translator never see it, and Vercel never sets the flag: production has no
+`/en-XA`. A unit test pins both.
+
+**The translation audit** (`npm run i18n:audit`, also in the lint job) first
+checks that `messages/en/Data.json` is still what `scripts/i18n-data.mjs`
+derives from `src/app/data.js`, then diffs every locale's catalogue against
+English. It fails on a missing key, an orphan file or key, a namespace nothing
+loads, a translation whose placeholders, rich-text tags or `select` branches
+differ from English (or whose plural has no `other` branch), and an
+**outdated** key: one whose English has changed since it was translated,
+detected from the source hash in `messages/.i18n-lock.json` rather than
+guessed. Text identical to English is a warning, never a failure, because a
+brand or "CV" is often correctly left alone. A missing key would still render,
+in English, which is exactly why it has to fail here instead of being found by
+a visitor. `docs/seo.md` §10 has the translation runbook.
 
 ## Known defects
 
@@ -430,6 +541,23 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Axe (`label-content-name-mismatch`) | axe 4.14 promoted WCAG 2.5.3 (Label in Name) out of "experimental", and it failed on 15 routes: seven controls whose accessible names left out, reordered or ran together their visible words. The footer GitHub CTA (every page), the footer terminal links, both `/about` stat cards, the `/uses` meters, and the `/journey` timeline bars, milestone link and CV link. A voice-control user operates a control by saying what it shows. | Each name now contains its visible words as one run, in order: the CTA names itself from content plus sr-only text; the others start with or follow their visible text; whitespace breaks the stacked parts into words (nothing renders). The axe layer is the regression test; `experiencePresentation.test.js` pins the cards' order with axe's tokenising. |
 | Count check (`--check`) | Vitest 5 made `vitest list` parse files statically by default, so the count `/uses` publishes fell from 1,391 to 1,114 (fitness 120 → 34) while every test still ran: each `it.each` over a list built at collection time read as one case, the error the script exists to avoid. | `scripts/count-vitest-cases.mjs` passes `--staticParse=false`; `browserScripts.test.js` fails if the flag is dropped. |
 | E2E (mobile-chrome) | Even on three r162, `/projects/*` tests still timed out now and then on the mobile runner (`/projects/1` failed all three attempts in run 40134171198; the passing ones took 31–60 s against ~11 s elsewhere). CI has no GPU, so the scene's never-ending frame loop ran in SwiftShader on the main thread: measured locally on a Pixel 7 profile, 3.9 fps, 7.9 s of every 8 s in long tasks, and 220 ms for a no-op `evaluate`. Any visitor whose browser falls back to software WebGL gets the same frozen page. | On a software renderer (`src/lib/softwareRenderer.js`) the scene renders at 1× and on demand: a still frame, then no draws. Same measurement after: 0 long tasks, a 1–3 ms `evaluate`; on a GPU it still animates. `softwareRenderer.test.js` pins which renderer strings count as software. |
+| Fitness (message budget) | The translation work's own client payload broke the 8 kB-per-route budget its spec set: measured 2026-10-29 in English, `/uses` handed its client provider 10.8 kB gzipped (a description of every tool the live crawl can find, most never rendered) and `/about` 9.1 kB (the whole `Data` namespace for one slice of it). | Routes now name dotted subtrees (`Data.journey`), which `pickMessages` copies out without writing into the shared cached catalogue; the tool descriptions moved to a deferred `UsesTools` namespace that `/uses` fetches alongside its live crawl, shipping only the curated tiles' copy up front. Measured after: 7.0 kB and 6.1 kB. `i18nBudget.test.js` holds every locale × route to the limit, and `i18nMessages.test.js` pins that picking never mutates the cache. |
+| Keyboard (2.4.11) | Once the intro seal stopped playing on visits that enter on a sub-page (2026-10-31, for LCP), `keyboard.spec.js` failed on every sub-page: "focused off-screen" on the Home link. `HomeBtn` and `ProjectsBtn` sat at `scale(0)` for a second before popping in, a focusable link with no box. The seal had hidden that second. | Both pop in from 60 % with an opacity fade over 300 ms, never from zero. `loader-inert.spec.js` now also checks that a sub-page entry ships no overlay, is never `inert` and leaves `loaderSeen` unwritten. |
+| Unit (translation validator) | `icuProblems` (`scripts/i18n-lib.mjs`), which rejects a machine translation whose ICU structure differs from English, compared raw rich-text tag counts. A tag repeated once per plural branch (`{count, plural, one {<n>{shown}</n> mark} other {<n>{shown}</n> marks}}`) therefore failed in every language with a different number of plural forms: Japanese, Chinese, Turkish, Vietnamese and Indonesian (`other` only), Portuguese (`one`/`many`/`other`), Polish (four). The first full translation run, 2026-10-29, rejected 8 correct batches. | A plural contributes its `other` branch's tags to the message's count, and every branch must carry the same tags as its own `other` (`unevenPlurals` in `icuSignature`), unless English's own branches already differ. Two cases in `i18nLib.test.js`: a tag inside a plural counts once however many branches the target has, and a tag dropped from one branch is still rejected. |
+| Owner report (footer language selector) | The footer's language panel opened inside the `<footer>`, which has `overflow-hidden`, and inside the split-flap row's transformed `<span>`. On desktop the overflow sliced the top off the upward panel, and the panel was 95% opaque, so the terminal showed through it. On a phone the transform became the containing block of the `position: fixed` bottom sheet, which collapsed into a 65 px sliver mid-screen. | The panel is portalled to `<body>` and anchored to the trigger's viewport rect (`anchorPanel`, which caps its height by the room on the side it opens to), and is opaque. `tests/component/LanguageSelector.test.jsx` pins the portal, the anchor maths, Escape with focus return, and outside-press. |
+| Pseudo-locale (footer) | The footer terminal's link names were a template literal, `${command}, ${handle}: ${description}`, so every language got English punctuation and word order in its accessible names. | One message, `Footer.elsewhere.linkLabel`; Arabic and Japanese now use their own comma. A translator note and a unit test keep the visible command and handle first (WCAG 2.5.3). |
+| Pseudo-locale (`/uses`) | A bench station's `name` read "zsh · macOS Terminal · the VS Code terminal": prose in a field no catalogue holds, so "the … terminal" stayed English in every locale. | Names only in `name` (prose lives in the translated `detail`); names across `/uses`, the footer, `/cv`, `/about`, `/projects` and `/journey` marked `translate="no"`. |
+| E2E + axe (`/ja`) | `/ja/about` threw React #418 (hydration text mismatch), intermittently `/ja/journey` too. `wordChunks` cut Han and kana with `Intl.Segmenter({ granularity: 'word' })`, whose cuts come from a dictionary, and Chromium ships a smaller CJK dictionary than Node's full ICU: one sentence in 80 cut differently on the server and in the browser, so the rendered spans differed. | A cut that is a pure function of the characters: one chunk per Han or hiragana character, katakana and Latin runs whole, closing punctuation kept with the chunk before it. A unit test makes the word segmenter throw and requires the same output. |
+| E2E (`/ar`, phone) | `/ar/privacy` scrolled sideways by 7 px and `/ar/notes/*` by 2 px. Rows and headings inside the English-only islands slide in from the left (their own start); in a left-to-right document that overhang is never scrollable, in a right-to-left one the scroll origin is on the right and it is. | `[dir='rtl'] [lang='en'][dir='ltr'] { overflow-x: clip }` in `globals.css`: the island clips its own overhang, only inside right-to-left pages. |
+| Axe (`/ja/journey`, `label-content-name-mismatch`) | The CV link showed 紙版はこちら while its `aria-label` read 紙版：PDF形式のCV: the Japanese translation reworded one of two messages that had to repeat each other, so the accessible name no longer contained the visible words (WCAG 2.5.3). English passed because its two strings happened to agree. | Named from content: no `aria-label`, the visible words then a screen-reader-only continuation (`Journey.endCap.paperHint`), so no translation can drift out of step. |
+| Owner review (right-to-left footer) | Text drawn one glyph per inline-block printed backwards in Arabic, Persian, Hebrew and Urdu: inline-blocks are bidi-neutral, so they followed the page's right-to-left direction. The footer email read `moc.liamg@…` and the index's CV row read `VC`. | `DecipherEmail` is `dir="ltr"` (an address is left to right in every language) and `HoverText` is `dir="auto"` (each label takes the direction of its own first letter). Pinned in `tests/component/FooterText.test.jsx`, and measured from on-screen glyph positions in a real browser. |
+| Fitness (message budget, local cache) | `i18nBudget` passed locally on 2026-11-01, yet with the cache cleared (as on CI, which caches no `node_modules`) it failed in 16 of 20 locales. Vitest 5 caches each transformed module on disk, keyed on that file’s own source; the loader’s ``import(`../../messages/${locale}/${ns}.json`)`` compiles to the list of catalogue files that existed when it was transformed, and the cached compile dated from when only `en` (and a few `ar`/`es` files) existed. Every other locale fell back to English inside `loadMessages`, so the budget measured English 17 times. The real figures, once measured: `/uses` up to 10.1 kB (Russian), `/about` 9.0 kB, `/journey` 8.6 kB. | The fitness project runs with `fsModuleCache: false` (`vitest.config.mjs`), so a gate never passes on a stale compile. The routes were then brought down: the preference centre’s copy (`Privacy.prefs`, `categories`) is fetched when the dialog opens, or preloaded for an undecided visitor (`usePrivacyCopy.jsx`); `Privacy.status` ships on `/privacy` only; the 404 hands down `NotFound` itself; `/uses` fetches its ⌘K copy (`UsesPalette`) at mount; the category fallback lines moved into the deferred `UsesTools`. Russian `/uses` still measured 8,279 bytes with only first-paint text left, and the owner set `/uses` at 9 kB. `PrivacyConsentUi` and `usesPalette` cover both fetch paths; the cleared-cache run is the regression check for the cache itself. |
+| Catalogue text (`fr`, `de`, `es`) | 65 translated strings carried the six characters `\u00a0` where a no-break space belonged. They were double-escaped in the JSON, so they parsed as a backslash and five letters: French visitors read “priorité\u00a0:” on the home page’s live header, and the German and Spanish percent format read `<n>\u00a0%`. No test saw it, because six locale tests still asserted the English fallback from before the catalogues were translated, so French was never rendered with its own words. | Each turned into a real JSON escape for U+00A0. `i18nCatalogueText` (fitness) fails on any parsed string containing an escape sequence; it fails with the old `fr/LiveHeader.json` restored. The six locale tests now take their expected words from the catalogue (`messagesFor`) instead of English. |
+| Review (contact name field, bidi) | The name field is `dir="auto"`, and `FireInput` copied that `dir` onto its overlay's text only. That reorders the glyphs but not where the flex overlay places them, so an Arabic name on `/contact` painted at the left edge while the caret sat right, and a Latin name on `/ar/contact` the reverse. | `dir` moved to the `.fire-input-overlay` container (the text inherits it; a `dir` on the child too would make the container's `auto` skip it and resolve left-to-right). `tests/e2e/rtl.spec.js` measures which edge the painted copy hugs, in both directions; all four Chromium and WebKit cases fail without the fix. |
+| Review (contact name field, long right-to-left value) | `FireInput` keeps the end of a long value in view itself (the input's own scroll-to-caret is off, because its text is transparent) with `scrollLeft = scrollWidth`. In a right-to-left field `scrollLeft` runs from 0 to a negative number, so that clamped to 0, the start, and a long Arabic name scrolled off the left past the caret. | `sync()` reads the input's resolved direction and pins to `-scrollWidth` when it is right-to-left. `tests/e2e/rtl.spec.js` fills a name longer than the field in each direction and checks that the end sits within the padding; the right-to-left case fails on Chromium and WebKit without the fix. |
+| CI (published Vitest count) | `test:count --check` failed on CI: 1,861 collected against a committed 1,862. `i18nCatalogueText` made one case per folder under `messages/`, and the gitignored pseudo-locale `messages/en-XA/` exists only where `npm run i18n:pseudo` has run, so the count depended on the machine. | The test iterates `LOCALE_CODES` from the locale registry. The count is 1,861 with or without the pseudo folder. |
+| CI (bundle budget) | After every page moved under `app/[locale]/`, `bundle-budget.json` matched no built route: the gate listed each page as "gone" and "unbudgeted" and measured nothing, which hid about 33–42 kB (gzip) of first-load growth per page from #82's i18n runtime. | Re-baselined with `--update` (measured + 10%), the growth recorded in the changelog. A route rename always needs `--update` in the same change. |
+| Owner report (`/ur/contact`, field direction) | Typing started at the left in some contact fields and at the right in others. An empty `dir="auto"` field resolves left-to-right (no letters to go by), so on a right-to-left page the empty name, subject and message waited at the left, while the email, with no `dir`, followed the page to the right and laid typed addresses out right to left. | One rule: empty, a field carries no `dir` and inherits the page's; typed, it takes `auto` (name, subject, message) or `ltr` (email), on the field and its overlay alike (`applyTypedDirection`). `tests/e2e/rtl.spec.js` checks every field empty, with Urdu, with Latin and cleared, on `/contact` and `/ur/contact`. |
 
 ## Maintenance
 

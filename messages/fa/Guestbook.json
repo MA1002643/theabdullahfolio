@@ -1,0 +1,124 @@
+{
+  "title": "دفتر یادبود",
+  "subtitle": "نشان خودتان را بگذارید",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> نشان به‌جا مانده} other {<n>{shown}</n> نشان به‌جا مانده}}",
+    "commands": "{shortcut} · دستورها",
+    "loading": "در حال بارگذاری دفتر یادبود…",
+    "loadingMore": "در حال بارگذاری بخش بیشتری از دفتر یادبود…",
+    "loadFailed": "بارگذاری دفتر یادبود ممکن نشد",
+    "pageFailed": "بارگذاری این صفحه ممکن نشد",
+    "retry": "تلاش دوباره",
+    "emptyTitle": "هنوز پیامی نیست",
+    "emptyInvite": "نخستین کسی باشید که نشانش را می‌گذارد"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> نفر همین‌حالا اینجا هستند}}",
+  "announce": {
+    "one": "پیام تازه از {name}: {message}",
+    "many": "{count, plural, one {# پیام تازه.} other {# پیام تازه.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": "؛ ",
+    "someone": "یک نفر"
+  },
+  "card": {
+    "sending": "ارسال…",
+    "guest": "مهمان",
+    "onGitHub": "{username} در GitHub (در تب جدید باز می‌شود)",
+    "copyLink": "کپی پیوند این پیام",
+    "linkCopied": "پیوند کپی شد — مستقیم به همین نشان می‌رسد",
+    "linkFailed": "کپی پیوند ممکن نشد",
+    "deleteOwn": "حذف پیام شما",
+    "deleteOther": "حذف پیام {name}",
+    "signature": "امضای {name}",
+    "signatureAnon": "امضا"
+  },
+  "reactions": {
+    "fire": "آتش",
+    "rocket": "موشک",
+    "heart": "قلب",
+    "count": "{label} — {count}",
+    "signInToReact": "برای واکنش وارد شوید"
+  },
+  "composer": {
+    "label": "پیام شما",
+    "placeholder": "پیامی بگذارید…",
+    "send": "ارسال پیام",
+    "offline": "آفلاین هستید — پیامتان تا بازگشت اتصال همین‌جا نگه‌داری می‌شود.",
+    "notSent": "پیام قبلی شما ارسال نشد",
+    "restore": "بازگردانی"
+  },
+  "signature": {
+    "add": "افزودن امضا (اختیاری)",
+    "discard": "دور انداختن امضا",
+    "clear": "پاک کردن",
+    "padLabel": "محل کشیدن امضا — با ماوس، انگشت یا قلم بکشید، یا یکی از نشان‌های آماده را در پایین انتخاب کنید.",
+    "padHint": "با انگشت، تاچ‌پد یا ماوس بکشید — ضخامت خط از سرعت دست شما پیروی می‌کند",
+    "pickMark": "یک نشان انتخاب کنید",
+    "orPickMark": "یا یک نشان انتخاب کنید",
+    "marks": {
+      "flourish": "کشیده",
+      "wave": "موج",
+      "spark": "جرقه",
+      "orbit": "مدار"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "پیامی بگذارید…",
+    "ghostRefine": "پیرایش با هوش مصنوعی",
+    "ghostSignature": "افزودن امضا (اختیاری)",
+    "ghostDrafts": "پیش‌نویس‌ها هنگام تایپ خودکار ذخیره می‌شوند",
+    "prompt": "برای گذاشتن پیام وارد شوید",
+    "promptReauth": "برای گذاشتن پیام دوباره وارد شوید",
+    "reauthExplain": "ورود فعلی شما از کلیدهای حساب این دیوار قدیمی‌تر است؛ پس فقط می‌تواند بخواند، نه بنویسد — یک بار ورود تازه مشکل را حل می‌کند.",
+    "github": "ورود با GitHub",
+    "google": "ورود با Google"
+  },
+  "pagination": {
+    "nav": "صفحه‌های دفتر یادبود",
+    "previous": "صفحه قبل",
+    "next": "صفحهٔ بعد",
+    "page": "صفحه ",
+    "status": "صفحهٔ {page} از {total}"
+  },
+  "palette": {
+    "leaveMessage": "گذاشتن پیام",
+    "leaveKeywords": "نوشتن امضا ارسال پیام نگارش write sign post compose",
+    "sectionGuestbook": "دفتر یادبود",
+    "sectionPreferences": "تنظیمات",
+    "signInToLeave": "برای گذاشتن پیام وارد شوید",
+    "toggleSound": "روشن/خاموش کردن صداهای رابط",
+    "soundKeywords": "صدا بوق بی‌صدا audio blip mute",
+    "toggleMotion": "روشن/خاموش کردن حرکت",
+    "motionKeywords": "انیمیشن کاهش حرکت ثابت animation reduce still",
+    "on": "روشن",
+    "off": "خاموش"
+  },
+  "toast": {
+    "posted": "پیام ارسال شد!",
+    "postFailed": "ارسال پیام ناموفق بود",
+    "reactFailed": "ثبت واکنش ناموفق بود",
+    "deleteFailed": "حذف پیام ناموفق بود",
+    "removedOwn": "پیام شما از دفتر یادبود حذف شد",
+    "removedOther": "یک پیام از دفتر یادبود حذف شد",
+    "you": "شما"
+  },
+  "errors": {
+    "unauthorized": "دسترسی غیرمجاز",
+    "too_large": "حجم بدنهٔ درخواست باید حداکثر {max, number, ::group-off} بایت باشد",
+    "invalid_body": "بدنهٔ درخواست نامعتبر است",
+    "message_required": "نوشتن پیام الزامی است",
+    "message_length": "پیام باید بین {min} تا {max} نویسه باشد",
+    "invalid_characters": "پیام شامل نویسه‌های نامعتبر است",
+    "links_not_allowed": "استفاده از پیوند در پیام‌های دفتر یادبود مجاز نیست",
+    "unfriendly": "لطفاً لحن دوستانه را حفظ کنید",
+    "invalid_signature": "امضا نامعتبر است",
+    "rate_limited": "هر ۵ دقیقه فقط یک پیام — {minutes, plural, one {# دقیقهٔ دیگر} other {# دقیقهٔ دیگر}} دوباره تلاش کنید",
+    "invalid_reaction": "واکنش نامعتبر است",
+    "reaction_rate_limited": "واکنش‌های بیش از حد — {seconds} ثانیهٔ دیگر دوباره تلاش کنید",
+    "not_found": "پیام پیدا نشد",
+    "id_required": "شناسهٔ پیام الزامی است",
+    "invalid_id": "شناسهٔ پیام نامعتبر است",
+    "forbidden": "دسترسی ممنوع",
+    "invalid_cursor": "مکان‌نما نامعتبر است"
+  }
+}

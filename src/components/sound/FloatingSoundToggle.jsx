@@ -22,8 +22,9 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { Volume2, VolumeX } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useSound } from './SoundProvider';
 
@@ -34,6 +35,7 @@ const ROUTES_WITHOUT_FOOTER = new Set(['/']);
 
 export default function FloatingSoundToggle() {
   const { soundOn, canHover, toggleSound } = useSound();
+  const t = useTranslations('Common');
   const pathname = usePathname();
   const reduce = useReducedMotion();
 
@@ -50,7 +52,7 @@ export default function FloatingSoundToggle() {
           type="button"
           onClick={toggleSound}
           aria-pressed={soundOn}
-          aria-label={soundOn ? 'Turn the guitar sound off' : 'Turn the guitar sound on'}
+          aria-label={soundOn ? t('sound.turnOff') : t('sound.turnOn')}
           initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, y: 8 }}
           animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
           exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, y: 8 }}
@@ -62,7 +64,9 @@ export default function FloatingSoundToggle() {
           // it on the homepage. Colours follow the footer's SoundControl: filled
           // orange when live, a dimmed neutral chip when off.
           className={cn(
-            'fixed right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md',
+            // `end-6` (issue #82): the reading-END corner, opposite NowPlaying,
+            // which holds the start corner — so they stay apart under RTL too.
+            'fixed end-6 z-50 flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md',
             // The bottom offset moved into `.floating-bottom-anchor`
             // (globals.css), which folds the safe-area inset together with
             // `--consent-lift` — so this control steps up out of the way of the

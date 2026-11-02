@@ -1,0 +1,124 @@
+{
+  "title": "سجل الزوار",
+  "subtitle": "اترك بصمتك",
+  "wall": {
+    "marksLeft": "{count, plural, one {البصمات المتروكة: <n>{shown}</n>} other {البصمات المتروكة: <n>{shown}</n>}}",
+    "commands": "{shortcut} · الأوامر",
+    "loading": "جارٍ تحميل سجل الزوار…",
+    "loadingMore": "جارٍ تحميل المزيد من سجل الزوار…",
+    "loadFailed": "تعذّر تحميل سجل الزوار",
+    "pageFailed": "تعذّر تحميل هذه الصفحة",
+    "retry": "أعد المحاولة",
+    "emptyTitle": "لا رسائل بعد",
+    "emptyInvite": "كن أول من يترك بصمته"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> هنا الآن}}",
+  "announce": {
+    "one": "رسالة جديدة من {name}: {message}",
+    "many": "{count, plural, zero {لا رسائل جديدة.} one {رسالة جديدة واحدة.} two {رسالتان جديدتان.} few {# رسائل جديدة.} many {# رسالة جديدة.} other {# رسالة جديدة.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": "، ",
+    "someone": "أحدهم"
+  },
+  "card": {
+    "sending": "يُرسَل…",
+    "guest": "زائر",
+    "onGitHub": "{username} على GitHub (يفتح في تبويب جديد)",
+    "copyLink": "انسخ رابط هذه الرسالة",
+    "linkCopied": "تم نسخ الرابط — يشير مباشرة إلى هذه البصمة",
+    "linkFailed": "تعذّر نسخ الرابط",
+    "deleteOwn": "احذف رسالتك",
+    "deleteOther": "حذف رسالة {name}",
+    "signature": "توقيع {name}",
+    "signatureAnon": "توقيع"
+  },
+  "reactions": {
+    "fire": "نار",
+    "rocket": "صاروخ",
+    "heart": "قلب",
+    "count": "{label} — {count}",
+    "signInToReact": "سجّل الدخول للتفاعل"
+  },
+  "composer": {
+    "label": "رسالتك",
+    "placeholder": "اترك رسالة…",
+    "send": "أرسل الرسالة",
+    "offline": "أنت غير متصل — ستبقى رسالتك هنا إلى أن تعود.",
+    "notSent": "لم تُرسَل رسالتك السابقة",
+    "restore": "استعدها"
+  },
+  "signature": {
+    "add": "أضف توقيعًا (اختياري)",
+    "discard": "تجاهل التوقيع",
+    "clear": "مسح",
+    "padLabel": "مساحة رسم التوقيع — ارسم بالفأرة أو بإصبعك أو بالقلم، أو اختر بصمة جاهزة أدناه.",
+    "padHint": "ارسم بإصبعك أو بلوحة اللمس أو بالفأرة — يتبع سمك الخط سرعتك",
+    "pickMark": "اختر بصمة",
+    "orPickMark": "أو اختر بصمة",
+    "marks": {
+      "flourish": "زخرفة",
+      "wave": "موجة",
+      "spark": "شرارة",
+      "orbit": "مدار"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "اترك رسالة…",
+    "ghostRefine": "حسّنها بالذكاء الاصطناعي",
+    "ghostSignature": "أضف توقيعًا (اختياري)",
+    "ghostDrafts": "تُحفظ المسودات تلقائيًا أثناء الكتابة",
+    "prompt": "سجّل الدخول لترك رسالة",
+    "promptReauth": "سجّل الدخول مجددًا لترك رسالة",
+    "reauthExplain": "تسجيل دخولك الحالي أقدم من مفاتيح حسابات السجل، لذا يمكنه القراءة دون الكتابة — ويكفي تسجيل دخول جديد واحد لإصلاح ذلك.",
+    "github": "تسجيل الدخول عبر GitHub",
+    "google": "تسجيل الدخول عبر Google"
+  },
+  "pagination": {
+    "nav": "صفحات سجل الزوار",
+    "previous": "الصفحة السابقة",
+    "next": "الصفحة التالية",
+    "page": "الصفحة ",
+    "status": "الصفحة {page} من {total}"
+  },
+  "palette": {
+    "leaveMessage": "اترك رسالة",
+    "leaveKeywords": "اكتب وقّع انشر تدوين رسالة",
+    "sectionGuestbook": "سجل الزوار",
+    "sectionPreferences": "التفضيلات",
+    "signInToLeave": "سجّل الدخول لترك رسالة",
+    "toggleSound": "تبديل أصوات الواجهة",
+    "soundKeywords": "صوت نغمة كتم",
+    "toggleMotion": "تبديل الحركة",
+    "motionKeywords": "حركة رسوم متحركة تقليل ثابت",
+    "on": "مفعّل",
+    "off": "معطّل"
+  },
+  "toast": {
+    "posted": "تم نشر الرسالة!",
+    "postFailed": "تعذّر نشر الرسالة",
+    "reactFailed": "تعذّر إرسال التفاعل",
+    "deleteFailed": "تعذّر حذف الرسالة",
+    "removedOwn": "تمت إزالة رسالتك من سجل الزوار",
+    "removedOther": "تمت إزالة رسالة من سجل الزوار",
+    "you": "أنت"
+  },
+  "errors": {
+    "unauthorized": "غير مصرّح",
+    "too_large": "يجب ألا يتجاوز حجم الطلب {max, number, ::group-off} بايت",
+    "invalid_body": "محتوى الطلب غير صالح",
+    "message_required": "الرسالة مطلوبة",
+    "message_length": "يجب أن يتراوح طول الرسالة بين {min} و{max} حرفًا",
+    "invalid_characters": "تحتوي الرسالة على أحرف غير صالحة",
+    "links_not_allowed": "الروابط غير مسموح بها في رسائل سجل الزوار",
+    "unfriendly": "يُرجى الحفاظ على لهجة ودّية",
+    "invalid_signature": "التوقيع غير صالح",
+    "rate_limited": "رسالة واحدة كل 5 دقائق — حاول مجددًا بعد {minutes, plural, zero {# دقيقة} one {دقيقة واحدة} two {دقيقتين} few {# دقائق} many {# دقيقة} other {# دقيقة}}",
+    "invalid_reaction": "التفاعل غير صالح",
+    "reaction_rate_limited": "تفاعلات كثيرة جدًا — حاول مجددًا بعد {seconds} ث",
+    "not_found": "الرسالة غير موجودة",
+    "id_required": "معرّف الرسالة مطلوب",
+    "invalid_id": "معرّف الرسالة غير صالح",
+    "forbidden": "الوصول محظور",
+    "invalid_cursor": "المؤشر غير صالح"
+  }
+}

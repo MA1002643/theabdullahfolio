@@ -218,6 +218,18 @@ describe('readBuildFacts — a full fixture repository', () => {
     expect(facts.pipeline.crons).toEqual([{ path: '/api/daily-warmup', schedule: '0 1 * * *' }]);
   });
 
+  it('reports the locale proxy and counts locale catalogues, skipping tooling directories (issue #82)', () => {
+    const root = makeRoot();
+    seedFullRepo(root);
+    expect(readBuildFacts(root, FIXED_NOW).pipeline).toMatchObject({ proxy: false, locales: null });
+
+    write(root, 'src/proxy.js', 'export default function proxy() {}\n');
+    // en-XA is the generated pseudo-locale: present in CI's build, never public.
+    for (const dir of ['en', 'ar', 'tr', '_notes', 'en-XA']) write(root, `messages/${dir}/Common.json`, '{}');
+    write(root, 'messages/.i18n-lock.json', '{}');
+    expect(readBuildFacts(root, FIXED_NOW).pipeline).toMatchObject({ proxy: true, locales: 3 });
+  });
+
   it('counts suites and cases from the runners and the files, never from a typed number', () => {
     const root = makeRoot();
     seedFullRepo(root);
@@ -294,7 +306,8 @@ describe('readBuildFacts — missing inputs fail to null, never to a fake value'
     const facts = readBuildFacts(root, FIXED_NOW);
     expect(facts.bom).toBeNull();
     expect(facts.node).toEqual({ engines: null, nvmrc: null, vercelMajor: null });
-    expect(facts.pipeline).toEqual({ workflows: null, crons: null });
+    // `proxy` is false, not null: an absent src/proxy.js is a fact, not a gap.
+    expect(facts.pipeline).toEqual({ workflows: null, crons: null, proxy: false, locales: null });
     expect(facts.instruments).toEqual({
       unit: null,
       e2e: null,

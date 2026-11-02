@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "הסטאפ שלי",
+    "subtitle": "הכלים, מאומתים"
+  },
+  "opensNewTab": "{name} (נפתח בלשונית חדשה)",
+  "machine": {
+    "eyebrow": "חומרה · הוגדר ידנית",
+    "title": "המכונה",
+    "provenance": "{count, plural, one {<fig>{n}</fig> שורה} other {<fig>{n}</fig> שורות}} · אושר על ידי הבעלים",
+    "seeItLive": "לצפייה חיה"
+  },
+  "bench": {
+    "eyebrow": "סביבה · הוגדרה ידנית",
+    "title": "שולחן העבודה",
+    "provenance": "{count, plural, one {<fig>{n}</fig> תחנה} other {<fig>{n}</fig> תחנות}} · קטע מתוך {file}",
+    "extensions": "התוספים שאני שולף שוב ושוב",
+    "editorCaption": "קטע מתוך {file} ב-VS Code שלי, מוצג בערכת הנושא {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "סטאק · נסרק מתוך המאגרים",
+    "eyebrowCurated": "סטאק · מערך נבחר",
+    "title": "הסטאק",
+    "provenanceLive": "חי · {count, plural, one {<fig>{n}</fig> כלי} other {<fig>{n}</fig> כלים}}",
+    "provenanceCurated": "נבחר · {count, plural, one {<fig>{n}</fig> כלי} other {<fig>{n}</fig> כלים}} · {state, select, unreachable {GitHub אינו זמין} other {מסתנכרן עם GitHub…}}",
+    "verifiedSr": "אומת מול GitHub",
+    "verifiedStatus": "הסטאק אומת מול GitHub.",
+    "cta": "לצפייה במאגרים",
+    "ctaLabel": "לצפייה במאגרים ב-GitHub (נפתח בלשונית חדשה)",
+    "tally": "<count></count> מתוך <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "מאגרים ציבוריים",
+    "keyPrivate": "פרטיים",
+    "keyRelative": "אורך הפסים יחסי לכלי הנפוץ ביותר",
+    "keyPending": "הפסים וספירת המאגרים יתמלאו עם הסריקה החיה",
+    "repoCount": {
+      "public": "בשימוש ב-{pub, plural, one {# מאגר ציבורי} other {# מאגרים ציבוריים}}",
+      "private": "בשימוש ב-{priv, plural, one {# מאגר פרטי} other {# מאגרים פרטיים}}",
+      "mixed": "בשימוש ב-{pub, plural, one {# מאגר ציבורי} other {# מאגרים ציבוריים}} · +{priv} פרטיים"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: ספירת המאגרים תגיע עם הסריקה החיה",
+    "figure": {
+      "publicRepos": "{n, plural, one {מאגר ציבורי} other {מאגרים ציבוריים}}",
+      "privateRepos": "{n, plural, one {מאגר פרטי} other {מאגרים פרטיים}}",
+      "repos": "{n, plural, one {מאגר} other {מאגרים}}",
+      "public": "ציבורי",
+      "private": "פרטי"
+    },
+    "curated": "נבחר"
+  },
+  "liveAge": {
+    "verified": "אומת {age}",
+    "s": "לפני {s} שנ׳",
+    "ms": "לפני {m} דק׳ ו-{s} שנ׳",
+    "hm": "לפני {h} שע׳ ו-{m} דק׳",
+    "dh": "לפני {d} ימ׳ ו-{h} שע׳"
+  },
+  "pipeline": {
+    "eyebrow": "אספקה · מקומיט ועד חישוב",
+    "title": "צינור האספקה",
+    "provenance": "{count, plural, one {<fig>{n}</fig> תהליך עבודה} other {<fig>{n}</fig> תהליכי עבודה}} · נקראים מתיקיית .github בזמן הבנייה",
+    "provenanceHandSet": "סכמה · הוגדרה ידנית",
+    "region": "תרשים צינור הבנייה",
+    "svgTitle": "צינור אספקה: דחיפת קוד (push) עוברת מ-GitHub דרך GitHub Actions ובניית Vercel אל Fluid compute, שאליו מגיע ישירות גם webhook של GitHub ושאותו מפעילה משימת cron יומית; משם החישוב מתפצל דרך אפיק שירות (service bus) אל השירותים המפורטים להלן.",
+    "fires": "מופעל <fig>{window}</fig> UTC (דיוק Hobby)",
+    "kinds": {
+      "source": "מקור",
+      "ci": "CI",
+      "build": "בנייה",
+      "runtime": "זמן ריצה",
+      "schedule": "תזמון",
+      "store": "אחסון",
+      "gateway": "שער",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "דואר",
+      "auth": "אימות",
+      "search": "חיפוש"
+    },
+    "workflows": "{count, plural, one {תהליך עבודה אחד} other {{n} תהליכי עבודה}}",
+    "apiRoutes": "{count, plural, one {נתיב API אחד} other {{n} נתיבי API}}",
+    "apiRoutesBare": "נתיבי API",
+    "locales": "{count, plural, one {שפה {n}} two {{n} שפות} other {{n} שפות}}",
+    "crons": "{count, plural, one {משימת cron} other {{n} משימות cron}}",
+    "daily": "מדי יום · {time} UTC",
+    "services": {
+      "redis": "ספר אורחים · מיקום · SEO · מניעת כפילויות",
+      "graphql": "סטטיסטיקות · כישורים · התקדמות",
+      "spotify": "מתנגן כעת",
+      "mail": "יצירת קשר · אימות Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "איכות · נספר בזמן הבנייה",
+    "title": "המכשירים",
+    "provenance": "נספר בזמן הבנייה · <fig>{date}</fig>",
+    "provenanceBare": "נספר בזמן הבנייה",
+    "unitLabel": "{count, plural, one {סוויטת Vitest} other {סוויטות Vitest}}",
+    "unitSub": "{count, plural, one {מקרה בדיקה אחד} other {{n} מקרי בדיקה}} · Vitest",
+    "e2eLabel": "{count, plural, one {סוויטת דפדפן} other {סוויטות דפדפן}}",
+    "e2eSub": "{count, plural, one {תרחיש אחד} other {{n} תרחישים}} · Playwright",
+    "apiLabel": "{count, plural, one {נתיב API} other {נתיבי API}}",
+    "apiSub": "מטפלי נתיבים · {methods}",
+    "apiSubBare": "מטפלי נתיבים",
+    "tileLabel": "{figure} {label} — {sub} (פותח את התיקייה ב-GitHub בלשונית חדשה)"
+  },
+  "bom": {
+    "eyebrow": "רשימת רכיבים · האתר הזה",
+    "title": "ממה הוא עשוי",
+    "provenance": "{source} · אומת בזמן הבנייה · <fig>{date}</fig>",
+    "provenanceBare": "{source} · אומת בזמן הבנייה",
+    "unreadable": "לא ניתן היה לקרוא את המניפסט בזמן הבנייה, ולכן לא מוצגות גרסאות.",
+    "packages": "{count, plural, one {חבילה <fig>{n}</fig>} other {<fig>{n}</fig> חבילות}}",
+    "packagesOf": "<fig>{n}</fig> מתוך <fig>{all}</fig> חבילות",
+    "built": "נבנה <fig>{date}</fig>",
+    "groups": {
+      "core": "ליבה",
+      "3d-and-motion": "תלת־ממד ותנועה",
+      "data-and-services": "נתונים ושירותים",
+      "interface": "ממשק",
+      "platform": "פלטפורמה",
+      "media": "מדיה",
+      "quality": "איכות",
+      "build": "בנייה",
+      "runtime": "סביבת הרצה",
+      "tooling": "כלים"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "שפות",
+        "lay": "השפה שבה הקוד עצמו נכתב."
+      },
+      "frameworks": {
+        "label": "פריימוורקים",
+        "lay": "השלד שעליו נבנית אפליקציה: המבנה שלה והמוסכמות שלה."
+      },
+      "libraries": {
+        "label": "ספריות",
+        "lay": "אבני בניין מוכנות, וכל אחת נכנסת כדי לעשות דבר אחד היטב."
+      },
+      "tools": {
+        "label": "כלים",
+        "lay": "כל מה שרץ סביב הקוד: בדיקות, עיצוב קוד, מסדי נתונים ופריסה."
+      },
+      "software": {
+        "label": "תוכנות",
+        "lay": "השירותים שבהם העבודה המוגמרת חיה."
+      }
+    }
+  }
+}

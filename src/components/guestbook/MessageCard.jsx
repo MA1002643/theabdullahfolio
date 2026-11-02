@@ -11,6 +11,7 @@ import {
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Link2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCardTilt } from '@/hooks/useCardTilt';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
 import { timeAgo } from '@/lib/guestbook/timeAgo';
@@ -46,6 +47,8 @@ export default function MessageCard({
   onDelete,
 }) {
   const reduceMotion = useReducedMotion();
+  const t = useTranslations('Guestbook');
+  const locale = useLocale();
   // 3D tilt + specular glare (issue #40 Phase 4) — the about-page hook,
   // self-gated on pointer-fine + reduced motion; the flag only decides
   // whether it is WIRED. Composes with the entrance animation because the
@@ -95,7 +98,7 @@ export default function MessageCard({
   const isGitHub = (author.provider ?? 'github') === 'github';
   const displayHandle = isGitHub
     ? `@${author.username || author.name}`
-    : author.name || 'Guest';
+    : author.name || t('card.guest');
 
   const avatarImg = author.avatar ? (
     // Plain <img>, not next/image: remote avatars would need a global
@@ -125,7 +128,7 @@ export default function MessageCard({
   );
 
   const hoverReveal = (
-    <span className="pointer-events-none absolute -bottom-6 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap font-mono text-xs text-[#fc83ff]/80 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
+    <span dir="auto" className="pointer-events-none absolute -bottom-6 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap font-mono text-xs text-[#fc83ff]/80 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
       {displayHandle}
     </span>
   );
@@ -135,12 +138,14 @@ export default function MessageCard({
   // (GuestbookWall's hash effect). Clipboard write is async and can be denied
   // (permissions, non-secure contexts) — say so instead of failing silently.
   const copyLink = async () => {
-    const url = `${window.location.origin}/guestbook#${message.id}`;
+    // The current page's own path, so the link keeps the visitor's locale
+    // prefix (/ar/guestbook#…) — the hash is what addresses the mark.
+    const url = `${window.location.origin}${window.location.pathname}#${message.id}`;
     try {
       await navigator.clipboard.writeText(url);
-      toast.success('Link copied — it points straight at this mark');
+      toast.success(t('card.linkCopied'));
     } catch {
-      toast.error('Could not copy the link');
+      toast.error(t('card.linkFailed'));
     }
   };
 
@@ -189,10 +194,10 @@ export default function MessageCard({
         />
       ) : null}
 
-      {/* Decorative opening quote, sitting inside the card's top-left. */}
+      {/* Decorative opening quote, sitting inside the card's top-start. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute left-2 top-0 select-none font-serif text-4xl leading-none text-[#ff6d05]/10"
+        className="pointer-events-none absolute start-2 top-0 select-none font-serif text-4xl leading-none text-[#ff6d05]/10"
       >
         &ldquo;
       </span>
@@ -208,7 +213,7 @@ export default function MessageCard({
             href={`https://github.com/${author.username}`}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`${author.username} on GitHub (opens in a new tab)`}
+            aria-label={t('card.onGitHub', { username: author.username })}
             className="group relative shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
           >
             {avatarImg}
@@ -231,13 +236,18 @@ export default function MessageCard({
           {/* Ember, not gold (owner call): the author's name carries the same
               #ff6d05 the GUESTBOOK headline is filled with — names are
               content, and content speaks in the title's own ink. */}
-          <span className="min-w-0 flex-1 truncate font-mono text-sm text-[#ff6d05]">
+          {/* Visitor-chosen names are never translated, and may be in any
+              script: dir="auto" lays each out in its own direction. */}
+          <span
+            dir="auto"
+            className="min-w-0 flex-1 truncate text-start font-mono text-sm text-[#ff6d05]"
+          >
             {displayHandle}
           </span>
           {/* Timestamp in the numeral ember (owner call, third pass) — the
               pagination digits' #ff6d05, one colour for every number. */}
           <span className="shrink-0 font-mono text-xs text-[#ff6d05]">
-            {message.pending ? 'sending…' : timeAgo(message.createdAt, now)}
+            {message.pending ? t('card.sending') : timeAgo(message.createdAt, now, locale)}
           </span>
           {/* Copy-link — every confirmed card is deep-linkable, so the URL
               can travel (a visitor showing off their mark, the owner citing
@@ -247,7 +257,7 @@ export default function MessageCard({
             <button
               type="button"
               onClick={copyLink}
-              aria-label="Copy a link to this message"
+              aria-label={t('card.copyLink')}
               className="shrink-0 rounded-md p-1.5 text-[#fc83ff]/60 transition-colors duration-300 hover:bg-[#ff6d05]/10 hover:text-[#ff6d05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
             >
               <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
@@ -264,8 +274,8 @@ export default function MessageCard({
               onClick={() => onDelete(message.id)}
               aria-label={
                 isOwn
-                  ? 'Delete your message'
-                  : `Delete ${author.name || displayHandle}'s message`
+                  ? t('card.deleteOwn')
+                  : t('card.deleteOther', { name: author.name || displayHandle })
               }
               className="shrink-0 rounded-md p-1.5 text-[#fc83ff]/60 transition-colors duration-300 hover:bg-[#ff6d05]/10 hover:text-[#ff6d05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
             >
@@ -283,7 +293,14 @@ export default function MessageCard({
           inside these animated cards follows the RepoStatsCard precedent
           (clipped paragraph inside a tilt card) — verify entrances on a real
           GPU if this ever misbehaves. */}
-      <p className="gb-fire-ink mt-3 pl-1 text-sm leading-relaxed sm:text-base">
+      {/* Visitor-written, so never translated (issue #82). dir="auto" lets an
+          Arabic mark on the English wall (or an English one on the Arabic
+          wall) lay out in its own direction; text-start then aligns it to
+          that direction's start. */}
+      <p
+        dir="auto"
+        className="gb-fire-ink mt-3 ps-1 text-start text-sm leading-relaxed sm:text-base"
+      >
         {message.message}
       </p>
 

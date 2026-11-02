@@ -2,11 +2,16 @@
 
 import { motion } from 'framer-motion';
 import { ArrowDownRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useDataT } from '@/i18n/useDataT';
+import { localizeMachineRow } from '@/i18n/data';
+import { useDirection } from '@/i18n/useDirection';
 import FireText from '@/components/shared/FireText';
 import { useCardTilt } from '@/hooks/useCardTilt';
 import { USES_FLAGS } from '@/lib/flags';
 import { fluid } from '@/lib/fluidScale';
-import Plate, { Figure } from './Plate';
+import Plate, { figTag } from './Plate';
+import { useUsesFormat } from './useUsesFormat';
 import { riseProps, staged, useStagedReveal } from './useStagedReveal';
 
 // 00 · THE MACHINE — the hardware, typeset as an engraved nameplate: a single
@@ -43,7 +48,18 @@ const CUT_EASE = [0.65, 0, 0.35, 1];
 const ROW_STEP_S = 0.14;
 const ROW_BASE_S = 0.2;
 
+// The cut runs in reading direction (issue #82): left→right, or right→left in
+// an RTL document, where the value text starts at the right edge. Shut, the
+// clip hides the whole box from the far side; open, it hides nothing.
+const CUT = {
+  ltr: { shut: 'inset(0 100% 0 0)', open: 'inset(0 0% 0 0)', from: '0%', to: '100%' },
+  rtl: { shut: 'inset(0 0 0 100%)', open: 'inset(0 0 0 0%)', from: '100%', to: '0%' },
+};
+
 function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
+  const t = useTranslations('Uses');
+  const { dir } = useDirection();
+  const cut = CUT[dir];
   const { ref, on, delay } = useStagedReveal({
     revealed,
     reduceMotion,
@@ -95,9 +111,9 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
           {/* The cut — a clip wipe over the fire ink… */}
           <motion.span
             className="uses-anim uses-anim-clip block"
-            initial={reduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+            initial={reduceMotion ? false : { clipPath: cut.shut }}
             animate={{
-              clipPath: on || reduceMotion ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)',
+              clipPath: on || reduceMotion ? cut.open : cut.shut,
             }}
             transition={at(cutStart, CUT_S, CUT_EASE)}
           >
@@ -111,8 +127,8 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
             <motion.span
               aria-hidden="true"
               className="uses-cutter"
-              initial={{ left: '0%', opacity: 0 }}
-              animate={on ? { left: '100%', opacity: [0, 1, 1, 0] } : { left: '0%', opacity: 0 }}
+              initial={{ left: cut.from, opacity: 0 }}
+              animate={on ? { left: cut.to, opacity: [0, 1, 1, 0] } : { left: cut.from, opacity: 0 }}
               transition={{
                 left: at(cutStart, CUT_S, CUT_EASE),
                 opacity: {
@@ -139,7 +155,7 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
             className="uses-anim uses-xref mt-1.5 inline-flex items-center gap-1 font-mono uppercase text-[#ffaa2a] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
             {...riseProps(on, reduceMotion, at(afterCut + 0.1, 0.5), 6)}
           >
-            {row.hrefLabel || 'see it live'}
+            {row.hrefLabel || t('machine.seeItLive')}
             <ArrowDownRight aria-hidden="true" className="h-3 w-3" />
           </motion.a>
         ) : null}
@@ -148,21 +164,27 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
   );
 }
 
-export default function MachinePlate({ rows }) {
+export default function MachinePlate({ rows: source }) {
+  const t = useTranslations('Uses');
+  const dataT = useDataT();
+  const { num, ord } = useUsesFormat();
+  // Labels, values and notes in the reader's language (the Data catalogue,
+  // keyed by each row's English label); hrefs untouched.
+  const rows = source.map((row) => localizeMachineRow(row, dataT));
   const tilt = useCardTilt({ maxTilt: 4 });
   const tiltOn = USES_FLAGS.tilt && tilt.enabled;
 
   return (
     <Plate
       slug="machine"
-      ordinal="00"
-      eyebrow="Hardware · hand-set"
-      title="The machine"
-      provenance={
-        <>
-          <Figure>{rows.length}</Figure> rows · owner-confirmed
-        </>
-      }
+      ordinal={ord(0)}
+      eyebrow={t('machine.eyebrow')}
+      title={t('machine.title')}
+      provenance={t.rich('machine.provenance', {
+        count: rows.length,
+        n: num(rows.length),
+        fig: figTag,
+      })}
     >
       {({ revealed, reduceMotion, revealedAtRef }) => (
         <Nameplate

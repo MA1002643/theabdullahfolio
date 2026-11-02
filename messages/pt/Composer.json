@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Recuperamos sua mensagem não enviada",
+    "keep": "Manter",
+    "clear": "Limpar"
+  },
+  "refine": {
+    "affordance": "Aprimorar minha mensagem",
+    "panelLabel": "Sugestão de reescrita",
+    "polishing": "Aprimorando…",
+    "announcePolishing": "Aprimorando sua mensagem…",
+    "announceReady": "Sugestão de reescrita pronta.",
+    "announceError": "Não foi possível aprimorar a mensagem.",
+    "use": "Usar esta",
+    "again": "Aprimorar de novo",
+    "discard": "Descartar",
+    "retry": "Tentar novamente",
+    "dismiss": "Dispensar",
+    "cancel": "Cancelar",
+    "errors": {
+      "unconfigured": "O aprimoramento de mensagens não está disponível no momento.",
+      "unavailable": "O aprimoramento de mensagens não está disponível no momento.",
+      "rate_limited": "Muitas solicitações — tente novamente daqui a pouco.",
+      "too_large": "A solicitação é grande demais.",
+      "bad_request": "Solicitação inválida.",
+      "too_short": "Escreva um pouco mais primeiro, e então eu posso aprimorar.",
+      "too_long": "Essa mensagem é longa demais para ser aprimorada.",
+      "budget": "O aprimoramento de mensagens está pausado no momento.",
+      "failed": "Não foi possível aprimorar a mensagem. Tente novamente."
+    }
+  }
+}

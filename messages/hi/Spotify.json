@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "अभी चल रहा है",
+  "lastPlayed": "पिछली बार सुना",
+  "cardLabel": "{state, select, playing {अभी चल रहा है} other {पिछली बार सुना}}: {artist} का {title}।",
+  "cardLabelLink": "{state, select, playing {अभी चल रहा है} other {पिछली बार सुना}}: {artist} का {title}। Spotify पर खोलें।",
+  "openOnSpotify": "Spotify पर खोलें"
+}

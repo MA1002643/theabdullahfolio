@@ -16,6 +16,7 @@
 
 import { Fragment } from 'react';
 import { motion } from 'framer-motion';
+import { glyphUnits, wordChunks } from '@/components/ui/textSegments';
 
 export const FLAP_EASE = [0.22, 1, 0.36, 1];
 
@@ -78,21 +79,29 @@ export function FlapItem({ children, className }) {
 // Visually-hidden real text has none of those problems: it is content rather
 // than an annotation, so no role permits or forbids it, every assistive
 // technology reads it, and it survives a future change of `as`.
+//
+// ── Scripts that must not be cut per letter (issue #82) ─────────────────────
+// Words come from `wordChunks` (identical to `split(' ')` for spaced text,
+// dictionary-segmented for Chinese/Japanese so a translated line can still
+// wrap) and the ticks inside a word from `glyphUnits`, which hands back the
+// WHOLE word for Arabic-script and Devanagari text — a joined letter split
+// into its own flap would lose its connected form. Those languages ripple word
+// by word instead of letter by letter. See src/components/ui/textSegments.js.
 export function SplitFlapText({ text, as: Tag = 'span', className }) {
-  const words = text.split(' ');
+  const words = wordChunks(text);
   return (
     <Tag className={className}>
       {/* The accessible copy. `sr-only` keeps it out of the visual layout
           entirely, so it cannot affect the flap cascade's metrics. */}
       <span className="sr-only">{text}</span>
-      {words.map((word, wi) => (
+      {words.map(({ word, gap }, wi) => (
         <Fragment key={wi}>
-          {wi > 0 ? ' ' : null}
+          {gap || null}
           <span
             aria-hidden="true"
             style={{ display: 'inline-flex', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
           >
-            {Array.from(word).map((ch, ci) => (
+            {glyphUnits(word).map((ch, ci) => (
               <motion.span key={ci} variants={flapChild} style={GLYPH_STYLE}>
                 {ch}
               </motion.span>

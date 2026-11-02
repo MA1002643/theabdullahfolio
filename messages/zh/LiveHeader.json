@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "新功能即将发布，本网站正在积极开发中。",
+    "shippingNone": "刚刚为本网站发布了 {count, plural, other {# 项更新}}。",
+    "shippingOne": "刚刚发布了 <bdi>#{number} {title}</bdi>。",
+    "shippingMany": "刚刚发布了 <bdi>#{number} {title}</bdi>（另有 {more, number} 项）。",
+    "liveWithTop": "实时更新：正在发布变更——当前专注于 <bdi>#{number} {title}</bdi>。",
+    "livePushes": "实时更新：正在为本网站发布新的变更。",
+    "liveActive": "正在积极开发中{hasTop, select, yes {——当前专注于 <bdi>#{number} {title}</bdi>} other {}}。",
+    "inProgressBoard": "正在积极处理 {count, plural, other {# 项任务}}{hasTop, select, yes {——当前专注于 <bdi>#{number} {title}</bdi>} other {}}。",
+    "inProgressPrsAndIssues": "正在处理 {prs, plural, other {# 个拉取请求}}和 {issues, plural, other {# 项待办任务}}{hasTop, select, yes {——当前专注于 <bdi>#{number} {title}</bdi>} other {}}。",
+    "inProgressPrs": "正在处理 {prs, plural, other {# 个拉取请求}}{hasTop, select, yes {——当前专注于 <bdi>#{number} {title}</bdi>} other {}}。",
+    "inProgressIssues": "正在处理 {issues, plural, other {# 项待办任务}}{hasTop, select, yes {——当前专注于 <bdi>#{number} {title}</bdi>} other {}}。",
+    "inProgressFallback": "本网站正在开发中。",
+    "planning": "正在规划下一步改进{hasTop, select, yes {——当前专注于 <bdi>#{number} {title}</bdi>} other {}}。",
+    "secondary": "正在处理 {count, plural, other {# 项任务}}——当前专注于 <bdi>#{number} {title}</bdi>。"
+  },
+  "headline": {
+    "shipping": "刚刚发布",
+    "live": "实时开发进行中",
+    "inProgress": "开发进行中",
+    "planning": "规划下一步改进",
+    "idle": "持续维护中"
+  },
+  "region": "实时维护状态",
+  "state": {
+    "shipping": "发布中",
+    "live": "实时",
+    "inProgress": "进行中",
+    "planning": "规划中",
+    "idle": "维护中"
+  },
+  "stateSpoken": {
+    "shipping": "发布中",
+    "live": "实时",
+    "inProgress": "进行中",
+    "planning": "规划中",
+    "idle": "维护中"
+  },
+  "pipeline": {
+    "planning": "规划",
+    "inProgress": "构建",
+    "shipping": "发布",
+    "live": "上线"
+  },
+  "legend": {
+    "title": "交付流水线",
+    "srIdle": "交付流水线。当前不在流水线中：维护监控。",
+    "srStage": "交付流水线。当前阶段：{stage}，第 {index} 阶段，共 {total} 个。",
+    "headingIdle": "维护 · 不在流水线中",
+    "headingStage": "{stage} · 第 {index} 阶段，共 {total} 个",
+    "maintenance": "维护",
+    "offPipeline": "不在流水线中——正在监控 {count, plural, =0 {已跟踪的仓库} other {# 个仓库}}",
+    "meaning": {
+      "planning": "待处理的议题已排队并明确范围",
+      "inProgress": "分支和拉取请求上的积极开发",
+      "shipping": "过去 48 小时内已合并并移至“完成”的工作",
+      "live": "过去 2 小时内的提交或更新"
+    }
+  },
+  "fields": {
+    "state": "状态",
+    "focus": "焦点",
+    "focusPr": "焦点 · PR",
+    "focusIssue": "焦点 · 议题",
+    "prs": "PR",
+    "issues": "议题",
+    "pushes24h": "推送 · 24 小时",
+    "pushes": "推送",
+    "activity": "活跃度 · {days} 天",
+    "sync": "同步",
+    "metered": "· 已限流"
+  },
+  "metric": {
+    "prs": "活跃 PR",
+    "issues": "待处理议题",
+    "pushes": "推送（24 小时）",
+    "emptyPrs": "已跟踪的项目中暂无活跃 PR。",
+    "emptyIssues": "所跟踪的项目暂无未关闭的 issue。",
+    "emptyPushes": "所跟踪的项目在过去 24 小时内没有推送。"
+  },
+  "popover": {
+    "breakdown": "{metric}明细",
+    "summary": "{metric} · 共 {count} 项，涉及 {projects, plural, other {# 个项目}}",
+    "heading": "<count></count> 项，涉及 {projects, plural, other {# 个项目}}",
+    "stale": "显示的是最近一次已知的活动。",
+    "more": "+ 在 GitHub 上还有 {count} 项",
+    "openOnGitHub": "在 GitHub 上打开 ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Issue}} #{number}",
+    "ariaOpen": "在 GitHub 上打开{type, select, pr {Pull request} other {issue}} #{number}：{title}",
+    "stepped": "{type, select, pr {Pull request} other {Issue}} {number}：{title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {活跃于<age></age>} other {}}",
+    "monitoring": "正在监控 {count, plural, other {# 个仓库}} — 暂无活跃的关注项",
+    "monitoringNone": "正在监控所跟踪的仓库"
+  },
+  "queue": {
+    "label": "关注队列",
+    "hint": "第 {index} 项，共 {count} 项 · ← → 切换",
+    "sr": "共 {count} 项的关注队列 — 使用左右方向键切换"
+  },
+  "activity": {
+    "label": "提交轨迹",
+    "summary": "{total, plural, other {# 次提交}} · 最近 {days, plural, other {# 天}}{truncated, select, yes {（最早几天的数据偏少）} other {}}"
+  },
+  "sync": {
+    "label": "上次同步",
+    "hint": "置信度 {confidence} · 每 {seconds} 秒轮询{metered, select, yes { · 按流量计费} other {}}",
+    "detail": "{hasLast, select, yes {上次同步 {last} · } other {}}信号置信度 {confidence} · 每 {seconds, plural, other {# 秒}}轮询一次{metered, select, yes {（按流量计费网络下）} other {}}",
+    "stale": "已过期"
+  },
+  "announce": {
+    "status": "状态：{state}。",
+    "focus": "当前关注：{type, select, pr {pull request} other {issue}} {number}，{title}。",
+    "counts": "过去 24 小时内：{prs, plural, other {# 个活跃的 pull request}}，{issues, plural, other {# 个未关闭的 issue}}，以及 {pushes, plural, other {# 次推送}}。"
+  },
+  "error": {
+    "snapshot": "实时状态暂时不可用，正在显示最新快照。",
+    "fallback": "实时状态暂时不可用，正在显示维护期备用内容。"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "私の歩み",
+    "subtitle": "最初の一行から本番環境まで"
+  },
+  "timeline": {
+    "label": "経歴のタイムライン"
+  },
+  "endCap": {
+    "est": "{year}年〜 · BOLTON, UK",
+    "tally": "{years, plural, other {#年}} · {entries, plural, other {#件}} · {tracks, plural, other {#トラック}}",
+    "paper": "紙版はこちら →",
+    "paperHint": "PDF 形式の CV（新しいタブで開きます）"
+  },
+  "spine": {
+    "now": "現在"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {#か月}}} other {#年{months, plural, =0 {} other {#か月}}}}",
+    "tenureOngoing": "現在まで{tenure}",
+    "view": "見る",
+    "viewLabel": "{title}を見る（新しいタブで開きます）"
+  },
+  "eraRail": {
+    "label": "タイムラインの年代",
+    "jump": "{year}年へ移動"
+  },
+  "atlas": {
+    "eyebrow": "重なりビュー",
+    "title": "アトラス — 3つの軌跡、ひとつの時間軸",
+    "live": {
+      "career": "{count, plural, other {#件の職務}}",
+      "education": "{count, plural, other {#件の学位}}",
+      "milestone": "{count, plural, other {#件のコミュニティ投稿}}",
+      "separator": " + ",
+      "sentence": "現在進行中：{parts}{total, plural, =1 {。} other { — 並行して進行中です。}}"
+    },
+    "tracks": {
+      "all": "すべて",
+      "career": "キャリア",
+      "education": "学歴",
+      "milestone": "コミュニティ"
+    },
+    "chipsLabel": "トラックをひとつ強調表示",
+    "zoom": {
+      "group": "グリッドのズーム",
+      "out": "グリッドを縮小",
+      "outTitle": "縮小",
+      "in": "グリッドを拡大",
+      "inTitle": "拡大",
+      "readoutLabel": "グリッドのズーム {pct}。{full}にリセット",
+      "readoutTitle": "グリッドのズーム",
+      "resetTitle": "ズームを{full}にリセット",
+      "status": "グリッドのズーム {pct}"
+    },
+    "region": "重なりアトラス：すべての職務とコースを、ひとつの時間軸上の並行バーで表示",
+    "entries": "{count, plural, other {#件}}",
+    "now": "現在",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "{org} · {role}（{dates}）へ移動",
+    "spokenRange": "{start}から{end}まで",
+    "spokenOpen": "{start}から現在まで",
+    "key": {
+      "select": "バーを選ぶと該当箇所へ移動します。",
+      "dashed": "破線の端 = 継続中。",
+      "stacked": "重なったバー = 同時進行。"
+    }
+  },
+  "palette": {
+    "section": "経歴",
+    "jumpYear": "{year}年へ移動",
+    "eraHint": "年代",
+    "jumpAtlas": "重なりアトラスへ移動",
+    "openCv": "CV（PDF）を開く",
+    "openCvHint": "紙版"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "the full record"
+  },
+  "identity": {
+    "role": "Software Engineer"
+  },
+  "downloadPdf": "Download the PDF",
+  "sections": {
+    "experience": "Experience",
+    "education": "Education",
+    "representation": "Representation",
+    "skills": "Skills",
+    "projects": "Selected projects"
+  },
+  "skillGroups": {
+    "languages": "languages",
+    "frameworks": "frameworks",
+    "libraries": "libraries",
+    "tools": "tools",
+    "software": "software"
+  },
+  "allProjects": "All projects",
+  "asTimeline": "The same history as a timeline"
+}

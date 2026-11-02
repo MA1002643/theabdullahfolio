@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Navigasi proyek",
+    "all": "Semua proyek",
+    "previous": "Proyek sebelumnya: {name}",
+    "next": "Proyek berikutnya: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Beranda",
+    "projects": "Proyek"
+  },
+  "loading": "Memuat proyek",
+  "intro": {
+    "fallbackName": "Nama Proyek",
+    "fallbackDescription": "Solusi web yang inovatif, cepat, dan futuristik.",
+    "linksLabel": "Tautan {name}",
+    "liveDemo": "Demo langsung<sr> (terbuka di tab baru)</sr>",
+    "source": "Kode sumber di GitHub<sr> (terbuka di tab baru)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "Menginisialisasi BIOS...",
+      "hardware": "Mendeteksi perangkat keras...",
+      "os": "Memuat sistem operasi..."
+    },
+    "tagline": "Mewujudkan ide Anda lewat keahlian digital generasi berikutnya.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Alat & Framework",
+    "overview": "Ikhtisar Proyek",
+    "overviewLead": "Platform ini menyederhanakan alur kerja e-commerce melalui dasbor terpadu dan analitik langsung.",
+    "overviewBody": "Platform ini mengatasi kerumitan mengelola banyak alat dengan menghadirkan antarmuka terpusat yang intuitif.",
+    "features": "Fitur",
+    "feature": {
+      "auth": {
+        "title": "Autentikasi",
+        "desc": "Login aman dan akses pengguna."
+      },
+      "payments": {
+        "title": "Pembayaran",
+        "desc": "Gerbang pembayaran terintegrasi."
+      },
+      "chat": {
+        "title": "Obrolan Langsung",
+        "desc": "Komunikasi pengguna secara instan."
+      },
+      "admin": {
+        "title": "Panel Admin",
+        "desc": "Kontrol konten yang lebih sederhana."
+      }
+    },
+    "liveDemo": "Demo Langsung",
+    "github": "GitHub",
+    "demoLabel": "Buka demo langsung {name}",
+    "sourceLabel": "Lihat kode sumber {name} di GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. Proyek {category}, dimulai {when}. {visibility, select, private {Repositori privat} other {Repositori publik}}, dipantau langsung dari papan GitHub-nya.",
+    "undated": "{name} — {description}. Proyek {category}. {visibility, select, private {Repositori privat} other {Repositori publik}}, dipantau langsung dari papan GitHub-nya."
+  }
+}

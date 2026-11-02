@@ -18,7 +18,7 @@
 // message; who reacted never leaves the server, only totals do.
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { readJsonBody } from '@/lib/guestbook/body';
+import { bodyError, readJsonBody } from '@/lib/guestbook/body';
 import { setReaction } from '@/lib/guestbook/store';
 import { viewerFromSession } from '@/lib/guestbook/identity';
 import { isMessageId } from '@/lib/guestbook/messageId';
@@ -35,14 +35,14 @@ export const REACTION_BODY_MAX_BYTES = 1024;
 export async function POST(request) {
   const viewer = viewerFromSession(await auth());
   if (!viewer) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 });
   }
 
   // Ceiling before parsing (body.js): over it → 413, never read past the
   // limit; not JSON → 400, as ever.
   const read = await readJsonBody(request, { maxBytes: REACTION_BODY_MAX_BYTES });
   if (!read.ok) {
-    return NextResponse.json({ error: read.error }, { status: read.status });
+    return NextResponse.json(bodyError(read, REACTION_BODY_MAX_BYTES), { status: read.status });
   }
   const { body } = read;
 
@@ -53,7 +53,7 @@ export async function POST(request) {
   // 404. Now it is a 400 with no storage work at all (code review).
   const { id, key, clear } = body ?? {};
   if (!isMessageId(id) || !REACTION_KEYS.includes(key)) {
-    return NextResponse.json({ error: 'Invalid reaction' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid reaction', code: 'invalid_reaction' }, { status: 400 });
   }
 
   const limit = await checkReactionRateLimit(viewer.key);
@@ -61,6 +61,8 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: `Too many reactions — try again in ${limit.retryAfterSeconds}s`,
+        code: 'reaction_rate_limited',
+        values: { seconds: limit.retryAfterSeconds },
       },
       {
         status: 429,
@@ -72,7 +74,7 @@ export async function POST(request) {
   const nextValue = clear === true ? null : key;
   const map = await setReaction(id, viewer.key, nextValue);
   if (map === null) {
-    return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Message not found', code: 'not_found' }, { status: 404 });
   }
 
   return NextResponse.json({

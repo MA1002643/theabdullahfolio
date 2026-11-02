@@ -1,3 +1,5 @@
+import { englishAbout } from "@/i18n/sourceTranslator";
+
 // Language stats diffing + fingerprinting for the "Most Used Languages"
 // card (issue #18). Pure, framework-agnostic JS. The fingerprint is computed
 // CLIENT-side only: the /api/github-stats route deliberately does NOT ship a
@@ -35,9 +37,6 @@ export function languagesFingerprint(languages) {
     .join("|");
 }
 
-// 1-based rank for human-facing copy ("#2").
-const rankLabel = (index) => `#${index + 1}`;
-
 /**
  * Diff a previous language list against the latest one.
  *
@@ -47,8 +46,13 @@ const rankLabel = (index) => `#${index + 1}`;
  * change wins) plus a structured `details` object for any caller that
  * wants the full picture.
  *
+ * The sentence is a catalogue message (`About.changes.languages.*`, issue
+ * #82) — `t` is `useTranslations('About')`, defaulting to the English
+ * catalogue so a caller without one renders exactly the old English.
+ *
  * @param {Array} prev - previously-seen language list (may be null/empty)
  * @param {Array} next - latest language list
+ * @param {(key: string, values?: object) => string} [t]
  * @returns {{
  *   hasChanges: boolean,
  *   changeType: "added"|"removed"|"percentage"|"rank"|"none",
@@ -61,7 +65,7 @@ const rankLabel = (index) => `#${index + 1}`;
  *   }
  * }}
  */
-export function diffLanguages(prev, next) {
+export function diffLanguages(prev, next, t = englishAbout) {
   const prevList = Array.isArray(prev) ? prev : [];
   const nextList = Array.isArray(next) ? next : [];
 
@@ -106,37 +110,48 @@ export function diffLanguages(prev, next) {
   // Prioritised single-sentence summary — rarest / most newsworthy first.
   // 1) A language entering the top list, 2) one dropping out, 3) the
   // largest percentage move, 4) a rank shuffle.
+  // Language NAMES are proper nouns from GitHub and pass through untranslated;
+  // the sentence around them is the catalogue's. The one/many split stays a
+  // branch (naming the language vs counting them are different sentences).
   let changeType;
   let summaryMessage;
 
   if (added.length === 1) {
     changeType = "added";
-    summaryMessage = `${added[0]} has been added to the top languages.`;
+    summaryMessage = t("changes.languages.addedOne", { language: added[0] });
   } else if (added.length > 1) {
     changeType = "added";
-    summaryMessage = `${added.length} new languages entered the top list.`;
+    summaryMessage = t("changes.languages.addedMany", { count: added.length });
   } else if (removed.length === 1) {
     changeType = "removed";
-    summaryMessage = `${removed[0]} dropped out of the top languages.`;
+    summaryMessage = t("changes.languages.removedOne", { language: removed[0] });
   } else if (removed.length > 1) {
     changeType = "removed";
-    summaryMessage = `${removed.length} languages dropped out of the top list.`;
+    summaryMessage = t("changes.languages.removedMany", { count: removed.length });
   } else if (percentChanges.length > 0) {
     changeType = "percentage";
-    // Headline the biggest absolute move.
+    // Headline the biggest absolute move. `delta` renders through the
+    // catalogue's `::.0` skeleton — one decimal, the old `toFixed(1)`.
     const top = percentChanges.reduce((a, b) =>
       Math.abs(b.delta) > Math.abs(a.delta) ? b : a,
     );
-    const dir = top.delta > 0 ? "increased" : "decreased";
-    summaryMessage = `${top.language} ${dir} by ${Math.abs(top.delta).toFixed(1)}%.`;
+    summaryMessage = t("changes.languages.percentage", {
+      language: top.language,
+      direction: top.delta > 0 ? "increased" : "decreased",
+      delta: Math.abs(top.delta),
+    });
   } else {
     changeType = "rank";
     const top = rankChanges.reduce((a, b) =>
       Math.abs(b.to - b.from) > Math.abs(a.to - a.from) ? b : a,
     );
-    // Lower index = higher rank, so a decrease in index is a move *up*.
-    const dir = top.to < top.from ? "up" : "down";
-    summaryMessage = `${top.language} moved ${dir} to ${rankLabel(top.to)}.`;
+    // Lower index = higher rank, so a decrease in index is a move *up*. `rank`
+    // is 1-based for human-facing copy ("#2").
+    summaryMessage = t("changes.languages.rank", {
+      language: top.language,
+      direction: top.to < top.from ? "up" : "down",
+      rank: top.to + 1,
+    });
   }
 
   return { hasChanges: true, changeType, summaryMessage, details };

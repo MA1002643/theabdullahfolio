@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "Portfolio được xây dựng lại theo phong cách điện ảnh, điều khiển bằng cuộn trang"
+    },
+    "2": {
+      "description": "Nền tảng quản lý doanh nghiệp đa tenant"
+    },
+    "3": {
+      "description": "Nền tảng khám phá công thức nấu ăn ứng dụng AI"
+    },
+    "4": {
+      "description": "Portfolio nhập vai với chuyển động làm trọng tâm"
+    },
+    "5": {
+      "description": "Nền tảng xuất bản đa nền tảng ứng dụng AI"
+    },
+    "6": {
+      "description": "Nền tảng phát nhạc trực tuyến đa nền tảng"
+    },
+    "7": {
+      "description": "Nền tảng tương tác giáo dục theo thời gian thực"
+    },
+    "8": {
+      "description": "Nền tảng huấn luyện thể hình ứng dụng AI"
+    },
+    "9": {
+      "description": "Dẫn đường và tuân thủ quy định dành cho xe tải"
+    },
+    "10": {
+      "description": "Cuộc gọi check-in tự động mỗi giờ"
+    },
+    "11": {
+      "description": "Khám phá và tinh chỉnh hồ sơ ứng tuyển bằng AI"
+    }
+  },
+  "categories": {
+    "Web": "Web",
+    "System": "Hệ thống",
+    "AI": "AI",
+    "Mobile": "Di động"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "Trưởng nhóm Concierge · Adullam Homes Housing Association",
+      "description": "Phụ trách cấp khu vực mảng dịch vụ concierge tại tám cơ sở nhà ở hỗ trợ ở Bolton — dẫn dắt ba đội thuộc hai tổ chức, tuyển dụng cho cả khu vực, xử lý sự cố, và thay hai bảng tính phân ca riêng biệt bằng một công cụ quản lý ca trên Microsoft Teams, cho phép đưa ca trống đến thẳng nhân viên.",
+      "tags": {
+        "team-leadership": "Lãnh đạo nhóm",
+        "hiring-manager": "Quản lý tuyển dụng",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "Kỹ sư phần mềm · Dự án độc lập",
+      "description": "Thiết kế, xây dựng và triển khai các sản phẩm full-stack từ đầu đến cuối: một REST API có tài liệu Swagger cùng bộ kiểm thử Mocha/Chai, Colophon (xuất bản ứng dụng AI — Vue 3, Express, PostgreSQL + pgvector), AfaaqX, và một hồ sơ GitHub được tái tạo hằng ngày bằng các pipeline Actions theo lịch.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "Nhân viên bảo vệ · Constant Security Services",
+      "description": "Có giấy phép SIA, làm việc tại các địa điểm khoa học và đại học trọng yếu, trong đó có Đài quan sát Jodrell Bank — tuần tra, CCTV, ứng phó sự cố và báo cáo phòng điều khiển, trong lúc tìm vị trí kỹ sư tiếp theo.",
+      "tags": {
+        "sia-licensed": "Có giấy phép SIA",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "Kỹ sư DevOps · C365Cloud",
+      "description": "Giữ cho một nền tảng tuân thủ luôn được phát hành đều đặn: pipeline CI/CD, quản trị Microsoft SQL Server và MySQL, cùng các tính năng nền tảng .NET (Blazor) cho các nhóm nội bộ ở Wakefield.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "Concierge · Adullam Homes Housing Association",
+      "description": "Đầu mối liên hệ ngoài giờ tại cơ sở nhà ở hỗ trợ — chuyển cấp các vấn đề bảo vệ người yếu thế, xử lý sự cố và ghi chép hồ sơ điện tử chính xác cho những cư dân dễ bị tổn thương.",
+      "tags": {
+        "safeguarding": "Bảo vệ người yếu thế"
+      }
+    },
+    "j-showsec": {
+      "title": "Nhân viên bảo vệ / Vận hành CCTV · Showsec",
+      "description": "Giám sát CCTV, điều phối đám đông và ứng phó sự cố tại các sự kiện lớn, phối hợp theo thời gian thực với các đội an ninh và lực lượng thực thi pháp luật.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "Ứng phó sự cố"
+      }
+    },
+    "j-lidl": {
+      "title": "Nhân viên bán hàng · Lidl GB",
+      "description": "Làm việc tại một cửa hàng đông khách suốt thời gian học đại học — thu ngân, nhận hàng, quản lý kho; thuộc nhóm đã nâng thứ hạng doanh số của cửa hàng từ 14 lên 10 và tăng mức hài lòng của khách hàng 18% trong bốn tháng.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "3 năm 8 tháng song song với việc học"
+      }
+    },
+    "j-unisys": {
+      "title": "Kỹ sư phần mềm · Unisys",
+      "description": "16 tháng thực tập công nghiệp tại Manchester: triển khai các tính năng full-stack C# / .NET (Blazor) giúp nâng hiệu suất hệ thống khoảng 20%, giảm 30% sự cố trên môi trường production nhờ phụ trách phân loại hỗ trợ, rồi đảm nhận dẫn dắt một nhóm dự án giao hàng đúng hạn, giúp giành thêm các hợp đồng tiếp theo từ khách hàng.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "Đại sứ sinh viên · MMU",
+      "description": "Đại diện trường tại các ngày hội mở cửa, buổi tham quan và sự kiện tuyển sinh trên khắp Greater Manchester.",
+      "tags": {
+        "community": "Cộng đồng"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "Kỹ thuật viên IT Help Desk · MMU",
+      "description": "Hỗ trợ tuyến đầu cho nhân viên và sinh viên — các vấn đề về phần cứng, phần mềm và quyền truy cập, kết nối bộ phận IT với các phòng ban đối tác; được nhiều phòng ban khen ngợi ngay trong tuần đầu tiên.",
+      "tags": {
+        "first-line-support": "Hỗ trợ tuyến đầu"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "Lập trình viên phần mềm · MMU",
+      "description": "Phát triển chức năng front-end và back-end trong một nhóm đa ngành của trường đại học — xử lý hơn 50 lỗi, cải thiện tốc độ tải 25% và rút ngắn 15% thời gian phát triển khi chuyển yêu cầu của các bên liên quan thành tính năng hoạt động được.",
+      "tags": {
+        "full-stack": "Full-stack",
+        "50-bugs-resolved": "Xử lý hơn 50 lỗi"
+      }
+    },
+    "j-course-rep": {
+      "title": "Đại diện khóa học · MMU",
+      "description": "Đại diện do tập thể lớp bầu chọn — đã thương lượng lịch đánh giá để phù hợp với các ngày lễ tôn giáo và mở rộng các buổi diễn giả khách mời của khoa.",
+      "tags": {
+        "learner-voice-award": "Giải thưởng Tiếng nói người học",
+        "volunteering-award": "Giải thưởng Tình nguyện"
+      }
+    },
+    "j-bsc": {
+      "title": "Cử nhân (Hons) Kỹ thuật phần mềm · MMU",
+      "description": "Manchester Metropolitan University — được BCS công nhận, dự kiến tốt nghiệp hạng Nhất. Bước vào chuyên môn một cách bài bản.",
+      "tags": {
+        "bcs-accredited": "Được BCS công nhận",
+        "first-class-predicted": "Hạng Nhất (dự kiến)"
+      }
+    },
+    "j-kfc": {
+      "title": "Nhân viên · KFC",
+      "description": "Làm qua mọi vị trí, từ quầy trước đến bếp sau — sáu tháng liên tiếp được bình chọn Nhân viên xuất sắc nhất, trong đội đã nâng thứ hạng khu vực của cửa hàng từ 5 lên 2.",
+      "tags": {
+        "best-employee-6": "Nhân viên xuất sắc nhất ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC Level 3 Extended Diploma về CNTT",
+      "description": "Bolton College — Triple Distinction (DDD). Hai năm biến sự tò mò thành một kỷ luật.",
+      "tags": {
+        "triple-distinction": "Triple Distinction"
+      }
+    },
+    "j-ocnlr": {
+      "title": "Chứng chỉ OCNLR về Kỹ năng số",
+      "description": "Bolton College — bước đầu tiên chính thức vào thế giới máy tính, và là cánh cửa dẫn đến mọi chặng phía trên.",
+      "tags": {
+        "digital-skills": "Kỹ năng số"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "Máy",
+        "value": "MacBook Pro 13 inch · Apple M1 · 16 GB bộ nhớ hợp nhất"
+      },
+      "display": {
+        "label": "Màn hình",
+        "value": "2560 × 1600 Retina · 1440 × 900 logic",
+        "note": "Viewport chuẩn của hệ thống co giãn liên tục — mọi trang con đều được thiết kế ở tỉ lệ 1 đúng với độ rộng này, rồi co giãn theo một hệ số duy nhất."
+      },
+      "os": {
+        "label": "Hệ điều hành",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "Điện thoại",
+        "value": "iPhone, chạy OwnTracks ở chế độ HTTP",
+        "note": "Nó gửi vị trí đến /api/location; thị trấn và giờ địa phương ở chân trang lấy từ thiết bị này.",
+        "hrefLabel": "xem thị trấn mà nó cung cấp"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "Trình soạn thảo",
+        "detail": "Giao diện Dracula · vscode-icons · Prettier chạy khi lưu"
+      },
+      "agentic-pair": {
+        "role": "Cặp đôi agentic",
+        "detail": "Tiện ích mở rộng VS Code + CLI — skills, subagent và các máy chủ MCP (Chrome DevTools, Playwright) điều khiển trình duyệt trong quá trình kiểm chứng"
+      },
+      "terminal-and-shell": {
+        "role": "Terminal & shell",
+        "detail": "Node được cố định phiên bản bằng .nvmrc qua nvm · Homebrew cho mọi thứ còn lại"
+      },
+      "formatting-and-lint": {
+        "role": "Định dạng & lint",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "Phông chữ",
+        "detail": "next/font/google — được tự lưu trữ khi build, nên phông chữ không bao giờ làm xô lệch bố cục"
+      },
+      "browser-tooling": {
+        "role": "Công cụ trình duyệt",
+        "detail": "Kiểm tra điểm ảnh, giả lập giảm chuyển động và cổng kiểm thử e2e đều chạy trên Chromium thật"
+      }
+    }
+  }
+}

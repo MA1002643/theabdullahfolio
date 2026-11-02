@@ -1,0 +1,16 @@
+{
+  "role": "Software Engineer",
+  "summary": "Muhammad Abdullah adalah seorang software engineer yang berbasis di Bolton, Greater Manchester, yang membangun aplikasi web yang cepat dan terencana dengan baik menggunakan Next.js, React, TypeScript, dan Node.js. Situs ini memuat {count} proyek — web, sistem, seluler, dan AI — yang masing-masing dilacak langsung dari papan GitHub-nya sendiri, bersama gelar dan peran yang melatarbelakanginya, linimasa perjalanan dari kuliah hingga produksi, serta perangkat yang benar-benar digunakan dalam pengerjaannya. Setiap bagian dapat dijangkau dari ring di bawah, kecuali tiga: rekam jejak lengkap ada di <cv>halaman CV</cv> dan dalam bentuk PDF, alasan di balik cara situs ini dibangun dituliskan dalam <notes>catatan rekayasa</notes>, dan data yang dikumpulkan situs ini — beserta tombol untuk menonaktifkan bagian opsionalnya — dijelaskan di <privacy>halaman privasi</privacy>.",
+  "orbitTip": {
+    "hover": {
+      "lead": "Letakkan kursor di atas laptop, lalu gerakkan atau gulir ke atas dan bawah — ring akan berputar mengikuti Anda.",
+      "keys": "Anda juga dapat menyeret ring, atau menekan <key>←</key> <key>→</key> pada tombol yang sedang difokuskan.",
+      "sr": "Tips: ring navigasi dapat diputar. Letakkan penunjuk di atas laptop lalu gerakkan atau gulir ke atas dan bawah untuk memutarnya; Anda juga dapat menyeret ring, atau menekan tombol panah kiri dan kanan saat tombol navigasi sedang difokuskan."
+    },
+    "touch": {
+      "lead": "Geser ke atas dan bawah pada laptop — atau seret ring — untuk memutar navigasi.",
+      "sr": "Tips: ring navigasi dapat diputar. Geser ke atas dan bawah pada laptop, atau seret ringnya langsung, untuk memutarnya."
+    },
+    "dismiss": "Tutup tips navigasi"
+  }
+}

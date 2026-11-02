@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "내 작업 환경",
+    "subtitle": "검증된 도구들"
+  },
+  "opensNewTab": "{name}(새 탭에서 열림)",
+  "machine": {
+    "eyebrow": "하드웨어 · 직접 정리",
+    "title": "머신",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig>행} other {<fig>{n}</fig>행}} · 소유자 확인",
+    "seeItLive": "실시간으로 보기"
+  },
+  "bench": {
+    "eyebrow": "환경 · 직접 정리",
+    "title": "작업대",
+    "provenance": "{count, plural, =1 {스테이션 <fig>{n}</fig>개} other {스테이션 <fig>{n}</fig>개}} · {file} 발췌",
+    "extensions": "자주 쓰는 확장 프로그램",
+    "editorCaption": "{theme} 테마로 표시한 VS Code {file} 발췌본이에요."
+  },
+  "stack": {
+    "eyebrowLive": "스택 · 저장소에서 수집",
+    "eyebrowCurated": "스택 · 큐레이션 목록",
+    "title": "스택",
+    "provenanceLive": "실시간 · {count, plural, =1 {도구 <fig>{n}</fig>개} other {도구 <fig>{n}</fig>개}}",
+    "provenanceCurated": "큐레이션 · {count, plural, =1 {도구 <fig>{n}</fig>개} other {도구 <fig>{n}</fig>개}} · {state, select, unreachable {GitHub에 연결할 수 없음} other {GitHub와 동기화하는 중…}}",
+    "verifiedSr": "GitHub로 검증됨",
+    "verifiedStatus": "스택을 GitHub로 검증했어요.",
+    "cta": "저장소 보기",
+    "ctaLabel": "GitHub에서 저장소 보기(새 탭에서 열림)",
+    "tally": "전체 <total></total> 중 <count></count>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "공개 저장소",
+    "keyPrivate": "비공개",
+    "keyRelative": "막대는 가장 많이 쓴 도구를 기준으로 한 상대값이에요",
+    "keyPending": "막대와 저장소 수는 실시간 수집이 끝나면 채워져요",
+    "repoCount": {
+      "public": "{pub, plural, other {공개 저장소 #개에서 사용}}",
+      "private": "{priv, plural, other {비공개 저장소 #개에서 사용}}",
+      "mixed": "{pub, plural, other {공개 저장소 #개에서 사용}} · 비공개 +{priv}개"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: 저장소 수는 실시간 수집이 끝나면 표시돼요",
+    "figure": {
+      "publicRepos": "{n, plural, other {공개 저장소}}",
+      "privateRepos": "{n, plural, other {비공개 저장소}}",
+      "repos": "{n, plural, other {저장소}}",
+      "public": "공개",
+      "private": "비공개"
+    },
+    "curated": "큐레이션"
+  },
+  "liveAge": {
+    "verified": "{age} 검증",
+    "s": "{s}초 전",
+    "ms": "{m}분 {s}초 전",
+    "hm": "{h}시간 {m}분 전",
+    "dh": "{d}일 {h}시간 전"
+  },
+  "pipeline": {
+    "eyebrow": "배포 · 커밋에서 컴퓨트까지",
+    "title": "파이프라인",
+    "provenance": "{count, plural, =1 {워크플로 <fig>{n}</fig>개} other {워크플로 <fig>{n}</fig>개}} · 빌드 시 .github에서 읽음",
+    "provenanceHandSet": "도식 · 직접 정리",
+    "region": "빌드 파이프라인 다이어그램",
+    "svgTitle": "배포 파이프라인: 푸시가 GitHub에서 GitHub Actions와 Vercel 빌드를 거쳐 Fluid compute로 전달됩니다. Fluid compute에는 GitHub 웹훅도 직접 연결되고 매일 실행되는 크론도 호출합니다. 컴퓨트는 서비스 버스를 통해 아래에 나열된 서비스로 분기됩니다.",
+    "fires": "<fig>{window}</fig> UTC에 실행 (Hobby 플랜 정밀도)",
+    "kinds": {
+      "source": "소스",
+      "ci": "CI",
+      "build": "빌드",
+      "runtime": "런타임",
+      "schedule": "스케줄",
+      "store": "저장소",
+      "gateway": "게이트웨이",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "메일",
+      "auth": "인증",
+      "search": "검색"
+    },
+    "workflows": "{count, plural, other {워크플로 {n}개}}",
+    "apiRoutes": "{count, plural, other {API 라우트 {n}개}}",
+    "apiRoutesBare": "API 라우트",
+    "locales": "{count, plural, other {로케일 {n}개}}",
+    "crons": "{count, plural, other {크론 {n}개}}",
+    "daily": "매일 · {time} UTC",
+    "services": {
+      "redis": "방명록 · 위치 · SEO · 중복 제거",
+      "graphql": "통계 · 스킬 · 진행 상황",
+      "spotify": "지금 재생 중",
+      "mail": "문의 · Abstract 검증"
+    }
+  },
+  "instruments": {
+    "eyebrow": "품질 · 빌드 시 집계",
+    "title": "계측기",
+    "provenance": "빌드 시 집계 · <fig>{date}</fig>",
+    "provenanceBare": "빌드 시 집계",
+    "unitLabel": "{count, plural, other {Vitest 스위트}}",
+    "unitSub": "{count, plural, other {테스트 케이스 {n}개}} · Vitest",
+    "e2eLabel": "{count, plural, other {브라우저 스위트}}",
+    "e2eSub": "{count, plural, other {시나리오 {n}개}} · Playwright",
+    "apiLabel": "{count, plural, other {API 라우트}}",
+    "apiSub": "라우트 핸들러 · {methods}",
+    "apiSubBare": "라우트 핸들러",
+    "tileLabel": "{figure} {label} — {sub} (GitHub의 폴더를 새 탭에서 열어요)"
+  },
+  "bom": {
+    "eyebrow": "자재 명세서 · 이 사이트",
+    "title": "이 사이트의 구성 요소",
+    "provenance": "{source} · 빌드 시 확인 · <fig>{date}</fig>",
+    "provenanceBare": "{source} · 빌드 시 확인",
+    "unreadable": "빌드 시 매니페스트를 읽지 못해서 버전을 표시하지 않아요.",
+    "packages": "{count, plural, one {패키지 <fig>{n}</fig>개} other {패키지 <fig>{n}</fig>개}}",
+    "packagesOf": "전체 <fig>{all}</fig>개 중 <fig>{n}</fig>개 패키지",
+    "built": "<fig>{date}</fig> 빌드",
+    "groups": {
+      "core": "코어",
+      "3d-and-motion": "3D 및 모션",
+      "data-and-services": "데이터 및 서비스",
+      "interface": "인터페이스",
+      "platform": "플랫폼",
+      "media": "미디어",
+      "quality": "품질",
+      "build": "빌드",
+      "runtime": "런타임",
+      "tooling": "툴링"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "언어",
+        "lay": "코드 자체를 작성하는 언어예요."
+      },
+      "frameworks": {
+        "label": "프레임워크",
+        "lay": "애플리케이션을 세우는 뼈대로, 구조와 관례를 정해 줘요."
+      },
+      "libraries": {
+        "label": "라이브러리",
+        "lay": "한 가지 일을 잘 해내도록 가져다 쓰는, 미리 만들어진 구성 요소예요."
+      },
+      "tools": {
+        "label": "도구",
+        "lay": "코드 주변에서 돌아가는 것들로, 테스트, 포맷팅, 데이터베이스, 배포가 여기에 해당해요."
+      },
+      "software": {
+        "label": "소프트웨어",
+        "lay": "완성된 결과물이 올라가 있는 서비스예요."
+      }
+    }
+  }
+}

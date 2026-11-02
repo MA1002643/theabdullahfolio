@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "Tentang",
+    "projects": "Proyek",
+    "qualifications": "Kualifikasi",
+    "contact": "Kontak",
+    "journey": "Perjalanan",
+    "past": "Masa Lalu",
+    "guestbook": "Buku Tamu",
+    "uses": "Perlengkapan"
+  },
+  "routes": {
+    "home": "Beranda",
+    "about": "Tentang",
+    "projects": "Proyek",
+    "qualifications": "Kualifikasi",
+    "contact": "Kontak",
+    "myPast": "Masa Lalu",
+    "journey": "Perjalanan",
+    "guestbook": "Buku Tamu",
+    "uses": "Perlengkapan",
+    "cv": "CV",
+    "notes": "Catatan",
+    "privacy": "Privasi"
+  },
+  "homeButton": {
+    "tooltip": "Beranda",
+    "srLabel": "Buka halaman Beranda"
+  },
+  "projectsButton": {
+    "label": "Proyek",
+    "tooltip": "Proyek",
+    "srLabel": "Buka halaman Proyek"
+  }
+}

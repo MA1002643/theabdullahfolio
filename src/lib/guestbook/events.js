@@ -13,9 +13,28 @@ export const NEW_MESSAGE_EVENT = 'guestbook:new-message';
 // The wall therefore folds every unseen arrival into a single announcement
 // and updates the region once. `arrivals` is expected oldest first, so the
 // newest is heard last, as it would have been had they landed one at a time.
-export function arrivalAnnouncement(arrivals) {
+//
+// `t` (issue #82) is the wall's translator scoped to `Guestbook.announce`,
+// so the sentence frame is the visitor's language while the names and the
+// messages — visitor-written — pass through untouched. Without one, the
+// English frame below is used (unit tests, and any caller outside a locale).
+const ENGLISH = (key, v) =>
+  ({
+    one: `New message from ${v.name}: ${v.message}`,
+    many: `${v.count} new messages. ${v.lines}`,
+    line: `${v.name}: ${v.message}`,
+    separator: '. ',
+    someone: 'Someone',
+  })[key];
+
+export function arrivalAnnouncement(arrivals, t = ENGLISH) {
   if (!arrivals.length) return '';
-  const line = (m) => `${m.author?.name || 'Someone'}: ${m.message}`;
-  if (arrivals.length === 1) return `New message from ${line(arrivals[0])}`;
-  return `${arrivals.length} new messages. ${arrivals.map(line).join('. ')}`;
+  const name = (m) => m.author?.name || t('someone', {});
+  if (arrivals.length === 1) {
+    return t('one', { name: name(arrivals[0]), message: arrivals[0].message });
+  }
+  const lines = arrivals
+    .map((m) => t('line', { name: name(m), message: m.message }))
+    .join(t('separator', {}));
+  return t('many', { count: arrivals.length, lines });
 }

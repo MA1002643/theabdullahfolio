@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "MIJN SETUP",
+    "subtitle": "de tools, geverifieerd"
+  },
+  "opensNewTab": "{name} (opent in een nieuw tabblad)",
+  "machine": {
+    "eyebrow": "Hardware · met de hand samengesteld",
+    "title": "De machine",
+    "provenance": "{count, plural, one {<fig>{n}</fig> regel} other {<fig>{n}</fig> regels}} · bevestigd door de eigenaar",
+    "seeItLive": "zie het live"
+  },
+  "bench": {
+    "eyebrow": "Omgeving · met de hand samengesteld",
+    "title": "De werkbank",
+    "provenance": "{count, plural, one {<fig>{n}</fig> station} other {<fig>{n}</fig> stations}} · fragment uit {file}",
+    "extensions": "Extensies waar ik naar grijp",
+    "editorCaption": "Een fragment uit mijn VS Code {file}, getoond in het thema {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · uitgelezen uit de repositories",
+    "eyebrowCurated": "Stack · samengestelde selectie",
+    "title": "De stack",
+    "provenanceLive": "live · {count, plural, one {<fig>{n}</fig> tool} other {<fig>{n}</fig> tools}}",
+    "provenanceCurated": "samengesteld · {count, plural, one {<fig>{n}</fig> tool} other {<fig>{n}</fig> tools}} · {state, select, unreachable {GitHub onbereikbaar} other {synchroniseren met GitHub…}}",
+    "verifiedSr": "geverifieerd via GitHub",
+    "verifiedStatus": "Stack geverifieerd via GitHub.",
+    "cta": "BEKIJK DE REPOSITORIES",
+    "ctaLabel": "Bekijk de repositories op GitHub (opent in een nieuw tabblad)",
+    "tally": "<count></count> van <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "publieke repositories",
+    "keyPrivate": "privé",
+    "keyRelative": "de balken zijn relatief aan de meestgebruikte tool",
+    "keyPending": "de balken vullen zich en het aantal repositories verschijnt zodra de live crawl binnen is",
+    "repoCount": {
+      "public": "gebruikt in {pub, plural, one {# publieke repo} other {# publieke repo's}}",
+      "private": "gebruikt in {priv, plural, one {# privérepo} other {# privérepo's}}",
+      "mixed": "gebruikt in {pub, plural, one {# publieke repo} other {# publieke repo's}} · +{priv} privé"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: het aantal repositories verschijnt zodra de live crawl binnen is",
+    "figure": {
+      "publicRepos": "{n, plural, one {publieke repo} other {publieke repo's}}",
+      "privateRepos": "{n, plural, one {privérepo} other {privérepo's}}",
+      "repos": "{n, plural, one {repo} other {repo's}}",
+      "public": "publiek",
+      "private": "privé"
+    },
+    "curated": "samengesteld"
+  },
+  "liveAge": {
+    "verified": "geverifieerd {age}",
+    "s": "{s}s geleden",
+    "ms": "{m}m {s}s geleden",
+    "hm": "{h}u {m}m geleden",
+    "dh": "{d}d {h}u geleden"
+  },
+  "pipeline": {
+    "eyebrow": "Oplevering · van commit tot compute",
+    "title": "De pipeline",
+    "provenance": "{count, plural, one {<fig>{n}</fig> workflow} other {<fig>{n}</fig> workflows}} · tijdens de build uitgelezen uit .github",
+    "provenanceHandSet": "schematisch · met de hand samengesteld",
+    "region": "Diagram van de buildpipeline",
+    "svgTitle": "Deliverypipeline: een push loopt van GitHub via GitHub Actions en de Vercel-build naar Fluid compute, dat ook rechtstreeks door een GitHub-webhook wordt bereikt en dagelijks door een cron wordt aangeroepen; vanuit compute verspreidt het verkeer zich via een servicebus naar de hieronder genoemde services.",
+    "fires": "draait <fig>{window}</fig> UTC (Hobby-precisie)",
+    "kinds": {
+      "source": "BRON",
+      "ci": "CI",
+      "build": "BUILD",
+      "runtime": "RUNTIME",
+      "schedule": "PLANNING",
+      "store": "OPSLAG",
+      "gateway": "GATEWAY",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "MAIL",
+      "auth": "AUTH",
+      "search": "ZOEKEN"
+    },
+    "workflows": "{count, plural, one {{n} workflow} other {{n} workflows}}",
+    "apiRoutes": "{count, plural, one {{n} API-route} other {{n} API-routes}}",
+    "apiRoutesBare": "API-routes",
+    "locales": "{count, plural, one {{n} taal} other {{n} talen}}",
+    "crons": "{count, plural, one {cronjob} other {{n} cronjobs}}",
+    "daily": "dagelijks · {time} UTC",
+    "services": {
+      "redis": "gastenboek · locatie · SEO · ontdubbeling",
+      "graphql": "statistieken · vaardigheden · voortgang",
+      "spotify": "nu aan het afspelen",
+      "mail": "contact · Abstract-verificatie"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Kwaliteit · geteld bij de build",
+    "title": "De instrumenten",
+    "provenance": "geteld bij de build · <fig>{date}</fig>",
+    "provenanceBare": "geteld bij de build",
+    "unitLabel": "{count, plural, one {Vitest-suite} other {Vitest-suites}}",
+    "unitSub": "{count, plural, one {{n} testcase} other {{n} testcases}} · Vitest",
+    "e2eLabel": "{count, plural, one {browsersuite} other {browsersuites}}",
+    "e2eSub": "{count, plural, one {{n} scenario} other {{n} scenario's}} · Playwright",
+    "apiLabel": "{count, plural, one {API-route} other {API-routes}}",
+    "apiSub": "route handlers · {methods}",
+    "apiSubBare": "route handlers",
+    "tileLabel": "{figure} {label} — {sub} (opent de map op GitHub in een nieuw tabblad)"
+  },
+  "bom": {
+    "eyebrow": "Stuklijst · deze site",
+    "title": "Waar het uit bestaat",
+    "provenance": "{source} · geverifieerd bij de build · <fig>{date}</fig>",
+    "provenanceBare": "{source} · geverifieerd bij de build",
+    "unreadable": "Het manifest kon bij de build niet worden gelezen, dus er worden geen versies getoond.",
+    "packages": "{count, plural, one {<fig>{n}</fig> pakket} other {<fig>{n}</fig> pakketten}}",
+    "packagesOf": "<fig>{n}</fig> van <fig>{all}</fig> pakketten",
+    "built": "gebouwd <fig>{date}</fig>",
+    "groups": {
+      "core": "Kern",
+      "3d-and-motion": "3D & beweging",
+      "data-and-services": "Data & diensten",
+      "interface": "Interface",
+      "platform": "Platform",
+      "media": "Media",
+      "quality": "Kwaliteit",
+      "build": "Build",
+      "runtime": "Runtime",
+      "tooling": "Tooling"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Talen",
+        "lay": "De taal waarin de code zelf is geschreven."
+      },
+      "frameworks": {
+        "label": "Frameworks",
+        "lay": "Het raamwerk waarop een applicatie is gebouwd: de structuur en de conventies."
+      },
+      "libraries": {
+        "label": "Libraries",
+        "lay": "Kant-en-klare bouwstenen, elk binnengehaald om één taak goed te doen."
+      },
+      "tools": {
+        "label": "Tools",
+        "lay": "Alles wat rond de code draait: testen, formatteren, databases en deployment."
+      },
+      "software": {
+        "label": "Software",
+        "lay": "De diensten waarop het afgeronde werk draait."
+      }
+    }
+  }
+}

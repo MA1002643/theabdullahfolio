@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Software Engineer. Dark ember card with the Muhammad Abdullah seal and live portfolio status.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Software Engineer. Square dark ember card with the Muhammad Abdullah seal and live portfolio status.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Software Engineer",
+      "description": "Software engineer in Bolton building fast, considered web applications with Next.js, React and TypeScript. Projects, credentials and the tools behind them."
+    },
+    "about": {
+      "title": "About",
+      "description": "The engineer behind the ember — the story, the stack, and live GitHub telemetry on what is being built right now."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "The full record — every role, qualification and shipped project, in HTML. Written from the same data the timeline renders, with the PDF one click away."
+    },
+    "notes": {
+      "title": "Notes",
+      "description": "Engineering decision records — why each choice on this site was made, which alternatives were rejected, and what each one cost."
+    },
+    "projects": {
+      "title": "Projects",
+      "description": "{countWord} builds — web, systems, mobile and AI — each tracked live from its own GitHub board, with the stack and completion state on every card."
+    },
+    "qualifications": {
+      "title": "Qualifications",
+      "description": "Degrees, certificates and professional credentials — the verified paper trail behind the practice, with every certificate viewable."
+    },
+    "journey": {
+      "title": "Journey",
+      "description": "Every role, qualification and volunteering post as one scroll-driven timeline — from Bolton College in 2018 to shipping production software today."
+    },
+    "uses": {
+      "title": "Uses",
+      "description": "The machine, the bench, the stack and the pipeline — every tool on this page verified against the repositories and the build that ships it."
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "Start a conversation about a role or a project — a contact form that refines your message as you write it and never loses a draft."
+    },
+    "myPast": {
+      "title": "My Past",
+      "description": "The university-era portfolio where this began — hand-built with plain HTML, CSS and JavaScript, kept online as an honest before picture."
+    },
+    "guestbook": {
+      "title": "Guestbook",
+      "description": "Leave your mark on the wall — a neon message board signed by visitors through GitHub or Google, with live presence and reactions."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Every cookie, storage key and third party this site touches, why each exists, and how to turn the optional ones off. Audited, not templated."
+    }
+  },
+  "notFound": {
+    "title": "404 — Page Not Found",
+    "description": "You've drifted into the void. This page doesn't exist — yet."
+  }
+}

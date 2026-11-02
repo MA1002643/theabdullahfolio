@@ -20,6 +20,10 @@
 // page where being wrong is expensive.
 
 import { CalendarClock, ShieldCheck, ShieldOff } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+
+import { intlTag } from '@/i18n/format';
+import { localeInfo } from '@/i18n/locales';
 
 import { fluid, fluidText } from '@/lib/fluidScale';
 import { cn } from '@/lib/utils';
@@ -28,13 +32,16 @@ import { useConsent } from './ConsentProvider';
 
 export default function ConsentStatusPanel() {
   const { status, analytics, decidedAt, hydrated, reopen } = useConsent();
+  const t = useTranslations('Privacy');
+  const locale = useLocale();
+  const { hreflang, dir } = localeInfo(locale);
 
   // Formatted with an explicit locale and only after hydration, so there is no
   // server render of it to disagree with — the footer's copyright-year note
   // documents the same hazard.
   const decidedLabel =
     decidedAt &&
-    new Date(decidedAt).toLocaleDateString('en-GB', {
+    new Date(decidedAt).toLocaleDateString(intlTag(locale), {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -43,7 +50,13 @@ export default function ConsentStatusPanel() {
   const allowed = hydrated && analytics;
 
   return (
+    // `lang` + `dir` (issue #82): this panel sits INSIDE the policy body,
+    // which /privacy wraps in an English-only `lang="en" dir="ltr"` island.
+    // The visitor's own choice is not policy text — it is their account, in
+    // their language — so the panel re-establishes the page's language here.
     <aside
+      lang={hreflang}
+      dir={dir}
       // `aria-live="polite"`: the text changes when the visitor accepts or
       // declines from the dialog while standing on this page, and a screen
       // reader user needs to hear that their change took effect. `polite` rather
@@ -56,7 +69,7 @@ export default function ConsentStatusPanel() {
         className="font-semibold uppercase tracking-[0.16em] text-[#ffaa2a]"
         style={{ fontSize: fluidText(0.74, 0.7) }}
       >
-        <span className="pv-focus">Your current choice</span>
+        <span className="pv-focus">{t('status.heading')}</span>
       </h2>
 
       <div className="mt-3.5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -70,7 +83,7 @@ export default function ConsentStatusPanel() {
               className="text-[#e4d6f7]"
               style={{ fontSize: fluidText(0.95, 0.88), lineHeight: 1.55 }}
             >
-              Analytics are not running. With JavaScript disabled they cannot be.
+              {t('status.noScript')}
             </p>
           ) : (
             <>
@@ -86,9 +99,7 @@ export default function ConsentStatusPanel() {
                 ) : (
                   <ShieldOff className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
                 )}
-                {allowed
-                  ? 'Anonymous analytics are allowed.'
-                  : 'Analytics are off. Nothing is being measured.'}
+                {allowed ? t('status.allowed') : t('status.off')}
               </p>
               <p
                 className="mt-1.5 flex items-center gap-2 text-[#c8a6ee]"
@@ -96,10 +107,10 @@ export default function ConsentStatusPanel() {
               >
                 <CalendarClock className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
                 {status === STATUS.UNDECIDED
-                  ? 'You have not been asked yet, so the answer is no.'
+                  ? t('status.notAsked')
                   : decidedLabel
-                    ? `You decided this on ${decidedLabel}.`
-                    : 'Your decision is stored on this device.'}
+                    ? t('status.decidedOn', { date: decidedLabel })
+                    : t('status.stored')}
               </p>
             </>
           )}
@@ -115,7 +126,7 @@ export default function ConsentStatusPanel() {
           )}
           style={{ fontSize: fluidText(0.86, 0.8) }}
         >
-          Change this
+          {t('status.change')}
         </button>
       </div>
     </aside>

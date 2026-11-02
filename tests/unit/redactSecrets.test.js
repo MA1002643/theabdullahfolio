@@ -146,6 +146,8 @@ describe('the secret allowlist covers the environment it protects', () => {
     NEXT_PUBLIC_SITE_ORIGIN: 'NEXT_PUBLIC_ — the site’s own canonical origin',
     NEXT_PUBLIC_GA_MEASUREMENT_ID:
       'NEXT_PUBLIC_ — a GA4 measurement id is published in the tag itself',
+    NEXT_PUBLIC_I18N_PSEUDO:
+      "NEXT_PUBLIC_ — a CI build switch ('1' or unset) that routes the pseudo-locale",
     GOOGLE_SITE_VERIFICATION:
       'published verbatim in a <meta> tag on every page',
     GUESTBOOK_ADMIN:

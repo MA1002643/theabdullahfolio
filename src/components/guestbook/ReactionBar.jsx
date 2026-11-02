@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useLocale, useTranslations } from 'next-intl';
 import { REACTIONS } from '@/lib/guestbook/reactions';
+import { formatNumber } from '@/i18n/format';
 import { useUiSound } from '@/hooks/useUiSound';
 
 // 🔥 🚀 ❤️ per message (issue #40 Phase 4). Counts roll up on a spring —
@@ -77,8 +79,11 @@ function burst(canvas) {
 // the new number in place — no slide, no fade, no exiting twin. It used to
 // roll on the spring whatever the verdict said (code review): the one layer on
 // the page the motion switch did not reach.
-function RollingCount({ value }) {
+function RollingCount({ value: raw }) {
   const reduceMotion = useReducedMotion();
+  // The locale's digits (issue #82); the key stays the raw number so the roll
+  // fires on a real change, not a re-format.
+  const value = formatNumber(raw, useLocale(), { useGrouping: false });
   return (
     <span className="relative inline-flex h-4 min-w-[1ch] overflow-hidden font-mono text-xs tabular-nums">
       {reduceMotion ? (
@@ -86,7 +91,7 @@ function RollingCount({ value }) {
       ) : (
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
-            key={value}
+            key={raw}
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -10, opacity: 0 }}
@@ -103,6 +108,8 @@ function RollingCount({ value }) {
 
 export default function ReactionBar({ message, canReact, onReact }) {
   const reduceMotion = useReducedMotion();
+  const t = useTranslations('Guestbook');
+  const locale = useLocale();
   const play = useUiSound();
   const canvasRefs = useRef({});
   const [pendingKey, setPendingKey] = useState(null);
@@ -128,8 +135,11 @@ export default function ReactionBar({ message, canReact, onReact }) {
 
   return (
     <div className="mt-3 flex items-center gap-2">
-      {REACTIONS.map(({ key, emoji, label }) => {
+      {REACTIONS.map(({ key, emoji }) => {
         const active = message.viewerReaction === key;
+        // The vocabulary's `label` is the English source; the catalogue
+        // holds the visitor-facing word for each key (issue #82).
+        const label = t(`reactions.${key}`);
         return (
           <button
             key={key}
@@ -137,8 +147,11 @@ export default function ReactionBar({ message, canReact, onReact }) {
             disabled={!canReact || Boolean(pendingKey)}
             onClick={() => handleClick(key)}
             aria-pressed={active}
-            aria-label={`${label} — ${counts[key] || 0}`}
-            title={canReact ? label : 'Sign in to react'}
+            aria-label={t('reactions.count', {
+              label,
+              count: formatNumber(counts[key] || 0, locale, { useGrouping: false }),
+            })}
+            title={canReact ? label : t('reactions.signInToReact')}
             className={`relative inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05] disabled:cursor-default ${
               active
                 ? 'border-[#ff6d05] bg-[#ff6d05]/15 text-[#f9d174]'

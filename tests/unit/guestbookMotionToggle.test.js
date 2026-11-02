@@ -5,6 +5,11 @@ import { createElement } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getPrefs, togglePref } from '@/lib/guestbook/prefs';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The guestbook's manual motion toggle, end to end. It used to reach framer
 // alone, through MotionConfig: the aurora mount read the OS media query
@@ -86,16 +91,16 @@ afterEach(() => {
 
 describe('/guestbook — one motion switch, every layer', () => {
   it('motion on: framer sees no reduction, the aurora is enabled, the wrapper says on', async () => {
-    const { default: Guestbook } = await import('@/app/(sub pages)/guestbook/page');
-    const { container, getByTestId } = render(createElement(Guestbook));
+    const { default: Guestbook } = await import('@/app/[locale]/(sub pages)/guestbook/page');
+    const { container, getByTestId } = renderIntl(createElement(Guestbook));
     expect(container.querySelector('[data-motion]').dataset.motion).toBe('on');
     expect(getByTestId('aurora').dataset.enabled).toBe('true');
     expect(getByTestId('probe').dataset.reduced).toBe('false');
   });
 
   it('toggling motion off reaches all three at once — and back', async () => {
-    const { default: Guestbook } = await import('@/app/(sub pages)/guestbook/page');
-    const { container, getByTestId } = render(createElement(Guestbook));
+    const { default: Guestbook } = await import('@/app/[locale]/(sub pages)/guestbook/page');
+    const { container, getByTestId } = renderIntl(createElement(Guestbook));
 
     act(() => togglePref('motion'));
     expect(container.querySelector('[data-motion]').dataset.motion).toBe('off');
@@ -111,8 +116,8 @@ describe('/guestbook — one motion switch, every layer', () => {
   });
 
   it('the wrapper generates no box of its own', async () => {
-    const { default: Guestbook } = await import('@/app/(sub pages)/guestbook/page');
-    const { container } = render(createElement(Guestbook));
+    const { default: Guestbook } = await import('@/app/[locale]/(sub pages)/guestbook/page');
+    const { container } = renderIntl(createElement(Guestbook));
     expect(container.querySelector('[data-motion]').className).toContain('contents');
   });
 });

@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Navigazione tra i progetti",
+    "all": "Tutti i progetti",
+    "previous": "Progetto precedente: {name}",
+    "next": "Progetto successivo: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "projects": "Progetti"
+  },
+  "loading": "Caricamento del progetto",
+  "intro": {
+    "fallbackName": "Nome del progetto",
+    "fallbackDescription": "Soluzioni web innovative, veloci e futuristiche.",
+    "linksLabel": "Link di {name}",
+    "liveDemo": "Demo live<sr> (si apre in una nuova scheda)</sr>",
+    "source": "Codice su GitHub<sr> (si apre in una nuova scheda)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "Inizializzazione del BIOS...",
+      "hardware": "Rilevamento dell'hardware...",
+      "os": "Caricamento del sistema operativo..."
+    },
+    "tagline": "Diamo forza alle tue idee con un artigianato digitale di nuova generazione.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Strumenti e framework",
+    "overview": "Panoramica del progetto",
+    "overviewLead": "Questa piattaforma semplifica i flussi di lavoro dell'e-commerce con una dashboard unificata e analisi in tempo reale.",
+    "overviewBody": "Risolve la complessità di gestire più strumenti offrendo un'interfaccia centralizzata e intuitiva.",
+    "features": "Funzionalità",
+    "feature": {
+      "auth": {
+        "title": "Autenticazione",
+        "desc": "Accesso sicuro e gestione degli utenti."
+      },
+      "payments": {
+        "title": "Pagamenti",
+        "desc": "Gateway di pagamento integrato."
+      },
+      "chat": {
+        "title": "Chat live",
+        "desc": "Comunicazione immediata con gli utenti."
+      },
+      "admin": {
+        "title": "Pannello di amministrazione",
+        "desc": "Gestione dei contenuti semplificata."
+      }
+    },
+    "liveDemo": "Demo live",
+    "github": "GitHub",
+    "demoLabel": "Apri la demo live di {name}",
+    "sourceLabel": "Vedi il codice di {name} su GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. Progetto {category}, avviato {when}. {visibility, select, private {Repository privato} other {Repository pubblico}}, monitorato in tempo reale dalla sua board su GitHub.",
+    "undated": "{name} — {description}. Progetto {category}. {visibility, select, private {Repository privato} other {Repository pubblico}}, monitorato in tempo reale dalla sua board su GitHub."
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "EN COURS D’ÉCOUTE",
+  "lastPlayed": "DERNIÈRE ÉCOUTE",
+  "cardLabel": "{state, select, playing {En cours d’écoute} other {Dernière écoute}} : {title} de {artist}.",
+  "cardLabelLink": "{state, select, playing {En cours d’écoute} other {Dernière écoute}} : {title} de {artist}. Ouvrir dans Spotify.",
+  "openOnSpotify": "Ouvrir dans Spotify"
+}

@@ -3,6 +3,11 @@ import { createElement } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MessageRefine from '@/components/contact/MessageRefine';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The refine panel while its host form starts sending. The guestbook composer
 // stays mounted after a successful post, so a refine that was merely HIDDEN
@@ -50,7 +55,7 @@ function streamedFetch() {
 const MESSAGE = 'hello there, this is a rough draft of my mark';
 
 function renderPanel(props) {
-  return render(
+  return renderIntl(
     createElement(MessageRefine, {
       message: MESSAGE,
       onAccept: () => {},

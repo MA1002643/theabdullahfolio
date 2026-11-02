@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import { LOCALES } from '@/i18n/locales';
+import { useLocaleSwitch } from '@/i18n/useLocaleSwitch';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Search } from 'lucide-react';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
@@ -18,9 +21,59 @@ import { useCommandPalette } from '@/hooks/useCommandPalette';
 // Keyboard: ⌘K/Ctrl+K toggles, Esc closes, ↑/↓ move, Enter runs, Tab is
 // trapped (the input is the single tab stop; options are a listbox driven by
 // aria-activedescendant, the pattern screen readers expect from a combobox).
-export default function CommandPalette({ actions }) {
+//
+// Language (issue #82): every palette ends with a "Language" group — one
+// command per locale, labelled with its ENDONYM (rendered in its own `lang`
+// and `dir`) and searchable by English name and code, so "spanish", "es"
+// and "Español" all find it. Running one switches the current page's locale
+// through useLocaleSwitch (cookie + soft navigation + analytics source
+// 'palette'). `includeLanguages={false}` opts a palette out.
+//
+// Actions built by `routeActions` carry `navKey` / `sectionKey`; those are
+// translated here, so a page config never needs a translator for the shared
+// Navigate group. Any other action's label is used as given (the page owns
+// and translates its own commands).
+export default function CommandPalette({ actions, includeLanguages = true }) {
   const reduceMotion = useReducedMotion();
-  const pal = useCommandPalette(actions);
+  const t = useTranslations('Palette');
+  const tNav = useTranslations('Nav');
+  const tLocale = useTranslations('Locale');
+  const { switchTo, locale } = useLocaleSwitch();
+
+  const allActions = useMemo(() => {
+    const localized = actions.map((a) => {
+      if (!a.navKey && !a.sectionKey) return a;
+      return {
+        ...a,
+        label: a.navKey ? tNav(`routes.${a.navKey}`) : a.label,
+        section: a.sectionKey ? t(`sections.${a.sectionKey}`) : a.section,
+        // Translated AND English terms, so either language's query matches.
+        keywords: [
+          a.keywords,
+          a.label,
+          a.section,
+          a.sectionKey ? t(`keywords.${a.sectionKey}`) : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      };
+    });
+    if (!includeLanguages) return localized;
+    const section = t('sections.language');
+    const languages = LOCALES.map((l) => ({
+      id: `lang-${l.code}`,
+      label: l.endonym,
+      lang: l.hreflang,
+      dir: l.dir,
+      hint: l.code === locale ? `${l.code} · ${tLocale('current')}` : l.code,
+      section,
+      keywords: `${l.english} ${l.code} ${t('keywords.language')} language`,
+      perform: () => switchTo(l.code, 'palette'),
+    }));
+    return [...localized, ...languages];
+  }, [actions, includeLanguages, locale, switchTo, t, tLocale, tNav]);
+
+  const pal = useCommandPalette(allActions);
   const inputRef = useRef(null);
   const listRef = useRef(null);
   // Set by the pointer path (onMouseMove) so the scroll-follow below can tell
@@ -77,7 +130,7 @@ export default function CommandPalette({ actions }) {
       <motion.div
         role="dialog"
         aria-modal="true"
-        aria-label="Command palette"
+        aria-label={t('dialog')}
         initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10, scale: 0.98 }}
         animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
@@ -93,7 +146,7 @@ export default function CommandPalette({ actions }) {
             ref={inputRef}
             type="text"
             role="combobox"
-            aria-label="Search commands"
+            aria-label={t('search')}
             aria-expanded="true"
             aria-controls="command-palette-list"
             aria-activedescendant={
@@ -104,7 +157,7 @@ export default function CommandPalette({ actions }) {
             value={pal.query}
             onChange={(e) => pal.setQuery(e.target.value)}
             onKeyDown={pal.onInputKeyDown}
-            placeholder="Type a command or destination…"
+            placeholder={t('placeholder')}
             className="min-w-0 flex-1 border-none bg-transparent font-mono text-sm text-foreground/80 outline-none placeholder:text-foreground/60"
           />
           <kbd className="rounded border border-[#ff6d05]/25 px-1.5 py-0.5 font-mono text-[10px] text-foreground/60">
@@ -116,7 +169,7 @@ export default function CommandPalette({ actions }) {
           ref={listRef}
           id="command-palette-list"
           role="listbox"
-          aria-label="Commands"
+          aria-label={t('list')}
           className="max-h-[19rem] overflow-y-auto py-2"
         >
           {pal.filtered.length === 0 ? null : (
@@ -156,7 +209,9 @@ export default function CommandPalette({ actions }) {
                         : 'text-foreground/70'
                     }`}
                   >
-                    <span>{action.label}</span>
+                    <span lang={action.lang} dir={action.dir}>
+                      {action.label}
+                    </span>
                     {action.hint ? (
                       <span className="shrink-0 font-mono text-xs text-foreground/60">
                         {action.hint}
@@ -186,7 +241,7 @@ export default function CommandPalette({ actions }) {
               : undefined
           }
         >
-          {pal.filtered.length === 0 ? 'Nothing matches' : null}
+          {pal.filtered.length === 0 ? t('empty') : null}
         </p>
       </motion.div>
     </div>

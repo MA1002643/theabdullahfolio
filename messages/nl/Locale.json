@@ -1,0 +1,28 @@
+{
+  "label": "Taal",
+  "triggerLabel": "Taal: {language}",
+  "searchLabel": "Talen zoeken",
+  "searchPlaceholder": "Zoek in 20 talen…",
+  "noResults": "Geen taal gevonden voor “{query}”.",
+  "tier1": "Niveau 1",
+  "tier2": "Niveau 2",
+  "current": "Huidig",
+  "machineBadge": "Machine",
+  "machineBadgeLabel": "Machinaal vertaald",
+  "switching": "Overschakelen naar {language}…",
+  "notice": {
+    "title": "Machinaal vertaald",
+    "body": "Deze vertaling is automatisch gemaakt en is nog niet gecontroleerd door een moedertaalspreker.",
+    "cta": "Stel een betere vertaling voor"
+  },
+  "suggestion": {
+    "region": "Taalsuggestie",
+    "message": "Deze site is ook beschikbaar in het {language}.",
+    "switch": "Overschakelen naar {language}",
+    "dismiss": "Blijf bij {current}"
+  },
+  "englishOnly": {
+    "label": "Alleen in het Engels gepubliceerd",
+    "body": "Dit document is alleen in het Engels gepubliceerd. Navigatie en bediening blijven in jouw taal."
+  }
+}

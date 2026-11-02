@@ -3,6 +3,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useExperienceSummary } from '@/hooks/useExperienceSummary';
+import { IntlWrapper } from '../support/intl';
 
 // ── What a partial poll must NOT leave behind ───────────────────────────────
 // `/api/experience-summary` marks a response `partial` when GitHub failed or
@@ -173,7 +174,7 @@ describe('useExperienceSummary — a partial poll', () => {
       respondWith(withRepo('brand-new', '2026-09-01T00:00:00Z'), PARTIAL),
     );
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
 
     // Poll 1 — a real change is detected and announced. Asserted, not assumed:
     // if this were empty the clearing assertions below would be vacuous.
@@ -200,7 +201,7 @@ describe('useExperienceSummary — a partial poll', () => {
       respondWith(withRepo('kept', '2026-09-01T00:00:00Z'), PARTIAL),
     );
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
 
     await settle();
     const complete = result.current.data;
@@ -220,7 +221,7 @@ describe('useExperienceSummary — a partial poll', () => {
     // none of it is a "change".
     vi.stubGlobal('fetch', respondWith(PARTIAL));
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
 
     await settle();
     expect(result.current.data).toBeTruthy();
@@ -239,7 +240,7 @@ describe('useExperienceSummary — a partial poll', () => {
     // longer span. Only a COMPLETE answer earns that protection.
     vi.stubGlobal('fetch', respondWith(PARTIAL, BETTER_PARTIAL));
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
 
     await settle();
     expect(result.current.data.personalProjects).toBeNull();
@@ -266,7 +267,7 @@ describe('useExperienceSummary — a partial poll', () => {
     seedStored(COMPLETE_BASELINE);
     vi.stubGlobal('fetch', respondWith(PARTIAL));
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
     await settle();
 
     expect(result.current.data.total).toEqual({
@@ -281,7 +282,7 @@ describe('useExperienceSummary — a partial poll', () => {
     // where someone will look after changing it.
     vi.stubGlobal('fetch', respondWith(PARTIAL));
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
     await settle();
     expect(result.current.data).toBeTruthy();
 
@@ -326,7 +327,7 @@ describe('useExperienceSummary — a store written by an older deploy', () => {
       respondWith(withRepo('long-standing', '2020-01-01T00:00:00Z')),
     );
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
     await settle();
 
     // The live answer is shown in full — this is about what is CLAIMED about
@@ -350,7 +351,7 @@ describe('useExperienceSummary — a store written by an older deploy', () => {
     // hydration put on screen.
     vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
     await settle();
 
     expect(result.current.data).toBeNull();
@@ -362,7 +363,7 @@ describe('useExperienceSummary — a store written by an older deploy', () => {
     seedLegacyStored(LEGACY_DEGRADED);
     vi.stubGlobal('fetch', respondWith(PARTIAL));
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
     await settle();
 
     // The poll was partial, so nothing was written back — what is (not) there
@@ -383,7 +384,7 @@ describe('useExperienceSummary — a store written by an older deploy', () => {
       respondWith(withRepo('brand-new', '2026-09-01T00:00:00Z')),
     );
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
     await settle();
 
     expect(result.current.changeMessage).toBeNull();
@@ -407,7 +408,7 @@ describe('useExperienceSummary — a store written by an older deploy', () => {
       respondWith(withRepo('long-standing', '2020-01-01T00:00:00Z')),
     );
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
     await settle();
 
     expect(result.current.changeMessage).toBeNull();
@@ -436,7 +437,7 @@ describe('useExperienceSummary — a failed poll', () => {
       respondThenFail(withRepo('brand-new', '2026-09-01T00:00:00Z')),
     );
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
 
     // Poll 1 — a real change, asserted so the clearing below is not vacuous.
     await settle();
@@ -465,7 +466,7 @@ describe('useExperienceSummary — a failed poll', () => {
       respondThenFail(withRepo('kept', '2026-09-01T00:00:00Z')),
     );
 
-    const { result } = renderHook(() => useExperienceSummary(USERNAME));
+    const { result } = renderHook(() => useExperienceSummary(USERNAME), { wrapper: IntlWrapper });
 
     await settle();
     const complete = result.current.data;
