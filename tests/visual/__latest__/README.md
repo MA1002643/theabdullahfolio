@@ -1,6 +1,6 @@
 # Latest visual render
 
-Rendered for `846ebfd` by `.github/workflows/visual-baselines.yml` on every push (issue #92).
+Rendered for `10e1fc9` by `.github/workflows/visual-baselines.yml` on every push (issue #92).
 These are the CURRENT screenshots. The reviewed baselines CI compares against live in
 `../__screenshots__/`; promote a render to baseline by running the workflow with `promote: true`.
 
@@ -8,11 +8,11 @@ These are the CURRENT screenshots. The reviewed baselines CI compares against li
 
 | View | Status | Size |
 |---|---|---:|
-| `pages.spec.js/ar-contact.png` | 🆕 new view, seeded as its baseline | 160 kB |
-| `pages.spec.js/ar-cv.png` | 🆕 new view, seeded as its baseline | 221 kB |
+| `pages.spec.js/ar-contact.png` | ✅ matches baseline | 160 kB |
+| `pages.spec.js/ar-cv.png` | ✅ matches baseline | 221 kB |
 | `pages.spec.js/contact.png` | ⚠️ differs from baseline | 197 kB |
 | `pages.spec.js/cv.png` | ✅ matches baseline | 272 kB |
-| `pages.spec.js/ja-cv.png` | 🆕 new view, seeded as its baseline | 281 kB |
+| `pages.spec.js/ja-cv.png` | ✅ matches baseline | 281 kB |
 | `pages.spec.js/not-found.png` | ⚠️ differs from baseline | 233 kB |
 | `pages.spec.js/notes-index.png` | ⚠️ differs from baseline | 263 kB |
 | `pages.spec.js/privacy.png` | ⚠️ differs from baseline | 217 kB |
