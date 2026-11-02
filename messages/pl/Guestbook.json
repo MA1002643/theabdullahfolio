@@ -1,0 +1,124 @@
+{
+  "title": "KSIĘGA GOŚCI",
+  "subtitle": "ZOSTAW SWÓJ ŚLAD",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> wpis} few {<n>{shown}</n> wpisy} many {<n>{shown}</n> wpisów} other {<n>{shown}</n> wpisu}}",
+    "commands": "{shortcut} · polecenia",
+    "loading": "Wczytywanie księgi gości…",
+    "loadingMore": "Wczytywanie kolejnych wpisów z księgi gości…",
+    "loadFailed": "Nie udało się wczytać księgi gości",
+    "pageFailed": "Nie udało się wczytać tej strony",
+    "retry": "Spróbuj ponownie",
+    "emptyTitle": "Na razie brak wiadomości",
+    "emptyInvite": "Zostaw swój ślad jako pierwszy"
+  },
+  "presence": "{count, plural, one {<n>{shown}</n> osoba tutaj} few {<n>{shown}</n> osoby tutaj} many {<n>{shown}</n> osób tutaj} other {<n>{shown}</n> osoby tutaj}}",
+  "announce": {
+    "one": "Nowa wiadomość od {name}: {message}",
+    "many": "{count, plural, one {# nowa wiadomość.} few {# nowe wiadomości.} many {# nowych wiadomości.} other {# nowej wiadomości.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Ktoś"
+  },
+  "card": {
+    "sending": "wysyłanie…",
+    "guest": "Gość",
+    "onGitHub": "{username} na GitHub (otwiera się w nowej karcie)",
+    "copyLink": "Skopiuj link do tej wiadomości",
+    "linkCopied": "Skopiowano link — prowadzi prosto do tego wpisu",
+    "linkFailed": "Nie udało się skopiować linku",
+    "deleteOwn": "Usuń swoją wiadomość",
+    "deleteOther": "Usuń wiadomość użytkownika {name}",
+    "signature": "Podpis: {name}",
+    "signatureAnon": "Podpis"
+  },
+  "reactions": {
+    "fire": "Ogień",
+    "rocket": "Rakieta",
+    "heart": "Serce",
+    "count": "{label} — {count}",
+    "signInToReact": "Zaloguj się, aby zareagować"
+  },
+  "composer": {
+    "label": "Twoja wiadomość",
+    "placeholder": "Zostaw wiadomość…",
+    "send": "Wyślij wiadomość",
+    "offline": "Jesteś offline — wiadomość zostanie tutaj, dopóki nie wrócisz do sieci.",
+    "notSent": "Twoja wcześniejsza wiadomość nie została wysłana",
+    "restore": "Przywróć ją"
+  },
+  "signature": {
+    "add": "Dodaj podpis (opcjonalnie)",
+    "discard": "Odrzuć podpis",
+    "clear": "Wyczyść",
+    "padLabel": "Pole do rysowania podpisu — rysuj myszą, palcem lub rysikiem albo wybierz gotowy znak poniżej.",
+    "padHint": "Rysuj palcem, gładzikiem lub myszą — grubość kreski zależy od szybkości",
+    "pickMark": "Wybierz znak",
+    "orPickMark": "Albo wybierz znak",
+    "marks": {
+      "flourish": "Zawijas",
+      "wave": "Fala",
+      "spark": "Iskra",
+      "orbit": "Orbita"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Zostaw wiadomość…",
+    "ghostRefine": "Dopracuj z AI",
+    "ghostSignature": "Dodaj podpis (opcjonalnie)",
+    "ghostDrafts": "Szkice zapisują się automatycznie podczas pisania",
+    "prompt": "Zaloguj się, aby zostawić wiadomość",
+    "promptReauth": "Zaloguj się ponownie, aby zostawić wiadomość",
+    "reauthExplain": "Twoje obecne logowanie powstało przed wprowadzeniem kluczy kont dla księgi, więc możesz czytać, ale nie pisać — wystarczy jedno ponowne logowanie.",
+    "github": "ZALOGUJ SIĘ PRZEZ GITHUB",
+    "google": "ZALOGUJ SIĘ PRZEZ GOOGLE"
+  },
+  "pagination": {
+    "nav": "Strony księgi gości",
+    "previous": "Poprzednia strona",
+    "next": "Następna strona",
+    "page": "STRONA ",
+    "status": "Strona {page} z {total}"
+  },
+  "palette": {
+    "leaveMessage": "Zostaw wiadomość",
+    "leaveKeywords": "napisz podpisz wpis wiadomość dodaj",
+    "sectionGuestbook": "Księga gości",
+    "sectionPreferences": "Preferencje",
+    "signInToLeave": "Zaloguj się, aby zostawić wiadomość",
+    "toggleSound": "Przełącz dźwięki interfejsu",
+    "soundKeywords": "audio dźwięk sygnał wyciszenie wycisz",
+    "toggleMotion": "Przełącz animacje",
+    "motionKeywords": "animacja ruch ogranicz redukcja bez ruchu",
+    "on": "wł.",
+    "off": "wył."
+  },
+  "toast": {
+    "posted": "Wiadomość opublikowana!",
+    "postFailed": "Nie udało się opublikować wiadomości",
+    "reactFailed": "Nie udało się dodać reakcji",
+    "deleteFailed": "Nie udało się usunąć wiadomości",
+    "removedOwn": "Twoja wiadomość została usunięta z księgi gości",
+    "removedOther": "Wiadomość została usunięta z księgi gości",
+    "you": "Ty"
+  },
+  "errors": {
+    "unauthorized": "Brak autoryzacji",
+    "too_large": "Treść żądania może mieć maksymalnie {max, number, ::group-off} bajtów",
+    "invalid_body": "Nieprawidłowa treść żądania",
+    "message_required": "Wiadomość jest wymagana",
+    "message_length": "Wiadomość musi mieć od {min} do {max} znaków",
+    "invalid_characters": "Wiadomość zawiera niedozwolone znaki",
+    "links_not_allowed": "Linki są niedozwolone w wiadomościach w księdze gości",
+    "unfriendly": "Zachowajmy życzliwy ton",
+    "invalid_signature": "Nieprawidłowy podpis",
+    "rate_limited": "Jedna wiadomość na 5 minut — spróbuj ponownie za {minutes, plural, one {# minutę} few {# minuty} many {# minut} other {# minuty}}",
+    "invalid_reaction": "Nieprawidłowa reakcja",
+    "reaction_rate_limited": "Zbyt wiele reakcji — spróbuj ponownie za {seconds} s",
+    "not_found": "Nie znaleziono wiadomości",
+    "id_required": "Identyfikator wiadomości jest wymagany",
+    "invalid_id": "Nieprawidłowy identyfikator wiadomości",
+    "forbidden": "Brak dostępu",
+    "invalid_cursor": "Nieprawidłowy kursor"
+  }
+}

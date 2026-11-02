@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { createTranslator, useLocale } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import CommandPalette from '@/components/commandPalette/CommandPalette';
 import { routeActions, routesExcept } from '@/components/commandPalette/routes';
@@ -9,6 +10,8 @@ import { profileGithubUrl } from '@/components/footer/footer-data';
 import { usePageTransition } from '@/components/pageTransition/PageTransitionProvider';
 import { useGuestbookPrefs } from '@/hooks/useGuestbookPrefs';
 import { togglePref } from '@/lib/guestbook/prefs';
+import { intlTag } from '@/i18n/format';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
 
 // /uses' action set for the shared CommandPalette — the JourneyPalette seam:
 // the palette component knows nothing about this page. Plate jumps land on
@@ -35,65 +38,139 @@ export const jumpToPlate = (slug) => {
 };
 
 // Pure builder — exported for the unit suite. `deps` carries every side
-// effect so the test can hand in spies.
-export function buildUsesActions({ frameLines, motionOn, go, copyText, openExternal, toggleMotion }) {
+// effect so the test can hand in spies, and `t` — the UsesPalette translator
+// (issue #82) — so the labels, hints and section headings are the reader's
+// language. `ordinal` formats the plate number in the locale's digits; it
+// defaults to the literal "00". Search keywords stay English on purpose:
+// they are extra match terms, and an English query still finds the action.
+// `USES_PLATES[].label` is kept as the English record (and the key into
+// `plates`).
+export function buildUsesActions({
+  t,
+  ordinal = (o) => o,
+  frameLines,
+  motionOn,
+  go,
+  copyText,
+  openExternal,
+  toggleMotion,
+}) {
   return [
     ...USES_PLATES.map((p) => ({
       id: `jump-${p.slug}`,
-      label: `Jump to ${p.ordinal} ${p.label}`,
-      hint: p.ordinal,
-      section: 'Uses',
+      label: t('jumpPlate', {
+        ordinal: ordinal(p.ordinal),
+        label: t(`plates.${p.slug}`),
+      }),
+      hint: ordinal(p.ordinal),
+      section: t('section'),
       keywords: `plate jump scroll ${p.keywords}`,
       perform: () => jumpToPlate(p.slug),
     })),
     {
       id: 'copy-settings',
-      label: 'Copy my editor settings',
+      label: t('copySettings'),
       hint: 'settings.json',
-      section: 'Uses',
+      section: t('section'),
       keywords: 'vscode clipboard copy json theme dracula',
       perform: () => copyText(frameLines.join('\n')),
     },
     {
       id: 'open-repos',
-      label: 'See the repositories on GitHub',
+      label: t('openRepos'),
       hint: 'github.com',
-      section: 'Uses',
+      section: t('section'),
       keywords: 'repos github source code open',
       perform: () => openExternal(`${profileGithubUrl}?tab=repositories`),
     },
     ...routeActions(routesExcept('/uses'), go),
     {
       id: 'toggle-motion',
-      label: 'Toggle motion',
-      hint: motionOn ? 'on' : 'off',
-      section: 'Preferences',
+      label: t('toggleMotion'),
+      hint: t(motionOn ? 'motionOn' : 'motionOff'),
+      section: t('preferences'),
       keywords: 'animation reduce still',
       perform: toggleMotion,
     },
   ];
 }
 
+// The palette's own copy is fetched, not shipped (issue #82, the 8 kB
+// budget): it is only read once a visitor opens ⌘K, and in the longer
+// locales it was what held /uses over. The fetch starts at mount, so it is
+// in long before a hand reaches the shortcut; until it is, the palette still
+// offers every route jump and only this page's own actions are missing.
+// A failed chunk falls back to English, and a failed English chunk leaves
+// the route jumps alone.
+const pending = new Map();
+
+export function loadPaletteCopy(locale) {
+  if (!pending.has(locale)) {
+    pending.set(
+      locale,
+      import(`../../../messages/${locale}/UsesPalette.json`).then(
+        (mod) => mod.default ?? null,
+        () => null,
+      ),
+    );
+  }
+  return pending.get(locale);
+}
+
+function usePaletteTranslator(locale) {
+  const [copy, setCopy] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadPaletteCopy(locale)
+      .then((messages) =>
+        messages || locale === DEFAULT_LOCALE ? messages : loadPaletteCopy(DEFAULT_LOCALE),
+      )
+      .then((messages) => {
+        if (!cancelled) setCopy({ locale, messages });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+  const messages = copy?.locale === locale ? copy.messages : null;
+  return useMemo(
+    () =>
+      messages
+        ? createTranslator({ locale, messages: { UsesPalette: messages }, namespace: 'UsesPalette' })
+        : null,
+    [locale, messages],
+  );
+}
+
 export default function UsesPalette({ frame }) {
   const router = useRouter();
   const { navigate } = usePageTransition();
   const prefs = useGuestbookPrefs();
+  const locale = useLocale();
+  const t = usePaletteTranslator(locale);
 
   const actions = useMemo(() => {
     const go = (href, label) => {
       if (navigate) navigate(href, { label });
       else router.push(href);
     };
+    if (!t) return routeActions(routesExcept('/uses'), go);
     const copyText = async (text) => {
       try {
         await navigator.clipboard.writeText(text);
-        toast('Editor settings copied');
+        toast(t('copied'));
       } catch {
-        toast('Clipboard unavailable — select the frame to copy');
+        toast(t('clipboardUnavailable'));
       }
     };
     const openExternal = (url) => window.open(url, '_blank', 'noopener,noreferrer');
+    const two = new Intl.NumberFormat(intlTag(locale), {
+      useGrouping: false,
+      minimumIntegerDigits: 2,
+    });
     return buildUsesActions({
+      t,
+      ordinal: locale === 'en' ? undefined : (o) => two.format(Number(o)),
       frameLines: frame.lines,
       motionOn: prefs.motion,
       go,
@@ -101,7 +178,7 @@ export default function UsesPalette({ frame }) {
       openExternal,
       toggleMotion: () => togglePref('motion'),
     });
-  }, [navigate, router, prefs.motion, frame.lines]);
+  }, [navigate, router, prefs.motion, frame.lines, t, locale]);
 
   return <CommandPalette actions={actions} />;
 }

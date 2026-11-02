@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "소개",
+    "projects": "프로젝트",
+    "qualifications": "자격",
+    "contact": "연락처",
+    "journey": "여정",
+    "past": "지난 이야기",
+    "guestbook": "방명록",
+    "uses": "사용 도구"
+  },
+  "routes": {
+    "home": "홈",
+    "about": "소개",
+    "projects": "프로젝트",
+    "qualifications": "자격",
+    "contact": "연락처",
+    "myPast": "지난 이야기",
+    "journey": "여정",
+    "guestbook": "방명록",
+    "uses": "사용 도구",
+    "cv": "CV",
+    "notes": "노트",
+    "privacy": "개인정보 처리방침"
+  },
+  "homeButton": {
+    "tooltip": "홈",
+    "srLabel": "홈 페이지로 이동"
+  },
+  "projectsButton": {
+    "label": "프로젝트",
+    "tooltip": "프로젝트",
+    "srLabel": "프로젝트 페이지로 이동"
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "मेरा सेटअप",
+    "subtitle": "टूल्स, जाँचे-परखे"
+  },
+  "opensNewTab": "{name} (नए टैब में खुलता है)",
+  "machine": {
+    "eyebrow": "हार्डवेयर · हाथ से तय किया",
+    "title": "मेरी मशीन",
+    "provenance": "{count, plural, one {<fig>{n}</fig> पंक्ति} other {<fig>{n}</fig> पंक्तियाँ}} · मालिक द्वारा पुष्टि की गई",
+    "seeItLive": "लाइव देखें"
+  },
+  "bench": {
+    "eyebrow": "एनवायरनमेंट · हाथ से तय किया",
+    "title": "मेरी वर्कबेंच",
+    "provenance": "{count, plural, one {<fig>{n}</fig> स्टेशन} other {<fig>{n}</fig> स्टेशन}} · {file} का अंश",
+    "extensions": "जिन एक्सटेंशन्स को मैं अक्सर चुनता हूँ",
+    "editorCaption": "मेरे VS Code की {file} का एक अंश, {theme} थीम में दिखाया गया है।"
+  },
+  "stack": {
+    "eyebrowLive": "स्टैक · रिपॉज़िटरी से क्रॉल किया गया",
+    "eyebrowCurated": "स्टैक · चुना हुआ सेट",
+    "title": "स्टैक",
+    "provenanceLive": "लाइव · {count, plural, one {<fig>{n}</fig> टूल} other {<fig>{n}</fig> टूल}}",
+    "provenanceCurated": "चुना हुआ · {count, plural, one {<fig>{n}</fig> टूल} other {<fig>{n}</fig> टूल}} · {state, select, unreachable {GitHub से संपर्क नहीं हो पाया} other {GitHub से सिंक हो रहा है…}}",
+    "verifiedSr": "GitHub से मिलान कर सत्यापित",
+    "verifiedStatus": "स्टैक का GitHub से मिलान कर सत्यापन हो चुका है।",
+    "cta": "रिपॉज़िटरी देखें",
+    "ctaLabel": "GitHub पर रिपॉज़िटरी देखें (नए टैब में खुलता है)",
+    "tally": "<total></total> में से <count></count>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "पब्लिक रिपॉज़िटरी",
+    "keyPrivate": "प्राइवेट",
+    "keyRelative": "बार सबसे ज़्यादा इस्तेमाल होने वाले टूल के सापेक्ष हैं",
+    "keyPending": "बार और रिपॉज़िटरी की गिनती लाइव क्रॉल के साथ आती है",
+    "repoCount": {
+      "public": "{pub, plural, one {# पब्लिक रेपो} other {# पब्लिक रेपो}} में इस्तेमाल हुआ",
+      "private": "{priv, plural, one {# प्राइवेट रेपो} other {# प्राइवेट रेपो}} में इस्तेमाल हुआ",
+      "mixed": "{pub, plural, one {# पब्लिक रेपो} other {# पब्लिक रेपो}} में इस्तेमाल हुआ · +{priv} प्राइवेट"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: रिपॉज़िटरी की गिनती लाइव क्रॉल के साथ आती है",
+    "figure": {
+      "publicRepos": "{n, plural, one {पब्लिक रेपो} other {पब्लिक रेपो}}",
+      "privateRepos": "{n, plural, one {प्राइवेट रेपो} other {प्राइवेट रेपो}}",
+      "repos": "{n, plural, one {रेपो} other {रेपो}}",
+      "public": "पब्लिक",
+      "private": "प्राइवेट"
+    },
+    "curated": "चुना हुआ"
+  },
+  "liveAge": {
+    "verified": "{age} सत्यापित",
+    "s": "{s} सेकंड पहले",
+    "ms": "{m} मिनट {s} सेकंड पहले",
+    "hm": "{h} घंटे {m} मिनट पहले",
+    "dh": "{d} दिन {h} घंटे पहले"
+  },
+  "pipeline": {
+    "eyebrow": "डिलीवरी · कमिट से कंप्यूट तक",
+    "title": "पाइपलाइन",
+    "provenance": "{count, plural, one {<fig>{n}</fig> वर्कफ़्लो} other {<fig>{n}</fig> वर्कफ़्लो}} · बिल्ड के समय .github से पढ़े गए",
+    "provenanceHandSet": "योजनाबद्ध चित्र · हाथ से तय किया",
+    "region": "बिल्ड पाइपलाइन का आरेख",
+    "svgTitle": "डिलीवरी पाइपलाइन: GitHub पर किया गया push GitHub Actions और Vercel build से होकर Fluid compute तक पहुँचता है। GitHub का एक webhook भी सीधे Fluid compute तक पहुँचता है, और एक daily cron उसे कॉल करता है। इसके बाद compute एक service bus के ज़रिये नीचे सूचीबद्ध services तक फैल जाता है।",
+    "fires": "UTC में <fig>{window}</fig> पर चलता है (Hobby प्लान की सटीकता)",
+    "kinds": {
+      "source": "सोर्स",
+      "ci": "CI",
+      "build": "बिल्ड",
+      "runtime": "रनटाइम",
+      "schedule": "शेड्यूल",
+      "store": "स्टोर",
+      "gateway": "गेटवे",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "मेल",
+      "auth": "ऑथ",
+      "search": "सर्च"
+    },
+    "workflows": "{count, plural, one {{n} वर्कफ़्लो} other {{n} वर्कफ़्लो}}",
+    "apiRoutes": "{count, plural, one {{n} API रूट} other {{n} API रूट}}",
+    "apiRoutesBare": "API रूट",
+    "locales": "{count, plural, one {{n} भाषा} other {{n} भाषाएँ}}",
+    "crons": "{count, plural, one {cron} other {{n} cron}}",
+    "daily": "रोज़ाना · {time} UTC",
+    "services": {
+      "redis": "गेस्टबुक · लोकेशन · SEO · dedupe",
+      "graphql": "आँकड़े · स्किल · प्रगति",
+      "spotify": "अभी बज रहा है",
+      "mail": "संपर्क · Abstract वेरिफ़ाई"
+    }
+  },
+  "instruments": {
+    "eyebrow": "गुणवत्ता · बिल्ड के समय गिना गया",
+    "title": "मापक यंत्र",
+    "provenance": "बिल्ड के समय गिना गया · <fig>{date}</fig>",
+    "provenanceBare": "बिल्ड के समय गिना गया",
+    "unitLabel": "{count, plural, one {Vitest सूट} other {Vitest सूट}}",
+    "unitSub": "{count, plural, one {{n} टेस्ट केस} other {{n} टेस्ट केस}} · Vitest",
+    "e2eLabel": "{count, plural, one {ब्राउज़र सूट} other {ब्राउज़र सूट}}",
+    "e2eSub": "{count, plural, one {{n} परिदृश्य} other {{n} परिदृश्य}} · Playwright",
+    "apiLabel": "{count, plural, one {API रूट} other {API रूट}}",
+    "apiSub": "रूट हैंडलर · {methods}",
+    "apiSubBare": "रूट हैंडलर",
+    "tileLabel": "{figure} {label} — {sub} (GitHub पर फ़ोल्डर नए टैब में खुलता है)"
+  },
+  "bom": {
+    "eyebrow": "बिल ऑफ़ मैटेरियल्स · यह साइट",
+    "title": "यह किससे बनी है",
+    "provenance": "{source} · बिल्ड के समय सत्यापित · <fig>{date}</fig>",
+    "provenanceBare": "{source} · बिल्ड के समय सत्यापित",
+    "unreadable": "बिल्ड के समय मैनिफ़ेस्ट पढ़ा नहीं जा सका, इसलिए कोई वर्ज़न सूचीबद्ध नहीं है।",
+    "packages": "{count, plural, one {<fig>{n}</fig> पैकेज} other {<fig>{n}</fig> पैकेज}}",
+    "packagesOf": "<fig>{all}</fig> में से <fig>{n}</fig> पैकेज",
+    "built": "बिल्ड: <fig>{date}</fig>",
+    "groups": {
+      "core": "कोर",
+      "3d-and-motion": "3D और मोशन",
+      "data-and-services": "डेटा और सेवाएँ",
+      "interface": "इंटरफ़ेस",
+      "platform": "प्लेटफ़ॉर्म",
+      "media": "मीडिया",
+      "quality": "गुणवत्ता",
+      "build": "बिल्ड",
+      "runtime": "रनटाइम",
+      "tooling": "टूलिंग"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "भाषाएँ",
+        "lay": "कोड स्वयं जिस भाषा में लिखा जाता है।"
+      },
+      "frameworks": {
+        "label": "फ़्रेमवर्क",
+        "lay": "वह ढाँचा जिस पर कोई एप्लिकेशन खड़ा होता है: उसकी संरचना और उसके नियम-कायदे।"
+      },
+      "libraries": {
+        "label": "लाइब्रेरी",
+        "lay": "तैयार बिल्डिंग ब्लॉक, जिनमें से हर एक को एक काम बखूबी करने के लिए जोड़ा जाता है।"
+      },
+      "tools": {
+        "label": "टूल्स",
+        "lay": "कोड के आस-पास जो कुछ चलता है: टेस्टिंग, फ़ॉर्मैटिंग, डेटाबेस और डिप्लॉयमेंट।"
+      },
+      "software": {
+        "label": "सॉफ़्टवेयर",
+        "lay": "वे सेवाएँ जिन पर तैयार काम चलता है।"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "dialog": "Riquadro comandi",
+  "search": "Cerca comandi",
+  "placeholder": "Digita un comando o una destinazione…",
+  "list": "Comandi",
+  "empty": "Nessun risultato",
+  "sections": {
+    "navigate": "Vai a",
+    "language": "Lingua"
+  },
+  "keywords": {
+    "navigate": "vai naviga apri salta percorso pagina sezione",
+    "language": "lingua traduci traduzione locale idioma"
+  }
+}

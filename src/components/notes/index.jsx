@@ -1,13 +1,16 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { motion, useInView } from 'framer-motion';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { wordFill } from '@/lib/fireRamp';
 import { fluid, fluidText } from '@/lib/fluidScale';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
+import { intlTag } from '@/i18n/format';
 
 // The /notes index body — the standfirst and the record list (issue #32, W8).
 //
@@ -67,10 +70,34 @@ const RECORD_STAGGER = 0.14;
 // delay it has no visible siblings to be staggered against.
 const SAME_BEAT_MS = 200;
 
-const INTRO =
-  'Every non-obvious decision behind this site is recorded — the choice made, ' +
-  'the alternatives rejected, and what each one cost. These are the working ' +
-  'documents from the repository, served here rather than left in the tree.';
+// The standfirst is the catalogue's (Notes.index.intro, issue #82) — it is
+// page chrome describing the documents, so it translates even though the
+// documents themselves stay English.
+
+/**
+ * The standfirst's words, each with the separator that follows it. English
+ * splits on spaces exactly as it always has. Other languages go through
+ * `Intl.Segmenter`: Chinese and Japanese put no spaces between words, and a
+ * whole paragraph as ONE inline-block "word" would never wrap.
+ */
+function splitWords(text, locale) {
+  if (locale === DEFAULT_LOCALE || typeof Intl.Segmenter !== 'function') {
+    const words = text.split(' ');
+    return words.map((w, i) => ({ w, gap: i < words.length - 1 ? ' ' : '' }));
+  }
+  const out = [];
+  for (const { segment } of new Intl.Segmenter(intlTag(locale), { granularity: 'word' }).segment(text)) {
+    if (/^\s+$/u.test(segment)) {
+      if (out.length) out[out.length - 1].gap = ' ';
+    } else if (out.length && !out[out.length - 1].gap && /^\p{P}+$/u.test(segment)) {
+      // Punctuation rides on the word before it, as it does in the English split.
+      out[out.length - 1].w += segment;
+    } else {
+      out.push({ w: segment, gap: '' });
+    }
+  }
+  return out;
+}
 
 // Body-copy sizing, shared by the standfirst and the record summaries so the
 // two read as the same prose. 1rem at scale 1 with a 0.8125rem legibility
@@ -92,7 +119,10 @@ const PROSE = {
  * fade: no blur, no rise, no wave.
  */
 function Standfirst({ revealed, reduceMotion }) {
-  const words = useMemo(() => INTRO.split(' '), []);
+  const t = useTranslations('Notes');
+  const locale = useLocale();
+  const intro = t('index.intro');
+  const words = useMemo(() => splitWords(intro, locale), [intro, locale]);
 
   const container = {
     hidden: {},
@@ -133,7 +163,7 @@ function Standfirst({ revealed, reduceMotion }) {
       initial={reduceMotion ? false : 'hidden'}
       animate={revealed ? 'visible' : 'hidden'}
     >
-      {words.map((w, i) => (
+      {words.map(({ w, gap }, i) => (
         <Fragment key={`${i}-${w}`}>
           {/* inline-block so the word can take a transform and a blur; the
               space stays a bare text node OUTSIDE the span so the paragraph
@@ -145,7 +175,7 @@ function Standfirst({ revealed, reduceMotion }) {
           >
             {w}
           </motion.span>
-          {i < words.length - 1 ? ' ' : ''}
+          {gap}
         </Fragment>
       ))}
     </motion.p>
@@ -169,6 +199,8 @@ function Standfirst({ revealed, reduceMotion }) {
  * transform and clip-path, so the whole cascade composites.
  */
 function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
+  // `tr`, not `t`: this component's `t` is its transition helper below.
+  const tr = useTranslations('Notes');
   const ref = useRef(null);
   // `amount: 'some'` with a negative bottom margin rather than a fraction of
   // the element: a record with a long summary can be taller than a phone
@@ -215,7 +247,9 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
     <li
       ref={ref}
       className="note-record relative"
-      style={{ paddingLeft: fluid(1.6) }}
+      // Inline-start, so the rail's gutter follows the reading direction
+      // (issue #82; the rail itself is positioned in globals.css).
+      style={{ paddingInlineStart: fluid(1.6) }}
     >
       {/* The rail's static track — the grey hairline the ember draws over, so
           the entry has a left edge from the first paint whatever the motion
@@ -251,6 +285,11 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
               ancestor's clip-path is a paint-time clip, so it applies to the
               promoted layer the clipped-gradient child rasterises into. */}
           <motion.span
+            // The title is the document's own, and the documents are English
+            // only (issue #82): marked so, which also keeps the left→right
+            // typesetting wipe running in the title's own direction.
+            lang="en"
+            dir="ltr"
             className="note-anim-clip inline-block [will-change:clip-path,transform]"
             initial={
               reduceMotion ? false : { clipPath: 'inset(0 100% 0 0)', y: 6 }
@@ -272,6 +311,8 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
 
       {note.summary ? (
         <motion.p
+          lang="en"
+          dir="ltr"
           className="note-anim note-record__summary max-w-prose font-light"
           style={{ ...PROSE, marginTop: fluid(0.5) }}
           {...rise(0.36, 0.55)}
@@ -302,11 +343,16 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
         transition={t(0.46, 0.6)}
       >
         <span className="note-record__figure">{note.linesLabel}</span>{' '}
-        <span className="note-record__label">lines</span>
+        <span className="note-record__label">
+          {tr('index.lines', { count: note.lines ?? 0 })}
+        </span>
         <span className="note-record__sep" aria-hidden="true">
           ·
         </span>
-        <span className="note-record__source">{note.source}</span>
+        {/* A file path in the repository: translate="no". */}
+        <span className="note-record__source" dir="ltr" translate="no">
+          {note.source}
+        </span>
       </motion.p>
     </li>
   );

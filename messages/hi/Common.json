@@ -1,0 +1,14 @@
+{
+  "loadingProject": "प्रोजेक्ट लोड हो रहा है",
+  "emblem": "Muhammad Abdullah का प्रतीक-चिह्न",
+  "notifications": "सूचनाएँ",
+  "sound": {
+    "turnOn": "गिटार की ध्वनि चालू करें",
+    "turnOff": "गिटार की ध्वनि बंद करें"
+  },
+  "owner": {
+    "given": "मुहम्मद",
+    "family": "अब्दुल्लाह",
+    "full": "मुहम्मद अब्दुल्लाह"
+  }
+}

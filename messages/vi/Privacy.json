@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Thông báo về quyền riêng tư",
+    "heading": "Quyền riêng tư",
+    "announce": "Một thông báo về quyền riêng tư vừa xuất hiện ở cuối trang. Bạn có thể đồng ý hoặc từ chối phân tích, hoặc mở phần tùy chọn.",
+    "body": "Trang web này lưu một ít dữ liệu trên thiết bị của bạn để ghi nhớ các tùy chọn của bạn, và — chỉ khi bạn cho phép — đếm xem những trang nào được đọc. Không có cookie quảng cáo, không theo dõi, không lập hồ sơ bởi bên thứ ba. <link>Xem điều này có nghĩa là gì</link>.",
+    "accept": "Đồng ý",
+    "decline": "Từ chối",
+    "preferences": "Tùy chọn"
+  },
+  "prefs": {
+    "title": "Lựa chọn về quyền riêng tư",
+    "intro": "Chỉ có hai nhóm, vì thực tế chỉ có hai. Chi tiết đầy đủ nằm trong <link>trang quyền riêng tư</link>.",
+    "close": "Đóng lựa chọn về quyền riêng tư",
+    "alwaysOn": "Luôn bật",
+    "reloadNote": "Tắt mục này sẽ tải lại trang — đó là cách duy nhất để thực sự gỡ một đoạn mã mà trình duyệt của bạn đã chạy, thay vì để nó vẫn nằm đó rồi lịch sự nhờ nó dừng lại.",
+    "declineAll": "Từ chối tất cả",
+    "acceptAnalytics": "Đồng ý phân tích",
+    "on": "Bật",
+    "off": "Tắt",
+    "switchLabel": "Cho phép phân tích ẩn danh"
+  },
+  "categories": {
+    "essential": {
+      "name": "Thiết yếu",
+      "summary": "Luôn bật. Được lưu trên thiết bị của bạn và chỉ dùng để trang web hoạt động tốt cho bạn.",
+      "detail": "Trang web ghi nhớ một vài thứ ngay trên máy để hoạt động như một trang bạn đã dùng trước đó — tin nhắn đang soạn dở vẫn còn sau khi làm mới trang, phần giới thiệu chỉ phát một lần, gợi ý đã đóng sẽ không hiện lại. Dữ liệu này được ghi vào chính trình duyệt của bạn và do chính trình duyệt của bạn đọc lại, và không có phần nào được dùng để nhận diện bạn. Có hai mục rời khỏi thiết bị của bạn. Tin nhắn liên hệ bạn gửi khi đang ngoại tuyến sẽ được giữ lại ở đây cho đến khi có mạng trở lại, rồi được chuyển đến tôi như mọi tin nhắn khác. Ở trang sổ lưu bút, một mã ngẫu nhiên theo từng thẻ được gửi đi để đếm xem hiện có bao nhiêu người đang ở đây; mã này không liên kết với bạn, và máy chủ sẽ quên nó trong vòng vài phút. Những bản nháp bạn chưa gửi không bao giờ được truyền đi."
+    },
+    "analytics": {
+      "name": "Phân tích",
+      "summary": "Tắt trừ khi bạn bật. Đếm xem những trang nào được đọc — không bao giờ biết ai đã đọc.",
+      "detail": "Ba đoạn mã đo lường, được xem là một quyết định duy nhất vì chúng cùng trả lời một câu hỏi: những trang nào đáng được giữ lại. Không đoạn nào đặt cookie quảng cáo, không đoạn nào lập hồ sơ, và không đoạn nào được tải cho đến khi bạn đồng ý — không phải tải sẵn rồi để yên, cũng không phải tải sẵn rồi bị từ chối. Trước khi bạn quyết định, trình duyệt của bạn không gửi yêu cầu nào đến bất kỳ đoạn nào trong số đó."
+    }
+  },
+  "status": {
+    "heading": "Lựa chọn hiện tại của bạn",
+    "noScript": "Phân tích không chạy. Khi JavaScript bị tắt, chúng không thể chạy.",
+    "allowed": "Phân tích ẩn danh đang được cho phép.",
+    "off": "Phân tích đang tắt. Không có gì được đo lường.",
+    "notAsked": "Bạn chưa được hỏi, nên câu trả lời mặc định là không.",
+    "decidedOn": "Bạn đã quyết định điều này vào {date}.",
+    "stored": "Quyết định của bạn được lưu trên thiết bị này.",
+    "change": "Thay đổi"
+  }
+}

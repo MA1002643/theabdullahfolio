@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useCardTilt } from '@/hooks/useCardTilt';
 import { USES_FLAGS } from '@/lib/flags';
 import { staged, useStagedReveal } from './useStagedReveal';
@@ -101,6 +102,7 @@ export default function EditorFrame({
   reduceMotion,
   revealedAtRef,
 }) {
+  const t = useTranslations('Uses');
   const tilt = useCardTilt({ maxTilt: 4 });
   const tiltOn = USES_FLAGS.tilt && tilt.enabled;
   const { fileName, theme, lines, status = [] } = frame;
@@ -133,11 +135,19 @@ export default function EditorFrame({
       ) : null}
 
       <figcaption className="sr-only">
-        An excerpt of my VS Code {fileName}, shown in the {theme} theme.
+        {t('bench.editorCaption', { file: fileName, theme })}
       </figcaption>
 
-      {/* The screen — unrolls top→bottom as the frame arrives. */}
+      {/* The screen — unrolls top→bottom as the frame arrives. A picture of
+          a left-to-right editor showing JSON, so it stays `dir="ltr"` in an
+          RTL document (issue #82): the gutter, the typing wipe left→right and
+          the carets all describe that screen, not the page around it. */}
       <motion.div
+        dir="ltr"
+        // A picture of an editor: its tab, code and status bar are what the
+        // screen literally shows, so none of it is translated (the caption
+        // above is, and stays checked by the pseudo-locale gate).
+        translate="no"
         className="uses-anim-clip uses-editor__screen"
         initial={reduceMotion ? false : { clipPath: SHUT_CLIP }}
         animate={{ clipPath: on ? OPEN_CLIP : SHUT_CLIP }}

@@ -80,14 +80,23 @@ export const REDUCED_COVER_MS = 200;
 export const REDUCED_MIN_MS = 460;
 export const REDUCED_REVEAL_MS = 240;
 
-// Known routes → destination names. Anything not listed falls back to a
-// prettified last path segment.
+// Known routes → the `Nav.routes.<key>` message that names them (issue #82).
+// The passage engraves the DESTINATION in the visitor's language, so for a
+// known route the catalogue name wins over whatever label the caller passed
+// (callers pass English constants such as 'Home'). Anything not listed — a
+// project page, which passes its own title — keeps the caller's label, then
+// falls back to a prettified last path segment.
 export const ROUTE_LABELS = {
-  '/': 'Home',
-  '/about': 'About',
-  '/projects': 'Projects',
-  '/qualifications': 'Qualifications',
-  '/contact': 'Contact',
-  '/my-past': 'My Past',
-  '/journey': 'Journey',
+  '/': 'home',
+  '/about': 'about',
+  '/projects': 'projects',
+  '/qualifications': 'qualifications',
+  '/contact': 'contact',
+  '/my-past': 'myPast',
+  '/journey': 'journey',
+  '/guestbook': 'guestbook',
+  '/uses': 'uses',
+  '/cv': 'cv',
+  '/notes': 'notes',
+  '/privacy': 'privacy',
 };

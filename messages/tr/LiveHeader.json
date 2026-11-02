@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "Yeni özellikler çok yakında yayında. Bu web sitesi aktif olarak geliştiriliyor.",
+    "shippingNone": "Bu web sitesine az önce {count, plural, other {# güncelleme}} yayınlandı.",
+    "shippingOne": "Az önce <bdi>#{number} {title}</bdi> yayınlandı.",
+    "shippingMany": "Az önce <bdi>#{number} {title}</bdi> yayınlandı (ve {more, number} tane daha).",
+    "liveWithTop": "Canlı güncelleme: değişiklikler şu anda yayına alınıyor — şu an odak noktası <bdi>#{number} {title}</bdi>.",
+    "livePushes": "Canlı güncelleme: bu web sitesine şu anda yeni değişiklikler yayınlanıyor.",
+    "liveActive": "Şu anda aktif olarak çalışılıyor{hasTop, select, yes { — şu an odak noktası <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "Şu anda {count, plural, other {# görev}} üzerinde aktif olarak çalışılıyor{hasTop, select, yes { — şu an odak noktası <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "{prs, plural, other {# pull request}} ve {issues, plural, other {# açık görev}} üzerinde çalışmalar sürüyor{hasTop, select, yes { — şu an odak noktası <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "{prs, plural, other {# pull request}} üzerinde çalışmalar sürüyor{hasTop, select, yes { — şu an odak noktası <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "{issues, plural, other {# açık görev}} üzerinde çalışmalar sürüyor{hasTop, select, yes { — şu an odak noktası <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "Bu web sitesi üzerinde çalışmalar sürüyor.",
+    "planning": "Sıradaki iyileştirmeler planlanıyor{hasTop, select, yes { — şu an odak noktası <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "{count, plural, other {# görev}} üzerinde çalışılıyor — odak: <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "Az önce yayınlandı",
+    "live": "Canlı geliştirme sürüyor",
+    "inProgress": "Çalışmalar sürüyor",
+    "planning": "Sıradaki iyileştirmeler planlanıyor",
+    "idle": "Bakım sürüyor"
+  },
+  "region": "Canlı bakım durumu",
+  "state": {
+    "shipping": "YAYINDA",
+    "live": "CANLI",
+    "inProgress": "DEVAM EDİYOR",
+    "planning": "PLANLAMA",
+    "idle": "BAKIM"
+  },
+  "stateSpoken": {
+    "shipping": "yayınlanıyor",
+    "live": "canlı",
+    "inProgress": "devam ediyor",
+    "planning": "planlama",
+    "idle": "bakım"
+  },
+  "pipeline": {
+    "planning": "Plan",
+    "inProgress": "Yapım",
+    "shipping": "Yayın",
+    "live": "Canlı"
+  },
+  "legend": {
+    "title": "Teslimat hattı",
+    "srIdle": "Teslimat hattı. Hat dışı: bakım izleniyor.",
+    "srStage": "Teslimat hattı. Mevcut aşama: {stage}, {index}/{total}.",
+    "headingIdle": "Bakım · hat dışı",
+    "headingStage": "{stage} · aşama {index}/{total}",
+    "maintenance": "Bakım",
+    "offPipeline": "Hat dışı — {count, plural, =0 {izlenen depolar} other {# depo}} izleniyor",
+    "meaning": {
+      "planning": "Açık issue'lar sıraya alındı ve kapsamı belirlendi",
+      "inProgress": "Dallarda ve pull request'lerde aktif çalışma",
+      "shipping": "Son 48 saatte Done'a taşınan birleştirilmiş işler",
+      "live": "Son 2 saat içindeki commit'ler veya güncellemeler"
+    }
+  },
+  "fields": {
+    "state": "Durum",
+    "focus": "Odak",
+    "focusPr": "Odak · PR",
+    "focusIssue": "Odak · Issue",
+    "prs": "PR'lar",
+    "issues": "Issue'lar",
+    "pushes24h": "Push · 24 sa",
+    "pushes": "Push",
+    "activity": "Etkinlik · {days} g",
+    "sync": "Eşitleme",
+    "metered": "· sınırlı"
+  },
+  "metric": {
+    "prs": "Aktif PR'lar",
+    "issues": "Açık issue'lar",
+    "pushes": "Push (24 sa)",
+    "emptyPrs": "İzlenen projelerde aktif PR yok.",
+    "emptyIssues": "Takip edilen projelerde açık issue yok.",
+    "emptyPushes": "Takip edilen projelerde son 24 saatte push yok."
+  },
+  "popover": {
+    "breakdown": "{metric} dökümü",
+    "summary": "{metric} · {projects, plural, other {# projede}} {count}",
+    "heading": "{projects, plural, other {# projede}} <count></count>",
+    "stale": "Bilinen son etkinlik gösteriliyor.",
+    "more": "+ GitHub'da {count} tane daha",
+    "openOnGitHub": "GitHub'da aç ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Issue}} #{number}",
+    "ariaOpen": "{type, select, pr {Pull request} other {Issue}} #{number} öğesini GitHub'da aç: {title}",
+    "stepped": "{type, select, pr {Pull request} other {Issue}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {<age></age> etkindi} other {}}",
+    "monitoring": "{count, plural, other {# depo}} izleniyor — etkin odak öğesi yok",
+    "monitoringNone": "Takip edilen depolar izleniyor"
+  },
+  "queue": {
+    "label": "Odak sırası",
+    "hint": "{count} öğeden {index}. · ← → ile gez",
+    "sr": "{count} öğelik odak sırası — sol ve sağ ok tuşlarıyla gezinilir"
+  },
+  "activity": {
+    "label": "Commit izi",
+    "summary": "{total, plural, other {# commit}} · son {days, plural, other {# gün}}{truncated, select, yes { (en eski günler eksik sayıldı)} other {}}"
+  },
+  "sync": {
+    "label": "Son eşitleme",
+    "hint": "Güven {confidence} · her {seconds} sn'de bir yoklar{metered, select, yes { · sınırlı bağlantı} other {}}",
+    "detail": "{hasLast, select, yes {Son eşitleme {last} · } other {}}Sinyal güveni {confidence} · {seconds, plural, other {# saniyede}} bir yoklar{metered, select, yes { (sınırlı bağlantıda)} other {}}",
+    "stale": "Eski"
+  },
+  "announce": {
+    "status": "Durum: {state}.",
+    "focus": "Şu anki odak: {type, select, pr {pull request} other {issue}} {number}, {title}.",
+    "counts": "Son 24 saatte {prs, plural, other {# etkin pull request}}, {issues, plural, other {# açık issue}} ve {pushes, plural, other {# push}} var."
+  },
+  "error": {
+    "snapshot": "Canlı durum geçici olarak kullanılamıyor. Son anlık görüntü gösteriliyor.",
+    "fallback": "Canlı durum geçici olarak kullanılamıyor. Bakım yedeği gösteriliyor."
+  }
+}

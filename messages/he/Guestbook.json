@@ -1,0 +1,124 @@
+{
+  "title": "ספר אורחים",
+  "subtitle": "השאירו חותם",
+  "wall": {
+    "marksLeft": "{count, plural, one {נותר <n>{shown}</n> חותם} other {נותרו <n>{shown}</n> חותמים}}",
+    "commands": "{shortcut} · פקודות",
+    "loading": "טוענים את ספר האורחים…",
+    "loadingMore": "טוענים עוד מספר האורחים…",
+    "loadFailed": "לא הצלחנו לטעון את ספר האורחים",
+    "pageFailed": "לא הצלחנו לטעון את העמוד הזה",
+    "retry": "נסו שוב",
+    "emptyTitle": "אין הודעות עדיין",
+    "emptyInvite": "היו הראשונים להשאיר חותם"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> כאן עכשיו}}",
+  "announce": {
+    "one": "הודעה חדשה מאת {name}: {message}",
+    "many": "{count, plural, one {הודעה חדשה אחת.} other {# הודעות חדשות.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "מישהו"
+  },
+  "card": {
+    "sending": "שולח…",
+    "guest": "אורח",
+    "onGitHub": "{username} ב-GitHub (נפתח בלשונית חדשה)",
+    "copyLink": "העתקת קישור להודעה הזו",
+    "linkCopied": "הקישור הועתק — הוא מוביל ישירות לחותם הזה",
+    "linkFailed": "לא ניתן היה להעתיק את הקישור",
+    "deleteOwn": "מחיקת ההודעה שלכם",
+    "deleteOther": "מחיקת ההודעה של {name}",
+    "signature": "החתימה של {name}",
+    "signatureAnon": "חתימה"
+  },
+  "reactions": {
+    "fire": "אש",
+    "rocket": "רקטה",
+    "heart": "לב",
+    "count": "{label} — {count}",
+    "signInToReact": "התחברו כדי להגיב"
+  },
+  "composer": {
+    "label": "ההודעה שלכם",
+    "placeholder": "השאירו הודעה…",
+    "send": "שליחת הודעה",
+    "offline": "אין חיבור לאינטרנט — ההודעה שלכם נשמרת כאן עד שתחזרו לרשת.",
+    "notSent": "ההודעה הקודמת שלכם לא נשלחה",
+    "restore": "שחזור"
+  },
+  "signature": {
+    "add": "הוספת חתימה (אופציונלי)",
+    "discard": "ביטול החתימה",
+    "clear": "ניקוי",
+    "padLabel": "אזור ציור החתימה — ציירו בעכבר, באצבע או בעט, או בחרו חותם מוכן למטה.",
+    "padHint": "ציירו באצבע, בלוח המגע או בעכבר — עובי הקו נקבע לפי המהירות",
+    "pickMark": "בחירת חותם",
+    "orPickMark": "או בחרו חותם",
+    "marks": {
+      "flourish": "שזירה",
+      "wave": "גל",
+      "spark": "ניצוץ",
+      "orbit": "מסלול"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "השאירו הודעה…",
+    "ghostRefine": "שיפור באמצעות AI",
+    "ghostSignature": "הוספת חתימה (אופציונלי)",
+    "ghostDrafts": "טיוטות נשמרות אוטומטית בזמן ההקלדה",
+    "prompt": "התחברו כדי להשאיר הודעה",
+    "promptReauth": "התחברו שוב כדי להשאיר הודעה",
+    "reauthExplain": "ההתחברות הנוכחית שלכם קדמה למפתחות החשבון של הקיר, ולכן היא מאפשרת קריאה בלבד — התחברות חדשה אחת תפתור זאת.",
+    "github": "התחברות עם GITHUB",
+    "google": "התחברות עם GOOGLE"
+  },
+  "pagination": {
+    "nav": "עמודי ספר האורחים",
+    "previous": "העמוד הקודם",
+    "next": "העמוד הבא",
+    "page": "עמוד ",
+    "status": "עמוד {page} מתוך {total}"
+  },
+  "palette": {
+    "leaveMessage": "השאירו הודעה",
+    "leaveKeywords": "כתיבה חתימה פרסום הודעה לכתוב לחתום write sign post compose",
+    "sectionGuestbook": "ספר אורחים",
+    "sectionPreferences": "העדפות",
+    "signInToLeave": "התחברו כדי להשאיר הודעה",
+    "toggleSound": "הפעלה/השבתה של צלילי ממשק",
+    "soundKeywords": "שמע צליל השתקה השתק אודיו audio blip mute",
+    "toggleMotion": "הפעלה/השבתה של תנועה",
+    "motionKeywords": "אנימציה הפחתה תנועה סטטי animation reduce still",
+    "on": "פעיל",
+    "off": "כבוי"
+  },
+  "toast": {
+    "posted": "ההודעה פורסמה!",
+    "postFailed": "פרסום ההודעה נכשל",
+    "reactFailed": "שליחת התגובה נכשלה",
+    "deleteFailed": "מחיקת ההודעה נכשלה",
+    "removedOwn": "ההודעה שלכם הוסרה מספר האורחים",
+    "removedOther": "הודעה הוסרה מספר האורחים",
+    "you": "אתם"
+  },
+  "errors": {
+    "unauthorized": "אין הרשאה",
+    "too_large": "גוף הבקשה יכול להיות עד {max, number, ::group-off} בתים",
+    "invalid_body": "גוף הבקשה אינו תקין",
+    "message_required": "יש להזין הודעה",
+    "message_length": "אורך ההודעה חייב להיות {min}–{max} תווים",
+    "invalid_characters": "ההודעה מכילה תווים לא תקינים",
+    "links_not_allowed": "אי אפשר לכלול קישורים בהודעות בספר האורחים",
+    "unfriendly": "נא לשמור על נימה ידידותית",
+    "invalid_signature": "חתימה לא תקינה",
+    "rate_limited": "הודעה אחת בכל 5 דקות — נסו שוב בעוד {minutes, plural, one {דקה #} two {# דקות} other {# דקות}}",
+    "invalid_reaction": "תגובה לא תקינה",
+    "reaction_rate_limited": "יותר מדי תגובות — נסו שוב בעוד {seconds} שנ׳",
+    "not_found": "ההודעה לא נמצאה",
+    "id_required": "נדרש מזהה הודעה",
+    "invalid_id": "מזהה הודעה לא תקין",
+    "forbidden": "הגישה נחסמה",
+    "invalid_cursor": "סמן לא תקין"
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "title": "SỔ LƯU BÚT",
+  "subtitle": "ĐỂ LẠI DẤU ẤN CỦA BẠN",
+  "wall": {
+    "marksLeft": "{count, plural, other {Đã có <n>{shown}</n> dấu ấn}}",
+    "commands": "{shortcut} · lệnh",
+    "loading": "Đang tải sổ lưu bút…",
+    "loadingMore": "Đang tải thêm sổ lưu bút…",
+    "loadFailed": "Không thể tải sổ lưu bút",
+    "pageFailed": "Không thể tải trang này",
+    "retry": "Thử lại",
+    "emptyTitle": "Chưa có lời nhắn nào",
+    "emptyInvite": "Hãy là người đầu tiên để lại dấu ấn"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> người đang ở đây}}",
+  "announce": {
+    "one": "Lời nhắn mới từ {name}: {message}",
+    "many": "{count, plural, other {# lời nhắn mới.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Một người nào đó"
+  },
+  "card": {
+    "sending": "đang gửi…",
+    "guest": "Khách",
+    "onGitHub": "{username} trên GitHub (mở trong tab mới)",
+    "copyLink": "Sao chép liên kết đến lời nhắn này",
+    "linkCopied": "Đã sao chép liên kết — liên kết trỏ thẳng đến dấu ấn này",
+    "linkFailed": "Không thể sao chép liên kết",
+    "deleteOwn": "Xóa lời nhắn của bạn",
+    "deleteOther": "Xóa lời nhắn của {name}",
+    "signature": "Chữ ký của {name}",
+    "signatureAnon": "Chữ ký"
+  },
+  "reactions": {
+    "fire": "Lửa",
+    "rocket": "Tên lửa",
+    "heart": "Trái tim",
+    "count": "{label} — {count}",
+    "signInToReact": "Đăng nhập để bày tỏ cảm xúc"
+  },
+  "composer": {
+    "label": "Lời nhắn của bạn",
+    "placeholder": "Để lại lời nhắn…",
+    "send": "Gửi lời nhắn",
+    "offline": "Bạn đang ngoại tuyến — lời nhắn sẽ được giữ lại ở đây cho đến khi bạn trực tuyến trở lại.",
+    "notSent": "Lời nhắn trước đó của bạn chưa được gửi",
+    "restore": "Khôi phục"
+  },
+  "signature": {
+    "add": "Thêm chữ ký (không bắt buộc)",
+    "discard": "Bỏ chữ ký",
+    "clear": "Xóa",
+    "padLabel": "Vùng vẽ chữ ký — vẽ bằng chuột, ngón tay hoặc bút, hoặc chọn một dấu có sẵn bên dưới.",
+    "padHint": "Vẽ bằng ngón tay, bàn di chuột hoặc chuột — nét đậm nhạt thay đổi theo tốc độ của bạn",
+    "pickMark": "Chọn một dấu",
+    "orPickMark": "Hoặc chọn một dấu",
+    "marks": {
+      "flourish": "Nét hoa mỹ",
+      "wave": "Sóng",
+      "spark": "Tia lửa",
+      "orbit": "Quỹ đạo"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Để lại lời nhắn…",
+    "ghostRefine": "Trau chuốt bằng AI",
+    "ghostSignature": "Thêm chữ ký (không bắt buộc)",
+    "ghostDrafts": "Bản nháp tự động lưu khi bạn gõ",
+    "prompt": "Đăng nhập để để lại lời nhắn",
+    "promptReauth": "Đăng nhập lại để để lại lời nhắn",
+    "reauthExplain": "Phiên đăng nhập hiện tại của bạn có trước khóa tài khoản của bức tường lưu bút, nên chỉ có thể đọc chứ không thể viết — chỉ cần đăng nhập lại một lần là xong.",
+    "github": "ĐĂNG NHẬP BẰNG GITHUB",
+    "google": "ĐĂNG NHẬP BẰNG GOOGLE"
+  },
+  "pagination": {
+    "nav": "Các trang sổ lưu bút",
+    "previous": "Trang trước",
+    "next": "Trang tiếp theo",
+    "page": "TRANG ",
+    "status": "Trang {page} trên {total}"
+  },
+  "palette": {
+    "leaveMessage": "Để lại lời nhắn",
+    "leaveKeywords": "viết ký đăng soạn lời nhắn write sign post compose",
+    "sectionGuestbook": "Sổ lưu bút",
+    "sectionPreferences": "Tùy chọn",
+    "signInToLeave": "Đăng nhập để để lại lời nhắn",
+    "toggleSound": "Bật/tắt âm thanh giao diện",
+    "soundKeywords": "âm thanh tiếng bíp tắt tiếng audio blip mute",
+    "toggleMotion": "Bật/tắt chuyển động",
+    "motionKeywords": "hiệu ứng giảm tĩnh animation reduce still",
+    "on": "bật",
+    "off": "tắt"
+  },
+  "toast": {
+    "posted": "Đã đăng lời nhắn!",
+    "postFailed": "Không thể đăng lời nhắn",
+    "reactFailed": "Không thể gửi biểu cảm",
+    "deleteFailed": "Không thể xóa lời nhắn",
+    "removedOwn": "Lời nhắn của bạn đã bị gỡ khỏi sổ lưu bút",
+    "removedOther": "Một lời nhắn đã bị gỡ khỏi sổ lưu bút",
+    "you": "Bạn"
+  },
+  "errors": {
+    "unauthorized": "Chưa được xác thực",
+    "too_large": "Nội dung yêu cầu tối đa {max, number, ::group-off} byte",
+    "invalid_body": "Nội dung yêu cầu không hợp lệ",
+    "message_required": "Vui lòng nhập lời nhắn",
+    "message_length": "Lời nhắn phải dài từ {min}–{max} ký tự",
+    "invalid_characters": "Lời nhắn chứa ký tự không hợp lệ",
+    "links_not_allowed": "Không được phép chèn liên kết trong lời nhắn của sổ lưu bút",
+    "unfriendly": "Vui lòng giữ lời lẽ thân thiện",
+    "invalid_signature": "Chữ ký không hợp lệ",
+    "rate_limited": "Mỗi 5 phút chỉ được gửi một lời nhắn — hãy thử lại sau {minutes, plural, other {# phút}}",
+    "invalid_reaction": "Biểu cảm không hợp lệ",
+    "reaction_rate_limited": "Bạn gửi biểu cảm quá nhiều — hãy thử lại sau {seconds} giây",
+    "not_found": "Không tìm thấy lời nhắn",
+    "id_required": "Cần có mã lời nhắn",
+    "invalid_id": "Mã lời nhắn không hợp lệ",
+    "forbidden": "Không có quyền truy cập",
+    "invalid_cursor": "Con trỏ không hợp lệ"
+  }
+}

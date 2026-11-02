@@ -1,6 +1,8 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { useTranslations } from "next-intl"
+import { useDirection } from "@/i18n/useDirection"
 
 import { optionalChunk } from "@/lib/optionalChunk"
 
@@ -32,6 +34,38 @@ export function warmProjectScene() {
     import("@/components/project-detail/scene").catch(() => {})
 }
 
+// The laptop screen's copy, resolved HERE rather than inside the screen
+// (issue #82). drei's <Html> mounts its children in a separate React root,
+// which inherits none of this tree's context, so a `useTranslations` call on
+// the far side of the Canvas would find no provider and throw. Strings and the
+// reading direction cross the boundary as plain props instead.
+export function useScreenCopy() {
+    const t = useTranslations("ProjectDetail")
+    const { dir, isRtl } = useDirection()
+    return {
+        dir,
+        isRtl,
+        boot: [t("screen.boot.bios"), t("screen.boot.hardware"), t("screen.boot.os")],
+        tagline: t("screen.tagline"),
+        badgeFullstack: t("screen.badgeFullstack"),
+        tools: t("screen.tools"),
+        overview: t("screen.overview"),
+        overviewLead: t("screen.overviewLead"),
+        overviewBody: t("screen.overviewBody"),
+        features: t("screen.features"),
+        featureList: ["auth", "payments", "chat", "admin"].map((key) => ({
+            key,
+            title: t(`screen.feature.${key}.title`),
+            desc: t(`screen.feature.${key}.desc`),
+        })),
+        liveDemo: t("screen.liveDemo"),
+        github: t("screen.github"),
+        demoLabel: (name) => t("screen.demoLabel", { name }),
+        sourceLabel: (name) => t("screen.sourceLabel", { name }),
+    }
+}
+
 export default function SceneLoader({ links }) {
-    return <ProjectScene links={links} />
+    const copy = useScreenCopy()
+    return <ProjectScene links={links} copy={copy} />
 }

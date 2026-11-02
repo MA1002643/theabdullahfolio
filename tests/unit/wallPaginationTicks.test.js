@@ -7,6 +7,11 @@ import WallPagination, {
   tickStyle,
   tickTiles,
 } from '@/components/guestbook/WallPagination';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...options });
 
 // The page rail's size in the wall's size. It used to render one tick span
 // per page — a decorative node count that grew linearly with a long-lived
@@ -28,7 +33,7 @@ vi.mock('framer-motion', async (importOriginal) => {
 
 function renderRail(props) {
   const onPage = vi.fn();
-  const view = render(
+  const view = renderIntl(
     createElement(WallPagination, { page: 0, dir: 1, onPage, ...props }),
   );
   return { onPage, ...view };

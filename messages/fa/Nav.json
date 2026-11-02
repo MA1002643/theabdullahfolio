@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "درباره من",
+    "projects": "پروژه‌ها",
+    "qualifications": "صلاحیت‌ها",
+    "contact": "تماس",
+    "journey": "مسیر من",
+    "past": "گذشته من",
+    "guestbook": "دفتر مهمان",
+    "uses": "ابزارهای من"
+  },
+  "routes": {
+    "home": "خانه",
+    "about": "درباره من",
+    "projects": "پروژه‌ها",
+    "qualifications": "صلاحیت‌ها",
+    "contact": "تماس",
+    "myPast": "گذشته من",
+    "journey": "مسیر من",
+    "guestbook": "دفتر مهمان",
+    "uses": "ابزارهای من",
+    "cv": "CV",
+    "notes": "یادداشت‌ها",
+    "privacy": "حریم خصوصی"
+  },
+  "homeButton": {
+    "tooltip": "خانه",
+    "srLabel": "رفتن به صفحه اصلی"
+  },
+  "projectsButton": {
+    "label": "پروژه‌ها",
+    "tooltip": "پروژه‌ها",
+    "srLabel": "رفتن به صفحه پروژه‌ها"
+  }
+}

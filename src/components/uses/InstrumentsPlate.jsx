@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useDirection } from '@/i18n/useDirection';
 import { projectGithubUrl } from '@/components/footer/footer-data';
 import { useViewportCountUp } from '@/hooks/useViewportCountUp';
 import { fluid } from '@/lib/fluidScale';
-import Plate, { Figure } from './Plate';
+import Plate, { figTag } from './Plate';
+import { useUsesFormat } from './useUsesFormat';
 import { riseProps, staged, useStagedReveal } from './useStagedReveal';
 
 // 04 · THE INSTRUMENTS — three meter tiles: Vitest suites, browser suites, API
@@ -51,6 +54,11 @@ function Meter({
   revealedAtRef,
   index,
 }) {
+  const t = useTranslations('Uses');
+  const { num, countFormat } = useUsesFormat();
+  // The ruler etches in reading direction (issue #82): its scale origin and
+  // the cutter's travel both start at the inline-start edge.
+  const { isRtl } = useDirection();
   const { ref, on, delay } = useStagedReveal({
     revealed,
     reduceMotion,
@@ -90,6 +98,7 @@ function Meter({
     to: figure,
     inView: on && landed && gridInView,
     prefersReducedMotion: reduceMotion,
+    format: countFormat,
   });
 
   const rest = (x, y) => (reduceMotion ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x, y });
@@ -101,7 +110,7 @@ function Meter({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`${figure} ${label} — ${sub} (opens the folder on GitHub in a new tab)`}
+      aria-label={t('instruments.tileLabel', { figure: num(figure), label, sub })}
       data-lit={on ? 'true' : 'false'}
       className="uses-anim uses-meter custom-bg-abt group relative block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
       style={{
@@ -121,7 +130,7 @@ function Meter({
       <motion.span
         aria-hidden="true"
         className="uses-anim uses-meter__ticks"
-        style={{ originX: 0 }}
+        style={{ originX: isRtl ? 1 : 0 }}
         initial={reduceMotion ? false : { scaleX: 0 }}
         animate={{ scaleX: on ? 1 : reduceMotion ? 1 : 0 }}
         transition={etch}
@@ -130,8 +139,12 @@ function Meter({
         <motion.span
           aria-hidden="true"
           className="uses-meter__etch"
-          initial={{ left: '0%', opacity: 0 }}
-          animate={on ? { left: ['0%', '100%'], opacity: [0, 1, 1, 0] } : { left: '0%', opacity: 0 }}
+          initial={{ left: isRtl ? '100%' : '0%', opacity: 0 }}
+          animate={
+            on
+              ? { left: isRtl ? ['100%', '0%'] : ['0%', '100%'], opacity: [0, 1, 1, 0] }
+              : { left: isRtl ? '100%' : '0%', opacity: 0 }
+          }
           transition={
             on
               ? { left: etch, opacity: { ...etch, ease: 'linear', times: [0, 0.08, 0.85, 1] } }
@@ -150,7 +163,7 @@ function Meter({
           animate={on ? { opacity: 1, x: 0, y: 0 } : rest(0, 8)}
           transition={at(FIGURE_AT_S, FIGURE_S)}
         >
-          <span ref={nodeRef}>{reduceMotion ? figure : 0}</span>
+          <span ref={nodeRef}>{num(reduceMotion ? figure : 0)}</span>
         </motion.span>
         <motion.span
           aria-hidden="true"
@@ -193,6 +206,8 @@ function Meter({
 }
 
 export default function InstrumentsPlate({ facts }) {
+  const t = useTranslations('Uses');
+  const { num, ord, builtAt } = useUsesFormat();
   const ref = useRef(null);
   // Live (not once): the count-ups replay when the grid comes back.
   const gridInView = useInView(ref, { amount: 0.4 });
@@ -204,7 +219,7 @@ export default function InstrumentsPlate({ facts }) {
   const methodsSub =
     apiMethods && Object.keys(apiMethods).length > 0
       ? Object.entries(apiMethods)
-          .map(([verb, n]) => `${n} ${verb}`)
+          .map(([verb, n]) => `${num(n)} ${verb}`)
           .join(' · ')
       : null;
 
@@ -216,43 +231,43 @@ export default function InstrumentsPlate({ facts }) {
       figure: unit.suites,
       // Every Vitest layer since issue #92 (unit, property, fitness,
       // component, api), so "unit" alone would under-describe the figure.
-      label: unit.suites === 1 ? 'Vitest suite' : 'Vitest suites',
-      sub: `${unit.cases} test cases · Vitest`,
+      label: t('instruments.unitLabel', { count: unit.suites }),
+      sub: t('instruments.unitSub', { count: unit.cases, n: num(unit.cases) }),
       href: `${projectGithubUrl}/tree/main/tests`,
     },
     e2e && {
       slug: 'e2e',
       figure: e2e.suites,
       // e2e, a11y, visual, security and perf all run in a real browser.
-      label: e2e.suites === 1 ? 'browser suite' : 'browser suites',
-      sub: `${e2e.cases} scenarios · Playwright`,
+      label: t('instruments.e2eLabel', { count: e2e.suites }),
+      sub: t('instruments.e2eSub', { count: e2e.cases, n: num(e2e.cases) }),
       href: `${projectGithubUrl}/tree/main/tests`,
     },
     apiRoutes != null && {
       slug: 'api',
       figure: apiRoutes,
-      label: apiRoutes === 1 ? 'API route' : 'API routes',
-      sub: methodsSub ? `route handlers · ${methodsSub}` : 'route handlers',
+      label: t('instruments.apiLabel', { count: apiRoutes }),
+      sub: methodsSub
+        ? t('instruments.apiSub', { methods: methodsSub })
+        : t('instruments.apiSubBare'),
       href: `${projectGithubUrl}/tree/main/src/app/api`,
     },
   ].filter(Boolean);
 
   if (tiles.length === 0) return null;
 
+  const stamp = builtAt(facts);
+
   return (
     <Plate
       slug="instruments"
-      ordinal="04"
-      eyebrow="Quality · counted at build"
-      title="The instruments"
+      ordinal={ord(4)}
+      eyebrow={t('instruments.eyebrow')}
+      title={t('instruments.title')}
       provenance={
-        facts?.builtAtLabel ? (
-          <>
-            counted at build · <Figure>{facts.builtAtLabel}</Figure>
-          </>
-        ) : (
-          'counted at build'
-        )
+        stamp
+          ? t.rich('instruments.provenance', { date: stamp, fig: figTag })
+          : t('instruments.provenanceBare')
       }
     >
       {({ revealed, reduceMotion, revealedAtRef }) => (

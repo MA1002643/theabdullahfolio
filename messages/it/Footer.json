@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Indice",
+    "elsewhere": "Altrove"
+  },
+  "siteNav": "Sito",
+  "identity": {
+    "role": "Software Engineer",
+    "statement": "Creo esperienze web veloci e curate dal nord dell'Inghilterra."
+  },
+  "availability": "Disponibile a nuovi ruoli",
+  "githubCta": {
+    "label": "Vedi questo progetto su GitHub",
+    "newTab": "(si apre in una nuova scheda)",
+    "commits": "{count, plural, one {<num>{formatted}</num> commit} other {<num>{formatted}</num> commit}}",
+    "pushed": "ultimo push {when}"
+  },
+  "manifest": {
+    "departures": "Partenze",
+    "nowBoarding": "In imbarco",
+    "onTime": "In orario",
+    "links": {
+      "about": {
+        "label": "Profilo",
+        "desc": "Chi sono"
+      },
+      "journey": {
+        "label": "Percorso",
+        "desc": "La strada fatta finora"
+      },
+      "qualifications": {
+        "label": "Qualifiche",
+        "desc": "Titoli e certificazioni"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Il quadro completo"
+      },
+      "projects": {
+        "label": "Progetti",
+        "desc": "Lavori selezionati"
+      },
+      "uses": {
+        "label": "Strumenti",
+        "desc": "Con cosa costruisco"
+      },
+      "notes": {
+        "label": "Note",
+        "desc": "Perché è fatto così"
+      },
+      "contact": {
+        "label": "Contatti",
+        "desc": "Dimmi ciao"
+      },
+      "guestbook": {
+        "label": "Libro degli ospiti",
+        "desc": "Lascia il tuo segno"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "Profilo GitHub (si apre in una nuova scheda)",
+    "linkedin": "Profilo LinkedIn (si apre in una nuova scheda)",
+    "resume": "Leggi il CV completo",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Ora locale {time} {period} a {town}} other {Ora locale {time} a {town}}}",
+    "placeLabel": "Luogo: {town}",
+    "live": "LIVE"
+  },
+  "sound": {
+    "label": "Suono",
+    "on": "Attivo",
+    "off": "Spento",
+    "turnOn": "Attiva il suono della chitarra nel footer",
+    "turnOff": "Disattiva il suono della chitarra nel footer",
+    "hoverLines": "Passa sulle corde",
+    "nowPlaying": "In riproduzione — una chitarra rilassante",
+    "turnOnPrompt": "Attiva il suono per una chitarra rilassante"
+  },
+  "privacy": {
+    "policy": "Privacy",
+    "choices": "Scelte sulla privacy"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/altrove",
+    "cmd": {
+      "github": "apri github",
+      "linkedin": "apri linkedin",
+      "resume": "apri cv"
+    }
+  }
+}

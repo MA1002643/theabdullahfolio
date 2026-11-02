@@ -1,0 +1,28 @@
+{
+  "label": "言語",
+  "triggerLabel": "言語:{language}",
+  "searchLabel": "言語を検索",
+  "searchPlaceholder": "20の言語から検索…",
+  "noResults": "「{query}」に一致する言語はありません。",
+  "tier1": "ティア1",
+  "tier2": "ティア2",
+  "current": "現在の言語",
+  "machineBadge": "機械翻訳",
+  "machineBadgeLabel": "機械翻訳",
+  "switching": "{language}に切り替えています…",
+  "notice": {
+    "title": "機械翻訳",
+    "body": "この翻訳は機械によるもので、ネイティブスピーカーによる確認はまだ行われていません。",
+    "cta": "より良い翻訳を提案する"
+  },
+  "suggestion": {
+    "region": "言語の提案",
+    "message": "このサイトは{language}でもご覧いただけます。",
+    "switch": "{language}に切り替える",
+    "dismiss": "{current}のままにする"
+  },
+  "englishOnly": {
+    "label": "英語で公開",
+    "body": "このドキュメントは英語のみで公開されています。ナビゲーションと操作部分は、お使いの言語のままです。"
+  }
+}

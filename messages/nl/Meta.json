@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Software Engineer. Donkere embertint-kaart met het zegel van Muhammad Abdullah en de live portfoliostatus.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Software Engineer. Vierkante donkere embertint-kaart met het zegel van Muhammad Abdullah en de live portfoliostatus.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Software Engineer",
+      "description": "Software engineer in Bolton die snelle, weloverwogen webapplicaties bouwt met Next.js, React en TypeScript. Projecten, kwalificaties en de tools erachter."
+    },
+    "about": {
+      "title": "Over mij",
+      "description": "De engineer achter de gloed — het verhaal, de stack en live GitHub-telemetrie over wat er op dit moment wordt gebouwd."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "Het volledige overzicht — elke functie, kwalificatie en opgeleverd project, in HTML. Opgebouwd uit dezelfde gegevens als de tijdlijn, met de pdf één klik verderop."
+    },
+    "notes": {
+      "title": "Notities",
+      "description": "Engineering decision records — waarom elke keuze op deze site is gemaakt, welke alternatieven zijn afgewezen en wat elke keuze heeft gekost."
+    },
+    "projects": {
+      "title": "Projecten",
+      "description": "{countWord} projecten — web, systemen, mobiel en AI — elk live gevolgd via een eigen GitHub-bord, met de stack en de voortgang op elke kaart."
+    },
+    "qualifications": {
+      "title": "Kwalificaties",
+      "description": "Diploma's, certificaten en professionele kwalificaties — het geverifieerde papieren spoor achter de praktijk, met elk certificaat in te zien."
+    },
+    "journey": {
+      "title": "Loopbaan",
+      "description": "Elke functie, kwalificatie en vrijwilligersrol als één tijdlijn om doorheen te scrollen — van Bolton College in 2018 tot het opleveren van productiesoftware vandaag."
+    },
+    "uses": {
+      "title": "Tools",
+      "description": "De machine, de werkbank, de stack en de pipeline — elke tool op deze pagina is geverifieerd aan de hand van de repositories en de build die de site uitrolt."
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "Start een gesprek over een functie of een project — een contactformulier dat je bericht verfijnt terwijl je typt en nooit een concept kwijtraakt."
+    },
+    "myPast": {
+      "title": "Mijn verleden",
+      "description": "Het portfolio uit mijn studententijd waar het allemaal begon — met de hand gebouwd in gewone HTML, CSS en JavaScript en online gelaten als eerlijke voor-foto."
+    },
+    "guestbook": {
+      "title": "Gastenboek",
+      "description": "Laat je sporen achter op de muur — een neonbord met berichten van bezoekers die inloggen via GitHub of Google, met live aanwezigheid en reacties."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Elke cookie, opslagsleutel en derde partij die deze site gebruikt, waarom ze bestaan en hoe je de optionele uitzet. Gecontroleerd, niet uit een sjabloon."
+    }
+  },
+  "notFound": {
+    "title": "404 — Pagina niet gevonden",
+    "description": "Je bent in de leegte beland. Deze pagina bestaat niet — nog niet."
+  }
+}

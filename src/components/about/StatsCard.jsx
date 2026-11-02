@@ -16,6 +16,10 @@ import { fastStartSlowFinish } from "@/utils/animationCurves";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
 import { fluid, fluidText } from "@/lib/fluidScale";
+import { useTranslations } from "next-intl";
+import { glyphUnits } from "@/components/ui/textSegments";
+import { useAboutDigits } from "./aboutI18n";
+import { useDirection } from "@/i18n/useDirection";
 
 // ---------------------------------------------------------------------------
 // Palette — deliberately the SAME tokens the "Most Active Repository" card
@@ -76,10 +80,12 @@ const metricContainerVariants = {
     visible: { transition: { staggerChildren: 0.06 } },
 };
 
-const metricRowVariants = {
-    hidden: { opacity: 0, x: -16 },
+// The row slides in from the READING-START side: `sign` is -1 in RTL locales
+// (issue #82, useDirection), so Arabic rows enter from the right.
+const metricRowVariantsFor = (sign) => ({
+    hidden: { opacity: 0, x: -16 * sign },
     visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
-};
+});
 
 /* ----------------------------- ANIMATED TITLE -----------------------------
    Per-character blur-fade-in, exactly like the repo card's title — only the
@@ -101,7 +107,9 @@ function AnimatedTitle({ text, play }) {
         );
     }
 
-    const chars = Array.from(text);
+    // Per-glyph for most scripts, per-word for joining ones (issue #82; see
+  // @/components/ui/textSegments). English splits exactly as Array.from did.
+  const chars = glyphUnits(text);
     const container = {
         hidden: {},
         visible: { transition: { staggerChildren: 0.025, delayChildren: 0.2 } },
@@ -151,6 +159,8 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
     const [display, setDisplay] = useState(prefersReducedMotion ? target : 0);
     const [pulse, setPulse] = useState(false);
     const rafRef = useRef(null);
+    const digits = useAboutDigits();
+    const { sign } = useDirection();
 
     useEffect(() => {
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -201,8 +211,8 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
 
     return (
         <motion.div
-            variants={metricRowVariants}
-            whileHover={prefersReducedMotion ? undefined : { x: 5, transition: { duration: 0.18 } }}
+            variants={metricRowVariantsFor(sign)}
+            whileHover={prefersReducedMotion ? undefined : { x: 5 * sign, transition: { duration: 0.18 } }}
             className="flex items-center justify-between gap-2 w-full px-2 py-1.5 rounded-md hover:bg-[#ff6d05]/5 transition-colors"
         >
             <div className="flex items-center gap-2 min-w-0">
@@ -232,8 +242,10 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
                 className={`text-xs sm:text-sm md:text-base font-semibold tabular-nums whitespace-nowrap${heartbeat ? " skill-heartbeat" : ""}`}
                 style={{ color: ORANGE, textShadow: "none", fontSize: fluidText(1, 0.75) }}
             >
-                <span className="sr-only">{target.toLocaleString()}</span>
-                <span aria-hidden="true">{display.toLocaleString()}</span>
+                {/* Grouped in the reader's digits (issue #82); English is the old
+                    toLocaleString() output. */}
+                <span className="sr-only">{digits.grouped(target)}</span>
+                <span aria-hidden="true">{digits.grouped(display)}</span>
             </motion.span>
         </motion.div>
     );
@@ -246,6 +258,7 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
    heat halo. Responsive diameter (120 → 144 → 160px) via the wrapper; the SVG
    fills it and keeps its 160-unit viewBox so the geometry scales cleanly. */
 function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
+    const t = useTranslations("About");
     const radius = 70;
     const circumference = 2 * Math.PI * radius;
     const controls = useAnimation();
@@ -326,7 +339,7 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
                     {level}
                 </span>
                 <span className="abt-micro text-[10px] uppercase tracking-[0.22em] mt-1 text-fire-amber" style={{ textShadow: "none" }}>
-                    Rank
+                    {t("statsCard.rank")}
                 </span>
             </div>
         </div>
@@ -334,7 +347,8 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
 }
 
 /* ---------------------------------- CARD ---------------------------------- */
-export default function GitHubStatsCard({ data, userName = "GitHub User", isUpdated, diffMessage = null, pulseFields, isLive = false }) {
+export default function GitHubStatsCard({ data, userName, isUpdated, diffMessage = null, pulseFields, isLive = false }) {
+    const t = useTranslations("About");
     const cardRef = useRef(null);
     // `playToken` (latched, hysteresis-debounced, monotonic) drives the
     // count-ups/arc, which key off its value and replay each entry on their
@@ -347,7 +361,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
 
     // Incoming change copy from the parent — prefer the specific per-stat diff,
     // fall back to a generic line for non-value changes (e.g. display name).
-    const incomingMessage = diffMessage ?? (isUpdated ? "GitHub stats updated" : null);
+    const incomingMessage = diffMessage ?? (isUpdated ? t("statsCard.updated") : null);
 
     // Self-contained banner state — mirrors LanguagesCard / SkillsCard so the
     // banner can NEVER get stuck. The parent's message is captured into LOCAL
@@ -477,12 +491,12 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
     }, [statsBannerGone, isInView, pendingStats, prefersReducedMotion]);
 
     const stats = [
-        { label: "Total Stars Earned", value: data.stars, icon: Star, field: "stars", pulseOnComplete: true },
-        { label: "Total Commits (last year)", value: data.commits, icon: Clock, field: "commits" },
-        { label: "Total PRs", value: data.prs, icon: GitBranch, field: "prs" },
-        { label: "Total Issues", value: data.issues, icon: AlertCircle, field: "issues" },
-        { label: "Contributed to (last year)", value: data.contributedTo, icon: Package, field: "contributedTo" },
-    ];
+        { value: data.stars, icon: Star, field: "stars", pulseOnComplete: true },
+        { value: data.commits, icon: Clock, field: "commits" },
+        { value: data.prs, icon: GitBranch, field: "prs" },
+        { value: data.issues, icon: AlertCircle, field: "issues" },
+        { value: data.contributedTo, icon: Package, field: "contributedTo" },
+    ].map((stat) => ({ ...stat, label: t(`statsCard.metrics.${stat.field}`) }));
 
     return (
         <motion.div
@@ -498,7 +512,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             <UpdateBanner
                 message={bannerMessage}
                 visible={Boolean(bannerMessage) && settledInView}
-                srPrefix="Stats update: "
+                srPrefix={t("statsCard.srPrefix")}
             />
 
             {/* Header — title first, then the live-status meta line BELOW it,
@@ -512,7 +526,9 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             <motion.div variants={childVariants} className="mb-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <Activity className="w-5 h-5 flex-shrink-0" style={{ color: AMBER }} />
-                    <AnimatedTitle text={`${userName}'s GitHub Stats`} play={settledInView} />
+                    {/* The account's display name is a proper name (untranslated); the
+                        possessive frame around it is the catalogue's. */}
+                    <AnimatedTitle text={t("statsCard.title", { name: userName || t("statsCard.defaultUser") })} play={settledInView} />
                 </div>
                 {isLive && (
                     <div className="flex items-center gap-2 mt-1.5">
@@ -524,7 +540,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
                             transition={prefersReducedMotion ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         />
                         <span className="abt-micro text-[10px] uppercase tracking-[0.22em] text-fire-amber" style={{ textShadow: "none" }}>
-                            Live GitHub Metrics
+                            {t("statsCard.live")}
                         </span>
                     </div>
                 )}
@@ -533,7 +549,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
             {/* Animated hairline divider — fills from the left on entry. */}
             <motion.div
                 aria-hidden="true"
-                className="h-px elite-divider mb-4 origin-left"
+                className="h-px elite-divider mb-4 origin-left rtl:origin-right"
                 variants={{
                     hidden: { scaleX: 0, opacity: 0 },
                     visible: { scaleX: 1, opacity: 1, transition: { duration: 0.6, ease: "easeOut" } },
@@ -553,7 +569,7 @@ export default function GitHubStatsCard({ data, userName = "GitHub User", isUpda
                 >
                     {stats.map((stat) => (
                         <MetricRow
-                            key={stat.label}
+                            key={stat.field}
                             icon={stat.icon}
                             label={stat.label}
                             value={stat.value}

@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "الفهرس",
+    "elsewhere": "في مكان آخر"
+  },
+  "siteNav": "الموقع",
+  "identity": {
+    "role": "مهندس برمجيات",
+    "statement": "أصنع تجارب ويب سريعة ومدروسة من شمال إنجلترا."
+  },
+  "availability": "متاح لفرص عمل جديدة",
+  "githubCta": {
+    "label": "عرض هذا المشروع على GitHub",
+    "newTab": "(يفتح في علامة تبويب جديدة)",
+    "commits": "{count, plural, one {<num>{formatted}</num> إيداع} other {<num>{formatted}</num> إيداعات}}",
+    "pushed": "آخر دفع {when}"
+  },
+  "manifest": {
+    "departures": "المغادرة",
+    "nowBoarding": "الصعود الآن",
+    "onTime": "في الموعد",
+    "links": {
+      "about": {
+        "label": "نبذة",
+        "desc": "من أنا"
+      },
+      "journey": {
+        "label": "المسيرة",
+        "desc": "الطريق حتى الآن"
+      },
+      "qualifications": {
+        "label": "المؤهلات",
+        "desc": "الشهادات والاعتمادات"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "السجل الكامل"
+      },
+      "projects": {
+        "label": "المشاريع",
+        "desc": "أعمال مختارة"
+      },
+      "uses": {
+        "label": "أدواتي",
+        "desc": "ما أبني به"
+      },
+      "notes": {
+        "label": "ملاحظات",
+        "desc": "لماذا بُني على هذا النحو"
+      },
+      "contact": {
+        "label": "تواصل",
+        "desc": "قل مرحبًا"
+      },
+      "guestbook": {
+        "label": "سجل الزوار",
+        "desc": "اترك أثرك"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "الملف الشخصي على GitHub (يفتح في علامة تبويب جديدة)",
+    "linkedin": "الملف الشخصي على LinkedIn (يفتح في علامة تبويب جديدة)",
+    "resume": "اقرأ السيرة الذاتية كاملة",
+    "linkLabel": "{command}، {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {الوقت المحلي {time} {period} في {town}} other {الوقت المحلي {time} في {town}}}",
+    "placeLabel": "الموقع: {town}",
+    "live": "مباشر"
+  },
+  "sound": {
+    "label": "الصوت",
+    "on": "تشغيل",
+    "off": "إيقاف",
+    "turnOn": "تشغيل صوت الغيتار في التذييل",
+    "turnOff": "إيقاف صوت الغيتار في التذييل",
+    "hoverLines": "مرّر المؤشر فوق الخطوط",
+    "nowPlaying": "يُعزف الآن — غيتار هادئ",
+    "turnOnPrompt": "شغّل الصوت للاستماع إلى غيتار هادئ"
+  },
+  "privacy": {
+    "policy": "الخصوصية",
+    "choices": "خيارات الخصوصية"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/في-مكان-آخر",
+    "cmd": {
+      "github": "افتح github",
+      "linkedin": "افتح linkedin",
+      "resume": "افتح السيرة"
+    }
+  }
+}

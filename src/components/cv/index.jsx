@@ -1,4 +1,9 @@
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
+import { journeyData, projectsData } from '@/app/data';
+import { localizeCategory, localizeJourneyEntry, localizeProject } from '@/i18n/data';
+import { getDataT } from '@/i18n/getDataT';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
 
 import {
   email as publicEmail,
@@ -101,16 +106,60 @@ const PINK_ORG = 'text-[#fc83ff] [text-shadow:0_0_10px_rgba(252,131,255,0.35)]';
 const LINK_AQUA =
   'text-[#5ee6c4] decoration-[#5ee6c4]/40 hover:text-[#9ffce6] hover:decoration-[#9ffce6]/70';
 
+// ── Language (issue #82) ─────────────────────────────────────────────────────
+// The document is translated; the PDF it offers is not (it is the artifact
+// people attach, and it stays English — the link says so with `hreflang`).
+// `buildCv()` stays the English model: the JSON-LD reads it, and it is what
+// the consistency tests pin against the PDF. The localisation happens here,
+// at the last step, from the SAME journey and project records the model was
+// derived from (matched by id), through the shared data helpers — so the role,
+// description, tags and date range a reader sees are exactly what /journey
+// prints for that entry in their language. Organisation and tool names are
+// never translated.
+function localizeEntry(entry, dataT, locale) {
+  const source = journeyData.find((d) => d.id === entry.id);
+  if (!source) return entry;
+  const local = localizeJourneyEntry(source, dataT, locale);
+  if (local === source) return entry;
+  const [role] = String(local.title ?? '').split(' · ');
+  return {
+    ...entry,
+    role: role.trim() || entry.role,
+    dates: local.dateLabel,
+    description: local.description,
+    tags: local.tags,
+  };
+}
+
+function localizeCv(cv, dataT, locale) {
+  if (locale === DEFAULT_LOCALE) return cv;
+  const entry = (e) => localizeEntry(e, dataT, locale);
+  return {
+    ...cv,
+    experience: cv.experience.map(entry),
+    education: cv.education.map(entry),
+    activities: cv.activities.map(entry),
+    projects: cv.projects.map((project) => {
+      const source = projectsData.find((p) => p.id === project.id);
+      return {
+        ...project,
+        description: source ? localizeProject(source, dataT).description : project.description,
+        category: localizeCategory(project.category, dataT),
+      };
+    }),
+  };
+}
+
 /** One dated row — a role, an award, or a representation post. */
 function Entry({ entry }) {
   return (
-    <li className="cv-entry cv-reveal relative border-l border-white/10 pl-5 print:border-l-0 print:pl-0">
+    <li className="cv-entry cv-reveal relative border-s border-white/10 ps-5 print:border-s-0 print:ps-0">
       {/* The rule's marker. `aria-hidden` because the list semantics already
           convey "one of several" — a screen reader announcing a bullet glyph
           here would be reading out decoration. */}
       <span
         aria-hidden="true"
-        className="cv-marker absolute -left-[3px] top-2 h-[5px] w-[5px] rounded-full bg-[#ff6d05] print:hidden"
+        className="cv-marker absolute -start-[3px] top-2 h-[5px] w-[5px] rounded-full bg-[#ff6d05] print:hidden"
       />
 
       {/* Role and dates on one row at desktop, stacked on a phone. The dates
@@ -191,7 +240,11 @@ function Section({ title, children }) {
   );
 }
 
-export default function Cv({ cv }) {
+export default async function Cv({ cv: model, locale = DEFAULT_LOCALE }) {
+  const t = await getTranslations({ locale, namespace: 'Cv' });
+  const dataT = await getDataT(locale);
+  const english = locale === DEFAULT_LOCALE;
+  const cv = localizeCv(model, dataT, locale);
   const { identity, experience, education, activities, skills, projects } = cv;
 
   return (
@@ -223,20 +276,23 @@ export default function Cv({ cv }) {
             line, set large, that the eye lands on first. Used twice it would
             stop being a treatment and start being the page's texture. */}
         <p
+          translate="no"
           className={`text-3xl font-semibold tracking-tight sm:text-4xl ${NAME_METAL} ${PRINT_INK}`}
         >
           {identity.name}
         </p>
         <p className={`mt-1.5 text-lg ${PINK_ORG} print:text-black`}>
-          {identity.role}
+          {english ? identity.role : t('identity.role')}
         </p>
 
         {/* Contact row. Every value here is already public — the footer prints
             the same address on every page — so nothing is exposed that was not
             already. `RECEIVER_EMAIL` (the server-only delivery inbox) is a
             different variable and never reaches a client bundle; see the note
-            beside `email` in footer-data.js. */}
-        <ul className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm print:text-black">
+            beside `email` in footer-data.js. Names, a town, an address and two
+            brands: translate="no", so neither a browser translator nor the
+            pseudo-locale gate treats them as prose. */}
+        <ul translate="no" className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm print:text-black">
           {/* Ice blue: the cool family's quiet end. It pairs with the aqua
               links beside it, so the masthead's metadata reads as one cool
               block sitting under the warm name. */}
@@ -301,16 +357,17 @@ export default function Cv({ cv }) {
           <a
             className="custom-bg-abt inline-flex items-center justify-center gap-2 rounded-full px-6 py-2 text-sm font-semibold tracking-wide text-[#ff6d05] shadow-sm transition-[box-shadow,opacity] duration-300 hover:shadow-[0_0_8px_rgba(255,109,5,0.65),0_0_20px_rgba(255,109,5,0.4)]"
             href={resumeUrl}
+            hrefLang="en"
             rel="noopener noreferrer"
             target="_blank"
           >
-            Download the PDF
+            {t('downloadPdf')}
             <span aria-hidden="true">↓</span>
           </a>
         </p>
       </header>
 
-      <Section title="Experience">
+      <Section title={t('sections.experience')}>
         <ul className="flex flex-col gap-8">
           {experience.map((entry) => (
             <Entry key={entry.id} entry={entry} />
@@ -318,7 +375,7 @@ export default function Cv({ cv }) {
         </ul>
       </Section>
 
-      <Section title="Education">
+      <Section title={t('sections.education')}>
         <ul className="flex flex-col gap-8">
           {education.map((entry) => (
             <Entry key={entry.id} entry={entry} />
@@ -331,7 +388,7 @@ export default function Cv({ cv }) {
           absent — and `journeyData` genuinely might not carry a milestone
           entry after a future edit. */}
       {activities.length > 0 && (
-        <Section title="Representation">
+        <Section title={t('sections.representation')}>
           <ul className="flex flex-col gap-8">
             {activities.map((entry) => (
               <Entry key={entry.id} entry={entry} />
@@ -340,7 +397,7 @@ export default function Cv({ cv }) {
         </Section>
       )}
 
-      <Section title="Skills">
+      <Section title={t('sections.skills')}>
         <dl className="flex flex-col gap-4">
           {skills.map((group) => (
             <div key={group.group} className="cv-reveal sm:flex sm:gap-6">
@@ -355,7 +412,9 @@ export default function Cv({ cv }) {
               <dt
                 className={`w-28 shrink-0 font-mono text-xs uppercase tracking-wider print:text-neutral-600 ${EMBER_META}`}
               >
-                {group.group}
+                {t.has(`skillGroups.${group.group}`)
+                  ? t(`skillGroups.${group.group}`)
+                  : group.group}
               </dt>
               <dd
                 className={`mt-1 text-sm leading-relaxed text-fire-amber sm:mt-0 ${PRINT_INK}`}
@@ -367,7 +426,7 @@ export default function Cv({ cv }) {
         </dl>
       </Section>
 
-      <Section title="Selected projects">
+      <Section title={t('sections.projects')}>
         <ul className="flex flex-col gap-5">
           {projects.map((project) => (
             <li key={project.id} className="cv-reveal">
@@ -412,14 +471,14 @@ export default function Cv({ cv }) {
             className={`underline underline-offset-4 transition-colors print:text-black ${LINK_AQUA}`}
             href="/projects"
           >
-            All projects
+            {t('allProjects')}
           </Link>
           <span className="text-[#5ee6c4]/45"> · </span>
           <Link
             className={`underline underline-offset-4 transition-colors print:text-black ${LINK_AQUA}`}
             href="/journey"
           >
-            The same history as a timeline
+            {t('asTimeline')}
           </Link>
         </p>
       </Section>

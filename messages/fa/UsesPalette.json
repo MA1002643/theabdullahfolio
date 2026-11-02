@@ -1,0 +1,20 @@
+{
+  "section": "ابزارها",
+  "preferences": "تنظیمات",
+  "jumpPlate": "رفتن به {ordinal} {label}",
+  "plates": {
+    "machine": "دستگاه",
+    "bench": "میز کار",
+    "stack": "پشتهٔ فناوری",
+    "pipeline": "خط لوله",
+    "instruments": "ابزارهای سنجش",
+    "bom": "صورت مواد"
+  },
+  "copySettings": "رونوشت از تنظیمات ویرایشگر من",
+  "openRepos": "دیدن مخزن‌ها در GitHub",
+  "toggleMotion": "روشن یا خاموش کردن حرکت",
+  "motionOn": "روشن",
+  "motionOff": "خاموش",
+  "copied": "تنظیمات ویرایشگر کپی شد",
+  "clipboardUnavailable": "کلیپ‌بورد در دسترس نیست — برای کپی، کادر را انتخاب کنید"
+}

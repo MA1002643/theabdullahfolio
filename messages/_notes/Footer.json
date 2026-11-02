@@ -1,0 +1,18 @@
+{
+  "identity.statement": "One-line positioning statement under the owner's name. Must fit two lines at a 360px phone width (~70 Latin characters). 'North of England' is the region the owner lives in.",
+  "manifest.departures": "Decorative header of a split-flap airport DEPARTURES board styled as the site index. One short word, shown uppercase.",
+  "manifest.nowBoarding": "Airport-board status shown on the row for the page the visitor is currently on. Very short (≈12 characters).",
+  "manifest.onTime": "Airport-board status shown on every other row. Very short (≈8 characters).",
+  "githubCta.commits": "Commit count of this site's repository. {formatted} is the already-formatted number; keep the <num></num> tag around it.",
+  "githubCta.pushed": "{when} is a short relative time such as '5m ago' or '3 Oct', already localised.",
+  "location.timeLabel": "Accessible name of the owner's live local-time plate. {time} like '1:01', {period} the AM/PM word (only in the 'yes' branch), {town} a place name (not translated).",
+  "location.live": "Badge shown when the location fix is fresh. Very short, uppercase.",
+  "sound.label": "Label beside the footer's speaker button; followed by On/Off. Shown uppercase.",
+  "sound.hoverLines": "Instruction to hover the giant name at the bottom of the page, whose letters are 'guitar strings' that play notes.",
+  "copyright.withYear": "{year} is the current year, {name} the owner's name, already in the reader's script.",
+  "terminal.path": "Working-directory label in the title bar of a small mock terminal window. Keep the '~/' prefix; translate the folder name ('elsewhere' = the owner's profiles on other sites) as ONE lowercase word or hyphenated words with no spaces, as a real folder name would be. Very short.",
+  "terminal.cmd.github": "A command typed into a mock terminal that opens the owner's GitHub profile. Write it as a short lowercase terminal-style command in the target language: translate the verb 'open' (imperative), keep the product name 'github' in lowercase Latin letters exactly. No trailing punctuation. Under ~20 characters.",
+  "terminal.cmd.linkedin": "A command typed into a mock terminal that opens the owner's LinkedIn profile. Write it as a short lowercase terminal-style command in the target language: translate the verb 'open' (imperative), keep the product name 'linkedin' in lowercase Latin letters exactly. No trailing punctuation. Under ~20 characters.",
+  "terminal.cmd.resume": "A command typed into a mock terminal that opens the owner's CV/résumé page. Write it as a short lowercase terminal-style command in the target language: translate the verb 'open' (imperative), keep the word for résumé/CV short and lowercase. No trailing punctuation. Under ~20 characters.",
+  "elsewhere.linkLabel": "Accessible name of a link in the footer terminal. {command} is the typed command and {handle} the address, both VISIBLE on screen, so they must stay FIRST and in this order: screen-reader and voice-control users speak what they see (WCAG 2.5.3). Only the punctuation between them and {description} may follow your language."
+}

@@ -1,0 +1,13 @@
+{
+  "title": "DỰ ÁN",
+  "subtitle": "CÔNG VIỆC CỦA TÔI",
+  "filters": {
+    "label": "Danh mục dự án",
+    "all": "Tất cả",
+    "empty": "Chưa có dự án nào trong \"{category}\".",
+    "fallback": "Chưa có dự án nào trong \"{category}\". Đang hiển thị tất cả dự án."
+  },
+  "list": {
+    "empty": "Không tìm thấy dự án nào!"
+  }
+}

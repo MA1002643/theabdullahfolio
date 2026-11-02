@@ -5,6 +5,11 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
 import { fluid, fluidText } from "@/lib/fluidScale";
+import { useTranslations } from "next-intl";
+import { glyphUnits } from "@/components/ui/textSegments";
+import { useLocale } from "next-intl";
+import { localizeWireDate, localizeWirePlaceholder, useAboutDigits } from "./aboutI18n";
+import { useDirection } from "@/i18n/useDirection";
 import {
   Clock,
   GitCommitHorizontal,
@@ -69,10 +74,11 @@ const metricContainerVariants = {
   visible: { transition: { staggerChildren: 0.06 } },
 };
 
-const metricRowVariants = {
-  hidden: { opacity: 0, x: -16 },
+// Rows slide in from the reading-start side (`sign` = -1 in RTL, issue #82).
+const metricRowVariantsFor = (sign) => ({
+  hidden: { opacity: 0, x: -16 * sign },
   visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
-};
+});
 
 // ----- Per-character title (blur-fade in) -----
 function AnimatedTitle({ text, play, heartbeat = false }) {
@@ -87,6 +93,7 @@ function AnimatedTitle({ text, play, heartbeat = false }) {
   if (prefersReducedMotion) {
     return (
       <h3
+        translate="no"
         className={`text-xl font-semibold break-words${pulseClass}`}
         style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(1.25, 1.125) }}
       >
@@ -95,7 +102,9 @@ function AnimatedTitle({ text, play, heartbeat = false }) {
     );
   }
 
-  const chars = Array.from(text);
+  // Per-glyph for most scripts, per-word for joining ones (issue #82; see
+  // @/components/ui/textSegments). English splits exactly as Array.from did.
+  const chars = glyphUnits(text);
   const container = {
     hidden: {},
     visible: { transition: { staggerChildren: 0.035, delayChildren: 0.2 } },
@@ -115,6 +124,8 @@ function AnimatedTitle({ text, play, heartbeat = false }) {
       variants={container}
       initial="hidden"
       animate={play ? "visible" : "hidden"}
+      // A repository name: never translated (translate="no").
+      translate="no"
       className={`text-xl font-semibold break-words${pulseClass}`}
       style={{ color: "#ff6d05", textShadow: "none", fontSize: fluidText(1.25, 1.125) }}
       aria-label={text}
@@ -143,6 +154,8 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
   );
   const [pulse, setPulse] = useState(false);
   const rafRef = useRef(null);
+  const digits = useAboutDigits();
+  const { sign } = useDirection();
   // 2 s gives the slow-settle phase room to breathe — at the previous 1.1 s
   // the settle phase compressed into ~800 ms and the elite landing felt rushed.
   const DURATION = 2000;
@@ -215,10 +228,11 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
 
   return (
     <motion.div
-      variants={metricRowVariants}
+      variants={metricRowVariantsFor(sign)}
       // Hover transforms (`x: 5` slide, icon scale/rotate) are tiny but they
-      // are still motion. Skip them when the user has opted out.
-      whileHover={prefersReducedMotion ? undefined : { x: 5, transition: { duration: 0.18 } }}
+      // are still motion. Skip them when the user has opted out. The nudge
+      // points toward reading-end, so it mirrors in RTL.
+      whileHover={prefersReducedMotion ? undefined : { x: 5 * sign, transition: { duration: 0.18 } }}
       className="flex items-center justify-between gap-2 w-full px-2 py-1 rounded-md hover:bg-[#ff6d05]/5 transition-colors"
     >
       <div className="flex items-center gap-2 min-w-0">
@@ -263,8 +277,13 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
             forks". The sr-only span carries the final, correct value
             unconditionally; the visible span is `aria-hidden` so the
             animated digits never reach the accessibility tree. */}
-        <span className="sr-only">{isDate ? target : target.toLocaleString()}</span>
-        <span aria-hidden="true">{isDate ? display : display.toLocaleString()}</span>
+        {/* A date here is Intl's output, not a catalogue's: translate="no". */}
+        <span className="sr-only" translate={isDate ? 'no' : undefined}>
+          {isDate ? target : digits.grouped(target)}
+        </span>
+        <span aria-hidden="true" translate={isDate ? 'no' : undefined}>
+          {isDate ? display : digits.grouped(display)}
+        </span>
       </motion.span>
     </motion.div>
   );
@@ -280,6 +299,8 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
   // displayed number is correct on the very first paint, no count-up.
   const [displayScore, setDisplayScore] = useState(prefersReducedMotion ? target : 0);
   const rafRef = useRef(null);
+  const t = useTranslations("About");
+  const digits = useAboutDigits();
   const DURATION = 2000;
   // Final arc fill amount — also used as the resting state for the
   // reduced-motion branch so the arc paints at its destination immediately.
@@ -414,14 +435,14 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
                 The sr-only span carries the final truthful score; the
                 visible span is aria-hidden so the animated digits never
                 reach the accessibility tree. */}
-            <span className="sr-only">{target.toLocaleString()}</span>
-            <span aria-hidden="true">{displayScore.toLocaleString()}</span>
+            <span className="sr-only">{digits.grouped(target)}</span>
+            <span aria-hidden="true">{digits.grouped(displayScore)}</span>
           </span>
           <span
             className="text-[9px] leading-none mt-0.5 text-fire-amber"
             style={{ textShadow: "none" }}
           >
-            score
+            {t("repoCard.score")}
           </span>
         </div>
       </div>
@@ -429,7 +450,7 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
         className="abt-micro text-[10px] text-fire-amber"
         style={{ textShadow: "none" }}
       >
-        Activity Score
+        {t("repoCard.activityScore")}
       </span>
     </div>
   );
@@ -437,6 +458,8 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
 
 // ----- Main card -----
 export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFields }) {
+  const t = useTranslations("About");
+  const locale = useLocale();
   const ref = useRef(null);
   // Two visibility signals, intentionally separated:
   //   - `playToken` (latched + hysteresis-debounced, monotonic) drives the
@@ -608,12 +631,21 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
 
   // `field` keys the row to the repo-diff's changed-field list so a risen metric
   // heartbeats. "Last Pushed" has no field — a timestamp change isn't a "rise".
+  // `id` is the stable React key; `label` the reader's-language row name.
+  // "Last Pushed" is an en-US wire date ("Oct 12") re-rendered for other
+  // locales — see aboutI18n.
   const metrics = [
-    { icon: Star, label: "Stars", value: stars, field: "stars", pulseOnComplete: true },
-    { icon: GitFork, label: "Forks", value: forks, field: "forks" },
-    { icon: GitMerge, label: "Merged PRs", value: mergedPRs, field: "mergedPRs" },
-    { icon: GitCommitHorizontal, label: "Total Commits", value: commitCount, field: "commitCount" },
-    { icon: Clock, label: "Last Pushed", value: pushedAt, isDate: true },
+    { id: "stars", icon: Star, label: t("repoCard.metrics.stars"), value: stars, field: "stars", pulseOnComplete: true },
+    { id: "forks", icon: GitFork, label: t("repoCard.metrics.forks"), value: forks, field: "forks" },
+    { id: "mergedPrs", icon: GitMerge, label: t("repoCard.metrics.mergedPrs"), value: mergedPRs, field: "mergedPRs" },
+    { id: "commits", icon: GitCommitHorizontal, label: t("repoCard.metrics.commits"), value: commitCount, field: "commitCount" },
+    {
+      id: "lastPushed",
+      icon: Clock,
+      label: t("repoCard.metrics.lastPushed"),
+      value: localizeWirePlaceholder(localizeWireDate(pushedAt, locale), locale, t),
+      isDate: true,
+    },
   ];
 
   return (
@@ -630,7 +662,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
       <UpdateBanner
         message={bannerMessage}
         visible={Boolean(bannerMessage) && settledInView}
-        srPrefix="Repository update: "
+        srPrefix={t("repoCard.srPrefix")}
       />
 
       {/* Title + Most-Active badge */}
@@ -658,7 +690,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
             fontSize: fluidText(0.75, 0.625),
           }}
         >
-          <span className="text-fire-amber">Most Active Repository</span>
+          <span className="text-fire-amber">{t("repoCard.badge")}</span>
         </span>
       </motion.div>
 
@@ -667,8 +699,13 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
         variants={childVariants}
         className="text-sm font-light mb-4 text-fire-amber"
         style={{ textShadow: "none", fontSize: fluidText(0.875, 0.75) }}
+        // The owner's own words, kept as written; only the placeholder for
+        // a missing one comes from the catalogue, and that stays checkable.
+        translate={description ? "no" : undefined}
       >
-        {description}
+        {/* The description is the repo owner's own text (untranslated); only
+            the API's "No description" placeholder is localised. */}
+        {localizeWirePlaceholder(description, locale, t)}
       </motion.p>
 
       {/* Language */}
@@ -708,8 +745,9 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
           // CSS no-ops `skill-heartbeat` under reduced motion.
           className={`text-sm font-light text-fire-amber${pulsing.has("language") ? " skill-heartbeat" : ""}`}
           style={{ textShadow: "none", fontSize: fluidText(0.875, 0.75) }}
+          translate={language ? "no" : undefined}
         >
-          {language}
+          {localizeWirePlaceholder(language, locale, t)}
         </span>
       </motion.div>
 
@@ -728,7 +766,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
           className="flex flex-col gap-1 w-full sm:w-auto sm:flex-1 sm:min-w-[200px]"
         >
           {metrics.map((m) => (
-            <MetricRow key={m.label} {...m} playToken={playToken} heartbeat={m.field ? pulsing.has(m.field) : false} prefersReducedMotion={prefersReducedMotion} />
+            <MetricRow key={m.id} {...m} playToken={playToken} heartbeat={m.field ? pulsing.has(m.field) : false} prefersReducedMotion={prefersReducedMotion} />
           ))}
         </motion.div>
         <ActivityArc score={activityScore} playToken={playToken} heartbeat={pulsing.has("activityScore")} prefersReducedMotion={prefersReducedMotion} />

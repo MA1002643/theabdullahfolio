@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "PERJALANAN SAYA",
+    "subtitle": "dari baris kode pertama hingga produksi"
+  },
+  "timeline": {
+    "label": "Lini masa perjalanan"
+  },
+  "endCap": {
+    "est": "SEJAK {year} · BOLTON, UK",
+    "tally": "{years, plural, other {# TAHUN}} · {entries, plural, other {# ENTRI}} · {tracks, plural, other {# JALUR}}",
+    "paper": "VERSI KERTAS →",
+    "paperHint": "CV dalam format PDF (dibuka di tab baru)"
+  },
+  "spine": {
+    "now": "SEKARANG"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# bln}}} other {# thn{months, plural, =0 {} other { # bln}}}}",
+    "tenureOngoing": "{tenure} hingga kini",
+    "view": "LIHAT",
+    "viewLabel": "Lihat {title} (dibuka di tab baru)"
+  },
+  "eraRail": {
+    "label": "Era lini masa",
+    "jump": "Loncat ke {year}"
+  },
+  "atlas": {
+    "eyebrow": "Tampilan tumpang tindih",
+    "title": "Atlas — tiga jalur, satu jam",
+    "live": {
+      "career": "{count, plural, other {# peran}}",
+      "education": "{count, plural, other {# gelar}}",
+      "milestone": "{count, plural, other {# unggahan komunitas}}",
+      "separator": " + ",
+      "sentence": "Berjalan hari ini: {parts}{total, plural, =1 {.} other { — secara paralel.}}"
+    },
+    "tracks": {
+      "all": "Semua",
+      "career": "Karier",
+      "education": "Pendidikan",
+      "milestone": "Komunitas"
+    },
+    "chipsLabel": "Sorot satu jalur",
+    "zoom": {
+      "group": "Zoom grid",
+      "out": "Perkecil grid",
+      "outTitle": "Perkecil",
+      "in": "Perbesar grid",
+      "inTitle": "Perbesar",
+      "readoutLabel": "Zoom grid {pct}. Setel ulang ke {full}",
+      "readoutTitle": "Zoom grid",
+      "resetTitle": "Setel ulang zoom ke {full}",
+      "status": "Zoom grid {pct}"
+    },
+    "region": "Atlas tumpang tindih: setiap peran dan kursus sebagai batang paralel pada satu sumbu waktu",
+    "entries": "{count, plural, other {# entri}}",
+    "now": "Sekarang",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Loncat ke {org} · {role}, {dates}",
+    "spokenRange": "{start} hingga {end}",
+    "spokenOpen": "{start} hingga sekarang",
+    "key": {
+      "select": "Pilih batang mana pun untuk melompat ke sana.",
+      "dashed": "Tepi putus-putus = masih berjalan.",
+      "stacked": "Batang bertumpuk = berjalan bersamaan."
+    }
+  },
+  "palette": {
+    "section": "Perjalanan",
+    "jumpYear": "Loncat ke {year}",
+    "eraHint": "era",
+    "jumpAtlas": "Loncat ke atlas tumpang tindih",
+    "openCv": "Buka CV (PDF)",
+    "openCvHint": "versi kertas"
+  }
+}

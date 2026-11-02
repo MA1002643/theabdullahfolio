@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import SliceLabel from '@/components/contact/SliceLabel';
 import { githubUsername, profileGithubUrl } from '@/components/footer/footer-data';
 import { useMagneticPull } from '@/hooks/useMagneticPull';
@@ -16,9 +17,11 @@ import {
   hasLiveCategories,
 } from '@/utils/skillsIconUrl';
 import LiveAge from './LiveAge';
-import Plate, { Figure } from './Plate';
+import Plate, { figTag } from './Plate';
+import { useUsesFormat } from './useUsesFormat';
 import ToolGrid from './ToolGrid';
 import { riseProps, staged, useStagedReveal } from './useStagedReveal';
+import { ToolCopyScope, useToolCopy } from './useToolCopy';
 
 // 02 · THE STACK — crawled live from the owner's repositories. The plate
 // renders the CURATED set immediately (never an empty plate, and the grid's
@@ -43,6 +46,8 @@ import { riseProps, staged, useStagedReveal } from './useStagedReveal';
 const ENDPOINT = '/api/github-skills';
 
 export default function StackPlate({ fallback }) {
+  const t = useTranslations('Uses');
+  const { num, ord } = useUsesFormat();
   const gateRef = useRef(null);
   // Start fetching a little before the plate is on screen so the counts are
   // usually there by the time the tiles reveal.
@@ -53,7 +58,10 @@ export default function StackPlate({ fallback }) {
   // fabricate a timestamp the helper (and its test) had already ruled out.
   const [payload, setPayload] = useState(null);
   const [loaded, setLoaded] = useState(false);
-  const [statusText, setStatusText] = useState('');
+  // The announcement is held as a FLAG, not a string, so the sentence is
+  // read from the catalogue at render (issue #82) and the effect below needs
+  // no translator in its dependency list.
+  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
     if (!near || !USES_FLAGS.liveStack || typeof window === 'undefined') return undefined;
@@ -80,7 +88,7 @@ export default function StackPlate({ fallback }) {
           // server-sent `fetchedAt` does.
           setPayload({ categories, fetchedAt: new Date(last).toISOString() });
           setLoaded(true);
-          setStatusText('Stack verified against GitHub.');
+          setVerified(true);
           servedFromCache = true;
         }
       }
@@ -110,7 +118,7 @@ export default function StackPlate({ fallback }) {
         // crawl and must not be written into the cache the About card shares —
         // persisting one would make the NEXT visitor's plate serve it.
         if (!data._fallback && hasLiveCategories(data.categories)) {
-          setStatusText('Stack verified against GitHub.');
+          setVerified(true);
           try {
             window.localStorage.setItem(SKILLS_LAST_FETCHED_KEY, String(Date.now()));
             window.localStorage.setItem(SKILLS_CACHE_KEY, JSON.stringify(data.categories));
@@ -129,16 +137,27 @@ export default function StackPlate({ fallback }) {
     };
   }, [near]);
 
-  const stack = useMemo(() => resolveStack(payload, fallback), [payload, fallback]);
+  // A live crawl can name tools the page did not ship copy for (issue #82:
+  // only the curated tiles' descriptions are in the first payload). The live
+  // payload is held back until the locale's full tool copy is in too, so the
+  // tiles upgrade once, in the reader's language, rather than in English and
+  // then again. English is ready from the start and never waits.
+  const toolCopy = useToolCopy(near);
+  const copyReady = toolCopy !== null;
+  const stack = useMemo(
+    () => resolveStack(copyReady ? payload : null, fallback),
+    [copyReady, payload, fallback],
+  );
   const total = countTiles(stack.groups);
 
   const magnet = useMagneticPull();
   const magnetOn = USES_FLAGS.magnetic && magnet.enabled;
 
+  const figures = { count: total, n: num(total), fig: figTag };
   const provenance = stack.live ? (
     <>
-      <span aria-hidden="true" className="uses-live-dot" /> live ·{' '}
-      <Figure>{total}</Figure> tools
+      <span aria-hidden="true" className="uses-live-dot" />{' '}
+      {t.rich('stack.provenanceLive', figures)}
       {stack.fetchedAt ? (
         <>
           {' '}
@@ -146,37 +165,39 @@ export default function StackPlate({ fallback }) {
           <span aria-hidden="true">
             <LiveAge fetchedAt={stack.fetchedAt} />
           </span>
-          <span className="sr-only">verified against GitHub</span>
+          <span className="sr-only">{t('stack.verifiedSr')}</span>
         </>
       ) : null}
     </>
   ) : (
-    <>
-      curated · <Figure>{total}</Figure> tools ·{' '}
-      {loaded ? 'GitHub unreachable' : 'syncing with GitHub…'}
-    </>
+    t.rich('stack.provenanceCurated', {
+      ...figures,
+      state: loaded && copyReady ? 'unreachable' : 'syncing',
+    })
   );
 
   return (
     <Plate
       slug="stack"
-      ordinal="02"
-      eyebrow={stack.live ? 'Stack · crawled from the repositories' : 'Stack · curated set'}
-      title="The stack"
+      ordinal={ord(2)}
+      eyebrow={t(stack.live ? 'stack.eyebrowLive' : 'stack.eyebrowCurated')}
+      title={t('stack.title')}
       provenance={provenance}
     >
       {({ revealed, reduceMotion, revealedAtRef }) => (
         <div ref={gateRef}>
           <p role="status" aria-live="polite" className="sr-only">
-            {statusText}
+            {verified && copyReady ? t('stack.verifiedStatus') : ''}
           </p>
 
-          <ToolGrid
-            groups={stack.groups}
-            revealed={revealed}
-            reduceMotion={reduceMotion}
-            revealedAtRef={revealedAtRef}
-          />
+          <ToolCopyScope messages={toolCopy?.messages}>
+            <ToolGrid
+              groups={stack.groups}
+              revealed={revealed}
+              reduceMotion={reduceMotion}
+              revealedAtRef={revealedAtRef}
+            />
+          </ToolCopyScope>
 
           <RepositoriesCta
             revealed={revealed}
@@ -205,6 +226,7 @@ export default function StackPlate({ fallback }) {
 // box-shadow/opacity: the transform is Framer's per frame (magnetic x/y +
 // the scale spring), and a CSS transition on it would lag the follow.
 function RepositoriesCta({ revealed, reduceMotion, revealedAtRef, magnet, magnetOn }) {
+  const t = useTranslations('Uses');
   const { ref, on, delay } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
   const [hovered, setHovered] = useState(false);
   return (
@@ -218,7 +240,7 @@ function RepositoriesCta({ revealed, reduceMotion, revealedAtRef, magnet, magnet
         href={`${profileGithubUrl}?tab=repositories`}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="See the repositories on GitHub (opens in a new tab)"
+        aria-label={t('stack.ctaLabel')}
         className="btn-slice custom-bg-abt inline-flex cursor-pointer items-center justify-center gap-2 rounded-full font-semibold tracking-wide shadow-sm transition-[box-shadow,opacity] duration-300 hover:shadow-[0_0_8px_rgba(255,109,5,0.65),0_0_20px_rgba(255,109,5,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
         style={{
           color: '#ff6d05',
@@ -234,7 +256,7 @@ function RepositoriesCta({ revealed, reduceMotion, revealedAtRef, magnet, magnet
         whileTap={{ scale: 0.96 }}
         transition={{ type: 'spring', stiffness: 400, damping: 22, mass: 0.6 }}
       >
-        <SliceLabel text="SEE THE REPOSITORIES" hovered={hovered} />
+        <SliceLabel text={t('stack.cta')} hovered={hovered} />
         <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
       </motion.a>
     </motion.div>

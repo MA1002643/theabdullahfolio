@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Pemberitahuan privasi",
+    "heading": "Privasi",
+    "announce": "Pemberitahuan privasi muncul di bagian bawah halaman. Anda dapat menerima atau menolak analitik, atau membuka preferensi.",
+    "body": "Situs ini menyimpan sedikit data di perangkat Anda agar mengingat preferensi Anda, dan — hanya jika Anda mengizinkan — menghitung halaman mana yang dibaca. Tanpa cookie iklan, tanpa pelacakan, tanpa pembuatan profil oleh pihak ketiga. <link>Baca artinya</link>.",
+    "accept": "Terima",
+    "decline": "Tolak",
+    "preferences": "Preferensi"
+  },
+  "prefs": {
+    "title": "Pilihan privasi",
+    "intro": "Dua kategori, karena memang hanya dua. Rincian lengkapnya ada di <link>halaman privasi</link>.",
+    "close": "Tutup pilihan privasi",
+    "alwaysOn": "Selalu aktif",
+    "reloadNote": "Mematikan ini akan memuat ulang halaman — itulah satu-satunya cara untuk benar-benar melepas skrip yang sudah dijalankan browser Anda, alih-alih membiarkannya tetap termuat lalu memintanya berhenti baik-baik.",
+    "declineAll": "Tolak semua",
+    "acceptAnalytics": "Terima analitik",
+    "on": "Aktif",
+    "off": "Nonaktif",
+    "switchLabel": "Izinkan analitik anonim"
+  },
+  "categories": {
+    "essential": {
+      "name": "Esensial",
+      "summary": "Selalu aktif. Disimpan di perangkat Anda dan hanya digunakan agar situs berfungsi bagi Anda.",
+      "detail": "Situs ini mengingat beberapa hal secara lokal agar berperilaku seperti situs yang pernah Anda gunakan — pesan yang baru separuh diketik tetap ada setelah halaman dimuat ulang, intro hanya diputar sekali, dan petunjuk yang sudah ditutup tidak muncul lagi. Data itu ditulis ke browser Anda sendiri dan dibaca kembali oleh browser Anda sendiri, dan tidak ada yang digunakan untuk mengenali Anda. Dua hal keluar dari perangkat Anda. Pesan kontak yang Anda kirim saat offline ditahan di sini sampai jaringan kembali, lalu dikirimkan kepada saya seperti pesan lainnya. Di halaman buku tamu, ID acak per tab dikirim untuk menghitung siapa yang sedang berada di sini; ID itu tidak terhubung dengan Anda, dan server melupakannya dalam hitungan menit. Draf yang belum Anda kirim tidak pernah dikirimkan."
+    },
+    "analytics": {
+      "name": "Analitik",
+      "summary": "Nonaktif kecuali Anda mengaktifkannya. Menghitung halaman mana yang dibaca — bukan siapa yang membacanya.",
+      "detail": "Tiga skrip pengukuran, diperlakukan sebagai satu keputusan karena menjawab satu pertanyaan: halaman mana yang layak dipertahankan. Tidak satu pun memasang cookie iklan, tidak satu pun membuat profil, dan tidak satu pun dimuat sama sekali sampai Anda menyetujuinya — bukan dimuat lalu didiamkan, bukan dimuat lalu ditolak. Sebelum Anda memutuskan, browser Anda tidak mengirim permintaan apa pun ke salah satunya."
+    }
+  },
+  "status": {
+    "heading": "Pilihan Anda saat ini",
+    "noScript": "Analitik tidak berjalan. Saat JavaScript dinonaktifkan, analitik memang tidak mungkin berjalan.",
+    "allowed": "Analitik anonim diizinkan.",
+    "off": "Analitik nonaktif. Tidak ada yang diukur.",
+    "notAsked": "Anda belum ditanya, jadi jawabannya tidak.",
+    "decidedOn": "Anda memutuskan ini pada {date}.",
+    "stored": "Keputusan Anda disimpan di perangkat ini.",
+    "change": "Ubah"
+  }
+}

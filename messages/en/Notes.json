@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "NOTES",
+    "subtitle": "decisions, written down",
+    "intro": "Every non-obvious decision behind this site is recorded — the choice made, the alternatives rejected, and what each one cost. These are the working documents from the repository, served here rather than left in the tree.",
+    "lines": "{count, plural, one {line} other {lines}}"
+  },
+  "note": {
+    "title": "NOTE",
+    "breadcrumb": "Breadcrumb",
+    "allNotes": "All notes",
+    "source": "Source: {source} · {count, plural, one {{n} line} other {{n} lines}}"
+  }
+}

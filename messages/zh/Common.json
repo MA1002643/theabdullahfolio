@@ -1,0 +1,14 @@
+{
+  "loadingProject": "正在加载项目",
+  "emblem": "Muhammad Abdullah 徽标",
+  "notifications": "通知",
+  "sound": {
+    "turnOn": "开启吉他音效",
+    "turnOff": "关闭吉他音效"
+  },
+  "owner": {
+    "given": "穆罕默德",
+    "family": "阿卜杜拉",
+    "full": "穆罕默德·阿卜杜拉"
+  }
+}

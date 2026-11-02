@@ -5,6 +5,12 @@
 // (workMessageAI.js) fall back to deterministic output if the LLM call
 // fails or is disabled.
 
+import { createTranslator } from 'next-intl';
+// The English catalogue is the template source for the server's English
+// sentences (issue #82) — see "Deterministic message templates" below.
+// Pure JSON, so this module stays side-effect free and server-safe.
+import enLiveHeader from '../../messages/en/LiveHeader.json';
+
 export const WORK_STATES = Object.freeze({
   SHIPPING: 'shipping',
   LIVE: 'live',
@@ -430,18 +436,67 @@ const sumBy = (list, pick) => list.reduce((total, item) => total + pick(item), 0
 // Deterministic message templates. Always available — used as the
 // baseline output, and as the fallback when AI refinement is disabled
 // or fails. Kept short and non-technical per spec section 10.
-const HEADLINES = {
-  [WORK_STATES.SHIPPING]: 'Just shipped',
-  [WORK_STATES.LIVE]: 'Live development in progress',
-  [WORK_STATES.IN_PROGRESS]: 'Work in progress',
-  [WORK_STATES.PLANNING]: 'Planning the next improvements',
-  [WORK_STATES.IDLE]: 'Maintenance ongoing',
+//
+// Since issue #82 every sentence is a DESCRIPTOR first — `{ key, values }`
+// naming a message in messages/<locale>/LiveHeader.json — and the English
+// string is that descriptor rendered against the English catalogue. One
+// template source serves every language: /api/work-status sends the English
+// sentence (possibly AI-refined) AND the descriptor, and a non-English
+// visitor's header words the descriptor in their own locale, so the 30s
+// cache never has to split twenty ways. tests/unit/workSignal.test.js pins
+// the English output of every branch against the strings the old template
+// literals produced.
+//
+// Value conventions the catalogue relies on:
+//   - counts that reach a noun are NUMBERS (ICU plural `#`, which formats in
+//     the reader's digits);
+//   - issue/PR numbers are STRINGS — identifiers, kept in GitHub's own digits
+//     and never grouped ("#1234", not "#1,234");
+//   - titles come from GitHub and are never translated; the catalogue wraps
+//     `#{number} {title}` in <bdi> so a Latin title isolates cleanly inside
+//     right-to-left text;
+//   - the "currently focused on" clause is a `hasTop` select (yes | no), so
+//     each sentence stays ONE message whatever a language's word order.
+const enTranslator = createTranslator({
+  locale: 'en',
+  messages: { LiveHeader: enLiveHeader },
+  namespace: 'LiveHeader',
+});
+
+// `t.markup` with an identity `bdi` tag: the plain-text English sentence,
+// tags dissolved, values inserted verbatim (no escaping — a title containing
+// `<b>` or `{` comes through exactly as GitHub sent it).
+const renderEnglish = (described) =>
+  enTranslator.markup(described.key, {
+    ...described.values,
+    bdi: (chunks) => chunks,
+  });
+
+const HEADLINE_KEYS = {
+  [WORK_STATES.SHIPPING]: 'headline.shipping',
+  [WORK_STATES.LIVE]: 'headline.live',
+  [WORK_STATES.IN_PROGRESS]: 'headline.inProgress',
+  [WORK_STATES.PLANNING]: 'headline.planning',
+  [WORK_STATES.IDLE]: 'headline.idle',
 };
 
-const FALLBACK_MESSAGE =
-  'New features are being released very soon. This website is actively under development.';
+const FALLBACK_KEY = 'message.idle';
 
-export function buildMessage(signal) {
+const descriptor = (key, values = {}) => ({ key, values });
+
+// The focus clause's values. `hasTop: 'no'` leaves number/title unset — the
+// select's `other` branch never reads them.
+const topValues = (topItems) => {
+  if (!topItems || topItems.length === 0) return { hasTop: 'no' };
+  const first = topItems[0];
+  return {
+    hasTop: 'yes',
+    number: String(first.number),
+    title: truncateTitle(first.title),
+  };
+};
+
+export function describeMessage(signal) {
   const {
     state,
     activePrs,
@@ -454,21 +509,26 @@ export function buildMessage(signal) {
   } = signal;
 
   if (state === WORK_STATES.IDLE) {
-    return FALLBACK_MESSAGE;
+    return descriptor(FALLBACK_KEY);
   }
 
   if (state === WORK_STATES.SHIPPING) {
-    return shippingMessage(recentlyShippedCount, shippedItems);
+    return describeShipping(recentlyShippedCount, shippedItems);
   }
+
+  const top = topValues(topItems);
 
   if (state === WORK_STATES.LIVE) {
     if (recentPushes > 0 && topItems.length > 0) {
-      return `Live update: shipping changes right now${describeTop(topItems)}.`;
+      return descriptor('message.liveWithTop', {
+        number: top.number,
+        title: top.title,
+      });
     }
     if (recentPushes > 0) {
-      return 'Live update: shipping new changes to this website right now.';
+      return descriptor('message.livePushes');
     }
-    return `Active work happening right now${describeTop(topItems)}.`;
+    return descriptor('message.liveActive', top);
   }
 
   if (state === WORK_STATES.IN_PROGRESS) {
@@ -476,35 +536,49 @@ export function buildMessage(signal) {
     // message around what's actually in the In Progress column rather than
     // generic open-PR/issue counts.
     if (projectInProgressCount > 0) {
-      return `Actively working on ${pluralize(projectInProgressCount, 'task')}${describeTop(topItems)}.`;
+      return descriptor('message.inProgressBoard', {
+        count: projectInProgressCount,
+        ...top,
+      });
     }
     if (activePrs > 0 && activeIssues > 0) {
-      return `Work in progress on ${pluralize(activePrs, 'pull request')} and ${pluralize(activeIssues, 'open task')}${describeTop(topItems)}.`;
+      return descriptor('message.inProgressPrsAndIssues', {
+        prs: activePrs,
+        issues: activeIssues,
+        ...top,
+      });
     }
     if (activePrs > 0) {
-      return `Work in progress on ${pluralize(activePrs, 'pull request')}${describeTop(topItems)}.`;
+      return descriptor('message.inProgressPrs', { prs: activePrs, ...top });
     }
     if (activeIssues > 0) {
-      return `Work in progress on ${pluralize(activeIssues, 'open task')}${describeTop(topItems)}.`;
+      return descriptor('message.inProgressIssues', {
+        issues: activeIssues,
+        ...top,
+      });
     }
     // Defensive: with the current state precedence, IN_PROGRESS implies at
     // least one of {projectInProgressCount, activePrs} is > 0, so this
     // line is unreachable. Kept so any future precedence shift can't
     // surface "0 open tasks" to users.
-    return 'Work is in progress on this website.';
+    return descriptor('message.inProgressFallback');
   }
 
   if (state === WORK_STATES.PLANNING) {
-    return `Planning the next improvements${describeTop(topItems)}.`;
+    return descriptor('message.planning', top);
   }
 
-  return FALLBACK_MESSAGE;
+  return descriptor(FALLBACK_KEY);
+}
+
+export function buildMessage(signal) {
+  return renderEnglish(describeMessage(signal));
 }
 
 // Secondary message for the Pattern D rotation. Returns null when there's
 // no second story worth rotating to. The client cycles between the
 // primary `message` and this `secondaryMessage` every ~10 seconds.
-export function buildSecondaryMessage(signal) {
+export function describeSecondaryMessage(signal) {
   const { state, topItems, projectInProgressCount = 0 } = signal;
 
   // Only rotate when SHIPPING is active AND there's also active work.
@@ -514,31 +588,43 @@ export function buildSecondaryMessage(signal) {
   if (projectInProgressCount === 0) return null;
   if (!topItems || topItems.length === 0) return null;
 
-  return `Actively working on ${pluralize(projectInProgressCount, 'task')}${describeTop(topItems)}.`;
+  const { number, title } = topValues(topItems);
+  return descriptor('message.secondary', {
+    count: projectInProgressCount,
+    number,
+    title,
+  });
 }
 
-const shippingMessage = (count, shippedItems) => {
+export function buildSecondaryMessage(signal) {
+  const described = describeSecondaryMessage(signal);
+  return described ? renderEnglish(described) : null;
+}
+
+const describeShipping = (count, shippedItems) => {
   if (!shippedItems || shippedItems.length === 0) {
-    return `Just shipped ${pluralize(count, 'update')} to this website.`;
+    return descriptor('message.shippingNone', { count });
   }
   const first = shippedItems[0];
+  const named = {
+    number: String(first.number),
+    title: truncateTitle(first.title),
+  };
   if (count > 1) {
-    return `Just shipped #${first.number} ${truncateTitle(first.title)} (and ${count - 1} more).`;
+    return descriptor('message.shippingMany', { ...named, more: count - 1 });
   }
-  return `Just shipped #${first.number} ${truncateTitle(first.title)}.`;
+  return descriptor('message.shippingOne', named);
 };
 
-export function buildHeadline(signal) {
-  return HEADLINES[signal.state] ?? HEADLINES[WORK_STATES.IDLE];
+export function describeHeadline(signal) {
+  return descriptor(
+    HEADLINE_KEYS[signal.state] ?? HEADLINE_KEYS[WORK_STATES.IDLE],
+  );
 }
 
-const pluralize = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-const describeTop = (topItems) => {
-  if (!topItems || topItems.length === 0) return '';
-  const first = topItems[0];
-  return ` — currently focused on #${first.number} ${truncateTitle(first.title)}`;
-};
+export function buildHeadline(signal) {
+  return renderEnglish(describeHeadline(signal));
+}
 
 // Despite the name (kept for call-site stability), this no longer
 // truncates — the maintenance-header message paragraph now wraps to as
@@ -550,4 +636,30 @@ const truncateTitle = (title) => {
   return title.trim();
 };
 
-export const __testing = { FALLBACK_MESSAGE, HEADLINES };
+/**
+ * True for a descriptor a client can safely word: a `message.*` key and a
+ * plain-object `values`. Anything else — a payload cached before descriptors
+ * existed, a malformed response — makes the caller fall back to the English
+ * sentence it was sent alongside.
+ */
+export function isMessageDescriptor(value) {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    typeof value.key === 'string' &&
+    /^message\.[A-Za-z]+$/.test(value.key) &&
+    value.values !== null &&
+    typeof value.values === 'object' &&
+    !Array.isArray(value.values)
+  );
+}
+
+export const __testing = {
+  FALLBACK_MESSAGE: renderEnglish(descriptor(FALLBACK_KEY)),
+  HEADLINES: Object.fromEntries(
+    Object.entries(HEADLINE_KEYS).map(([state, key]) => [
+      state,
+      renderEnglish(descriptor(key)),
+    ]),
+  ),
+};

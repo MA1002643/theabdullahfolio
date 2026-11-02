@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "Các tính năng mới sẽ sớm được phát hành. Website này đang được phát triển tích cực.",
+    "shippingNone": "Vừa phát hành {count, plural, other {# bản cập nhật}} cho website này.",
+    "shippingOne": "Vừa phát hành <bdi>#{number} {title}</bdi>.",
+    "shippingMany": "Vừa phát hành <bdi>#{number} {title}</bdi> (và {more, number} mục khác).",
+    "liveWithTop": "Cập nhật trực tiếp: đang phát hành thay đổi ngay lúc này — hiện tập trung vào <bdi>#{number} {title}</bdi>.",
+    "livePushes": "Cập nhật trực tiếp: đang phát hành các thay đổi mới cho website này ngay lúc này.",
+    "liveActive": "Công việc đang diễn ra ngay lúc này{hasTop, select, yes { — hiện tập trung vào <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "Đang tích cực xử lý {count, plural, other {# tác vụ}}{hasTop, select, yes { — hiện tập trung vào <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "Đang thực hiện {prs, plural, other {# pull request}} và {issues, plural, other {# tác vụ đang mở}}{hasTop, select, yes { — hiện tập trung vào <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "Đang thực hiện {prs, plural, other {# pull request}}{hasTop, select, yes { — hiện tập trung vào <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "Đang thực hiện {issues, plural, other {# tác vụ đang mở}}{hasTop, select, yes { — hiện tập trung vào <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "Website này đang được thực hiện công việc.",
+    "planning": "Đang lên kế hoạch cho những cải tiến tiếp theo{hasTop, select, yes { — hiện tập trung vào <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "Đang xử lý {count, plural, other {# tác vụ}} — hiện tập trung vào <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "Vừa phát hành",
+    "live": "Đang phát triển trực tiếp",
+    "inProgress": "Đang thực hiện",
+    "planning": "Lên kế hoạch cho những cải tiến tiếp theo",
+    "idle": "Đang bảo trì"
+  },
+  "region": "Trạng thái bảo trì trực tiếp",
+  "state": {
+    "shipping": "PHÁT HÀNH",
+    "live": "TRỰC TIẾP",
+    "inProgress": "ĐANG LÀM",
+    "planning": "LẬP KẾ HOẠCH",
+    "idle": "BẢO TRÌ"
+  },
+  "stateSpoken": {
+    "shipping": "phát hành",
+    "live": "trực tiếp",
+    "inProgress": "đang thực hiện",
+    "planning": "lập kế hoạch",
+    "idle": "bảo trì"
+  },
+  "pipeline": {
+    "planning": "Lên kế hoạch",
+    "inProgress": "Xây dựng",
+    "shipping": "Phát hành",
+    "live": "Live"
+  },
+  "legend": {
+    "title": "Quy trình phát hành",
+    "srIdle": "Quy trình phát hành. Ngoài quy trình: giám sát bảo trì.",
+    "srStage": "Quy trình phát hành. Giai đoạn hiện tại: {stage}, {index} trên {total}.",
+    "headingIdle": "Bảo trì · ngoài quy trình",
+    "headingStage": "{stage} · giai đoạn {index}/{total}",
+    "maintenance": "Bảo trì",
+    "offPipeline": "Ngoài quy trình — đang giám sát {count, plural, =0 {các repo được theo dõi} other {# repo}}",
+    "meaning": {
+      "planning": "Các issue đang mở đã được xếp hàng và xác định phạm vi",
+      "inProgress": "Công việc đang thực hiện trên các nhánh và pull request",
+      "shipping": "Công việc đã merge và chuyển sang Done trong 48 giờ qua",
+      "live": "Commit hoặc cập nhật trong 2 giờ qua"
+    }
+  },
+  "fields": {
+    "state": "Trạng thái",
+    "focus": "Trọng tâm",
+    "focusPr": "Trọng tâm · PR",
+    "focusIssue": "Trọng tâm · Issue",
+    "prs": "PR",
+    "issues": "Issue",
+    "pushes24h": "Push · 24 giờ",
+    "pushes": "Push",
+    "activity": "Hoạt động · {days} ngày",
+    "sync": "Đồng bộ",
+    "metered": "· giới hạn"
+  },
+  "metric": {
+    "prs": "PR đang hoạt động",
+    "issues": "Issue đang mở",
+    "pushes": "Push (24 giờ)",
+    "emptyPrs": "Không có PR nào đang hoạt động trong các dự án được theo dõi.",
+    "emptyIssues": "Không có issue nào đang mở trong các dự án được theo dõi.",
+    "emptyPushes": "Không có lượt push nào trong các dự án được theo dõi trong 24 giờ qua."
+  },
+  "popover": {
+    "breakdown": "Chi tiết {metric}",
+    "summary": "{metric} · {count} trong {projects, plural, other {# dự án}}",
+    "heading": "<count></count> trong {projects, plural, other {# dự án}}",
+    "stale": "Đang hiển thị hoạt động gần nhất đã biết.",
+    "more": "+ {count} mục nữa trên GitHub",
+    "openOnGitHub": "Mở trên GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Issue}} #{number}",
+    "ariaOpen": "Mở {type, select, pr {pull request} other {issue}} #{number}: {title} trên GitHub",
+    "stepped": "{type, select, pr {Pull request} other {Issue}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {hoạt động <age></age>} other {}}",
+    "monitoring": "Đang theo dõi {count, plural, other {# kho mã}} — không có mục trọng tâm nào đang hoạt động",
+    "monitoringNone": "Đang theo dõi các kho mã được chọn"
+  },
+  "queue": {
+    "label": "Hàng đợi trọng tâm",
+    "hint": "Mục {index}/{count} · ← → để chuyển",
+    "sr": "Hàng đợi trọng tâm gồm {count} mục — dùng phím mũi tên trái và phải để chuyển"
+  },
+  "activity": {
+    "label": "Dấu vết commit",
+    "summary": "{total, plural, other {# commit}} · {days, plural, other {# ngày}} gần nhất{truncated, select, yes { (các ngày cũ nhất bị tính thiếu)} other {}}"
+  },
+  "sync": {
+    "label": "Đồng bộ gần nhất",
+    "hint": "Độ tin cậy {confidence} · thăm dò mỗi {seconds} giây{metered, select, yes { · mạng có giới hạn} other {}}",
+    "detail": "{hasLast, select, yes {Đồng bộ gần nhất {last} · } other {}}Độ tin cậy tín hiệu {confidence} · thăm dò mỗi {seconds, plural, other {# giây}}{metered, select, yes { khi dùng mạng có giới hạn} other {}}",
+    "stale": "Đã cũ"
+  },
+  "announce": {
+    "status": "Trạng thái: {state}.",
+    "focus": "Trọng tâm hiện tại: {type, select, pr {pull request} other {issue}} {number}, {title}.",
+    "counts": "{prs, plural, other {# pull request đang hoạt động}}, {issues, plural, other {# issue đang mở}} và {pushes, plural, other {# lượt push}} trong 24 giờ qua."
+  },
+  "error": {
+    "snapshot": "Trạng thái trực tiếp tạm thời không khả dụng. Đang hiển thị ảnh chụp mới nhất.",
+    "fallback": "Trạng thái trực tiếp tạm thời không khả dụng. Đang hiển thị bản dự phòng bảo trì."
+  }
+}

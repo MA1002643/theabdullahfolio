@@ -1,0 +1,13 @@
+{
+  "title": "PROYEK",
+  "subtitle": "KARYA SAYA",
+  "filters": {
+    "label": "Kategori proyek",
+    "all": "Semua",
+    "empty": "Belum ada proyek dalam \"{category}\".",
+    "fallback": "Belum ada proyek dalam \"{category}\". Menampilkan semua proyek sebagai gantinya."
+  },
+  "list": {
+    "empty": "Proyek tidak ditemukan."
+  }
+}

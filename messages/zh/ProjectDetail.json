@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "项目导航",
+    "all": "全部项目",
+    "previous": "上一个项目：{name}",
+    "next": "下一个项目：{name}"
+  },
+  "breadcrumbs": {
+    "home": "首页",
+    "projects": "项目"
+  },
+  "loading": "正在加载项目",
+  "intro": {
+    "fallbackName": "项目名称",
+    "fallbackDescription": "创新、快速、面向未来的网页解决方案。",
+    "linksLabel": "{name}相关链接",
+    "liveDemo": "在线演示<sr>（在新标签页中打开）</sr>",
+    "source": "GitHub 上的源码<sr>（在新标签页中打开）</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "正在初始化 BIOS...",
+      "hardware": "正在检测硬件...",
+      "os": "正在加载操作系统..."
+    },
+    "tagline": "以新一代数字工艺，成就你的创意。",
+    "badgeFullstack": "全栈",
+    "tools": "工具与框架",
+    "overview": "项目概览",
+    "overviewLead": "该平台通过统一的控制面板和实时分析，简化电商工作流程。",
+    "overviewBody": "它提供集中、直观的界面，解决了同时管理多种工具的复杂问题。",
+    "features": "功能特性",
+    "feature": {
+      "auth": {
+        "title": "身份验证",
+        "desc": "安全登录与用户访问控制。"
+      },
+      "payments": {
+        "title": "支付",
+        "desc": "集成支付网关。"
+      },
+      "chat": {
+        "title": "在线聊天",
+        "desc": "即时的用户沟通。"
+      },
+      "admin": {
+        "title": "管理后台",
+        "desc": "更简单的内容管理。"
+      }
+    },
+    "liveDemo": "在线演示",
+    "github": "GitHub",
+    "demoLabel": "打开{name}在线演示",
+    "sourceLabel": "在 GitHub 上查看{name}源码"
+  },
+  "meta": {
+    "dated": "{name} — {description}。{category}项目，始于{when}。{visibility, select, private {私有仓库} other {公开仓库}}，实时跟踪其 GitHub 看板。",
+    "undated": "{name} — {description}。{category}项目。{visibility, select, private {私有仓库} other {公开仓库}}，实时跟踪其 GitHub 看板。"
+  }
+}

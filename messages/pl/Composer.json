@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Przywrócono Twoją niewysłaną wiadomość",
+    "keep": "Zachowaj",
+    "clear": "Wyczyść"
+  },
+  "refine": {
+    "affordance": "Dopracuj moją wiadomość",
+    "panelLabel": "Proponowana wersja",
+    "polishing": "Dopracowuję…",
+    "announcePolishing": "Dopracowuję Twoją wiadomość…",
+    "announceReady": "Proponowana wersja jest gotowa.",
+    "announceError": "Nie udało się dopracować wiadomości.",
+    "use": "Użyj tej wersji",
+    "again": "Dopracuj ponownie",
+    "discard": "Odrzuć",
+    "retry": "Spróbuj ponownie",
+    "dismiss": "Zamknij",
+    "cancel": "Anuluj",
+    "errors": {
+      "unconfigured": "Dopracowywanie wiadomości jest teraz niedostępne.",
+      "unavailable": "Dopracowywanie wiadomości jest teraz niedostępne.",
+      "rate_limited": "Zbyt wiele żądań — spróbuj za chwilę.",
+      "too_large": "Żądanie jest zbyt duże.",
+      "bad_request": "Nieprawidłowe żądanie.",
+      "too_short": "Napisz najpierw trochę więcej, a wtedy ją dopracuję.",
+      "too_long": "Ta wiadomość jest zbyt długa, by ją dopracować.",
+      "budget": "Dopracowywanie wiadomości jest teraz wstrzymane.",
+      "failed": "Nie udało się dopracować wiadomości. Spróbuj ponownie."
+    }
+  }
+}

@@ -29,8 +29,9 @@
 // is seen. Same reveal-gating pattern as ElsewhereTerminal.jsx.
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 import { useFooterReveal } from './useFooterReveal';
 import { cn } from '@/lib/utils';
@@ -108,6 +109,7 @@ function Flap({ final, play, reduced, delayMs, ticks }) {
 }
 
 export default function FooterManifest() {
+  const t = useTranslations('Footer');
   const pathname = usePathname();
   const rawReduced = useReducedMotion();
   const ref = useRef(null);
@@ -149,7 +151,7 @@ export default function FooterManifest() {
     >
       {/* Board chrome — a "DEPARTURES" marquee over a hairline. Decorative. */}
       <div className="footer-index__head" aria-hidden="true">
-        <span className="footer-index__marquee">Departures</span>
+        <span className="footer-index__marquee">{t('manifest.departures')}</span>
         <span className="footer-index__rule" />
       </div>
 
@@ -165,6 +167,7 @@ export default function FooterManifest() {
       >
         {quickLinks.map((l, i) => {
           const active = isActive(l.href);
+          const label = t(`manifest.links.${l.key}.label`);
           const ordinal = String(i + 1).padStart(2, '0');
           return (
             // Per-row entrance delay — the cascade cadence, matched to the flap's
@@ -172,7 +175,7 @@ export default function FooterManifest() {
             <li key={l.href} style={{ '--enter': `${i * ROW_STAGGER_MS}ms` }}>
               <TransitionLink
                 href={l.href}
-                transitionLabel={l.label}
+                transitionLabel={label}
                 aria-current={active ? 'page' : undefined}
                 data-active={active ? 'true' : undefined}
                 className={cn('footer-index__row hover-swap', FOCUS_RING)}
@@ -190,14 +193,14 @@ export default function FooterManifest() {
                   ))}
                 </span>
                 <span className="footer-index__dest">
-                  <HoverText text={l.label} />
+                  <HoverText text={label} />
                 </span>
                 <span className="footer-index__gate" aria-hidden="true">
-                  {l.desc}
+                  {t(`manifest.links.${l.key}.desc`)}
                 </span>
                 <span className="footer-index__status" aria-hidden="true">
                   <i />
-                  {active ? 'Now boarding' : 'On time'}
+                  {active ? t('manifest.nowBoarding') : t('manifest.onTime')}
                 </span>
               </TransitionLink>
             </li>

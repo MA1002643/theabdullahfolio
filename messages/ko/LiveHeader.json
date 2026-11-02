@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "곧 새로운 기능이 공개될 예정이에요. 이 웹사이트는 현재 활발히 개발 중입니다.",
+    "shippingNone": "이 웹사이트에 업데이트 {count, plural, other {#건}}을 방금 배포했어요.",
+    "shippingOne": "<bdi>#{number} {title}</bdi>을(를) 방금 배포했어요.",
+    "shippingMany": "<bdi>#{number} {title}</bdi>을(를) 방금 배포했어요 (외 {more, number}건).",
+    "liveWithTop": "실시간 업데이트: 지금 변경 사항을 배포하고 있어요. 현재 <bdi>#{number} {title}</bdi>에 집중하고 있습니다.",
+    "livePushes": "실시간 업데이트: 지금 이 웹사이트에 새로운 변경 사항을 배포하고 있어요.",
+    "liveActive": "지금 활발히 작업하고 있어요{hasTop, select, yes { — 현재 <bdi>#{number} {title}</bdi>에 집중하고 있어요} other {}}.",
+    "inProgressBoard": "현재 작업 {count, plural, other {#개}}를 활발히 진행하고 있어요{hasTop, select, yes { — 현재 <bdi>#{number} {title}</bdi>에 집중하고 있어요} other {}}.",
+    "inProgressPrsAndIssues": "풀 리퀘스트 {prs, plural, other {#건}}과 진행 예정 작업 {issues, plural, other {#건}}을 진행 중이에요{hasTop, select, yes { — 현재 <bdi>#{number} {title}</bdi>에 집중하고 있어요} other {}}.",
+    "inProgressPrs": "풀 리퀘스트 {prs, plural, other {#건}}을 진행 중이에요{hasTop, select, yes { — 현재 <bdi>#{number} {title}</bdi>에 집중하고 있어요} other {}}.",
+    "inProgressIssues": "열린 작업 {issues, plural, other {#건}}을 진행 중이에요{hasTop, select, yes { — 현재 <bdi>#{number} {title}</bdi>에 집중하고 있어요} other {}}.",
+    "inProgressFallback": "이 웹사이트를 작업 중이에요.",
+    "planning": "다음 개선 사항을 계획하고 있어요{hasTop, select, yes { — 현재 <bdi>#{number} {title}</bdi>에 집중하고 있어요} other {}}.",
+    "secondary": "작업 {count, plural, other {#개}}를 진행 중 — 현재 <bdi>#{number} {title}</bdi>에 집중하고 있어요."
+  },
+  "headline": {
+    "shipping": "방금 배포했어요",
+    "live": "실시간 개발 진행 중",
+    "inProgress": "작업 진행 중",
+    "planning": "다음 개선 사항 계획 중",
+    "idle": "유지보수 진행 중"
+  },
+  "region": "실시간 유지보수 상태",
+  "state": {
+    "shipping": "배포 중",
+    "live": "라이브",
+    "inProgress": "진행 중",
+    "planning": "계획 중",
+    "idle": "유지보수"
+  },
+  "stateSpoken": {
+    "shipping": "배포 중",
+    "live": "라이브",
+    "inProgress": "진행 중",
+    "planning": "계획 중",
+    "idle": "유지보수"
+  },
+  "pipeline": {
+    "planning": "계획",
+    "inProgress": "빌드",
+    "shipping": "배포",
+    "live": "라이브"
+  },
+  "legend": {
+    "title": "배포 파이프라인",
+    "srIdle": "배포 파이프라인. 파이프라인 외: 유지보수 모니터링 중입니다.",
+    "srStage": "배포 파이프라인. 현재 단계: {stage}, {total}단계 중 {index}단계입니다.",
+    "headingIdle": "유지보수 · 파이프라인 외",
+    "headingStage": "{stage} · {total}단계 중 {index}단계",
+    "maintenance": "유지보수",
+    "offPipeline": "파이프라인 외 — {count, plural, =0 {추적 중인 저장소} other {저장소 #개}} 모니터링 중",
+    "meaning": {
+      "planning": "열린 이슈를 정리하고 범위를 정해 대기 중",
+      "inProgress": "브랜치와 풀 리퀘스트에서 진행 중인 작업",
+      "shipping": "최근 48시간 내 병합되어 완료로 이동한 작업",
+      "live": "최근 2시간 내 커밋 또는 업데이트"
+    }
+  },
+  "fields": {
+    "state": "상태",
+    "focus": "집중",
+    "focusPr": "집중 · PR",
+    "focusIssue": "집중 · 이슈",
+    "prs": "PR",
+    "issues": "이슈",
+    "pushes24h": "푸시 · 24시간",
+    "pushes": "푸시",
+    "activity": "활동 · {days}일",
+    "sync": "동기화",
+    "metered": "· 제한됨"
+  },
+  "metric": {
+    "prs": "활성 PR",
+    "issues": "열린 이슈",
+    "pushes": "푸시 (24시간)",
+    "emptyPrs": "추적 중인 프로젝트에 활성 PR이 없어요.",
+    "emptyIssues": "추적 중인 프로젝트에 열린 이슈가 없어요.",
+    "emptyPushes": "추적 중인 프로젝트에 최근 24시간 동안 푸시가 없어요."
+  },
+  "popover": {
+    "breakdown": "{metric} 세부 내역",
+    "summary": "{metric} · 프로젝트 {projects, plural, other {#개}}에서 {count}",
+    "heading": "프로젝트 {projects, plural, other {#개}}에서 <count></count>",
+    "stale": "마지막으로 확인된 활동을 보여드려요.",
+    "more": "+ GitHub에서 {count}개 더 보기",
+    "openOnGitHub": "GitHub에서 열기 ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {풀 리퀘스트} other {이슈}} #{number}",
+    "ariaOpen": "GitHub에서 {type, select, pr {풀 리퀘스트} other {이슈}} #{number} 열기: {title}",
+    "stepped": "{type, select, pr {풀 리퀘스트} other {이슈}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {<age></age> 활동} other {}}",
+    "monitoring": "저장소 {count, plural, other {#개}}를 모니터링하고 있어요 — 활성 포커스 항목 없음",
+    "monitoringNone": "추적 중인 저장소를 모니터링하고 있어요"
+  },
+  "queue": {
+    "label": "포커스 대기열",
+    "hint": "{count}개 중 {index}번째 · ← →로 이동",
+    "sr": "포커스 대기열 {count}개 — 왼쪽, 오른쪽 화살표 키로 이동해요"
+  },
+  "activity": {
+    "label": "커밋 추적",
+    "summary": "{total, plural, other {커밋 #개}} · 최근 {days, plural, other {#일}}{truncated, select, yes { (오래된 날짜는 과소 집계됨)} other {}}"
+  },
+  "sync": {
+    "label": "마지막 동기화",
+    "hint": "신뢰도 {confidence} · {seconds}초마다 폴링{metered, select, yes { · 종량제} other {}}",
+    "detail": "{hasLast, select, yes {마지막 동기화 {last} · } other {}}신호 신뢰도 {confidence} · {metered, select, yes {종량제 연결 중 } other {}}{seconds, plural, other {#초}}마다 폴링",
+    "stale": "오래됨"
+  },
+  "announce": {
+    "status": "상태: {state}.",
+    "focus": "현재 포커스: {type, select, pr {풀 리퀘스트} other {이슈}} {number}, {title}.",
+    "counts": "최근 24시간 동안 활성 풀 리퀘스트 {prs, plural, other {#건}}, 열린 이슈 {issues, plural, other {#건}}, 푸시 {pushes, plural, other {#건}}이 있어요."
+  },
+  "error": {
+    "snapshot": "실시간 상태를 일시적으로 불러올 수 없어요. 최신 스냅샷을 보여드려요.",
+    "fallback": "실시간 상태를 일시적으로 불러올 수 없어요. 점검용 대체 화면을 보여드려요."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "label": "Dil",
+  "triggerLabel": "Dil: {language}",
+  "searchLabel": "Dillerde ara",
+  "searchPlaceholder": "20 dilde ara…",
+  "noResults": "“{query}” ile eşleşen dil yok.",
+  "tier1": "Seviye 1",
+  "tier2": "Seviye 2",
+  "current": "Geçerli",
+  "machineBadge": "Makine",
+  "machineBadgeLabel": "Makine çevirisi",
+  "switching": "{language} diline geçiliyor…",
+  "notice": {
+    "title": "Makine çevirisi",
+    "body": "Bu çeviri makine tarafından üretildi ve henüz anadili konuşan biri tarafından gözden geçirilmedi.",
+    "cta": "Daha iyi bir çeviri öner"
+  },
+  "suggestion": {
+    "region": "Dil önerisi",
+    "message": "Bu site {language} dilinde de mevcut.",
+    "switch": "{language} diline geç",
+    "dismiss": "{current} kalsın"
+  },
+  "englishOnly": {
+    "label": "İngilizce yayımlandı",
+    "body": "Bu belge yalnızca İngilizce yayımlanmaktadır. Gezinme ve denetimler senin dilinde kalır."
+  }
+}

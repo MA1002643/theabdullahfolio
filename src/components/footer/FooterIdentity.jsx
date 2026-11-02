@@ -25,11 +25,13 @@
 // actually scrolled to. Same gate as FooterManifest / ElsewhereTerminal.
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useFooterReveal } from './useFooterReveal';
 import ProjectGithubCta from './ProjectGithubCta';
-import { brand } from './footer-data';
 
 export default function FooterIdentity() {
+  const t = useTranslations('Footer');
+  const tCommon = useTranslations('Common');
   const ref = useRef(null);
   const revealed = useFooterReveal(ref, 0.4);
 
@@ -49,10 +51,12 @@ export default function FooterIdentity() {
       data-revealed={mounted ? (revealed ? 'true' : 'false') : undefined}
       className="footer-identity relative isolate md:col-span-2 lg:col-span-1"
     >
-      {/* Signature watermark — decorative, out of flow, aria-hidden. */}
+      {/* Signature watermark — decorative, out of flow, aria-hidden. A mark,
+          not a word: translate="no" (the pseudo-locale gate reads it). */}
       <span
         aria-hidden="true"
-        className="text-glow-stroke-neon pointer-events-none absolute -left-1 -top-7 -z-10 select-none leading-none opacity-[0.06]"
+        translate="no"
+        className="text-glow-stroke-neon pointer-events-none absolute -start-1 -top-7 -z-10 select-none leading-none opacity-[0.06]"
         style={{ fontSize: 'clamp(4rem, 10vw, 7rem)' }}
       >
         MA
@@ -63,13 +67,13 @@ export default function FooterIdentity() {
           filter); the gradient + background-clip:text stay on the <p>. */}
       <div className="footer-identity__name-wrap">
         <p className="footer-identity__name text-[2rem] md:text-[2.4rem]">
-          {brand.name}
+          {tCommon('owner.full')}
         </p>
       </div>
       <div className="footer-identity__rule mt-3" aria-hidden="true" />
-      <p className="footer-identity__role mt-3">{brand.role}</p>
+      <p className="footer-identity__role mt-3">{t('identity.role')}</p>
       <p className="footer-identity__stmt mt-4 max-w-[36ch] text-[0.95rem] leading-relaxed text-foreground">
-        {brand.statement}
+        {t('identity.statement')}
       </p>
       <div
         className="elite-divider footer-identity__divider mt-4 h-px w-12"

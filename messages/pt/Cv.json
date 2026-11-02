@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "o registro completo"
+  },
+  "identity": {
+    "role": "Engenheiro de Software"
+  },
+  "downloadPdf": "Baixar o PDF",
+  "sections": {
+    "experience": "Experiência",
+    "education": "Formação",
+    "representation": "Representação",
+    "skills": "Habilidades",
+    "projects": "Projetos selecionados"
+  },
+  "skillGroups": {
+    "languages": "linguagens",
+    "frameworks": "frameworks",
+    "libraries": "bibliotecas",
+    "tools": "ferramentas",
+    "software": "softwares"
+  },
+  "allProjects": "Todos os projetos",
+  "asTimeline": "A mesma trajetória em linha do tempo"
+}

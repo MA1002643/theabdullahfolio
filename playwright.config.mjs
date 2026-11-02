@@ -136,6 +136,10 @@ export default defineConfig({
       dependencies: ['warm-desktop', 'warm-axe-desktop'],
       use: { ...devices['Desktop Chrome'] },
     },
+    // The pseudo-locale gate: every route in `en-XA`, failing on plain
+    // English. Needs a build with NEXT_PUBLIC_I18N_PSEUDO=1 (tests/i18n/
+    // pseudo.spec.js says so when it is missing).
+    { name: 'i18n', testDir: 'tests/i18n', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
     { name: 'security', testDir: 'tests/security', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
     { name: 'perf', testDir: 'tests/perf', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
     ...(RUN_VISUAL

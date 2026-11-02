@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — inżynier oprogramowania. Ciemna karta w odcieniach żaru z pieczęcią Muhammad Abdullah i aktualnym statusem portfolio.",
+  "homeSquareCardAlt": "Muhammad Abdullah — inżynier oprogramowania. Kwadratowa ciemna karta w odcieniach żaru z pieczęcią Muhammad Abdullah i aktualnym statusem portfolio.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — inżynier oprogramowania",
+      "description": "Inżynier oprogramowania z Bolton, który tworzy szybkie, przemyślane aplikacje webowe w Next.js, React i TypeScript. Projekty, kwalifikacje i narzędzia, które za nimi stoją."
+    },
+    "about": {
+      "title": "O mnie",
+      "description": "Inżynier stojący za żarem — historia, stos technologiczny i telemetria z GitHub na żywo o tym, co właśnie powstaje."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "Pełny zapis — każda rola, kwalifikacja i ukończony projekt, w HTML. Powstał z tych samych danych, z których renderuje się oś czasu, a PDF jest oddalony o jedno kliknięcie."
+    },
+    "notes": {
+      "title": "Notatki",
+      "description": "Zapisy decyzji inżynierskich — dlaczego dokonano każdego wyboru na tej stronie, które alternatywy odrzucono i ile każda decyzja kosztowała."
+    },
+    "projects": {
+      "title": "Projekty",
+      "description": "{countWord} projektów — web, systemy, aplikacje mobilne i AI — każdy śledzony na żywo z własnej tablicy na GitHub, ze stosem technologicznym i stanem ukończenia na każdej karcie."
+    },
+    "qualifications": {
+      "title": "Kwalifikacje",
+      "description": "Dyplomy, certyfikaty i uprawnienia zawodowe — zweryfikowany ślad dokumentów stojący za praktyką, a każdy certyfikat można obejrzeć."
+    },
+    "journey": {
+      "title": "Droga zawodowa",
+      "description": "Każda rola, kwalifikacja i wolontariat na jednej osi czasu przewijanej w dół — od Bolton College w 2018 roku po tworzenie produkcyjnego oprogramowania dzisiaj."
+    },
+    "uses": {
+      "title": "Narzędzia",
+      "description": "Maszyna, stanowisko pracy, stos technologiczny i pipeline — każde narzędzie na tej stronie zweryfikowane na podstawie repozytoriów i buildu, który je wdraża."
+    },
+    "contact": {
+      "title": "Kontakt",
+      "description": "Zacznij rozmowę o roli lub projekcie — formularz kontaktowy, który dopracowuje Twoją wiadomość w trakcie pisania i nigdy nie gubi szkicu."
+    },
+    "myPast": {
+      "title": "Moja przeszłość",
+      "description": "Portfolio z czasów studiów, od którego wszystko się zaczęło — zbudowane ręcznie w czystym HTML, CSS i JavaScript i zachowane online jako uczciwe zdjęcie „przed”."
+    },
+    "guestbook": {
+      "title": "Księga gości",
+      "description": "Zostaw swój ślad na ścianie — neonowa tablica wiadomości, pod którą podpisują się odwiedzający przez GitHub lub Google, z obecnością i reakcjami na żywo."
+    },
+    "privacy": {
+      "title": "Prywatność",
+      "description": "Każde ciasteczko, klucz pamięci i podmiot trzeci, z którym ta strona ma styczność, po co istnieją i jak wyłączyć opcjonalne. Sprawdzone ręcznie, nie z szablonu."
+    }
+  },
+  "notFound": {
+    "title": "404 — Nie znaleziono strony",
+    "description": "Zdryfowałeś w pustkę. Tej strony nie ma — jeszcze."
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Projectnavigatie",
+    "all": "Alle projecten",
+    "previous": "Vorig project: {name}",
+    "next": "Volgend project: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "projects": "Projecten"
+  },
+  "loading": "Project laden",
+  "intro": {
+    "fallbackName": "Projectnaam",
+    "fallbackDescription": "Innovatieve, snelle en toekomstgerichte weboplossingen.",
+    "linksLabel": "Links van {name}",
+    "liveDemo": "Livedemo<sr> (opent in een nieuw tabblad)</sr>",
+    "source": "Broncode op GitHub<sr> (opent in een nieuw tabblad)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "BIOS wordt geïnitialiseerd...",
+      "hardware": "Hardware wordt gedetecteerd...",
+      "os": "Besturingssysteem wordt geladen..."
+    },
+    "tagline": "Jouw ideeën versterkt met digitaal vakmanschap van de nieuwste generatie.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Tools & frameworks",
+    "overview": "Projectoverzicht",
+    "overviewLead": "Dit platform stroomlijnt e-commerceprocessen met één centraal dashboard en live analyses.",
+    "overviewBody": "Het neemt de complexiteit van het beheren van meerdere tools weg met een centrale, intuïtieve interface.",
+    "features": "Functies",
+    "feature": {
+      "auth": {
+        "title": "Authenticatie",
+        "desc": "Veilig inloggen en gebruikerstoegang."
+      },
+      "payments": {
+        "title": "Betalingen",
+        "desc": "Geïntegreerde betaalprovider."
+      },
+      "chat": {
+        "title": "Livechat",
+        "desc": "Directe communicatie met gebruikers."
+      },
+      "admin": {
+        "title": "Beheerpaneel",
+        "desc": "Eenvoudig contentbeheer."
+      }
+    },
+    "liveDemo": "Livedemo",
+    "github": "GitHub",
+    "demoLabel": "Open de livedemo van {name}",
+    "sourceLabel": "Bekijk de broncode van {name} op GitHub"
+  },
+  "meta": {
+    "dated": "{name} — {description}. {category}-project, gestart in {when}. {visibility, select, private {Privérepository} other {Openbare repository}}, live bijgehouden via het GitHub-bord.",
+    "undated": "{name} — {description}. {category}-project. {visibility, select, private {Privérepository} other {Openbare repository}}, live bijgehouden via het GitHub-bord."
+  }
+}

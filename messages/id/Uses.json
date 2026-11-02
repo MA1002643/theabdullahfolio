@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "SETUP SAYA",
+    "subtitle": "perangkat yang terverifikasi"
+  },
+  "opensNewTab": "{name} (dibuka di tab baru)",
+  "machine": {
+    "eyebrow": "Perangkat keras · diatur manual",
+    "title": "Mesin kerja",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> baris} other {<fig>{n}</fig> baris}} · dikonfirmasi pemilik",
+    "seeItLive": "lihat langsung"
+  },
+  "bench": {
+    "eyebrow": "Lingkungan · diatur manual",
+    "title": "Meja kerja",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> stasiun} other {<fig>{n}</fig> stasiun}} · cuplikan {file}",
+    "extensions": "Ekstensi andalan saya",
+    "editorCaption": "Cuplikan {file} VS Code saya, ditampilkan dengan tema {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · dipindai dari repositori",
+    "eyebrowCurated": "Stack · set pilihan",
+    "title": "Tumpukan teknologi",
+    "provenanceLive": "langsung · {count, plural, =1 {<fig>{n}</fig> alat} other {<fig>{n}</fig> alat}}",
+    "provenanceCurated": "kurasi · {count, plural, =1 {<fig>{n}</fig> alat} other {<fig>{n}</fig> alat}} · {state, select, unreachable {GitHub tidak terjangkau} other {menyinkronkan dengan GitHub…}}",
+    "verifiedSr": "terverifikasi dengan GitHub",
+    "verifiedStatus": "Stack terverifikasi dengan GitHub.",
+    "cta": "LIHAT REPOSITORI",
+    "ctaLabel": "Lihat repositori di GitHub (dibuka di tab baru)",
+    "tally": "<count></count> dari <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "repositori publik",
+    "keyPrivate": "privat",
+    "keyRelative": "batang bersifat relatif terhadap alat yang paling sering digunakan",
+    "keyPending": "batang terisi dan jumlah repositori muncul bersama pemindaian langsung",
+    "repoCount": {
+      "public": "digunakan di {pub, plural, other {# repo publik}}",
+      "private": "digunakan di {priv, plural, other {# repo privat}}",
+      "mixed": "digunakan di {pub, plural, other {# repo publik}} · +{priv} privat"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: jumlah repositori muncul bersama pemindaian langsung",
+    "figure": {
+      "publicRepos": "{n, plural, other {repo publik}}",
+      "privateRepos": "{n, plural, other {repo privat}}",
+      "repos": "{n, plural, other {repo}}",
+      "public": "publik",
+      "private": "privat"
+    },
+    "curated": "kurasi"
+  },
+  "liveAge": {
+    "verified": "diverifikasi {age}",
+    "s": "{s} dtk lalu",
+    "ms": "{m} mnt {s} dtk lalu",
+    "hm": "{h} j {m} mnt lalu",
+    "dh": "{d} h {h} j lalu"
+  },
+  "pipeline": {
+    "eyebrow": "Pengiriman · dari commit ke compute",
+    "title": "Alur rilis",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> workflow} other {<fig>{n}</fig> workflow}} · dibaca dari .github saat build",
+    "provenanceHandSet": "skematik · diatur manual",
+    "region": "Diagram pipeline build",
+    "svgTitle": "Alur pengiriman: sebuah push mengalir dari GitHub melalui GitHub Actions dan proses build Vercel menuju Fluid compute. Fluid compute juga dijangkau langsung oleh webhook GitHub dan dipanggil oleh cron harian, lalu menyebar melalui service bus ke layanan-layanan yang tercantum di bawah.",
+    "fires": "berjalan <fig>{window}</fig> UTC (presisi Hobby)",
+    "kinds": {
+      "source": "SUMBER",
+      "ci": "CI",
+      "build": "BUILD",
+      "runtime": "RUNTIME",
+      "schedule": "JADWAL",
+      "store": "PENYIMPANAN",
+      "gateway": "GATEWAY",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "EMAIL",
+      "auth": "AUTENTIKASI",
+      "search": "PENCARIAN"
+    },
+    "workflows": "{count, plural, other {{n} workflow}}",
+    "apiRoutes": "{count, plural, other {{n} rute API}}",
+    "apiRoutesBare": "Rute API",
+    "locales": "{count, plural, other {{n} bahasa}}",
+    "crons": "{count, plural, other {{n} cron}}",
+    "daily": "harian · {time} UTC",
+    "services": {
+      "redis": "buku tamu · lokasi · SEO · deduplikasi",
+      "graphql": "statistik · keahlian · progres",
+      "spotify": "sedang diputar",
+      "mail": "kontak · verifikasi Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Kualitas · dihitung saat build",
+    "title": "Instrumen ukur",
+    "provenance": "dihitung saat build · <fig>{date}</fig>",
+    "provenanceBare": "dihitung saat build",
+    "unitLabel": "{count, plural, other {suite Vitest}}",
+    "unitSub": "{count, plural, other {{n} kasus uji}} · Vitest",
+    "e2eLabel": "{count, plural, other {suite browser}}",
+    "e2eSub": "{count, plural, other {{n} skenario}} · Playwright",
+    "apiLabel": "{count, plural, other {rute API}}",
+    "apiSub": "route handler · {methods}",
+    "apiSubBare": "route handler",
+    "tileLabel": "{figure} {label} — {sub} (membuka folder di GitHub pada tab baru)"
+  },
+  "bom": {
+    "eyebrow": "Daftar komponen · situs ini",
+    "title": "Terbuat dari apa",
+    "provenance": "{source} · diverifikasi saat build · <fig>{date}</fig>",
+    "provenanceBare": "{source} · diverifikasi saat build",
+    "unreadable": "Manifes tidak dapat dibaca saat build, sehingga tidak ada versi yang ditampilkan.",
+    "packages": "{count, plural, =1 {<fig>{n}</fig> paket} other {<fig>{n}</fig> paket}}",
+    "packagesOf": "<fig>{n}</fig> dari <fig>{all}</fig> paket",
+    "built": "dibangun <fig>{date}</fig>",
+    "groups": {
+      "core": "Inti",
+      "3d-and-motion": "3D & gerak",
+      "data-and-services": "Data & layanan",
+      "interface": "Antarmuka",
+      "platform": "Platform",
+      "media": "Media",
+      "quality": "Kualitas",
+      "build": "Build",
+      "runtime": "Runtime",
+      "tooling": "Perkakas"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Bahasa",
+        "lay": "Bahasa yang dipakai untuk menulis kodenya."
+      },
+      "frameworks": {
+        "label": "Framework",
+        "lay": "Kerangka dasar tempat sebuah aplikasi dibangun: struktur dan konvensinya."
+      },
+      "libraries": {
+        "label": "Pustaka",
+        "lay": "Komponen siap pakai, masing-masing dipasang untuk mengerjakan satu tugas dengan baik."
+      },
+      "tools": {
+        "label": "Perkakas",
+        "lay": "Yang bekerja di sekitar kode: pengujian, pemformatan, basis data, dan deployment."
+      },
+      "software": {
+        "label": "Perangkat lunak",
+        "lay": "Layanan tempat hasil karya yang sudah jadi berjalan."
+      }
+    }
+  }
+}

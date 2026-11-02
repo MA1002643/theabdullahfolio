@@ -1,0 +1,20 @@
+{
+  "section": "Lo que uso",
+  "preferences": "Preferencias",
+  "jumpPlate": "Ir a {ordinal} {label}",
+  "plates": {
+    "machine": "La máquina",
+    "bench": "El banco de trabajo",
+    "stack": "El stack",
+    "pipeline": "El pipeline",
+    "instruments": "Los instrumentos",
+    "bom": "Lista de materiales"
+  },
+  "copySettings": "Copiar mi configuración del editor",
+  "openRepos": "Ver los repositorios en GitHub",
+  "toggleMotion": "Alternar movimiento",
+  "motionOn": "activado",
+  "motionOff": "desactivado",
+  "copied": "Configuración del editor copiada",
+  "clipboardUnavailable": "Portapapeles no disponible — selecciona el marco para copiar"
+}

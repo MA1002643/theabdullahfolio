@@ -1,0 +1,14 @@
+{
+  "loadingProject": "Memuat proyek",
+  "emblem": "Emblem Muhammad Abdullah",
+  "notifications": "Notifikasi",
+  "sound": {
+    "turnOn": "Nyalakan suara gitar",
+    "turnOff": "Matikan suara gitar"
+  },
+  "owner": {
+    "given": "Muhammad",
+    "family": "Abdullah",
+    "full": "Muhammad Abdullah"
+  }
+}

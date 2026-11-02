@@ -6,6 +6,8 @@ import { createFakeRedis } from '../support/fakeRedis.js';
 import { abstractHandler } from '../support/msw/handlers.js';
 import { server } from '../support/msw/server.js';
 import { freshSecret } from '../helpers/secrets.js';
+import { createTranslator } from 'next-intl';
+import contactMessages from '../../messages/en/Contact.json';
 
 // POST /api/send-mail, end to end inside the handler (issue #92, L4).
 //
@@ -159,6 +161,32 @@ describe('validation', () => {
     const { POST } = await loadRoute();
     const { body } = await json(await POST(post({ name: '', email: 'nope', subject: '', message: '' })));
     expect(body.errors.length).toBeGreaterThanOrEqual(4);
+  });
+
+  // Issue #82: every error carries a machine code, index-aligned with the
+  // English, and the form words it from the Contact catalogue. The contract
+  // that keeps English byte-identical: each code, rendered in English with the
+  // route's own values, IS the sentence the route sent.
+  it('pairs every error with a code whose English catalogue entry matches it', async () => {
+    const t = createTranslator({ locale: 'en', messages: { Contact: contactMessages }, namespace: 'Contact' });
+    const { POST } = await loadRoute();
+    const cases = [
+      { name: '', email: 'nope', subject: '', message: '' },
+      validContactMessage({ name: 'n'.repeat(101), subject: 's'.repeat(176), message: 'm'.repeat(2001) }),
+      validContactMessage({ email: `${'e'.repeat(250)}@x.io`, name: 'a\nb' }),
+    ];
+    for (const payload of cases) {
+      const { body } = await json(await POST(post(payload)));
+      expect(body.issues).toHaveLength(body.errors.length);
+      body.issues.forEach(({ code, values }, i) => {
+        expect(t.has(`errors.${code}`), code).toBe(true);
+        expect(t(`errors.${code}`, values)).toBe(body.errors[i]);
+      });
+    }
+    const raw = await POST(post('{"name": '));
+    const malformed = await raw.json();
+    expect(malformed.issues).toEqual([{ code: 'invalid_body' }]);
+    expect(t('errors.invalid_body')).toBe(malformed.errors[0]);
   });
 
   it('answers malformed JSON with a 400, not a retryable 500', async () => {

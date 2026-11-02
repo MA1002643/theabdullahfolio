@@ -2,10 +2,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createElement } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BenchPlate from '@/components/uses/BenchPlate';
 import { usesData } from '@/app/data';
+import { renderWithIntl } from '../support/intl';
 
 // The /uses Bench plate's layout contract (owner correction, 2026-09-05):
 // the six stations run THREE ACROSS from `md` (tablets, laptops, desktops),
@@ -49,7 +50,7 @@ afterEach(() => {
 });
 
 function renderBench() {
-  render(
+  renderWithIntl(
     createElement(BenchPlate, {
       bench: usesData.bench,
       extensions: usesData.extensions,

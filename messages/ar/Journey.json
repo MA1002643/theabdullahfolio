@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "رحلتي",
+    "subtitle": "من السطر الأول إلى الإنتاج"
+  },
+  "timeline": {
+    "label": "الخط الزمني للرحلة"
+  },
+  "endCap": {
+    "est": "منذ {year} · Bolton، المملكة المتحدة",
+    "tally": "{years, plural, zero {# سنة} one {سنة واحدة} two {سنتان} few {# سنوات} many {# سنة} other {# سنة}} · {entries, plural, zero {# مدخل} one {مدخل واحد} two {مدخلان} few {# مداخل} many {# مدخلًا} other {# مدخل}} · {tracks, plural, zero {# مسار} one {مسار واحد} two {مساران} few {# مسارات} many {# مسارًا} other {# مسار}}",
+    "paper": "النسخة الورقية →",
+    "paperHint": "السيرة الذاتية بصيغة PDF (تُفتح في تبويب جديد)"
+  },
+  "spine": {
+    "now": "الآن"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, one {شهر} two {شهران} few {# أشهر} many {# شهرًا} other {# شهر}}} one {سنة{months, plural, =0 {} one { وشهر} two { وشهران} few { و# أشهر} many { و# شهرًا} other { و# شهر}}} two {سنتان{months, plural, =0 {} one { وشهر} two { وشهران} few { و# أشهر} many { و# شهرًا} other { و# شهر}}} few {# سنوات{months, plural, =0 {} one { وشهر} two { وشهران} few { و# أشهر} many { و# شهرًا} other { و# شهر}}} many {# سنة{months, plural, =0 {} one { وشهر} two { وشهران} few { و# أشهر} many { و# شهرًا} other { و# شهر}}} other {# سنة{months, plural, =0 {} one { وشهر} two { وشهران} few { و# أشهر} many { و# شهرًا} other { و# شهر}}}}",
+    "tenureOngoing": "{tenure} حتى الآن",
+    "view": "عرض",
+    "viewLabel": "عرض {title} (يُفتح في تبويب جديد)"
+  },
+  "eraRail": {
+    "label": "حقب الخط الزمني",
+    "jump": "الانتقال إلى {year}"
+  },
+  "atlas": {
+    "eyebrow": "عرض التداخل",
+    "title": "الأطلس — ثلاثة مسارات، ساعة واحدة",
+    "live": {
+      "career": "{count, plural, zero {# منصب} one {منصب واحد} two {منصبان} few {# مناصب} many {# منصبًا} other {# منصب}}",
+      "education": "{count, plural, zero {# درجة علمية} one {درجة علمية واحدة} two {درجتان علميتان} few {# درجات علمية} many {# درجة علمية} other {# درجة علمية}}",
+      "milestone": "{count, plural, zero {# منشور مجتمعي} one {منشور مجتمعي واحد} two {منشوران مجتمعيان} few {# منشورات مجتمعية} many {# منشورًا مجتمعيًا} other {# منشور مجتمعي}}",
+      "separator": " + ",
+      "sentence": "قيد التنفيذ اليوم: {parts}{total, plural, =1 {.} other { — بالتوازي.}}"
+    },
+    "tracks": {
+      "all": "الكل",
+      "career": "المهنة",
+      "education": "التعليم",
+      "milestone": "المجتمع"
+    },
+    "chipsLabel": "إبراز مسار واحد",
+    "zoom": {
+      "group": "مستوى تكبير الشبكة",
+      "out": "تصغير الشبكة",
+      "outTitle": "تصغير",
+      "in": "تكبير الشبكة",
+      "inTitle": "تكبير",
+      "readoutLabel": "تكبير الشبكة {pct}. إعادة الضبط إلى {full}",
+      "readoutTitle": "تكبير الشبكة",
+      "resetTitle": "إعادة التكبير إلى {full}",
+      "status": "تكبير الشبكة {pct}"
+    },
+    "region": "أطلس التداخل: كل دور وكل مقرر دراسي كأشرطة متوازية على محور زمني واحد",
+    "entries": "{count, plural, zero {# مدخل} one {مدخل واحد} two {مدخلان} few {# مداخل} many {# مدخلًا} other {# مدخل}}",
+    "now": "الآن",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "الانتقال إلى {org} · {role}، {dates}",
+    "spokenRange": "من {start} إلى {end}",
+    "spokenOpen": "من {start} حتى الآن",
+    "key": {
+      "select": "اختر أي شريط للانتقال إليه.",
+      "dashed": "الحافة المتقطعة = لا يزال جاريًا.",
+      "stacked": "الأشرطة المتراكمة = متزامنة."
+    }
+  },
+  "palette": {
+    "section": "الرحلة",
+    "jumpYear": "الانتقال إلى {year}",
+    "eraHint": "حقبة",
+    "jumpAtlas": "الانتقال إلى أطلس التداخل",
+    "openCv": "فتح الـ CV (PDF)",
+    "openCvHint": "النسخة الورقية"
+  }
+}

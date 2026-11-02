@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "het volledige overzicht"
+  },
+  "identity": {
+    "role": "Software engineer"
+  },
+  "downloadPdf": "Download de pdf",
+  "sections": {
+    "experience": "Ervaring",
+    "education": "Opleiding",
+    "representation": "Vertegenwoordiging",
+    "skills": "Vaardigheden",
+    "projects": "Uitgelichte projecten"
+  },
+  "skillGroups": {
+    "languages": "talen",
+    "frameworks": "frameworks",
+    "libraries": "bibliotheken",
+    "tools": "tools",
+    "software": "software"
+  },
+  "allProjects": "Alle projecten",
+  "asTimeline": "Dezelfde geschiedenis als tijdlijn"
+}

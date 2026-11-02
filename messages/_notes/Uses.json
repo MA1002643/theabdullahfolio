@@ -1,0 +1,5 @@
+{
+  "stack.title": "Section heading for the list of technologies the site is built with (a \"tech stack\"). Use a phrase in the target language, not the bare English loanword \"Stack\" — e.g. Turkish \"Teknoloji yığını\", Polish \"Stos technologiczny\". An article + loanword is fine where that is the natural native usage (German \"Der Stack\").",
+  "pipeline.title": "Section heading over a diagram of the delivery pipeline (commit → CI → build → deploy). Use a phrase in the target language, not the bare English loanword \"Pipeline\" — e.g. Turkish \"Teslimat hattı\", Polish \"Potok wdrożeniowy\".",
+  "pipeline.locales": "Tiny label inside a node of a build diagram: how many languages the site is built in. {n} is the pre-formatted number. Very short."
+}

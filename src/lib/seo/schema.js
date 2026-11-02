@@ -41,6 +41,7 @@
 // snapshot that rots invisibly. `usesData.stack` is reviewed in diffs and is
 // already rendered on /uses, so the claim and the visible page cannot disagree.
 
+import { DEFAULT_LOCALE, localeInfo, localizePath } from '@/i18n/locales';
 import { absoluteUrl } from './canonical';
 import { CV_ASSET, IDENTITY, ORIGIN, legalOrgName } from './site';
 import { linkedInUrl, profileGithubUrl } from '@/components/footer/footer-data';
@@ -51,6 +52,19 @@ import { linkedInUrl, profileGithubUrl } from '@/components/footer/footer-data';
 export const PERSON_ID = `${ORIGIN}/#person`;
 export const WEBSITE_ID = `${ORIGIN}/#website`;
 export const projectId = (id) => `${absoluteUrl(`/projects/${id}`)}#project`;
+
+// ── Locale (issue #82) ──────────────────────────────────────────────────────
+// Every page builder below takes an optional `locale`. Omitted or 'en', the
+// output is byte-identical to before #82 — English URLs, `en-GB`. Any other
+// locale describes ITS document: the prefixed URL as the page's `@id` and
+// `url` (each language version is its own page, as its canonical says), and
+// its own `inLanguage`. The ENTITY ids (`#person`, `#website`, `#project`) are
+// deliberately NOT localised: there is one person and one project no matter
+// how many languages describe them, and a per-locale `@id` would split one
+// entity into twenty.
+const pageUrl = (path, locale) => absoluteUrl(localizePath(path, locale));
+export const languageTag = (locale) =>
+  !locale || locale === DEFAULT_LOCALE ? 'en-GB' : localeInfo(locale).hreflang;
 
 // A reference to a node defined elsewhere in the graph. Emitting `{'@id': ...}`
 // rather than a duplicate of the node is the whole mechanism: it is a POINTER,
@@ -157,12 +171,13 @@ export function personGraph(options) {
  *   page that actually renders the stack this claim is read from.
  * @returns {object} A JSON-LD ProfilePage document.
  */
-export function profilePage({ knowsAbout } = {}) {
+export function profilePage({ knowsAbout, locale } = {}) {
   return {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
-    '@id': `${absoluteUrl('/about')}#page`,
-    url: absoluteUrl('/about'),
+    '@id': `${pageUrl('/about', locale)}#page`,
+    url: pageUrl('/about', locale),
+    ...(locale && locale !== DEFAULT_LOCALE ? { inLanguage: languageTag(locale) } : {}),
     isPartOf: ref(WEBSITE_ID),
     // When the caller has live skill data, the Person node is RESTATED here
     // with `knowsAbout` attached rather than referenced. That is the one place
@@ -206,12 +221,13 @@ export function profilePage({ knowsAbout } = {}) {
  *   [options] Derived CV sections. Each is pruned when empty.
  * @returns {object} A JSON-LD ProfilePage document.
  */
-export function cvPage({ experience = [], education = [], knowsAbout } = {}) {
+export function cvPage({ experience = [], education = [], knowsAbout, locale } = {}) {
   return {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
-    '@id': `${absoluteUrl('/cv')}#page`,
-    url: absoluteUrl('/cv'),
+    '@id': `${pageUrl('/cv', locale)}#page`,
+    url: pageUrl('/cv', locale),
+    ...(locale && locale !== DEFAULT_LOCALE ? { inLanguage: languageTag(locale) } : {}),
     isPartOf: ref(WEBSITE_ID),
     // The PDF the page links to, declared as the machine-readable form of the
     // same document. This is the one place the two CVs are tied together for a
@@ -270,13 +286,14 @@ export function cvPage({ experience = [], education = [], knowsAbout } = {}) {
  * @param {Array<{id: string|number, name: string}>} projects Project records.
  * @returns {object} A JSON-LD CollectionPage document.
  */
-export function projectsCollection(projects) {
+export function projectsCollection(projects, { locale, name = 'Projects' } = {}) {
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    '@id': `${absoluteUrl('/projects')}#page`,
-    url: absoluteUrl('/projects'),
-    name: 'Projects',
+    '@id': `${pageUrl('/projects', locale)}#page`,
+    url: pageUrl('/projects', locale),
+    name,
+    ...(locale && locale !== DEFAULT_LOCALE ? { inLanguage: languageTag(locale) } : {}),
     isPartOf: ref(WEBSITE_ID),
     about: ref(PERSON_ID),
     mainEntity: {
@@ -288,7 +305,7 @@ export function projectsCollection(projects) {
         // 1-based: schema.org positions are ordinals, and a 0 is treated as
         // missing by several consumers.
         position: index + 1,
-        url: absoluteUrl(`/projects/${project.id}`),
+        url: pageUrl(`/projects/${project.id}`, locale),
         name: project.name,
         item: ref(projectId(project.id)),
       })),
@@ -316,8 +333,11 @@ export function projectsCollection(projects) {
  *   src/data/project-languages.json map, never a live fetch.
  * @returns {object} A JSON-LD document containing the project and its trail.
  */
-export function projectPage(project, { programmingLanguage } = {}) {
-  const url = absoluteUrl(`/projects/${project.id}`);
+export function projectPage(
+  project,
+  { programmingLanguage, locale, description = project.description, crumbs = {} } = {},
+) {
+  const url = pageUrl(`/projects/${project.id}`, locale);
 
   return {
     '@context': 'https://schema.org',
@@ -327,7 +347,8 @@ export function projectPage(project, { programmingLanguage } = {}) {
         '@id': projectId(project.id),
         url,
         name: project.name,
-        description: project.description,
+        description,
+        ...(locale && locale !== DEFAULT_LOCALE ? { inLanguage: languageTag(locale) } : {}),
         // The repo's creation date, from data.js. `dateCreated` takes an
         // ISO-8601 date and `date` is already stored in exactly that form, so
         // it passes through untouched — no reformatting, nothing invented.
@@ -351,11 +372,14 @@ export function projectPage(project, { programmingLanguage } = {}) {
         author: ref(PERSON_ID),
         isPartOf: ref(WEBSITE_ID),
       },
-      breadcrumbList([
-        { name: 'Home', path: '/' },
-        { name: 'Projects', path: '/projects' },
-        { name: project.name, path: `/projects/${project.id}` },
-      ]),
+      breadcrumbList(
+        [
+          { name: crumbs.home ?? 'Home', path: '/' },
+          { name: crumbs.projects ?? 'Projects', path: '/projects' },
+          { name: project.name, path: `/projects/${project.id}` },
+        ],
+        locale,
+      ),
     ],
   };
 }
@@ -399,7 +423,7 @@ export function projectPage(project, { programmingLanguage } = {}) {
  *   when the document has none.
  * @returns {object} A JSON-LD document containing the article and its trail.
  */
-export function notePage({ slug, title, description }) {
+export function notePage({ slug, title, description, crumbs = {} }) {
   const path = `/notes/${slug}`;
 
   return {
@@ -428,8 +452,8 @@ export function notePage({ slug, title, description }) {
         inLanguage: 'en-GB',
       },
       breadcrumbList([
-        { name: 'Home', path: '/' },
-        { name: 'Notes', path: '/notes' },
+        { name: crumbs.home ?? 'Home', path: '/' },
+        { name: crumbs.notes ?? 'Notes', path: '/notes' },
         { name: title, path },
       ]),
     ],
@@ -448,7 +472,7 @@ export function notePage({ slug, title, description }) {
  * @param {Array<{name: string, path: string}>} trail Root-first crumbs.
  * @returns {object} A schema.org BreadcrumbList node.
  */
-export function breadcrumbList(trail) {
+export function breadcrumbList(trail, locale) {
   return {
     '@type': 'BreadcrumbList',
     itemListElement: trail.map((crumb, index) => ({
@@ -458,7 +482,7 @@ export function breadcrumbList(trail) {
       // The LAST crumb carries no `item`, per Google's guidance: it is the
       // current page, and a self-link in a breadcrumb is what makes the
       // Rich Results Test warn about a trail that does not terminate.
-      item: index === trail.length - 1 ? undefined : absoluteUrl(crumb.path),
+      item: index === trail.length - 1 ? undefined : pageUrl(crumb.path, locale),
     })),
   };
 }
@@ -474,13 +498,14 @@ export function breadcrumbList(trail) {
  *   Credential records.
  * @returns {object} A JSON-LD document for the qualifications page.
  */
-export function qualificationsPage(credentials) {
+export function qualificationsPage(credentials, { locale, name = 'Qualifications' } = {}) {
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    '@id': `${absoluteUrl('/qualifications')}#page`,
-    url: absoluteUrl('/qualifications'),
-    name: 'Qualifications',
+    '@id': `${pageUrl('/qualifications', locale)}#page`,
+    url: pageUrl('/qualifications', locale),
+    name,
+    ...(locale && locale !== DEFAULT_LOCALE ? { inLanguage: languageTag(locale) } : {}),
     isPartOf: ref(WEBSITE_ID),
     // Same merge-by-id mechanism as `profilePage`: a partial Person node whose
     // only job is to add `hasCredential` to the entity the root graph defined.
@@ -515,24 +540,27 @@ export function qualificationsPage(credentials) {
  * @param {{path: string, name: string, description?: string}} page Page facts.
  * @returns {object} A JSON-LD WebPage document.
  */
-export function sectionPage({ path, name, description }) {
+export function sectionPage({ path, name, description, locale, homeName = 'Home' }) {
   return {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'WebPage',
-        '@id': `${absoluteUrl(path)}#page`,
-        url: absoluteUrl(path),
+        '@id': `${pageUrl(path, locale)}#page`,
+        url: pageUrl(path, locale),
         name,
         description,
         isPartOf: ref(WEBSITE_ID),
         about: ref(PERSON_ID),
-        inLanguage: 'en-GB',
+        inLanguage: languageTag(locale),
       },
-      breadcrumbList([
-        { name: 'Home', path: '/' },
-        { name, path },
-      ]),
+      breadcrumbList(
+        [
+          { name: homeName, path: '/' },
+          { name, path },
+        ],
+        locale,
+      ),
     ],
   };
 }

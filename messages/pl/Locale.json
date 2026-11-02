@@ -1,0 +1,28 @@
+{
+  "label": "Język",
+  "triggerLabel": "Język: {language}",
+  "searchLabel": "Szukaj języków",
+  "searchPlaceholder": "Szukaj wśród 20 języków…",
+  "noResults": "Żaden język nie pasuje do „{query}”.",
+  "tier1": "Poziom 1",
+  "tier2": "Poziom 2",
+  "current": "Bieżący",
+  "machineBadge": "Maszynowe",
+  "machineBadgeLabel": "Tłumaczenie maszynowe",
+  "switching": "Przełączam na: {language}…",
+  "notice": {
+    "title": "Tłumaczenie maszynowe",
+    "body": "To tłumaczenie powstało maszynowo i nie zostało jeszcze sprawdzone przez osobę, dla której jest to język ojczysty.",
+    "cta": "Zaproponuj lepsze tłumaczenie"
+  },
+  "suggestion": {
+    "region": "Propozycja języka",
+    "message": "Ta strona jest dostępna także w języku: {language}.",
+    "switch": "Przełącz na: {language}",
+    "dismiss": "Zostań przy: {current}"
+  },
+  "englishOnly": {
+    "label": "Opublikowano po angielsku",
+    "body": "Ten dokument jest dostępny wyłącznie po angielsku. Nawigacja i elementy sterujące pozostają w Twoim języku."
+  }
+}

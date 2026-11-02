@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Music } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { SiSpotify } from 'react-icons/si';
 import { useNowPlaying } from './useNowPlaying';
 import SpotifyBars from './SpotifyBars';
@@ -61,6 +62,8 @@ const EASE = [0.22, 1, 0.36, 1];
 
 export default function NowPlaying() {
   const { data, loading } = useNowPlaying(30000);
+  const t = useTranslations('Spotify');
+  const locale = useLocale();
   const [expanded, setExpanded] = useState(false);
   const [footerHidden, setFooterHidden] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -161,8 +164,8 @@ export default function NowPlaying() {
   const accent = data.accent || EMBER;
   const progress =
     isPlaying && durationMs ? Math.min(1, displayMs / durationMs) : 0;
-  const label = isPlaying ? 'NOW PLAYING' : 'LAST PLAYED';
-  const playedAgo = !isPlaying ? formatPlayedAgo(playedAt) : null;
+  const label = isPlaying ? t('nowPlaying') : t('lastPlayed');
+  const playedAgo = !isPlaying ? formatPlayedAgo(playedAt, locale) : null;
 
   // Fold footer-hide into the expanded flag so the card also visually collapses
   // as it fades out behind the footer.
@@ -231,8 +234,14 @@ export default function NowPlaying() {
         onClick: toggle,
         onKeyDown: onCardKeyDown,
       };
-  const baseAria = `${label.toLowerCase()}: ${track.title} by ${track.artist}.`;
-  const ariaLabel = hasLink ? `${baseAria} Open on Spotify.` : baseAria;
+  // One message per shape (issue #82) — the track and artist are values, never
+  // translated, and the sentence around them is the catalogue's.
+  const ariaValues = {
+    state: isPlaying ? 'playing' : 'played',
+    title: track.title,
+    artist: track.artist,
+  };
+  const ariaLabel = hasLink ? t('cardLabelLink', ariaValues) : t('cardLabel', ariaValues);
 
   return (
     <motion.div
@@ -243,10 +252,14 @@ export default function NowPlaying() {
       // gone rather than overridden — a utility class and the anchor class have
       // equal specificity, so which one won would have depended on stylesheet
       // order. `left` stays inline; nothing moves it.
-      className="floating-bottom-anchor fixed left-6 z-50"
+      //
+      // Logical inset (issue #82): the widget holds the reading-START corner,
+      // mirroring to bottom-right under RTL, where the sound toggle moves to
+      // bottom-left — the two still never collide.
+      className="floating-bottom-anchor fixed start-6 z-50"
       style={{
         '--floating-bottom-gap': '1.25rem',
-        left: 'calc(env(safe-area-inset-left, 0px) + 1.25rem)',
+        insetInlineStart: 'calc(env(safe-area-inset-left, 0px) + 1.25rem)',
       }}
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
@@ -276,7 +289,7 @@ export default function NowPlaying() {
           onMouseLeave={close}
           onFocus={open}
           onBlur={close}
-          className="custom-bg-abt group relative block cursor-pointer overflow-hidden text-left"
+          className="custom-bg-abt group relative block cursor-pointer overflow-hidden text-start"
           animate={{
             width: showExpanded ? EXPANDED_W : COLLAPSED_W,
             borderRadius: showExpanded ? 20 : 9999,
@@ -322,6 +335,7 @@ export default function NowPlaying() {
 
                   {track.album && (
                     <p
+                      dir="auto"
                       className="mt-1 truncate text-[11px]"
                       style={{ color: GOLD_MUTED }}
                     >
@@ -381,7 +395,7 @@ export default function NowPlaying() {
                         className="text-[9px] uppercase tracking-wider"
                         style={{ color: GOLD_MUTED }}
                       >
-                        Open on Spotify
+                        {t('openOnSpotify')}
                       </span>
                     </div>
                   )}
@@ -442,7 +456,7 @@ export default function NowPlaying() {
                 signal, so a second forever-loop here would just add noise. */}
               <span
                 aria-hidden="true"
-                className="absolute -bottom-0.5 -right-0.5 flex h-[15px] w-[15px] items-center justify-center rounded-full"
+                className="absolute -bottom-0.5 -end-0.5 flex h-[15px] w-[15px] items-center justify-center rounded-full"
                 style={{ background: 'rgb(2 6 23 / 0.92)' }}
               >
                 <SiSpotify
@@ -477,6 +491,7 @@ export default function NowPlaying() {
                     />
                   </div>
                   <p
+                    dir="auto"
                     className="mt-0.5 truncate text-[10px]"
                     style={{ color: isPlaying ? GOLD_MUTED : GOLD_SOFT }}
                   >

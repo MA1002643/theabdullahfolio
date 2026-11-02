@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Indeks",
+    "elsewhere": "Di tempat lain"
+  },
+  "siteNav": "Situs",
+  "identity": {
+    "role": "Software Engineer",
+    "statement": "Membangun pengalaman web yang cepat dan matang dari utara Inggris."
+  },
+  "availability": "Terbuka untuk peran baru",
+  "githubCta": {
+    "label": "Lihat proyek ini di GitHub",
+    "newTab": "(terbuka di tab baru)",
+    "commits": "{count, plural, =1 {<num>{formatted}</num> komit} other {<num>{formatted}</num> komit}}",
+    "pushed": "di-push {when}"
+  },
+  "manifest": {
+    "departures": "Keberangkatan",
+    "nowBoarding": "Boarding",
+    "onTime": "Tepat waktu",
+    "links": {
+      "about": {
+        "label": "Tentang",
+        "desc": "Siapa saya"
+      },
+      "journey": {
+        "label": "Perjalanan",
+        "desc": "Jejak sejauh ini"
+      },
+      "qualifications": {
+        "label": "Kualifikasi",
+        "desc": "Kredensial"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Rekam jejak lengkap"
+      },
+      "projects": {
+        "label": "Proyek",
+        "desc": "Karya pilihan"
+      },
+      "uses": {
+        "label": "Perkakas",
+        "desc": "Yang saya pakai untuk membangun"
+      },
+      "notes": {
+        "label": "Catatan",
+        "desc": "Mengapa dibangun seperti ini"
+      },
+      "contact": {
+        "label": "Kontak",
+        "desc": "Sapa saya"
+      },
+      "guestbook": {
+        "label": "Buku Tamu",
+        "desc": "Tinggalkan jejak Anda"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "Profil GitHub (terbuka di tab baru)",
+    "linkedin": "Profil LinkedIn (terbuka di tab baru)",
+    "resume": "Baca CV lengkap",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Waktu setempat {time} {period} di {town}} other {Waktu setempat {time} di {town}}}",
+    "placeLabel": "Lokasi: {town}",
+    "live": "LANGSUNG"
+  },
+  "sound": {
+    "label": "Suara",
+    "on": "Nyala",
+    "off": "Mati",
+    "turnOn": "Nyalakan suara gitar di footer",
+    "turnOff": "Matikan suara gitar di footer",
+    "hoverLines": "Arahkan kursor ke garis-garisnya",
+    "nowPlaying": "Sedang diputar — gitar yang menenangkan",
+    "turnOnPrompt": "Nyalakan suara untuk mendengar gitar yang menenangkan"
+  },
+  "privacy": {
+    "policy": "Privasi",
+    "choices": "Pilihan privasi"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/di-tempat-lain",
+    "cmd": {
+      "github": "buka github",
+      "linkedin": "buka linkedin",
+      "resume": "buka cv"
+    }
+  }
+}

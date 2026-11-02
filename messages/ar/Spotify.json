@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "قيد التشغيل الآن",
+  "lastPlayed": "آخر ما تم تشغيله",
+  "cardLabel": "{state, select, playing {قيد التشغيل الآن} other {آخر ما تم تشغيله}}: {title} لـ {artist}.",
+  "cardLabelLink": "{state, select, playing {قيد التشغيل الآن} other {آخر ما تم تشغيله}}: {title} لـ {artist}. افتح في Spotify.",
+  "openOnSpotify": "افتح في Spotify"
+}

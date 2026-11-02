@@ -3,6 +3,11 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGuestbookMessages } from '@/hooks/useGuestbookMessages';
 import { PAGE_SIZE } from '@/lib/guestbook/paging';
+import { IntlWrapper } from '../support/intl.jsx';
+
+// Issue #82: these components read their copy through next-intl, so every
+// render runs inside the REAL English catalogue (tests/support/intl.jsx).
+const renderHookIntl = (cb, options) => renderHook(cb, { wrapper: IntlWrapper, ...options });
 
 // The poll against a burst of arrivals. The poll reads the NEWEST page and
 // merges it above the prefix's older tail — and when more than PAGE_SIZE
@@ -87,7 +92,7 @@ describe('useGuestbookMessages — the poll never leaves a hole', () => {
   it('fewer than a page since the last poll: one read, merged above the kept tail', async () => {
     let wall = wallOf([1, 2, 3, 4, 5, 6, 7, 8]);
     const calls = stubWall(() => wall);
-    const { result } = renderHook(() => useGuestbookMessages({ pollMs: 60_000 }));
+    const { result } = renderHookIntl(() => useGuestbookMessages({ pollMs: 60_000 }));
     await flush();
     expect(ids(result)).toEqual(idsOf(wall));
     expect(result.current.hasMore).toBe(false);
@@ -106,7 +111,7 @@ describe('useGuestbookMessages — the poll never leaves a hole', () => {
   it('nine since the last poll: the poll reads on until it reaches the prefix — the ninth is not lost', async () => {
     let wall = wallOf([1, 2, 3, 4, 5, 6, 7, 8]);
     const calls = stubWall(() => wall);
-    const { result } = renderHook(() => useGuestbookMessages({ pollMs: 60_000 }));
+    const { result } = renderHookIntl(() => useGuestbookMessages({ pollMs: 60_000 }));
     await flush();
     expect(ids(result)).toEqual(idsOf(wall));
 
@@ -133,7 +138,7 @@ describe('useGuestbookMessages — the poll never leaves a hole', () => {
     // Twenty on the wall; the first load takes sixteen and holds a cursor.
     let wall = wallOf(Array.from({ length: 20 }, (_, i) => i + 1));
     const calls = stubWall(() => wall);
-    const { result } = renderHook(() => useGuestbookMessages({ pollMs: 60_000 }));
+    const { result } = renderHookIntl(() => useGuestbookMessages({ pollMs: 60_000 }));
     await flush();
     expect(ids(result)).toHaveLength(16);
     expect(result.current.hasMore).toBe(true);
@@ -157,7 +162,7 @@ describe('useGuestbookMessages — the poll never leaves a hole', () => {
   it('a burst past the walk bound: the prefix restarts from the top, contiguous, and refills below', async () => {
     let wall = wallOf([1, 2, 3, 4, 5, 6, 7, 8]);
     const calls = stubWall(() => wall);
-    const { result } = renderHook(() => useGuestbookMessages({ pollMs: 60_000 }));
+    const { result } = renderHookIntl(() => useGuestbookMessages({ pollMs: 60_000 }));
     await flush();
 
     // Fifty arrive: five pages read, none reaching m008.
@@ -182,7 +187,7 @@ describe('useGuestbookMessages — the poll never leaves a hole', () => {
   it('a pending card rides on top through a walk and through a restart', async () => {
     let wall = wallOf([1, 2, 3, 4, 5, 6, 7, 8]);
     stubWall(() => wall);
-    const { result } = renderHook(() => useGuestbookMessages({ pollMs: 60_000 }));
+    const { result } = renderHookIntl(() => useGuestbookMessages({ pollMs: 60_000 }));
     await flush();
 
     // A POST that never resolves: the pending card stays pending throughout.

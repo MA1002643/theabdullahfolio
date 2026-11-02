@@ -3,6 +3,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatNumber } from '@/i18n/format';
+import { useDirection } from '@/i18n/useDirection';
 
 // Pagination for the guestbook wall, built as an INSTRUMENT in the site's
 // existing visual language rather than a row of numbered buttons:
@@ -80,7 +83,17 @@ const DIGIT_VARIANTS = {
 
 export default function WallPagination({ page, pageCount, dir, onPage }) {
   const reduceMotion = useReducedMotion();
+  const t = useTranslations('Guestbook');
+  const locale = useLocale();
+  // RTL (issue #82): page one sits at the reading START, so the rail fills
+  // from the right. The filament, ticks and comet are measured physical
+  // positions (`width` / `left` animate, never transforms — see the perf
+  // note), so each picks its physical side from the direction here.
+  const { isRtl } = useDirection();
   if (pageCount <= 1) return null;
+  const startSide = isRtl ? 'right' : 'left';
+  const twoDigits = (n) =>
+    formatNumber(n, locale, { minimumIntegerDigits: 2, useGrouping: false });
 
   const pct = (page / (pageCount - 1)) * 100;
   const slide = reduceMotion
@@ -90,23 +103,23 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
 
   const jump = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const k = (e.clientX - rect.left) / rect.width;
+    const k = (isRtl ? rect.right - e.clientX : e.clientX - rect.left) / rect.width;
     onPage(Math.round(k * (pageCount - 1)));
   };
 
   return (
     <nav
-      aria-label="Guestbook pages"
+      aria-label={t('pagination.nav')}
       className="flex items-center justify-center gap-3 pt-2 sm:gap-4"
     >
       <button
         type="button"
         onClick={() => onPage(page - 1)}
         disabled={page === 0}
-        aria-label="Previous page"
+        aria-label={t('pagination.previous')}
         className={BTN_CLASS}
       >
-        <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+        <ChevronLeft aria-hidden="true" className="h-4 w-4 rtl:-scale-x-100" />
       </button>
 
       {/* The rail. Hidden on phones (prev/next + odometer carry the job
@@ -118,7 +131,7 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
       >
         <span className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-[#f9d174]/20" />
         <motion.span
-          className="absolute left-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[#ff6d05]/0 via-[#ff6d05]/60 to-[#ff6d05]"
+          className="absolute start-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[#ff6d05]/0 via-[#ff6d05]/60 to-[#ff6d05] rtl:bg-gradient-to-l"
           animate={{ width: `${pct}%` }}
           transition={slide}
         />
@@ -135,12 +148,16 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
           className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 text-[#f9d174]/70"
           style={{
             ...ticks,
-            clipPath: `inset(0 max(0px, calc(${100 - pct}% - 1px)) 0 0)`,
+            clipPath: isRtl
+              ? `inset(0 0 0 max(0px, calc(${100 - pct}% - 1px)))`
+              : `inset(0 max(0px, calc(${100 - pct}% - 1px)) 0 0)`,
+            // The tick tiles repeat from the reading start too.
+            ...(isRtl ? { backgroundPosition: 'right' } : {}),
           }}
         />
         <motion.span
-          className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ff6d05] shadow-[0_0_10px_2px_rgba(255,109,5,0.55)]"
-          animate={{ left: `${pct}%` }}
+          className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ff6d05] shadow-[0_0_10px_2px_rgba(255,109,5,0.55)] rtl:translate-x-1/2"
+          animate={{ [startSide]: `${pct}%` }}
           transition={slide}
         />
       </div>
@@ -150,7 +167,7 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
           clean sentence, never mid-roll fragments. */}
       <p className="shrink-0 font-mono text-xs tracking-widest">
         <span aria-hidden="true">
-          <span className="text-[#fc83ff]/90">PAGE </span>
+          <span className="text-[#fc83ff]/90">{t('pagination.page')}</span>
           {/* Digits in the feature cards' numeral ink (owner call): the same
               vivid neon-orange #ff6d05 the "Projects shipped" / years digits
               carry — numbers speak in one colour across the site's cards. */}
@@ -166,17 +183,17 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
                 transition={{ duration: 0.28, ease: 'easeOut' }}
                 className="absolute font-semibold tabular-nums text-[#ff6d05]"
               >
-                {String(page + 1).padStart(2, '0')}
+                {twoDigits(page + 1)}
               </motion.span>
             </AnimatePresence>
           </span>
           <span className="text-[#fc83ff]/60"> / </span>
           <span className="font-semibold tabular-nums text-[#ff6d05]">
-            {String(pageCount).padStart(2, '0')}
+            {twoDigits(pageCount)}
           </span>
         </span>
         <span aria-live="polite" className="sr-only">
-          Page {page + 1} of {pageCount}
+          {t('pagination.status', { page: page + 1, total: pageCount })}
         </span>
       </p>
 
@@ -184,10 +201,10 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
         type="button"
         onClick={() => onPage(page + 1)}
         disabled={page === pageCount - 1}
-        aria-label="Next page"
+        aria-label={t('pagination.next')}
         className={BTN_CLASS}
       >
-        <ChevronRight aria-hidden="true" className="h-4 w-4" />
+        <ChevronRight aria-hidden="true" className="h-4 w-4 rtl:-scale-x-100" />
       </button>
     </nav>
   );

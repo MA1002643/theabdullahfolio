@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "Chi sono",
+    "projects": "Progetti",
+    "qualifications": "Qualifiche",
+    "contact": "Contatti",
+    "journey": "Percorso",
+    "past": "Il mio passato",
+    "guestbook": "Libro degli ospiti",
+    "uses": "Uso"
+  },
+  "routes": {
+    "home": "Home",
+    "about": "Chi sono",
+    "projects": "Progetti",
+    "qualifications": "Qualifiche",
+    "contact": "Contatti",
+    "myPast": "Il mio passato",
+    "journey": "Percorso",
+    "guestbook": "Libro degli ospiti",
+    "uses": "Uso",
+    "cv": "CV",
+    "notes": "Note",
+    "privacy": "Privacy"
+  },
+  "homeButton": {
+    "tooltip": "Home",
+    "srLabel": "Vai alla home page"
+  },
+  "projectsButton": {
+    "label": "Progetti",
+    "tooltip": "Progetti",
+    "srLabel": "Vai alla pagina dei progetti"
+  }
+}

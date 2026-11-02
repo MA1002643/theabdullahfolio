@@ -1,0 +1,13 @@
+{
+  "title": "PROJECTS",
+  "subtitle": "MY WORK",
+  "filters": {
+    "label": "Project categories",
+    "all": "All",
+    "empty": "No projects in \"{category}\" yet.",
+    "fallback": "No projects in \"{category}\" yet. Showing all projects instead."
+  },
+  "list": {
+    "empty": "No Projects Found !"
+  }
+}

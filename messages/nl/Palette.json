@@ -1,0 +1,15 @@
+{
+  "dialog": "Opdrachtenpalet",
+  "search": "Opdrachten zoeken",
+  "placeholder": "Typ een opdracht of bestemming…",
+  "list": "Opdrachten",
+  "empty": "Geen resultaten",
+  "sections": {
+    "navigate": "Navigeren",
+    "language": "Taal"
+  },
+  "keywords": {
+    "navigate": "ga navigeer navigeren spring pagina route bestemming",
+    "language": "taal talen vertalen vertaling locale language"
+  }
+}

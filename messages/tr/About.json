@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "HAKKIMDA",
+    "subtitle": "BEN KİMİM"
+  },
+  "intro": {
+    "heading": "Büyülerin Mimarı",
+    "paragraph": "Web geliştirmedeki yolculuğuma bir dizi gizemli araç ve dil güç veriyor; büyülerimin özünü ise JavaScript oluşturuyor. React.js ve Next.js gibi framework'leri ustalıkla kullanarak dijital evrende diyarları (kullanıcıları) birbirine bağlayan kusursuz portallar (web siteleri) yaratıyorum. Jamstack'in kadim sanatları hızlı, güvenli ve dinamik deneyimler kurmamı sağlıyor; tasarım becerilerim ise her eserin yalnızca işlevsel değil, görsel olarak da büyüleyici olmasını güvence altına alıyor. Görünen büyülerin ötesinde, gizli makinelerle de ilgileniyorum: dayanıklı API'ler ve veritabanları (her diyarın belleğinin güvenle saklandığı kasalar) çağırıyor, eserlerimi atölyeden buluta (sonunda uyandıkları sınırsız esir) taşıyan otomatik işlem hatları dokuyorum. Performansı ve erişilebilirliği kutsal birer yemin sayıyorum; böylece her portal, her yolcu için, her cihazda ve diyarın en uzak köşesinde bile çabucak açılıyor. Merak en gerçek pusulam olmaya devam ediyor; beni sürekli yeni büyü kitaplarına, keskinleşen sezgilere ve canlı, nefes alan deneyimlere dönüşecek kadar cesur fikirlere çekiyor. Webin geleceğini şekillendirecek yeni büyüleri ve teknolojileri keşfetmeye devam ederken bana katıl."
+  },
+  "projectsCard": {
+    "eyebrow": "Teslim edilen projeler",
+    "unit": "{count, plural, other {tamamlanan proje}}",
+    "viewProgress": "İlerlemeyi gör →",
+    "ariaLabel": "Teslim edilen projeler: {count, number, ::group-off} tamamlanan proje. {legend}. İlerlemeyi gör: canlı proje ilerlemesini açar.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "Kategoriye göre tamamlanan projeler — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, other {proje}}",
+    "srPrefix": "Proje güncellemesi: "
+  },
+  "statsCard": {
+    "title": "{name} GitHub İstatistikleri",
+    "defaultUser": "GitHub Kullanıcısı",
+    "live": "Canlı GitHub Metrikleri",
+    "rank": "Derece",
+    "updated": "GitHub istatistikleri güncellendi",
+    "srPrefix": "İstatistik güncellemesi: ",
+    "metrics": {
+      "stars": "Kazanılan Toplam Yıldız",
+      "commits": "Toplam Commit (son bir yıl)",
+      "prs": "Toplam PR",
+      "issues": "Toplam Issue",
+      "contributedTo": "Katkıda bulunulan (son bir yıl)"
+    }
+  },
+  "languagesCard": {
+    "title": "En Çok Kullanılan Diller",
+    "count": "{count, number, ::group-off} {count, plural, other {dil}}",
+    "live": "GitHub'dan canlı",
+    "primary": "Ana",
+    "percent": "%<n></n>",
+    "srPrefix": "Dil güncellemesi: ",
+    "popover": {
+      "eyebrow": "Depo dağılımı",
+      "ariaLabel": "{language} kullanan depolar",
+      "privateRepos": "{count, number, ::group-off} özel {count, plural, other {depo}}"
+    }
+  },
+  "streakCard": {
+    "title": "Katkı Serileri",
+    "subtitle": "GitHub etkinliği",
+    "srPrefix": "Seri güncellemesi: ",
+    "total": "Toplam Katkı",
+    "current": "Güncel Seri",
+    "longest": "En Uzun Seri",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, other {gün}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, other {gün}}, en uzun serinin yüzde {percent, number, ::group-off} kadarı"
+  },
+  "repoCard": {
+    "badge": "En Aktif Depo",
+    "srPrefix": "Depo güncellemesi: ",
+    "metrics": {
+      "stars": "Yıldız",
+      "forks": "Fork",
+      "mergedPrs": "Birleştirilen PR",
+      "commits": "Toplam Commit",
+      "lastPushed": "Son Push"
+    },
+    "score": "puan",
+    "activityScore": "Etkinlik Puanı"
+  },
+  "skillsCard": {
+    "title": "Beceriler ve Teknolojiler",
+    "categories": {
+      "languages": "Diller",
+      "frameworks": "Framework'ler",
+      "libraries": "Kütüphaneler",
+      "tools": "Araçlar",
+      "software": "Yazılımlar"
+    },
+    "count": "<n></n> {count, plural, other {teknoloji}}",
+    "live": "GitHub'dan canlı",
+    "syncing": "GitHub ile eşitleniyor…",
+    "noneDetected": "Beceri bulunamadı",
+    "noneInRepos": "Depolarında beceri bulunamadı",
+    "fetching": "Beceriler GitHub'dan alınıyor…",
+    "srPrefix": "Beceri güncellemesi: ",
+    "popover": {
+      "eyebrow": "Kullanıldığı depolar",
+      "ariaLabel": "{name} kullanan depolar",
+      "label": "Depolar:",
+      "publicSr": "{count, number, ::group-off} herkese açık",
+      "privateSr": "{count, number, ::group-off} özel",
+      "publicCount": "<n></n> herkese açık",
+      "privateCount": "<n></n> özel",
+      "slash": "/",
+      "allPrivate": "Tüm depolar özel"
+    }
+  },
+  "progress": {
+    "eyebrow": "Teslimat telemetrisi",
+    "title": "Proje ilerlemesi",
+    "close": "Proje ilerlemesini kapat",
+    "failed": "İlerleme senkronizasyonuna şu an ulaşılamıyor.",
+    "retry": "Senkronizasyonu yeniden dene",
+    "ringLineOne": "pano öğesi",
+    "ringLineTwo": "tamamlandı",
+    "percent": "%<n></n>",
+    "itemsDone": "Tamamlanan öğeler",
+    "ofTotal": "/ {total, number, ::group-off}",
+    "boardsLive": "Canlı panolar",
+    "allProjects": "{count, plural, other {proje}}",
+    "ofProjects": "/ {total, number, ::group-off} proje",
+    "unavailable": "Canlı senkronizasyon şu an kullanılamıyor — portfolyonun yapısı gösteriliyor; yüzdeler bir sonraki başarılı yenilemede geri gelecek.",
+    "byCategory": "Kategoriye göre",
+    "projectCount": "{count, number, ::group-off} proje",
+    "perProject": "Projeye göre",
+    "liveFrom": "GitHub Projects'ten canlı",
+    "footer": "GitHub Projects'ten otomatik senkronize edilir · günde iki kez",
+    "lastSync": "Son senkronizasyon",
+    "awaiting": "İlk senkronizasyon bekleniyor",
+    "row": {
+      "tracked": "%{percent, number, ::group-off} tamamlandı, {total, number, ::group-off} pano öğesinin {done, number, ::group-off} tanesi bitti",
+      "syncUnavailable": "ilerleme senkronizasyonu kullanılamıyor",
+      "notTracked": "takip edilmiyor",
+      "ariaLabel": "{name}, {category}. {status}. Pano dökümünü aç/kapat.",
+      "syncUnavailableTag": "· senkronizasyon kullanılamıyor",
+      "total": "Toplam",
+      "couldNotSync": "Bu pano şu an senkronize edilemedi — canlı sayılar bir sonraki yenilemede geri gelecek.",
+      "noBoard": "Bu projeye bağlı bir GitHub proje panosu yok.",
+      "viewBoard": "Proje panosunu görüntüle →"
+    },
+    "age": {
+      "seconds": "{s} sn önce",
+      "minutes": "{m} dk {s} sn önce",
+      "hours": "{h} sa {m} dk önce",
+      "days": "{d} g {h} sa önce"
+    },
+    "columns": {
+      "todo": "Yapılacak",
+      "backlog": "Birikim",
+      "ready": "Hazır",
+      "inProgress": "Devam ediyor",
+      "inReview": "İncelemede",
+      "done": "Tamamlandı",
+      "noStatus": "Durum yok",
+      "blocked": "Engellendi",
+      "onHold": "Beklemede"
+    }
+  },
+  "wire": {
+    "present": "Günümüz",
+    "noCurrent": "Güncel seri yok",
+    "noneFound": "Seri bulunamadı",
+    "noData": "Veri yok",
+    "notAvailable": "Yok",
+    "noDescription": "Açıklama yok",
+    "unknown": "Bilinmiyor",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "En aktif depo \"{name}\" olarak değişti",
+      "stars": "Yıldızlar {amount, number, ::group-off} {direction, select, increased {arttı} other {azaldı}} (şu an {total, number, ::group-off})",
+      "forks": "Fork sayısı {amount, number, ::group-off} {direction, select, increased {arttı} other {azaldı}} (şu an {total, number, ::group-off})",
+      "commits": "{count, plural, other {# yeni commit gönderildi}}",
+      "mergedPrs": "{count, plural, other {# PR birleştirildi}}",
+      "activityScore": "Etkinlik puanı {amount, number, ::group-off} {direction, select, increased {arttı} other {azaldı}} (şu an {total, number, ::group-off})",
+      "language": "Ana dil \"{language}\" olarak değişti"
+    },
+    "stats": {
+      "stars": "Toplam Yıldız {delta, number, ::sign-always group-off}",
+      "commits": "Toplam Commit {delta, number, ::sign-always group-off}",
+      "prs": "Toplam PR {delta, number, ::sign-always group-off}",
+      "issues": "Toplam Issue {delta, number, ::sign-always group-off}",
+      "contributedTo": "Katkı verilen {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "Toplam Katkı {delta, number, ::sign-always group-off}",
+      "currentStreak": "Mevcut Seri {delta, number, ::sign-always group-off}",
+      "longestStreak": "En Uzun Seri {delta, number, ::sign-always group-off}",
+      "currentDates": "Mevcut Seri tarihleri değişti",
+      "longestDates": "En Uzun Seri tarihleri değişti"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language}, en çok kullanılan diller arasına eklendi.",
+      "addedMany": "{count, number, ::group-off} yeni {count, plural, other {dil}} en çok kullanılanlar listesine girdi.",
+      "removedOne": "{language}, en çok kullanılan diller arasından çıktı.",
+      "removedMany": "{count, number, ::group-off} {count, plural, other {dil}} en çok kullanılanlar listesinden çıktı.",
+      "percentage": "{language} oranı %{delta, number, ::.0 group-off} {direction, select, increased {arttı} other {azaldı}}.",
+      "rank": "{language}, #{rank, number, ::group-off}. sıraya {direction, select, up {yükseldi} other {geriledi}}."
+    },
+    "skills": {
+      "added": "Eklenen: {items}",
+      "removed": "Kaldırılan: {items}",
+      "moved": "Taşınan: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, number, ::group-off} yeni tamamlanmış {delta, plural, other {proje}} eklendi — şu an {count, number, ::group-off}",
+      "updated": "Tamamlanan projeler güncellendi — şu an {count, number, ::group-off}"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "title": "CONTACT ME",
+  "subtitle": "get in touch",
+  "intro": "Step into the circle of enchantment and weave your words into the fabric of the cosmos. Whether you seek to conjure collaborations, unlock mysteries, or simply share tales of adventure, your messages are treasured scrolls within this realm. Use the form below to send your missives through the ethereal network, and await the whisper of magic in response.",
+  "fields": {
+    "name": "Full Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Message"
+  },
+  "validation": {
+    "nameRequired": "Full Name is required!",
+    "nameMin": "Name should be at least {min} characters long.",
+    "nameMax": "Name should be at most {max} characters long.",
+    "emailRequired": "Email is required!",
+    "emailMax": "Email should be at most {max} characters long.",
+    "subjectRequired": "Subject is required!",
+    "subjectMax": "Subject should be at most {max} characters long.",
+    "messageRequired": "Message is required!",
+    "messageMin": "Message should be at least {min} characters long.",
+    "messageMax": "Message should be at most {max} characters long."
+  },
+  "submit": {
+    "label": "SEND MESSAGE!",
+    "ariaLabel": "Send message",
+    "sending": "SENDING",
+    "sent": "SENT",
+    "held": "HELD"
+  },
+  "toast": {
+    "sent": "Message sent successfully!",
+    "savedOffline": "Saved — it will send when you reconnect.",
+    "savedRetrying": "Saved — retrying shortly…",
+    "failed": "Failed to send message",
+    "heldSent": "{count, plural, one {Your held message was sent ✦} other {# held messages were sent ✦}}"
+  },
+  "status": {
+    "held": "Held — your message will send itself the moment you’re back online.",
+    "offline": "You’re offline — your message will be held and sent automatically when you reconnect."
+  },
+  "errors": {
+    "name_required": "Full Name is required.",
+    "email_required": "Email is required.",
+    "subject_required": "Subject is required.",
+    "message_required": "Message is required.",
+    "name_too_long": "Full Name exceeds maximum allowed length ({max} characters).",
+    "email_too_long": "Email exceeds maximum allowed length ({max} characters).",
+    "subject_too_long": "Subject exceeds maximum allowed length ({max} characters).",
+    "message_too_long": "Message exceeds maximum allowed length ({max, number, ::group-off} characters).",
+    "invalid_characters": "Input contains invalid characters.",
+    "invalid_email": "Invalid email format.",
+    "undeliverable_email": "This email address does not exist or cannot receive emails.",
+    "disposable_email": "Disposable email addresses are not allowed.",
+    "too_large": "Request body must be at most {max, number, ::group-off} bytes",
+    "invalid_body": "Invalid request body",
+    "send_failed": "Failed to send message"
+  }
+}

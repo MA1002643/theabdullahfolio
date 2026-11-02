@@ -1,0 +1,58 @@
+{
+  "title": "HUBUNGI SAYA",
+  "subtitle": "mari terhubung",
+  "intro": "Melangkahlah ke lingkaran pesona dan jalinlah kata-kata Anda ke dalam tenunan semesta. Entah Anda ingin merajut kolaborasi, menyingkap misteri, atau sekadar berbagi kisah petualangan, setiap pesan Anda adalah gulungan naskah yang berharga di negeri ini. Gunakan formulir di bawah untuk mengirimkan surat Anda lewat jaringan gaib, lalu tunggulah bisikan sihir sebagai balasannya.",
+  "fields": {
+    "name": "Nama Lengkap",
+    "email": "Email",
+    "subject": "Subjek",
+    "message": "Pesan"
+  },
+  "validation": {
+    "nameRequired": "Nama Lengkap wajib diisi!",
+    "nameMin": "Nama minimal {min} karakter.",
+    "nameMax": "Nama maksimal {max} karakter.",
+    "emailRequired": "Email wajib diisi!",
+    "emailMax": "Email maksimal {max} karakter.",
+    "subjectRequired": "Subjek wajib diisi!",
+    "subjectMax": "Subjek maksimal {max} karakter.",
+    "messageRequired": "Pesan wajib diisi!",
+    "messageMin": "Pesan minimal {min} karakter.",
+    "messageMax": "Pesan maksimal {max} karakter."
+  },
+  "submit": {
+    "label": "KIRIM PESAN!",
+    "ariaLabel": "Kirim pesan",
+    "sending": "MENGIRIM",
+    "sent": "TERKIRIM",
+    "held": "DITAHAN"
+  },
+  "toast": {
+    "sent": "Pesan berhasil terkirim!",
+    "savedOffline": "Tersimpan — akan dikirim saat Anda kembali online.",
+    "savedRetrying": "Tersimpan — mencoba lagi sebentar lagi…",
+    "failed": "Gagal mengirim pesan",
+    "heldSent": "{count, plural, other {# pesan yang tertahan telah terkirim ✦}}"
+  },
+  "status": {
+    "held": "Ditahan — pesan Anda akan terkirim sendiri begitu Anda kembali online.",
+    "offline": "Anda sedang offline — pesan Anda akan ditahan dan dikirim otomatis saat Anda kembali terhubung."
+  },
+  "errors": {
+    "name_required": "Nama Lengkap wajib diisi.",
+    "email_required": "Email wajib diisi.",
+    "subject_required": "Subjek wajib diisi.",
+    "message_required": "Pesan wajib diisi.",
+    "name_too_long": "Nama Lengkap melebihi batas panjang maksimum ({max} karakter).",
+    "email_too_long": "Email melebihi batas panjang maksimum ({max} karakter).",
+    "subject_too_long": "Subjek melebihi batas panjang maksimum ({max} karakter).",
+    "message_too_long": "Pesan melebihi batas panjang maksimum ({max, number, ::group-off} karakter).",
+    "invalid_characters": "Isian mengandung karakter yang tidak valid.",
+    "invalid_email": "Format email tidak valid.",
+    "undeliverable_email": "Alamat email ini tidak ada atau tidak dapat menerima email.",
+    "disposable_email": "Alamat email sekali pakai tidak diizinkan.",
+    "too_large": "Isi permintaan maksimal {max, number, ::group-off} byte",
+    "invalid_body": "Isi permintaan tidak valid",
+    "send_failed": "Gagal mengirim pesan"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "Обо мне",
+    "projects": "Проекты",
+    "qualifications": "Квалификация",
+    "contact": "Контакты",
+    "journey": "Путь",
+    "past": "Моё прошлое",
+    "guestbook": "Гостевая книга",
+    "uses": "Инструменты"
+  },
+  "routes": {
+    "home": "Главная",
+    "about": "Обо мне",
+    "projects": "Проекты",
+    "qualifications": "Квалификация",
+    "contact": "Контакты",
+    "myPast": "Моё прошлое",
+    "journey": "Путь",
+    "guestbook": "Гостевая книга",
+    "uses": "Инструменты",
+    "cv": "CV",
+    "notes": "Заметки",
+    "privacy": "Конфиденциальность"
+  },
+  "homeButton": {
+    "tooltip": "Главная",
+    "srLabel": "Перейти на главную страницу"
+  },
+  "projectsButton": {
+    "label": "Проекты",
+    "tooltip": "Проекты",
+    "srLabel": "Перейти на страницу проектов"
+  }
+}

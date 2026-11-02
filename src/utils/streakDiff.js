@@ -1,3 +1,5 @@
+import { englishAbout } from "@/i18n/sourceTranslator";
+
 /**
  * Diff + fingerprint helpers for the Current Streak card (issue #21).
  *
@@ -73,10 +75,15 @@ function emptyDiff(hasChanged = false) {
  * the count is the more informative line), so "dates changed" only appears for
  * a block whose value held but whose range moved.
  *
+ * The words are catalogue messages (`About.changes.streak.*`, issue #82) with
+ * the signed delta as an ICU number; `t` is `useTranslations('About')`, and
+ * defaults to the English translator (src/i18n/sourceTranslator.js).
+ *
  * @param {object|null} prev - previous streak snapshot, or null on first load
  * @param {object|null} next - latest streak snapshot
+ * @param {(key: string, values?: object) => string} [t]
  */
-export function computeStreakDiff(prev, next) {
+export function computeStreakDiff(prev, next, t = englishAbout) {
   if (!prev || !next) return emptyDiff(false);
 
   const p = {
@@ -108,11 +115,13 @@ export function computeStreakDiff(prev, next) {
     longestStreakDates: dateField(p.longest, c.longest),
   };
 
+  // Message KEYS first, words second: whether anything changed must not depend
+  // on having a translator to hand.
   const messages = [];
-  const pushCount = (label, field) => {
+  const pushCount = (key, field) => {
     if (field.delta !== 0) {
-      const sign = field.delta > 0 ? "+" : "";
-      messages.push(`${label} ${sign}${field.delta}`);
+      // Signed via the catalogue's `::sign-always` skeleton ("+5" / "-2").
+      messages.push([`changes.streak.${key}`, { delta: field.delta }]);
       return true;
     }
     return false;
@@ -120,19 +129,22 @@ export function computeStreakDiff(prev, next) {
 
   // Value deltas first (most informative). A block's value move suppresses its
   // own "dates changed" note since the two co-occur when a streak grows.
-  pushCount("Total Contributions", changes.totalContributions);
-  const currentCounted = pushCount("Current Streak", changes.currentStreak);
-  const longestCounted = pushCount("Longest Streak", changes.longestStreak);
+  pushCount("totalContributions", changes.totalContributions);
+  const currentCounted = pushCount("currentStreak", changes.currentStreak);
+  const longestCounted = pushCount("longestStreak", changes.longestStreak);
 
   if (!currentCounted && changes.currentStreakDates.changed) {
-    messages.push("Current Streak dates changed");
+    messages.push(["changes.streak.currentDates"]);
   }
   if (!longestCounted && changes.longestStreakDates.changed) {
-    messages.push("Longest Streak dates changed");
+    messages.push(["changes.streak.longestDates"]);
   }
 
   const hasChanged = messages.length > 0;
-  return { hasChanged, changes, summaryMessage: messages.join(" | ") };
+  const summaryMessage = t
+    ? messages.map(([key, values]) => t(key, values)).join(t("changes.pipe"))
+    : "";
+  return { hasChanged, changes, summaryMessage };
 }
 
 // The three count blocks (the date ranges are tracked separately and never pulse).

@@ -1,0 +1,28 @@
+{
+  "label": "Sprache",
+  "triggerLabel": "Sprache: {language}",
+  "searchLabel": "Sprachen durchsuchen",
+  "searchPlaceholder": "20 Sprachen durchsuchen…",
+  "noResults": "Keine Sprache passt zu „{query}“.",
+  "tier1": "Stufe 1",
+  "tier2": "Stufe 2",
+  "current": "Aktuell",
+  "machineBadge": "Maschinell",
+  "machineBadgeLabel": "Maschinell übersetzt",
+  "switching": "Wechsel zu {language}…",
+  "notice": {
+    "title": "Maschinell übersetzt",
+    "body": "Diese Übersetzung wurde maschinell erstellt und noch nicht von einer Muttersprachlerin oder einem Muttersprachler geprüft.",
+    "cta": "Bessere Übersetzung vorschlagen"
+  },
+  "suggestion": {
+    "region": "Sprachvorschlag",
+    "message": "Diese Website gibt es auch auf {language}.",
+    "switch": "Zu {language} wechseln",
+    "dismiss": "Bei {current} bleiben"
+  },
+  "englishOnly": {
+    "label": "Auf Englisch veröffentlicht",
+    "body": "Dieses Dokument ist nur auf Englisch verfügbar. Navigation und Bedienelemente bleiben in deiner Sprache."
+  }
+}

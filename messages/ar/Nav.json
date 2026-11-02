@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "نبذة",
+    "projects": "المشاريع",
+    "qualifications": "المؤهلات",
+    "contact": "التواصل",
+    "journey": "المسيرة",
+    "past": "ماضيّ",
+    "guestbook": "سجل الزوار",
+    "uses": "أدواتي"
+  },
+  "routes": {
+    "home": "الرئيسية",
+    "about": "نبذة",
+    "projects": "المشاريع",
+    "qualifications": "المؤهلات",
+    "contact": "التواصل",
+    "myPast": "ماضيّ",
+    "journey": "المسيرة",
+    "guestbook": "سجل الزوار",
+    "uses": "أدواتي",
+    "cv": "CV",
+    "notes": "ملاحظات",
+    "privacy": "الخصوصية"
+  },
+  "homeButton": {
+    "tooltip": "الرئيسية",
+    "srLabel": "الانتقال إلى الصفحة الرئيسية"
+  },
+  "projectsButton": {
+    "label": "المشاريع",
+    "tooltip": "المشاريع",
+    "srLabel": "الانتقال إلى صفحة المشاريع"
+  }
+}

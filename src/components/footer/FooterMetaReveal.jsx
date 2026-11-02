@@ -22,11 +22,12 @@ import { useFooterReveal } from './useFooterReveal';
 import { cn } from '@/lib/utils';
 import SoundControl from './SoundControl';
 import FooterPrivacyLinks from './FooterPrivacyLinks';
-import { flapParent, FLAP_EASE, SplitFlapText } from './metaRevealMotion';
+import LanguageSelector from '@/components/i18n/LanguageSelector';
+import { FlapItem, flapParent, FLAP_EASE, SplitFlapText } from './metaRevealMotion';
 
-// Centred on a phone (per the mobile brief), left-aligned from `sm` up.
+// Centred on a phone (per the mobile brief), start-aligned from `sm` up.
 const COPY_CLASS =
-  'text-center text-[0.72rem] uppercase tracking-[0.2em] text-[#ff6d05] sm:text-left';
+  'text-center text-[0.72rem] uppercase tracking-[0.2em] text-[#ff6d05] sm:text-start';
 
 // Reduced-motion: the parent's own opacity fades the whole (plain) subtree — no
 // per-glyph orchestration.
@@ -72,7 +73,7 @@ export default function FooterMetaReveal({
       {!reduced && (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-px origin-left bg-[#ff6d05] shadow-[0_0_10px_#ff6d05]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px origin-left bg-[#ff6d05] rtl:origin-right shadow-[0_0_10px_#ff6d05]"
           initial={{ scaleX: 0 }}
           animate={show ? { scaleX: 1 } : { scaleX: 0 }}
           transition={{ duration: 0.55, ease: FLAP_EASE }}
@@ -96,6 +97,19 @@ export default function FooterMetaReveal({
           <p className={COPY_CLASS}>{copyright}</p>
         ) : (
           <SplitFlapText as="p" text={copyright} className={COPY_CLASS} />
+        )}
+        {/* The language selector (issue #82) — small print, so it lives with
+            the rest of the small print. LAST in this stack on purpose: each
+            FlapItem is transformed, so each is its own stacking context, and
+            a popup opening UPWARD paints over earlier siblings but would be
+            painted under later ones. Placed last, it covers the copyright and
+            the privacy links instead of hiding behind them. */}
+        {reduced ? (
+          <LanguageSelector source="footer" placement="up" variant="inline" />
+        ) : (
+          <FlapItem>
+            <LanguageSelector source="footer" placement="up" variant="inline" />
+          </FlapItem>
         )}
       </div>
     </motion.div>

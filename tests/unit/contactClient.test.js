@@ -68,13 +68,33 @@ describe('postContactMessage — outcome classification', () => {
     });
   });
 
+  // Issue #82: the route's machine codes ride through, index-aligned with the
+  // English, so the form can word each error in the visitor's language.
+  it('passes the route\'s `issues` codes through beside the English errors', async () => {
+    const issues = [{ code: 'subject_required' }, { code: 'name_too_long', values: { max: 100 } }];
+    vi.stubGlobal('fetch', respond(400, { errors: ['Subject is required.', 'x'], issues }));
+    await expect(postContactMessage(params)).resolves.toEqual({
+      ok: false,
+      errors: ['Subject is required.', 'x'],
+      issues,
+    });
+  });
+
   it('falls back to a single `error`, then to a generic message, then survives a non-JSON body', async () => {
     vi.stubGlobal('fetch', respond(413, { error: 'Too large' }));
     await expect(postContactMessage(params)).resolves.toEqual({ ok: false, errors: ['Too large'] });
     vi.stubGlobal('fetch', respond(400, {}));
-    await expect(postContactMessage(params)).resolves.toEqual({ ok: false, errors: ['Failed to send message'] });
+    await expect(postContactMessage(params)).resolves.toEqual({
+      ok: false,
+      errors: ['Failed to send message'],
+      issues: [{ code: 'send_failed' }],
+    });
     vi.stubGlobal('fetch', respond(400, '<html>bad gateway</html>'));
-    await expect(postContactMessage(params)).resolves.toEqual({ ok: false, errors: ['Failed to send message'] });
+    await expect(postContactMessage(params)).resolves.toEqual({
+      ok: false,
+      errors: ['Failed to send message'],
+      issues: [{ code: 'send_failed' }],
+    });
   });
 
   it('queues when fetch itself throws (offline, reset)', async () => {

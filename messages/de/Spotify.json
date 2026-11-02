@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "GERADE AM HÖREN",
+  "lastPlayed": "ZULETZT GEHÖRT",
+  "cardLabel": "{state, select, playing {Läuft gerade} other {Zuletzt gehört}}: {title} von {artist}.",
+  "cardLabelLink": "{state, select, playing {Läuft gerade} other {Zuletzt gehört}}: {title} von {artist}. Auf Spotify öffnen.",
+  "openOnSpotify": "Auf Spotify öffnen"
+}

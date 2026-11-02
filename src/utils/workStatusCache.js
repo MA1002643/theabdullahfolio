@@ -17,9 +17,12 @@ const TTL_MS = 30 * 1000;
 // a deploy already clears it, but the version gate makes the invariant
 // explicit: if this module ever grows a persistent backend (Upstash is
 // already a dependency), an older-schema payload — v1 lacks
-// `meta.byRepo` / `meta.breakdown`, v2 lacks `meta.activityTrace` — can
-// never be served to a client build that expects the newer shape.
-const SCHEMA_VERSION = 'v3-activity-trace';
+// `meta.byRepo` / `meta.breakdown`, v2 lacks `meta.activityTrace`, v3 lacks
+// the `messageDescriptor` / `secondaryMessageDescriptor` pair (issue #82) —
+// can never be served to a client build that expects the newer shape. The
+// client still tolerates a descriptor-less payload (it falls back to the
+// English `message`), so v4 is a guarantee, not a crash guard.
+const SCHEMA_VERSION = 'v4-message-descriptors';
 let entry = null;
 
 export function read() {

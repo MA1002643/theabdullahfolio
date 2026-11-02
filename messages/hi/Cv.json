@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "पूरा ब्योरा"
+  },
+  "identity": {
+    "role": "सॉफ़्टवेयर इंजीनियर"
+  },
+  "downloadPdf": "PDF डाउनलोड करें",
+  "sections": {
+    "experience": "अनुभव",
+    "education": "शिक्षा",
+    "representation": "प्रतिनिधित्व",
+    "skills": "कौशल",
+    "projects": "चुनिंदा प्रोजेक्ट"
+  },
+  "skillGroups": {
+    "languages": "भाषाएँ",
+    "frameworks": "फ़्रेमवर्क",
+    "libraries": "लाइब्रेरी",
+    "tools": "टूल",
+    "software": "सॉफ़्टवेयर"
+  },
+  "allProjects": "सभी प्रोजेक्ट",
+  "asTimeline": "यही इतिहास टाइमलाइन के रूप में"
+}

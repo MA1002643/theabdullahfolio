@@ -1,0 +1,15 @@
+{
+  "dialog": "پالت فرمان",
+  "search": "جست‌وجوی فرمان‌ها",
+  "placeholder": "یک فرمان یا مقصد را بنویسید…",
+  "list": "فرمان‌ها",
+  "empty": "موردی پیدا نشد",
+  "sections": {
+    "navigate": "پیمایش",
+    "language": "زبان"
+  },
+  "keywords": {
+    "navigate": "برو رفتن پرش مسیر صفحه go page route",
+    "language": "زبان ترجمه محلی زبان‌ها language translate locale"
+  }
+}

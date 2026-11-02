@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "笔记",
+    "subtitle": "把决策写下来",
+    "intro": "这个网站背后每一个不那么显而易见的决策都有记录：做了什么选择、否决了哪些备选方案，以及各自付出的代价。这些是来自代码仓库的工作文档，在此直接呈现，而不是留在目录树里。",
+    "lines": "{count, plural, other {行}}"
+  },
+  "note": {
+    "title": "笔记",
+    "breadcrumb": "面包屑导航",
+    "allNotes": "全部笔记",
+    "source": "来源：{source} · {count, plural, other {{n} 行}}"
+  }
+}

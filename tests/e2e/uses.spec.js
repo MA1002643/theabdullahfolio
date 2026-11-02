@@ -103,10 +103,26 @@ test('the pipeline schematic clips no label and runs its flow once drawn', async
   expect(clipped).toEqual([]);
   // The build node names the Node major Vercel resolves from `engines`,
   // never the .nvmrc pin; the cron names its Hobby firing window.
-  await expect(page.locator('.uses-pipeline__sub', { hasText: /^next build · Node \d+\.x$/ })).toHaveCount(1);
+  // (#82) It also counts the locales it prerenders.
+  await expect(
+    page.locator('.uses-pipeline__sub', { hasText: /^next build · (\d+ locales · )?Node \d+\.x$/ }),
+  ).toHaveCount(1);
   await expect(page.locator('.uses-pipeline__sub', { hasText: /\d\d:00–\d\d:59 UTC/ })).toHaveCount(1);
-  // After the draw the flow starts: a packet appears and moves.
+  // The systems and links the 2026-11-01 audit added: guestbook sign-in,
+  // Search Console behind the cron, and the webhook as the one dashed edge.
+  for (const title of ['Auth.js', 'Search Console']) {
+    await expect(page.locator('.uses-pipeline__title', { hasText: title })).toHaveCount(1);
+  }
+  // (framer's path draw writes a `1 1` dasharray on every drawn edge, so
+  // match the webhook's own value.)
+  await expect(page.locator('path.uses-pipeline__edge[stroke-dasharray="4 4"]')).toHaveCount(1);
+  // After the draw the flow starts: a packet appears and moves. The loop only
+  // runs while the schematic is on screen, and the page can settle under it
+  // while the assertions above run (a failed run on 2026-11-01 ended scrolled
+  // to the footer, the loop correctly paused), so bring the drawing itself
+  // back into view first.
   const comets = page.locator('.uses-pipeline__comet-head');
+  await page.locator('.uses-pipeline__svg').scrollIntoViewIfNeeded();
   await page.waitForFunction(
     () => [...document.querySelectorAll('.uses-pipeline__comet')].some((g) => Number(g.style.opacity) > 0),
     null,

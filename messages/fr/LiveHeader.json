@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "De nouvelles fonctionnalités arrivent très bientôt. Ce site est en cours de développement actif.",
+    "shippingNone": "Tout juste livré sur ce site\u00a0: {count, plural, one {# mise à jour} many {# de mises à jour} other {# mises à jour}}.",
+    "shippingOne": "Tout juste livré\u00a0: <bdi>#{number} {title}</bdi>.",
+    "shippingMany": "Tout juste livré\u00a0: <bdi>#{number} {title}</bdi> (et {more, number} de plus).",
+    "liveWithTop": "Mise à jour en direct\u00a0: des changements sont livrés en ce moment — priorité actuelle\u00a0: <bdi>#{number} {title}</bdi>.",
+    "livePushes": "Mise à jour en direct\u00a0: de nouveaux changements sont livrés sur ce site en ce moment.",
+    "liveActive": "Travail actif en cours{hasTop, select, yes { — priorité actuelle\u00a0: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "Travail actif sur {count, plural, one {# tâche} many {# de tâches} other {# tâches}}{hasTop, select, yes { — priorité actuelle\u00a0: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "Travail en cours sur {prs, plural, one {# pull request} many {# de pull requests} other {# pull requests}} et {issues, plural, one {# tâche ouverte} many {# de tâches ouvertes} other {# tâches ouvertes}}{hasTop, select, yes { — priorité actuelle\u00a0: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "Travail en cours sur {prs, plural, one {# pull request} many {# de pull requests} other {# pull requests}}{hasTop, select, yes { — priorité actuelle\u00a0: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "Travail en cours sur {issues, plural, one {# tâche ouverte} many {# de tâches ouvertes} other {# tâches ouvertes}}{hasTop, select, yes { — priorité actuelle\u00a0: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "Des travaux sont en cours sur ce site.",
+    "planning": "Préparation des prochaines améliorations{hasTop, select, yes { — priorité actuelle\u00a0: <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "Travail actif sur {count, plural, one {# tâche} many {# de tâches} other {# tâches}} — priorité\u00a0: <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "Tout juste livré",
+    "live": "Développement en direct en cours",
+    "inProgress": "Travail en cours",
+    "planning": "Préparation des prochaines améliorations",
+    "idle": "Maintenance en cours"
+  },
+  "region": "État de la maintenance en direct",
+  "state": {
+    "shipping": "LIVRAISON",
+    "live": "EN DIRECT",
+    "inProgress": "EN COURS",
+    "planning": "PRÉPARATION",
+    "idle": "MAINTENANCE"
+  },
+  "stateSpoken": {
+    "shipping": "livraison",
+    "live": "en direct",
+    "inProgress": "en cours",
+    "planning": "préparation",
+    "idle": "maintenance"
+  },
+  "pipeline": {
+    "planning": "Plan",
+    "inProgress": "Dév.",
+    "shipping": "Livrer",
+    "live": "Direct"
+  },
+  "legend": {
+    "title": "Pipeline de livraison",
+    "srIdle": "Pipeline de livraison. Hors pipeline\u00a0: surveillance de maintenance.",
+    "srStage": "Pipeline de livraison. Étape actuelle\u00a0: {stage}, {index} sur {total}.",
+    "headingIdle": "Maintenance · hors pipeline",
+    "headingStage": "{stage} · étape {index} sur {total}",
+    "maintenance": "Maintenance",
+    "offPipeline": "Hors pipeline — surveillance de {count, plural, =0 {dépôts suivis} one {# dépôt} many {# de dépôts} other {# dépôts}}",
+    "meaning": {
+      "planning": "Issues ouvertes, planifiées et cadrées",
+      "inProgress": "Travail actif sur les branches et les pull requests",
+      "shipping": "Travail fusionné passé en Done au cours des 48 dernières heures",
+      "live": "Commits ou mises à jour au cours des 2 dernières heures"
+    }
+  },
+  "fields": {
+    "state": "État",
+    "focus": "Focus",
+    "focusPr": "Focus · PR",
+    "focusIssue": "Focus · Issue",
+    "prs": "PR",
+    "issues": "Issues",
+    "pushes24h": "Pushs · 24 h",
+    "pushes": "Pushs",
+    "activity": "Activité · {days} j",
+    "sync": "Synchro",
+    "metered": "· limitée"
+  },
+  "metric": {
+    "prs": "PR actives",
+    "issues": "Issues ouvertes",
+    "pushes": "Pushs (24 h)",
+    "emptyPrs": "Aucune PR active dans les projets suivis.",
+    "emptyIssues": "Aucune issue ouverte sur les projets suivis.",
+    "emptyPushes": "Aucun push sur les projets suivis au cours des dernières 24 h."
+  },
+  "popover": {
+    "breakdown": "Détail : {metric}",
+    "summary": "{metric} · {count} sur {projects, plural, one {# projet} many {# de projets} other {# projets}}",
+    "heading": "<count></count> sur {projects, plural, one {# projet} many {# de projets} other {# projets}}",
+    "stale": "Affichage de la dernière activité connue.",
+    "more": "+ {count} de plus sur GitHub",
+    "openOnGitHub": "Ouvrir sur GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Issue}} #{number}",
+    "ariaOpen": "Ouvrir {type, select, pr {la pull request} other {l’issue}} #{number} : {title} sur GitHub",
+    "stepped": "{type, select, pr {Pull request} other {Issue}} {number} : {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {actif <age></age>} other {}}",
+    "monitoring": "Surveillance de {count, plural, one {# dépôt} many {# de dépôts} other {# dépôts}} — aucun élément en focus",
+    "monitoringNone": "Surveillance des dépôts suivis"
+  },
+  "queue": {
+    "label": "File de focus",
+    "hint": "Élément {index} sur {count} · ← → pour naviguer",
+    "sr": "File de focus de {count} éléments — les flèches gauche et droite permettent de naviguer"
+  },
+  "activity": {
+    "label": "Trace des commits",
+    "summary": "{total, plural, one {# commit} many {# de commits} other {# commits}} · sur {days, plural, one {# jour} many {# de jours} other {# jours}}{truncated, select, yes { (jours les plus anciens sous-estimés)} other {}}"
+  },
+  "sync": {
+    "label": "Dernière synchro",
+    "hint": "Confiance {confidence} · interrogation toutes les {seconds} s{metered, select, yes { · connexion limitée} other {}}",
+    "detail": "{hasLast, select, yes {Dernière synchro {last} · } other {}}Confiance du signal {confidence} · interrogation {seconds, plural, one {chaque seconde} many {toutes les # de secondes} other {toutes les # secondes}}{metered, select, yes { sur connexion limitée} other {}}",
+    "stale": "Obsolète"
+  },
+  "announce": {
+    "status": "Statut : {state}.",
+    "focus": "Focus actuel : {type, select, pr {pull request} other {issue}} {number}, {title}.",
+    "counts": "{prs, plural, one {# pull request active} many {# de pull requests actives} other {# pull requests actives}}, {issues, plural, one {# issue ouverte} many {# d’issues ouvertes} other {# issues ouvertes}} et {pushes, plural, one {# push} many {# de pushes} other {# pushes}} au cours des dernières 24 heures."
+  },
+  "error": {
+    "snapshot": "Statut en direct temporairement indisponible. Affichage du dernier instantané.",
+    "fallback": "Statut en direct temporairement indisponible. Affichage de la version de secours de maintenance."
+  }
+}

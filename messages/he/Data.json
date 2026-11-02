@@ -1,0 +1,219 @@
+{
+  "projects": {
+    "1": {
+      "description": "בנייה מחדש קולנועית של תיק עבודות, מונעת גלילה"
+    },
+    "2": {
+      "description": "פלטפורמה רב-דיירית לניהול עסקים"
+    },
+    "3": {
+      "description": "פלטפורמה מבוססת בינה מלאכותית לגילוי מתכונים"
+    },
+    "4": {
+      "description": "תיק עבודות immersive מונע תנועה"
+    },
+    "5": {
+      "description": "פלטפורמת הוצאה לאור חוצת פלטפורמות מבוססת בינה מלאכותית"
+    },
+    "6": {
+      "description": "פלטפורמת סטרימינג מוזיקה חוצת פלטפורמות"
+    },
+    "7": {
+      "description": "פלטפורמה להנעת מעורבות חינוכית בזמן אמת"
+    },
+    "8": {
+      "description": "פלטפורמת אימון כושר מבוססת בינה מלאכותית"
+    },
+    "9": {
+      "description": "ניווט ועמידה בתקנות למשאיות"
+    },
+    "10": {
+      "description": "שיחות צ׳ק-אין שעתיות אוטומטיות"
+    },
+    "11": {
+      "description": "גילוי משרות והתאמת קורות חיים בעזרת בינה מלאכותית"
+    }
+  },
+  "categories": {
+    "Web": "ווב",
+    "System": "מערכות",
+    "AI": "בינה מלאכותית",
+    "Mobile": "מובייל"
+  },
+  "journey": {
+    "j-adullam-lead": {
+      "title": "ראש צוות קונסיירז׳ · Adullam Homes Housing Association",
+      "description": "אחראי אזורי על שירותי קונסיירז׳ בשמונה אתרי דיור מוגן ב-Bolton — הובלת שלושה צוותים בשני ארגונים, גיוס עובדים לאזור, ניהול אירועים, והחלפת שני לוחות משמרות נפרדים בגיליונות אלקטרוניים בכלי לניהול משמרות ב-Microsoft Teams שמציע משמרות פנויות ישירות לצוות.",
+      "tags": {
+        "team-leadership": "הובלת צוותים",
+        "hiring-manager": "מנהל מגייס",
+        "microsoft-teams": "Microsoft Teams"
+      }
+    },
+    "j-indie": {
+      "title": "מהנדס תוכנה · פרויקטים עצמאיים",
+      "description": "תכנון, בנייה והשקה של עבודות full-stack מקצה לקצה: REST API מתועד ב-Swagger עם בדיקות Mocha/Chai, Colophon (הוצאה לאור מבוססת בינה מלאכותית — Vue 3, Express, PostgreSQL + pgvector), AfaaqX, ופרופיל GitHub שמתחדש מדי יום באמצעות צינורות Actions מתוזמנים.",
+      "tags": {
+        "typescript": "TypeScript",
+        "postgresql": "PostgreSQL",
+        "github-actions": "GitHub Actions"
+      }
+    },
+    "j-constant": {
+      "title": "קצין אבטחה · Constant Security Services",
+      "description": "בעל רישיון SIA באתרי מדע ואוניברסיטאות קריטיים, כולל מצפה הכוכבים Jodrell Bank — סיורים, מצלמות CCTV, תגובה לאירועים ודיווח מחדר הבקרה, תוך כדי חיפוש התפקיד ההנדסי הבא.",
+      "tags": {
+        "sia-licensed": "בעל רישיון SIA",
+        "jodrell-bank": "Jodrell Bank"
+      }
+    },
+    "j-c365": {
+      "title": "מהנדס DevOps · C365Cloud",
+      "description": "שמרתי על קצב שחרורים תקין בפלטפורמת ציות: צינורות CI/CD, ניהול Microsoft SQL Server ו-MySQL, ופיתוח יכולות פלטפורמה ב-.NET (Blazor) עבור צוותים פנימיים ב-Wakefield.",
+      "tags": {
+        "ci-cd": "CI/CD",
+        "t-sql": "T-SQL",
+        "net-blazor": ".NET Blazor"
+      }
+    },
+    "j-adullam": {
+      "title": "קונסיירז׳ · Adullam Homes Housing Association",
+      "description": "איש קשר מחוץ לשעות העבודה בדיור מוגן — הסלמות בנושאי הגנה על הפרט, ניהול אירועים ותיעוד אלקטרוני מדויק עבור דיירים פגיעים.",
+      "tags": {
+        "safeguarding": "הגנה על הפרט"
+      }
+    },
+    "j-showsec": {
+      "title": "קצין אבטחה / מפעיל CCTV · Showsec",
+      "description": "ניטור מצלמות CCTV, ניהול קהלים ותגובה לאירועים באירועים רחבי היקף, בתיאום בזמן אמת עם צוותי אבטחה וגורמי אכיפת החוק.",
+      "tags": {
+        "cctv": "CCTV",
+        "incident-response": "תגובה לאירועים"
+      }
+    },
+    "j-lidl": {
+      "title": "עובד שירות לקוחות · Lidl GB",
+      "description": "חנות בנפח פעילות גבוה לאורך כל התואר — קופה, קבלת סחורה ומלאי; חלק מהצוות שהעלה את דירוג המכירות של החנות מהמקום ה-14 ל-10 ואת שביעות רצון הלקוחות ב-18% בתוך ארבעה חודשים.",
+      "tags": {
+        "3-yrs-8-mo-alongside-study": "3 שנים ו-8 חודשים במקביל ללימודים"
+      }
+    },
+    "j-unisys": {
+      "title": "מהנדס תוכנה · Unisys",
+      "description": "התמחות תעשייתית של 16 חודשים במנצ׳סטר: פיתחתי ושחררתי יכולות full-stack ב-C# / .NET (Blazor) שהעלו את יעילות המערכת בכ-20%, צמצמתי תקלות בייצור ב-30% תוך אחריות על מיון פניות תמיכה, והובלתי צוות פרויקט למסירה בזמן שזיכתה בחוזים נוספים מהלקוח.",
+      "tags": {
+        "c": "C#",
+        "net-blazor": ".NET Blazor",
+        "sql": "SQL"
+      }
+    },
+    "j-ambassador": {
+      "title": "שגריר סטודנטים · MMU",
+      "description": "ייצגתי את האוניברסיטה בימים פתוחים, בסיורים ובאירועי גיוס ברחבי Greater Manchester.",
+      "tags": {
+        "community": "קהילה"
+      }
+    },
+    "j-mmu-helpdesk": {
+      "title": "טכנאי מוקד תמיכה בתחום ה-IT · MMU",
+      "description": "תמיכה ברמה ראשונה לצוות ולסטודנטים — תקלות חומרה, תוכנה והרשאות גישה, וגישור בין ה-IT למחלקות שותפות; זכיתי לשבחים ממספר מחלקות כבר בשבוע הראשון.",
+      "tags": {
+        "first-line-support": "תמיכה ברמה ראשונה"
+      }
+    },
+    "j-mmu-dev": {
+      "title": "מפתח תוכנה · MMU",
+      "description": "פיתוח פונקציונליות בצד הלקוח ובצד השרת בצוות אוניברסיטאי רב-תחומי — פתרתי יותר מ-50 באגים, שיפרתי את מהירות הטעינה ב-25% וקיצרתי את זמן הפיתוח ב-15% תוך תרגום דרישות בעלי עניין ליכולות עובדות.",
+      "tags": {
+        "full-stack": "Full-stack",
+        "50-bugs-resolved": "יותר מ-50 באגים נפתרו"
+      }
+    },
+    "j-course-rep": {
+      "title": "נציג קורס · MMU",
+      "description": "קול נבחר של המחזור — ניהלתי משא ומתן על לוחות זמנים להערכות בהתחשב במועדי חגים ומצוות דתיות, והרחבתי את מפגשי המרצים האורחים במחלקה.",
+      "tags": {
+        "learner-voice-award": "פרס קול הלומדים",
+        "volunteering-award": "פרס התנדבות"
+      }
+    },
+    "j-bsc": {
+      "title": "תואר ראשון (BSc עם הצטיינות) בהנדסת תוכנה · MMU",
+      "description": "Manchester Metropolitan University — בהסמכת BCS, עם צפי לסיום בהצטיינות ממדרגה ראשונה. הצלילה הרשמית למים העמוקים.",
+      "tags": {
+        "bcs-accredited": "בהסמכת BCS",
+        "first-class-predicted": "הצטיינות ממדרגה ראשונה (צפי)"
+      }
+    },
+    "j-kfc": {
+      "title": "חבר צוות · KFC",
+      "description": "בכל העמדות, מהחזית ועד האחורית — נבחרתי לעובד מצטיין שישה חודשים רצופים, בצוות שהעלה את דירוג הסניף האזורי ממקום 5 למקום 2.",
+      "tags": {
+        "best-employee-6": "עובד מצטיין ×6"
+      }
+    },
+    "j-btec": {
+      "title": "BTEC רמה 3, דיפלומה מורחבת בטכנולוגיות מידע",
+      "description": "Bolton College — שלוש הצטיינויות (DDD). שנתיים שהפכו סקרנות למשמעת מקצועית.",
+      "tags": {
+        "triple-distinction": "שלוש הצטיינויות"
+      }
+    },
+    "j-ocnlr": {
+      "title": "תעודת OCNLR במיומנויות דיגיטליות",
+      "description": "Bolton College — הצעד הרשמי הראשון אל עולם המחשוב, והפתח לכל מה שבא אחריו.",
+      "tags": {
+        "digital-skills": "מיומנויות דיגיטליות"
+      }
+    }
+  },
+  "uses": {
+    "machine": {
+      "machine": {
+        "label": "מחשב",
+        "value": "MacBook Pro בגודל 13 אינץ' · Apple M1 · זיכרון מאוחד של 16 GB"
+      },
+      "display": {
+        "label": "תצוגה",
+        "value": "2560 × 1600 Retina · 1440 × 900 לוגי",
+        "note": "אזור התצוגה של קנה המידה הגמיש — כל עמוד משנה נכתב בקנה מידה 1 בדיוק ברוחב הזה, ואז מתאים את עצמו לפי גורם אחד."
+      },
+      "os": {
+        "label": "מערכת הפעלה",
+        "value": "macOS 26 · Darwin 25.6"
+      },
+      "phone": {
+        "label": "טלפון",
+        "value": "iPhone עם OwnTracks במצב HTTP",
+        "note": "הוא שולח עדכון מיקום אל /api/location; העיר והשעה המקומית בכותרת התחתונה מגיעות מהמכשיר הזה.",
+        "hrefLabel": "לצפייה בעיר שהוא מזין"
+      }
+    },
+    "bench": {
+      "editor": {
+        "role": "עורך",
+        "detail": "ערכת הנושא Dracula · vscode-icons · Prettier בעת שמירה"
+      },
+      "agentic-pair": {
+        "role": "בן זוג סוכני",
+        "detail": "תוסף ל-VS Code ו-CLI — מיומנויות, תת-סוכנים ושרתי MCP (Chrome DevTools, Playwright) שמפעילים את הדפדפן בזמן האימות"
+      },
+      "terminal-and-shell": {
+        "role": "טרמינל ו-shell",
+        "detail": "גרסת Node מקובעת בקובץ .nvmrc דרך nvm · Homebrew לכל השאר"
+      },
+      "formatting-and-lint": {
+        "role": "עיצוב קוד ו-lint",
+        "detail": "prettier-plugin-tailwindcss · eslint-config-next (core-web-vitals)"
+      },
+      "type": {
+        "role": "טיפוגרפיה",
+        "detail": "next/font/google — מתארח עצמאית בזמן הבנייה, כך שהגופנים לעולם לא מזיזים את הפריסה"
+      },
+      "browser-tooling": {
+        "role": "כלי דפדפן",
+        "detail": "בדיקות פיקסלים, הדמיית תנועה מופחתת ושער ה-e2e רצים כולם מול Chromium אמיתי"
+      }
+    }
+  }
+}

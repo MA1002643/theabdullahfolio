@@ -9,7 +9,10 @@ import React, {
 } from 'react';
 import clsx from 'clsx';
 import { motion, useInView } from 'framer-motion';
+import { useLocale, useTranslations } from 'next-intl';
 import { journeyData } from '@/app/data';
+import { formatNumber } from '@/i18n/format';
+import { useDirection } from '@/i18n/useDirection';
 import FireText from '@/components/shared/FireText';
 import { ACCENTS } from './accents';
 
@@ -98,21 +101,26 @@ const CAPTION_PAD = 34; // px-2.5 both sides + comfortable clearance
 export const ZOOM_STEPS = [0.5, 0.65, 0.8, 1, 1.25, 1.5];
 const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
 
-const TRACKS = [
-  { type: 'career', label: 'Career' },
-  { type: 'education', label: 'Education' },
-  { type: 'milestone', label: 'Community' },
-];
+// Track and chip LABELS live in the Journey catalogue (atlas.tracks.<key>,
+// issue #82); these lists carry only the keys and the accents.
+const TRACKS = [{ type: 'career' }, { type: 'education' }, { type: 'milestone' }];
 
 const CHIPS = [
   // 'All' wears the card gold — it belongs to no single track.
-  { key: 'all', label: 'All', accent: '#f9d174' },
+  { key: 'all', accent: '#f9d174' },
   ...TRACKS.map((t) => ({
     key: t.type,
-    label: t.label,
     accent: ACCENTS[t.type].color,
   })),
 ];
+
+// Caption advance in CHAR_W units. Monospace Latin is one unit a character;
+// CJK and Hangul glyphs set at roughly two (issue #82 — a translated role can
+// be in any script, and an under-estimate would print a caption through its
+// neighbour). Counted by code point, so English measures exactly as before.
+const WIDE = /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/;
+const captionUnits = (caption) =>
+  [...caption].reduce((n, ch) => n + (WIDE.test(ch) ? 2 : 1), 0);
 
 const toMonths = (ym) => {
   const [y, m] = ym.split('-').map(Number);
@@ -155,27 +163,28 @@ export const packLanes = (items) => {
   return laneStarts.length;
 };
 
-// Everything the clock does NOT touch, computed once at module scope: month
-// spans, lane packing per track, and the axis origin (January of the earliest
-// year). Open entries keep `e: null` here and resolve against the live month
-// at render.
-const STRUCTURE = (() => {
-  const entries = journeyData.map((d) => {
+// Everything the clock does NOT touch: month spans, lane packing per track,
+// and the axis origin (January of the earliest year). Open entries keep
+// `e: null` here and resolve against the live month at render. Built per
+// LOCALE rather than once at module scope (issue #82): the caption is
+// `org · role` with the role translated, and both the caption floor and the
+// lane packing depend on its width. Still clock-free, so still SSR-stable.
+const buildStructure = (source) => {
+  const entries = source.map((d) => {
     // Caption = `org · role`, role being the title's first segment (the two
     // college titles carry no ' · ', so the whole title IS the role — which
     // is exactly right for a qualification).
     const role = d.title.split(' · ')[0];
     const caption = `${d.org} · ${role}`;
+    const units = captionUnits(caption);
     return {
       ...d,
       s: toMonths(d.start),
       e: d.end ? toMonths(d.end) : null,
       open: !d.end,
       role,
-      capPx: caption.length * CHAR_W + CAPTION_PAD,
-      capMonths: Math.ceil(
-        (caption.length * CHAR_W + CAPTION_PAD) / PX_PER_MONTH,
-      ),
+      capPx: units * CHAR_W + CAPTION_PAD,
+      capMonths: Math.ceil((units * CHAR_W + CAPTION_PAD) / PX_PER_MONTH),
     };
   });
   const maxFixedEnd = Math.max(...entries.map((d) => d.e ?? 0));
@@ -201,31 +210,39 @@ const STRUCTURE = (() => {
   // when today lies past the last dated end's year).
   const minSpan = (Math.floor(maxFixedEnd / 12) + 1) * 12 - t0;
   return { groups, t0, maxFixedEnd, minSpan };
-})();
+};
 
 // Screen-reader form of the date range — the display glyphs read badly aloud
-// ('—' is silence, '→' is "right arrow").
-const spokenDates = (d) =>
-  d.dateLabel.replace('—', 'to').replace('→', 'to now');
+// ('—' is silence, '→' is "right arrow"). Both the hand-written English labels
+// ("APR 2023 — JUL 2024", "OCT 2026 →", "FEB — MAY 2026") and the composed
+// ones of other locales use the same two glyphs, so splitting on them and
+// handing the halves to one message is exact for both.
+const spokenDates = (d, t) => {
+  const label = d.dateLabel ?? '';
+  if (label.includes('→')) {
+    return t('atlas.spokenOpen', { start: label.replace('→', '').trim() });
+  }
+  const [start, end] = label.split('—').map((part) => part.trim());
+  return end ? t('atlas.spokenRange', { start, end }) : label;
+};
 
 // The live line under the title — the page's whole thesis in one sentence
-// ("2 roles + 1 degree — in parallel."). Composed at module scope from the
-// data alone: "still running" is `end: null`, a property of the record, not
-// the clock, so the sentence is SSR-deterministic and needs no mount gate.
-const LIVE = (() => {
-  const open = journeyData.filter((d) => !d.end);
+// ("2 roles + 1 degree — in parallel."). Composed from the data alone: "still
+// running" is `end: null`, a property of the record, not the clock, so the
+// sentence is SSR-deterministic and needs no mount gate. Each count is its
+// own plural message and the sentence wraps the joined parts.
+const liveLine = (source, t) => {
+  const open = source.filter((d) => !d.end);
   if (!open.length) return null;
-  const noun = {
-    career: ['role', 'roles'],
-    education: ['degree', 'degrees'],
-    milestone: ['community post', 'community posts'],
-  };
   const parts = TRACKS.map(({ type }) => {
     const n = open.filter((d) => d.type === type).length;
-    return n ? `${n} ${noun[type][n > 1 ? 1 : 0]}` : null;
+    return n ? t(`atlas.live.${type}`, { count: n }) : null;
   }).filter(Boolean);
-  return { total: open.length, text: parts.join(' + ') };
-})();
+  return t('atlas.live.sentence', {
+    parts: parts.join(t('atlas.live.separator')),
+    total: open.length,
+  });
+};
 
 const TimelineAtlas = ({
   activeYear,
@@ -233,7 +250,19 @@ const TimelineAtlas = ({
   onFilter,
   revealed,
   reduceMotion,
+  entries,
+  formatYear = String,
 }) => {
+  const t = useTranslations('Journey');
+  const locale = useLocale();
+  const { isRtl } = useDirection();
+  // Inline-start offset. Physical `left` in LTR — exactly the style the atlas
+  // always wrote, which its tests measure — and `right` in RTL, where the
+  // time axis runs from the right edge and NOW lands on the left.
+  const inlineStart = (v) => (isRtl ? { right: v } : { left: v });
+  const source = entries ?? journeyData;
+  const STRUCTURE = useMemo(() => buildStructure(source), [source]);
+  const live = useMemo(() => liveLine(source, t), [source, t]);
   const rootRef = useRef(null);
   const inView = useInView(rootRef, { amount: 0.15, margin: '-40px 0px' });
   const show = reduceMotion || (revealed && inView);
@@ -253,8 +282,10 @@ const TimelineAtlas = ({
   useEffect(() => {
     if (nowM === null) return;
     const el = scrollerRef.current;
-    if (el) el.scrollLeft = el.scrollWidth;
-  }, [nowM]);
+    // In RTL the NOW edge is the far LEFT, i.e. the most negative scrollLeft
+    // (the spec'd RTL scroll origin is the right edge at 0).
+    if (el) el.scrollLeft = isRtl ? -el.scrollWidth : el.scrollWidth;
+  }, [nowM, isRtl]);
 
   // Grid zoom — an index into ZOOM_STEPS (see the constant's note). A zoom
   // change re-anchors the pan on the month at the CENTRE of the viewport:
@@ -278,7 +309,10 @@ const TimelineAtlas = ({
     const el = scrollerRef.current;
     if (el) {
       const half = el.clientWidth / 2;
-      panSnapshot.current = { centre: el.scrollLeft + half, half };
+      // Distance from the inline START, so the same arithmetic serves both
+      // directions (RTL scrollLeft counts negative from the right edge).
+      const fromStart = isRtl ? -el.scrollLeft : el.scrollLeft;
+      panSnapshot.current = { centre: fromStart + half, half, rtl: isRtl };
     }
     setZoomIdx(next);
   };
@@ -289,9 +323,14 @@ const TimelineAtlas = ({
     panSnapshot.current = null;
     const el = scrollerRef.current;
     if (prev === zoom || !el || !snap) return;
-    el.scrollLeft = snap.centre * (zoom / prev) - snap.half;
+    const next = snap.centre * (zoom / prev) - snap.half;
+    el.scrollLeft = snap.rtl ? -next : next;
   }, [zoom]);
   const zoomPct = Math.round(zoom * 100);
+  // The readout in the locale's digits and percent sign ("65%" in English,
+  // "٦٥٪" in Arabic); the arithmetic above stays on plain numbers.
+  const pctLabel = formatNumber(zoom, locale, { style: 'percent' });
+  const fullLabel = formatNumber(1, locale, { style: 'percent' });
   const canZoomOut = zoomIdx > 0;
   const canZoomIn = zoomIdx < ZOOM_STEPS.length - 1;
 
@@ -310,7 +349,7 @@ const TimelineAtlas = ({
     const years = [];
     for (let m = STRUCTURE.t0; m <= t1; m += 12) years.push(m);
     return { px, years, gridW: LABEL_W + span * PX_PER_MONTH + RUNOUT_W };
-  }, [nowM]);
+  }, [nowM, STRUCTURE]);
 
   // Same jump contract as the EraRail clock's year buttons; the focus hand-off
   // keeps a keyboard selection anchored where the scroll lands.
@@ -344,18 +383,16 @@ const TimelineAtlas = ({
               eyebrow, so every uppercase microlabel reads in one voice; the
               title takes the page-title ember (owner correction, both). */}
           <p className="ja-eyebrow font-mono uppercase text-[#ffaa2a]">
-            Overlap view
+            {t('atlas.eyebrow')}
           </p>
           <h2 className="ja-title mt-1.5 font-bold text-[#ff6d05]">
-            The atlas — three tracks, one clock
+            {t('atlas.title')}
           </h2>
           {/* Fire ink (owner correction): the contact intro's per-word
               gold→ember ramp, not a flat amber. */}
-          {LIVE && (
+          {live && (
             <p className="ja-note mt-1.5 font-mono">
-              <FireText
-                text={`Running today: ${LIVE.text}${LIVE.total > 1 ? ' — in parallel.' : '.'}`}
-              />
+              <FireText text={live} />
             </p>
           )}
         </div>
@@ -366,10 +403,10 @@ const TimelineAtlas = ({
         <div className="flex flex-col items-start gap-2.5 md:items-end">
           <div
             role="group"
-            aria-label="Highlight one track"
+            aria-label={t('atlas.chipsLabel')}
             className="flex flex-wrap gap-1.5"
           >
-            {CHIPS.map(({ key, label, accent }) => {
+            {CHIPS.map(({ key, accent }) => {
               const pressed = filter === key;
               return (
                 <button
@@ -392,7 +429,7 @@ const TimelineAtlas = ({
                       : undefined
                   }
                 >
-                  {label}
+                  {t(`atlas.tracks.${key}`)}
                 </button>
               );
             })}
@@ -407,16 +444,16 @@ const TimelineAtlas = ({
               the readout's own text change would otherwise pass silently. */}
           <div
             role="group"
-            aria-label="Grid zoom"
+            aria-label={t('atlas.zoom.group')}
             className="ja-zoom inline-flex items-stretch rounded-full border border-white/15 font-mono"
           >
             <button
               type="button"
               onClick={() => changeZoom((i) => Math.max(0, i - 1))}
               disabled={!canZoomOut}
-              aria-label="Zoom the grid out"
-              title="Zoom out"
-              className="ja-chip rounded-l-full py-1 pl-3 pr-2.5 text-white/45 transition-colors duration-300 hover:text-white/80 disabled:cursor-default disabled:text-white/20"
+              aria-label={t('atlas.zoom.out')}
+              title={t('atlas.zoom.outTitle')}
+              className="ja-chip rounded-s-full py-1 ps-3 pe-2.5 text-white/45 transition-colors duration-300 hover:text-white/80 disabled:cursor-default disabled:text-white/20"
             >
               <span aria-hidden>−</span>
             </button>
@@ -424,13 +461,18 @@ const TimelineAtlas = ({
               type="button"
               onClick={() => changeZoom(ZOOM_DEFAULT)}
               disabled={zoomIdx === ZOOM_DEFAULT}
-              aria-label={`Grid zoom ${zoomPct}%. Reset to 100%`}
+              aria-label={t('atlas.zoom.readoutLabel', {
+                pct: pctLabel,
+                full: fullLabel,
+              })}
               title={
-                zoomIdx === ZOOM_DEFAULT ? 'Grid zoom' : 'Reset zoom to 100%'
+                zoomIdx === ZOOM_DEFAULT
+                  ? t('atlas.zoom.readoutTitle')
+                  : t('atlas.zoom.resetTitle', { full: fullLabel })
               }
               className="ja-chip min-w-[4.75ch] border-x border-white/10 px-1.5 py-1 text-center tabular-nums text-white/60 transition-colors duration-300 hover:text-white/90 disabled:cursor-default disabled:text-white/60"
             >
-              {zoomPct}%
+              {pctLabel}
             </button>
             <button
               type="button"
@@ -438,14 +480,14 @@ const TimelineAtlas = ({
                 changeZoom((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))
               }
               disabled={!canZoomIn}
-              aria-label="Zoom the grid in"
-              title="Zoom in"
-              className="ja-chip rounded-r-full py-1 pl-2.5 pr-3 text-white/45 transition-colors duration-300 hover:text-white/80 disabled:cursor-default disabled:text-white/20"
+              aria-label={t('atlas.zoom.in')}
+              title={t('atlas.zoom.inTitle')}
+              className="ja-chip rounded-e-full py-1 ps-2.5 pe-3 text-white/45 transition-colors duration-300 hover:text-white/80 disabled:cursor-default disabled:text-white/20"
             >
               <span aria-hidden>+</span>
             </button>
             <span role="status" className="sr-only">
-              Grid zoom {zoomPct}%
+              {t('atlas.zoom.status', { pct: pctLabel })}
             </span>
           </div>
         </div>
@@ -457,7 +499,7 @@ const TimelineAtlas = ({
       <div
         ref={scrollerRef}
         role="region"
-        aria-label="Overlap atlas: every role and course as parallel bars on one time axis"
+        aria-label={t('atlas.region')}
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be keyboard-focusable (axe scrollable-region-focusable)
         tabIndex={0}
         className="ja-scroller mt-6 overflow-x-auto pb-1.5"
@@ -477,7 +519,7 @@ const TimelineAtlas = ({
             width: scale
               ? scale.gridW
               : LABEL_W + STRUCTURE.minSpan * PX_PER_MONTH + RUNOUT_W,
-            paddingRight: RUNOUT_W,
+            ...(isRtl ? { paddingLeft: RUNOUT_W } : { paddingRight: RUNOUT_W }),
           }}
         >
           <div className="relative">
@@ -485,21 +527,21 @@ const TimelineAtlas = ({
             <div
               aria-hidden
               className="relative h-6"
-              style={{ marginLeft: LABEL_W }}
+              style={isRtl ? { marginRight: LABEL_W } : { marginLeft: LABEL_W }}
             >
               {scale &&
                 scale.years.map((m) => (
                   <div
                     key={m}
-                    className="absolute top-0 -translate-x-1/2"
-                    style={{ left: scale.px(m) }}
+                    className="absolute top-0 -translate-x-1/2 rtl:translate-x-1/2"
+                    style={inlineStart(scale.px(m))}
                   >
                     {/* Year labels wear the page-title ember (owner
                         correction — the grey axis didn't belong to the
                         theme); the tick above each echoes it softer. */}
                     <span className="mx-auto block h-2 w-px bg-[#ff6d05]/60" />
                     <span className="ja-axis mt-0.5 block text-center font-mono text-[#ff6d05]">
-                      {Math.floor(m / 12)}
+                      {formatYear(Math.floor(m / 12))}
                     </span>
                   </div>
                 ))}
@@ -508,8 +550,8 @@ const TimelineAtlas = ({
             {/* Year rules behind the lanes. */}
             <div
               aria-hidden
-              className="pointer-events-none absolute bottom-0 right-0 top-6"
-              style={{ left: LABEL_W }}
+              className="pointer-events-none absolute bottom-0 end-0 top-6"
+              style={inlineStart(LABEL_W)}
             >
               {scale &&
                 scale.years.map((m) => (
@@ -519,14 +561,14 @@ const TimelineAtlas = ({
                   <span
                     key={m}
                     className="absolute bottom-0 top-0 w-px bg-[#f9d174]/20"
-                    style={{ left: scale.px(m) }}
+                    style={inlineStart(scale.px(m))}
                   />
                 ))}
             </div>
 
             {/* Lane groups — the deterministic frame: rows and their packed
               heights render on the server, bars land after mount. */}
-            {STRUCTURE.groups.map(({ type, label, items, laneCount }) => {
+            {STRUCTURE.groups.map(({ type, items, laneCount }) => {
               const accent = ACCENTS[type].color;
               return (
                 <div
@@ -553,7 +595,7 @@ const TimelineAtlas = ({
                       is as it always was; a vertical centring was tried
                       first and corrected back. */}
                   <div
-                    className="ja-lane pointer-events-none sticky left-0 z-20 flex shrink-0 flex-col items-center self-stretch pt-1.5 text-center font-mono uppercase tracking-[0.16em]"
+                    className="ja-lane pointer-events-none sticky start-0 z-20 flex shrink-0 flex-col items-center self-stretch pt-1.5 text-center font-mono uppercase tracking-[0.16em]"
                     style={{ width: LABEL_W, color: accent }}
                   >
                     <span
@@ -561,7 +603,8 @@ const TimelineAtlas = ({
                       className="absolute -bottom-3.5 -top-3.5 left-0 right-0"
                       style={{
                         background: 'rgba(2,6,17,0.97)',
-                        boxShadow: '1px 0 0 rgba(255,255,255,0.08)',
+                        // The hairline closes the panel on its inline END.
+                        boxShadow: `${isRtl ? -1 : 1}px 0 0 rgba(255,255,255,0.08)`,
                       }}
                     />
                     <span className="relative flex items-center gap-1.5">
@@ -569,10 +612,10 @@ const TimelineAtlas = ({
                         aria-hidden
                         className="h-1.5 w-1.5 rounded-full bg-current"
                       />
-                      {label}
+                      {t(`atlas.tracks.${type}`)}
                     </span>
                     <span className="relative mt-0.5 block normal-case tracking-[0.06em] text-white/40">
-                      {items.length} {items.length === 1 ? 'entry' : 'entries'}
+                      {t('atlas.entries', { count: items.length })}
                     </span>
                   </div>
 
@@ -609,12 +652,19 @@ const TimelineAtlas = ({
                               d.year === activeYear ? 'true' : undefined
                             }
                             onClick={() => jump(d)}
-                            title={`${d.title} — ${d.dateLabel}`}
+                            title={t('atlas.barTitle', {
+                              title: d.title,
+                              dates: d.dateLabel,
+                            })}
                             // The caption's own words, in its order ("org ·
                             // role"), WCAG 2.5.3: a voice-control user says
                             // what the bar shows. `Jump to ${d.title}` read
                             // "role · org", the reverse of the caption.
-                            aria-label={`Jump to ${d.org} · ${d.role}, ${spokenDates(d)}`}
+                            aria-label={t('atlas.barLabel', {
+                              org: d.org,
+                              role: d.role,
+                              dates: spokenDates(d, t),
+                            })}
                             className={clsx(
                               // No overflow-hidden and no truncation — the
                               // caption is a promise (owner direction: org
@@ -622,7 +672,7 @@ const TimelineAtlas = ({
                               // caption floor (rightward for closed bars,
                               // leftward for open ones) plus the packing
                               // reservation.
-                              'ja-bar absolute flex items-center rounded-md border px-2.5 text-left font-mono',
+                              'ja-bar absolute flex items-center rounded-md border px-2.5 text-start font-mono',
                               d.open ? 'border-dashed' : 'border-solid',
                               // Dimmed = de-emphasised, not disabled (the
                               // chips highlight a track, TimelineNode's
@@ -639,14 +689,17 @@ const TimelineAtlas = ({
                             )}
                             style={{
                               '--ja-accent': accent,
-                              left,
+                              ...inlineStart(left),
                               width,
                               top: d.lane * LANE_STEP,
                               height: BAR_H,
                             }}
                           >
                             <span className="whitespace-nowrap">
-                              <span className="text-white/90">{d.org}</span>
+                              {/* An organisation's name: translate="no". */}
+                              <span className="text-white/90" translate="no">
+                                {d.org}
+                              </span>
                               <span className="text-white/50"> · {d.role}</span>
                             </span>
                           </button>
@@ -662,23 +715,23 @@ const TimelineAtlas = ({
             {scale && (
               <div
                 aria-hidden
-                className="pointer-events-none absolute bottom-0 right-0 top-0"
-                style={{ left: LABEL_W }}
+                className="pointer-events-none absolute bottom-0 end-0 top-0"
+                style={inlineStart(LABEL_W)}
               >
                 <div
                   className="absolute bottom-0 top-0"
-                  style={{ left: scale.px(nowM) }}
+                  style={inlineStart(scale.px(nowM))}
                 >
-                  <span className="ja-lane absolute top-0 -translate-x-1/2 whitespace-nowrap font-mono uppercase tracking-[0.2em] text-[#ff6d05]">
-                    Now
+                  <span className="ja-lane absolute top-0 -translate-x-1/2 whitespace-nowrap font-mono uppercase tracking-[0.2em] text-[#ff6d05] rtl:translate-x-1/2">
+                    {t('atlas.now')}
                   </span>
                   <span
-                    className="absolute top-5 h-[5px] w-[5px] -translate-x-1/2 rounded-full bg-[#ff6d05]"
+                    className="absolute top-5 h-[5px] w-[5px] -translate-x-1/2 rounded-full bg-[#ff6d05] rtl:translate-x-1/2"
                     style={{
                       filter: 'drop-shadow(0 0 4px rgba(255,109,5,0.8))',
                     }}
                   />
-                  <span className="absolute bottom-0 top-5 w-px -translate-x-1/2 bg-gradient-to-b from-[#ff6d05]/80 via-[#ff6d05]/40 to-transparent" />
+                  <span className="absolute bottom-0 top-5 w-px -translate-x-1/2 bg-gradient-to-b rtl:translate-x-1/2 from-[#ff6d05]/80 via-[#ff6d05]/40 to-transparent" />
                 </div>
               </div>
             )}
@@ -690,13 +743,13 @@ const TimelineAtlas = ({
           contact intro's per-word gold→ember ramp. */}
       <p className="ja-note mt-3 flex flex-wrap gap-x-5 gap-y-1 font-mono">
         <span>
-          <FireText text="Select any bar to jump to it." />
+          <FireText text={t('atlas.key.select')} />
         </span>
         <span>
-          <FireText text="Dashed edge = still running." />
+          <FireText text={t('atlas.key.dashed')} />
         </span>
         <span>
-          <FireText text="Stacked bars = concurrent." />
+          <FireText text={t('atlas.key.stacked')} />
         </span>
       </p>
     </motion.div>

@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "New features are being released very soon. This website is actively under development.",
+    "shippingNone": "Just shipped {count, plural, one {# update} other {# updates}} to this website.",
+    "shippingOne": "Just shipped <bdi>#{number} {title}</bdi>.",
+    "shippingMany": "Just shipped <bdi>#{number} {title}</bdi> (and {more, number} more).",
+    "liveWithTop": "Live update: shipping changes right now — currently focused on <bdi>#{number} {title}</bdi>.",
+    "livePushes": "Live update: shipping new changes to this website right now.",
+    "liveActive": "Active work happening right now{hasTop, select, yes { — currently focused on <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "Actively working on {count, plural, one {# task} other {# tasks}}{hasTop, select, yes { — currently focused on <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "Work in progress on {prs, plural, one {# pull request} other {# pull requests}} and {issues, plural, one {# open task} other {# open tasks}}{hasTop, select, yes { — currently focused on <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "Work in progress on {prs, plural, one {# pull request} other {# pull requests}}{hasTop, select, yes { — currently focused on <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "Work in progress on {issues, plural, one {# open task} other {# open tasks}}{hasTop, select, yes { — currently focused on <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "Work is in progress on this website.",
+    "planning": "Planning the next improvements{hasTop, select, yes { — currently focused on <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "Actively working on {count, plural, one {# task} other {# tasks}} — currently focused on <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "Just shipped",
+    "live": "Live development in progress",
+    "inProgress": "Work in progress",
+    "planning": "Planning the next improvements",
+    "idle": "Maintenance ongoing"
+  },
+  "region": "Live maintenance status",
+  "state": {
+    "shipping": "SHIPPING",
+    "live": "LIVE",
+    "inProgress": "IN PROGRESS",
+    "planning": "PLANNING",
+    "idle": "MAINTENANCE"
+  },
+  "stateSpoken": {
+    "shipping": "shipping",
+    "live": "live",
+    "inProgress": "in progress",
+    "planning": "planning",
+    "idle": "maintenance"
+  },
+  "pipeline": {
+    "planning": "Plan",
+    "inProgress": "Build",
+    "shipping": "Ship",
+    "live": "Live"
+  },
+  "legend": {
+    "title": "Delivery pipeline",
+    "srIdle": "Delivery pipeline. Off pipeline: maintenance monitoring.",
+    "srStage": "Delivery pipeline. Current stage: {stage}, {index} of {total}.",
+    "headingIdle": "Maintenance · off pipeline",
+    "headingStage": "{stage} · stage {index} of {total}",
+    "maintenance": "Maintenance",
+    "offPipeline": "Off pipeline — monitoring {count, plural, =0 {tracked repositories} other {# repos}}",
+    "meaning": {
+      "planning": "Open issues queued and scoped",
+      "inProgress": "Active work on branches and pull requests",
+      "shipping": "Merged work moved to Done in the last 48 hours",
+      "live": "Commits or updates within the last 2 hours"
+    }
+  },
+  "fields": {
+    "state": "State",
+    "focus": "Focus",
+    "focusPr": "Focus · PR",
+    "focusIssue": "Focus · Issue",
+    "prs": "PRs",
+    "issues": "Issues",
+    "pushes24h": "Pushes · 24h",
+    "pushes": "Pushes",
+    "activity": "Activity · {days}d",
+    "sync": "Sync",
+    "metered": "· metered"
+  },
+  "metric": {
+    "prs": "Active PRs",
+    "issues": "Open issues",
+    "pushes": "Pushes (24h)",
+    "emptyPrs": "No active PRs across tracked projects.",
+    "emptyIssues": "No open issues across tracked projects.",
+    "emptyPushes": "No pushes across tracked projects in the last 24h."
+  },
+  "popover": {
+    "breakdown": "{metric} breakdown",
+    "summary": "{metric} · {count} across {projects, plural, one {# project} other {# projects}}",
+    "heading": "<count></count> across {projects, plural, one {# project} other {# projects}}",
+    "stale": "Showing last known activity.",
+    "more": "+ {count} more on GitHub",
+    "openOnGitHub": "Open on GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {Pull request} other {Issue}} #{number}",
+    "ariaOpen": "Open {type, select, pr {pull request} other {issue}} #{number}: {title} on GitHub",
+    "stepped": "{type, select, pr {Pull request} other {Issue}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {active <age></age>} other {}}",
+    "monitoring": "Monitoring {count, plural, one {# repository} other {# repositories}} — no active focus item",
+    "monitoringNone": "Monitoring tracked repositories"
+  },
+  "queue": {
+    "label": "Focus queue",
+    "hint": "Item {index} of {count} · ← → to cycle",
+    "sr": "Focus queue of {count} — left and right arrow keys cycle"
+  },
+  "activity": {
+    "label": "Commit trace",
+    "summary": "{total, plural, one {# commit} other {# commits}} · last {days, plural, one {# day} other {# days}}{truncated, select, yes { (oldest days undercounted)} other {}}"
+  },
+  "sync": {
+    "label": "Last sync",
+    "hint": "Confidence {confidence} · polls every {seconds}s{metered, select, yes { · metered} other {}}",
+    "detail": "{hasLast, select, yes {Last sync {last} · } other {}}Signal confidence {confidence} · polls every {seconds, plural, one {# second} other {# seconds}}{metered, select, yes { while metered} other {}}",
+    "stale": "Stale"
+  },
+  "announce": {
+    "status": "Status: {state}.",
+    "focus": "Current focus: {type, select, pr {pull request} other {issue}} {number}, {title}.",
+    "counts": "{prs, plural, one {# active pull request} other {# active pull requests}}, {issues, plural, one {# open issue} other {# open issues}}, and {pushes, plural, one {# push} other {# pushes}} in the last 24 hours."
+  },
+  "error": {
+    "snapshot": "Live status temporarily unavailable. Showing the latest snapshot.",
+    "fallback": "Live status temporarily unavailable. Showing maintenance fallback."
+  }
+}

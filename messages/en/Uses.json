@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "MY SETUP",
+    "subtitle": "the tools, verified"
+  },
+  "opensNewTab": "{name} (opens in a new tab)",
+  "machine": {
+    "eyebrow": "Hardware · hand-set",
+    "title": "The machine",
+    "provenance": "{count, plural, one {<fig>{n}</fig> row} other {<fig>{n}</fig> rows}} · owner-confirmed",
+    "seeItLive": "see it live"
+  },
+  "bench": {
+    "eyebrow": "Environment · hand-set",
+    "title": "The bench",
+    "provenance": "{count, plural, one {<fig>{n}</fig> station} other {<fig>{n}</fig> stations}} · {file} excerpt",
+    "extensions": "Extensions I reach for",
+    "editorCaption": "An excerpt of my VS Code {file}, shown in the {theme} theme."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · crawled from the repositories",
+    "eyebrowCurated": "Stack · curated set",
+    "title": "The stack",
+    "provenanceLive": "live · {count, plural, one {<fig>{n}</fig> tool} other {<fig>{n}</fig> tools}}",
+    "provenanceCurated": "curated · {count, plural, one {<fig>{n}</fig> tool} other {<fig>{n}</fig> tools}} · {state, select, unreachable {GitHub unreachable} other {syncing with GitHub…}}",
+    "verifiedSr": "verified against GitHub",
+    "verifiedStatus": "Stack verified against GitHub.",
+    "cta": "SEE THE REPOSITORIES",
+    "ctaLabel": "See the repositories on GitHub (opens in a new tab)",
+    "tally": "<count></count> of <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "public repositories",
+    "keyPrivate": "private",
+    "keyRelative": "bars are relative to the most-used tool",
+    "keyPending": "bars fill and repository counts arrive with the live crawl",
+    "repoCount": {
+      "public": "used in {pub, plural, one {# public repo} other {# public repos}}",
+      "private": "used in {priv, plural, one {# private repo} other {# private repos}}",
+      "mixed": "used in {pub, plural, one {# public repo} other {# public repos}} · +{priv} private"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: repository counts arrive with the live crawl",
+    "figure": {
+      "publicRepos": "{n, plural, one {public repo} other {public repos}}",
+      "privateRepos": "{n, plural, one {private repo} other {private repos}}",
+      "repos": "{n, plural, one {repo} other {repos}}",
+      "public": "public",
+      "private": "private"
+    },
+    "curated": "curated"
+  },
+  "liveAge": {
+    "verified": "verified {age}",
+    "s": "{s}s ago",
+    "ms": "{m}m {s}s ago",
+    "hm": "{h}h {m}m ago",
+    "dh": "{d}d {h}h ago"
+  },
+  "pipeline": {
+    "eyebrow": "Delivery · commit to compute",
+    "title": "The pipeline",
+    "provenance": "{count, plural, one {<fig>{n}</fig> workflow} other {<fig>{n}</fig> workflows}} · read from .github at build",
+    "provenanceHandSet": "schematic · hand-set",
+    "region": "Build pipeline diagram",
+    "svgTitle": "Delivery pipeline: a push flows from GitHub through GitHub Actions and the Vercel build to Fluid compute, which a GitHub webhook also reaches directly and a daily cron calls; compute fans out over a service bus to the services listed below.",
+    "fires": "fires <fig>{window}</fig> UTC (Hobby precision)",
+    "kinds": {
+      "source": "SOURCE",
+      "ci": "CI",
+      "build": "BUILD",
+      "runtime": "RUNTIME",
+      "schedule": "SCHEDULE",
+      "store": "STORE",
+      "gateway": "GATEWAY",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "MAIL",
+      "auth": "AUTH",
+      "search": "SEARCH"
+    },
+    "workflows": "{count, plural, one {{n} workflow} other {{n} workflows}}",
+    "apiRoutes": "{count, plural, one {{n} API route} other {{n} API routes}}",
+    "apiRoutesBare": "API routes",
+    "locales": "{count, plural, one {{n} locale} other {{n} locales}}",
+    "crons": "{count, plural, one {cron} other {{n} crons}}",
+    "daily": "daily · {time} UTC",
+    "services": {
+      "redis": "guestbook · location · SEO · dedupe",
+      "graphql": "stats · skills · progress",
+      "spotify": "now playing",
+      "mail": "contact · Abstract verify"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Quality · counted at build",
+    "title": "The instruments",
+    "provenance": "counted at build · <fig>{date}</fig>",
+    "provenanceBare": "counted at build",
+    "unitLabel": "{count, plural, one {Vitest suite} other {Vitest suites}}",
+    "unitSub": "{count, plural, one {{n} test case} other {{n} test cases}} · Vitest",
+    "e2eLabel": "{count, plural, one {browser suite} other {browser suites}}",
+    "e2eSub": "{count, plural, one {{n} scenario} other {{n} scenarios}} · Playwright",
+    "apiLabel": "{count, plural, one {API route} other {API routes}}",
+    "apiSub": "route handlers · {methods}",
+    "apiSubBare": "route handlers",
+    "tileLabel": "{figure} {label} — {sub} (opens the folder on GitHub in a new tab)"
+  },
+  "bom": {
+    "eyebrow": "Bill of materials · this site",
+    "title": "What it is made of",
+    "provenance": "{source} · verified at build · <fig>{date}</fig>",
+    "provenanceBare": "{source} · verified at build",
+    "unreadable": "The manifest could not be read at build, so no versions are listed.",
+    "packages": "{count, plural, one {<fig>{n}</fig> package} other {<fig>{n}</fig> packages}}",
+    "packagesOf": "<fig>{n}</fig> of <fig>{all}</fig> packages",
+    "built": "built <fig>{date}</fig>",
+    "groups": {
+      "core": "Core",
+      "3d-and-motion": "3D & motion",
+      "data-and-services": "Data & services",
+      "interface": "Interface",
+      "platform": "Platform",
+      "media": "Media",
+      "quality": "Quality",
+      "build": "Build",
+      "runtime": "Runtime",
+      "tooling": "Tooling"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Languages",
+        "lay": "What the code itself is written in."
+      },
+      "frameworks": {
+        "label": "Frameworks",
+        "lay": "The scaffolding an application is built on: its structure and its conventions."
+      },
+      "libraries": {
+        "label": "Libraries",
+        "lay": "Ready-made building blocks, each pulled in to do one job well."
+      },
+      "tools": {
+        "label": "Tools",
+        "lay": "What runs around the code: testing, formatting, databases and deployment."
+      },
+      "software": {
+        "label": "Software",
+        "lay": "The services the finished work lives on."
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "section": "Dotazione",
+  "preferences": "Preferenze",
+  "jumpPlate": "Vai a {ordinal} {label}",
+  "plates": {
+    "machine": "La macchina",
+    "bench": "Il banco di lavoro",
+    "stack": "Lo stack",
+    "pipeline": "La pipeline",
+    "instruments": "Gli strumenti di misura",
+    "bom": "Distinta base"
+  },
+  "copySettings": "Copia le mie impostazioni dell'editor",
+  "openRepos": "Vedi i repository su GitHub",
+  "toggleMotion": "Attiva/disattiva animazioni",
+  "motionOn": "attive",
+  "motionOff": "spente",
+  "copied": "Impostazioni dell'editor copiate",
+  "clipboardUnavailable": "Appunti non disponibili — seleziona il riquadro per copiare"
+}

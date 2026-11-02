@@ -1,0 +1,58 @@
+{
+  "title": "LIÊN HỆ",
+  "subtitle": "hãy kết nối với tôi",
+  "intro": "Hãy bước vào vòng tròn phép thuật và dệt lời của bạn vào tấm vải của vũ trụ. Dù bạn muốn triệu hồi một cuộc hợp tác, giải mở những điều bí ẩn hay chỉ kể những câu chuyện phiêu lưu, mỗi thông điệp của bạn đều là một cuộn giấy quý nơi vương quốc này. Hãy dùng biểu mẫu bên dưới để gửi thư qua mạng lưới huyền diệu, rồi lắng nghe tiếng thì thầm của phép màu đáp lại.",
+  "fields": {
+    "name": "Họ và tên",
+    "email": "Email",
+    "subject": "Chủ đề",
+    "message": "Tin nhắn"
+  },
+  "validation": {
+    "nameRequired": "Vui lòng nhập họ và tên!",
+    "nameMin": "Tên phải có ít nhất {min} ký tự.",
+    "nameMax": "Tên chỉ được dài tối đa {max} ký tự.",
+    "emailRequired": "Vui lòng nhập email!",
+    "emailMax": "Email chỉ được dài tối đa {max} ký tự.",
+    "subjectRequired": "Vui lòng nhập chủ đề!",
+    "subjectMax": "Chủ đề chỉ được dài tối đa {max} ký tự.",
+    "messageRequired": "Vui lòng nhập tin nhắn!",
+    "messageMin": "Tin nhắn phải có ít nhất {min} ký tự.",
+    "messageMax": "Tin nhắn chỉ được dài tối đa {max} ký tự."
+  },
+  "submit": {
+    "label": "GỬI NGAY!",
+    "ariaLabel": "Gửi tin nhắn",
+    "sending": "ĐANG GỬI",
+    "sent": "ĐÃ GỬI",
+    "held": "ĐANG GIỮ"
+  },
+  "toast": {
+    "sent": "Đã gửi tin nhắn thành công!",
+    "savedOffline": "Đã lưu — tin nhắn sẽ được gửi khi bạn kết nối lại.",
+    "savedRetrying": "Đã lưu — sẽ thử gửi lại sau giây lát…",
+    "failed": "Không gửi được tin nhắn",
+    "heldSent": "{count, plural, other {# tin nhắn đang chờ đã được gửi đi ✦}}"
+  },
+  "status": {
+    "held": "Đang giữ — tin nhắn sẽ tự gửi ngay khi bạn trực tuyến trở lại.",
+    "offline": "Bạn đang ngoại tuyến — tin nhắn sẽ được giữ lại và tự động gửi khi bạn kết nối lại."
+  },
+  "errors": {
+    "name_required": "Vui lòng nhập họ và tên.",
+    "email_required": "Vui lòng nhập email.",
+    "subject_required": "Vui lòng nhập chủ đề.",
+    "message_required": "Vui lòng nhập tin nhắn.",
+    "name_too_long": "Họ và tên vượt quá độ dài tối đa cho phép ({max} ký tự).",
+    "email_too_long": "Email vượt quá độ dài tối đa cho phép ({max} ký tự).",
+    "subject_too_long": "Chủ đề vượt quá độ dài tối đa cho phép ({max} ký tự).",
+    "message_too_long": "Tin nhắn vượt quá độ dài tối đa cho phép ({max, number, ::group-off} ký tự).",
+    "invalid_characters": "Nội dung nhập chứa ký tự không hợp lệ.",
+    "invalid_email": "Định dạng email không hợp lệ.",
+    "undeliverable_email": "Địa chỉ email này không tồn tại hoặc không thể nhận email.",
+    "disposable_email": "Không chấp nhận địa chỉ email dùng một lần.",
+    "too_large": "Nội dung yêu cầu chỉ được tối đa {max, number, ::group-off} byte",
+    "invalid_body": "Nội dung yêu cầu không hợp lệ",
+    "send_failed": "Không gửi được tin nhắn"
+  }
+}

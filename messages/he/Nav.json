@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "אודות",
+    "projects": "פרויקטים",
+    "qualifications": "הכשרה והסמכות",
+    "contact": "יצירת קשר",
+    "journey": "המסע",
+    "past": "העבר שלי",
+    "guestbook": "ספר אורחים",
+    "uses": "הכלים שלי"
+  },
+  "routes": {
+    "home": "בית",
+    "about": "אודות",
+    "projects": "פרויקטים",
+    "qualifications": "הכשרה והסמכות",
+    "contact": "יצירת קשר",
+    "myPast": "העבר שלי",
+    "journey": "המסע",
+    "guestbook": "ספר אורחים",
+    "uses": "הכלים שלי",
+    "cv": "CV",
+    "notes": "רשימות",
+    "privacy": "פרטיות"
+  },
+  "homeButton": {
+    "tooltip": "בית",
+    "srLabel": "מעבר לדף הבית"
+  },
+  "projectsButton": {
+    "label": "פרויקטים",
+    "tooltip": "פרויקטים",
+    "srLabel": "מעבר לדף הפרויקטים"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "CATATAN",
+    "subtitle": "keputusan, dituliskan",
+    "intro": "Setiap keputusan yang tidak lazim di balik situs ini dicatat: pilihan yang diambil, alternatif yang ditolak, dan harga dari masing-masing. Ini adalah dokumen kerja dari repositori, ditampilkan di sini alih-alih dibiarkan tersimpan di dalam struktur direktori.",
+    "lines": "{count, plural, other {baris}}"
+  },
+  "note": {
+    "title": "CATATAN",
+    "breadcrumb": "Navigasi rinci",
+    "allNotes": "Semua catatan",
+    "source": "Sumber: {source} · {count, plural, other {{n} baris}}"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Proje gezintisi",
+    "all": "Tüm projeler",
+    "previous": "Önceki proje: {name}",
+    "next": "Sonraki proje: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Ana sayfa",
+    "projects": "Projeler"
+  },
+  "loading": "Proje yükleniyor",
+  "intro": {
+    "fallbackName": "Proje adı",
+    "fallbackDescription": "Yenilikçi, hızlı ve geleceğe dönük web çözümleri.",
+    "linksLabel": "{name} bağlantıları",
+    "liveDemo": "Canlı demo<sr> (yeni sekmede açılır)</sr>",
+    "source": "GitHub'da kaynak kod<sr> (yeni sekmede açılır)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "BIOS başlatılıyor...",
+      "hardware": "Donanım algılanıyor...",
+      "os": "İşletim sistemi yükleniyor..."
+    },
+    "tagline": "Fikirlerine yeni nesil dijital işçilikle güç katıyoruz.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Araçlar ve Framework'ler",
+    "overview": "Proje Genel Bakışı",
+    "overviewLead": "Bu platform, tek bir panel ve canlı analitikle e-ticaret iş akışlarını kolaylaştırır.",
+    "overviewBody": "Merkezi ve sezgisel bir arayüz sunarak birden fazla aracı yönetmenin karmaşıklığını ortadan kaldırır.",
+    "features": "Özellikler",
+    "feature": {
+      "auth": {
+        "title": "Kimlik doğrulama",
+        "desc": "Güvenli giriş ve kullanıcı erişimi."
+      },
+      "payments": {
+        "title": "Ödemeler",
+        "desc": "Entegre ödeme geçidi."
+      },
+      "chat": {
+        "title": "Canlı sohbet",
+        "desc": "Anlık kullanıcı iletişimi."
+      },
+      "admin": {
+        "title": "Yönetim paneli",
+        "desc": "Kolaylaştırılmış içerik yönetimi."
+      }
+    },
+    "liveDemo": "Canlı demo",
+    "github": "GitHub",
+    "demoLabel": "{name} canlı demosunu aç",
+    "sourceLabel": "{name} kaynak kodunu GitHub'da görüntüle"
+  },
+  "meta": {
+    "dated": "{name} — {description}. {category} projesi, başlangıç: {when}. {visibility, select, private {Özel depo} other {Herkese açık depo}}, GitHub panosundan canlı olarak takip ediliyor.",
+    "undated": "{name} — {description}. {category} projesi. {visibility, select, private {Özel depo} other {Herkese açık depo}}, GitHub panosundan canlı olarak takip ediliyor."
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "siblingNav": {
+    "label": "Nawigacja po projektach",
+    "all": "Wszystkie projekty",
+    "previous": "Poprzedni projekt: {name}",
+    "next": "Następny projekt: {name}"
+  },
+  "breadcrumbs": {
+    "home": "Strona główna",
+    "projects": "Projekty"
+  },
+  "loading": "Wczytywanie projektu",
+  "intro": {
+    "fallbackName": "Nazwa projektu",
+    "fallbackDescription": "Innowacyjne, szybkie i futurystyczne rozwiązania webowe.",
+    "linksLabel": "Linki projektu {name}",
+    "liveDemo": "Demo na żywo<sr> (otwiera się w nowej karcie)</sr>",
+    "source": "Kod źródłowy na GitHubie<sr> (otwiera się w nowej karcie)</sr>"
+  },
+  "screen": {
+    "boot": {
+      "bios": "Inicjowanie BIOS-u...",
+      "hardware": "Wykrywanie sprzętu...",
+      "os": "Ładowanie systemu operacyjnego..."
+    },
+    "tagline": "Dajemy Twoim pomysłom moc dzięki cyfrowemu rzemiosłu nowej generacji.",
+    "badgeFullstack": "Fullstack",
+    "tools": "Narzędzia i frameworki",
+    "overview": "Przegląd projektu",
+    "overviewLead": "Ta platforma usprawnia procesy w e-commerce dzięki jednemu panelowi i analityce na żywo.",
+    "overviewBody": "Rozwiązuje problem złożoności zarządzania wieloma narzędziami, oferując scentralizowany, intuicyjny interfejs.",
+    "features": "Funkcje",
+    "feature": {
+      "auth": {
+        "title": "Uwierzytelnianie",
+        "desc": "Bezpieczne logowanie i dostęp użytkowników."
+      },
+      "payments": {
+        "title": "Płatności",
+        "desc": "Zintegrowana bramka płatnicza."
+      },
+      "chat": {
+        "title": "Czat na żywo",
+        "desc": "Natychmiastowa komunikacja z użytkownikami."
+      },
+      "admin": {
+        "title": "Panel administracyjny",
+        "desc": "Prostsze zarządzanie treścią."
+      }
+    },
+    "liveDemo": "Demo na żywo",
+    "github": "GitHub",
+    "demoLabel": "Otwórz demo na żywo projektu {name}",
+    "sourceLabel": "Zobacz kod źródłowy projektu {name} na GitHubie"
+  },
+  "meta": {
+    "dated": "{name} — {description}. Projekt: {category}, rozpoczęty: {when}. {visibility, select, private {Repozytorium prywatne} other {Repozytorium publiczne}}, śledzone na żywo na tablicy GitHub.",
+    "undated": "{name} — {description}. Projekt: {category}. {visibility, select, private {Repozytorium prywatne} other {Repozytorium publiczne}}, śledzone na żywo na tablicy GitHub."
+  }
+}

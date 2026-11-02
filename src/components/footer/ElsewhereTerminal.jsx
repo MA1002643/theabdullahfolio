@@ -23,8 +23,9 @@
 // mounted, it clears to empty behind the still-hidden footer and re-runs the
 // session when the footer reveals, so the type-out is actually seen.
 
-import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useFooterReveal } from './useFooterReveal';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ import { socialLinks } from './footer-data';
 // is the resolved destination printed beneath it. Derived once from the static
 // footer config so the arrays below stay referentially stable across renders.
 const CHANNELS = socialLinks.map((s) => ({
+  key: s.key,
   label: s.label,
   href: s.href,
   // The name starts with exactly what the entry shows ("open github",
@@ -41,8 +43,10 @@ const CHANNELS = socialLinks.map((s) => ({
   // voice-control user says the words on screen, so the name must contain
   // them. "GitHub profile (opens in a new tab)" alone named a link whose
   // visible text was "open github". The name is fixed, so it still never
-  // depends on how far the type-out has run.
-  aria: `open ${s.label.toLowerCase()}, ${s.handle}: ${s.aria}`,
+  // depends on how far the type-out has run. The command is copy
+  // (`Footer.terminal.cmd.<key>`, "open github" → "github'ı aç") and the
+  // destination half is `Footer.elsewhere.<key>`, both composed at render time
+  // (issue #82). The handle is an address and stays as it is.
   handle: s.handle,
   // `external` used to be read by nothing here — every entry was hardcoded to
   // open in a new tab, which was correct while every destination WAS external.
@@ -53,7 +57,6 @@ const CHANNELS = socialLinks.map((s) => ({
   // in the data and documented as driving target/rel; this is the consumer
   // finally honouring it.
   external: s.external !== false,
-  cmd: `open ${s.label.toLowerCase()}`,
 }));
 
 /**
@@ -81,7 +84,6 @@ function LinkOrAnchor({ external, href, children, ...props }) {
   );
 }
 
-const FULL_TYPED = CHANNELS.map((c) => c.cmd);
 const EMPTY_TYPED = CHANNELS.map(() => '');
 const ALL_SHOWN = CHANNELS.map(() => true);
 const NONE_SHOWN = CHANNELS.map(() => false);
@@ -95,6 +97,10 @@ const FOCUS_RING =
   'rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05] focus-visible:ring-offset-2 focus-visible:ring-offset-night-950';
 
 export default function ElsewhereTerminal() {
+  const t = useTranslations('Footer');
+  // The typed commands, in the reader's language. Memoised on `t` so the
+  // session effect below re-runs only when the language actually changes.
+  const commands = useMemo(() => CHANNELS.map((c) => t(`terminal.cmd.${c.key}`)), [t]);
   const rawReduced = useReducedMotion();
   const ref = useRef(null);
 
@@ -117,13 +123,13 @@ export default function ElsewhereTerminal() {
 
   // Rendered "fully run" for SSR / no-JS. The effect below clears it while the
   // footer is still hidden and replays the session on reveal.
-  const [typed, setTyped] = useState(FULL_TYPED);
+  const [typed, setTyped] = useState(commands);
   const [shown, setShown] = useState(ALL_SHOWN);
 
   useEffect(() => {
     // Reduced motion → show the finished session, no typing.
     if (reduced) {
-      setTyped(FULL_TYPED);
+      setTyped(commands);
       setShown(ALL_SHOWN);
       return;
     }
@@ -143,7 +149,7 @@ export default function ElsewhereTerminal() {
     let timer;
     const step = () => {
       if (cancelled || line >= CHANNELS.length) return;
-      const full = CHANNELS[line].cmd;
+      const full = commands[line];
       if (ch < full.length) {
         ch += 1;
         const at = line;
@@ -172,16 +178,21 @@ export default function ElsewhereTerminal() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [play, reduced]);
+  }, [play, reduced, commands]);
 
   return (
-    <div className="footer-term" ref={ref}>
+    // dir="ltr" (issue #82): the window is a terminal — the prompt, caret and
+    // traffic lights sit where they sit in every terminal anyone uses, and
+    // mirroring them would read as a broken widget. The WORDS are in the
+    // reader's language; a right-to-left command lays itself out right to left
+    // inside its own `dir="auto"` run without moving the prompt.
+    <div className="footer-term" ref={ref} dir="ltr">
       {/* Window chrome — traffic lights + working directory. Decorative. */}
       <div className="footer-term__bar" aria-hidden="true">
         <span className="footer-term__dot footer-term__dot--r" />
         <span className="footer-term__dot footer-term__dot--y" />
         <span className="footer-term__dot footer-term__dot--g" />
-        <span className="footer-term__path">~/elsewhere</span>
+        <span className="footer-term__path" dir="auto">{t('terminal.path')}</span>
       </div>
 
       <ul className="footer-term__body">
@@ -195,19 +206,26 @@ export default function ElsewhereTerminal() {
             <LinkOrAnchor
               external={c.external}
               href={c.href}
-              aria-label={c.aria}
+              // One message, not a template literal: the ", … : " between the
+              // parts is English punctuation, and a language with its own
+              // gets to say so (caught by the pseudo-locale gate).
+              aria-label={t('elsewhere.linkLabel', {
+                command: commands[i],
+                handle: c.handle,
+                description: t(`elsewhere.${c.key}`),
+              })}
               className={cn('footer-term__entry', FOCUS_RING)}
             >
               <span className="footer-term__cmdline">
                 <span className="footer-term__prompt" aria-hidden="true">❯</span>
-                <span className="footer-term__cmd">{typed[i]}</span>
+                <span className="footer-term__cmd" dir="auto">{typed[i]}</span>
               </span>
               <span
                 className={cn('footer-term__out', shown[i] && 'is-shown')}
                 aria-hidden="true"
               >
                 <span className="footer-term__branch">↳</span>
-                <span className="footer-term__handle">{c.handle}</span>
+                <span className="footer-term__handle" translate="no">{c.handle}</span>
               </span>
             </LinkOrAnchor>
           </li>

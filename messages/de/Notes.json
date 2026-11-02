@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "NOTIZEN",
+    "subtitle": "Entscheidungen, schriftlich festgehalten",
+    "intro": "Jede nicht offensichtliche Entscheidung hinter dieser Website ist dokumentiert — die getroffene Wahl, die verworfenen Alternativen und was jede davon gekostet hat. Das sind die Arbeitsdokumente aus dem Repository, hier veröffentlicht, statt sie im Verzeichnisbaum liegen zu lassen.",
+    "lines": "{count, plural, one {Zeile} other {Zeilen}}"
+  },
+  "note": {
+    "title": "NOTIZ",
+    "breadcrumb": "Brotkrumennavigation",
+    "allNotes": "Alle Notizen",
+    "source": "Quelle: {source} · {count, plural, one {{n} Zeile} other {{n} Zeilen}}"
+  }
+}

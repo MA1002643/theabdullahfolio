@@ -283,3 +283,68 @@ regenerates `tests/browser-cases.json` and `tests/vitest-cases.json`), and the e
 sentinel in every browser test. **Everything else in the table is not**: a new feature
 with no tests at all passes CI. The check is a habit, not a gate, which is why
 it is written here.
+
+---
+
+## 4. Every new component ships in every language
+
+The site is served in twenty languages, four of them right to left (Arabic,
+Urdu, Persian, Hebrew), since issue #82. **Any new component, page or piece of
+UI is fully localized in the same commit that adds it**, and so is any change
+that adds visitor-facing text to an existing one. An agent does this without
+being asked, then reports what it localized, or why nothing needed it. A
+component that only works in English is unfinished, not "English for now".
+
+How the system works, and why each choice was made, is in
+`docs/multilingual.md` (published at `/notes/multilingual`). Read it before the
+first localized component of a session.
+
+### What to do
+
+| If the component… | Then |
+| --- | --- |
+| Shows any text a visitor reads: labels, buttons, headings, placeholders, toasts, errors, empty states | Put every string in `messages/en/<Namespace>.json` (an existing namespace, or a new file) and read it with next-intl (`useTranslations` in a Client Component, `getTranslations` in a Server one). No hard-coded English in JSX. |
+| Has a name or description no one sees but assistive tech: `aria-label`, `alt`, `title`, sr-only text | The same: these are translated too. Keep the visible words first and contiguous in the accessible name (WCAG 2.5.3, which axe enforces in every locale). |
+| Builds a sentence from parts: a count, a name, a date inside text | One ICU message with arguments (`{count, plural, …}`, `{name}`), never concatenated fragments or a template literal; word order differs between languages. |
+| Formats a number, date, time or relative age | Take the locale tag from `src/i18n/format.js` (`intlTag`, `formatNumber`, `formatRelativeMs`); never a hard-coded `'en-GB'` or the browser's locale. |
+| Adds a new namespace, or a client component on a route that did not need that namespace before | Register it in `src/i18n/namespaces.js` (`GLOBAL_NAMESPACES` or the route's `ROUTE_NAMESPACES` entry) so its client provider receives it. Hand down a dotted subtree (`'Data.journey'`) rather than a whole namespace when only a slice is rendered; every route has a client message budget (`i18nBudget`). |
+| Shows text drawn from `src/app/data.js` | Run `npm run i18n:data` so the `Data` catalogue mirrors it, and read it through `useDataT` / `getDataT` (`src/i18n/`). |
+| Has a layout with a side: margins, padding, borders, alignment, icons that point, slide-ins | Logical properties only (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`, `margin-inline-start`, `text-align: start`). Mirror directional icons and motion under right to left (`useDirection` from `src/i18n/useDirection.js`, or `:dir(rtl)` in CSS on its own selector). |
+| Takes typed input | Typed text follows its own direction, and an empty field starts on the page's side (`dir="auto"`, or `dir="ltr"` for emails, URLs and code). The contact fields do this through `applyTypedDirection`; reuse `FireInput` / `FireTextarea`, or the helper, rather than a bare `dir` that resolves left to right while empty. |
+| Holds something that must stay as written: a name, handle, email address, code, a brand | `translate="no"`, and `dir="ltr"` if it is Latin text that would print backwards inside a right-to-left line (see the footer email, `tests/e2e/rtl.spec.js`). |
+| Is English by decision (it appears in a list in `docs/multilingual.md`) | Mark the island `lang="en" dir="ltr"`, and add it to that list with the reason. |
+| Has a string whose meaning a translator could misread: length limits, tone, wordplay, a word that is a UI term | Add a note under the same key in `messages/_notes/<Namespace>.json`. |
+
+### Then, before the commit
+
+1. Translate: `npm run i18n:translate -- --ns <Namespace>` sends only the
+   missing or changed keys to every locale, and validates each response
+   (placeholders, plurals, tags). It needs the AI Gateway credential
+   (`AI_GATEWAY_API_KEY`, or the OIDC token from `vercel env pull`). If it is
+   missing, say which variable is unset (rule §1): do not hand-write
+   nineteen translations, and do not ship English copied into the other
+   locales.
+2. Audit: `npm run i18n:audit` must report 0 errors. Review its
+   identical-to-English warnings rather than ignoring them.
+3. Look at it in the browser in a right-to-left locale (`/ar/…` or `/ur/…`) and
+   a CJK one (`/ja/…`), not only in English: alignment, mirroring, text that
+   overflows, glyphs that print backwards.
+4. Tests (§3): a component test in a second locale when the component has
+   locale-specific behaviour, and a case in `tests/e2e/rtl.spec.js` when it has
+   direction-sensitive layout or input. A new route is covered by the localized
+   axe and navigation runs once it is in `tests/support/routes.js`.
+5. Record it in the commit's `CHANGELOG.md` entry: the namespaces and keys
+   added and the locales translated, or "i18n check: no visitor-facing text".
+
+### What CI catches, and what it does not
+
+Enforced: `i18nCatalogues` (every English namespace is loaded and parses as
+ICU), `i18nCatalogueText` (no escaped characters in a translation),
+`i18nBudget` (each route's client messages stay within budget), `logicalCss`
+(no physical inline-axis property in `globals.css`), the pseudo-locale gate
+(`npm run test:i18n`, in CI: any visible English word on a route fails), and
+axe in Arabic and Japanese. **Not enforced:** a hard-coded string inside a
+component that the pseudo-locale run never renders (a toast, an error, a
+closed popover), a physical Tailwind class (`ml-`, `left-`, `text-left`), a
+missing translator note, or a layout that is merely wrong in right to left
+without overflowing. As with §3, the check is a habit, not a gate.

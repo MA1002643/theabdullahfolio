@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Số năm làm nghề",
+    "unit": "{unit, select, years {{count, plural, other {năm kinh nghiệm}}} other {{count, plural, other {tháng kinh nghiệm}}}}",
+    "unavailable": "chưa có dữ liệu kinh nghiệm",
+    "loadingAria": "Đang tải số năm kinh nghiệm",
+    "viewBreakdown": "Xem chi tiết →",
+    "srPrefix": "Cập nhật kinh nghiệm: ",
+    "personal": "Cá nhân",
+    "employment": "Đi làm",
+    "splitUnavailable": "Không có",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "Đang tải bản tóm tắt kinh nghiệm",
+    "degraded": "Số năm làm nghề: chưa có dữ liệu kinh nghiệm (phần dữ liệu GitHub của bản tóm tắt bị thiếu hoặc chưa đầy đủ).{split} Xem chi tiết: mở phần chi tiết của dữ liệu hiện có.",
+    "ready": "Số năm làm nghề: {count, number, ::group-off}+ {unit, select, years {năm} other {tháng}} kinh nghiệm.{split} Xem chi tiết: mở phần phân tích theo hạng mục.",
+    "split": "Cá nhân {personal}, Đi làm {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "không có"
+  },
+  "modal": {
+    "eyebrow": "Tổng quan sự nghiệp",
+    "title": "Kinh nghiệm theo hạng mục",
+    "close": "Đóng phần chi tiết kinh nghiệm",
+    "personalProjects": "Dự án cá nhân",
+    "employment": "Đi làm",
+    "unavailable": "Không có",
+    "unitWord": "{unit, select, years {{count, plural, other {năm}}} other {{count, plural, other {tháng}}}}",
+    "totalUnavailable": "chưa có tổng",
+    "totalUnit": "tổng {unit, select, years {năm} other {tháng}}",
+    "ownedRepos": "<n></n> {count, plural, other {kho lưu trữ do bạn sở hữu}}",
+    "roles": "<n></n> {count, plural, other {vai trò}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ năm} other { tháng}}",
+    "newestFirst": "Mới nhất trước",
+    "showFewer": "Thu gọn",
+    "showAll": "Hiện tất cả {count, number, ::group-off} kho lưu trữ →",
+    "noRepos": "Chưa phát hiện kho lưu trữ nào do bạn sở hữu.",
+    "personalFailed": "Hiện chưa thể tải dữ liệu dự án cá nhân.",
+    "relativeDuration": "Thời lượng tương đối",
+    "noRoles": "Chưa phát hiện vai trò kỹ sư phần mềm nào.",
+    "employmentFailed": "Hiện chưa thể tải dữ liệu đi làm."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, other {năm}}} other {{count, plural, other {tháng}}}}",
+  "changes": {
+    "newRole": "Phát hiện vai trò mới từ CV: {company}",
+    "years": "Đã cập nhật số năm kinh nghiệm: {from} → {to}",
+    "employment": "Đã cập nhật kinh nghiệm đi làm: +{count, number, ::group-off} {count, plural, other {tháng}}",
+    "newRepo": "Phát hiện kho lưu trữ mới: {name}",
+    "newRepos": "Phát hiện {count, number, ::group-off} {count, plural, other {kho lưu trữ mới}} trên GitHub",
+    "timeline": "Đã cập nhật dòng thời gian dự án cá nhân"
+  }
+}

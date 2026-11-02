@@ -1,0 +1,124 @@
+{
+  "title": "GUESTBOOK",
+  "subtitle": "LEAVE YOUR MARK",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> mark left} other {<n>{shown}</n> marks left}}",
+    "commands": "{shortcut} · commands",
+    "loading": "Loading the guestbook…",
+    "loadingMore": "Loading more of the guestbook…",
+    "loadFailed": "Couldn’t load the guestbook",
+    "pageFailed": "Couldn’t load this page",
+    "retry": "Try again",
+    "emptyTitle": "No messages yet",
+    "emptyInvite": "Be the first to leave your mark"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> here now}}",
+  "announce": {
+    "one": "New message from {name}: {message}",
+    "many": "{count, plural, one {# new message.} other {# new messages.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Someone"
+  },
+  "card": {
+    "sending": "sending…",
+    "guest": "Guest",
+    "onGitHub": "{username} on GitHub (opens in a new tab)",
+    "copyLink": "Copy a link to this message",
+    "linkCopied": "Link copied — it points straight at this mark",
+    "linkFailed": "Could not copy the link",
+    "deleteOwn": "Delete your message",
+    "deleteOther": "Delete {name}'s message",
+    "signature": "{name}’s signature",
+    "signatureAnon": "Signature"
+  },
+  "reactions": {
+    "fire": "Fire",
+    "rocket": "Rocket",
+    "heart": "Heart",
+    "count": "{label} — {count}",
+    "signInToReact": "Sign in to react"
+  },
+  "composer": {
+    "label": "Your message",
+    "placeholder": "Leave a message…",
+    "send": "Send message",
+    "offline": "You’re offline — your message is kept here until you’re back.",
+    "notSent": "Your earlier message wasn’t sent",
+    "restore": "Restore it"
+  },
+  "signature": {
+    "add": "Add a signature (optional)",
+    "discard": "Discard signature",
+    "clear": "Clear",
+    "padLabel": "Signature drawing area — draw with your mouse, finger, or pen, or pick a preset mark below.",
+    "padHint": "Draw with your finger, trackpad or mouse — stroke weight follows your speed",
+    "pickMark": "Pick a mark",
+    "orPickMark": "Or pick a mark",
+    "marks": {
+      "flourish": "Flourish",
+      "wave": "Wave",
+      "spark": "Spark",
+      "orbit": "Orbit"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Leave a message…",
+    "ghostRefine": "Refine with AI",
+    "ghostSignature": "Add a signature (optional)",
+    "ghostDrafts": "Drafts save themselves as you type",
+    "prompt": "Sign in to leave a message",
+    "promptReauth": "Sign in again to leave a message",
+    "reauthExplain": "Your current sign-in predates the wall’s account keys, so it can read but not write — one fresh sign-in fixes it.",
+    "github": "SIGN IN WITH GITHUB",
+    "google": "SIGN IN WITH GOOGLE"
+  },
+  "pagination": {
+    "nav": "Guestbook pages",
+    "previous": "Previous page",
+    "next": "Next page",
+    "page": "PAGE ",
+    "status": "Page {page} of {total}"
+  },
+  "palette": {
+    "leaveMessage": "Leave a message",
+    "leaveKeywords": "write sign post compose",
+    "sectionGuestbook": "Guestbook",
+    "sectionPreferences": "Preferences",
+    "signInToLeave": "Sign in to leave a message",
+    "toggleSound": "Toggle UI sounds",
+    "soundKeywords": "audio blip mute",
+    "toggleMotion": "Toggle motion",
+    "motionKeywords": "animation reduce still",
+    "on": "on",
+    "off": "off"
+  },
+  "toast": {
+    "posted": "Message posted!",
+    "postFailed": "Failed to post message",
+    "reactFailed": "Failed to react",
+    "deleteFailed": "Failed to delete message",
+    "removedOwn": "Your message was removed from the guestbook",
+    "removedOther": "Message removed from the guestbook",
+    "you": "You"
+  },
+  "errors": {
+    "unauthorized": "Unauthorized",
+    "too_large": "Request body must be at most {max, number, ::group-off} bytes",
+    "invalid_body": "Invalid request body",
+    "message_required": "Message is required",
+    "message_length": "Message must be {min}–{max} characters",
+    "invalid_characters": "Message contains invalid characters",
+    "links_not_allowed": "Links are not allowed in guestbook messages",
+    "unfriendly": "Please keep it friendly",
+    "invalid_signature": "Invalid signature",
+    "rate_limited": "One message every 5 minutes — try again in {minutes, plural, one {# minute} other {# minutes}}",
+    "invalid_reaction": "Invalid reaction",
+    "reaction_rate_limited": "Too many reactions — try again in {seconds}s",
+    "not_found": "Message not found",
+    "id_required": "Message id is required",
+    "invalid_id": "Invalid message id",
+    "forbidden": "Forbidden",
+    "invalid_cursor": "Invalid cursor"
+  }
+}

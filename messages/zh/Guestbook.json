@@ -1,0 +1,124 @@
+{
+  "title": "留言墙",
+  "subtitle": "留下你的印记",
+  "wall": {
+    "marksLeft": "{count, plural, other {已留下 <n>{shown}</n> 条印记}}",
+    "commands": "{shortcut} · 命令",
+    "loading": "正在加载留言墙…",
+    "loadingMore": "正在加载更多留言…",
+    "loadFailed": "无法加载留言墙",
+    "pageFailed": "无法加载此页",
+    "retry": "重试",
+    "emptyTitle": "暂无留言",
+    "emptyInvite": "来留下第一枚印记吧"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> 人在线}}",
+  "announce": {
+    "one": "来自{name}的新留言：{message}",
+    "many": "{count, plural, other {# 条新留言。}}{lines}",
+    "line": "{name}：{message}",
+    "separator": "。",
+    "someone": "有人"
+  },
+  "card": {
+    "sending": "发送中…",
+    "guest": "访客",
+    "onGitHub": "GitHub 上的 {username}（在新标签页中打开）",
+    "copyLink": "复制此留言的链接",
+    "linkCopied": "链接已复制，可直接定位到这条留言",
+    "linkFailed": "无法复制链接",
+    "deleteOwn": "删除你的留言",
+    "deleteOther": "删除{name}的留言",
+    "signature": "{name}的签名",
+    "signatureAnon": "签名"
+  },
+  "reactions": {
+    "fire": "火焰",
+    "rocket": "火箭",
+    "heart": "爱心",
+    "count": "{label}：{count}",
+    "signInToReact": "登录后即可回应"
+  },
+  "composer": {
+    "label": "你的留言",
+    "placeholder": "留下一条留言…",
+    "send": "发送留言",
+    "offline": "你已离线，留言会保留在此，待恢复网络后再发送。",
+    "notSent": "你之前的留言未能发送",
+    "restore": "恢复留言"
+  },
+  "signature": {
+    "add": "添加签名（可选）",
+    "discard": "放弃签名",
+    "clear": "清除",
+    "padLabel": "签名绘制区域：可用鼠标、手指或触控笔书写，也可在下方选择预设印记。",
+    "padHint": "用手指、触控板或鼠标书写，笔画粗细会随速度变化",
+    "pickMark": "选择印记",
+    "orPickMark": "或选择一个印记",
+    "marks": {
+      "flourish": "花体",
+      "wave": "波浪",
+      "spark": "火花",
+      "orbit": "轨道"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "留下一条留言…",
+    "ghostRefine": "用 AI 润色",
+    "ghostSignature": "添加签名（可选）",
+    "ghostDrafts": "输入时会自动保存草稿",
+    "prompt": "登录后即可留言",
+    "promptReauth": "请重新登录后留言",
+    "reauthExplain": "你当前的登录早于留言墙的账户密钥，因此只能查看、无法写入，重新登录一次即可解决。",
+    "github": "使用 GITHUB 登录",
+    "google": "使用 GOOGLE 登录"
+  },
+  "pagination": {
+    "nav": "留言墙分页",
+    "previous": "上一页",
+    "next": "下一页",
+    "page": "第 ",
+    "status": "第 {page} 页，共 {total} 页"
+  },
+  "palette": {
+    "leaveMessage": "留言",
+    "leaveKeywords": "留言 写 签名 发布 撰写 write sign post compose",
+    "sectionGuestbook": "留言簿",
+    "sectionPreferences": "偏好设置",
+    "signInToLeave": "登录后留言",
+    "toggleSound": "切换界面音效",
+    "soundKeywords": "音效 声音 静音 提示音 audio blip mute",
+    "toggleMotion": "切换动效",
+    "motionKeywords": "动画 动效 减少 静止 animation reduce still",
+    "on": "开",
+    "off": "关"
+  },
+  "toast": {
+    "posted": "留言已发布！",
+    "postFailed": "留言发布失败",
+    "reactFailed": "回应失败",
+    "deleteFailed": "留言删除失败",
+    "removedOwn": "你的留言已从留言簿中移除",
+    "removedOther": "一条留言已从留言簿中移除",
+    "you": "你"
+  },
+  "errors": {
+    "unauthorized": "未授权",
+    "too_large": "请求正文不得超过 {max, number, ::group-off} 字节",
+    "invalid_body": "请求正文无效",
+    "message_required": "请输入留言内容",
+    "message_length": "留言长度须为 {min}–{max} 个字符",
+    "invalid_characters": "留言包含无效字符",
+    "links_not_allowed": "留言簿留言中不允许包含链接",
+    "unfriendly": "请保持友善",
+    "invalid_signature": "签名无效",
+    "rate_limited": "每 5 分钟只能留言一次——请在 {minutes, plural, other {# 分钟}}后重试",
+    "invalid_reaction": "回应无效",
+    "reaction_rate_limited": "回应过于频繁——请在 {seconds} 秒后重试",
+    "not_found": "未找到该留言",
+    "id_required": "需要提供留言 ID",
+    "invalid_id": "留言 ID 无效",
+    "forbidden": "禁止访问",
+    "invalid_cursor": "游标无效"
+  }
+}

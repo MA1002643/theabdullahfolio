@@ -1,0 +1,13 @@
+{
+  "title": "PROJEKTE",
+  "subtitle": "MEINE ARBEIT",
+  "filters": {
+    "label": "Projektkategorien",
+    "all": "Alle",
+    "empty": "In „{category}“ gibt es noch keine Projekte.",
+    "fallback": "In „{category}“ gibt es noch keine Projekte. Stattdessen werden alle Projekte angezeigt."
+  },
+  "list": {
+    "empty": "Keine Projekte gefunden!"
+  }
+}

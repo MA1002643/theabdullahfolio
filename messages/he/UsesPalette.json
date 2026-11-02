@@ -1,0 +1,20 @@
+{
+  "section": "ציוד וכלים",
+  "preferences": "העדפות",
+  "jumpPlate": "מעבר ללוח {ordinal}: {label}",
+  "plates": {
+    "machine": "המכונה",
+    "bench": "שולחן העבודה",
+    "stack": "הסטאק",
+    "pipeline": "הצינור",
+    "instruments": "המכשירים",
+    "bom": "רשימת רכיבים"
+  },
+  "copySettings": "העתקת הגדרות העורך שלי",
+  "openRepos": "צפייה במאגרים ב-GitHub",
+  "toggleMotion": "הפעלה או כיבוי של תנועה",
+  "motionOn": "מופעלת",
+  "motionOff": "כבויה",
+  "copied": "הגדרות העורך הועתקו",
+  "clipboardUnavailable": "הלוח אינו זמין — סמנו את המסגרת כדי להעתיק"
+}

@@ -339,7 +339,7 @@ export default function HoverHint({
           : undefined
       }
       exit={{ opacity: 0, transition: { duration: 0.1 } }}
-      className="custom-bg-abt pointer-events-none fixed z-[70] max-w-[min(20rem,calc(100vw-16px))] rounded-md px-3 py-2 text-left"
+      className="custom-bg-abt pointer-events-none fixed z-[70] max-w-[min(20rem,calc(100vw-16px))] rounded-md px-3 py-2 text-start"
       style={
         pos
           ? {

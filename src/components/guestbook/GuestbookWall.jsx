@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useSession } from 'next-auth/react';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatNumber } from '@/i18n/format';
+import { useDirection } from '@/i18n/useDirection';
 import { MessageSquare } from 'lucide-react';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useGuestbookMessages } from '@/hooks/useGuestbookMessages';
@@ -75,9 +78,9 @@ function WallSkeleton({ label }) {
             <div className="flex items-center gap-3">
               <span className="h-8 w-8 shrink-0 rounded-full border border-[#ff6d05]/20 bg-black/40" />
               <span className="h-3 w-28 rounded bg-[#f9d174]/10" />
-              <span className="ml-auto h-2.5 w-14 rounded bg-[#f9d174]/10" />
+              <span className="ms-auto h-2.5 w-14 rounded bg-[#f9d174]/10" />
             </div>
-            <div className="mt-4 space-y-2 pl-1">
+            <div className="mt-4 space-y-2 ps-1">
               <span className="block h-3 w-11/12 rounded bg-[#ff6d05]/10" />
               {/* Middle card runs a line longer — identical ghosts read
                   as a pattern, staggered ones read as content. */}
@@ -108,6 +111,11 @@ export default function GuestbookWall() {
   const viewer = status === 'authenticated' ? viewerFromSession(session) : null;
   const canWrite = viewer !== null;
   const reduceMotion = useReducedMotion();
+  const t = useTranslations('Guestbook');
+  const locale = useLocale();
+  // The leaf slide travels along the reading direction (issue #82): "next"
+  // leaves toward the reading-start side in RTL as it does in LTR.
+  const { sign } = useDirection();
   const {
     messages,
     count,
@@ -158,12 +166,15 @@ export default function GuestbookWall() {
       arrivals.unshift(msg);
     }
     if (!arrivals.length) return;
-    setAnnouncement(arrivalAnnouncement(arrivals));
+    // The frame in the visitor's language; names and messages stay as written.
+    setAnnouncement(
+      arrivalAnnouncement(arrivals, (key, values) => t(`announce.${key}`, values)),
+    );
     // Same moment, different audience: the headline listens for this and
     // replays its scramble-decode (GuestbookTitle) — once per batch; a
     // dispatch per arrival would only restart the same replay N times.
     window.dispatchEvent(new CustomEvent(NEW_MESSAGE_EVENT));
-  }, [newIds, messages]);
+  }, [newIds, messages, t]);
 
   const listTopRef = useRef(null);
   // How much of the wall is in hand (pending cards included — they occupy
@@ -299,7 +310,8 @@ export default function GuestbookWall() {
   // Variant FUNCTIONS + AnimatePresence `custom` so an exiting leaf always
   // reads the current direction, not the one it mounted with.
   const pageVariants = {
-    enter: (d) => (reduceMotion ? { opacity: 1 } : { opacity: 0, x: 18 * d }),
+    enter: (d) =>
+      reduceMotion ? { opacity: 1 } : { opacity: 0, x: 18 * d * sign },
     center: {
       opacity: 1,
       x: 0,
@@ -310,7 +322,7 @@ export default function GuestbookWall() {
         ? { opacity: 0, transition: { duration: 0.1 } }
         : {
             opacity: 0,
-            x: -18 * d,
+            x: -18 * d * sign,
             transition: { duration: 0.18, ease: 'easeIn' },
           },
   };
@@ -401,9 +413,17 @@ export default function GuestbookWall() {
           {/* Eyebrow amber #ffaa2a (owner call): the same ink the Career
               Snapshot's "Personal Projects" label carries, on text and
               border both. */}
+          {/* One ICU plural on the REAL count (issue #82), with the rolling
+              figure as a value — the label never reads "1 marks" mid-roll.
+              The figure takes the locale's digits, ungrouped as before. */}
           <p className="rounded-full border border-[#ffaa2a]/30 bg-black/40 px-3 py-1 font-mono text-xs text-[#ffaa2a]">
-            <span className="font-semibold tabular-nums">{shownCount}</span>{' '}
-            {count === 1 ? 'mark' : 'marks'} left
+            {t.rich('wall.marksLeft', {
+              count,
+              shown: formatNumber(shownCount, locale, { useGrouping: false }),
+              n: (chunks) => (
+                <span className="font-semibold tabular-nums">{chunks}</span>
+              ),
+            })}
           </p>
           {/* The hotkey the reader's OWN keyboard has (shortcut.js): the
               palette listens for ⌘K and Ctrl+K alike, and this pill used to
@@ -413,7 +433,7 @@ export default function GuestbookWall() {
               server HTML. */}
           {GUESTBOOK_FLAGS.commandPalette && keyboardLikely ? (
             <p className="rounded-full border border-[#ff6d05]/30 bg-black/40 px-3 py-1 font-mono text-xs text-[#ff6d05]">
-              {paletteShortcutLabel()} · commands
+              {t('wall.commands', { shortcut: paletteShortcutLabel() })}
             </p>
           ) : null}
         </motion.div>
@@ -442,14 +462,14 @@ export default function GuestbookWall() {
       <div ref={listTopRef} aria-hidden="true" />
 
       {loading ? (
-        <WallSkeleton label="Loading the guestbook…" />
+        <WallSkeleton label={t('wall.loading')} />
       ) : count === 0 && loadError ? (
         <div className="space-y-3 py-16 text-center">
           <p className="font-mono text-sm text-foreground/60">
-            Couldn&rsquo;t load the guestbook
+            {t('wall.loadFailed')}
           </p>
           <button type="button" onClick={reload} className={RETRY_BTN_CLASS}>
-            Try again
+            {t('wall.retry')}
           </button>
         </div>
       ) : count === 0 ? (
@@ -470,9 +490,11 @@ export default function GuestbookWall() {
               className="h-7 w-7 text-[#ff6d05]"
             />
           </div>
-          <p className="font-mono text-sm text-[#f9d174]">No messages yet</p>
+          <p className="font-mono text-sm text-[#f9d174]">
+            {t('wall.emptyTitle')}
+          </p>
           <p className="text-xs text-[#fc83ff]/90">
-            Be the first to leave your mark
+            {t('wall.emptyInvite')}
           </p>
         </motion.div>
       ) : (
@@ -515,18 +537,18 @@ export default function GuestbookWall() {
               loaded prefix) holds its space with the ghosts; one whose fetch
               failed offers the retry inline — everything above it stays. */}
           {visibleMessages.length === 0 && loadingMore ? (
-            <WallSkeleton label="Loading more of the guestbook…" />
+            <WallSkeleton label={t('wall.loadingMore')} />
           ) : visibleMessages.length === 0 && loadError ? (
             <div className="space-y-3 py-16 text-center">
               <p className="font-mono text-sm text-foreground/60">
-                Couldn&rsquo;t load this page
+                {t('wall.pageFailed')}
               </p>
               <button
                 type="button"
                 onClick={() => ensureLoaded((page + 1) * PAGE_SIZE - 1)}
                 className={RETRY_BTN_CLASS}
               >
-                Try again
+                {t('wall.retry')}
               </button>
             </div>
           ) : null}

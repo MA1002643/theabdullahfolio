@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "ОБО МНЕ",
+    "subtitle": "КТО Я"
+  },
+  "intro": {
+    "heading": "Архитектор волшебства",
+    "paragraph": "Мой путь в веб-разработке движим целым арсеналом мистических инструментов и языков, а сердце моих чар — JavaScript. Я владею такими фреймворками, как React.js и Next.js, с точностью мастера и создаю бесшовные порталы (сайты), которые соединяют миры (пользователей) по всей цифровой вселенной. Древние искусства Jamstack помогают мне делать быстрые, безопасные и живые решения, а дизайнерское чутьё следит за тем, чтобы каждое творение было не только полезным, но и завораживающим на вид. Но за видимыми чарами скрыт механизм, за которым я тоже слежу: я призываю надёжные API и базы данных (хранилища, где бережно хранится память каждого мира) и плету автоматические конвейеры, которые несут мои творения из мастерской в облако (безграничный эфир, где они наконец пробуждаются). Производительность и доступность для меня священные обеты, поэтому каждый портал быстро открывается перед любым путником, на любом устройстве и в самом отдалённом уголке мира. Любопытство остаётся моим вернейшим компасом: оно влечёт меня к новым гримуарам, более острому чутью и идеям, достаточно смелым, чтобы стать живыми, дышащими творениями. Отправляйтесь со мной, пока я продолжаю открывать новые заклинания и технологии, которые определят будущее веба."
+  },
+  "projectsCard": {
+    "eyebrow": "Проектов выпущено",
+    "unit": "{count, plural, one {завершённый проект} few {завершённых проекта} many {завершённых проектов} other {завершённого проекта}}",
+    "viewProgress": "Смотреть прогресс →",
+    "ariaLabel": "Проектов выпущено: {count, number, ::group-off} {count, plural, one {завершённый проект} few {завершённых проекта} many {завершённых проектов} other {завершённого проекта}}. {legend}. Смотреть прогресс: открывает актуальный прогресс по проектам.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "Завершённые проекты по категориям — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, one {проект} few {проекта} many {проектов} other {проекта}}",
+    "srPrefix": "Обновление по проектам: "
+  },
+  "statsCard": {
+    "title": "Статистика {name} на GitHub",
+    "defaultUser": "Пользователь GitHub",
+    "live": "Актуальные метрики GitHub",
+    "rank": "Ранг",
+    "updated": "Статистика GitHub обновлена",
+    "srPrefix": "Обновление статистики: ",
+    "metrics": {
+      "stars": "Всего звёзд получено",
+      "commits": "Всего коммитов (за год)",
+      "prs": "Всего PR",
+      "issues": "Всего issues",
+      "contributedTo": "Участие в проектах (за год)"
+    }
+  },
+  "languagesCard": {
+    "title": "Самые используемые языки",
+    "count": "{count, number, ::group-off} {count, plural, one {язык} few {языка} many {языков} other {языка}}",
+    "live": "данные из GitHub в реальном времени",
+    "primary": "Основной",
+    "percent": "<n></n>%",
+    "srPrefix": "Обновление по языкам: ",
+    "popover": {
+      "eyebrow": "Разбивка по репозиториям",
+      "ariaLabel": "Репозитории на языке {language}",
+      "privateRepos": "{count, number, ::group-off} {count, plural, one {приватный репозиторий} few {приватных репозитория} many {приватных репозиториев} other {приватного репозитория}}"
+    }
+  },
+  "streakCard": {
+    "title": "Серии вкладов",
+    "subtitle": "Активность на GitHub",
+    "srPrefix": "Обновление серий: ",
+    "total": "Всего вкладов",
+    "current": "Текущая серия",
+    "longest": "Самая длинная серия",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, one {день} few {дня} many {дней} other {дня}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, one {день} few {дня} many {дней} other {дня}}, {percent, number, ::group-off} процентов от вашей самой длинной серии"
+  },
+  "repoCard": {
+    "badge": "Самый активный репозиторий",
+    "srPrefix": "Обновление по репозиторию: ",
+    "metrics": {
+      "stars": "Звёзды",
+      "forks": "Форки",
+      "mergedPrs": "Принятые PR",
+      "commits": "Всего коммитов",
+      "lastPushed": "Последний push"
+    },
+    "score": "баллов",
+    "activityScore": "Оценка активности"
+  },
+  "skillsCard": {
+    "title": "Навыки и технологии",
+    "categories": {
+      "languages": "Языки",
+      "frameworks": "Фреймворки",
+      "libraries": "Библиотеки",
+      "tools": "Инструменты",
+      "software": "Программы"
+    },
+    "count": "<n></n> {count, plural, one {технология} few {технологии} many {технологий} other {технологии}}",
+    "live": "данные из GitHub в реальном времени",
+    "syncing": "Синхронизация с GitHub…",
+    "noneDetected": "Навыки не найдены",
+    "noneInRepos": "В ваших репозиториях навыки не найдены",
+    "fetching": "Загружаем навыки из GitHub…",
+    "srPrefix": "Обновление навыков: ",
+    "popover": {
+      "eyebrow": "Используется в репозиториях",
+      "ariaLabel": "Репозитории, где используется {name}",
+      "label": "Репозитории:",
+      "publicSr": "{count, number, ::group-off} публичных",
+      "privateSr": "{count, number, ::group-off} приватных",
+      "publicCount": "<n></n> публичных",
+      "privateCount": "<n></n> приватных",
+      "slash": "/",
+      "allPrivate": "Все репозитории приватные"
+    }
+  },
+  "progress": {
+    "eyebrow": "Телеметрия разработки",
+    "title": "Прогресс проектов",
+    "close": "Закрыть прогресс проектов",
+    "failed": "Сейчас не удаётся подключиться к синхронизации прогресса.",
+    "retry": "Повторить синхронизацию",
+    "ringLineOne": "задач",
+    "ringLineTwo": "готово",
+    "percent": "<n></n>%",
+    "itemsDone": "Задач выполнено",
+    "ofTotal": "из {total, number, ::group-off}",
+    "boardsLive": "Досок онлайн",
+    "allProjects": "{count, plural, one {проект} few {проекта} many {проектов} other {проекта}}",
+    "ofProjects": "из {total, number, ::group-off} проектов",
+    "unavailable": "Живая синхронизация сейчас недоступна — показана структура портфолио; проценты вернутся после следующего успешного обновления.",
+    "byCategory": "По категориям",
+    "projectCount": "{count, number, ::group-off} {count, plural, one {проект} few {проекта} many {проектов} other {проекта}}",
+    "perProject": "По проектам",
+    "liveFrom": "Данные из GitHub Projects в реальном времени",
+    "footer": "Автосинхронизация с GitHub Projects · дважды в день",
+    "lastSync": "Последняя синхронизация",
+    "awaiting": "Ожидается первая синхронизация",
+    "row": {
+      "tracked": "завершено {percent, number, ::group-off}%, выполнено {done, number, ::group-off} из {total, number, ::group-off} задач на доске",
+      "syncUnavailable": "синхронизация прогресса недоступна",
+      "notTracked": "не отслеживается",
+      "ariaLabel": "{name}, {category}. {status}. Показать или скрыть разбивку по доске.",
+      "syncUnavailableTag": "· синхронизация недоступна",
+      "total": "Всего",
+      "couldNotSync": "Сейчас не удалось синхронизировать эту доску — актуальные данные появятся после следующего обновления.",
+      "noBoard": "К этому проекту не привязана доска GitHub Projects.",
+      "viewBoard": "Открыть доску проекта →"
+    },
+    "age": {
+      "seconds": "{s} с назад",
+      "minutes": "{m} мин {s} с назад",
+      "hours": "{h} ч {m} мин назад",
+      "days": "{d} д {h} ч назад"
+    },
+    "columns": {
+      "todo": "К выполнению",
+      "backlog": "Бэклог",
+      "ready": "Готово к работе",
+      "inProgress": "В работе",
+      "inReview": "На проверке",
+      "done": "Готово",
+      "noStatus": "Без статуса",
+      "blocked": "Заблокировано",
+      "onHold": "Отложено"
+    }
+  },
+  "wire": {
+    "present": "настоящее время",
+    "noCurrent": "Нет текущей серии",
+    "noneFound": "Серий не найдено",
+    "noData": "Нет данных",
+    "notAvailable": "Н/Д",
+    "noDescription": "Нет описания",
+    "unknown": "Неизвестно",
+    "span": "{start} – {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "Самым активным репозиторием стал «{name}»",
+      "stars": "Число звёзд {direction, select, increased {выросло} other {уменьшилось}} на {amount, number, ::group-off} (сейчас {total, number, ::group-off})",
+      "forks": "Число форков {direction, select, increased {выросло} other {уменьшилось}} на {amount, number, ::group-off} (сейчас {total, number, ::group-off})",
+      "commits": "{count, number, ::group-off} {count, plural, one {новый коммит отправлен} few {новых коммита отправлено} many {новых коммитов отправлено} other {нового коммита отправлено}}",
+      "mergedPrs": "{count, number, ::group-off} {count, plural, one {PR объединён} few {PR объединено} many {PR объединено} other {PR объединено}}",
+      "activityScore": "Индекс активности {direction, select, increased {вырос} other {снизился}} на {amount, number, ::group-off} (сейчас {total, number, ::group-off})",
+      "language": "Основной язык изменился на «{language}»"
+    },
+    "stats": {
+      "stars": "Всего звёзд {delta, number, ::sign-always group-off}",
+      "commits": "Всего коммитов {delta, number, ::sign-always group-off}",
+      "prs": "Всего PR {delta, number, ::sign-always group-off}",
+      "issues": "Всего issues {delta, number, ::sign-always group-off}",
+      "contributedTo": "Участие в проектах {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "Всего вкладов {delta, number, ::sign-always group-off}",
+      "currentStreak": "Текущая серия {delta, number, ::sign-always group-off}",
+      "longestStreak": "Самая длинная серия {delta, number, ::sign-always group-off}",
+      "currentDates": "Даты текущей серии изменились",
+      "longestDates": "Даты самой длинной серии изменились"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language} добавлен в топ языков.",
+      "addedMany": "В топ {count, plural, one {вошёл} few {вошли} many {вошли} other {вошли}} {count, number, ::group-off} {count, plural, one {новый язык} few {новых языка} many {новых языков} other {новых языка}}.",
+      "removedOne": "{language} выбыл из топа языков.",
+      "removedMany": "Из топа {count, plural, one {выбыл} few {выбыли} many {выбыли} other {выбыли}} {count, number, ::group-off} {count, plural, one {язык} few {языка} many {языков} other {языка}}.",
+      "percentage": "Доля {language} {direction, select, increased {выросла} other {снизилась}} на {delta, number, ::.0 group-off}%.",
+      "rank": "{language}: {direction, select, up {подъём} other {спад}} до #{rank, number, ::group-off}."
+    },
+    "skills": {
+      "added": "Добавлено: {items}",
+      "removed": "Удалено: {items}",
+      "moved": "Перемещено: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, number, ::group-off} {delta, plural, one {новый завершённый проект добавлен} few {новых завершённых проекта добавлено} many {новых завершённых проектов добавлено} other {новых завершённых проекта добавлено}} — теперь {count, number, ::group-off}",
+      "updated": "Завершённые проекты обновлены — теперь {count, number, ::group-off}"
+    }
+  }
+}

@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { signIn } from 'next-auth/react';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatNumber } from '@/i18n/format';
 import { PenLine, Send } from 'lucide-react';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import { useMagneticPull } from '@/hooks/useMagneticPull';
@@ -29,6 +31,8 @@ const BUTTON_CLASS =
 
 export default function SignInPrompt({ reauth = false }) {
   const reduceMotion = useReducedMotion();
+  const t = useTranslations('Guestbook');
+  const locale = useLocale();
   // Magnetic lean on the CTAs (issue #40 Phase 4) — inert on touch and under
   // reduced motion by the hook's own gate; the flag decides the wiring. One
   // hook instance per button so each leans independently.
@@ -58,31 +62,31 @@ export default function SignInPrompt({ reauth = false }) {
       >
         <div className="flex items-center gap-3">
           <span className="h-8 w-8 shrink-0 rounded-full border border-[#ff6d05]/30 bg-black/40" />
-          <span className="min-w-0 flex-1 truncate text-left font-mono text-sm text-foreground/60">
-            Leave a message…
+          <span className="min-w-0 flex-1 truncate text-start font-mono text-sm text-foreground/60">
+            {t('signIn.ghostPlaceholder')}
           </span>
           <span className="shrink-0 font-mono text-xs tabular-nums text-foreground/60">
-            0/{MESSAGE_MAX}
+            {formatNumber(0, locale)}/{formatNumber(MESSAGE_MAX, locale, { useGrouping: false })}
           </span>
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
-            <Send aria-hidden="true" className="h-4 w-4 text-[#f9d174]" />
+            <Send aria-hidden="true" className="h-4 w-4 text-[#f9d174] rtl:-scale-x-100" />
           </span>
         </div>
 
         {/* The refine affordance, where the real composer grows it. */}
-        <p className="mt-2 inline-flex items-center gap-1.5 text-left font-mono text-xs text-[#ff6d05]/75">
-          <span className="refine-spark">✦</span> Refine with AI
+        <p className="mt-2 inline-flex items-center gap-1.5 text-start font-mono text-xs text-[#ff6d05]/75">
+          <span className="refine-spark">✦</span> {t('signIn.ghostRefine')}
         </p>
 
         {/* The signature fold, with its real header line this time. */}
         <div className="mt-3 border-t border-dashed border-[#f9d174]/15 pt-3">
           <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#ffd27d]/80">
             <PenLine className="h-3.5 w-3.5" />
-            Add a signature (optional)
+            {t('signIn.ghostSignature')}
           </p>
           <div className="mt-3 h-16 rounded-lg border border-dashed border-[#f9d174]/25 bg-gradient-to-b from-[#ff6d05]/5 to-black/20" />
           <p className="mt-2 text-center font-mono text-[10px] tracking-wide text-[#f9d174]/50">
-            Drafts save themselves as you type
+            {t('signIn.ghostDrafts')}
           </p>
         </div>
       </div>
@@ -93,12 +97,11 @@ export default function SignInPrompt({ reauth = false }) {
           invitational voice — the LEAVE YOUR MARK subtitle), gold acts. */}
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/30 p-6 text-center backdrop-blur-[3px]">
         <p className="text-sm text-[#fc83ff]/90">
-          {reauth ? 'Sign in again to leave a message' : 'Sign in to leave a message'}
+          {reauth ? t('signIn.promptReauth') : t('signIn.prompt')}
         </p>
         {reauth ? (
           <p className="-mt-2 max-w-xs font-mono text-[11px] leading-relaxed text-[#f9d174]/60">
-            Your current sign-in predates the wall&rsquo;s account keys, so it
-            can read but not write &mdash; one fresh sign-in fixes it.
+            {t('signIn.reauthExplain')}
           </p>
         ) : null}
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -110,7 +113,7 @@ export default function SignInPrompt({ reauth = false }) {
           className={BUTTON_CLASS}
         >
           <FaGithub aria-hidden="true" className="h-4 w-4" />
-          SIGN IN WITH GITHUB
+          {t('signIn.github')}
         </motion.button>
         <motion.button
           type="button"
@@ -120,7 +123,7 @@ export default function SignInPrompt({ reauth = false }) {
           className={BUTTON_CLASS}
         >
           <FaGoogle aria-hidden="true" className="h-4 w-4" />
-          SIGN IN WITH GOOGLE
+          {t('signIn.google')}
         </motion.button>
         </div>
       </div>

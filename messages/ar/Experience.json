@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "سنوات في المهنة",
+    "unit": "{unit, select, years {{count, plural, zero {سنوات من الخبرة} one {سنة من الخبرة} two {سنتان من الخبرة} few {سنوات من الخبرة} many {سنة من الخبرة} other {سنة من الخبرة}}} other {{count, plural, zero {أشهر من الخبرة} one {شهر من الخبرة} two {شهران من الخبرة} few {أشهر من الخبرة} many {شهرًا من الخبرة} other {شهر من الخبرة}}}}",
+    "unavailable": "الخبرة غير متاحة",
+    "loadingAria": "جارٍ تحميل سنوات الخبرة",
+    "viewBreakdown": "عرض التفاصيل →",
+    "srPrefix": "تحديث الخبرة: ",
+    "personal": "شخصي",
+    "employment": "وظيفي",
+    "splitUnavailable": "غير متاح",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "جارٍ تحميل ملخص الخبرة",
+    "degraded": "سنوات في المهنة: الخبرة غير متاحة (جزء GitHub من الملخص مفقود أو غير مكتمل).{split} عرض التفاصيل: يفتح تفاصيل المتاح.",
+    "ready": "سنوات في المهنة: {count, number, ::group-off}+ {unit, select, years {{count, plural, zero {سنوات} one {سنة} two {سنتان} few {سنوات} many {سنة} other {سنة}}} other {{count, plural, zero {أشهر} one {شهر} two {شهران} few {أشهر} many {شهرًا} other {شهر}}}} من الخبرة.{split} عرض التفاصيل: يفتح تفاصيل الفئات.",
+    "split": "شخصي {personal}، وظيفي {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "غير متاح"
+  },
+  "modal": {
+    "eyebrow": "لمحة عن المسيرة المهنية",
+    "title": "الخبرة حسب الفئة",
+    "close": "إغلاق تفاصيل الخبرة",
+    "personalProjects": "المشاريع الشخصية",
+    "employment": "العمل الوظيفي",
+    "unavailable": "غير متاح",
+    "unitWord": "{unit, select, years {{count, plural, zero {سنوات} one {سنة} two {سنتان} few {سنوات} many {سنة} other {سنة}}} other {{count, plural, zero {أشهر} one {شهر} two {شهران} few {أشهر} many {شهرًا} other {شهر}}}}",
+    "totalUnavailable": "الإجمالي غير متاح",
+    "totalUnit": "إجمالي {unit, select, years {سنوات} other {أشهر}}",
+    "ownedRepos": "<n></n> {count, plural, zero {مستودعات مملوكة} one {مستودع مملوك} two {مستودعان مملوكان} few {مستودعات مملوكة} many {مستودعًا مملوكًا} other {مستودع مملوك}}",
+    "roles": "<n></n> {count, plural, zero {مناصب} one {منصب} two {منصبان} few {مناصب} many {منصبًا} other {منصب}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ سنة} other { شهر}}",
+    "newestFirst": "الأحدث أولًا",
+    "showFewer": "عرض أقل",
+    "showAll": "عرض كل المستودعات ({count, number, ::group-off}) →",
+    "noRepos": "لم يُرصد أي مستودع مملوك حتى الآن.",
+    "personalFailed": "تعذّر تحميل بيانات المشاريع الشخصية الآن.",
+    "relativeDuration": "المدة النسبية",
+    "noRoles": "لم تُرصد أي مناصب في هندسة البرمجيات حتى الآن.",
+    "employmentFailed": "تعذّر تحميل بيانات العمل الوظيفي الآن."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, zero {سنوات} one {سنة} two {سنتان} few {سنوات} many {سنة} other {سنة}}} other {{count, plural, zero {أشهر} one {شهر} two {شهران} few {أشهر} many {شهرًا} other {شهر}}}}",
+  "changes": {
+    "newRole": "رُصد منصب جديد من السيرة الذاتية: {company}",
+    "years": "تم تحديث سنوات الخبرة: {from} → {to}",
+    "employment": "تم تحديث الخبرة الوظيفية: +{count, number, ::group-off} {count, plural, zero {أشهر} one {شهر} two {شهرين} few {أشهر} many {شهرًا} other {شهر}}",
+    "newRepo": "رُصد مستودع جديد: {name}",
+    "newRepos": "{count, plural, zero {لم يُرصد أي مستودع جديد على GitHub} one {رُصد مستودع جديد على GitHub} two {رُصد مستودعان جديدان على GitHub} few {رُصدت {count, number, ::group-off} مستودعات جديدة على GitHub} many {رُصد {count, number, ::group-off} مستودعًا جديدًا على GitHub} other {رُصد {count, number, ::group-off} مستودع جديد على GitHub}}",
+    "timeline": "تم تحديث الخط الزمني للمشاريع الشخصية"
+  }
+}

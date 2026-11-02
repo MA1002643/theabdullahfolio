@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "NOTLAR",
+    "subtitle": "kararlar, yazıya dökülmüş",
+    "intro": "Bu sitenin ardındaki her bariz olmayan karar kayıt altında: seçilen yol, elenen alternatifler ve her birinin bedeli. Bunlar depodaki çalışma belgeleri; dizinde bırakılmak yerine burada sunuluyor.",
+    "lines": "{count, plural, other {satır}}"
+  },
+  "note": {
+    "title": "NOT",
+    "breadcrumb": "Gezinti yolu",
+    "allNotes": "Tüm notlar",
+    "source": "Kaynak: {source} · {count, plural, other {{n} satır}}"
+  }
+}

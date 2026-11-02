@@ -1,0 +1,124 @@
+{
+  "title": "अतिथि पुस्तिका",
+  "subtitle": "अपनी छाप छोड़ें",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> छाप बाकी} other {<n>{shown}</n> छापें बाकी}}",
+    "commands": "{shortcut} · कमांड",
+    "loading": "अतिथि पुस्तिका लोड हो रही है…",
+    "loadingMore": "अतिथि पुस्तिका के और संदेश लोड हो रहे हैं…",
+    "loadFailed": "अतिथि पुस्तिका लोड नहीं हो सकी",
+    "pageFailed": "यह पेज लोड नहीं हो सका",
+    "retry": "फिर कोशिश करें",
+    "emptyTitle": "अभी तक कोई संदेश नहीं",
+    "emptyInvite": "अपनी छाप छोड़ने वाले पहले व्यक्ति बनें"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> लोग अभी यहाँ हैं}}",
+  "announce": {
+    "one": "{name} का नया संदेश: {message}",
+    "many": "{count, plural, one {# नया संदेश।} other {# नए संदेश।}} {lines}",
+    "line": "{name}: {message}",
+    "separator": "। ",
+    "someone": "किसी ने"
+  },
+  "card": {
+    "sending": "भेज रहे हैं…",
+    "guest": "अतिथि",
+    "onGitHub": "GitHub पर {username} (नए टैब में खुलता है)",
+    "copyLink": "इस संदेश का लिंक कॉपी करें",
+    "linkCopied": "लिंक कॉपी हो गया — यह सीधे इसी छाप पर ले जाता है",
+    "linkFailed": "लिंक कॉपी नहीं हो सका",
+    "deleteOwn": "अपना संदेश हटाएँ",
+    "deleteOther": "{name} का संदेश हटाएँ",
+    "signature": "{name} के हस्ताक्षर",
+    "signatureAnon": "हस्ताक्षर"
+  },
+  "reactions": {
+    "fire": "आग",
+    "rocket": "रॉकेट",
+    "heart": "दिल",
+    "count": "{label} — {count}",
+    "signInToReact": "प्रतिक्रिया देने के लिए साइन इन करें"
+  },
+  "composer": {
+    "label": "आपका संदेश",
+    "placeholder": "एक संदेश छोड़ें…",
+    "send": "संदेश भेजें",
+    "offline": "आप ऑफ़लाइन हैं — आपका संदेश यहीं सुरक्षित है, कनेक्शन लौटते ही भेजा जा सकेगा।",
+    "notSent": "आपका पिछला संदेश भेजा नहीं जा सका",
+    "restore": "उसे वापस लाएँ"
+  },
+  "signature": {
+    "add": "हस्ताक्षर जोड़ें (वैकल्पिक)",
+    "discard": "हस्ताक्षर हटाएँ",
+    "clear": "मिटाएँ",
+    "padLabel": "हस्ताक्षर बनाने का क्षेत्र — माउस, उँगली या पेन से बनाएँ, या नीचे से कोई पहले से बनी छाप चुनें।",
+    "padHint": "उँगली, ट्रैकपैड या माउस से बनाएँ — रेखा की मोटाई आपकी गति के अनुसार बदलती है",
+    "pickMark": "एक छाप चुनें",
+    "orPickMark": "या कोई छाप चुनें",
+    "marks": {
+      "flourish": "अलंकरण",
+      "wave": "लहर",
+      "spark": "चिंगारी",
+      "orbit": "कक्षा"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "एक संदेश छोड़ें…",
+    "ghostRefine": "AI से निखारें",
+    "ghostSignature": "हस्ताक्षर जोड़ें (वैकल्पिक)",
+    "ghostDrafts": "टाइप करते समय ड्राफ़्ट अपने आप सेव होते हैं",
+    "prompt": "संदेश छोड़ने के लिए साइन इन करें",
+    "promptReauth": "संदेश छोड़ने के लिए दोबारा साइन इन करें",
+    "reauthExplain": "आपका मौजूदा साइन-इन दीवार की अकाउंट कुंजियों से पहले का है, इसलिए इससे पढ़ा तो जा सकता है, लिखा नहीं — एक बार नया साइन-इन करने से यह ठीक हो जाएगा।",
+    "github": "GitHub से साइन इन करें",
+    "google": "Google से साइन इन करें"
+  },
+  "pagination": {
+    "nav": "अतिथि पुस्तिका के पेज",
+    "previous": "पिछला पेज",
+    "next": "अगला पृष्ठ",
+    "page": "पृष्ठ ",
+    "status": "पृष्ठ {page} / {total}"
+  },
+  "palette": {
+    "leaveMessage": "संदेश छोड़ें",
+    "leaveKeywords": "लिखें हस्ताक्षर पोस्ट संदेश write sign post compose",
+    "sectionGuestbook": "अतिथि पुस्तिका",
+    "sectionPreferences": "प्राथमिकताएँ",
+    "signInToLeave": "संदेश छोड़ने के लिए साइन इन करें",
+    "toggleSound": "UI ध्वनियाँ चालू/बंद करें",
+    "soundKeywords": "ध्वनि आवाज़ म्यूट audio blip mute",
+    "toggleMotion": "मोशन चालू/बंद करें",
+    "motionKeywords": "एनिमेशन गति कम स्थिर animation reduce still",
+    "on": "चालू",
+    "off": "बंद"
+  },
+  "toast": {
+    "posted": "संदेश पोस्ट हो गया!",
+    "postFailed": "संदेश पोस्ट नहीं हो सका",
+    "reactFailed": "प्रतिक्रिया नहीं दी जा सकी",
+    "deleteFailed": "संदेश हटाया नहीं जा सका",
+    "removedOwn": "आपका संदेश अतिथि पुस्तिका से हटा दिया गया",
+    "removedOther": "संदेश अतिथि पुस्तिका से हटा दिया गया",
+    "you": "आप"
+  },
+  "errors": {
+    "unauthorized": "अनधिकृत",
+    "too_large": "अनुरोध की बॉडी अधिकतम {max, number, ::group-off} बाइट की होनी चाहिए",
+    "invalid_body": "अनुरोध की बॉडी अमान्य है",
+    "message_required": "संदेश आवश्यक है",
+    "message_length": "संदेश {min}–{max} वर्णों का होना चाहिए",
+    "invalid_characters": "संदेश में अमान्य वर्ण हैं",
+    "links_not_allowed": "अतिथि पुस्तिका के संदेशों में लिंक की अनुमति नहीं है",
+    "unfriendly": "कृपया शालीनता बनाए रखें",
+    "invalid_signature": "अमान्य हस्ताक्षर",
+    "rate_limited": "हर 5 मिनट में एक संदेश — {minutes, plural, one {# मिनट} other {# मिनट}} बाद फिर कोशिश करें",
+    "invalid_reaction": "अमान्य प्रतिक्रिया",
+    "reaction_rate_limited": "बहुत अधिक प्रतिक्रियाएँ — {seconds} सेकंड बाद फिर कोशिश करें",
+    "not_found": "संदेश नहीं मिला",
+    "id_required": "संदेश आईडी आवश्यक है",
+    "invalid_id": "अमान्य संदेश आईडी",
+    "forbidden": "अनुमति नहीं है",
+    "invalid_cursor": "अमान्य कर्सर"
+  }
+}

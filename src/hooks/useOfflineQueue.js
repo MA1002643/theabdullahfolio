@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { QUEUE_KEY, postContactMessage, readJSON, writeJSON } from '@/lib/contact';
 
 // Auto-drain cadence for items queued while already online — where there's no
@@ -33,6 +34,15 @@ export function useOfflineQueue() {
   const [online, setOnline] = useState(true);
   const [pending, setPending] = useState(0);
   const flushingRef = useRef(false);
+  // The translator through a ref (issue #82): `flush` is a stable callback
+  // the listeners below hold on to, so it reads the CURRENT locale's copy at
+  // toast time instead of capturing the first render's.
+  const t = useTranslations('Contact');
+  const tRef = useRef(t);
+  // Synced after render, never during it (react-hooks/refs).
+  useEffect(() => {
+    tRef.current = t;
+  });
 
   const enqueue = useCallback((params) => {
     const q = readJSON(QUEUE_KEY) || [];
@@ -70,11 +80,9 @@ export function useOfflineQueue() {
       writeJSON(QUEUE_KEY, nextQueue);
       setPending(nextQueue.length);
       if (sent > 0) {
-        toast.success(
-          sent === 1
-            ? 'Your held message was sent ✦'
-            : `${sent} held messages were sent ✦`,
-        );
+        // One ICU plural (issue #82), not a JS `=== 1` branch: other
+        // languages have more than two forms.
+        toast.success(tRef.current('toast.heldSent', { count: sent }));
       }
     } finally {
       flushingRef.current = false;

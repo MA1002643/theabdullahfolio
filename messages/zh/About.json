@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "关于我",
+    "subtitle": "我是谁"
+  },
+  "intro": {
+    "heading": "魔法建筑师",
+    "paragraph": "我的网页开发之旅，由一整套神秘的工具与语言驱动，其中 JavaScript 是我施展魔法的核心。我精准地驾驭 React.js 和 Next.js 等框架，打造无缝衔接的传送门（网站），将数字宇宙中的各方领域（用户）连接在一起。Jamstack 的古老技艺让我能够创造出快速、安全且富有动态的体验，而我的设计功底，则让每一件作品不仅实用，更赏心悦目。在可见的魔法之外，我也守护着隐藏的机关——召唤坚韧的 API 与数据库（安放每个领域记忆的保险库），并编织自动化流水线，将我的作品从工坊送往云端（它们最终苏醒的无垠以太）。我将性能与无障碍视为神圣的誓言，让每一道传送门都能为每一位旅人迅速开启，无论使用何种设备，无论身处领域的哪个遥远角落。好奇心始终是我最真切的罗盘，不断牵引我走向新的魔法书、更敏锐的直觉，以及足够大胆、足以化为鲜活体验的创意。欢迎与我同行，继续探索新的咒语与技术，共同塑造网络的未来。"
+  },
+  "projectsCard": {
+    "eyebrow": "已交付项目",
+    "unit": "{count, plural, other {个已完成项目}}",
+    "viewProgress": "查看进展 →",
+    "ariaLabel": "已交付项目：{count, number, ::group-off} 个已完成项目。{legend}。查看进展：打开项目实时进展。",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "按类别统计的已完成项目——{summary}。",
+    "srItem": "{label}：{count, number, ::group-off} {count, plural, other {个项目}}",
+    "srPrefix": "项目更新："
+  },
+  "statsCard": {
+    "title": "{name} 的 GitHub 统计",
+    "defaultUser": "GitHub 用户",
+    "live": "GitHub 实时数据",
+    "rank": "排名",
+    "updated": "GitHub 统计已更新",
+    "srPrefix": "统计更新：",
+    "metrics": {
+      "stars": "获得星标总数",
+      "commits": "提交总数（过去一年）",
+      "prs": "PR 总数",
+      "issues": "议题总数",
+      "contributedTo": "参与贡献的项目（过去一年）"
+    }
+  },
+  "languagesCard": {
+    "title": "最常用语言",
+    "count": "{count, number, ::group-off} {count, plural, other {种语言}}",
+    "live": "实时来自 GitHub",
+    "primary": "主要",
+    "percent": "<n></n>%",
+    "srPrefix": "语言更新：",
+    "popover": {
+      "eyebrow": "仓库分布",
+      "ariaLabel": "使用 {language} 的仓库",
+      "privateRepos": "{count, number, ::group-off} {count, plural, other {个私有仓库}}"
+    }
+  },
+  "streakCard": {
+    "title": "连续贡献",
+    "subtitle": "GitHub 动态",
+    "srPrefix": "连续贡献更新：",
+    "total": "贡献总数",
+    "current": "当前连续天数",
+    "longest": "最长连续天数",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, other {天}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, other {天}}，占最长连续天数的 {percent, number, ::group-off}%"
+  },
+  "repoCard": {
+    "badge": "最活跃仓库",
+    "srPrefix": "仓库更新：",
+    "metrics": {
+      "stars": "星标",
+      "forks": "复刻",
+      "mergedPrs": "已合并 PR",
+      "commits": "提交总数",
+      "lastPushed": "最近推送"
+    },
+    "score": "分",
+    "activityScore": "活跃度得分"
+  },
+  "skillsCard": {
+    "title": "技能与技术",
+    "categories": {
+      "languages": "语言",
+      "frameworks": "框架",
+      "libraries": "库",
+      "tools": "工具",
+      "software": "软件"
+    },
+    "count": "<n></n> {count, plural, other {项技术}}",
+    "live": "实时来自 GitHub",
+    "syncing": "正在与 GitHub 同步…",
+    "noneDetected": "未检测到技能",
+    "noneInRepos": "在你的仓库中未检测到技能",
+    "fetching": "正在从 GitHub 获取技能…",
+    "srPrefix": "技能更新：",
+    "popover": {
+      "eyebrow": "使用该技能的仓库",
+      "ariaLabel": "使用 {name} 的仓库",
+      "label": "仓库：",
+      "publicSr": "{count, number, ::group-off} 个公开",
+      "privateSr": "{count, number, ::group-off} 个私有",
+      "publicCount": "<n></n> 个公开",
+      "privateCount": "<n></n> 个私有",
+      "slash": "/",
+      "allPrivate": "所有仓库均为私有"
+    }
+  },
+  "progress": {
+    "eyebrow": "交付遥测",
+    "title": "项目进度",
+    "close": "关闭项目进度",
+    "failed": "目前无法连接进度同步服务。",
+    "retry": "重试同步",
+    "ringLineOne": "看板事项",
+    "ringLineTwo": "已完成",
+    "percent": "<n></n>%",
+    "itemsDone": "已完成事项",
+    "ofTotal": "共 {total, number, ::group-off} 项",
+    "boardsLive": "在线看板",
+    "allProjects": "{count, plural, other {个项目}}",
+    "ofProjects": "共 {total, number, ::group-off} 个项目",
+    "unavailable": "实时同步暂不可用，当前显示的是作品集的结构；百分比将在下次刷新成功后恢复。",
+    "byCategory": "按类别",
+    "projectCount": "{count, number, ::group-off} 个项目",
+    "perProject": "按项目",
+    "liveFrom": "实时数据来自 GitHub Projects",
+    "footer": "每日自动同步两次，数据来自 GitHub Projects",
+    "lastSync": "上次同步",
+    "awaiting": "等待首次同步",
+    "row": {
+      "tracked": "已完成 {percent, number, ::group-off}%，看板共 {total, number, ::group-off} 项，已完成 {done, number, ::group-off} 项",
+      "syncUnavailable": "进度同步不可用",
+      "notTracked": "未跟踪",
+      "ariaLabel": "{name}，{category}。{status}。切换看板明细。",
+      "syncUnavailableTag": "· 同步不可用",
+      "total": "总计",
+      "couldNotSync": "目前无法同步此看板，实时数据将在下次刷新后恢复。",
+      "noBoard": "此项目尚未关联 GitHub 项目看板。",
+      "viewBoard": "查看项目看板 →"
+    },
+    "age": {
+      "seconds": "{s}秒前",
+      "minutes": "{m}分{s}秒前",
+      "hours": "{h}小时{m}分前",
+      "days": "{d}天{h}小时前"
+    },
+    "columns": {
+      "todo": "待办",
+      "backlog": "待规划",
+      "ready": "就绪",
+      "inProgress": "进行中",
+      "inReview": "评审中",
+      "done": "已完成",
+      "noStatus": "无状态",
+      "blocked": "已阻塞",
+      "onHold": "已搁置"
+    }
+  },
+  "wire": {
+    "present": "至今",
+    "noCurrent": "当前无连续记录",
+    "noneFound": "未找到连续记录",
+    "noData": "暂无数据",
+    "notAvailable": "不适用",
+    "noDescription": "暂无描述",
+    "unknown": "未知",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": "　·　",
+    "pipe": " | ",
+    "repo": {
+      "switched": "最活跃的仓库已变为“{name}”",
+      "stars": "星标数{direction, select, increased {增加了} other {减少了}} {amount, number, ::group-off}（当前 {total, number, ::group-off}）",
+      "forks": "复刻数{direction, select, increased {增加了} other {减少了}} {amount, number, ::group-off}（当前 {total, number, ::group-off}）",
+      "commits": "已推送 {count, number, ::group-off} {count, plural, other {个新提交}}",
+      "mergedPrs": "已合并 {count, number, ::group-off} {count, plural, other {个 PR}}",
+      "activityScore": "活跃度得分{direction, select, increased {增加了} other {减少了}}{amount, number, ::group-off}（当前为{total, number, ::group-off}）",
+      "language": "主要语言已更改为“{language}”"
+    },
+    "stats": {
+      "stars": "星标总数 {delta, number, ::sign-always group-off}",
+      "commits": "提交总数 {delta, number, ::sign-always group-off}",
+      "prs": "PR 总数 {delta, number, ::sign-always group-off}",
+      "issues": "议题总数 {delta, number, ::sign-always group-off}",
+      "contributedTo": "参与贡献的项目 {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "贡献总数 {delta, number, ::sign-always group-off}",
+      "currentStreak": "当前连续天数 {delta, number, ::sign-always group-off}",
+      "longestStreak": "最长连续天数 {delta, number, ::sign-always group-off}",
+      "currentDates": "当前连续记录的日期已变更",
+      "longestDates": "最长连续记录的日期已变更"
+    },
+    "comma": "，",
+    "languages": {
+      "addedOne": "{language} 已加入常用语言榜单。",
+      "addedMany": "有 {count, number, ::group-off} 种{count, plural, other {新语言}}进入常用语言榜单。",
+      "removedOne": "{language} 已退出常用语言榜单。",
+      "removedMany": "有 {count, number, ::group-off} 种{count, plural, other {语言}}退出常用语言榜单。",
+      "percentage": "{language} 的占比{direction, select, increased {上升了} other {下降了}} {delta, number, ::.0 group-off}%。",
+      "rank": "{language} {direction, select, up {上升} other {下降}}至第 #{rank, number, ::group-off} 位。"
+    },
+    "skills": {
+      "added": "新增：{items}",
+      "removed": "移除：{items}",
+      "moved": "调整：{items}",
+      "entry": "{name}（{category}）",
+      "move": "{name}（{from} → {to}）"
+    },
+    "projects": {
+      "added": "新增 {delta, number, ::group-off} 个{delta, plural, other {已完成项目}}，现共 {count, number, ::group-off} 个",
+      "updated": "已完成项目已更新，现共 {count, number, ::group-off} 个"
+    }
+  }
+}

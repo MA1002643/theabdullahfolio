@@ -1,0 +1,14 @@
+{
+  "loadingProject": "Đang tải dự án",
+  "emblem": "Biểu tượng của Muhammad Abdullah",
+  "notifications": "Thông báo",
+  "sound": {
+    "turnOn": "Bật âm thanh đàn guitar",
+    "turnOff": "Tắt âm thanh đàn guitar"
+  },
+  "owner": {
+    "given": "Muhammad",
+    "family": "Abdullah",
+    "full": "Muhammad Abdullah"
+  }
+}

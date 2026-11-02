@@ -1,0 +1,28 @@
+{
+  "label": "Idioma",
+  "triggerLabel": "Idioma: {language}",
+  "searchLabel": "Buscar idiomas",
+  "searchPlaceholder": "Buscar entre 20 idiomas…",
+  "noResults": "Ningún idioma coincide con “{query}”.",
+  "tier1": "Nivel 1",
+  "tier2": "Nivel 2",
+  "current": "Actual",
+  "machineBadge": "Automática",
+  "machineBadgeLabel": "Traducción automática",
+  "switching": "Cambiando a {language}…",
+  "notice": {
+    "title": "Traducción automática",
+    "body": "Esta traducción se ha generado automáticamente y aún no la ha revisado un hablante nativo.",
+    "cta": "Sugerir una mejor traducción"
+  },
+  "suggestion": {
+    "region": "Sugerencia de idioma",
+    "message": "Este sitio también está disponible en {language}.",
+    "switch": "Cambiar a {language}",
+    "dismiss": "Mantener {current}"
+  },
+  "englishOnly": {
+    "label": "Publicado en inglés",
+    "body": "Este documento solo está publicado en inglés. La navegación y los controles siguen en tu idioma."
+  }
+}

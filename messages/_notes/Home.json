@@ -1,0 +1,6 @@
+{
+  "role": "The job title under the name on the homepage, set very large in uppercase with wide letter-spacing. Keep it short (two words in English).",
+  "summary": "Screen-reader / search-engine summary of the whole site (visually hidden). Keep the three tags <cv>…</cv>, <notes>…</notes>, <privacy>…</privacy> — they become links; translate the words inside them. {count} is the number of projects, already formatted. Keep Next.js, React, TypeScript, Node.js, GitHub and the place names as they are.",
+  "orbitTip.hover.keys": "<key>←</key> and <key>→</key> render as keyboard key caps — keep the arrows unchanged.",
+  "orbitTip.hover.lead": "Short tip in a small card (max ~27rem wide). 'the ring' is the circle of navigation buttons orbiting the laptop image."
+}

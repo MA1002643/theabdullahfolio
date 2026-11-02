@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Không tìm thấy trang",
+    "description": "Bạn vừa lạc vào hư không. Trang này không tồn tại — ít nhất là chưa."
+  },
+  "messages": {
+    "void": "Bạn vừa lạc vào hư không.",
+    "dimension": "Trang này đang nằm ở một chiều không gian khác.",
+    "render": "Đến kỹ năng 3D của mình cũng không dựng nổi trang này.",
+    "vibes": "404: không thấy trang đâu, nhưng tinh thần vẫn không chê vào đâu được.",
+    "edge": "Bạn đã đi đến tận rìa của portfolio này."
+  },
+  "subtitle": "Trang này không tồn tại — ít nhất là chưa.",
+  "didYouMean": "Có phải bạn muốn đến <link>{label}</link>?",
+  "takeMeBack": "QUAY VỀ TRANG CHỦ",
+  "keyHint": "Nhấn {key} để về trang chủ"
+}

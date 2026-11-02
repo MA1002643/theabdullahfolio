@@ -1,0 +1,16 @@
+{
+  "role": "Engenheiro de Software",
+  "summary": "Muhammad Abdullah é engenheiro de software em Bolton, Greater Manchester, e cria aplicações web rápidas e bem pensadas com Next.js, React, TypeScript e Node.js. Este site reúne {count} projetos — web, sistemas, mobile e IA — cada um acompanhado ao vivo em seu próprio quadro no GitHub, além das formações e experiências que os sustentam, uma linha do tempo do caminho da faculdade até a produção e as ferramentas com as quais o trabalho é realmente construído. Todas as seções podem ser acessadas pelo anel abaixo, exceto três: o histórico completo está na <cv>página do CV</cv> e em PDF, as justificativas de como este site foi construído estão nas <notes>notas de engenharia</notes>, e o que este site coleta — com a opção que desativa a parte opcional — está descrito na <privacy>página de privacidade</privacy>.",
+  "orbitTip": {
+    "hover": {
+      "lead": "Deixe o cursor sobre o laptop e mova ou role para cima e para baixo — o anel gira com você.",
+      "keys": "Você também pode arrastar o anel ou pressionar <key>←</key> <key>→</key> em um botão com foco.",
+      "sr": "Dica: o anel de navegação pode ser girado. Deixe o ponteiro sobre o laptop e mova ou role para cima e para baixo para girá-lo; você também pode arrastar o anel ou pressionar as setas para a esquerda e para a direita enquanto um botão de navegação estiver com foco."
+    },
+    "touch": {
+      "lead": "Deslize para cima e para baixo sobre o laptop — ou arraste o anel — para girar a navegação.",
+      "sr": "Dica: o anel de navegação pode ser girado. Deslize para cima e para baixo sobre o laptop, ou arraste o próprio anel, para girá-lo."
+    },
+    "dismiss": "Fechar dica de navegação"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "MINHA JORNADA",
+    "subtitle": "da primeira linha à produção"
+  },
+  "timeline": {
+    "label": "Linha do tempo da jornada"
+  },
+  "endCap": {
+    "est": "DESDE {year} · BOLTON, REINO UNIDO",
+    "tally": "{years, plural, one {# ANO} other {# ANOS}} · {entries, plural, one {# ENTRADA} other {# ENTRADAS}} · {tracks, plural, one {# TRILHA} other {# TRILHAS}}",
+    "paper": "A VERSÃO EM PAPEL →",
+    "paperHint": "o CV em PDF (abre em uma nova aba)"
+  },
+  "spine": {
+    "now": "AGORA"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, one {# mês} other {# meses}}} one {# ano{months, plural, =0 {} one { # mês} other { # meses}}} other {# anos{months, plural, =0 {} one { # mês} other { # meses}}}}",
+    "tenureOngoing": "{tenure} até agora",
+    "view": "VER",
+    "viewLabel": "Ver {title} (abre em uma nova aba)"
+  },
+  "eraRail": {
+    "label": "Eras da linha do tempo",
+    "jump": "Ir para {year}"
+  },
+  "atlas": {
+    "eyebrow": "Visão de sobreposição",
+    "title": "O atlas — três trilhas, um só relógio",
+    "live": {
+      "career": "{count, plural, one {# cargo} other {# cargos}}",
+      "education": "{count, plural, one {# formação} other {# formações}}",
+      "milestone": "{count, plural, one {# publicação na comunidade} other {# publicações na comunidade}}",
+      "separator": " + ",
+      "sentence": "Em andamento hoje: {parts}{total, plural, =1 {.} other { — em paralelo.}}"
+    },
+    "tracks": {
+      "all": "Todas",
+      "career": "Carreira",
+      "education": "Formação",
+      "milestone": "Comunidade"
+    },
+    "chipsLabel": "Destacar uma trilha",
+    "zoom": {
+      "group": "Zoom da grade",
+      "out": "Diminuir o zoom da grade",
+      "outTitle": "Diminuir zoom",
+      "in": "Aumentar o zoom da grade",
+      "inTitle": "Aumentar zoom",
+      "readoutLabel": "Zoom da grade {pct}. Redefinir para {full}",
+      "readoutTitle": "Zoom da grade",
+      "resetTitle": "Redefinir zoom para {full}",
+      "status": "Zoom da grade {pct}"
+    },
+    "region": "Atlas de sobreposição: cada cargo e curso como barras paralelas em um único eixo de tempo",
+    "entries": "{count, plural, one {# entrada} other {# entradas}}",
+    "now": "Agora",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Ir para {org} · {role}, {dates}",
+    "spokenRange": "{start} a {end}",
+    "spokenOpen": "{start} até agora",
+    "key": {
+      "select": "Selecione qualquer barra para ir até ela.",
+      "dashed": "Borda tracejada = ainda em andamento.",
+      "stacked": "Barras empilhadas = simultâneas."
+    }
+  },
+  "palette": {
+    "section": "Jornada",
+    "jumpYear": "Ir para {year}",
+    "eraHint": "era",
+    "jumpAtlas": "Ir para o atlas de sobreposição",
+    "openCv": "Abrir o CV (PDF)",
+    "openCvHint": "a versão em papel"
+  }
+}

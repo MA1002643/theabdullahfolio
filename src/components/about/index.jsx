@@ -30,12 +30,20 @@ import { UpdateBanner } from "./UpdateBanner";
 import { wordFill } from "@/lib/fireRamp";
 import { fluid, fluidText } from "@/lib/fluidScale";
 import { PROJECT_CATEGORY_COLORS } from "@/lib/categories";
+import { useTranslations } from "next-intl";
+import { wordChunks } from "@/components/ui/textSegments";
+import { useDataT } from "@/i18n/useDataT";
+import { localizeCategory } from "@/i18n/data";
+import { useAboutDigits } from "./aboutI18n";
 
 const githubStatsStorageKey = (username) =>
   `github-stats:lastGood:${username}`;
 
-const ARCHITECT_PARAGRAPH = "My journey in web development is powered by an array of mystical tools and languages, with JavaScript casting the core of my enchantments. I wield frameworks like React.js and Next.js with precision, crafting seamless portals (websites) that connect realms (users) across the digital universe. The ancient arts of the Jamstack empower me to create fast, secure, and dynamic experiences, while my design skills ensure every creation is not only functional but visually captivating. Beyond the visible enchantments, I tend the hidden machinery — conjuring resilient APIs and databases (the vaults where each realm's memory is safely kept) and weaving automated pipelines that carry my creations from the workshop to the cloud (the boundless aether where they finally awaken). I hold performance and accessibility as sacred vows, so every portal opens swiftly for every traveller, on any device and in any far-flung corner of the realm. Curiosity remains my truest compass, forever drawing me toward new grimoires, sharper instincts, and ideas bold enough to become living, breathing experiences. Join me as I continue to explore new spells and technologies to shape the future of the web.";
-const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
+// The "Architect of Enchantment" paragraph now lives in the catalogue
+// (`About.intro.paragraph`, issue #82) and is cut into reveal words by the
+// shared `wordChunks` (@/components/ui/textSegments): single-space splits for
+// spaced scripts — byte-identical to the old `split(" ")` in English — and the
+// platform word segmenter for Chinese/Japanese, which have no spaces to cut on.
 
 // The gold→ember fill is applied PER WORD (not via `.text-fire-amber` on the
 // parent <p>): a single `background-clip:text` fill on the parent rasterises
@@ -44,7 +52,7 @@ const ARCHITECT_WORDS = ARCHITECT_PARAGRAPH.split(" ");
 // owning its own clip fixes that AND lets the fill darken gold→ember across the
 // paragraph in reading order — see `wordFill` in @/lib/fireRamp.
 
-const RevealWord = ({ children, progress, range, index, total }) => {
+const RevealWord = ({ children, progress, range, index, total, gap = " " }) => {
   // Start fully hidden (0) and light to full (1) across this word's slice of
   // the scroll range — at load the whole paragraph is invisible and only
   // materialises word-by-word as the reader scrolls into it.
@@ -58,7 +66,7 @@ const RevealWord = ({ children, progress, range, index, total }) => {
     // Per-word ramp fill (darkens toward the paragraph's end) + opacity on the
     // SAME element, so a word's opacity fades its OWN clip. See wordFill.
     <motion.span style={{ ...wordFill(index, total), opacity }}>
-      {children}{" "}
+      {children}{gap}
     </motion.span>
   );
 };
@@ -74,26 +82,33 @@ const RevealWord = ({ children, progress, range, index, total }) => {
 function PercentCount({ value, unavailable = false, inView = true }) {
   const nodeRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
+  const t = useTranslations("Experience");
+  // Every count-up on this page paints in the reader's digits (issue #82);
+  // English is the old `${n}`.
+  const digits = useAboutDigits();
 
   useViewportCountUp(nodeRef, {
     to: value,
     inView,
     prefersReducedMotion,
     enabled: !unavailable,
+    format: digits.int,
   });
 
   if (unavailable) {
     return (
       <span className="italic opacity-60 normal-case tracking-normal">
-        Unavailable
+        {t("card.splitUnavailable")}
       </span>
     );
   }
 
+  // The "%" side is the catalogue's (Turkish writes "%40").
   return (
     <span className="inline-flex items-baseline">
-      <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>
-      <span>%</span>
+      {t.rich("card.percent", {
+        n: () => <span ref={nodeRef}>{digits.int(prefersReducedMotion ? value : 0)}</span>,
+      })}
     </span>
   );
 }
@@ -108,10 +123,11 @@ function PercentCount({ value, unavailable = false, inView = true }) {
 function CountUp({ value, inView = true }) {
   const nodeRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
+  const digits = useAboutDigits();
 
-  useViewportCountUp(nodeRef, { to: value, inView, prefersReducedMotion });
+  useViewportCountUp(nodeRef, { to: value, inView, prefersReducedMotion, format: digits.int });
 
-  return <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>;
+  return <span ref={nodeRef}>{digits.int(prefersReducedMotion ? value : 0)}</span>;
 }
 
 // Big-digit count-up for the "Completed projects" and "Years in the craft"
@@ -130,15 +146,16 @@ function CountUp({ value, inView = true }) {
 function Counter({ from = 0, to, plusIcon = true, inView = true }) {
   const nodeRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
+  const digits = useAboutDigits();
 
-  useViewportCountUp(nodeRef, { from, to, inView, prefersReducedMotion });
+  useViewportCountUp(nodeRef, { from, to, inView, prefersReducedMotion, format: digits.int });
 
   return (
     // Inline elements only: this renders inside the cards' <h1>, and a
     // heading may contain phrasing content only — a block <div>/<p> here is
     // invalid HTML. `inline-flex` keeps the digit (+ optional plus) aligned.
     <span className="inline-flex items-center justify-center">
-      <span ref={nodeRef}>{prefersReducedMotion ? to : from}</span>
+      <span ref={nodeRef}>{digits.int(prefersReducedMotion ? to : from)}</span>
       {plusIcon && <span>+</span>}
     </span>
   );
@@ -159,6 +176,7 @@ function ExperienceSplitBar({
   pulseCategories = [],
 }) {
   const prefersReducedMotion = useReducedMotion();
+  const t = useTranslations("Experience");
   // Heartbeat a category whose experience just grew — the same `skill-heartbeat`
   // opacity pulse the Skills / Completed-projects cards apply to a changed
   // category's label + count. Applied to BOTH the legend label and its
@@ -212,7 +230,8 @@ function ExperienceSplitBar({
             already fills the bar at 100%. */}
         {personalAvailable && (
           <motion.span
-            className="absolute inset-y-0 left-0"
+            // Logical edge: the split fills from the reading start (issue #82).
+            className="absolute inset-y-0 start-0"
             style={{
               background: "#ff6d05",
               boxShadow: "0 0 10px rgba(255, 109, 5, 0.45)",
@@ -230,7 +249,7 @@ function ExperienceSplitBar({
           <motion.span
             className="absolute inset-y-0"
             style={{
-              left: `${personalPct}%`,
+              insetInlineStart: `${personalPct}%`,
               background: "#ffd27d",
               boxShadow: "0 0 10px rgba(255, 210, 125, 0.45)",
             }}
@@ -271,7 +290,7 @@ function ExperienceSplitBar({
                   : { border: "1px solid #ff6d05", opacity: 0.5 }
               }
             />
-            <span className={`text-fire-amber ${personalPulse}`}>Personal</span>
+            <span className={`text-fire-amber ${personalPulse}`}>{t("card.personal")}</span>
           </span>
           {" "}
           <span className={personalPulse} style={{ color: "#ff6d05", textShadow: "none" }}>
@@ -306,7 +325,7 @@ function ExperienceSplitBar({
                   : { border: "1px solid #ffd27d", opacity: 0.5 }
               }
             />
-            <span className={`text-fire-amber ${employmentPulse}`}>Employment</span>
+            <span className={`text-fire-amber ${employmentPulse}`}>{t("card.employment")}</span>
           </span>
           {" "}
           <span className={employmentPulse} style={{ color: "#ff6d05", textShadow: "none" }}>
@@ -354,9 +373,15 @@ const PROJECT_CATEGORY_BREAKDOWN = (() => {
 // AI 3, …"), in the legend's order, so the name contains the card's visible
 // text (WCAG 2.5.3). "System: 3 projects" said it in words the card does
 // not show.
-const PROJECT_CATEGORY_LEGEND = PROJECT_CATEGORY_BREAKDOWN.map(
-  (c) => `${c.label} ${c.count}`,
-).join(", ");
+//
+// Built per render now (issue #82): the category label and the join are the
+// reader's language, so it can no longer be a module constant. The labels are
+// localised exactly as the legend prints them, keeping the name and the
+// visible text in step in every locale.
+const projectCategoryLegend = (t, dataT) =>
+  PROJECT_CATEGORY_BREAKDOWN.map((c) =>
+    t("projectsCard.legendItem", { label: localizeCategory(c.label, dataT), count: c.count }),
+  ).join(t("changes.comma"));
 
 // Completed-projects category split bar — the "elite & complex" counterpart to
 // the years card's ExperienceSplitBar. Apportions the total project count
@@ -371,6 +396,8 @@ const PROJECT_CATEGORY_LEGEND = PROJECT_CATEGORY_BREAKDOWN.map(
 // documented on PercentCount above), so it re-fires on every viewport entry.
 function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
   const prefersReducedMotion = useReducedMotion();
+  const t = useTranslations("About");
+  const dataT = useDataT();
   const total = breakdown.reduce((sum, c) => sum + c.count, 0);
   if (total === 0) return null;
 
@@ -395,14 +422,18 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
   // they stay aria-hidden; this string is the ONLY place the category
   // breakdown — information not expressed in text anywhere else on the card —
   // reaches assistive tech.
+  //
+  // `s.label` stays the English category KEY (it is what `pulseCategories`
+  // and the per-device baseline compare against); only what is SHOWN or
+  // SPOKEN goes through `localizeCategory`.
   const categorySummary = segments
-    .map((s) => `${s.label}: ${s.count} ${s.count === 1 ? "project" : "projects"}`)
-    .join(", ");
+    .map((s) => t("projectsCard.srItem", { label: localizeCategory(s.label, dataT), count: s.count }))
+    .join(t("changes.comma"));
 
   return (
     <div className="mt-3 w-full">
       <span className="sr-only">
-        Completed projects by category — {categorySummary}.
+        {t("projectsCard.srSummary", { summary: categorySummary })}
       </span>
       <div
         aria-hidden="true"
@@ -414,7 +445,8 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
             key={s.label}
             className="absolute inset-y-0"
             style={{
-              left: `${s.left}%`,
+              // Logical edge so the bar fills from the reading start in RTL.
+              insetInlineStart: `${s.left}%`,
               background: s.color,
               // 8-digit hex: `73` ≈ 0.45 alpha, matching the 0.45 glow on the
               // years card's split segments.
@@ -474,7 +506,7 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
                     className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
                     style={{ background: s.color }}
                   />
-                  <span className={`text-fire-amber ${pulse}`}>{s.label}</span>
+                  <span className={`text-fire-amber ${pulse}`}>{localizeCategory(s.label, dataT)}</span>
                 </span>
                 {/* Word breaks (here and after the item): flex children, so
                     they render nothing, but without them the visible text
@@ -511,6 +543,15 @@ const AboutDetails = () => {
   // The most-active repo is now picked server-side by /api/github-stats, so the
   // hardcoded `repo` constant that used to live here is gone (issue #22).
   const username = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "MA1002643";
+  // Page copy (issue #82). `t` is also handed to the repo / stats diff
+  // builders inside `getGithubStats`, so the update banners speak the
+  // reader's language; `tx` words the years card.
+  const t = useTranslations("About");
+  const tx = useTranslations("Experience");
+  const dataT = useDataT();
+  // The paragraph's reveal units — see the note at the top of the file.
+  const architectChunks = useMemo(() => wordChunks(t("intro.paragraph")), [t]);
+  const architectSpaced = architectChunks.some((c) => c.gap === " ");
 
   // The two feature cards at the top of the page ("Projects shipped" / "Years in
   // the craft") sit on screen at scroll 0 — behind the full-screen intro loader.
@@ -651,7 +692,7 @@ const AboutDetails = () => {
   // name (the visual legend is decorative + aria-hidden and, being inside a
   // labelled button, would never be announced on its own). Empty string when
   // there's no split to read.
-  const experienceSplitLabel = buildSplitBreakdownLabel(experienceData);
+  const experienceSplitLabel = buildSplitBreakdownLabel(experienceData, tx);
   // One label builder for all three states, so a degraded payload can never be
   // announced with the `ready` sentence — which is exactly what it was being
   // given, complete with a zero it had withheld.
@@ -660,6 +701,7 @@ const AboutDetails = () => {
     counterValue: experienceCounterValue,
     counterUnit: experienceCounterUnit,
     splitLabel: experienceSplitLabel,
+    t: tx,
   });
 
   // Render the split bar when there's anything worth communicating: measured
@@ -887,7 +929,7 @@ const AboutDetails = () => {
       // Compute a human-readable diff for the repo card's update banner.
       // computeRepoDiff returns null on the first-ever change cycle (no prev),
       // suppressing a false-positive banner on the initial poll after load.
-      const repoMsg = computeRepoDiff(prevStats?.stats?.repo, data?.stats?.repo);
+      const repoMsg = computeRepoDiff(prevStats?.stats?.repo, data?.stats?.repo, t);
       if (repoMsg) setRepoDiffMessage(repoMsg);
 
       // Structured changed-field list for the repo card's heartbeat (which
@@ -910,7 +952,7 @@ const AboutDetails = () => {
       // `hasChanged` is false but `changedFields` still flips the card's
       // `isUpdated`). Clearing to null when stats didn't move this poll makes
       // the card correctly fall back to the generic banner.
-      const statsMsg = computeStatsDiff(prevStats?.stats?.stats, data?.stats?.stats);
+      const statsMsg = computeStatsDiff(prevStats?.stats?.stats, data?.stats?.stats, t);
       setStatsDiffMessage(statsMsg.hasChanged ? statsMsg.summaryMessage : null);
 
       // Stats that ROSE → heartbeat their label + number after the banner. Only
@@ -1362,7 +1404,7 @@ const AboutDetails = () => {
           className={" col-span-full lg:col-span-8 row-span-2 flex-col items-start"}
         >
           <h2
-            className="text-xl md:text-2xl text-left w-full capitalize mb-3"
+            className="text-xl md:text-2xl text-start w-full capitalize mb-3"
             style={{
               // Fluid heading (issue #25): overrides the utility base under
               // the scope; 1.5rem = the md:text-2xl anchor.
@@ -1379,7 +1421,7 @@ const AboutDetails = () => {
               textRendering: 'geometricPrecision',
             }}
           >
-            Architect of Enchantment
+            {t("intro.heading")}
           </h2>
           <p
             ref={paragraphRef}
@@ -1402,13 +1444,16 @@ const AboutDetails = () => {
                 'drop-shadow(0 0 4px rgba(255, 178, 60, 0.55)) drop-shadow(0 0 12px rgba(255, 73, 0, 0.35))',
             }}
           >
-            {ARCHITECT_WORDS.map((word, i) => (
+            {architectChunks.map(({ word }, i) => (
               <RevealWord
                 key={i}
                 index={i}
-                total={ARCHITECT_WORDS.length}
+                total={architectChunks.length}
                 progress={paragraphScrollProgress}
-                range={[i / ARCHITECT_WORDS.length, (i + 1) / ARCHITECT_WORDS.length]}
+                range={[i / architectChunks.length, (i + 1) / architectChunks.length]}
+                // Spaced scripts keep the old trailing space per word; unspaced
+                // ones (Chinese, Japanese) must not gain spaces between words.
+                gap={architectSpaced ? " " : ""}
               >
                 {word}
               </RevealWord>
@@ -1441,7 +1486,10 @@ const AboutDetails = () => {
           // a voice-control user says what they see ("projects shipped",
           // "view progress"), and a name that left those out could not be
           // spoken to.
-          aria-label={`Projects shipped: ${projectsData.length} completed projects. ${PROJECT_CATEGORY_LEGEND}. View progress: opens live project progress.`}
+          aria-label={t("projectsCard.ariaLabel", {
+            count: projectsData.length,
+            legend: projectCategoryLegend(t, dataT),
+          })}
           onClick={openProgressPopup}
           onKeyDown={handleProgressTriggerKeyDown}
           // Mirrors the "Years in the craft" card exactly: `!p-0` hands all
@@ -1499,7 +1547,7 @@ const AboutDetails = () => {
             <UpdateBanner
               message={projectCountBanner}
               visible={isCompletedProjectsInView}
-              srPrefix="Projects update: "
+              srPrefix={t("projectsCard.srPrefix")}
               // Only a real dismissal arms the pulse: if the message has already
               // cleared (ref === null) this exit is the auto-hide; if it's still
               // set, this exit is a scroll-out and must be ignored.
@@ -1517,7 +1565,7 @@ const AboutDetails = () => {
               className="abt-micro text-[10px] uppercase tracking-[0.22em] mb-2"
               style={{ color: "#ffaa2a", textShadow: "none" }}
             >
-              Projects shipped
+              {t("projectsCard.eyebrow")}
             </motion.p>
             {/* Word breaks between the card's stacked parts: block and flex
                 siblings, so nothing renders, but the visible text must read
@@ -1545,7 +1593,7 @@ const AboutDetails = () => {
                 flex` resolves identically. Zero visual difference. */}
             <motion.div
               variants={childVariants}
-              className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
+              className="flex items-center gap-2 font-semibold w-full text-start text-2xl sm:text-5xl"
               // Fluid figure: 3rem = the sm:text-5xl anchor; the 1.5rem floor
               // is the legacy mobile text-2xl, so phones never drop below
               // today's smallest rendering.
@@ -1557,7 +1605,7 @@ const AboutDetails = () => {
                 className="font-semibold text-base text-fire-amber"
                 style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
               >
-                completed projects
+                {t("projectsCard.unit", { count: projectsData.length })}
               </span>
             </motion.div>
 
@@ -1585,7 +1633,7 @@ const AboutDetails = () => {
               className="text-[11px] tracking-wide mt-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
               style={{ color: "#ffd27d", textShadow: "none", fontSize: fluidText(0.6875, 0.6875) }}
             >
-              View progress →
+              {t("projectsCard.viewProgress")}
             </p>
           </motion.div>
         </ItemLayout>
@@ -1685,7 +1733,7 @@ const AboutDetails = () => {
               className="abt-micro text-[10px] uppercase tracking-[0.22em] mb-2"
               style={{ color: "#ffaa2a", textShadow: "none" }}
             >
-              Years in the craft
+              {tx("card.eyebrow")}
             </motion.p>
             {" "}
 
@@ -1701,7 +1749,7 @@ const AboutDetails = () => {
               // "… of experience" text drift apart. Centering aligns them
               // consistently at every width — and matches the sibling
               // "Completed projects" card, which already uses items-center.
-              className="flex items-center gap-2 font-semibold w-full text-left text-2xl sm:text-5xl"
+              className="flex items-center gap-2 font-semibold w-full text-start text-2xl sm:text-5xl"
               // Fluid figure: 3rem = the sm:text-5xl anchor; the 1.5rem floor
               // is the legacy mobile text-2xl, so phones never drop below
               // today's smallest rendering.
@@ -1715,7 +1763,7 @@ const AboutDetails = () => {
                     className="font-semibold text-base text-fire-amber"
                     style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
                   >
-                    {experienceCounterUnit} of experience
+                    {tx("card.unit", { unit: experienceCounterUnit, count: experienceCounterValue })}
                   </span>
                 </>
               ) : experienceState === "degraded" ? (
@@ -1734,7 +1782,7 @@ const AboutDetails = () => {
                     className="font-semibold text-base text-fire-amber"
                     style={{ textShadow: "none", fontSize: fluidText(1, 0.875) }}
                   >
-                    experience unavailable
+                    {tx("card.unavailable")}
                   </span>
                 </>
               ) : (
@@ -1745,7 +1793,7 @@ const AboutDetails = () => {
                 // the layout stable and signals "still computing" instead
                 // of "the answer is zero". Once data arrives, the Counter
                 // takes over and animates 0 → value as before.
-                <span aria-label="Loading years of experience" className="animate-pulse">
+                <span aria-label={tx("card.loadingAria")} className="animate-pulse">
                   —
                 </span>
               )}
@@ -1783,7 +1831,7 @@ const AboutDetails = () => {
               className="text-[11px] tracking-wide mt-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300"
               style={{ color: "#ffd27d", textShadow: "none", fontSize: fluidText(0.6875, 0.6875) }}
             >
-              View breakdown →
+              {tx("card.viewBreakdown")}
             </p>
           </motion.div>
         </ItemLayout>

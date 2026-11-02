@@ -1,0 +1,15 @@
+{
+  "dialog": "Palet perintah",
+  "search": "Cari perintah",
+  "placeholder": "Ketik perintah atau tujuan…",
+  "list": "Perintah",
+  "empty": "Tidak ada yang cocok",
+  "sections": {
+    "navigate": "Navigasi",
+    "language": "Bahasa"
+  },
+  "keywords": {
+    "navigate": "pergi buka pindah menuju rute halaman navigasi go jump",
+    "language": "bahasa terjemahan terjemahkan lokal locale language translate"
+  }
+}

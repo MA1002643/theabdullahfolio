@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "経歴の全体像"
+  },
+  "identity": {
+    "role": "ソフトウェアエンジニア"
+  },
+  "downloadPdf": "PDFをダウンロード",
+  "sections": {
+    "experience": "職務経歴",
+    "education": "学歴",
+    "representation": "代表活動",
+    "skills": "スキル",
+    "projects": "主なプロジェクト"
+  },
+  "skillGroups": {
+    "languages": "言語",
+    "frameworks": "フレームワーク",
+    "libraries": "ライブラリ",
+    "tools": "ツール",
+    "software": "ソフトウェア"
+  },
+  "allProjects": "すべてのプロジェクト",
+  "asTimeline": "同じ経歴を時系列で見る"
+}

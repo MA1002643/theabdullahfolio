@@ -1,0 +1,58 @@
+{
+  "title": "NAPISZ DO MNIE",
+  "subtitle": "skontaktuj się",
+  "intro": "Wstąp do kręgu czarów i wpleć swoje słowa w tkaninę kosmosu. Niezależnie od tego, czy chcesz wyczarować współpracę, rozwikłać tajemnice, czy po prostu opowiedzieć historię przygody, każda wiadomość jest w tej krainie cennym zwojem. Skorzystaj z formularza poniżej, by wysłać swoje poselstwo przez eteryczną sieć, a potem nasłuchuj szeptu magii w odpowiedzi.",
+  "fields": {
+    "name": "Imię i nazwisko",
+    "email": "E-mail",
+    "subject": "Temat",
+    "message": "Wiadomość"
+  },
+  "validation": {
+    "nameRequired": "Imię i nazwisko są wymagane!",
+    "nameMin": "Imię i nazwisko powinny mieć co najmniej {min} znaków.",
+    "nameMax": "Imię i nazwisko powinny mieć co najwyżej {max} znaków.",
+    "emailRequired": "Adres e-mail jest wymagany!",
+    "emailMax": "Adres e-mail powinien mieć co najwyżej {max} znaków.",
+    "subjectRequired": "Temat jest wymagany!",
+    "subjectMax": "Temat powinien mieć co najwyżej {max} znaków.",
+    "messageRequired": "Wiadomość jest wymagana!",
+    "messageMin": "Wiadomość powinna mieć co najmniej {min} znaków.",
+    "messageMax": "Wiadomość powinna mieć co najwyżej {max} znaków."
+  },
+  "submit": {
+    "label": "WYŚLIJ!",
+    "ariaLabel": "Wyślij wiadomość",
+    "sending": "WYSYŁAM",
+    "sent": "WYSŁANO",
+    "held": "CZEKA"
+  },
+  "toast": {
+    "sent": "Wiadomość została wysłana!",
+    "savedOffline": "Zapisano — wyślemy ją, gdy tylko odzyskasz połączenie.",
+    "savedRetrying": "Zapisano — za chwilę ponowimy próbę…",
+    "failed": "Nie udało się wysłać wiadomości",
+    "heldSent": "{count, plural, one {Wstrzymana wiadomość została wysłana ✦} few {Wysłano # wstrzymane wiadomości ✦} many {Wysłano # wstrzymanych wiadomości ✦} other {Wysłano # wstrzymanej wiadomości ✦}}"
+  },
+  "status": {
+    "held": "Wstrzymana — wiadomość wyśle się sama, gdy tylko wrócisz do sieci.",
+    "offline": "Jesteś offline — wiadomość zostanie wstrzymana i wysłana automatycznie po odzyskaniu połączenia."
+  },
+  "errors": {
+    "name_required": "Imię i nazwisko są wymagane.",
+    "email_required": "Adres e-mail jest wymagany.",
+    "subject_required": "Temat jest wymagany.",
+    "message_required": "Wiadomość jest wymagana.",
+    "name_too_long": "Imię i nazwisko przekraczają maksymalną dozwoloną długość ({max} znaków).",
+    "email_too_long": "Adres e-mail przekracza maksymalną dozwoloną długość ({max} znaków).",
+    "subject_too_long": "Temat przekracza maksymalną dozwoloną długość ({max} znaków).",
+    "message_too_long": "Wiadomość przekracza maksymalną dozwoloną długość ({max, number, ::group-off} znaków).",
+    "invalid_characters": "Dane zawierają niedozwolone znaki.",
+    "invalid_email": "Nieprawidłowy format adresu e-mail.",
+    "undeliverable_email": "Ten adres e-mail nie istnieje lub nie może odbierać wiadomości.",
+    "disposable_email": "Jednorazowe adresy e-mail są niedozwolone.",
+    "too_large": "Treść żądania może mieć co najwyżej {max, number, ::group-off} bajtów",
+    "invalid_body": "Nieprawidłowa treść żądania",
+    "send_failed": "Nie udało się wysłać wiadomości"
+  }
+}

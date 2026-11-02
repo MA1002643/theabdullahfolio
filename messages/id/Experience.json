@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Tahun menekuni bidang ini",
+    "unit": "{unit, select, years {{count, plural, other {tahun pengalaman}}} other {{count, plural, other {bulan pengalaman}}}}",
+    "unavailable": "pengalaman tidak tersedia",
+    "loadingAria": "Memuat lama pengalaman",
+    "viewBreakdown": "Lihat rincian →",
+    "srPrefix": "Pembaruan pengalaman: ",
+    "personal": "Pribadi",
+    "employment": "Pekerjaan",
+    "splitUnavailable": "Tidak tersedia",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "Memuat ringkasan pengalaman",
+    "degraded": "Tahun menekuni bidang ini: pengalaman tidak tersedia (bagian GitHub dari ringkasan hilang atau tidak lengkap).{split} Lihat rincian: membuka rincian data yang tersedia.",
+    "ready": "Tahun menekuni bidang ini: {count, number, ::group-off}+ {unit, select, years {tahun} other {bulan}} pengalaman.{split} Lihat rincian: membuka rincian per kategori.",
+    "split": "Pribadi {personal}, Pekerjaan {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "tidak tersedia"
+  },
+  "modal": {
+    "eyebrow": "Sekilas perjalanan karier",
+    "title": "Pengalaman per kategori",
+    "close": "Tutup rincian pengalaman",
+    "personalProjects": "Proyek Pribadi",
+    "employment": "Pekerjaan",
+    "unavailable": "Tidak tersedia",
+    "unitWord": "{unit, select, years {{count, plural, other {tahun}}} other {{count, plural, other {bulan}}}}",
+    "totalUnavailable": "total tidak tersedia",
+    "totalUnit": "total {unit, select, years {thn} other {bln}}",
+    "ownedRepos": "{count, plural, other {<n></n> repositori milik sendiri}}",
+    "roles": "{count, plural, other {<n></n> peran}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ thn} other { bln}}",
+    "newestFirst": "Terbaru lebih dulu",
+    "showFewer": "Tampilkan lebih sedikit",
+    "showAll": "Tampilkan semua {count, number, ::group-off} repositori →",
+    "noRepos": "Belum ada repositori milik sendiri yang terdeteksi.",
+    "personalFailed": "Data proyek pribadi tidak dapat dimuat saat ini.",
+    "relativeDuration": "Durasi relatif",
+    "noRoles": "Belum ada peran rekayasa perangkat lunak yang terdeteksi.",
+    "employmentFailed": "Data pekerjaan tidak dapat dimuat saat ini."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, other {tahun}}} other {{count, plural, other {bulan}}}}",
+  "changes": {
+    "newRole": "Peran baru terdeteksi dari resume: {company}",
+    "years": "Lama pengalaman diperbarui: {from} → {to}",
+    "employment": "Pengalaman kerja diperbarui: +{count, number, ::group-off} {count, plural, other {bulan}}",
+    "newRepo": "Repositori baru terdeteksi: {name}",
+    "newRepos": "{count, number, ::group-off} {count, plural, other {repositori}} baru terdeteksi di GitHub",
+    "timeline": "Lini masa proyek pribadi diperbarui"
+  }
+}

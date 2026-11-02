@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "ویژگی‌های تازه به‌زودی منتشر می‌شوند. این وب‌سایت فعالانه در حال توسعه است.",
+    "shippingNone": "همین حالا {count, plural, one {# به‌روزرسانی} other {# به‌روزرسانی}} برای این وب‌سایت منتشر شد.",
+    "shippingOne": "همین حالا <bdi>#{number} {title}</bdi> منتشر شد.",
+    "shippingMany": "همین حالا <bdi>#{number} {title}</bdi> منتشر شد (و {more, number} مورد دیگر).",
+    "liveWithTop": "به‌روزرسانی زنده: هم‌اکنون تغییرات تازه در حال انتشار است — تمرکز فعلی روی <bdi>#{number} {title}</bdi>.",
+    "livePushes": "به‌روزرسانی زنده: هم‌اکنون تغییرات تازه‌ای برای این وب‌سایت منتشر می‌شود.",
+    "liveActive": "هم‌اکنون کار فعال در جریان است{hasTop, select, yes { — تمرکز فعلی روی <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "در حال کار فعال روی {count, plural, one {# وظیفه} other {# وظیفه}}{hasTop, select, yes { — تمرکز فعلی روی <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "کار روی {prs, plural, one {# PR} other {# PR}} و {issues, plural, one {# وظیفهٔ باز} other {# وظیفهٔ باز}} در جریان است{hasTop, select, yes { — تمرکز فعلی روی <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "کار روی {prs, plural, one {# PR} other {# PR}} در جریان است{hasTop, select, yes { — تمرکز فعلی روی <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "کار روی {issues, plural, one {# وظیفهٔ باز} other {# وظیفهٔ باز}} در جریان است{hasTop, select, yes { — تمرکز فعلی روی <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "کار روی این وب‌سایت در جریان است.",
+    "planning": "برنامه‌ریزی برای بهبودهای بعدی{hasTop, select, yes { — تمرکز فعلی روی <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "در حال کار روی {count, plural, one {# وظیفه} other {# وظیفه}} — تمرکز: <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "همین حالا منتشر شد",
+    "live": "توسعهٔ زنده در جریان است",
+    "inProgress": "کار در جریان است",
+    "planning": "برنامه‌ریزی برای بهبودهای بعدی",
+    "idle": "نگهداری مستمر"
+  },
+  "region": "وضعیت زندهٔ نگهداری",
+  "state": {
+    "shipping": "انتشار",
+    "live": "زنده",
+    "inProgress": "در حال انجام",
+    "planning": "برنامه‌ریزی",
+    "idle": "نگهداری"
+  },
+  "stateSpoken": {
+    "shipping": "انتشار",
+    "live": "زنده",
+    "inProgress": "در حال انجام",
+    "planning": "برنامه‌ریزی",
+    "idle": "نگهداری"
+  },
+  "pipeline": {
+    "planning": "طرح",
+    "inProgress": "ساخت",
+    "shipping": "انتشار",
+    "live": "زنده"
+  },
+  "legend": {
+    "title": "خط تحویل",
+    "srIdle": "خط تحویل. خارج از خط تحویل: پایش نگهداری.",
+    "srStage": "خط تحویل. مرحلهٔ فعلی: {stage}، مرحلهٔ {index} از {total}.",
+    "headingIdle": "نگهداری · خارج از خط تحویل",
+    "headingStage": "{stage} · مرحلهٔ {index} از {total}",
+    "maintenance": "نگهداری",
+    "offPipeline": "خارج از خط تحویل — پایش {count, plural, =0 {مخازن تحت رصد} other {# مخزن}}",
+    "meaning": {
+      "planning": "ایشوهای باز در صف و با دامنهٔ مشخص",
+      "inProgress": "کار فعال روی شاخه‌ها و PRها",
+      "shipping": "کارهای ادغام‌شده که در ۴۸ ساعت گذشته به «انجام‌شده» رفته‌اند",
+      "live": "کامیت یا به‌روزرسانی در ۲ ساعت گذشته"
+    }
+  },
+  "fields": {
+    "state": "وضعیت",
+    "focus": "تمرکز",
+    "focusPr": "تمرکز · PR",
+    "focusIssue": "تمرکز · ایشو",
+    "prs": "PRها",
+    "issues": "ایشوها",
+    "pushes24h": "پوش · ۲۴ ساعت",
+    "pushes": "پوش",
+    "activity": "فعالیت · {days} روز",
+    "sync": "همگام‌سازی",
+    "metered": "· محدودشده"
+  },
+  "metric": {
+    "prs": "PRهای فعال",
+    "issues": "ایشوهای باز",
+    "pushes": "پوش‌ها (۲۴ ساعت)",
+    "emptyPrs": "در پروژه‌های تحت رصد هیچ PR فعالی نیست.",
+    "emptyIssues": "هیچ ایشو بازی در پروژه‌های تحت رصد وجود ندارد.",
+    "emptyPushes": "در ۲۴ ساعت گذشته هیچ پوشی در پروژه‌های تحت رصد ثبت نشده است."
+  },
+  "popover": {
+    "breakdown": "جزئیات {metric}",
+    "summary": "{metric} · {count} در {projects, plural, one {# پروژه} other {# پروژه}}",
+    "heading": "<count></count> در {projects, plural, one {# پروژه} other {# پروژه}}",
+    "stale": "آخرین فعالیت شناخته‌شده نمایش داده می‌شود.",
+    "more": "+ {count} مورد دیگر در GitHub",
+    "openOnGitHub": "باز کردن در GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {پول‌ریکوست} other {ایشو}} #{number}",
+    "ariaOpen": "باز کردن {type, select, pr {پول‌ریکوست} other {ایشو}} #{number}: {title} در GitHub",
+    "stepped": "{type, select, pr {پول‌ریکوست} other {ایشو}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {فعال <age></age>} other {}}",
+    "monitoring": "رصد {count, plural, one {# مخزن} other {# مخزن}} — بدون مورد فعال برای تمرکز",
+    "monitoringNone": "رصد مخزن‌های تحت پیگیری"
+  },
+  "queue": {
+    "label": "صف تمرکز",
+    "hint": "مورد {index} از {count} · ← → برای جابه‌جایی",
+    "sr": "صف تمرکز با {count} مورد — کلیدهای جهت‌نمای چپ و راست برای جابه‌جایی"
+  },
+  "activity": {
+    "label": "ردپای کامیت‌ها",
+    "summary": "{total, plural, one {# کامیت} other {# کامیت}} · {days, plural, one {# روز} other {# روز}} گذشته{truncated, select, yes { (قدیمی‌ترین روزها کمتر از واقع شمارش شده‌اند)} other {}}"
+  },
+  "sync": {
+    "label": "آخرین همگام‌سازی",
+    "hint": "اطمینان {confidence} · هر {seconds} ثانیه یک‌بار بررسی{metered, select, yes { · اتصال محدود} other {}}",
+    "detail": "{hasLast, select, yes {آخرین همگام‌سازی {last} · } other {}}اطمینان سیگنال {confidence} · بررسی هر {seconds, plural, one {# ثانیه} other {# ثانیه}} یک‌بار{metered, select, yes { در حالت اتصال محدود} other {}}",
+    "stale": "قدیمی"
+  },
+  "announce": {
+    "status": "وضعیت: {state}.",
+    "focus": "تمرکز فعلی: {type, select, pr {پول‌ریکوست} other {ایشو}} {number}، {title}.",
+    "counts": "{prs, plural, one {# پول‌ریکوست فعال} other {# پول‌ریکوست فعال}}، {issues, plural, one {# ایشو باز} other {# ایشو باز}} و {pushes, plural, one {# پوش} other {# پوش}} در ۲۴ ساعت گذشته."
+  },
+  "error": {
+    "snapshot": "وضعیت زنده موقتاً در دسترس نیست. آخرین تصویر لحظه‌ای نمایش داده می‌شود.",
+    "fallback": "وضعیت زنده موقتاً در دسترس نیست. حالت جایگزین نگهداری نمایش داده می‌شود."
+  }
+}

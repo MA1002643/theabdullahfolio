@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "درباره من",
+    "subtitle": "من کیستم"
+  },
+  "intro": {
+    "heading": "معمار افسون",
+    "paragraph": "سفر من در دنیای توسعه وب با مجموعه‌ای از ابزارها و زبان‌های رازآلود پیش می‌رود و JavaScript هسته‌ی افسون‌های من است. فریم‌ورک‌هایی مانند React.js و Next.js را با دقت به کار می‌گیرم و پورتال‌هایی (وب‌سایت‌هایی) روان می‌سازم که قلمروها (کاربران) را در سراسر جهان دیجیتال به هم پیوند می‌دهند. هنرهای کهن Jamstack به من توان می‌دهد تجربه‌هایی سریع، امن و پویا بیافرینم، و مهارت‌های طراحی‌ام تضمین می‌کند هر آفریده‌ای نه‌فقط کارآمد، بلکه از نظر بصری هم مسحورکننده باشد. فراتر از افسون‌های دیدنی، از ماشین‌آلات پنهان هم مراقبت می‌کنم: APIها و پایگاه‌های داده‌ی پایدار (گاوصندوق‌هایی که حافظه‌ی هر قلمرو در آن‌ها محفوظ می‌ماند) را احضار می‌کنم و خط‌لوله‌های خودکاری می‌بافم که آفریده‌هایم را از کارگاه به ابر (اثیر بی‌کرانی که سرانجام در آن بیدار می‌شوند) می‌رسانند. عملکرد و دسترس‌پذیری را سوگندهایی مقدس می‌دانم، تا هر پورتال برای هر رهگذر، روی هر دستگاه و در هر گوشه‌ی دورافتاده‌ی قلمرو، به‌سرعت گشوده شود. کنجکاوی همچنان راست‌ترین قطب‌نمای من است و پیوسته مرا به سوی گریموارهای تازه، شهودی تیزتر و ایده‌هایی آن‌قدر جسور می‌کشاند که به تجربه‌هایی زنده و نفس‌کشنده بدل شوند. همراه من باشید تا افسون‌ها و فناوری‌های تازه را کشف کنم و آینده‌ی وب را شکل دهم."
+  },
+  "projectsCard": {
+    "eyebrow": "پروژه‌های تحویل‌شده",
+    "unit": "{count, plural, other {پروژه تکمیل‌شده}}",
+    "viewProgress": "مشاهده پیشرفت →",
+    "ariaLabel": "پروژه‌های تحویل‌شده: {count, number, ::group-off} پروژه تکمیل‌شده. {legend}. مشاهده پیشرفت: پیشرفت زنده‌ی پروژه‌ها را باز می‌کند.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "پروژه‌های تکمیل‌شده به تفکیک دسته — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, one {پروژه} other {پروژه}}",
+    "srPrefix": "به‌روزرسانی پروژه‌ها: "
+  },
+  "statsCard": {
+    "title": "آمار GitHub از {name}",
+    "defaultUser": "کاربر GitHub",
+    "live": "معیارهای زنده‌ی GitHub",
+    "rank": "رتبه",
+    "updated": "آمار GitHub به‌روز شد",
+    "srPrefix": "به‌روزرسانی آمار: ",
+    "metrics": {
+      "stars": "مجموع ستاره‌های دریافتی",
+      "commits": "مجموع کامیت‌ها (سال گذشته)",
+      "prs": "مجموع PRها",
+      "issues": "مجموع ایشوها",
+      "contributedTo": "مشارکت در (سال گذشته)"
+    }
+  },
+  "languagesCard": {
+    "title": "پرکاربردترین زبان‌ها",
+    "count": "{count, number, ::group-off} {count, plural, one {زبان} other {زبان}}",
+    "live": "زنده از GitHub",
+    "primary": "اصلی",
+    "percent": "<n></n>%",
+    "srPrefix": "به‌روزرسانی زبان‌ها: ",
+    "popover": {
+      "eyebrow": "تفکیک مخزن‌ها",
+      "ariaLabel": "مخزن‌هایی که از {language} استفاده می‌کنند",
+      "privateRepos": "{count, number, ::group-off} {count, plural, one {مخزن خصوصی} other {مخزن خصوصی}}"
+    }
+  },
+  "streakCard": {
+    "title": "تداوم مشارکت‌ها",
+    "subtitle": "فعالیت GitHub",
+    "srPrefix": "به‌روزرسانی تداوم: ",
+    "total": "مجموع مشارکت‌ها",
+    "current": "تداوم فعلی",
+    "longest": "طولانی‌ترین تداوم",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, one {روز} other {روز}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, one {روز} other {روز}}، {percent, number, ::group-off} درصد از طولانی‌ترین تداوم شما"
+  },
+  "repoCard": {
+    "badge": "فعال‌ترین مخزن",
+    "srPrefix": "به‌روزرسانی مخزن: ",
+    "metrics": {
+      "stars": "ستاره‌ها",
+      "forks": "فورک‌ها",
+      "mergedPrs": "PRهای ادغام‌شده",
+      "commits": "مجموع کامیت‌ها",
+      "lastPushed": "آخرین پوش"
+    },
+    "score": "امتیاز",
+    "activityScore": "امتیاز فعالیت"
+  },
+  "skillsCard": {
+    "title": "مهارت‌ها و فناوری‌ها",
+    "categories": {
+      "languages": "زبان‌ها",
+      "frameworks": "فریم‌ورک‌ها",
+      "libraries": "کتابخانه‌ها",
+      "tools": "ابزارها",
+      "software": "نرم‌افزارها"
+    },
+    "count": "<n></n> {count, plural, one {فناوری} other {فناوری}}",
+    "live": "زنده از GitHub",
+    "syncing": "در حال همگام‌سازی با GitHub…",
+    "noneDetected": "مهارتی شناسایی نشد",
+    "noneInRepos": "مهارتی در مخزن‌های شما شناسایی نشد",
+    "fetching": "در حال دریافت مهارت‌ها از GitHub…",
+    "srPrefix": "به‌روزرسانی مهارت‌ها: ",
+    "popover": {
+      "eyebrow": "استفاده‌شده در مخزن‌ها",
+      "ariaLabel": "مخزن‌هایی که از {name} استفاده می‌کنند",
+      "label": "مخزن‌ها:",
+      "publicSr": "{count, number, ::group-off} عمومی",
+      "privateSr": "{count, number, ::group-off} خصوصی",
+      "publicCount": "<n></n> عمومی",
+      "privateCount": "<n></n> خصوصی",
+      "slash": "/",
+      "allPrivate": "همه مخزن‌ها خصوصی هستند"
+    }
+  },
+  "progress": {
+    "eyebrow": "تله‌متری تحویل",
+    "title": "پیشرفت پروژه‌ها",
+    "close": "بستن پیشرفت پروژه‌ها",
+    "failed": "در حال حاضر اتصال به همگام‌سازی پیشرفت ممکن نیست.",
+    "retry": "تلاش دوباره",
+    "ringLineOne": "مورد برد",
+    "ringLineTwo": "انجام‌شده",
+    "percent": "<n></n>٪",
+    "itemsDone": "موارد انجام‌شده",
+    "ofTotal": "از {total, number, ::group-off}",
+    "boardsLive": "بردهای فعال",
+    "allProjects": "{count, plural, one {پروژه} other {پروژه}}",
+    "ofProjects": "از {total, number, ::group-off} پروژه",
+    "unavailable": "همگام‌سازی زنده در حال حاضر در دسترس نیست — ساختار پورتفولیو نمایش داده می‌شود؛ درصدها با نخستین به‌روزرسانی موفق بازمی‌گردند.",
+    "byCategory": "بر اساس دسته‌بندی",
+    "projectCount": "{count, number, ::group-off} پروژه",
+    "perProject": "به تفکیک پروژه",
+    "liveFrom": "زنده از GitHub Projects",
+    "footer": "همگام‌سازی خودکار از GitHub Projects · دو بار در روز",
+    "lastSync": "آخرین همگام‌سازی",
+    "awaiting": "در انتظار نخستین همگام‌سازی",
+    "row": {
+      "tracked": "{percent, number, ::group-off}٪ تکمیل‌شده، {done, number, ::group-off} مورد از {total, number, ::group-off} مورد برد انجام شده است",
+      "syncUnavailable": "همگام‌سازی پیشرفت در دسترس نیست",
+      "notTracked": "بدون پیگیری",
+      "ariaLabel": "{name}، {category}. {status}. نمایش یا پنهان‌کردن جزئیات برد.",
+      "syncUnavailableTag": "· همگام‌سازی در دسترس نیست",
+      "total": "مجموع",
+      "couldNotSync": "در حال حاضر همگام‌سازی این برد ممکن نشد — شمارش‌های زنده با به‌روزرسانی بعدی بازمی‌گردند.",
+      "noBoard": "هیچ بردی از GitHub به این پروژه متصل نشده است.",
+      "viewBoard": "مشاهده برد پروژه ←"
+    },
+    "age": {
+      "seconds": "{s} ثانیه پیش",
+      "minutes": "{m} دقیقه و {s} ثانیه پیش",
+      "hours": "{h} ساعت و {m} دقیقه پیش",
+      "days": "{d} روز و {h} ساعت پیش"
+    },
+    "columns": {
+      "todo": "برای انجام",
+      "backlog": "بک‌لاگ",
+      "ready": "آماده",
+      "inProgress": "در حال انجام",
+      "inReview": "در حال بازبینی",
+      "done": "انجام‌شده",
+      "noStatus": "بدون وضعیت",
+      "blocked": "مسدود",
+      "onHold": "در انتظار"
+    }
+  },
+  "wire": {
+    "present": "اکنون",
+    "noCurrent": "بدون توالی فعلی",
+    "noneFound": "توالی‌ای یافت نشد",
+    "noData": "بدون داده",
+    "notAvailable": "نامشخص",
+    "noDescription": "بدون توضیح",
+    "unknown": "نامشخص",
+    "span": "{start} تا {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "فعال‌ترین مخزن به «{name}» تغییر کرد",
+      "stars": "تعداد ستاره‌ها {amount, number, ::group-off} {direction, select, increased {افزایش} other {کاهش}} یافت (اکنون {total, number, ::group-off})",
+      "forks": "تعداد فورک‌ها {amount, number, ::group-off} {direction, select, increased {افزایش} other {کاهش}} یافت (اکنون {total, number, ::group-off})",
+      "commits": "{count, number, ::group-off} {count, plural, one {کامیت} other {کامیت}} جدید ارسال شد",
+      "mergedPrs": "{count, number, ::group-off} {count, plural, one {PR} other {PR}} ادغام شد",
+      "activityScore": "امتیاز فعالیت به اندازهٔ {amount, number, ::group-off} {direction, select, increased {افزایش یافت} other {کاهش یافت}} (اکنون {total, number, ::group-off})",
+      "language": "زبان اصلی به «{language}» تغییر کرد"
+    },
+    "stats": {
+      "stars": "مجموع ستاره‌ها {delta, number, ::sign-always group-off}",
+      "commits": "مجموع کامیت‌ها {delta, number, ::sign-always group-off}",
+      "prs": "مجموع PR‌ها {delta, number, ::sign-always group-off}",
+      "issues": "مجموع ایشوها {delta, number, ::sign-always group-off}",
+      "contributedTo": "مشارکت در {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "مجموع مشارکت‌ها {delta, number, ::sign-always group-off}",
+      "currentStreak": "توالی فعلی {delta, number, ::sign-always group-off}",
+      "longestStreak": "طولانی‌ترین توالی {delta, number, ::sign-always group-off}",
+      "currentDates": "بازهٔ توالی فعلی تغییر کرد",
+      "longestDates": "بازهٔ طولانی‌ترین توالی تغییر کرد"
+    },
+    "comma": "، ",
+    "languages": {
+      "addedOne": "{language} به زبان‌های برتر اضافه شد.",
+      "addedMany": "{count, number, ::group-off} {count, plural, one {زبان جدید} other {زبان جدید}} وارد فهرست برتر شد.",
+      "removedOne": "{language} از زبان‌های برتر خارج شد.",
+      "removedMany": "{count, number, ::group-off} {count, plural, one {زبان} other {زبان}} از فهرست برتر خارج شد.",
+      "percentage": "سهم {language} به اندازهٔ {delta, number, ::.0 group-off}% {direction, select, increased {افزایش یافت} other {کاهش یافت}}.",
+      "rank": "{language} به رتبهٔ #{rank, number, ::group-off} {direction, select, up {صعود کرد} other {نزول کرد}}."
+    },
+    "skills": {
+      "added": "افزوده‌شده: {items}",
+      "removed": "حذف‌شده: {items}",
+      "moved": "جابه‌جاشده: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, number, ::group-off} {delta, plural, one {پروژهٔ تکمیل‌شدهٔ جدید} other {پروژهٔ تکمیل‌شدهٔ جدید}} اضافه شد — اکنون {count, number, ::group-off}",
+      "updated": "پروژه‌های تکمیل‌شده به‌روزرسانی شد — اکنون {count, number, ::group-off}"
+    }
+  }
+}

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { createElement } from 'react';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ToolGrid from '@/components/uses/ToolGrid';
 import { usesData } from '@/app/data';
+import { renderWithIntl } from '../support/intl';
 import {
   METER_SEGMENTS,
   maxUsage,
@@ -77,7 +78,7 @@ afterEach(() => {
 });
 
 const mount = (groups) =>
-  render(createElement(ToolGrid, { groups, revealed: true, reduceMotion: true }));
+  renderWithIntl(createElement(ToolGrid, { groups, revealed: true, reduceMotion: true }));
 const cards = () => [...document.querySelectorAll('.uses-tool')];
 const card = (slug) => document.querySelector(`.uses-tool[data-slug="${slug}"]`);
 const figure = (slug) => card(slug).querySelector('.uses-tool__figure').textContent;

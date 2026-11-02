@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -18,7 +18,7 @@ import { ROUTES } from '@/lib/seo/site';
 // looks broken, and the wrong number is what gets served to crawlers, quoted
 // by assistants, and read aloud by screen readers.
 
-const HOME_PAGE = 'src/app/page.js';
+const HOME_PAGE = 'src/app/[locale]/(home)/page.js';
 const HOME_PAGE_PATH = path.join(process.cwd(), HOME_PAGE);
 
 /** Number words the prose could plausibly have hard-coded. */
@@ -46,8 +46,24 @@ function homeSummarySource() {
     `no sr-only <p> found in ${HOME_PAGE}; if the summary moved, ` +
       'point this guard at its new home rather than deleting it',
   ).not.toBe(null);
-  return match[1];
+  return { source, paragraph: match[1] };
 }
+
+// Since issue #82 the prose itself lives in the catalogue (`Home.summary`), and
+// the page hands it the count. So the guard now has two halves: the PAGE must
+// derive the value from projectsData, and the MESSAGE must take it as a
+// placeholder rather than spelling a number. Every other locale's catalogue is
+// checked the same way — a translation that typed "11" would go stale too.
+const catalogues = () =>
+  readdirSync(path.join(process.cwd(), 'messages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
+    .map((entry) => entry.name)
+    .flatMap((locale) => {
+      const file = path.join(process.cwd(), 'messages', locale, 'Home.json');
+      if (!existsSync(file)) return [];
+      const summary = JSON.parse(readFileSync(file, 'utf8')).summary;
+      return summary ? [[locale, summary]] : [];
+    });
 
 describe('project counts in prose are derived, not typed', () => {
   it('states the current count in the /projects description', () => {
@@ -61,24 +77,40 @@ describe('project counts in prose are derived, not typed', () => {
   });
 
   it("derives the count in the homepage's accessible summary", () => {
-    const summary = homeSummarySource();
+    const { source, paragraph } = homeSummarySource();
 
-    // The interpolation itself, so a future edit that "simplifies" it back to
-    // a word fails here rather than on a crawler's next visit.
+    // The paragraph renders the catalogue message and passes it a count...
     expect(
-      summary,
-      `${HOME_PAGE}'s sr-only summary no longer derives its project count ` +
-        'from projectsData — it must interpolate countWord(projectsData.length)',
-    ).toMatch(/\{countWord\(projectsData\.length\)[^}]*\}\s*projects/);
-
-    const hardCoded = summary.match(
-      new RegExp(`collects\\s+(${COUNT_WORDS}|\\d+)\\s+projects`, 'i'),
+      paragraph,
+      `${HOME_PAGE}'s sr-only summary must render the Home.summary message`,
+    ).toMatch(/t\.rich\(\s*'summary',\s*\{\s*count:\s*projectCount\b/);
+    // ...and that count is read from projectsData: the English word through
+    // countWord, every other locale as a formatted number. A future edit that
+    // "simplifies" either back to a literal fails here rather than on a
+    // crawler's next visit.
+    expect(
+      source,
+      `${HOME_PAGE} no longer derives the summary's project count from projectsData`,
+    ).toMatch(
+      /const projectCount =[\s\S]*?countWord\(projectsData\.length\)\.toLowerCase\(\)[\s\S]*?formatNumber\(projectsData\.length, locale\)/,
     );
-    expect(
-      hardCoded,
-      `${HOME_PAGE} hard-codes "${hardCoded?.[1]}" as the project count; ` +
-        'read it from projectsData instead',
-    ).toBe(null);
+  });
+
+  it('keeps the count a placeholder in every Home.summary catalogue', () => {
+    const found = catalogues();
+    expect(found.map(([locale]) => locale)).toContain('en');
+    for (const [locale, summary] of found) {
+      expect(summary, `messages/${locale}/Home.json summary lost its {count}`).toContain(
+        '{count}',
+      );
+      const hardCoded = summary.match(
+        new RegExp(`collects\\s+(${COUNT_WORDS}|\\d+)\\s+projects`, 'i'),
+      );
+      expect(
+        hardCoded,
+        `messages/${locale}/Home.json hard-codes "${hardCoded?.[1]}" as the project count`,
+      ).toBe(null);
+    }
   });
 
   it('keeps countWord free of imports, so both sides of the line can use it', () => {

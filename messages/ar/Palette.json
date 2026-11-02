@@ -1,0 +1,15 @@
+{
+  "dialog": "لوحة الأوامر",
+  "search": "البحث في الأوامر",
+  "placeholder": "اكتب أمرًا أو وجهة…",
+  "list": "الأوامر",
+  "empty": "لا توجد نتائج مطابقة",
+  "sections": {
+    "navigate": "التنقّل",
+    "language": "اللغة"
+  },
+  "keywords": {
+    "navigate": "انتقال اذهب تنقل صفحة مسار وجهة go page",
+    "language": "لغة ترجمة تغيير اللغة لغات language locale"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Informacja o prywatności",
+    "heading": "Prywatność",
+    "announce": "Na dole strony pojawiła się informacja o prywatności. Możesz zaakceptować lub odrzucić analitykę albo otworzyć preferencje.",
+    "body": "Ta strona zapisuje na Twoim urządzeniu odrobinę danych, by pamiętać Twoje preferencje, oraz — tylko za Twoją zgodą — zlicza, które strony są czytane. Bez reklamowych plików cookie, bez śledzenia, bez profilowania przez osoby trzecie. <link>Sprawdź, co to oznacza</link>.",
+    "accept": "Akceptuję",
+    "decline": "Odrzucam",
+    "preferences": "Preferencje"
+  },
+  "prefs": {
+    "title": "Wybory dotyczące prywatności",
+    "intro": "Dwie kategorie, bo tyle ich naprawdę jest. Pełne informacje znajdziesz na <link>stronie o prywatności</link>.",
+    "close": "Zamknij wybory dotyczące prywatności",
+    "alwaysOn": "Zawsze włączone",
+    "reloadNote": "Wyłączenie tej opcji przeładuje stronę — to jedyny sposób, by naprawdę wyładować skrypt, który przeglądarka już uruchomiła, zamiast zostawiać go w pamięci i grzecznie prosić, żeby przestał działać.",
+    "declineAll": "Odrzuć wszystko",
+    "acceptAnalytics": "Akceptuj analitykę",
+    "on": "Włączone",
+    "off": "Wyłączone",
+    "switchLabel": "Zezwól na anonimową analitykę"
+  },
+  "categories": {
+    "essential": {
+      "name": "Niezbędne",
+      "summary": "Zawsze włączone. Przechowywane na Twoim urządzeniu i używane wyłącznie po to, by strona działała dla Ciebie.",
+      "detail": "Strona zapamiętuje lokalnie kilka rzeczy, aby zachowywała się jak miejsce, które już znasz — niedokończona wiadomość przetrwa odświeżenie, intro odtwarza się raz, odrzucona wskazówka pozostaje odrzucona. Te dane są zapisywane w Twojej przeglądarce i odczytywane przez nią samą, a żadne z nich nie służą do rozpoznawania Cię. Dwie rzeczy opuszczają Twoje urządzenie. Wiadomość kontaktowa wysłana w trybie offline jest tu przechowywana do czasu powrotu sieci, a potem dostarczana do mnie jak każda inna wiadomość. Na stronie księgi gości wysyłany jest losowy identyfikator przypisany do karty, aby policzyć, kto jest tu teraz; nie jest on powiązany z Tobą, a serwer zapomina go w ciągu kilku minut. Niewysłane szkice nigdy nie są przesyłane."
+    },
+    "analytics": {
+      "name": "Analityka",
+      "summary": "Wyłączona, dopóki jej nie włączysz. Zlicza, które strony są czytane — nigdy kto je czyta.",
+      "detail": "Trzy skrypty pomiarowe, traktowane jako jedna decyzja, ponieważ odpowiadają na jedno pytanie: które strony warto zachować. Żaden z nich nie ustawia reklamowego pliku cookie, żaden nie buduje profilu i żaden nie jest w ogóle ładowany, dopóki nie powiesz „tak” — ani załadowany i bezczynny, ani załadowany i zablokowany. Przed podjęciem decyzji Twoja przeglądarka nie wysyła do żadnego z nich żadnego żądania."
+    }
+  },
+  "status": {
+    "heading": "Twój aktualny wybór",
+    "noScript": "Analityka nie działa. Przy wyłączonym JavaScript nie może działać.",
+    "allowed": "Anonimowa analityka jest dozwolona.",
+    "off": "Analityka jest wyłączona. Nic nie jest mierzone.",
+    "notAsked": "Nie zapytano Cię jeszcze, więc odpowiedź brzmi: nie.",
+    "decidedOn": "Decyzję podjęto dnia {date}.",
+    "stored": "Twoja decyzja jest zapisana na tym urządzeniu.",
+    "change": "Zmień"
+  }
+}

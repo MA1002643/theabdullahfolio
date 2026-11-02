@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Page introuvable",
+    "description": "Vous avez dérivé dans le vide. Cette page n’existe pas… pour l’instant."
+  },
+  "messages": {
+    "void": "Vous avez dérivé dans le vide.",
+    "dimension": "Cette page se trouve dans une autre dimension.",
+    "render": "Même mes talents en 3D n’ont pas réussi à afficher cette page.",
+    "vibes": "404 : page introuvable, mais la bonne humeur reste intacte.",
+    "edge": "Vous avez atteint les confins du portfolio."
+  },
+  "subtitle": "Cette page n’existe pas… pour l’instant.",
+  "didYouMean": "Vouliez-vous dire <link>{label}</link> ?",
+  "takeMeBack": "RAMENEZ-MOI",
+  "keyHint": "Appuyez sur {key} pour revenir à l’accueil"
+}

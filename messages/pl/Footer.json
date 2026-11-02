@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Indeks",
+    "elsewhere": "Gdzie indziej"
+  },
+  "siteNav": "Witryna",
+  "identity": {
+    "role": "Inżynier oprogramowania",
+    "statement": "Tworzę szybkie, przemyślane strony WWW z północy Anglii."
+  },
+  "availability": "Otwarty na nowe oferty",
+  "githubCta": {
+    "label": "Zobacz ten projekt w serwisie GitHub",
+    "newTab": "(otwiera się w nowej karcie)",
+    "commits": "{count, plural, one {<num>{formatted}</num> commit} other {<num>{formatted}</num> {count, plural, few {commity} other {commitów}}}}",
+    "pushed": "wysłano {when}"
+  },
+  "manifest": {
+    "departures": "Odloty",
+    "nowBoarding": "Wsiadanie",
+    "onTime": "Planowo",
+    "links": {
+      "about": {
+        "label": "O mnie",
+        "desc": "Kim jestem"
+      },
+      "journey": {
+        "label": "Droga",
+        "desc": "Dotychczasowa droga"
+      },
+      "qualifications": {
+        "label": "Kwalifikacje",
+        "desc": "Dyplomy i certyfikaty"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Pełny życiorys"
+      },
+      "projects": {
+        "label": "Projekty",
+        "desc": "Wybrane prace"
+      },
+      "uses": {
+        "label": "Narzędzia",
+        "desc": "Z czego korzystam"
+      },
+      "notes": {
+        "label": "Notatki",
+        "desc": "Dlaczego zbudowano to w ten sposób"
+      },
+      "contact": {
+        "label": "Kontakt",
+        "desc": "Przywitaj się"
+      },
+      "guestbook": {
+        "label": "Księga gości",
+        "desc": "Zostaw ślad"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "Profil na GitHub (otwiera się w nowej karcie)",
+    "linkedin": "Profil na LinkedIn (otwiera się w nowej karcie)",
+    "resume": "Przeczytaj pełne CV",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Czas lokalny w {town}: {time} {period}} other {Czas lokalny w {town}: {time}}}",
+    "placeLabel": "Lokalizacja: {town}",
+    "live": "NA ŻYWO"
+  },
+  "sound": {
+    "label": "Dźwięk",
+    "on": "Wł.",
+    "off": "Wył.",
+    "turnOn": "Włącz dźwięk gitary w stopce",
+    "turnOff": "Wyłącz dźwięk gitary w stopce",
+    "hoverLines": "Najedź na struny",
+    "nowPlaying": "Gra teraz — kojąca gitara",
+    "turnOnPrompt": "Włącz dźwięk, by usłyszeć kojącą gitarę"
+  },
+  "privacy": {
+    "policy": "Prywatność",
+    "choices": "Ustawienia prywatności"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/gdzie-indziej",
+    "cmd": {
+      "github": "otwórz github",
+      "linkedin": "otwórz linkedin",
+      "resume": "otwórz cv"
+    }
+  }
+}

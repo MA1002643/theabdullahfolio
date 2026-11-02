@@ -1,0 +1,28 @@
+{
+  "label": "语言",
+  "triggerLabel": "语言：{language}",
+  "searchLabel": "搜索语言",
+  "searchPlaceholder": "搜索 20 种语言…",
+  "noResults": "没有与“{query}”匹配的语言。",
+  "tier1": "第一级",
+  "tier2": "第二级",
+  "current": "当前",
+  "machineBadge": "机翻",
+  "machineBadgeLabel": "机器翻译",
+  "switching": "正在切换至{language}…",
+  "notice": {
+    "title": "机器翻译",
+    "body": "此译文由机器生成，尚未经母语人士审校。",
+    "cta": "建议更好的译文"
+  },
+  "suggestion": {
+    "region": "语言建议",
+    "message": "本站还提供{language}版本。",
+    "switch": "切换至{language}",
+    "dismiss": "保持{current}"
+  },
+  "englishOnly": {
+    "label": "仅以英文发布",
+    "body": "本文档仅以英文发布。导航和控件仍会使用你的语言。"
+  }
+}

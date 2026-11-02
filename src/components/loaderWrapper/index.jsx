@@ -11,6 +11,10 @@ import {
   useTransform,
 } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useLocale } from 'next-intl';
+import { usePathname } from '@/i18n/navigation';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
+import { formatNumber } from '@/i18n/format';
 import EmblemSeal from './EmblemSeal';
 import {
   BUILD_DURATION_MS,
@@ -27,7 +31,23 @@ import {
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
 export default function LoaderWrapper({ children }) {
-  const [showLoader, setShowLoader] = useState(true);
+  // The intro plays only when a visit ENTERS on the homepage. Measured on
+  // production (2026-10-31): a first visit straight to /qualifications put LCP
+  // at 4.6 s with the seal and 1.7 s without it on a fast desktop, because
+  // each sub-page's headline waits for the reveal (useLoaderRevealed). That
+  // visit is the one that sank the Speed Insights score (12.5 s LCP), and it is
+  // also the recruiter's path: a link to /cv should open the CV, not a 3 s
+  // ceremony in front of it. The homepage's LCP is its H1 at ~0.3 s whether
+  // the seal plays or not, so the intro costs it nothing.
+  //
+  // Read from the pathname on the FIRST render, so the server and the client
+  // agree and a sub-page never ships the overlay in its HTML at all. This
+  // wrapper lives in the root layout and survives client navigation, so the
+  // decision is per full page load: entering on /cv and then clicking Home
+  // does not replay it. next-intl's usePathname is locale-free, so /fr is `/`.
+  const pathname = usePathname();
+  const [enteredOnHome] = useState(() => pathname === '/');
+  const [showLoader, setShowLoader] = useState(enteredOnHome);
   // 'building' → 'built' → 'igniting' → 'reveal' → 'done'
   const [phase, setPhase] = useState('building');
   const [farthestCornerPx, setFarthestCornerPx] = useState(0);
@@ -37,6 +57,7 @@ export default function LoaderWrapper({ children }) {
   // matchMedia, so prefers-reduced-motion users get the simpler path even on
   // initial paint. Returns null during SSR; we treat that as "no preference".
   const prefersReducedMotion = useReducedMotion() ?? false;
+  const locale = useLocale();
 
   // Build progress is a motion value so the counter text can update without a
   // React re-render per frame; only the formatted integer goes through setState.
@@ -99,6 +120,10 @@ export default function LoaderWrapper({ children }) {
   // The four-beat timeline. Repeat visitors arriving from the same site skip
   // straight to the page.
   useEffect(() => {
+    // Entered on a sub-page: no overlay was rendered, so there is no timeline
+    // to run. It also leaves `loaderSeen` unwritten — this visitor has not
+    // seen the intro, and should get it the first time they land on `/`.
+    if (!enteredOnHome) return undefined;
     // Storage can throw when it's disabled or blocked (private mode, hardened
     // privacy settings, cross-origin iframes). A throw here would crash the
     // effect before the timeline starts and strand the overlay, so swallow it and
@@ -161,7 +186,7 @@ export default function LoaderWrapper({ children }) {
       controls.stop();
       timers.forEach(clearTimeout);
     };
-  }, [progress, prefersReducedMotion]);
+  }, [progress, prefersReducedMotion, enteredOnHome]);
 
   // Drive the radial wipe once the reveal beat begins.
   useEffect(() => {
@@ -272,7 +297,11 @@ export default function LoaderWrapper({ children }) {
                 animate={{ opacity: phase === 'building' ? 0.85 : 0 }}
                 transition={{ duration: 0.3 }}
               >
-                {displayProgress}%
+                {/* English keeps its literal "42%"; other locales get their own
+                    digits and percent sign ("٤٢٪", "42 %") from Intl (#82). */}
+                {locale === DEFAULT_LOCALE
+                  ? `${displayProgress}%`
+                  : formatNumber(Number(displayProgress) / 100, locale, { style: 'percent' })}
               </motion.div>
             </div>
           </motion.div>

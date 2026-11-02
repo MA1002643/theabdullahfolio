@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "मेरी यात्रा",
+    "subtitle": "पहली लाइन से प्रोडक्शन तक"
+  },
+  "timeline": {
+    "label": "यात्रा की टाइमलाइन"
+  },
+  "endCap": {
+    "est": "{year} से · BOLTON, UK",
+    "tally": "{years, plural, one {# वर्ष} other {# वर्ष}} · {entries, plural, one {# प्रविष्टि} other {# प्रविष्टियाँ}} · {tracks, plural, one {# ट्रैक} other {# ट्रैक}}",
+    "paper": "पेपर वर्ज़न →",
+    "paperHint": "PDF के रूप में CV (नए टैब में खुलता है)"
+  },
+  "spine": {
+    "now": "अभी"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# माह}}} one {# वर्ष{months, plural, =0 {} other { # माह}}} other {# वर्ष{months, plural, =0 {} other { # माह}}}}",
+    "tenureOngoing": "अब तक {tenure}",
+    "view": "देखें",
+    "viewLabel": "{title} देखें (नए टैब में खुलता है)"
+  },
+  "eraRail": {
+    "label": "टाइमलाइन के दौर",
+    "jump": "{year} पर जाएँ"
+  },
+  "atlas": {
+    "eyebrow": "ओवरलैप व्यू",
+    "title": "एटलस — तीन ट्रैक, एक घड़ी",
+    "live": {
+      "career": "{count, plural, one {# भूमिका} other {# भूमिकाएँ}}",
+      "education": "{count, plural, one {# डिग्री} other {# डिग्रियाँ}}",
+      "milestone": "{count, plural, one {# कम्युनिटी पोस्ट} other {# कम्युनिटी पोस्ट}}",
+      "separator": " + ",
+      "sentence": "आज चल रहा है: {parts}{total, plural, =1 {।} other { — एक साथ।}}"
+    },
+    "tracks": {
+      "all": "सभी",
+      "career": "करियर",
+      "education": "शिक्षा",
+      "milestone": "कम्युनिटी"
+    },
+    "chipsLabel": "एक ट्रैक हाइलाइट करें",
+    "zoom": {
+      "group": "ग्रिड ज़ूम",
+      "out": "ग्रिड ज़ूम आउट करें",
+      "outTitle": "ज़ूम आउट",
+      "in": "ग्रिड ज़ूम इन करें",
+      "inTitle": "ज़ूम इन",
+      "readoutLabel": "ग्रिड ज़ूम {pct}। रीसेट करके {full} करें",
+      "readoutTitle": "ग्रिड ज़ूम",
+      "resetTitle": "ज़ूम को {full} पर रीसेट करें",
+      "status": "ग्रिड ज़ूम {pct}"
+    },
+    "region": "ओवरलैप एटलस: एक समय-अक्ष पर समानांतर पट्टियों के रूप में हर भूमिका और कोर्स",
+    "entries": "{count, plural, one {# प्रविष्टि} other {# प्रविष्टियाँ}}",
+    "now": "अभी",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "{org} · {role}, {dates} पर जाएँ",
+    "spokenRange": "{start} से {end} तक",
+    "spokenOpen": "{start} से अब तक",
+    "key": {
+      "select": "किसी भी पट्टी को चुनकर सीधे वहाँ जाएँ।",
+      "dashed": "धारीदार किनारा = अब भी जारी।",
+      "stacked": "एक के ऊपर एक पट्टियाँ = एक साथ चल रही हैं।"
+    }
+  },
+  "palette": {
+    "section": "यात्रा",
+    "jumpYear": "{year} पर जाएँ",
+    "eraHint": "दौर",
+    "jumpAtlas": "ओवरलैप एटलस पर जाएँ",
+    "openCv": "CV खोलें (PDF)",
+    "openCvHint": "पेपर वर्ज़न"
+  }
+}

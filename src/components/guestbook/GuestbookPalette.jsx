@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import CommandPalette from '@/components/commandPalette/CommandPalette';
 import { routeActions, routesExcept } from '@/components/commandPalette/routes';
 import { usePageTransition } from '@/components/pageTransition/PageTransitionProvider';
@@ -24,6 +25,9 @@ export default function GuestbookPalette() {
   const router = useRouter();
   const { navigate } = usePageTransition();
   const prefs = useGuestbookPrefs();
+  // Labels, sections, hints and search keywords in the visitor's language
+  // (issue #82); the shared route jumps word themselves (commandPalette/routes).
+  const t = useTranslations('Guestbook');
 
   const actions = useMemo(() => {
     const go = (href, label) => {
@@ -34,16 +38,16 @@ export default function GuestbookPalette() {
     const list = [
       {
         id: 'leave-message',
-        label: 'Leave a message',
-        section: 'Guestbook',
-        keywords: 'write sign post compose',
+        label: t('palette.leaveMessage'),
+        section: t('palette.sectionGuestbook'),
+        keywords: t('palette.leaveKeywords'),
         perform: () => {
           const input = document.getElementById('guestbook-message');
           if (input) {
             input.scrollIntoView({ block: 'center' });
             input.focus();
           } else {
-            toast('Sign in to leave a message');
+            toast(t('palette.signInToLeave'));
           }
         },
       },
@@ -53,24 +57,24 @@ export default function GuestbookPalette() {
     if (GUESTBOOK_FLAGS.sound) {
       list.push({
         id: 'toggle-sound',
-        label: 'Toggle UI sounds',
-        hint: prefs.sound ? 'on' : 'off',
-        section: 'Preferences',
-        keywords: 'audio blip mute',
+        label: t('palette.toggleSound'),
+        hint: t(prefs.sound ? 'palette.on' : 'palette.off'),
+        section: t('palette.sectionPreferences'),
+        keywords: t('palette.soundKeywords'),
         perform: () => togglePref('sound'),
       });
     }
     list.push({
       id: 'toggle-motion',
-      label: 'Toggle motion',
-      hint: prefs.motion ? 'on' : 'off',
-      section: 'Preferences',
-      keywords: 'animation reduce still',
+      label: t('palette.toggleMotion'),
+      hint: t(prefs.motion ? 'palette.on' : 'palette.off'),
+      section: t('palette.sectionPreferences'),
+      keywords: t('palette.motionKeywords'),
       perform: () => togglePref('motion'),
     });
 
     return list;
-  }, [navigate, router, prefs.sound, prefs.motion]);
+  }, [navigate, router, prefs.sound, prefs.motion, t]);
 
   return <CommandPalette actions={actions} />;
 }

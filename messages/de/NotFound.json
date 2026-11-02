@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Seite nicht gefunden",
+    "description": "Du bist ins Nichts abgedriftet. Diese Seite gibt es nicht – noch nicht."
+  },
+  "messages": {
+    "void": "Du bist ins Nichts abgedriftet.",
+    "dimension": "Diese Seite befindet sich in einer anderen Dimension.",
+    "render": "Nicht einmal meine 3D-Kenntnisse konnten diese Seite rendern.",
+    "vibes": "404: Seite nicht gefunden, die Stimmung bleibt trotzdem makellos.",
+    "edge": "Du hast den Rand des Portfolios erreicht."
+  },
+  "subtitle": "Diese Seite gibt es nicht – noch nicht.",
+  "didYouMean": "Meintest du <link>{label}</link>?",
+  "takeMeBack": "ZURÜCK ZUR STARTSEITE",
+  "keyHint": "Drücke {key}, um zur Startseite zu gelangen"
+}

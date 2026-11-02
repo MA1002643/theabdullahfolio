@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "O MNIE",
+    "subtitle": "KIM JESTEM"
+  },
+  "intro": {
+    "heading": "Architekt Czarów",
+    "paragraph": "Moją drogę w tworzeniu stron internetowych napędza zestaw tajemnych narzędzi i języków, a sercem moich zaklęć jest JavaScript. Z precyzją władam frameworkami takimi jak React.js i Next.js, tworząc płynne portale (strony internetowe), które łączą królestwa (użytkowników) w cyfrowym uniwersum. Prastare sztuki Jamstacka pozwalają mi budować szybkie, bezpieczne i dynamiczne doświadczenia, a umiejętności projektowe sprawiają, że każde dzieło jest nie tylko funkcjonalne, ale i urzekające dla oka. Poza widocznymi czarami opiekuję się ukrytą maszynerią: przywołuję odporne API i bazy danych (skarbce, w których pamięć każdego królestwa spoczywa bezpiecznie) oraz tkam zautomatyzowane potoki, które niosą moje dzieła z warsztatu do chmury (bezkresnego eteru, w którym w końcu się budzą). Wydajność i dostępność traktuję jak święte śluby, by każdy portal otwierał się szybko dla każdego wędrowca, na dowolnym urządzeniu i w najdalszym zakątku królestwa. Ciekawość pozostaje moim najprawdziwszym kompasem, który wciąż wiedzie mnie ku nowym grimuarom, ostrzejszym instynktom i pomysłom dość odważnym, by stać się żywymi, oddychającymi doświadczeniami. Dołącz do mnie, gdy dalej odkrywam nowe zaklęcia i technologie, które ukształtują przyszłość internetu."
+  },
+  "projectsCard": {
+    "eyebrow": "Wydane projekty",
+    "unit": "{count, plural, one {ukończony projekt} few {ukończone projekty} many {ukończonych projektów} other {ukończonego projektu}}",
+    "viewProgress": "Zobacz postęp →",
+    "ariaLabel": "Wydane projekty: {count, number, ::group-off} {count, plural, one {ukończony projekt} few {ukończone projekty} many {ukończonych projektów} other {ukończonego projektu}}. {legend}. Zobacz postęp: otwiera postęp projektów na żywo.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "Ukończone projekty według kategorii — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, one {projekt} few {projekty} many {projektów} other {projektu}}",
+    "srPrefix": "Aktualizacja projektów: "
+  },
+  "statsCard": {
+    "title": "Statystyki GitHub użytkownika {name}",
+    "defaultUser": "Użytkownik GitHub",
+    "live": "Metryki GitHub na żywo",
+    "rank": "Ranga",
+    "updated": "Zaktualizowano statystyki GitHub",
+    "srPrefix": "Aktualizacja statystyk: ",
+    "metrics": {
+      "stars": "Zdobyte gwiazdki łącznie",
+      "commits": "Commity łącznie (ostatni rok)",
+      "prs": "PR-y łącznie",
+      "issues": "Zgłoszenia łącznie",
+      "contributedTo": "Wkład w projekty (ostatni rok)"
+    }
+  },
+  "languagesCard": {
+    "title": "Najczęściej używane języki",
+    "count": "{count, number, ::group-off} {count, plural, one {język} few {języki} many {języków} other {języka}}",
+    "live": "na żywo z GitHub",
+    "primary": "Główny",
+    "percent": "<n></n>%",
+    "srPrefix": "Aktualizacja języków: ",
+    "popover": {
+      "eyebrow": "Podział repozytoriów",
+      "ariaLabel": "Repozytoria używające języka {language}",
+      "privateRepos": "{count, number, ::group-off} {count, plural, one {prywatne repozytorium} few {prywatne repozytoria} many {prywatnych repozytoriów} other {prywatnego repozytorium}}"
+    }
+  },
+  "streakCard": {
+    "title": "Serie wkładu",
+    "subtitle": "Aktywność na GitHub",
+    "srPrefix": "Aktualizacja serii: ",
+    "total": "Wkład łącznie",
+    "current": "Obecna seria",
+    "longest": "Najdłuższa seria",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, one {dzień} few {dni} many {dni} other {dnia}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, one {dzień} few {dni} many {dni} other {dnia}}, {percent, number, ::group-off} procent Twojej najdłuższej serii"
+  },
+  "repoCard": {
+    "badge": "Najaktywniejsze repozytorium",
+    "srPrefix": "Aktualizacja repozytorium: ",
+    "metrics": {
+      "stars": "Gwiazdki",
+      "forks": "Forki",
+      "mergedPrs": "Scalone PR-y",
+      "commits": "Commity łącznie",
+      "lastPushed": "Ostatni push"
+    },
+    "score": "wynik",
+    "activityScore": "Wynik aktywności"
+  },
+  "skillsCard": {
+    "title": "Umiejętności i technologie",
+    "categories": {
+      "languages": "Języki",
+      "frameworks": "Frameworki",
+      "libraries": "Biblioteki",
+      "tools": "Narzędzia",
+      "software": "Oprogramowanie"
+    },
+    "count": "<n></n> {count, plural, one {technologia} few {technologie} many {technologii} other {technologii}}",
+    "live": "na żywo z GitHub",
+    "syncing": "Synchronizacja z GitHub…",
+    "noneDetected": "Nie wykryto umiejętności",
+    "noneInRepos": "Nie wykryto umiejętności w Twoich repozytoriach",
+    "fetching": "Pobieranie umiejętności z GitHub…",
+    "srPrefix": "Aktualizacja umiejętności: ",
+    "popover": {
+      "eyebrow": "Używane w repozytoriach",
+      "ariaLabel": "Repozytoria używające {name}",
+      "label": "Repozytoria:",
+      "publicSr": "{count, number, ::group-off} publicznych",
+      "privateSr": "{count, number, ::group-off} prywatnych",
+      "publicCount": "<n></n> publicznych",
+      "privateCount": "<n></n> prywatnych",
+      "slash": "/",
+      "allPrivate": "Wszystkie repozytoria są prywatne"
+    }
+  },
+  "progress": {
+    "eyebrow": "Telemetria realizacji",
+    "title": "Postęp projektów",
+    "close": "Zamknij postęp projektów",
+    "failed": "Nie udało się teraz połączyć z synchronizacją postępu.",
+    "retry": "Ponów synchronizację",
+    "ringLineOne": "zadania",
+    "ringLineTwo": "gotowe",
+    "percent": "<n></n>%",
+    "itemsDone": "Zrealizowane pozycje",
+    "ofTotal": "z {total, number, ::group-off}",
+    "boardsLive": "Aktywne tablice",
+    "allProjects": "{count, plural, one {projekt} few {projekty} many {projektów} other {projektu}}",
+    "ofProjects": "z {total, number, ::group-off} projektów",
+    "unavailable": "Synchronizacja na żywo jest teraz niedostępna — widać strukturę portfolio; wartości procentowe wrócą po następnym udanym odświeżeniu.",
+    "byCategory": "Według kategorii",
+    "projectCount": "{count, number, ::group-off} {count, plural, one {projekt} few {projekty} many {projektów} other {projektu}}",
+    "perProject": "Według projektu",
+    "liveFrom": "Na żywo z GitHub Projects",
+    "footer": "Automatyczna synchronizacja z GitHub Projects · dwa razy dziennie",
+    "lastSync": "Ostatnia synchronizacja",
+    "awaiting": "Oczekiwanie na pierwszą synchronizację",
+    "row": {
+      "tracked": "Ukończono {percent, number, ::group-off}%, gotowych pozycji tablicy: {done, number, ::group-off} z {total, number, ::group-off}",
+      "syncUnavailable": "synchronizacja postępu niedostępna",
+      "notTracked": "nieśledzony",
+      "ariaLabel": "{name}, {category}. {status}. Przełącz szczegóły tablicy.",
+      "syncUnavailableTag": "· synchronizacja niedostępna",
+      "total": "Razem",
+      "couldNotSync": "Nie udało się teraz zsynchronizować tej tablicy — bieżące wartości wrócą po następnym odświeżeniu.",
+      "noBoard": "Do tego projektu nie podłączono tablicy projektu GitHub.",
+      "viewBoard": "Zobacz tablicę projektu →"
+    },
+    "age": {
+      "seconds": "{s}s temu",
+      "minutes": "{m}m {s}s temu",
+      "hours": "{h}h {m}m temu",
+      "days": "{d}d {h}h temu"
+    },
+    "columns": {
+      "todo": "Do zrobienia",
+      "backlog": "Backlog",
+      "ready": "Gotowe do startu",
+      "inProgress": "W toku",
+      "inReview": "W przeglądzie",
+      "done": "Zrobione",
+      "noStatus": "Bez statusu",
+      "blocked": "Zablokowane",
+      "onHold": "Wstrzymane"
+    }
+  },
+  "wire": {
+    "present": "Obecnie",
+    "noCurrent": "Brak aktualnej serii",
+    "noneFound": "Nie znaleziono serii",
+    "noData": "Brak danych",
+    "notAvailable": "N/D",
+    "noDescription": "Brak opisu",
+    "unknown": "Nieznane",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "Najaktywniejsze repozytorium zmieniło się na „{name}”",
+      "stars": "Liczba gwiazdek {direction, select, increased {wzrosła} other {spadła}} o {amount, number, ::group-off} (obecnie {total, number, ::group-off})",
+      "forks": "Liczba forków {direction, select, increased {wzrosła} other {spadła}} o {amount, number, ::group-off} (obecnie {total, number, ::group-off})",
+      "commits": "Wypchnięto {count, number, ::group-off} {count, plural, one {nowy commit} few {nowe commity} many {nowych commitów} other {nowego commita}}",
+      "mergedPrs": "Scalono {count, number, ::group-off} {count, plural, one {PR} few {PR-y} many {PR-ów} other {PR-a}}",
+      "activityScore": "Wynik aktywności {direction, select, increased {wzrósł} other {spadł}} o {amount, number, ::group-off} (obecnie {total, number, ::group-off})",
+      "language": "Główny język zmieniono na „{language}”"
+    },
+    "stats": {
+      "stars": "Łącznie gwiazdek {delta, number, ::sign-always group-off}",
+      "commits": "Łącznie commitów {delta, number, ::sign-always group-off}",
+      "prs": "Łącznie PR {delta, number, ::sign-always group-off}",
+      "issues": "Łącznie zgłoszeń {delta, number, ::sign-always group-off}",
+      "contributedTo": "Wkład w projekty {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "Łączna liczba wkładów {delta, number, ::sign-always group-off}",
+      "currentStreak": "Obecna seria {delta, number, ::sign-always group-off}",
+      "longestStreak": "Najdłuższa seria {delta, number, ::sign-always group-off}",
+      "currentDates": "Zmieniły się daty obecnej serii",
+      "longestDates": "Zmieniły się daty najdłuższej serii"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language} trafia do czołówki języków.",
+      "addedMany": "{count, number, ::group-off} {count, plural, one {nowy język trafił} few {nowe języki trafiły} many {nowych języków trafiło} other {nowych języków trafiło}} do czołówki.",
+      "removedOne": "{language} wypada z czołówki języków.",
+      "removedMany": "{count, number, ::group-off} {count, plural, one {język wypadł} few {języki wypadły} many {języków wypadło} other {języka wypadło}} z czołówki.",
+      "percentage": "Udział {language} {direction, select, increased {wzrósł} other {spadł}} o {delta, number, ::.0 group-off}%.",
+      "rank": "{language} — {direction, select, up {awans} other {spadek}} na pozycję #{rank, number, ::group-off}."
+    },
+    "skills": {
+      "added": "Dodano: {items}",
+      "removed": "Usunięto: {items}",
+      "moved": "Przeniesiono: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "Dodano {delta, number, ::group-off} {delta, plural, one {nowy ukończony projekt} few {nowe ukończone projekty} many {nowych ukończonych projektów} other {nowego ukończonego projektu}} — łącznie {count, number, ::group-off}",
+      "updated": "Zaktualizowano ukończone projekty — łącznie {count, number, ::group-off}"
+    }
+  }
+}

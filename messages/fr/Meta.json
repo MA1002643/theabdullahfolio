@@ -1,0 +1,60 @@
+{
+  "siteName": "Muhammad Abdullah",
+  "titleTemplate": "%s · Muhammad Abdullah",
+  "homeCardAlt": "Muhammad Abdullah — Ingénieur logiciel. Carte sombre aux tons de braise avec le sceau de Muhammad Abdullah et l'état du portfolio en direct.",
+  "homeSquareCardAlt": "Muhammad Abdullah — Ingénieur logiciel. Carte carrée sombre aux tons de braise avec le sceau de Muhammad Abdullah et l'état du portfolio en direct.",
+  "routes": {
+    "home": {
+      "title": "Muhammad Abdullah — Ingénieur logiciel",
+      "description": "Ingénieur logiciel à Bolton, je conçois des applications web rapides et réfléchies avec Next.js, React et TypeScript. Projets, diplômes et certifications, et les outils qui les sous-tendent."
+    },
+    "about": {
+      "title": "À propos",
+      "description": "L'ingénieur derrière la braise — son parcours, sa stack et la télémétrie GitHub en direct de ce qui se construit en ce moment."
+    },
+    "cv": {
+      "title": "CV",
+      "description": "Le parcours complet — chaque poste, chaque diplôme et chaque projet livré, en HTML. Rédigé à partir des mêmes données que la frise chronologique, avec le PDF à portée de clic."
+    },
+    "notes": {
+      "title": "Notes",
+      "description": "Des registres de décisions d'ingénierie : pourquoi chaque choix a été fait sur ce site, quelles alternatives ont été écartées et ce que chacun a coûté."
+    },
+    "projects": {
+      "title": "Projets",
+      "description": "{countWord} réalisations — web, systèmes, mobile et IA — chacune suivie en direct depuis son propre tableau GitHub, avec la stack et l'état d'avancement sur chaque carte."
+    },
+    "qualifications": {
+      "title": "Diplômes et certifications",
+      "description": "Diplômes, certificats et accréditations professionnelles : les justificatifs vérifiés derrière la pratique, chaque certificat pouvant être consulté."
+    },
+    "journey": {
+      "title": "Parcours",
+      "description": "Chaque poste, diplôme et mission de bénévolat réunis dans une seule frise chronologique à faire défiler — du Bolton College en 2018 à la mise en production de logiciels aujourd'hui."
+    },
+    "uses": {
+      "title": "Outils",
+      "description": "La machine, l'établi, la stack et la chaîne de livraison : chaque outil de cette page est vérifié par rapport aux dépôts et au build qui le livre."
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "Engagez la conversation à propos d'un poste ou d'un projet — un formulaire de contact qui affine votre message pendant que vous l'écrivez et ne perd jamais un brouillon."
+    },
+    "myPast": {
+      "title": "Mon passé",
+      "description": "Le portfolio de l'époque universitaire où tout a commencé — conçu à la main en HTML, CSS et JavaScript pur, laissé en ligne comme un honnête « avant »."
+    },
+    "guestbook": {
+      "title": "Livre d'or",
+      "description": "Laissez votre empreinte sur le mur — un tableau de messages néon signé par les visiteurs via GitHub ou Google, avec présence en direct et réactions."
+    },
+    "privacy": {
+      "title": "Confidentialité",
+      "description": "Chaque cookie, clé de stockage et service tiers utilisé par ce site, la raison de leur présence et la façon de désactiver ceux qui sont facultatifs. Audité, pas copié d'un modèle."
+    }
+  },
+  "notFound": {
+    "title": "404 — Page introuvable",
+    "description": "Vous vous êtes égaré dans le vide. Cette page n'existe pas… pour l'instant."
+  }
+}

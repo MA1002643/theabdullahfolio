@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Gönderilmemiş mesajın geri yüklendi",
+    "keep": "Tut",
+    "clear": "Temizle"
+  },
+  "refine": {
+    "affordance": "Mesajımı düzelt",
+    "panelLabel": "Önerilen yeniden yazım",
+    "polishing": "Düzenleniyor…",
+    "announcePolishing": "Mesajın düzenleniyor…",
+    "announceReady": "Önerilen yeniden yazım hazır.",
+    "announceError": "Mesaj düzenlenemedi.",
+    "use": "Bunu kullan",
+    "again": "Yeniden düzenle",
+    "discard": "Vazgeç",
+    "retry": "Tekrar dene",
+    "dismiss": "Kapat",
+    "cancel": "İptal",
+    "errors": {
+      "unconfigured": "Mesaj düzenleme şu anda kullanılamıyor.",
+      "unavailable": "Mesaj düzenleme şu anda kullanılamıyor.",
+      "rate_limited": "Çok fazla istek var — birazdan tekrar dene.",
+      "too_large": "İstek çok büyük.",
+      "bad_request": "Geçersiz istek.",
+      "too_short": "Önce biraz daha yaz, sonra ben düzenleyebilirim.",
+      "too_long": "Bu mesaj düzenlenemeyecek kadar uzun.",
+      "budget": "Mesaj düzenleme şu anda duraklatıldı.",
+      "failed": "Mesaj düzenlenemedi. Lütfen tekrar dene."
+    }
+  }
+}

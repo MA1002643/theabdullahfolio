@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "NOTITIES",
+    "subtitle": "beslissingen, vastgelegd",
+    "intro": "Elke niet-vanzelfsprekende beslissing achter deze site is vastgelegd: de gemaakte keuze, de afgewezen alternatieven en wat elk daarvan kostte. Dit zijn de werkdocumenten uit de repository, hier getoond in plaats van verstopt in de bestandsstructuur.",
+    "lines": "{count, plural, one {regel} other {regels}}"
+  },
+  "note": {
+    "title": "NOTITIE",
+    "breadcrumb": "Kruimelpad",
+    "allNotes": "Alle notities",
+    "source": "Bron: {source} · {count, plural, one {{n} regel} other {{n} regels}}"
+  }
+}

@@ -48,6 +48,8 @@ npm run dev      # Start the Next.js dev server (Turbopack disabled by default)
 npm run lint     # Run ESLint over src/
 npm run build    # Production build — ALWAYS run before opening a PR
 npm run start    # Serve the production build locally
+npm run i18n:audit       # Check every translation catalogue against English (CI runs this)
+npm run i18n:translate   # Machine-translate missing or outdated strings (see Translations below)
 ```
 
 ## Branch naming
@@ -157,6 +159,102 @@ A PR is ready to merge when:
 - For API routes: hit the endpoint directly with `curl` or in the browser
   network tab; verify the response shape and status code.
 - Verify all three breakpoints noted above for any UI change.
+
+## Translations
+
+The site is published in English and in every language listed in
+`src/i18n/locales.js` ([#82](https://github.com/MA1002643/theabdullahfolio/issues/82)).
+English is the source. Every other language launched **machine-translated**
+and shows a notice saying so until a native speaker has reviewed it. If you
+have been invited to review a language, this is the workflow.
+
+### Where the words live
+
+```text
+messages/
+├── en/<Namespace>.json      # English, the source (one file per page or component)
+├── <code>/<Namespace>.json  # one directory per language (ar, ja, es, ...)
+├── _notes/<Namespace>.json  # context for translators, keyed by the message's dotted path
+└── .i18n-lock.json          # which English each translation was made from (generated)
+```
+
+- **Edit only `messages/<code>/`** for your language. Do not edit
+  `messages/en/Data.json` by hand: it is generated from `src/app/data.js` by
+  `npm run i18n:data`.
+- **Read `messages/_notes/` first.** A note says where a string appears, how
+  much room it has, and what must stay as it is. For example: a label that sits
+  in a narrow pill, a heading set in capitals, or a tag that becomes a link.
+- **Never edit `messages/.i18n-lock.json` by hand.** It records a hash of the
+  English each translation was made from. That is how the audit knows a
+  translation is outdated, and how the translation script knows to leave your
+  edits alone.
+
+### The rules a translation must keep
+
+Messages use [ICU MessageFormat](https://formatjs.github.io/docs/core-concepts/icu-syntax/).
+`npm run i18n:audit` fails on any of these, and so does CI:
+
+- **Placeholders** keep their names exactly: `{count}`, `{title}`. You may move
+  them to suit the grammar, but never translate the name inside the braces.
+- **Rich-text tags** keep the same names: in `<link>read the notes</link>`,
+  translate the words and leave `<link>` and `</link>` as they are.
+- **Plurals** (`{count, plural, one {…} other {…}}`) use *your* language's
+  plural categories: Arabic has `zero one two few many other`, Russian and
+  Polish `one few many other`, and Japanese only `other`. Every plural must
+  keep an `other` branch, and each branch must carry the same tags as `other`.
+- **Selects** (`{state, select, open {…} closed {…} other {…}}`) keep exactly the
+  same branch keys. Translate only the text inside each branch.
+- A literal brace is written `'{'` and `'}'`. Do not add `<` or `>` characters.
+- **Never translate** names and brands: Muhammad Abdullah, ma.codes, GitHub,
+  Next.js, React, project names, organisation names. Code, file names, URLs,
+  email addresses, keyboard keys and version numbers stay as they are.
+- Use your language's own punctuation (`،` `؟` `。` `、` `«»`) and keep symbols
+  such as `→`, `·`, `—` and `%`.
+
+### Reviewing a language
+
+1. Branch off `main` following the naming pattern above (for example
+   `chore/<issue#>-review-ar`).
+2. Edit `messages/<code>/*.json`. Read each page in the browser as you go
+   (`npm run dev`, then `http://localhost:3000/<code>/about`), because a string
+   that reads well in a file can still overflow its button.
+3. When the whole language has been reviewed, change its `status` from
+   `'machine'` to `'reviewed'` in `src/i18n/locales.js`, in the same PR. That is
+   the only thing that removes the machine-translation notice. Do not change it
+   for a partial review.
+4. Run `npm run i18n:audit`. It must report 0 errors. A warning that text is
+   identical to English is fine when it is correct, for a brand name or "CV".
+5. Open the PR with the label **`i18n:locale-<code>`**. The maintainer reviews
+   layout rather than language: right-to-left languages are checked at the
+   three breakpoints above.
+
+### Running the machine pass (maintainer)
+
+When English copy changes, every other language needs the new strings:
+
+```bash
+npm run i18n:data                              # only if src/app/data.js changed
+npm run i18n:translate -- --dry-run            # how many strings would be sent; needs no key
+npm run i18n:translate                         # every language, only what is missing or changed
+npm run i18n:translate -- --locale ar,ja       # just these languages
+npm run i18n:translate -- --ns Home            # just this namespace
+npm run i18n:audit
+```
+
+The script needs `AI_GATEWAY_API_KEY` in `.env.local`, or the
+`VERCEL_OIDC_TOKEN` that `vercel env pull` provides. Set it in `.env.local`
+only, never in a committed file. It sends only strings that are missing, or
+whose English has changed since they were translated, so a reviewer's edit to a
+string whose English has not changed is never overwritten. Two exceptions:
+`--force` retranslates everything it selects, and a string whose **English**
+changes is retranslated by machine even in a reviewed language. After that,
+ask the language's reviewer to check the changed strings. Every response is
+checked against the English ICU structure and retried if it breaks a rule
+above. Other options (`--model`, `--batch`, `--concurrency`) are read at the
+top of `scripts/i18n-translate.mjs`.
+
+The full runbook, including how to add a language, is §10 *Translations* of
+[`docs/seo.md`](docs/seo.md).
 
 ## Questions
 

@@ -72,6 +72,10 @@ export const EVENTS = Object.freeze({
   USES_LINK_OUT: 'uses_link_out',
   SOUND_TOGGLE: 'sound_toggle',
   SCROLL_DEPTH: 'scroll_depth',
+  // Issue #82: which languages visitors actually choose, and from where (the
+  // homepage tile, the footer, the palette, the suggestion). The evidence for
+  // which machine-translated locales most deserve a native review first.
+  LOCALE_SWITCH: 'locale_switch',
 });
 
 // The wire names, as a Set, for the O(1) membership check in `trackEvent` and
@@ -102,6 +106,7 @@ export const EVENT_PARAMS = Object.freeze({
   [EVENTS.USES_LINK_OUT]: ['tool_name'],
   [EVENTS.SOUND_TOGGLE]: ['state'],
   [EVENTS.SCROLL_DEPTH]: ['route', 'percent'],
+  [EVENTS.LOCALE_SWITCH]: ['from', 'to', 'source'],
 });
 
 /**

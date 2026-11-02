@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "正在播放",
+  "lastPlayed": "上次播放",
+  "cardLabel": "{state, select, playing {正在播放} other {上次播放}}：{artist} 的《{title}》。",
+  "cardLabelLink": "{state, select, playing {正在播放} other {上次播放}}：{artist} 的《{title}》。在 Spotify 中打开。",
+  "openOnSpotify": "在 Spotify 中打开"
+}

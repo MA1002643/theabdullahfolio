@@ -9,6 +9,11 @@ import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { roleKey } from "@/hooks/useExperienceSummary";
 import { experienceSourceAvailability } from "@/utils/experience/experiencePresentation";
 import { claimEscape } from "@/lib/escapeKey";
+import { useLocale, useTranslations } from "next-intl";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
+import { intlTag } from "@/i18n/format";
+import { useDirection } from "@/i18n/useDirection";
+import { useAboutDigits } from "./aboutI18n";
 
 // ── Scroll-reveal cascade — the SAME entrance the Repository Breakdown / Used in
 // Repositories popovers use (sections slide up, list rows slide in from the left,
@@ -23,10 +28,11 @@ const revealListContainer = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.06 } },
 };
-const revealRow = {
-  hidden: { opacity: 0, x: -16 },
+// Rows slide in from the reading-start edge: `sign` is -1 in RTL (issue #82).
+const revealRowFor = (sign) => ({
+  hidden: { opacity: 0, x: -16 * sign },
   visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: "easeOut" } },
-};
+});
 // Reduced-motion no-op for every reveal variant above.
 const revealNoMotion = {
   hidden: { opacity: 1, x: 0, y: 0 },
@@ -96,28 +102,30 @@ function AnimatedNumber({ value }) {
   const nodeRef = useRef(null);
   const sectionRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
+  // Reader's digits (issue #82); English is the old String / toFixed(0).
+  const digits = useAboutDigits();
   const { playToken } = useViewportCountTrigger(sectionRef, { amount: 0.3 });
 
   useEffect(() => {
     const node = nodeRef.current;
     if (!node) return;
     if (prefersReducedMotion) {
-      node.textContent = String(value);
+      node.textContent = digits.int(value);
       return;
     }
     if (playToken === 0) return;
     const controls = animate(0, value, {
       duration: 1.2,
       onUpdate: (v) => {
-        node.textContent = v.toFixed(0);
+        node.textContent = digits.fixed(v, 0);
       },
     });
     return () => controls.stop();
-  }, [value, playToken, prefersReducedMotion]);
+  }, [value, playToken, prefersReducedMotion, digits]);
 
   return (
     <span ref={sectionRef} className="inline-block tabular-nums">
-      <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>
+      <span ref={nodeRef}>{digits.int(prefersReducedMotion ? value : 0)}</span>
     </span>
   );
 }
@@ -129,12 +137,13 @@ function AnimatedNumber({ value }) {
 // animation cleanly without a manual reset. Reduced motion lands on
 // the final value with no animation.
 function CategoryCount({ months, unavailable = false }) {
+  const t = useTranslations("Experience");
+  const digits = useAboutDigits();
   const value = months >= 12 ? Math.floor(months / 12) : months;
-  // Singular when the count is exactly 1, matching RoleBar's plural-
-  // aware rendering. Without this the 12–23-month window reads "1+
-  // years" — the same window RoleBar correctly prints as "1+ year".
-  const baseUnit = months >= 12 ? "year" : "month";
-  const unit = value === 1 ? baseUnit : `${baseUnit}s`;
+  // Singular when the count is exactly 1 — an ICU plural now (issue #82), so
+  // the 12–23-month window reads "1+ year" in English and the right form in
+  // every other language.
+  const unitValues = { count: value, unit: months >= 12 ? "years" : "months" };
   const nodeRef = useRef(null);
   const sectionRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
@@ -145,18 +154,18 @@ function CategoryCount({ months, unavailable = false }) {
     const node = nodeRef.current;
     if (!node) return;
     if (prefersReducedMotion) {
-      node.textContent = String(value);
+      node.textContent = digits.int(value);
       return;
     }
     if (playToken === 0) return;
     const controls = animate(0, value, {
       duration: 1.2,
       onUpdate: (v) => {
-        node.textContent = v.toFixed(0);
+        node.textContent = digits.fixed(v, 0);
       },
     });
     return () => controls.stop();
-  }, [value, playToken, prefersReducedMotion, unavailable]);
+  }, [value, playToken, prefersReducedMotion, unavailable, digits]);
 
   // A `null` source (failed to load) reads as "Unavailable", never "0+
   // years" — same distinction the about-page split bar draws. A parsed-
@@ -165,24 +174,24 @@ function CategoryCount({ months, unavailable = false }) {
   if (unavailable) {
     return (
       <span className="text-base sm:text-lg italic text-fire-amber opacity-70">
-        Unavailable
+        {t("modal.unavailable")}
       </span>
     );
   }
 
   return (
     <span ref={sectionRef} className="inline-flex items-baseline gap-1 tabular-nums">
-      <span className="sr-only">{`${value}+ ${unit}`}</span>
+      <span className="sr-only">{t("duration", unitValues)}</span>
       <span
         aria-hidden="true"
         className="text-2xl sm:text-3xl font-semibold"
         style={{ color: "#ff6d05", textShadow: "none" }}
       >
-        <span ref={nodeRef}>{prefersReducedMotion ? value : 0}</span>
+        <span ref={nodeRef}>{digits.int(prefersReducedMotion ? value : 0)}</span>
         <span>+</span>
       </span>
       <span aria-hidden="true" className="text-sm sm:text-base text-fire-amber">
-        {unit}
+        {t("modal.unitWord", unitValues)}
       </span>
     </span>
   );
@@ -205,6 +214,7 @@ function CategoryCount({ months, unavailable = false }) {
 // headline and leaving this would have moved the false number rather than
 // removing it.
 function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false }) {
+  const t = useTranslations("Experience");
   const prefersReducedMotion = useReducedMotion();
   const total = personalMonths + employmentMonths;
   // Rendering nothing is the EMPTY answer — "there is no experience to draw" —
@@ -236,7 +246,7 @@ function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false
   const employmentDash = (employmentSweep / 360) * circumference;
 
   const totalValue = total >= 12 ? Math.floor(total / 12) : total;
-  const totalUnit = total >= 12 ? "yrs" : "mo";
+  const totalUnit = total >= 12 ? "years" : "months";
 
   const arcInitial = prefersReducedMotion
     ? { strokeDasharray: undefined }
@@ -279,7 +289,7 @@ function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false
             —
           </span>
           <span className="text-[10px] uppercase tracking-[0.18em] text-fire-amber mt-1">
-            total unavailable
+            {t("modal.totalUnavailable")}
           </span>
         </div>
       </div>
@@ -367,7 +377,7 @@ function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false
           <AnimatedNumber value={totalValue} />+
         </span>
         <span className="text-[10px] uppercase tracking-[0.18em] text-fire-amber mt-1">
-          total {totalUnit}
+          {t("modal.totalUnit", { unit: totalUnit })}
         </span>
       </div>
     </div>
@@ -384,6 +394,8 @@ function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false
 // is the dialog scroller, threaded through from the parent so this
 // detail stays local to the modal.
 function RoleBar({ role, maxMonths, index, containerRef, pulse = false }) {
+  const t = useTranslations("Experience");
+  const { sign } = useDirection();
   const prefersReducedMotion = useReducedMotion();
   const pct = maxMonths > 0 ? Math.max(4, (role.months / maxMonths) * 100) : 0;
   // Heartbeat the role name + company + duration digit when this role was just
@@ -404,18 +416,25 @@ function RoleBar({ role, maxMonths, index, containerRef, pulse = false }) {
       // Slide in from the left as this role's list scrolls into the dialog —
       // inherits the parent list's in-view stagger (same row reveal as the repo
       // popovers). The progress bar inside keeps its own width animation.
-      variants={prefersReducedMotion ? revealNoMotion : revealRow}
+      variants={prefersReducedMotion ? revealNoMotion : revealRowFor(sign)}
     >
       <span
         className={`text-sm leading-snug min-w-0 truncate${pulseClass}`}
         style={{ color: "#ff6d05", textShadow: "none" }}
       >
-        {role.role}
-        <span className="text-fire-amber"> · {role.company}</span>
+        {/* Role title and company come from the résumé (untranslated); the
+            " · " frame between them is the catalogue's. */}
+        {t.rich("modal.roleAt", {
+          role: role.role,
+          company: role.company,
+          muted: (chunks) => <span className="text-fire-amber">{chunks}</span>,
+        })}
       </span>
       <span className={`text-xs text-[#ffaa2a] tabular-nums self-center${pulseClass}`}>
-        <AnimatedNumber value={leading} />
-        {isYears ? "+ yrs" : " mo"}
+        {t.rich("modal.roleDuration", {
+          unit: isYears ? "years" : "months",
+          n: () => <AnimatedNumber value={leading} />,
+        })}
       </span>
       <div
         className="col-span-2 h-1.5 rounded-full overflow-hidden"
@@ -546,6 +565,9 @@ export function ExperienceBreakdownModal({
   pulseRepoNames = EMPTY_SET,
   pulseRoleKeys = EMPTY_SET,
 }) {
+  const t = useTranslations("Experience");
+  const locale = useLocale();
+  const { sign } = useDirection();
   const prefersReducedMotion = useReducedMotion();
   const dialogRef = useRef(null);
   // Inner scrolling region is the actual `overflow-y-auto` element so
@@ -793,10 +815,13 @@ export function ExperienceBreakdownModal({
   // Repos arrive in DESC-by-createdAt order (newest first) from the
   // API. Date formatter renders "Mar 4, 2023"-style readable dates
   // anchored in UTC so a non-UTC client locale can't shift the day.
+  // English keeps its historical en-US form ("Mar 4, 2023", not the en-GB
+  // "4 Mar 2023") so the modal reads exactly as before; every other locale
+  // formats in its own order and digits (issue #82).
   const formatRepoDate = (iso) => {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(locale === DEFAULT_LOCALE ? "en-US" : intlTag(locale), {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -809,7 +834,7 @@ export function ExperienceBreakdownModal({
   // it scrolls into the dialog (not the page) — once per open.
   const upV = prefersReducedMotion ? revealNoMotion : revealUp;
   const listV = prefersReducedMotion ? revealNoMotion : revealListContainer;
-  const rowV = prefersReducedMotion ? revealNoMotion : revealRow;
+  const rowV = prefersReducedMotion ? revealNoMotion : revealRowFor(sign);
   const revealViewport = { root: scrollRef, once: false, amount: 0.1 };
 
   return (
@@ -896,21 +921,21 @@ export function ExperienceBreakdownModal({
             <header className="flex items-start justify-between gap-4 mb-6">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">
-                  Career snapshot
+                  {t("modal.eyebrow")}
                 </p>
                 <h2
                   id="experience-modal-title"
                   className="text-xl sm:text-2xl font-semibold"
                   style={{ color: "#ff6d05", textShadow: "none" }}
                 >
-                  Experience by category
+                  {t("modal.title")}
                 </h2>
               </div>
               <button
                 ref={closeButtonRef}
                 type="button"
                 onClick={onClose}
-                aria-label="Close experience breakdown"
+                aria-label={t("modal.close")}
                 // Reuses the home button's `.custom-bg` class so the
                 // close button inherits the exact same orange neon
                 // border + subtle outer glow at rest AND the brighter
@@ -947,7 +972,7 @@ export function ExperienceBreakdownModal({
                   custom classes responsive prefixes can't retarget — the same
                   split the Project Progress popup's hero uses. */}
               <dl className="flex-1 w-full flex items-stretch justify-evenly gap-4 sm:block sm:space-y-4">
-                <div className="text-center sm:text-left">
+                <div className="text-center sm:text-start">
                   <dt className="flex items-center justify-center sm:justify-start gap-2 text-[10px] uppercase tracking-[0.18em] text-[#ffaa2a] mb-1">
                     <span
                       aria-hidden="true"
@@ -961,7 +986,7 @@ export function ExperienceBreakdownModal({
                           : { border: "1px solid #ff6d05", opacity: 0.5 }
                       }
                     />
-                    Personal Projects
+                    {t("modal.personalProjects")}
                   </dt>
                   <dd>
                     <CategoryCount
@@ -973,14 +998,17 @@ export function ExperienceBreakdownModal({
                         ref={ownedTotalRef}
                         className={`block text-xs text-[#ffbb55] mt-0.5${ownedTotalPulsing ? " skill-heartbeat" : ""}`}
                       >
-                        <AnimatedNumber value={repos.length} /> owned {repos.length === 1 ? "repository" : "repositories"}
+                        {t.rich("modal.ownedRepos", {
+                          count: repos.length,
+                          n: () => <AnimatedNumber value={repos.length} />,
+                        })}
                       </span>
                     )}
                   </dd>
                 </div>
                 <div aria-hidden="true" className="w-px self-stretch elite-divider-v sm:hidden" />
                 <div aria-hidden="true" className="hidden sm:block h-px elite-divider" />
-                <div className="text-center sm:text-left">
+                <div className="text-center sm:text-start">
                   <dt className="flex items-center justify-center sm:justify-start gap-2 text-[10px] uppercase tracking-[0.18em] text-[#ffaa2a] mb-1">
                     <span
                       aria-hidden="true"
@@ -994,7 +1022,7 @@ export function ExperienceBreakdownModal({
                           : { border: "1px solid #ffd27d", opacity: 0.5 }
                       }
                     />
-                    Employment
+                    {t("modal.employment")}
                   </dt>
                   <dd>
                     <CategoryCount
@@ -1003,7 +1031,10 @@ export function ExperienceBreakdownModal({
                     />
                     {roles.length > 0 && (
                       <span className="block text-xs text-[#ffbb55] mt-0.5">
-                        <AnimatedNumber value={roles.length} /> {roles.length === 1 ? "role" : "roles"}
+                        {t.rich("modal.roles", {
+                          count: roles.length,
+                          n: () => <AnimatedNumber value={roles.length} />,
+                        })}
                       </span>
                     )}
                   </dd>
@@ -1020,11 +1051,11 @@ export function ExperienceBreakdownModal({
                 className="flex items-center justify-between mb-3"
               >
                 <h3 className="text-[11px] uppercase tracking-[0.2em] text-[#ffaa2a]">
-                  Personal Projects
+                  {t("modal.personalProjects")}
                 </h3>
                 {repos.length > 0 && (
                   <span className="text-[10px] uppercase tracking-[0.16em] text-[#d4af7a]">
-                    Newest first
+                    {t("modal.newestFirst")}
                   </span>
                 )}
               </motion.header>
@@ -1098,16 +1129,16 @@ export function ExperienceBreakdownModal({
                       aria-expanded={showAllRepos}
                     >
                       {showAllRepos
-                        ? "Show fewer"
-                        : `Show all ${repos.length} repositories →`}
+                        ? t("modal.showFewer")
+                        : t("modal.showAll", { count: repos.length })}
                     </button>
                   )}
                 </>
               ) : (
                 <p className="text-xs text-fire-amber">
                   {personalAvailable
-                    ? "No owned repositories detected yet."
-                    : "Personal project data couldn’t be loaded right now."}
+                    ? t("modal.noRepos")
+                    : t("modal.personalFailed")}
                 </p>
               )}
             </section>
@@ -1121,11 +1152,11 @@ export function ExperienceBreakdownModal({
                 className="flex items-center justify-between mb-3"
               >
                 <h3 className="text-[11px] uppercase tracking-[0.2em] text-[#ffaa2a]">
-                  Employment
+                  {t("modal.employment")}
                 </h3>
                 {roles.length > 0 && (
                   <span className="text-[10px] uppercase tracking-[0.16em] text-[#d4af7a]">
-                    Relative duration
+                    {t("modal.relativeDuration")}
                   </span>
                 )}
               </motion.header>
@@ -1172,8 +1203,8 @@ export function ExperienceBreakdownModal({
               ) : (
                 <p className="text-sm text-fire-amber">
                   {employmentAvailable
-                    ? "No software-engineering roles detected yet."
-                    : "Employment data couldn’t be loaded right now."}
+                    ? t("modal.noRoles")
+                    : t("modal.employmentFailed")}
                 </p>
               )}
             </section>

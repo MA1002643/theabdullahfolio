@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Privacymelding",
+    "heading": "Privacy",
+    "announce": "Onderaan de pagina is een privacymelding verschenen. Je kunt analytics accepteren of weigeren, of de voorkeuren openen.",
+    "body": "Deze site bewaart een beetje status op je apparaat om je voorkeuren te onthouden en telt — alleen als jij dat toestaat — welke pagina's worden gelezen. Geen advertentiecookies, geen tracking, geen profilering door derden. <link>Lees wat dat betekent</link>.",
+    "accept": "Accepteren",
+    "decline": "Weigeren",
+    "preferences": "Voorkeuren"
+  },
+  "prefs": {
+    "title": "Privacykeuzes",
+    "intro": "Twee categorieën, want twee is het echte aantal. Alle details staan op de <link>privacypagina</link>.",
+    "close": "Privacykeuzes sluiten",
+    "alwaysOn": "Altijd aan",
+    "reloadNote": "Als je dit uitzet, wordt de pagina opnieuw geladen. Dat is de enige manier om een script dat je browser al heeft uitgevoerd echt te laten verdwijnen, in plaats van het geladen te laten en het beleefd te vragen te stoppen.",
+    "declineAll": "Alles weigeren",
+    "acceptAnalytics": "Analytics accepteren",
+    "on": "Aan",
+    "off": "Uit",
+    "switchLabel": "Anonieme analytics toestaan"
+  },
+  "categories": {
+    "essential": {
+      "name": "Essentieel",
+      "summary": "Altijd aan. Wordt op je apparaat bewaard en alleen gebruikt om de site voor jou te laten werken.",
+      "detail": "De site onthoudt lokaal een paar dingen, zodat hij zich gedraagt als een site die je al eerder hebt gebruikt: een half getypt bericht overleeft een refresh, de intro wordt maar één keer afgespeeld en een weggeklikte tip blijft weg. Dit wordt in je eigen browser opgeslagen en door je eigen browser weer uitgelezen, en niets ervan wordt gebruikt om je te herkennen. Twee dingen verlaten je apparaat. Een contactbericht dat je offline verstuurt, wordt hier bewaard tot het netwerk terug is en wordt dan aan mij bezorgd, zoals elk ander bericht. Op de gastenboekpagina wordt een willekeurig ID per tabblad verstuurd om te tellen wie er nu is; het is niet aan jou gekoppeld en de server vergeet het binnen enkele minuten. Concepten die je niet hebt verstuurd, worden nooit verzonden."
+    },
+    "analytics": {
+      "name": "Analytics",
+      "summary": "Uit, tenzij je het aanzet. Telt welke pagina's worden gelezen, nooit wie ze leest.",
+      "detail": "Drie meetscripts, behandeld als één beslissing omdat ze één vraag beantwoorden: welke pagina's de moeite waard zijn om te behouden. Geen van hen plaatst een advertentiecookie, geen bouwt een profiel op en geen wordt geladen voordat je ja zegt — niet geladen en inactief, niet geladen en geweigerd. Vóór je keuze doet je browser geen enkel verzoek naar een van hen."
+    }
+  },
+  "status": {
+    "heading": "Je huidige keuze",
+    "noScript": "Analytics draait niet. Met JavaScript uitgeschakeld kan dat ook niet.",
+    "allowed": "Anonieme analytics zijn toegestaan.",
+    "off": "Analytics staat uit. Er wordt niets gemeten.",
+    "notAsked": "Je is nog niets gevraagd, dus het antwoord is nee.",
+    "decidedOn": "Je hebt dit besloten op {date}.",
+    "stored": "Je keuze wordt op dit apparaat bewaard.",
+    "change": "Aanpassen"
+  }
+}

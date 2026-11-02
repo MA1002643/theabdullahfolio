@@ -47,6 +47,12 @@ export const Figure = ({ children }) => (
   <span className="font-semibold tabular-nums text-[#ff6d05]">{children}</span>
 );
 
+// The same Figure as a next-intl rich-text tag (issue #82): provenance lines
+// are ONE message each, "<fig>{n}</fig> rows · owner-confirmed", so a
+// translator can move the figure within the sentence instead of the code
+// gluing a number to a translated tail.
+export const figTag = (chunks) => <Figure>{chunks}</Figure>;
+
 // Per-row stagger for plate bodies — shared so every plate's rows land in
 // the same cadence.
 export const rowMotion = (revealed, reduceMotion, index, base = 0.28) => ({

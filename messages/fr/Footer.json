@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Index",
+    "elsewhere": "Ailleurs"
+  },
+  "siteNav": "Site",
+  "identity": {
+    "role": "Ingénieur logiciel",
+    "statement": "Des expériences web rapides et soignées, depuis le nord de l'Angleterre."
+  },
+  "availability": "Ouvert à de nouvelles opportunités",
+  "githubCta": {
+    "label": "Voir ce projet sur GitHub",
+    "newTab": "(s'ouvre dans un nouvel onglet)",
+    "commits": "{count, plural, one {<num>{formatted}</num> commit} other {<num>{formatted}</num> commits}}",
+    "pushed": "dernier push {when}"
+  },
+  "manifest": {
+    "departures": "Départs",
+    "nowBoarding": "Embarquement",
+    "onTime": "À l'heure",
+    "links": {
+      "about": {
+        "label": "À propos",
+        "desc": "Qui je suis"
+      },
+      "journey": {
+        "label": "Parcours",
+        "desc": "La route jusqu'ici"
+      },
+      "qualifications": {
+        "label": "Qualifications",
+        "desc": "Diplômes et certifications"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Le parcours complet"
+      },
+      "projects": {
+        "label": "Projets",
+        "desc": "Réalisations choisies"
+      },
+      "uses": {
+        "label": "Outils",
+        "desc": "Avec quoi je construis"
+      },
+      "notes": {
+        "label": "Notes",
+        "desc": "Pourquoi c'est conçu ainsi"
+      },
+      "contact": {
+        "label": "Contact",
+        "desc": "Dites bonjour"
+      },
+      "guestbook": {
+        "label": "Livre d'or",
+        "desc": "Laissez votre trace"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "Profil GitHub (s'ouvre dans un nouvel onglet)",
+    "linkedin": "Profil LinkedIn (s'ouvre dans un nouvel onglet)",
+    "resume": "Lire le CV complet",
+    "linkLabel": "{command}, {handle}\t: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Heure locale à {town} : {time} {period}} other {Heure locale à {town} : {time}}}",
+    "placeLabel": "Lieu : {town}",
+    "live": "EN DIRECT"
+  },
+  "sound": {
+    "label": "Son",
+    "on": "Activé",
+    "off": "Désactivé",
+    "turnOn": "Activer le son de guitare du pied de page",
+    "turnOff": "Désactiver le son de guitare du pied de page",
+    "hoverLines": "Survolez les cordes",
+    "nowPlaying": "En lecture — une guitare apaisante",
+    "turnOnPrompt": "Activez le son pour une guitare apaisante"
+  },
+  "privacy": {
+    "policy": "Confidentialité",
+    "choices": "Choix de confidentialité"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/ailleurs",
+    "cmd": {
+      "github": "ouvrir github",
+      "linkedin": "ouvrir linkedin",
+      "resume": "ouvrir cv"
+    }
+  }
+}

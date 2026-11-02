@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Avis de confidentialité",
+    "heading": "Confidentialité",
+    "announce": "Un avis de confidentialité est apparu en bas de la page. Vous pouvez accepter ou refuser les statistiques d’audience, ou ouvrir les préférences.",
+    "body": "Ce site conserve un peu d’information sur votre appareil pour se souvenir de vos préférences et, uniquement si vous l’autorisez, compter les pages qui sont lues. Aucun cookie publicitaire, aucun pistage, aucun profilage par des tiers. <link>Ce que cela signifie</link>.",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "preferences": "Préférences"
+  },
+  "prefs": {
+    "title": "Choix de confidentialité",
+    "intro": "Deux catégories, car deux est le vrai nombre. Le détail complet se trouve sur la <link>page de confidentialité</link>.",
+    "close": "Fermer les choix de confidentialité",
+    "alwaysOn": "Toujours activé",
+    "reloadNote": "Désactiver cette option recharge la page : c’est le seul moyen de décharger réellement un script déjà exécuté par votre navigateur, plutôt que de le laisser chargé en lui demandant poliment de s’arrêter.",
+    "declineAll": "Tout refuser",
+    "acceptAnalytics": "Accepter les statistiques",
+    "on": "Activé",
+    "off": "Désactivé",
+    "switchLabel": "Autoriser les statistiques anonymes"
+  },
+  "categories": {
+    "essential": {
+      "name": "Essentiels",
+      "summary": "Toujours activés. Conservés sur votre appareil et utilisés uniquement pour que le site fonctionne pour vous.",
+      "detail": "Le site mémorise quelques éléments en local pour se comporter comme un site que vous avez déjà utilisé : un message à moitié rédigé survit à une actualisation, l’introduction ne se joue qu’une fois, une astuce masquée reste masquée. Ces données sont écrites dans votre propre navigateur et relues par lui, et aucune ne sert à vous reconnaître. Deux éléments quittent votre appareil. Un message de contact envoyé hors connexion est conservé ici jusqu’au retour du réseau, puis me est remis comme n’importe quel autre message. Sur la page du livre d’or, un identifiant aléatoire propre à chaque onglet est envoyé pour compter les personnes présentes en ce moment ; il n’est pas lié à vous, et le serveur l’oublie en quelques minutes. Les brouillons que vous n’avez pas envoyés ne sont jamais transmis."
+    },
+    "analytics": {
+      "name": "Statistiques d’audience",
+      "summary": "Désactivées sauf si vous les activez. Comptent les pages lues, jamais les personnes qui les lisent.",
+      "detail": "Trois scripts de mesure, traités comme une seule décision parce qu’ils répondent à une seule question : quelles pages valent la peine d’être conservées. Aucun ne dépose de cookie publicitaire, aucun ne construit de profil, et aucun n’est chargé tant que vous n’avez pas dit oui : ni chargé et inactif, ni chargé et refusé. Avant toute décision, votre navigateur n’envoie aucune requête vers l’un d’eux."
+    }
+  },
+  "status": {
+    "heading": "Votre choix actuel",
+    "noScript": "Les statistiques ne sont pas actives. Avec JavaScript désactivé, elles ne peuvent pas l’être.",
+    "allowed": "Les statistiques anonymes sont autorisées.",
+    "off": "Les statistiques sont désactivées. Rien n’est mesuré.",
+    "notAsked": "On ne vous a pas encore posé la question, la réponse est donc non.",
+    "decidedOn": "Vous avez décidé cela le {date}.",
+    "stored": "Votre décision est enregistrée sur cet appareil.",
+    "change": "Modifier"
+  }
+}

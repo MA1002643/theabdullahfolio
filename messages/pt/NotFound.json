@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Página não encontrada",
+    "description": "Você foi parar no vazio. Esta página não existe — ainda."
+  },
+  "messages": {
+    "void": "Você foi parar no vazio.",
+    "dimension": "Esta página está em outra dimensão.",
+    "render": "Nem as minhas habilidades em 3D conseguiram renderizar esta página.",
+    "vibes": "404: página não encontrada, mas o astral continua impecável.",
+    "edge": "Você chegou ao limite do portfólio."
+  },
+  "subtitle": "Esta página não existe — ainda.",
+  "didYouMean": "Você quis dizer <link>{label}</link>?",
+  "takeMeBack": "ME LEVE DE VOLTA",
+  "keyHint": "Pressione {key} para voltar ao início"
+}

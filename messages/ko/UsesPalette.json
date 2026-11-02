@@ -1,0 +1,20 @@
+{
+  "section": "사용 도구",
+  "preferences": "환경설정",
+  "jumpPlate": "{ordinal} {label}(으)로 이동",
+  "plates": {
+    "machine": "작업 머신",
+    "bench": "작업대",
+    "stack": "기술 스택",
+    "pipeline": "파이프라인",
+    "instruments": "계측기",
+    "bom": "자재 명세서"
+  },
+  "copySettings": "내 에디터 설정 복사",
+  "openRepos": "GitHub에서 저장소 보기",
+  "toggleMotion": "모션 전환",
+  "motionOn": "켜짐",
+  "motionOff": "꺼짐",
+  "copied": "에디터 설정을 복사했어요",
+  "clipboardUnavailable": "클립보드를 사용할 수 없어요 — 프레임을 선택해서 복사하세요"
+}

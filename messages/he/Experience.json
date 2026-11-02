@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "שנים במקצוע",
+    "unit": "{unit, select, years {{count, plural, other {שנות ניסיון}}} other {{count, plural, other {חודשי ניסיון}}}}",
+    "unavailable": "הניסיון אינו זמין",
+    "loadingAria": "טוען שנות ניסיון",
+    "viewBreakdown": "לפירוט המלא →",
+    "srPrefix": "עדכון ניסיון: ",
+    "personal": "אישי",
+    "employment": "תעסוקה",
+    "splitUnavailable": "לא זמין",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "טוען סיכום ניסיון",
+    "degraded": "שנים במקצוע: הניסיון אינו זמין (חלק הסיכום המגיע מ-GitHub חסר או לא שלם).{split} לפירוט המלא: פותח את הפירוט של הנתונים הזמינים.",
+    "ready": "שנים במקצוע: {count, number, ::group-off}+ {unit, select, years {שנות} other {חודשי}} ניסיון.{split} לפירוט המלא: פותח את הפירוט לפי קטגוריות.",
+    "split": "אישי {personal}, תעסוקה {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "לא זמין"
+  },
+  "modal": {
+    "eyebrow": "תמונת מצב מקצועית",
+    "title": "ניסיון לפי קטגוריה",
+    "close": "סגירת פירוט הניסיון",
+    "personalProjects": "פרויקטים אישיים",
+    "employment": "תעסוקה",
+    "unavailable": "לא זמין",
+    "unitWord": "{unit, select, years {{count, plural, one {שנה} other {שנים}}} other {{count, plural, one {חודש} other {חודשים}}}}",
+    "totalUnavailable": "הסה״כ אינו זמין",
+    "totalUnit": "סה״כ {unit, select, years {שנ׳} other {חו׳}}",
+    "ownedRepos": "<n></n> {count, plural, one {מאגר בבעלות אישית} other {מאגרים בבעלות אישית}}",
+    "roles": "<n></n> {count, plural, one {תפקיד} other {תפקידים}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ שנ׳} other { חו׳}}",
+    "newestFirst": "החדשים תחילה",
+    "showFewer": "הצגת פחות",
+    "showAll": "הצגת כל {count, number, ::group-off} המאגרים →",
+    "noRepos": "טרם זוהו מאגרים בבעלות אישית.",
+    "personalFailed": "לא ניתן לטעון כעת את נתוני הפרויקטים האישיים.",
+    "relativeDuration": "משך יחסי",
+    "noRoles": "טרם זוהו תפקידי הנדסת תוכנה.",
+    "employmentFailed": "לא ניתן לטעון כעת את נתוני התעסוקה."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {שנה} other {שנים}}} other {{count, plural, one {חודש} other {חודשים}}}}",
+  "changes": {
+    "newRole": "זוהה תפקיד חדש בקורות החיים: {company}",
+    "years": "שנות הניסיון עודכנו: {from} → {to}",
+    "employment": "ניסיון התעסוקה עודכן: +{count, number, ::group-off} {count, plural, one {חודש} other {חודשים}}",
+    "newRepo": "זוהה מאגר חדש: {name}",
+    "newRepos": "{count, number, ::group-off} {count, plural, one {מאגר חדש זוהה} other {מאגרים חדשים זוהו}} ב-GitHub",
+    "timeline": "ציר הזמן של הפרויקטים האישיים עודכן"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "loadingProject": "Project laden",
+  "emblem": "Embleem van Muhammad Abdullah",
+  "notifications": "Meldingen",
+  "sound": {
+    "turnOn": "Gitaargeluid aanzetten",
+    "turnOff": "Gitaargeluid uitzetten"
+  },
+  "owner": {
+    "given": "Muhammad",
+    "family": "Abdullah",
+    "full": "Muhammad Abdullah"
+  }
+}

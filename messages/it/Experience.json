@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Anni nel mestiere",
+    "unit": "{unit, select, years {{count, plural, one {anno di esperienza} other {anni di esperienza}}} other {{count, plural, one {mese di esperienza} other {mesi di esperienza}}}}",
+    "unavailable": "esperienza non disponibile",
+    "loadingAria": "Caricamento degli anni di esperienza",
+    "viewBreakdown": "Vedi dettaglio →",
+    "srPrefix": "Aggiornamento esperienza: ",
+    "personal": "Personale",
+    "employment": "Lavoro",
+    "splitUnavailable": "Non disponibile",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "Caricamento del riepilogo dell’esperienza",
+    "degraded": "Anni nel mestiere: esperienza non disponibile (la parte GitHub del riepilogo è mancante o incompleta).{split} Vedi dettaglio: apre il dettaglio dei dati disponibili.",
+    "ready": "Anni nel mestiere: {count, number, ::group-off}+ {unit, select, years {anni} other {mesi}} di esperienza.{split} Vedi dettaglio: apre il dettaglio per categoria.",
+    "split": "Personale {personal}, Lavoro {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "non disponibile"
+  },
+  "modal": {
+    "eyebrow": "Quadro della carriera",
+    "title": "Esperienza per categoria",
+    "close": "Chiudi il dettaglio dell’esperienza",
+    "personalProjects": "Progetti personali",
+    "employment": "Lavoro",
+    "unavailable": "Non disponibile",
+    "unitWord": "{unit, select, years {{count, plural, one {anno} other {anni}}} other {{count, plural, one {mese} other {mesi}}}}",
+    "totalUnavailable": "totale non disponibile",
+    "totalUnit": "tot. {unit, select, years {anni} other {mesi}}",
+    "ownedRepos": "<n></n> {count, plural, one {repository proprio} other {repository propri}}",
+    "roles": "<n></n> {count, plural, one {ruolo} other {ruoli}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ anni} other { mesi}}",
+    "newestFirst": "Prima i più recenti",
+    "showFewer": "Mostra meno",
+    "showAll": "Mostra tutti i {count, number, ::group-off} repository →",
+    "noRepos": "Nessun repository di proprietà rilevato finora.",
+    "personalFailed": "Al momento non è stato possibile caricare i dati dei progetti personali.",
+    "relativeDuration": "Durata relativa",
+    "noRoles": "Nessun ruolo di ingegneria del software rilevato finora.",
+    "employmentFailed": "Al momento non è stato possibile caricare i dati lavorativi."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, one {anno} other {anni}}} other {{count, plural, one {mese} other {mesi}}}}",
+  "changes": {
+    "newRole": "Nuovo ruolo rilevato dal CV: {company}",
+    "years": "Anni di esperienza aggiornati: {from} → {to}",
+    "employment": "Esperienza lavorativa aggiornata: +{count, number, ::group-off} {count, plural, one {mese} other {mesi}}",
+    "newRepo": "Nuovo repository rilevato: {name}",
+    "newRepos": "{count, number, ::group-off} {count, plural, one {nuovo repository rilevato} other {nuovi repository rilevati}} su GitHub",
+    "timeline": "Cronologia dei progetti personali aggiornata"
+  }
+}

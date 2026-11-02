@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "私のセットアップ",
+    "subtitle": "検証済みのツール"
+  },
+  "opensNewTab": "{name}（新しいタブで開きます）",
+  "machine": {
+    "eyebrow": "ハードウェア · 手作業で設定",
+    "title": "マシン",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig>行} other {<fig>{n}</fig>行}} · オーナー確認済み",
+    "seeItLive": "実際の様子を見る"
+  },
+  "bench": {
+    "eyebrow": "環境 · 手作業で設定",
+    "title": "作業台",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig>ステーション} other {<fig>{n}</fig>ステーション}} · {file} の抜粋",
+    "extensions": "よく使う拡張機能",
+    "editorCaption": "私の VS Code の {file} の抜粋です。{theme} テーマで表示しています。"
+  },
+  "stack": {
+    "eyebrowLive": "スタック · リポジトリから自動収集",
+    "eyebrowCurated": "スタック · 厳選セット",
+    "title": "スタック",
+    "provenanceLive": "ライブ · {count, plural, =1 {<fig>{n}</fig>ツール} other {<fig>{n}</fig>ツール}}",
+    "provenanceCurated": "厳選 · {count, plural, =1 {<fig>{n}</fig>ツール} other {<fig>{n}</fig>ツール}} · {state, select, unreachable {GitHubに接続できません} other {GitHubと同期中…}}",
+    "verifiedSr": "GitHubで検証済み",
+    "verifiedStatus": "スタックをGitHubで検証しました。",
+    "cta": "リポジトリを見る",
+    "ctaLabel": "GitHubでリポジトリを見る（新しいタブで開きます）",
+    "tally": "<total></total>件中<count></count>件",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "公開リポジトリ",
+    "keyPrivate": "非公開",
+    "keyRelative": "バーは最も使用頻度の高いツールとの相対値です",
+    "keyPending": "バーとリポジトリ数はライブ収集の完了後に表示されます",
+    "repoCount": {
+      "public": "{pub, plural, other {公開リポジトリ#件で使用}}",
+      "private": "{priv, plural, other {非公開リポジトリ#件で使用}}",
+      "mixed": "{pub, plural, other {公開リポジトリ#件で使用}} · 非公開+{priv}件"
+    },
+    "meterLabel": "{name}：{sentence}",
+    "meterPending": "{name}：リポジトリ数はライブ収集の完了後に表示されます",
+    "figure": {
+      "publicRepos": "{n, plural, other {公開リポジトリ}}",
+      "privateRepos": "{n, plural, other {非公開リポジトリ}}",
+      "repos": "{n, plural, other {リポジトリ}}",
+      "public": "公開",
+      "private": "非公開"
+    },
+    "curated": "厳選"
+  },
+  "liveAge": {
+    "verified": "{age}確認済み",
+    "s": "{s}秒前",
+    "ms": "{m}分{s}秒前",
+    "hm": "{h}時間{m}分前",
+    "dh": "{d}日{h}時間前"
+  },
+  "pipeline": {
+    "eyebrow": "デリバリー · コミットからコンピュートまで",
+    "title": "パイプライン",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig>ワークフロー} other {<fig>{n}</fig>ワークフロー}} · ビルド時に .github から読み込み",
+    "provenanceHandSet": "模式図 · 手作業で設定",
+    "region": "ビルドパイプラインの図",
+    "svgTitle": "デリバリーパイプライン：プッシュは GitHub から GitHub Actions と Vercel のビルドを経て Fluid compute に流れます。Fluid compute には GitHub の webhook が直接届き、毎日の cron からも呼び出されます。compute はサービスバスを通じて、下に挙げるサービスへ分岐します。",
+    "fires": "<fig>{window}</fig> UTC に実行（Hobby プランの精度）",
+    "kinds": {
+      "source": "ソース",
+      "ci": "CI",
+      "build": "ビルド",
+      "runtime": "ランタイム",
+      "schedule": "スケジュール",
+      "store": "ストア",
+      "gateway": "ゲートウェイ",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "メール",
+      "auth": "認証",
+      "search": "検索"
+    },
+    "workflows": "{count, plural, other {ワークフロー {n} 件}}",
+    "apiRoutes": "{count, plural, other {APIルート {n} 件}}",
+    "apiRoutesBare": "APIルート",
+    "locales": "{count, plural, other {{n} ロケール}}",
+    "crons": "{count, plural, other {cron {n} 件}}",
+    "daily": "毎日 · {time} UTC",
+    "services": {
+      "redis": "ゲストブック · 位置情報 · SEO · 重複排除",
+      "graphql": "統計 · スキル · 進捗",
+      "spotify": "再生中の曲",
+      "mail": "お問い合わせ · Abstract による検証"
+    }
+  },
+  "instruments": {
+    "eyebrow": "品質 · ビルド時に集計",
+    "title": "計測器",
+    "provenance": "ビルド時に集計 · <fig>{date}</fig>",
+    "provenanceBare": "ビルド時に集計",
+    "unitLabel": "{count, plural, other {Vitest スイート}}",
+    "unitSub": "{count, plural, other {テストケース {n} 件}} · Vitest",
+    "e2eLabel": "{count, plural, other {ブラウザスイート}}",
+    "e2eSub": "{count, plural, other {シナリオ {n} 件}} · Playwright",
+    "apiLabel": "{count, plural, other {APIルート}}",
+    "apiSub": "ルートハンドラー · {methods}",
+    "apiSubBare": "ルートハンドラー",
+    "tileLabel": "{figure} {label} — {sub}(GitHub のフォルダーを新しいタブで開きます)"
+  },
+  "bom": {
+    "eyebrow": "部品表 · このサイト",
+    "title": "このサイトの構成要素",
+    "provenance": "{source} · ビルド時に検証済み · <fig>{date}</fig>",
+    "provenanceBare": "{source} · ビルド時に検証済み",
+    "unreadable": "ビルド時にマニフェストを読み取れなかったため、バージョンは掲載していません。",
+    "packages": "{count, plural, =1 {<fig>{n}</fig> 個のパッケージ} other {<fig>{n}</fig> 個のパッケージ}}",
+    "packagesOf": "<fig>{all}</fig> 個中 <fig>{n}</fig> 個のパッケージ",
+    "built": "<fig>{date}</fig> にビルド",
+    "groups": {
+      "core": "コア",
+      "3d-and-motion": "3D・モーション",
+      "data-and-services": "データ・サービス",
+      "interface": "インターフェース",
+      "platform": "プラットフォーム",
+      "media": "メディア",
+      "quality": "品質",
+      "build": "ビルド",
+      "runtime": "ランタイム",
+      "tooling": "ツール類"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "言語",
+        "lay": "コードそのものを記述する言語です。"
+      },
+      "frameworks": {
+        "label": "フレームワーク",
+        "lay": "アプリケーションの土台となる骨組みで、その構造と作法を定めます。"
+      },
+      "libraries": {
+        "label": "ライブラリ",
+        "lay": "完成済みの部品群です。それぞれが一つの役割をきちんと担うために取り入れています。"
+      },
+      "tools": {
+        "label": "ツール",
+        "lay": "コードを取り巻く工程を担うもので、テスト、フォーマット、データベース、デプロイが含まれます。"
+      },
+      "software": {
+        "label": "ソフトウェア",
+        "lay": "完成した成果物が稼働しているサービスです。"
+      }
+    }
+  }
+}

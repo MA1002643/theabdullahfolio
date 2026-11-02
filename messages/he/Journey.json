@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "המסע שלי",
+    "subtitle": "מהשורה הראשונה ועד פרודקשן"
+  },
+  "timeline": {
+    "label": "ציר הזמן של המסע"
+  },
+  "endCap": {
+    "est": "מאז {year} · Bolton, UK",
+    "tally": "{years, plural, one {שנה #} other {# שנים}} · {entries, plural, one {פריט #} other {# פריטים}} · {tracks, plural, one {מסלול #} other {# מסלולים}}",
+    "paper": "הגרסה המודפסת →",
+    "paperHint": "קורות החיים כקובץ PDF (נפתח בלשונית חדשה)"
+  },
+  "spine": {
+    "now": "עכשיו"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, one {חודש} other {# חודשים}}} one {שנה{months, plural, =0 {} one { וחודש} other { ו-# חודשים}}} other {# שנים{months, plural, =0 {} one { וחודש} other { ו-# חודשים}}}}",
+    "tenureOngoing": "{tenure} עד כה",
+    "view": "צפייה",
+    "viewLabel": "צפייה ב-{title} (נפתח בכרטיסייה חדשה)"
+  },
+  "eraRail": {
+    "label": "תקופות בציר הזמן",
+    "jump": "מעבר ל-{year}"
+  },
+  "atlas": {
+    "eyebrow": "תצוגת חפיפה",
+    "title": "האטלס — שלושה מסלולים, שעון אחד",
+    "live": {
+      "career": "{count, plural, one {תפקיד אחד} other {# תפקידים}}",
+      "education": "{count, plural, one {תואר אחד} other {# תארים}}",
+      "milestone": "{count, plural, one {פוסט קהילתי אחד} other {# פוסטים קהילתיים}}",
+      "separator": " + ",
+      "sentence": "פעילים כיום: {parts}{total, plural, =1 {.} other { — במקביל.}}"
+    },
+    "tracks": {
+      "all": "הכול",
+      "career": "קריירה",
+      "education": "השכלה",
+      "milestone": "קהילה"
+    },
+    "chipsLabel": "הדגשת מסלול אחד",
+    "zoom": {
+      "group": "זום הרשת",
+      "out": "הקטנת הרשת",
+      "outTitle": "הקטנה",
+      "in": "הגדלת הרשת",
+      "inTitle": "הגדלה",
+      "readoutLabel": "זום הרשת {pct}. איפוס ל-{full}",
+      "readoutTitle": "זום הרשת",
+      "resetTitle": "איפוס הזום ל-{full}",
+      "status": "זום הרשת {pct}"
+    },
+    "region": "אטלס חפיפות: כל תפקיד וכל קורס כפסים מקבילים על ציר זמן אחד",
+    "entries": "{count, plural, one {פריט אחד} other {# פריטים}}",
+    "now": "עכשיו",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "מעבר אל {org} · {role}, {dates}",
+    "spokenRange": "{start} עד {end}",
+    "spokenOpen": "{start} עד היום",
+    "key": {
+      "select": "בחרו בכל פס כדי לקפוץ אליו.",
+      "dashed": "קצה מקווקו = עדיין פעיל.",
+      "stacked": "פסים מוערמים = במקביל."
+    }
+  },
+  "palette": {
+    "section": "המסע",
+    "jumpYear": "מעבר ל-{year}",
+    "eraHint": "תקופה",
+    "jumpAtlas": "מעבר לאטלס החפיפות",
+    "openCv": "פתיחת ה-CV (PDF)",
+    "openCvHint": "הגרסה המודפסת"
+  }
+}

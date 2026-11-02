@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "404 — Pagina niet gevonden",
+    "description": "Je bent in de leegte beland. Deze pagina bestaat niet — nog niet."
+  },
+  "messages": {
+    "void": "Je bent in de leegte beland.",
+    "dimension": "Deze pagina bevindt zich in een andere dimensie.",
+    "render": "Zelfs mijn 3D-skills kregen deze pagina niet gerenderd.",
+    "vibes": "404: pagina niet gevonden, maar de vibes blijven onberispelijk.",
+    "edge": "Je bent aan de rand van de portfolio aangekomen."
+  },
+  "subtitle": "Deze pagina bestaat niet — nog niet.",
+  "didYouMean": "Bedoelde je <link>{label}</link>?",
+  "takeMeBack": "BRENG ME TERUG",
+  "keyHint": "Druk op {key} om naar home te gaan"
+}

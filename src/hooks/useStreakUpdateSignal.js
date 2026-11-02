@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   computeStreakDiff,
@@ -103,6 +104,8 @@ function writeStored(value) {
  */
 export function useStreakUpdateSignal(streaks) {
   const [pendingMessage, setPendingMessage] = useState(null);
+  // Reader's-language banner copy (issue #82); see useLanguagesUpdateSignal.
+  const t = useTranslations("About");
   // The count blocks that ROSE this change cycle — surfaced so the card can
   // heartbeat each risen number + its label after the banner. Captured by the
   // consumer; cleared via `clearIncreased` once its pulse has played.
@@ -132,7 +135,7 @@ export function useStreakUpdateSignal(streaks) {
     }
     if (stored.fingerprint === fingerprint) return; // nothing changed
 
-    const diff = computeStreakDiff(stored.streaks, current);
+    const diff = computeStreakDiff(stored.streaks, current, t);
     // Advance the baseline immediately so a reload before the user scrolls
     // doesn't replay the same banner indefinitely. The message lives in React
     // state until the section becomes visible and the consumer shows it.

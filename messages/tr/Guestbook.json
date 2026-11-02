@@ -1,0 +1,124 @@
+{
+  "title": "ZİYARETÇİ DEFTERİ",
+  "subtitle": "İZ BIRAK",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> iz bırakıldı} other {<n>{shown}</n> iz bırakıldı}}",
+    "commands": "{shortcut} · komutlar",
+    "loading": "Ziyaretçi defteri yükleniyor…",
+    "loadingMore": "Ziyaretçi defterinin devamı yükleniyor…",
+    "loadFailed": "Ziyaretçi defteri yüklenemedi",
+    "pageFailed": "Bu sayfa yüklenemedi",
+    "retry": "Tekrar dene",
+    "emptyTitle": "Henüz mesaj yok",
+    "emptyInvite": "İlk izi sen bırak"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> kişi şu an burada}}",
+  "announce": {
+    "one": "{name} yeni bir mesaj bıraktı: {message}",
+    "many": "{count, plural, one {# yeni mesaj.} other {# yeni mesaj.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Biri"
+  },
+  "card": {
+    "sending": "iletiliyor…",
+    "guest": "Misafir",
+    "onGitHub": "GitHub’da {username} (yeni sekmede açılır)",
+    "copyLink": "Bu mesajın bağlantısını kopyala",
+    "linkCopied": "Bağlantı kopyalandı — doğrudan bu izi gösterir",
+    "linkFailed": "Bağlantı kopyalanamadı",
+    "deleteOwn": "Mesajını sil",
+    "deleteOther": "{name} adlı kişinin mesajını sil",
+    "signature": "{name} adlı kişinin imzası",
+    "signatureAnon": "İmza"
+  },
+  "reactions": {
+    "fire": "Ateş",
+    "rocket": "Roket",
+    "heart": "Kalp",
+    "count": "{label} — {count}",
+    "signInToReact": "Tepki vermek için giriş yap"
+  },
+  "composer": {
+    "label": "Mesajın",
+    "placeholder": "Bir mesaj bırak…",
+    "send": "Mesajı gönder",
+    "offline": "Çevrimdışısın — mesajın, geri dönene kadar burada saklanır.",
+    "notSent": "Önceki mesajın gönderilemedi",
+    "restore": "Geri yükle"
+  },
+  "signature": {
+    "add": "İmza ekle (isteğe bağlı)",
+    "discard": "İmzayı at",
+    "clear": "Temizle",
+    "padLabel": "İmza çizim alanı — fareyle, parmağınla ya da kalemle çiz veya aşağıdan hazır bir iz seç.",
+    "padHint": "Parmağınla, dokunmatik yüzeyle ya da fareyle çiz — çizgi kalınlığı hızını izler",
+    "pickMark": "Bir iz seç",
+    "orPickMark": "Ya da bir iz seç",
+    "marks": {
+      "flourish": "Süs",
+      "wave": "Dalga",
+      "spark": "Kıvılcım",
+      "orbit": "Yörünge"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Bir mesaj bırak…",
+    "ghostRefine": "Yapay zekâyla düzelt",
+    "ghostSignature": "İmza ekle (isteğe bağlı)",
+    "ghostDrafts": "Taslaklar yazdıkça kendiliğinden kaydedilir",
+    "prompt": "Mesaj bırakmak için giriş yap",
+    "promptReauth": "Mesaj bırakmak için yeniden giriş yap",
+    "reauthExplain": "Mevcut girişin duvarın hesap anahtarlarından önceye ait; bu yüzden okuyabiliyor ama yazamıyorsun — yeniden giriş yapman yeterli.",
+    "github": "GITHUB İLE GİRİŞ YAP",
+    "google": "GOOGLE İLE GİRİŞ YAP"
+  },
+  "pagination": {
+    "nav": "Ziyaretçi defteri sayfaları",
+    "previous": "Önceki sayfa",
+    "next": "Sonraki sayfa",
+    "page": "SAYFA ",
+    "status": "Sayfa {page} / {total}"
+  },
+  "palette": {
+    "leaveMessage": "Mesaj bırak",
+    "leaveKeywords": "yaz imzala gönder mesaj oluştur",
+    "sectionGuestbook": "Ziyaretçi defteri",
+    "sectionPreferences": "Tercihler",
+    "signInToLeave": "Mesaj bırakmak için giriş yap",
+    "toggleSound": "Arayüz seslerini aç/kapat",
+    "soundKeywords": "ses bip sessiz sustur",
+    "toggleMotion": "Hareketi aç/kapat",
+    "motionKeywords": "animasyon azalt sabit hareket",
+    "on": "açık",
+    "off": "kapalı"
+  },
+  "toast": {
+    "posted": "Mesaj gönderildi!",
+    "postFailed": "Mesaj gönderilemedi",
+    "reactFailed": "Tepki verilemedi",
+    "deleteFailed": "Mesaj silinemedi",
+    "removedOwn": "Mesajın ziyaretçi defterinden kaldırıldı",
+    "removedOther": "Mesaj ziyaretçi defterinden kaldırıldı",
+    "you": "Sen"
+  },
+  "errors": {
+    "unauthorized": "Yetkisiz erişim",
+    "too_large": "İstek gövdesi en fazla {max, number, ::group-off} bayt olmalı",
+    "invalid_body": "Geçersiz istek gövdesi",
+    "message_required": "Mesaj gerekli",
+    "message_length": "Mesaj {min}–{max} karakter olmalı",
+    "invalid_characters": "Mesaj geçersiz karakterler içeriyor",
+    "links_not_allowed": "Ziyaretçi defteri mesajlarında bağlantı kullanılamaz",
+    "unfriendly": "Lütfen nazik bir dil kullan",
+    "invalid_signature": "Geçersiz imza",
+    "rate_limited": "5 dakikada bir mesaj gönderilebilir — {minutes, plural, other {# dakika}} sonra tekrar dene",
+    "invalid_reaction": "Geçersiz tepki",
+    "reaction_rate_limited": "Çok fazla tepki verdin — {seconds} sn sonra tekrar dene",
+    "not_found": "Mesaj bulunamadı",
+    "id_required": "Mesaj kimliği gerekli",
+    "invalid_id": "Geçersiz mesaj kimliği",
+    "forbidden": "Erişim yasak",
+    "invalid_cursor": "Geçersiz imleç"
+  }
+}

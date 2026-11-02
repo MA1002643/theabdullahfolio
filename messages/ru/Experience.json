@@ -1,0 +1,54 @@
+{
+  "card": {
+    "eyebrow": "Лет в профессии",
+    "unit": "{unit, select, years {{count, plural, other {лет опыта}}} other {{count, plural, other {месяцев опыта}}}}",
+    "unavailable": "опыт недоступен",
+    "loadingAria": "Загрузка данных об опыте",
+    "viewBreakdown": "Смотреть детали →",
+    "srPrefix": "Обновление опыта: ",
+    "personal": "Личные",
+    "employment": "Работа",
+    "splitUnavailable": "Недоступно",
+    "percent": "<n></n>%"
+  },
+  "label": {
+    "loading": "Загрузка сводки об опыте",
+    "degraded": "Лет в профессии: опыт недоступен (данные GitHub в сводке отсутствуют или неполны).{split} Смотреть детали: открывает разбивку по доступным данным.",
+    "ready": "Лет в профессии: {count, number, ::group-off}+ {unit, select, years {лет} other {месяцев}} опыта.{split} Смотреть детали: открывает разбивку по категориям.",
+    "split": "Личные {personal}, Работа {employment}.",
+    "splitPercent": "{value, number, ::group-off}%",
+    "splitUnavailable": "недоступно"
+  },
+  "modal": {
+    "eyebrow": "Карьера в цифрах",
+    "title": "Опыт по категориям",
+    "close": "Закрыть разбивку опыта",
+    "personalProjects": "Личные проекты",
+    "employment": "Работа",
+    "unavailable": "Недоступно",
+    "unitWord": "{unit, select, years {{count, plural, one {год} few {года} many {лет} other {года}}} other {{count, plural, one {месяц} few {месяца} many {месяцев} other {месяца}}}}",
+    "totalUnavailable": "итог недоступен",
+    "totalUnit": "всего {unit, select, years {л.} other {мес.}}",
+    "ownedRepos": "<n></n> {count, plural, one {собственный репозиторий} few {собственных репозитория} many {собственных репозиториев} other {собственного репозитория}}",
+    "roles": "<n></n> {count, plural, one {роль} few {роли} many {ролей} other {роли}}",
+    "roleAt": "{role}<muted> · {company}</muted>",
+    "roleDuration": "<n></n>{unit, select, years {+ л.} other { мес.}}",
+    "newestFirst": "Сначала новые",
+    "showFewer": "Показать меньше",
+    "showAll": "{count, plural, one {Показать все {count, number, ::group-off} репозиторий →} few {Показать все {count, number, ::group-off} репозитория →} many {Показать все {count, number, ::group-off} репозиториев →} other {Показать все {count, number, ::group-off} репозитория →}}",
+    "noRepos": "Собственных репозиториев пока не найдено.",
+    "personalFailed": "Сейчас не удалось загрузить данные о личных проектах.",
+    "relativeDuration": "Относительная длительность",
+    "noRoles": "Должностей в разработке ПО пока не найдено.",
+    "employmentFailed": "Сейчас не удалось загрузить данные о работе."
+  },
+  "duration": "{count, number, ::group-off}+ {unit, select, years {{count, plural, other {лет}}} other {{count, plural, other {месяцев}}}}",
+  "changes": {
+    "newRole": "Новая должность найдена в резюме: {company}",
+    "years": "Опыт обновлён: {from} → {to}",
+    "employment": "Опыт работы обновлён: +{count, number, ::group-off} {count, plural, one {месяц} few {месяца} many {месяцев} other {месяца}}",
+    "newRepo": "Найден новый репозиторий: {name}",
+    "newRepos": "{count, plural, one {На GitHub найден {count, number, ::group-off} новый репозиторий} few {На GitHub найдено {count, number, ::group-off} новых репозитория} many {На GitHub найдено {count, number, ::group-off} новых репозиториев} other {На GitHub найдено {count, number, ::group-off} нового репозитория}}",
+    "timeline": "Хронология личных проектов обновлена"
+  }
+}

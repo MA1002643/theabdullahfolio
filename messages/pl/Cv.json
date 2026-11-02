@@ -1,0 +1,26 @@
+{
+  "page": {
+    "title": "CV",
+    "subtitle": "pełny życiorys"
+  },
+  "identity": {
+    "role": "Inżynier oprogramowania"
+  },
+  "downloadPdf": "Pobierz PDF",
+  "sections": {
+    "experience": "Doświadczenie",
+    "education": "Wykształcenie",
+    "representation": "Reprezentacja",
+    "skills": "Umiejętności",
+    "projects": "Wybrane projekty"
+  },
+  "skillGroups": {
+    "languages": "języki",
+    "frameworks": "frameworki",
+    "libraries": "biblioteki",
+    "tools": "narzędzia",
+    "software": "oprogramowanie"
+  },
+  "allProjects": "Wszystkie projekty",
+  "asTimeline": "Ta sama historia jako oś czasu"
+}

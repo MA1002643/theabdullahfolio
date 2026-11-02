@@ -2,15 +2,18 @@
 
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import { useDirection } from '@/i18n/useDirection';
 import { useViewportCountUp } from '@/hooks/useViewportCountUp';
 import { fluid } from '@/lib/fluidScale';
 import {
   METER_SEGMENTS,
   meterSegments,
-  repoCountCopy,
   repoFigureParts,
+  usageTotal,
 } from '@/lib/uses/stack';
 import { describeTool } from '@/lib/uses/toolCopy';
+import { useUsesFormat } from './useUsesFormat';
 import { cn } from '@/lib/utils';
 import { getIconUrl } from '@/utils/skillsIconUrl';
 import { riseProps, staged, useStagedReveal } from './useStagedReveal';
@@ -88,13 +91,56 @@ function useSustained(inView, resetMs) {
 // calling hooks in a loop (the part count varies per card).
 function CountFigure({ to, counting, reduceMotion }) {
   const ref = useRef(null);
+  const { num, countFormat } = useUsesFormat();
   useViewportCountUp(ref, {
     to,
     inView: counting,
     prefersReducedMotion: reduceMotion,
+    format: countFormat,
   });
-  return <b ref={ref}>{reduceMotion ? to : 0}</b>;
+  return <b ref={ref}>{num(reduceMotion ? to : 0)}</b>;
 }
+
+// The tile's one-line description: the catalogue's copy of TOOL_COPY (the
+// UsesTools namespace mirrors it under `tools` — tests/unit/usesI18n pins
+// the two equal), else the category's generic line (`UsesTools.generic`),
+// else describeTool's own fallback. Same precedence as describeTool, in the
+// reader's language. UsesTools is deferred (see useToolCopy.jsx), so a tile
+// can be on screen before its line is: describeTool's English covers the gap.
+// The generic lines live there rather than in `Uses` because only a tile the
+// live crawl surfaces can need one, and the crawl is what the fetch waits on.
+function useToolDescription(slug, category) {
+  const tools = useTranslations('UsesTools');
+  if (tools.has(`tools.${slug}`)) return tools(`tools.${slug}`);
+  if (!describeTool(slug, '') && tools.has(`generic.${category}`)) {
+    return tools(`generic.${category}`);
+  }
+  return describeTool(slug, category);
+}
+
+// "used in 7 public repos · +2 private", as one plural message per shape —
+// the same three shapes and the same null as stack.js `repoCountCopy`.
+function repoSentence(t, item) {
+  const pub = Array.isArray(item?.repos) ? item.repos.length : 0;
+  const priv = usageTotal(item) - pub;
+  if (pub === 0 && priv === 0) return null;
+  if (pub === 0) return t('stack.repoCount.private', { priv });
+  return priv > 0
+    ? t('stack.repoCount.mixed', { pub, priv })
+    : t('stack.repoCount.public', { pub });
+}
+
+// The figure's unit words, keyed off stack.js' English units so the parts
+// (and their order) stay that module's decision.
+const UNIT_KEY = {
+  'public repo': 'publicRepos',
+  'public repos': 'publicRepos',
+  'private repo': 'privateRepos',
+  'private repos': 'privateRepos',
+  repos: 'repos',
+  public: 'public',
+  private: 'private',
+};
 
 export default function ToolTile({
   item,
@@ -108,6 +154,9 @@ export default function ToolTile({
   revealedAtRef,
   onHidden,
 }) {
+  const t = useTranslations('Uses');
+  const { sign } = useDirection();
+  const description = useToolDescription(item.slug, category);
   const { ref, on, delay } = useStagedReveal({
     revealed,
     reduceMotion,
@@ -119,7 +168,7 @@ export default function ToolTile({
   });
   const seg = meterSegments(item, max);
   const parts = repoFigureParts(item);
-  const sentence = repoCountCopy(item);
+  const sentence = repoSentence(t, item);
   const at = (offset, duration) =>
     staged(reduceMotion, delay, offset, duration);
   const litMs = Math.round(delay * 1000) + METER_AFTER_MS;
@@ -206,6 +255,8 @@ export default function ToolTile({
         <span className="uses-tool__name uses-mask block min-w-0">
           <motion.span
             className="uses-anim uses-mask__in truncate"
+            // A tool's name: translate="no" (the pseudo-locale gate reads it).
+            translate="no"
             initial={reduceMotion ? false : { y: '140%' }}
             animate={{ y: on ? '0%' : '140%' }}
             transition={at(0.18, 0.55)}
@@ -216,8 +267,9 @@ export default function ToolTile({
         <motion.span
           aria-hidden="true"
           className="uses-anim uses-tool__rank font-mono tabular-nums"
-          initial={reduceMotion ? false : { opacity: 0, x: 8 }}
-          animate={on ? { opacity: 1, x: 0 } : { opacity: 0, x: 8 }}
+          // The rank sits at the inline end, so it slides in from that side.
+          initial={reduceMotion ? false : { opacity: 0, x: 8 * sign }}
+          animate={on ? { opacity: 1, x: 0 } : { opacity: 0, x: 8 * sign }}
           transition={at(0.3, 0.45)}
         >
           {rank}
@@ -228,7 +280,7 @@ export default function ToolTile({
         className="uses-anim uses-tool__desc"
         {...riseProps(on, reduceMotion, at(0.26, 0.5), 6)}
       >
-        {describeTool(item.slug, category)}
+        {description}
       </motion.p>
 
       {/* Track first at full width, figure beneath: every bar on the plate
@@ -239,8 +291,8 @@ export default function ToolTile({
           role="img"
           aria-label={
             sentence
-              ? `${item.displayName}: ${sentence}`
-              : `${item.displayName}: repository counts arrive with the live crawl`
+              ? t('stack.meterLabel', { name: item.displayName, sentence })
+              : t('stack.meterPending', { name: item.displayName })
           }
         >
           {Array.from({ length: METER_SEGMENTS }, (_, i) => (
@@ -269,12 +321,14 @@ export default function ToolTile({
                     counting={counting}
                     reduceMotion={reduceMotion}
                   />{' '}
-                  {p.unit}
+                  {UNIT_KEY[p.unit]
+                    ? t(`stack.figure.${UNIT_KEY[p.unit]}`, { n: p.n })
+                    : p.unit}
                 </Fragment>
               ))
             : counted
               ? '—'
-              : 'curated'}
+              : t('stack.curated')}
         </motion.p>
       </div>
     </motion.li>

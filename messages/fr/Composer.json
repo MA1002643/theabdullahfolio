@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Votre message non envoyé a été restauré",
+    "keep": "Conserver",
+    "clear": "Effacer"
+  },
+  "refine": {
+    "affordance": "Améliorer mon message",
+    "panelLabel": "Reformulation suggérée",
+    "polishing": "Amélioration en cours…",
+    "announcePolishing": "Amélioration de votre message en cours…",
+    "announceReady": "Reformulation suggérée prête.",
+    "announceError": "Impossible d’améliorer le message.",
+    "use": "Utiliser",
+    "again": "Reformuler à nouveau",
+    "discard": "Ignorer",
+    "retry": "Réessayer",
+    "dismiss": "Fermer",
+    "cancel": "Annuler",
+    "errors": {
+      "unconfigured": "L’amélioration des messages n’est pas disponible pour le moment.",
+      "unavailable": "L’amélioration des messages n’est pas disponible pour le moment.",
+      "rate_limited": "Trop de requêtes — réessayez dans un instant.",
+      "too_large": "La requête est trop volumineuse.",
+      "bad_request": "Requête non valide.",
+      "too_short": "Écrivez-en un peu plus d’abord, et je pourrai l’améliorer.",
+      "too_long": "Ce message est trop long pour être amélioré.",
+      "budget": "L’amélioration des messages est suspendue pour le moment.",
+      "failed": "Impossible d’améliorer le message. Veuillez réessayer."
+    }
+  }
+}

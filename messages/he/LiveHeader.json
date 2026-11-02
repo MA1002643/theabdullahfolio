@@ -1,0 +1,122 @@
+{
+  "message": {
+    "idle": "תכונות חדשות ייצאו בקרוב מאוד. האתר נמצא בפיתוח פעיל.",
+    "shippingNone": "זה עתה פורסמו באתר {count, plural, one {עדכון אחד} two {שני עדכונים} other {# עדכונים}}.",
+    "shippingOne": "פורסם זה עתה: <bdi>#{number} {title}</bdi>.",
+    "shippingMany": "פורסם זה עתה: <bdi>#{number} {title}</bdi> (ועוד {more, number}).",
+    "liveWithTop": "עדכון חי: שינויים עולים לאוויר כעת — המיקוד הנוכחי: <bdi>#{number} {title}</bdi>.",
+    "livePushes": "עדכון חי: שינויים חדשים באתר עולים לאוויר כעת.",
+    "liveActive": "עבודה פעילה מתבצעת כעת{hasTop, select, yes { — המיקוד הנוכחי: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressBoard": "עבודה פעילה על {count, plural, one {משימה אחת} two {שתי משימות} other {# משימות}}{hasTop, select, yes { — המיקוד הנוכחי: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrsAndIssues": "בעבודה: {prs, plural, one {PR אחד} two {שני PRs} other {# PRs}}, וכן {issues, plural, one {משימה פתוחה אחת} two {שתי משימות פתוחות} other {# משימות פתוחות}}{hasTop, select, yes { — המיקוד הנוכחי: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressPrs": "בעבודה: {prs, plural, one {PR אחד} two {שני PRs} other {# PRs}}{hasTop, select, yes { — המיקוד הנוכחי: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressIssues": "בעבודה: {issues, plural, one {משימה פתוחה אחת} two {שתי משימות פתוחות} other {# משימות פתוחות}}{hasTop, select, yes { — המיקוד הנוכחי: <bdi>#{number} {title}</bdi>} other {}}.",
+    "inProgressFallback": "העבודה על האתר מתבצעת כעת.",
+    "planning": "מתכננים את השיפורים הבאים{hasTop, select, yes { — המיקוד הנוכחי: <bdi>#{number} {title}</bdi>} other {}}.",
+    "secondary": "עבודה פעילה על {count, plural, one {משימה אחת} two {שתי משימות} other {# משימות}} — מיקוד: <bdi>#{number} {title}</bdi>."
+  },
+  "headline": {
+    "shipping": "פורסם זה עתה",
+    "live": "פיתוח חי מתבצע כעת",
+    "inProgress": "עבודה בתהליך",
+    "planning": "מתכננים את השיפורים הבאים",
+    "idle": "תחזוקה מתמשכת"
+  },
+  "region": "מצב תחזוקה חי",
+  "state": {
+    "shipping": "בפרסום",
+    "live": "חי",
+    "inProgress": "בעבודה",
+    "planning": "בתכנון",
+    "idle": "תחזוקה"
+  },
+  "stateSpoken": {
+    "shipping": "בפרסום",
+    "live": "חי",
+    "inProgress": "בעבודה",
+    "planning": "בתכנון",
+    "idle": "תחזוקה"
+  },
+  "pipeline": {
+    "planning": "תכנון",
+    "inProgress": "בנייה",
+    "shipping": "פרסום",
+    "live": "חי"
+  },
+  "legend": {
+    "title": "צינור אספקה",
+    "srIdle": "צינור אספקה. מחוץ לצינור: מעקב תחזוקה.",
+    "srStage": "צינור אספקה. השלב הנוכחי: {stage}, {index} מתוך {total}.",
+    "headingIdle": "תחזוקה · מחוץ לצינור",
+    "headingStage": "{stage} · שלב {index} מתוך {total}",
+    "maintenance": "תחזוקה",
+    "offPipeline": "מחוץ לצינור — מעקב אחר {count, plural, =0 {מאגרים במעקב} one {מאגר אחד} two {שני מאגרים} other {# מאגרים}}",
+    "meaning": {
+      "planning": "משימות פתוחות שהוגדרו ונקבעו בתור",
+      "inProgress": "עבודה פעילה בענפים וב-PR",
+      "shipping": "עבודה ממוזגת שעברה ל-Done ב-48 השעות האחרונות",
+      "live": "קומיטים או עדכונים ב-2 השעות האחרונות"
+    }
+  },
+  "fields": {
+    "state": "מצב",
+    "focus": "מיקוד",
+    "focusPr": "מיקוד · PR",
+    "focusIssue": "מיקוד · משימה",
+    "prs": "PRs",
+    "issues": "משימות",
+    "pushes24h": "דחיפות · 24 ש׳",
+    "pushes": "דחיפות",
+    "activity": "פעילות · {days} י׳",
+    "sync": "סנכרון",
+    "metered": "· מוגבל"
+  },
+  "metric": {
+    "prs": "PRs פעילים",
+    "issues": "משימות פתוחות",
+    "pushes": "דחיפות (24 ש׳)",
+    "emptyPrs": "אין PRs פעילים בפרויקטים במעקב.",
+    "emptyIssues": "אין סוגיות פתוחות בפרויקטים במעקב.",
+    "emptyPushes": "אין דחיפות בפרויקטים במעקב ב-24 השעות האחרונות."
+  },
+  "popover": {
+    "breakdown": "פירוט {metric}",
+    "summary": "{metric} · {count} ב־{projects, plural, one {פרויקט אחד} two {שני פרויקטים} other {# פרויקטים}}",
+    "heading": "<count></count> ב־{projects, plural, one {פרויקט אחד} two {שני פרויקטים} other {# פרויקטים}}",
+    "stale": "מוצגת הפעילות הידועה האחרונה.",
+    "more": "+ עוד {count} ב-GitHub",
+    "openOnGitHub": "פתיחה ב-GitHub ↗"
+  },
+  "focus": {
+    "hintItem": "{type, select, pr {בקשת משיכה} other {סוגיה}} #{number}",
+    "ariaOpen": "פתיחת {type, select, pr {בקשת משיכה} other {סוגיה}} #{number}: {title} ב-GitHub",
+    "stepped": "{type, select, pr {בקשת משיכה} other {סוגיה}} {number}: {title}",
+    "subRow": "{hasRepo, select, yes {<repo></repo> · } other {}}{hasAge, select, yes {פעיל <age></age>} other {}}",
+    "monitoring": "מעקב אחר {count, plural, one {מאגר אחד} two {שני מאגרים} other {# מאגרים}} — אין פריט מוקד פעיל",
+    "monitoringNone": "מעקב אחר מאגרים במעקב"
+  },
+  "queue": {
+    "label": "תור מוקד",
+    "hint": "פריט {index} מתוך {count} · ← → למעבר",
+    "sr": "תור מוקד של {count} פריטים — מקשי החיצים שמאלה וימינה למעבר בין הפריטים"
+  },
+  "activity": {
+    "label": "עקבות קומיטים",
+    "summary": "{total, plural, one {קומיט אחד} two {שני קומיטים} other {# קומיטים}} · ב{days, plural, one {יום האחרון} two {יומיים האחרונים} other {# הימים האחרונים}}{truncated, select, yes { (הימים הישנים ביותר נספרו בחסר)} other {}}"
+  },
+  "sync": {
+    "label": "סנכרון אחרון",
+    "hint": "רמת ביטחון {confidence} · בדיקה כל {seconds} שנ׳{metered, select, yes { · חיבור מדוד} other {}}",
+    "detail": "{hasLast, select, yes {סנכרון אחרון {last} · } other {}}רמת ביטחון האות {confidence} · בדיקה כל {seconds, plural, one {שנייה אחת} two {שתי שניות} other {# שניות}}{metered, select, yes { בחיבור מדוד} other {}}",
+    "stale": "לא עדכני"
+  },
+  "announce": {
+    "status": "מצב: {state}.",
+    "focus": "המוקד הנוכחי: {type, select, pr {בקשת משיכה} other {סוגיה}} {number}, {title}.",
+    "counts": "{prs, plural, one {בקשת משיכה פעילה אחת} two {שתי בקשות משיכה פעילות} other {# בקשות משיכה פעילות}}, {issues, plural, one {סוגיה פתוחה אחת} two {שתי סוגיות פתוחות} other {# סוגיות פתוחות}} ו{pushes, plural, one {דחיפה אחת} two {שתי דחיפות} other {# דחיפות}} ב-24 השעות האחרונות."
+  },
+  "error": {
+    "snapshot": "הסטטוס החי אינו זמין זמנית. מוצג הצילום העדכני האחרון.",
+    "fallback": "הסטטוס החי אינו זמין זמנית. מוצג מצב גיבוי לתחזוקה."
+  }
+}

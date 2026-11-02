@@ -163,7 +163,7 @@ describe('the unset-measurement-id path', () => {
 // loading for somebody who never agreed — looks like nothing at all in a browser.
 describe('the consent gate around the mount', () => {
   const layout = codeOnly(
-    readFileSync(new URL('../../src/app/layout.js', import.meta.url), 'utf8'),
+    readFileSync(new URL('../../src/app/[locale]/layout.js', import.meta.url), 'utf8'),
   );
   const gateSource = readFileSync(
     new URL('../../src/components/privacy/ConsentedAnalytics.jsx', import.meta.url),

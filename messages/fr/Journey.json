@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "MON PARCOURS",
+    "subtitle": "de la première ligne à la production"
+  },
+  "timeline": {
+    "label": "Chronologie du parcours"
+  },
+  "endCap": {
+    "est": "DEPUIS {year} · BOLTON, R.-U.",
+    "tally": "{years, plural, one {# AN} other {# ANS}} · {entries, plural, one {# ENTRÉE} other {# ENTRÉES}} · {tracks, plural, one {# VOLET} other {# VOLETS}}",
+    "paper": "LA VERSION PAPIER →",
+    "paperHint": "le CV au format PDF (s’ouvre dans un nouvel onglet)"
+  },
+  "spine": {
+    "now": "MAINTENANT"
+  },
+  "node": {
+    "tenure": "{years, plural, =0 {{months, plural, other {# mois}}} one {# an{months, plural, =0 {} other { # mois}}} other {# ans{months, plural, =0 {} other { # mois}}}}",
+    "tenureOngoing": "{tenure} à ce jour",
+    "view": "VOIR",
+    "viewLabel": "Voir {title} (s'ouvre dans un nouvel onglet)"
+  },
+  "eraRail": {
+    "label": "Périodes de la chronologie",
+    "jump": "Aller à {year}"
+  },
+  "atlas": {
+    "eyebrow": "Vue des chevauchements",
+    "title": "L'atlas — trois volets, une seule horloge",
+    "live": {
+      "career": "{count, plural, one {# poste} other {# postes}}",
+      "education": "{count, plural, one {# diplôme} other {# diplômes}}",
+      "milestone": "{count, plural, one {# publication communautaire} other {# publications communautaires}}",
+      "separator": " + ",
+      "sentence": "En cours aujourd'hui : {parts}{total, plural, =1 {.} other { — en parallèle.}}"
+    },
+    "tracks": {
+      "all": "Tout",
+      "career": "Carrière",
+      "education": "Formation",
+      "milestone": "Communauté"
+    },
+    "chipsLabel": "Mettre en avant un volet",
+    "zoom": {
+      "group": "Zoom de la grille",
+      "out": "Dézoomer la grille",
+      "outTitle": "Dézoomer",
+      "in": "Zoomer la grille",
+      "inTitle": "Zoomer",
+      "readoutLabel": "Zoom de la grille {pct}. Rétablir à {full}",
+      "readoutTitle": "Zoom de la grille",
+      "resetTitle": "Rétablir le zoom à {full}",
+      "status": "Zoom de la grille {pct}"
+    },
+    "region": "Atlas des chevauchements : chaque poste et chaque cursus en barres parallèles sur un même axe temporel",
+    "entries": "{count, plural, one {# entrée} other {# entrées}}",
+    "now": "Maintenant",
+    "barTitle": "{title} — {dates}",
+    "barLabel": "Aller à {org} · {role}, {dates}",
+    "spokenRange": "{start} à {end}",
+    "spokenOpen": "{start} à aujourd'hui",
+    "key": {
+      "select": "Sélectionnez une barre pour y accéder.",
+      "dashed": "Bord en pointillés = toujours en cours.",
+      "stacked": "Barres empilées = simultanées."
+    }
+  },
+  "palette": {
+    "section": "Parcours",
+    "jumpYear": "Aller à {year}",
+    "eraHint": "période",
+    "jumpAtlas": "Aller à l'atlas des chevauchements",
+    "openCv": "Ouvrir le CV (PDF)",
+    "openCvHint": "la version papier"
+  }
+}

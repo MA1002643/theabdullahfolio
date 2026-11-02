@@ -1,0 +1,45 @@
+{
+  "notice": {
+    "region": "Privacy notice",
+    "heading": "Privacy",
+    "announce": "A privacy notice has appeared at the bottom of the page. You can accept or decline analytics, or open preferences.",
+    "body": "This site keeps a little state on your device so it remembers your preferences, and — only if you allow it — counts which pages get read. No advertising cookies, no tracking, no third-party profiling. <link>Read what that means</link>.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "preferences": "Preferences"
+  },
+  "prefs": {
+    "title": "Privacy choices",
+    "intro": "Two categories, because two is the real number. The full detail is on the <link>privacy page</link>.",
+    "close": "Close privacy choices",
+    "alwaysOn": "Always on",
+    "reloadNote": "Turning this off reloads the page — it is the only way to genuinely unload a script your browser has already run, rather than leaving it loaded and asking it politely to stop.",
+    "declineAll": "Decline all",
+    "acceptAnalytics": "Accept analytics",
+    "on": "On",
+    "off": "Off",
+    "switchLabel": "Allow anonymous analytics"
+  },
+  "categories": {
+    "essential": {
+      "name": "Essential",
+      "summary": "Always on. Kept on your device, and used only to make the site work for you.",
+      "detail": "The site remembers a few things locally so it behaves like a site you have used before — a half-typed message survives a refresh, the intro plays once, a dismissed hint stays dismissed. That is written to your own browser and read back by your own browser, and none of it is used to recognise you. Two items leave your device. A contact message you send while offline is held here until the network returns, then delivered to me like any other message. On the guestbook page, a random per-tab ID is sent to count who is here now; it is not linked to you, and the server forgets it within minutes. Drafts you have not sent are never transmitted."
+    },
+    "analytics": {
+      "name": "Analytics",
+      "summary": "Off unless you turn it on. Counts which pages get read — never who read them.",
+      "detail": "Three measurement scripts, treated as one decision because they answer one question: which pages are worth keeping. None of them sets an advertising cookie, none builds a profile, and none is loaded at all until you say yes — not loaded-and-idle, not loaded-and-denied. Before a decision, your browser makes no request to any of them."
+    }
+  },
+  "status": {
+    "heading": "Your current choice",
+    "noScript": "Analytics are not running. With JavaScript disabled they cannot be.",
+    "allowed": "Anonymous analytics are allowed.",
+    "off": "Analytics are off. Nothing is being measured.",
+    "notAsked": "You have not been asked yet, so the answer is no.",
+    "decidedOn": "You decided this on {date}.",
+    "stored": "Your decision is stored on this device.",
+    "change": "Change this"
+  }
+}

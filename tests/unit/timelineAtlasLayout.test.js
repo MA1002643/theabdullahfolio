@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { createElement } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TimelineAtlas, { packLanes } from '@/components/journey/TimelineAtlas';
 import { journeyData } from '@/app/data';
+import { renderWithIntl } from '../support/intl';
 
 // Two owner reports from 2026-10-18, both on the overlap atlas's newest role
 // (Concierge Team Leader, started OCT 2026, the same month as the clock):
@@ -57,7 +58,9 @@ afterEach(() => {
 });
 
 function renderAtlas() {
-  render(
+  // Inside the real catalogue (issue #82): the atlas reads its copy through
+  // useTranslations, and every assertion below is on the English it renders.
+  renderWithIntl(
     createElement(TimelineAtlas, {
       activeYear: newest.year,
       filter: 'all',

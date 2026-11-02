@@ -1,0 +1,15 @@
+{
+  "dialog": "Command palette",
+  "search": "Search commands",
+  "placeholder": "Type a command or destination…",
+  "list": "Commands",
+  "empty": "Nothing matches",
+  "sections": {
+    "navigate": "Navigate",
+    "language": "Language"
+  },
+  "keywords": {
+    "navigate": "go jump route page",
+    "language": "language translate locale"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "nowPlaying": "ĐANG PHÁT",
+  "lastPlayed": "PHÁT GẦN ĐÂY",
+  "cardLabel": "{state, select, playing {đang phát} other {phát gần đây}}: {title} của {artist}.",
+  "cardLabelLink": "{state, select, playing {đang phát} other {phát gần đây}}: {title} của {artist}. Mở trên Spotify.",
+  "openOnSpotify": "Mở trên Spotify"
+}

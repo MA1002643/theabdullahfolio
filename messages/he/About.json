@@ -1,0 +1,207 @@
+{
+  "page": {
+    "title": "קצת עליי",
+    "subtitle": "מי אני"
+  },
+  "intro": {
+    "heading": "אדריכל הקסמים",
+    "paragraph": "המסע שלי בפיתוח אתרים מונע על ידי מגוון כלים ושפות מיסטיים, כשה־JavaScript יוצקת את לב הכישופים שלי. אני שולט במסגרות עבודה כמו React.js ו־Next.js בדיוק רב, ויוצר פורטלים חלקים (אתרים) שמחברים בין ממלכות (משתמשים) ברחבי היקום הדיגיטלי. אמנויות ה־Jamstack הקדומות מאפשרות לי ליצור חוויות מהירות, מאובטחות ודינמיות, ויכולות העיצוב שלי מבטיחות שכל יצירה תהיה לא רק פונקציונלית אלא גם מרהיבה לעין. מעבר לקסמים הנראים לעין, אני מטפל במנגנונים הנסתרים — מזמן ממשקי API ומסדי נתונים עמידים (הכספות שבהן זיכרונה של כל ממלכה נשמר בבטחה), ואורג צינורות אוטומטיים שנושאים את יצירותיי מהסדנה אל הענן (האתר האינסופי שבו הן מתעוררות לבסוף). ביצועים ונגישות הם נדרים קדושים בעיניי, כך שכל פורטל נפתח במהירות לכל נוסע, בכל מכשיר ובכל פינה נידחת בממלכה. הסקרנות נשארת מצפן האמת שלי, ומושכת אותי תמיד אל ספרי כישוף חדשים, אינסטינקטים חדים יותר ורעיונות נועזים מספיק כדי להפוך לחוויות חיות ונושמות. הצטרפו אליי כשאני ממשיך לחקור כישופים וטכנולוגיות חדשים כדי לעצב את עתיד האינטרנט."
+  },
+  "projectsCard": {
+    "eyebrow": "פרויקטים שהושקו",
+    "unit": "{count, plural, one {פרויקט שהושלם} two {פרויקטים שהושלמו} other {פרויקטים שהושלמו}}",
+    "viewProgress": "צפו בהתקדמות ←",
+    "ariaLabel": "פרויקטים שהושקו: {count, number, ::group-off} פרויקטים שהושלמו. {legend}. צפו בהתקדמות: פותח את התקדמות הפרויקטים בזמן אמת.",
+    "legendItem": "{label} {count, number, ::group-off}",
+    "srSummary": "פרויקטים שהושלמו לפי קטגוריה — {summary}.",
+    "srItem": "{label}: {count, number, ::group-off} {count, plural, one {פרויקט} two {פרויקטים} other {פרויקטים}}",
+    "srPrefix": "עדכון פרויקטים: "
+  },
+  "statsCard": {
+    "title": "סטטיסטיקות GitHub של {name}",
+    "defaultUser": "משתמש GitHub",
+    "live": "מדדי GitHub בזמן אמת",
+    "rank": "דירוג",
+    "updated": "סטטיסטיקות GitHub עודכנו",
+    "srPrefix": "עדכון סטטיסטיקות: ",
+    "metrics": {
+      "stars": "סך הכוכבים שהתקבלו",
+      "commits": "סך הקומיטים (בשנה האחרונה)",
+      "prs": "סך ה־PR",
+      "issues": "סך הבעיות (Issues)",
+      "contributedTo": "תרומות ל… (בשנה האחרונה)"
+    }
+  },
+  "languagesCard": {
+    "title": "השפות הנפוצות ביותר",
+    "count": "{count, number, ::group-off} {count, plural, one {שפה} two {שפות} other {שפות}}",
+    "live": "בזמן אמת מ־GitHub",
+    "primary": "ראשית",
+    "percent": "<n></n>%",
+    "srPrefix": "עדכון שפות: ",
+    "popover": {
+      "eyebrow": "פירוט מאגרים",
+      "ariaLabel": "מאגרים שמשתמשים ב־{language}",
+      "privateRepos": "{count, number, ::group-off} {count, plural, one {מאגר פרטי} two {מאגרים פרטיים} other {מאגרים פרטיים}}"
+    }
+  },
+  "streakCard": {
+    "title": "רצפי תרומות",
+    "subtitle": "פעילות ב־GitHub",
+    "srPrefix": "עדכון רצפים: ",
+    "total": "סך התרומות",
+    "current": "הרצף הנוכחי",
+    "longest": "הרצף הארוך ביותר",
+    "ringSrDays": "{days, number, ::group-off} {days, plural, one {יום} two {ימים} other {ימים}}",
+    "ringSrShare": "{days, number, ::group-off} {days, plural, one {יום} two {ימים} other {ימים}}, {percent, number, ::group-off} אחוז מהרצף הארוך ביותר שלכם"
+  },
+  "repoCard": {
+    "badge": "המאגר הפעיל ביותר",
+    "srPrefix": "עדכון מאגר: ",
+    "metrics": {
+      "stars": "כוכבים",
+      "forks": "Forks",
+      "mergedPrs": "PR שמוזגו",
+      "commits": "סך הקומיטים",
+      "lastPushed": "דחיפה אחרונה"
+    },
+    "score": "ציון",
+    "activityScore": "ציון פעילות"
+  },
+  "skillsCard": {
+    "title": "כישורים וטכנולוגיות",
+    "categories": {
+      "languages": "שפות",
+      "frameworks": "מסגרות עבודה",
+      "libraries": "ספריות",
+      "tools": "כלים",
+      "software": "תוכנות"
+    },
+    "count": "<n></n> {count, plural, one {טכנולוגיה} two {טכנולוגיות} other {טכנולוגיות}}",
+    "live": "בזמן אמת מ־GitHub",
+    "syncing": "מסנכרן עם GitHub…",
+    "noneDetected": "לא זוהו כישורים",
+    "noneInRepos": "לא זוהו כישורים במאגרים שלכם",
+    "fetching": "טוען כישורים מ-GitHub…",
+    "srPrefix": "עדכון כישורים: ",
+    "popover": {
+      "eyebrow": "בשימוש במאגרים",
+      "ariaLabel": "מאגרים שמשתמשים ב-{name}",
+      "label": "מאגרים:",
+      "publicSr": "{count, number, ::group-off} ציבוריים",
+      "privateSr": "{count, number, ::group-off} פרטיים",
+      "publicCount": "<n></n> ציבוריים",
+      "privateCount": "<n></n> פרטיים",
+      "slash": "/",
+      "allPrivate": "כל המאגרים פרטיים"
+    }
+  },
+  "progress": {
+    "eyebrow": "טלמטריית אספקה",
+    "title": "התקדמות הפרויקטים",
+    "close": "סגירת התקדמות הפרויקטים",
+    "failed": "לא ניתן להגיע כרגע לסנכרון ההתקדמות.",
+    "retry": "ניסיון סנכרון נוסף",
+    "ringLineOne": "פריטי לוח",
+    "ringLineTwo": "הושלמו",
+    "percent": "<n></n>%",
+    "itemsDone": "פריטים שהושלמו",
+    "ofTotal": "מתוך {total, number, ::group-off}",
+    "boardsLive": "לוחות פעילים",
+    "allProjects": "{count, plural, one {פרויקט} other {פרויקטים}}",
+    "ofProjects": "מתוך {total, number, ::group-off} פרויקטים",
+    "unavailable": "הסנכרון החי אינו זמין כרגע — מוצג מבנה הפורטפוליו; האחוזים יחזרו עם הרענון המוצלח הבא.",
+    "byCategory": "לפי קטגוריה",
+    "projectCount": "{count, number, ::group-off} פרויקטים",
+    "perProject": "לפי פרויקט",
+    "liveFrom": "נתונים חיים מ-GitHub Projects",
+    "footer": "מסונכרן אוטומטית מ-GitHub Projects · פעמיים ביום",
+    "lastSync": "סנכרון אחרון",
+    "awaiting": "ממתין לסנכרון הראשון",
+    "row": {
+      "tracked": "{percent, number, ::group-off}% הושלמו, {done, number, ::group-off} מתוך {total, number, ::group-off} פריטי לוח הושלמו",
+      "syncUnavailable": "סנכרון ההתקדמות אינו זמין",
+      "notTracked": "לא במעקב",
+      "ariaLabel": "{name}, {category}. {status}. החלפת מצב של פירוט הלוח.",
+      "syncUnavailableTag": "· הסנכרון אינו זמין",
+      "total": "סה״כ",
+      "couldNotSync": "לא ניתן היה לסנכרן את הלוח הזה כרגע — הספירות החיות יחזרו עם הרענון הבא.",
+      "noBoard": "לא מקושר לפרויקט הזה לוח פרויקט ב-GitHub.",
+      "viewBoard": "לצפייה בלוח הפרויקט →"
+    },
+    "age": {
+      "seconds": "לפני {s} שנ׳",
+      "minutes": "לפני {m} דק׳ ו-{s} שנ׳",
+      "hours": "לפני {h} שע׳ ו-{m} דק׳",
+      "days": "לפני {d} י׳ ו-{h} שע׳"
+    },
+    "columns": {
+      "todo": "לביצוע",
+      "backlog": "באקלוג",
+      "ready": "מוכן",
+      "inProgress": "בעבודה",
+      "inReview": "בבדיקה",
+      "done": "הושלם",
+      "noStatus": "ללא סטטוס",
+      "blocked": "חסום",
+      "onHold": "בהמתנה"
+    }
+  },
+  "wire": {
+    "present": "הווה",
+    "noCurrent": "אין רצף נוכחי",
+    "noneFound": "לא נמצא רצף",
+    "noData": "אין נתונים",
+    "notAvailable": "לא זמין",
+    "noDescription": "אין תיאור",
+    "unknown": "לא ידוע",
+    "span": "{start} - {end}"
+  },
+  "changes": {
+    "dot": " · ",
+    "pipe": " | ",
+    "repo": {
+      "switched": "המאגר הפעיל ביותר השתנה ל-\"{name}\"",
+      "stars": "מספר הכוכבים {direction, select, increased {עלה} other {ירד}} ב-{amount, number, ::group-off} (כעת {total, number, ::group-off})",
+      "forks": "מספר ה-Forks {direction, select, increased {עלה} other {ירד}} ב-{amount, number, ::group-off} (כעת {total, number, ::group-off})",
+      "commits": "{count, plural, one {נדחף קומיט חדש אחד} other {נדחפו {count, number, ::group-off} קומיטים חדשים}}",
+      "mergedPrs": "{count, plural, one {מוזג PR אחד} other {מוזגו {count, number, ::group-off} PRs}}",
+      "activityScore": "ציון הפעילות {direction, select, increased {עלה} other {ירד}} ב-{amount, number, ::group-off} (כעת {total, number, ::group-off})",
+      "language": "השפה העיקרית שונתה ל-\"{language}\""
+    },
+    "stats": {
+      "stars": "סה״כ כוכבים {delta, number, ::sign-always group-off}",
+      "commits": "סה״כ קומיטים {delta, number, ::sign-always group-off}",
+      "prs": "סה״כ PR {delta, number, ::sign-always group-off}",
+      "issues": "סה״כ Issues {delta, number, ::sign-always group-off}",
+      "contributedTo": "תרומה למאגרים {delta, number, ::sign-always group-off}"
+    },
+    "streak": {
+      "totalContributions": "סה״כ תרומות {delta, number, ::sign-always group-off}",
+      "currentStreak": "הרצף הנוכחי {delta, number, ::sign-always group-off}",
+      "longestStreak": "הרצף הארוך ביותר {delta, number, ::sign-always group-off}",
+      "currentDates": "תאריכי הרצף הנוכחי השתנו",
+      "longestDates": "תאריכי הרצף הארוך ביותר השתנו"
+    },
+    "comma": ", ",
+    "languages": {
+      "addedOne": "{language} התווספה לרשימת השפות המובילות.",
+      "addedMany": "{count, plural, one {שפה חדשה אחת נכנסה} two {שתי שפות חדשות נכנסו} other {{count, number, ::group-off} שפות חדשות נכנסו}} לרשימה המובילה.",
+      "removedOne": "{language} יצאה מרשימת השפות המובילות.",
+      "removedMany": "{count, plural, one {שפה אחת יצאה} two {שתי שפות יצאו} other {{count, number, ::group-off} שפות יצאו}} מהרשימה המובילה.",
+      "percentage": "{language} {direction, select, increased {עלתה} other {ירדה}} ב-{delta, number, ::.0 group-off}%.",
+      "rank": "{language} {direction, select, up {עלתה} other {ירדה}} למקום #{rank, number, ::group-off}."
+    },
+    "skills": {
+      "added": "נוספו: {items}",
+      "removed": "הוסרו: {items}",
+      "moved": "הועברו: {items}",
+      "entry": "{name} ({category})",
+      "move": "{name} ({from} → {to})"
+    },
+    "projects": {
+      "added": "{delta, plural, one {נוסף פרויקט שהושלם אחד} two {נוספו שני פרויקטים שהושלמו} other {נוספו {delta, number, ::group-off} פרויקטים שהושלמו}} — כעת {count, number, ::group-off}",
+      "updated": "הפרויקטים שהושלמו עודכנו — כעת {count, number, ::group-off}"
+    }
+  }
+}

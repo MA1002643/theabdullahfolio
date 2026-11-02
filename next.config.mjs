@@ -1,3 +1,5 @@
+import createNextIntlPlugin from 'next-intl/plugin';
+
 // ANALYZE=true npm run build → per-chunk treemaps in .next*/analyze/ (issue
 // #40 Phase 6 budget evidence). Inert in every normal build and on Vercel.
 //
@@ -238,4 +240,9 @@ const nextConfig = {
   }
 };
 
-export default withBundleAnalyzer(nextConfig);
+// next-intl (issue #82): points the library at the per-request config in
+// src/i18n/request.js, which loads the active locale's catalogue. Composed
+// inside the bundle analyser so ANALYZE=true still sees the final config.
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.js');
+
+export default withBundleAnalyzer(withNextIntl(nextConfig));

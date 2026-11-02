@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "BỘ ĐỒ NGHỀ CỦA TÔI",
+    "subtitle": "các công cụ, đã được xác minh"
+  },
+  "opensNewTab": "{name} (mở trong tab mới)",
+  "machine": {
+    "eyebrow": "Phần cứng · nhập tay",
+    "title": "Chiếc máy",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> dòng} other {<fig>{n}</fig> dòng}} · chủ sở hữu xác nhận",
+    "seeItLive": "xem trực tiếp"
+  },
+  "bench": {
+    "eyebrow": "Môi trường · nhập tay",
+    "title": "Bàn làm việc",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> trạm} other {<fig>{n}</fig> trạm}} · trích từ {file}",
+    "extensions": "Những tiện ích mở rộng tôi hay dùng",
+    "editorCaption": "Đoạn trích từ {file} trong VS Code của tôi, hiển thị với giao diện {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "Stack · quét từ các kho mã nguồn",
+    "eyebrowCurated": "Stack · bộ chọn lọc",
+    "title": "Stack công nghệ",
+    "provenanceLive": "trực tiếp · {count, plural, =1 {<fig>{n}</fig> công cụ} other {<fig>{n}</fig> công cụ}}",
+    "provenanceCurated": "chọn lọc · {count, plural, =1 {<fig>{n}</fig> công cụ} other {<fig>{n}</fig> công cụ}} · {state, select, unreachable {không truy cập được GitHub} other {đang đồng bộ với GitHub…}}",
+    "verifiedSr": "đã xác minh với GitHub",
+    "verifiedStatus": "Stack đã được xác minh với GitHub.",
+    "cta": "XEM CÁC KHO MÃ NGUỒN",
+    "ctaLabel": "Xem các kho mã nguồn trên GitHub (mở trong tab mới)",
+    "tally": "<count></count> trên <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "kho công khai",
+    "keyPrivate": "riêng tư",
+    "keyRelative": "thanh so sánh với công cụ được dùng nhiều nhất",
+    "keyPending": "thanh và số lượng kho sẽ hiển thị khi quá trình quét trực tiếp hoàn tất",
+    "repoCount": {
+      "public": "dùng trong {pub, plural, other {# kho công khai}}",
+      "private": "dùng trong {priv, plural, other {# kho riêng tư}}",
+      "mixed": "dùng trong {pub, plural, other {# kho công khai}} · +{priv} riêng tư"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: số lượng kho sẽ hiển thị khi quá trình quét trực tiếp hoàn tất",
+    "figure": {
+      "publicRepos": "{n, plural, other {kho công khai}}",
+      "privateRepos": "{n, plural, other {kho riêng tư}}",
+      "repos": "{n, plural, other {kho}}",
+      "public": "công khai",
+      "private": "riêng tư"
+    },
+    "curated": "chọn lọc"
+  },
+  "liveAge": {
+    "verified": "đã xác minh {age}",
+    "s": "{s} giây trước",
+    "ms": "{m} phút {s} giây trước",
+    "hm": "{h} giờ {m} phút trước",
+    "dh": "{d} ngày {h} giờ trước"
+  },
+  "pipeline": {
+    "eyebrow": "Triển khai · từ commit đến compute",
+    "title": "Quy trình triển khai",
+    "provenance": "{count, plural, =1 {<fig>{n}</fig> workflow} other {<fig>{n}</fig> workflow}} · đọc từ .github khi build",
+    "provenanceHandSet": "sơ đồ · nhập tay",
+    "region": "Sơ đồ quy trình build",
+    "svgTitle": "Quy trình triển khai: mỗi lần push đi từ GitHub qua GitHub Actions và bản build trên Vercel để đến Fluid compute. Webhook của GitHub cũng gọi thẳng tới Fluid compute, và một cron hằng ngày cũng gọi vào đây. Từ đó, lớp compute phân nhánh qua một service bus tới các dịch vụ liệt kê bên dưới.",
+    "fires": "chạy lúc <fig>{window}</fig> UTC (độ chính xác của gói Hobby)",
+    "kinds": {
+      "source": "NGUỒN",
+      "ci": "CI",
+      "build": "BUILD",
+      "runtime": "RUNTIME",
+      "schedule": "LỊCH CHẠY",
+      "store": "LƯU TRỮ",
+      "gateway": "GATEWAY",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "THƯ",
+      "auth": "XÁC THỰC",
+      "search": "TÌM KIẾM"
+    },
+    "workflows": "{count, plural, other {{n} workflow}}",
+    "apiRoutes": "{count, plural, other {{n} API route}}",
+    "apiRoutesBare": "API route",
+    "locales": "{count, plural, other {{n} ngôn ngữ}}",
+    "crons": "{count, plural, other {{n} cron}}",
+    "daily": "hằng ngày · {time} UTC",
+    "services": {
+      "redis": "sổ lưu bút · vị trí · SEO · chống trùng lặp",
+      "graphql": "thống kê · kỹ năng · tiến độ",
+      "spotify": "đang phát",
+      "mail": "liên hệ · xác minh qua Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Chất lượng · đếm khi build",
+    "title": "Các thước đo",
+    "provenance": "đếm khi build · <fig>{date}</fig>",
+    "provenanceBare": "đếm khi build",
+    "unitLabel": "{count, plural, other {bộ kiểm thử Vitest}}",
+    "unitSub": "{count, plural, other {{n} ca kiểm thử}} · Vitest",
+    "e2eLabel": "{count, plural, other {bộ kiểm thử trình duyệt}}",
+    "e2eSub": "{count, plural, other {{n} kịch bản}} · Playwright",
+    "apiLabel": "{count, plural, other {API route}}",
+    "apiSub": "route handler · {methods}",
+    "apiSubBare": "route handler",
+    "tileLabel": "{figure} {label} — {sub} (mở thư mục trên GitHub trong tab mới)"
+  },
+  "bom": {
+    "eyebrow": "Bảng vật tư · trang web này",
+    "title": "Trang web được tạo nên từ những gì",
+    "provenance": "{source} · đã xác minh khi build · <fig>{date}</fig>",
+    "provenanceBare": "{source} · đã xác minh khi build",
+    "unreadable": "Không đọc được tệp manifest khi build nên không có phiên bản nào được liệt kê.",
+    "packages": "{count, plural, =1 {<fig>{n}</fig> gói} other {<fig>{n}</fig> gói}}",
+    "packagesOf": "<fig>{n}</fig> trên <fig>{all}</fig> gói",
+    "built": "build ngày <fig>{date}</fig>",
+    "groups": {
+      "core": "Lõi",
+      "3d-and-motion": "3D & chuyển động",
+      "data-and-services": "Dữ liệu & dịch vụ",
+      "interface": "Giao diện",
+      "platform": "Nền tảng",
+      "media": "Đa phương tiện",
+      "quality": "Chất lượng",
+      "build": "Build",
+      "runtime": "Runtime",
+      "tooling": "Công cụ"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Ngôn ngữ",
+        "lay": "Ngôn ngữ mà chính mã nguồn được viết bằng."
+      },
+      "frameworks": {
+        "label": "Framework",
+        "lay": "Bộ khung nền tảng để xây dựng một ứng dụng: cấu trúc và các quy ước của nó."
+      },
+      "libraries": {
+        "label": "Thư viện",
+        "lay": "Những mảnh ghép dựng sẵn, mỗi mảnh được đưa vào để làm tốt một việc."
+      },
+      "tools": {
+        "label": "Công cụ",
+        "lay": "Những thứ vận hành xung quanh mã nguồn: kiểm thử, định dạng, cơ sở dữ liệu và triển khai."
+      },
+      "software": {
+        "label": "Phần mềm",
+        "lay": "Các dịch vụ nơi sản phẩm hoàn chỉnh được vận hành."
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Je niet-verzonden bericht is hersteld",
+    "keep": "Behouden",
+    "clear": "Wissen"
+  },
+  "refine": {
+    "affordance": "Mijn bericht verfijnen",
+    "panelLabel": "Voorgestelde herschrijving",
+    "polishing": "Bezig met bijschaven…",
+    "announcePolishing": "Je bericht wordt bijgeschaafd…",
+    "announceReady": "Voorgestelde herschrijving staat klaar.",
+    "announceError": "Het bericht kon niet worden bijgeschaafd.",
+    "use": "Gebruiken",
+    "again": "Opnieuw bijschaven",
+    "discard": "Weggooien",
+    "retry": "Probeer opnieuw",
+    "dismiss": "Sluiten",
+    "cancel": "Annuleren",
+    "errors": {
+      "unconfigured": "Berichten bijschaven is op dit moment niet beschikbaar.",
+      "unavailable": "Berichten bijschaven is op dit moment niet beschikbaar.",
+      "rate_limited": "Te veel verzoeken — probeer het zo opnieuw.",
+      "too_large": "Het verzoek is te groot.",
+      "bad_request": "Ongeldig verzoek.",
+      "too_short": "Schrijf eerst wat meer, dan kan ik het bijschaven.",
+      "too_long": "Dit bericht is te lang om bij te schaven.",
+      "budget": "Berichten bijschaven staat op dit moment gepauzeerd.",
+      "failed": "Het bericht kon niet worden bijgeschaafd. Probeer het opnieuw."
+    }
+  }
+}

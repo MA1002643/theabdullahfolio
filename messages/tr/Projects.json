@@ -1,0 +1,13 @@
+{
+  "title": "PROJELER",
+  "subtitle": "ÇALIŞMALARIM",
+  "filters": {
+    "label": "Proje kategorileri",
+    "all": "Tümü",
+    "empty": "\"{category}\" kategorisinde henüz proje yok.",
+    "fallback": "\"{category}\" kategorisinde henüz proje yok. Bunun yerine tüm projeler gösteriliyor."
+  },
+  "list": {
+    "empty": "Proje bulunamadı!"
+  }
+}

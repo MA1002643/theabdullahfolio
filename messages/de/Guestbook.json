@@ -1,0 +1,124 @@
+{
+  "title": "GÄSTEBUCH",
+  "subtitle": "HINTERLASSE DEINE SPUR",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> Spur hinterlassen} other {<n>{shown}</n> Spuren hinterlassen}}",
+    "commands": "{shortcut} · Befehle",
+    "loading": "Gästebuch wird geladen…",
+    "loadingMore": "Weitere Einträge werden geladen…",
+    "loadFailed": "Das Gästebuch konnte nicht geladen werden",
+    "pageFailed": "Diese Seite konnte nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "emptyTitle": "Noch keine Nachrichten",
+    "emptyInvite": "Hinterlasse als Erste:r deine Spur"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> gerade hier}}",
+  "announce": {
+    "one": "Neue Nachricht von {name}: {message}",
+    "many": "{count, plural, one {# neue Nachricht.} other {# neue Nachrichten.}} {lines}",
+    "line": "{name}: {message}",
+    "separator": ". ",
+    "someone": "Jemand"
+  },
+  "card": {
+    "sending": "sendet…",
+    "guest": "Gast",
+    "onGitHub": "{username} auf GitHub (öffnet in einem neuen Tab)",
+    "copyLink": "Link zu dieser Nachricht kopieren",
+    "linkCopied": "Link kopiert – er führt direkt zu diesem Eintrag",
+    "linkFailed": "Der Link konnte nicht kopiert werden",
+    "deleteOwn": "Deine Nachricht löschen",
+    "deleteOther": "Nachricht von {name} löschen",
+    "signature": "Signatur von {name}",
+    "signatureAnon": "Signatur"
+  },
+  "reactions": {
+    "fire": "Feuer",
+    "rocket": "Rakete",
+    "heart": "Herz",
+    "count": "{label} — {count}",
+    "signInToReact": "Melde dich an, um zu reagieren"
+  },
+  "composer": {
+    "label": "Deine Nachricht",
+    "placeholder": "Hinterlasse eine Nachricht…",
+    "send": "Nachricht senden",
+    "offline": "Du bist offline – deine Nachricht bleibt hier gespeichert, bis du wieder verbunden bist.",
+    "notSent": "Deine vorherige Nachricht wurde nicht gesendet",
+    "restore": "Wiederherstellen"
+  },
+  "signature": {
+    "add": "Signatur hinzufügen (optional)",
+    "discard": "Signatur verwerfen",
+    "clear": "Löschen",
+    "padLabel": "Zeichenfläche für die Signatur – zeichne mit Maus, Finger oder Stift oder wähle unten eine vorgefertigte Signatur.",
+    "padHint": "Zeichne mit Finger, Trackpad oder Maus – die Strichstärke folgt deiner Geschwindigkeit",
+    "pickMark": "Zeichen auswählen",
+    "orPickMark": "Oder wähle ein Zeichen",
+    "marks": {
+      "flourish": "Schnörkel",
+      "wave": "Welle",
+      "spark": "Funke",
+      "orbit": "Umlaufbahn"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Hinterlasse eine Nachricht…",
+    "ghostRefine": "Mit KI verfeinern",
+    "ghostSignature": "Signatur hinzufügen (optional)",
+    "ghostDrafts": "Entwürfe werden beim Tippen automatisch gespeichert",
+    "prompt": "Melde dich an, um eine Nachricht zu hinterlassen",
+    "promptReauth": "Melde dich erneut an, um eine Nachricht zu hinterlassen",
+    "reauthExplain": "Deine aktuelle Anmeldung stammt aus der Zeit vor den Kontoschlüsseln der Gästebuchwand, daher kannst du lesen, aber nicht schreiben – eine neue Anmeldung behebt das.",
+    "github": "MIT GITHUB ANMELDEN",
+    "google": "MIT GOOGLE ANMELDEN"
+  },
+  "pagination": {
+    "nav": "Gästebuchseiten",
+    "previous": "Vorherige Seite",
+    "next": "Nächste Seite",
+    "page": "SEITE ",
+    "status": "Seite {page} von {total}"
+  },
+  "palette": {
+    "leaveMessage": "Nachricht hinterlassen",
+    "leaveKeywords": "schreiben eintragen verfassen posten nachricht",
+    "sectionGuestbook": "Gästebuch",
+    "sectionPreferences": "Einstellungen",
+    "signInToLeave": "Anmelden, um eine Nachricht zu hinterlassen",
+    "toggleSound": "UI-Töne umschalten",
+    "soundKeywords": "audio ton klang piepton stumm",
+    "toggleMotion": "Bewegung umschalten",
+    "motionKeywords": "animation reduzieren bewegung ruhig",
+    "on": "an",
+    "off": "aus"
+  },
+  "toast": {
+    "posted": "Nachricht gesendet!",
+    "postFailed": "Nachricht konnte nicht gesendet werden",
+    "reactFailed": "Reaktion fehlgeschlagen",
+    "deleteFailed": "Nachricht konnte nicht gelöscht werden",
+    "removedOwn": "Deine Nachricht wurde aus dem Gästebuch entfernt",
+    "removedOther": "Nachricht aus dem Gästebuch entfernt",
+    "you": "Du"
+  },
+  "errors": {
+    "unauthorized": "Nicht autorisiert",
+    "too_large": "Der Anfrage-Body darf höchstens {max, number, ::group-off} Bytes groß sein",
+    "invalid_body": "Ungültiger Anfrage-Body",
+    "message_required": "Eine Nachricht ist erforderlich",
+    "message_length": "Die Nachricht muss {min}–{max} Zeichen lang sein",
+    "invalid_characters": "Die Nachricht enthält ungültige Zeichen",
+    "links_not_allowed": "Links sind in Gästebuch-Nachrichten nicht erlaubt",
+    "unfriendly": "Bitte bleib freundlich",
+    "invalid_signature": "Ungültige Signatur",
+    "rate_limited": "Eine Nachricht alle 5 Minuten — versuche es in {minutes, plural, one {# Minute} other {# Minuten}} erneut",
+    "invalid_reaction": "Ungültige Reaktion",
+    "reaction_rate_limited": "Zu viele Reaktionen — versuche es in {seconds}s erneut",
+    "not_found": "Nachricht nicht gefunden",
+    "id_required": "Nachrichten-ID ist erforderlich",
+    "invalid_id": "Ungültige Nachrichten-ID",
+    "forbidden": "Zugriff verweigert",
+    "invalid_cursor": "Ungültiger Cursor"
+  }
+}

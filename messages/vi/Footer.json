@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "Mục lục",
+    "elsewhere": "Nơi khác"
+  },
+  "siteNav": "Trang web",
+  "identity": {
+    "role": "Kỹ sư phần mềm",
+    "statement": "Xây dựng trải nghiệm web nhanh, chỉn chu từ miền Bắc nước Anh."
+  },
+  "availability": "Sẵn sàng cho vai trò mới",
+  "githubCta": {
+    "label": "Xem dự án này trên GitHub",
+    "newTab": "(mở trong tab mới)",
+    "commits": "{count, plural, other {<num>{formatted}</num> commit}}",
+    "pushed": "đã đẩy {when}"
+  },
+  "manifest": {
+    "departures": "Chuyến khởi hành",
+    "nowBoarding": "Đang lên máy bay",
+    "onTime": "Đúng giờ",
+    "links": {
+      "about": {
+        "label": "Giới thiệu",
+        "desc": "Tôi là ai"
+      },
+      "journey": {
+        "label": "Hành trình",
+        "desc": "Chặng đường đã qua"
+      },
+      "qualifications": {
+        "label": "Bằng cấp",
+        "desc": "Chứng chỉ"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Hồ sơ đầy đủ"
+      },
+      "projects": {
+        "label": "Dự án",
+        "desc": "Công việc chọn lọc"
+      },
+      "uses": {
+        "label": "Công cụ",
+        "desc": "Tôi xây dựng bằng gì"
+      },
+      "notes": {
+        "label": "Ghi chú",
+        "desc": "Vì sao xây dựng như vậy"
+      },
+      "contact": {
+        "label": "Liên hệ",
+        "desc": "Gửi lời chào"
+      },
+      "guestbook": {
+        "label": "Sổ lưu bút",
+        "desc": "Để lại dấu ấn"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "Hồ sơ GitHub (mở trong tab mới)",
+    "linkedin": "Hồ sơ LinkedIn (mở trong tab mới)",
+    "resume": "Đọc CV đầy đủ",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {Giờ địa phương {time} {period} tại {town}} other {Giờ địa phương {time} tại {town}}}",
+    "placeLabel": "Vị trí: {town}",
+    "live": "TRỰC TIẾP"
+  },
+  "sound": {
+    "label": "Âm thanh",
+    "on": "Bật",
+    "off": "Tắt",
+    "turnOn": "Bật âm thanh guitar ở chân trang",
+    "turnOff": "Tắt âm thanh guitar ở chân trang",
+    "hoverLines": "Rê chuột qua các dây",
+    "nowPlaying": "Đang phát — tiếng guitar êm dịu",
+    "turnOnPrompt": "Bật âm thanh để nghe tiếng guitar êm dịu"
+  },
+  "privacy": {
+    "policy": "Quyền riêng tư",
+    "choices": "Tùy chọn quyền riêng tư"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/nơi-khác",
+    "cmd": {
+      "github": "mở github",
+      "linkedin": "mở linkedin",
+      "resume": "mở hồ-sơ"
+    }
+  }
+}

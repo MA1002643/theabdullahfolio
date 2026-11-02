@@ -1,0 +1,14 @@
+{
+  "index": {
+    "title": "GHI CHÚ",
+    "subtitle": "các quyết định, được ghi lại",
+    "intro": "Mọi quyết định không hiển nhiên đằng sau trang web này đều được ghi lại — lựa chọn đã đưa ra, những phương án bị loại bỏ và cái giá của từng phương án. Đây là các tài liệu làm việc trong repository, được đưa lên đây thay vì để nằm yên trong cây thư mục.",
+    "lines": "{count, plural, other {dòng}}"
+  },
+  "note": {
+    "title": "GHI CHÚ",
+    "breadcrumb": "Đường dẫn điều hướng",
+    "allNotes": "Tất cả ghi chú",
+    "source": "Nguồn: {source} · {count, plural, other {{n} dòng}}"
+  }
+}

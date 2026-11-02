@@ -1,0 +1,28 @@
+{
+  "label": "Language",
+  "triggerLabel": "Language: {language}",
+  "searchLabel": "Search languages",
+  "searchPlaceholder": "Search 20 languages…",
+  "noResults": "No language matches “{query}”.",
+  "tier1": "Tier 1",
+  "tier2": "Tier 2",
+  "current": "Current",
+  "machineBadge": "Machine",
+  "machineBadgeLabel": "Machine-translated",
+  "switching": "Switching to {language}…",
+  "notice": {
+    "title": "Machine-translated",
+    "body": "This translation was produced by machine and hasn’t been reviewed by a native speaker yet.",
+    "cta": "Suggest a better translation"
+  },
+  "suggestion": {
+    "region": "Language suggestion",
+    "message": "This site is also available in {language}.",
+    "switch": "Switch to {language}",
+    "dismiss": "Keep {current}"
+  },
+  "englishOnly": {
+    "label": "Published in English",
+    "body": "This document is published in English only. Navigation and controls stay in your language."
+  }
+}

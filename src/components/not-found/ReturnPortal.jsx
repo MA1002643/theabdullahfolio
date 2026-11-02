@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Home } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 
 /**
@@ -26,6 +27,8 @@ import TransitionLink from '@/components/pageTransition/TransitionLink';
  */
 export default function ReturnPortal() {
   const prefersReducedMotion = useReducedMotion();
+  const t = useTranslations('NotFound');
+  const tNav = useTranslations('Nav');
 
   return (
     <motion.div
@@ -43,16 +46,18 @@ export default function ReturnPortal() {
     >
       <TransitionLink
         href="/"
-        transitionLabel="Home"
+        transitionLabel={tNav('routes.home')}
         prefetch={false}
         className="group relative inline-flex items-center gap-3 rounded-full border border-[#ff6d05]/50 bg-black/60 px-8 py-4 font-mono text-sm tracking-wider transition-all duration-300 hover:border-[#ff6d05] hover:bg-[#ff6d05]/10 hover:shadow-[0_0_30px_#ff6d0540,0_0_60px_#ff6d0520] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6d05] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
         <Home
-          className="elite-cta-icon h-4 w-4 transition-transform group-hover:-translate-x-1"
+          // The hover nudge points BACK, i.e. toward the reading start, so it
+          // flips under RTL (issue #82). The house glyph itself is not mirrored.
+          className="elite-cta-icon h-4 w-4 transition-transform group-hover:-translate-x-1 rtl:group-hover:translate-x-1"
           strokeWidth={1.5}
           aria-hidden="true"
         />
-        <span className="elite-cta-text">TAKE ME BACK</span>
+        <span className="elite-cta-text">{t('takeMeBack')}</span>
         {/* The pulsing ring is purely decorative. It sits on top of
             the link but is pointer-events:none so clicks/taps fall
             through to the Link underneath. */}

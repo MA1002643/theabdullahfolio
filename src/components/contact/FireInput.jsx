@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, useCallback, useEffect, useRef } from 'react';
+import { applyTypedDirection } from './typedDirection';
 
 // FireInput — single-line <input> wrapper that paints the fire-amber
 // gradient on typed text without breaking the input's native horizontal
@@ -25,7 +26,7 @@ import { forwardRef, useCallback, useEffect, useRef } from 'react';
 // component drops in for `<input {...register('name', {...})} />`
 // usage without changing the form's validation wiring.
 const FireInput = forwardRef(function FireInput(
-  { className = '', ...rest },
+  { className = '', dir, ...rest },
   forwardedRef,
 ) {
   const inputRef = useRef(null);
@@ -70,6 +71,9 @@ const FireInput = forwardRef(function FireInput(
     const input = inputRef.current;
     const overlay = overlayRef.current;
     if (!input || !overlay) return;
+    // Direction first: the scroll pin below reads the resolved direction.
+    // On the overlay's flex CONTAINER, whose flex-start places the text.
+    applyTypedDirection(input, overlay.parentElement, dir);
     // `selectionEnd` is only defined for the text-like input types
     // (text, search, url, tel, password) per the HTML spec. Reading it
     // on `type="email"` / `type="number"` throws `InvalidStateError`
@@ -87,11 +91,17 @@ const FireInput = forwardRef(function FireInput(
       end = null;
     }
     if (end == null || end === input.value.length) {
-      input.scrollLeft = input.scrollWidth;
+      // In a right-to-left field (an Arabic value under dir="auto") the
+      // value's end is at the LEFT, and scrollLeft runs from 0 down to
+      // -(scrollWidth - clientWidth), so the same pin is the most negative
+      // value. The computed direction is the resolved one, re-read per
+      // sync because dir="auto" re-resolves as the value changes.
+      const rtl = getComputedStyle(input).direction === 'rtl';
+      input.scrollLeft = rtl ? -input.scrollWidth : input.scrollWidth;
     }
     overlay.textContent = input.value;
     overlay.style.transform = `translateX(${-input.scrollLeft}px)`;
-  }, []);
+  }, [dir]);
 
   useEffect(() => {
     const input = inputRef.current;
@@ -124,6 +134,14 @@ const FireInput = forwardRef(function FireInput(
       />
       {/* Overlay is decorative — the real <input> above it owns all
           interaction, focus, validation, and AT semantics. */}
+      {/* `dir` is set by sync() (applyTypedDirection), on the real input and
+          on this flex CONTAINER, not the text: the overlay's flex-start has
+          to follow the input's resolved direction or the painted copy sits
+          at the opposite edge from the caret. The text child inherits it (so
+          its `:dir(rtl)` gradient still matches) and must not carry its own
+          `dir` — dir="auto" skips descendants that set one, so the
+          container would then resolve from no text at all and fall back
+          to ltr. */}
       <div className="fire-input-overlay" aria-hidden="true">
         <div ref={overlayRef} className="fire-input-overlay-text" />
       </div>

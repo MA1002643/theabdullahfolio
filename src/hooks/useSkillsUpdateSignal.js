@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   buildBannerMessage,
@@ -101,6 +102,8 @@ function writeStored(value) {
  */
 export function useSkillsUpdateSignal(skills) {
   const [pendingMessage, setPendingMessage] = useState(null);
+  // Reader's-language banner copy (issue #82); see useLanguagesUpdateSignal.
+  const t = useTranslations("About");
   // The icons ADDED in this change cycle — `{ slug, category }[]` — surfaced so
   // the card can heartbeat exactly those icons (and their category header) when
   // the user scrolls to them. Cleared per-slug by the consumer once pulsed.
@@ -157,7 +160,7 @@ export function useSkillsUpdateSignal(skills) {
     // the section becomes visible and the consumer shows + consumes it.
     writeStored({ fingerprint, dataFingerprint, skills: current });
     if (diff.hasChanges) {
-      setPendingMessage(buildBannerMessage(diff));
+      setPendingMessage(buildBannerMessage(diff, t));
       setAddedSkills(diff.added.map((a) => ({ slug: a.slug, category: a.category })));
     }
     // Merge-by-slug rather than replace: a changed slug from a previous cycle

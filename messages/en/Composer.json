@@ -1,0 +1,32 @@
+{
+  "draft": {
+    "restored": "Restored your unsent message",
+    "keep": "Keep",
+    "clear": "Clear"
+  },
+  "refine": {
+    "affordance": "Refine my message",
+    "panelLabel": "Suggested rewrite",
+    "polishing": "Polishing…",
+    "announcePolishing": "Polishing your message…",
+    "announceReady": "Suggested rewrite ready.",
+    "announceError": "Could not polish the message.",
+    "use": "Use this",
+    "again": "Polish again",
+    "discard": "Discard",
+    "retry": "Try again",
+    "dismiss": "Dismiss",
+    "cancel": "Cancel",
+    "errors": {
+      "unconfigured": "Message polishing is not available right now.",
+      "unavailable": "Message polishing is not available right now.",
+      "rate_limited": "Too many requests — try again in a moment.",
+      "too_large": "Request is too large.",
+      "bad_request": "Invalid request.",
+      "too_short": "Write a little more first, then I can polish it.",
+      "too_long": "That message is too long to polish.",
+      "budget": "Message polishing is paused right now.",
+      "failed": "Could not polish the message. Please try again."
+    }
+  }
+}

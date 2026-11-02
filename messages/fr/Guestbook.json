@@ -1,0 +1,124 @@
+{
+  "title": "LIVRE D’OR",
+  "subtitle": "LAISSEZ VOTRE TRACE",
+  "wall": {
+    "marksLeft": "{count, plural, one {<n>{shown}</n> trace laissée} other {<n>{shown}</n> traces laissées}}",
+    "commands": "{shortcut} · commandes",
+    "loading": "Chargement du livre d’or…",
+    "loadingMore": "Chargement de la suite du livre d’or…",
+    "loadFailed": "Impossible de charger le livre d’or",
+    "pageFailed": "Impossible de charger cette page",
+    "retry": "Réessayer",
+    "emptyTitle": "Aucun message pour l’instant",
+    "emptyInvite": "Soyez le premier à laisser votre trace"
+  },
+  "presence": "{count, plural, other {<n>{shown}</n> ici en ce moment}}",
+  "announce": {
+    "one": "Nouveau message de {name}\u00a0: {message}",
+    "many": "{count, plural, one {# nouveau message.} other {# nouveaux messages.}} {lines}",
+    "line": "{name}\u00a0: {message}",
+    "separator": ". ",
+    "someone": "Quelqu’un"
+  },
+  "card": {
+    "sending": "envoi…",
+    "guest": "Invité",
+    "onGitHub": "{username} sur GitHub (s’ouvre dans un nouvel onglet)",
+    "copyLink": "Copier un lien vers ce message",
+    "linkCopied": "Lien copié — il pointe directement vers cette trace",
+    "linkFailed": "Impossible de copier le lien",
+    "deleteOwn": "Supprimer votre message",
+    "deleteOther": "Supprimer le message de {name}",
+    "signature": "Signature de {name}",
+    "signatureAnon": "Signature"
+  },
+  "reactions": {
+    "fire": "Feu",
+    "rocket": "Fusée",
+    "heart": "Cœur",
+    "count": "{label} — {count}",
+    "signInToReact": "Connectez-vous pour réagir"
+  },
+  "composer": {
+    "label": "Votre message",
+    "placeholder": "Laissez un message…",
+    "send": "Envoyer le message",
+    "offline": "Vous êtes hors ligne\u00a0: votre message est conservé ici jusqu’à votre retour.",
+    "notSent": "Votre message précédent n’a pas été envoyé",
+    "restore": "Le restaurer"
+  },
+  "signature": {
+    "add": "Ajouter une signature (facultatif)",
+    "discard": "Abandonner la signature",
+    "clear": "Effacer",
+    "padLabel": "Zone de dessin de la signature — dessinez avec la souris, le doigt ou un stylet, ou choisissez un motif prédéfini ci-dessous.",
+    "padHint": "Dessinez avec le doigt, le pavé tactile ou la souris — l’épaisseur du trait suit votre vitesse",
+    "pickMark": "Choisir un motif",
+    "orPickMark": "Ou choisissez un motif",
+    "marks": {
+      "flourish": "Arabesque",
+      "wave": "Vague",
+      "spark": "Étincelle",
+      "orbit": "Orbite"
+    }
+  },
+  "signIn": {
+    "ghostPlaceholder": "Laissez un message…",
+    "ghostRefine": "Affiner avec l’IA",
+    "ghostSignature": "Ajouter une signature (facultatif)",
+    "ghostDrafts": "Les brouillons s’enregistrent pendant que vous écrivez",
+    "prompt": "Connectez-vous pour laisser un message",
+    "promptReauth": "Reconnectez-vous pour laisser un message",
+    "reauthExplain": "Votre connexion actuelle est antérieure aux clés de compte du mur : elle permet de lire, mais pas d’écrire — une nouvelle connexion suffit à régler cela.",
+    "github": "SE CONNECTER AVEC GITHUB",
+    "google": "SE CONNECTER AVEC GOOGLE"
+  },
+  "pagination": {
+    "nav": "Pages du livre d’or",
+    "previous": "Page précédente",
+    "next": "Page suivante",
+    "page": "PAGE ",
+    "status": "Page {page} sur {total}"
+  },
+  "palette": {
+    "leaveMessage": "Laisser un message",
+    "leaveKeywords": "écrire signer publier rédiger message",
+    "sectionGuestbook": "Livre d’or",
+    "sectionPreferences": "Préférences",
+    "signInToLeave": "Se connecter pour laisser un message",
+    "toggleSound": "Activer/désactiver les sons de l’interface",
+    "soundKeywords": "audio son bip muet silence",
+    "toggleMotion": "Activer/désactiver les animations",
+    "motionKeywords": "animation mouvement réduire immobile",
+    "on": "activé",
+    "off": "désactivé"
+  },
+  "toast": {
+    "posted": "Message publié !",
+    "postFailed": "Échec de la publication du message",
+    "reactFailed": "Échec de la réaction",
+    "deleteFailed": "Échec de la suppression du message",
+    "removedOwn": "Votre message a été retiré du livre d’or",
+    "removedOther": "Message retiré du livre d’or",
+    "you": "Vous"
+  },
+  "errors": {
+    "unauthorized": "Non autorisé",
+    "too_large": "Le corps de la requête ne doit pas dépasser {max, number, ::group-off} octets",
+    "invalid_body": "Corps de la requête non valide",
+    "message_required": "Le message est obligatoire",
+    "message_length": "Le message doit comporter entre {min} et {max} caractères",
+    "invalid_characters": "Le message contient des caractères non valides",
+    "links_not_allowed": "Les liens ne sont pas autorisés dans les messages du livre d’or",
+    "unfriendly": "Merci de rester courtois",
+    "invalid_signature": "Signature non valide",
+    "rate_limited": "Un message toutes les 5 minutes — réessayez dans {minutes, plural, one {# minute} many {# minutes} other {# minutes}}",
+    "invalid_reaction": "Réaction non valide",
+    "reaction_rate_limited": "Trop de réactions — réessayez dans {seconds} s",
+    "not_found": "Message introuvable",
+    "id_required": "L’identifiant du message est obligatoire",
+    "invalid_id": "Identifiant de message non valide",
+    "forbidden": "Accès interdit",
+    "invalid_cursor": "Curseur non valide"
+  }
+}

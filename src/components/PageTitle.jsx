@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
+import { glyphUnits } from "@/components/ui/textSegments";
 
 // Shared page-title block. Single source of truth for sub-page
 // headings so every page reads with the same visual weight, font
@@ -38,6 +39,11 @@ import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 // Props:
 //   - `title`    — primary heading text. Required.
 //   - `subtitle` — optional secondary text. Omit to render only h1.
+//   - `subtitleLang` — optional BCP 47 tag for a subtitle in a different
+//                  language from the page (issue #82): a note page's subtitle
+//                  is the English document title even on /ar/notes/…, and
+//                  `lang="en" dir="ltr"` is what makes a screen reader switch
+//                  voice and keeps the line from right-aligning.
 //   - `id`       — optional DOM id forwarded to the wrapping div so existing
 //                  anchor links (e.g. about/projects' `id="about"`) keep working.
 //   - `replayOnView` — opt-in scroll replay (issue #46). When set, the ignite
@@ -95,7 +101,7 @@ const SUBTITLE_MOTION = {
   },
 };
 
-export default function PageTitle({ title, subtitle, id, replayOnView = false }) {
+export default function PageTitle({ title, subtitle, subtitleLang, id, replayOnView = false }) {
   const prefersReducedMotion = useReducedMotion();
   const revealed = useLoaderRevealed();
   // The hook always runs (hooks can't be conditional) but the value is only
@@ -126,7 +132,14 @@ export default function PageTitle({ title, subtitle, id, replayOnView = false })
   // Split into characters; spaces become non-animated spacer spans so word gaps
   // survive the inline-block letters (a transformed inline-block needs explicit
   // whitespace between words).
-  const chars = Array.from(title);
+  //
+  // "Characters" means grapheme clusters, and for scripts that shape ACROSS
+  // letters (Arabic, Persian, Urdu, Devanagari...) it means whole WORDS
+  // (issue #82): an Arabic letter in its own inline-block loses its joining
+  // forms, so per-letter spans would render the title as a row of isolated,
+  // disconnected letters. See src/components/ui/textSegments.js. The <h1>'s
+  // text content is still exactly `title`, and so is its aria-label.
+  const chars = glyphUnits(title);
 
   return (
     <div ref={rootRef} id={id} className="page-title-block z-50 text-center">
@@ -174,7 +187,12 @@ export default function PageTitle({ title, subtitle, id, replayOnView = false })
             className="page-title-flank rounded-full"
             style={FLANK_PILL_STYLE}
           />
-          <h2>{subtitle}</h2>
+          <h2
+            lang={subtitleLang}
+            dir={subtitleLang ? 'ltr' : undefined}
+          >
+            {subtitle}
+          </h2>
           <span
             aria-hidden="true"
             className="page-title-flank rounded-full"

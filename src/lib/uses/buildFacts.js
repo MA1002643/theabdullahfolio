@@ -15,6 +15,7 @@
 //     boundary as props.
 import fs from 'node:fs';
 import path from 'node:path';
+import { PSEUDO_LOCALE } from '../../i18n/locales.js';
 
 // The bill of materials: the WHOLE manifest, read at build and sorted into
 // groups by rule — never by a hand-kept list of package names (owner ask
@@ -36,7 +37,10 @@ export const BOM_FALLBACK = { dependency: 'Runtime', development: 'Tooling' };
 export const BOM_RULES = [
   {
     label: 'Core',
-    match: [/^next$/, /^react$/, /^react-dom$/, /^tailwindcss$/],
+    // `next-intl` (issue #82) is Core rather than Interface: it is the routing
+    // layer every page renders through — the `[locale]` segment, the proxy and
+    // every string on the site — not a component library.
+    match: [/^next$/, /^react$/, /^react-dom$/, /^tailwindcss$/, /^next-intl$/],
   },
   {
     label: '3D & motion',
@@ -509,6 +513,19 @@ export function readBuildFacts(root = process.cwd(), now = new Date()) {
     pipeline: {
       workflows: safe(() => workflowNames(root)),
       crons,
+      // Issue #82: the request proxy (locale routing) runs ahead of every
+      // route, and the build prerenders one copy of each page per catalogue
+      // in messages/ — `_notes` and the dot-files are tooling, not locales,
+      // and `en-XA` is the CI-only pseudo-locale (generated, never public), so
+      // a build that generated it must not report one locale more than
+      // production serves.
+      proxy: safe(() => fs.existsSync(path.join(root, 'src/proxy.js'))),
+      locales: safe(() =>
+        fs
+          .readdirSync(path.join(root, 'messages'), { withFileTypes: true })
+          .filter((d) => d.isDirectory() && !/^[._]/.test(d.name) && d.name !== PSEUDO_LOCALE.code)
+          .length || null,
+      ),
     },
     instruments: {
       unit: safe(() => readCases(root, VITEST_CASES_FILE)),

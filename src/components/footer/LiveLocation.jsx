@@ -22,6 +22,9 @@
 
 import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
+import { intlTag } from '@/i18n/format';
 import { availability } from './footer-data';
 
 const LOCATION_ENDPOINT = '/api/location';
@@ -31,7 +34,14 @@ const CLOCK_TICK_MS = 15 * 1000; // advance the clock 4×/min
 
 // Everything the plate shows about "now", derived from an IANA zone. Intl does
 // all the DST/offset work, so nothing is hardcoded regardless of the city.
-function readClock(timeZone) {
+//
+// English keeps its exact historical shape ("1:01" + "AM", always 12-hour,
+// parsed out of en-GB's "1:01 am"). Every other locale gets its own clock
+// convention from Intl (issue #82) — 24-hour where that is the norm, the
+// locale's own day-period word where it is not, its own digits — split into
+// the same time / period pair via formatToParts rather than an English regex.
+function readClock(timeZone, locale) {
+  if (locale && locale !== DEFAULT_LOCALE) return readLocalClock(timeZone, intlTag(locale));
   try {
     const now = new Date();
     const pretty = new Intl.DateTimeFormat('en-GB', {
@@ -73,7 +83,48 @@ function readClock(timeZone) {
   }
 }
 
+// The non-English clock: the same { time, ampm, day, offset } shape, built
+// entirely from the locale's own formatting.
+function readLocalClock(timeZone, tag) {
+  try {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat(tag, {
+      timeZone,
+      hour: 'numeric',
+      minute: '2-digit',
+    }).formatToParts(now);
+    const ampm = parts.find((p) => p.type === 'dayPeriod')?.value || '';
+    const time = parts
+      .filter((p) => p.type !== 'dayPeriod')
+      .map((p) => p.value)
+      .join('')
+      .trim();
+    const hour24 = Number(
+      new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hourCycle: 'h23' }).format(now),
+    );
+    let offset = '';
+    try {
+      offset =
+        new Intl.DateTimeFormat(tag, { timeZone, timeZoneName: 'shortOffset' })
+          .formatToParts(now)
+          .find((p) => p.type === 'timeZoneName')?.value || '';
+    } catch {
+      /* older runtimes without shortOffset — just omit the offset */
+    }
+    return {
+      time,
+      ampm,
+      day: Number.isFinite(hour24) ? hour24 >= 6 && hour24 < 18 : true,
+      offset,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function LiveLocation() {
+  const t = useTranslations('Footer');
+  const locale = useLocale();
   // Home city is the SSR-safe default; the live fix swaps in after fetch.
   const [place, setPlace] = useState({
     town: availability.city,
@@ -127,11 +178,11 @@ export default function LiveLocation() {
 
   // Tick the clock in whatever timezone `place` currently is.
   useEffect(() => {
-    const tick = () => setClock(readClock(place.tz));
+    const tick = () => setClock(readClock(place.tz, locale));
     tick();
     const id = setInterval(tick, CLOCK_TICK_MS);
     return () => clearInterval(id);
-  }, [place.tz]);
+  }, [place.tz, locale]);
 
   // Sun by day, moon by night; default to Sun before the clock resolves so the
   // glyph never flips from a wrong default on mount.
@@ -147,8 +198,13 @@ export default function LiveLocation() {
       role="group"
       aria-label={
         clock
-          ? `Local time ${clock.time} ${clock.ampm} in ${place.town}`
-          : `Location: ${place.town}`
+          ? t('location.timeLabel', {
+              time: clock.time,
+              period: clock.ampm,
+              hasPeriod: clock.ampm ? 'yes' : 'no',
+              town: place.town,
+            })
+          : t('location.placeLabel', { town: place.town })
       }
     >
       <span className="live-place__glyph" aria-hidden="true">
@@ -157,21 +213,35 @@ export default function LiveLocation() {
 
       <div className="live-place__body">
         <div className="live-place__time">
-          <span className="live-place__digits">{clock ? clock.time : '—:—'}</span>
-          {clock?.ampm && <span className="live-place__ampm">{clock.ampm}</span>}
+          {/* The clock, the town and the offset are Intl output and live data,
+              not prose: translate="no" (the pseudo-locale gate reads it). */}
+          <span className="live-place__digits" translate="no">
+            {clock ? clock.time : '—:—'}
+          </span>
+          {clock?.ampm && (
+            <span className="live-place__ampm" translate="no">
+              {clock.ampm}
+            </span>
+          )}
           {place.live && (
             <span className="live-place__live">
               <span className="live-place__dot" aria-hidden="true">
                 <span className="live-place__dot-halo" />
                 <span className="live-place__dot-core" />
               </span>
-              LIVE
+              {t('location.live')}
             </span>
           )}
         </div>
         <div className="live-place__meta">
-          <span className="live-place__town">{place.town}</span>
-          {clock?.offset && <span className="live-place__tz">{clock.offset}</span>}
+          <span className="live-place__town" translate="no">
+            {place.town}
+          </span>
+          {clock?.offset && (
+            <span className="live-place__tz" translate="no">
+              {clock.offset}
+            </span>
+          )}
         </div>
       </div>
     </div>

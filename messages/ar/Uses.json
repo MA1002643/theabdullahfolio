@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "إعدادي",
+    "subtitle": "الأدوات، موثّقة"
+  },
+  "opensNewTab": "{name} (يُفتح في علامة تبويب جديدة)",
+  "machine": {
+    "eyebrow": "العتاد · إعداد يدوي",
+    "title": "الجهاز",
+    "provenance": "{count, plural, one {<fig>{n}</fig> صف} other {<fig>{n}</fig> من الصفوف}} · أكّدها المالك",
+    "seeItLive": "شاهده مباشرة"
+  },
+  "bench": {
+    "eyebrow": "البيئة · إعداد يدوي",
+    "title": "منصة العمل",
+    "provenance": "{count, plural, one {<fig>{n}</fig> محطة} other {<fig>{n}</fig> من المحطات}} · مقتطف من {file}",
+    "extensions": "الإضافات التي ألجأ إليها",
+    "editorCaption": "مقتطف من {file} في VS Code لديّ، معروض بسمة {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "الأدوات · مستخلصة من المستودعات",
+    "eyebrowCurated": "الأدوات · مجموعة مختارة",
+    "title": "الأدوات",
+    "provenanceLive": "مباشر · {count, plural, one {<fig>{n}</fig> أداة} other {<fig>{n}</fig> من الأدوات}}",
+    "provenanceCurated": "مختارة · {count, plural, one {<fig>{n}</fig> أداة} other {<fig>{n}</fig> من الأدوات}} · {state, select, unreachable {تعذّر الوصول إلى GitHub} other {جارٍ التزامن مع GitHub…}}",
+    "verifiedSr": "موثّق بالمقارنة مع GitHub",
+    "verifiedStatus": "تم التحقق من الأدوات بالمقارنة مع GitHub.",
+    "cta": "عرض المستودعات",
+    "ctaLabel": "عرض المستودعات على GitHub (يُفتح في علامة تبويب جديدة)",
+    "tally": "<count></count> من <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "المستودعات العامة",
+    "keyPrivate": "خاصة",
+    "keyRelative": "الأشرطة نسبية إلى الأداة الأكثر استخدامًا",
+    "keyPending": "تمتلئ الأشرطة وتظهر أعداد المستودعات عند اكتمال الاستخلاص المباشر",
+    "repoCount": {
+      "public": "مستخدمة في {pub, plural, zero {# مستودع عام} one {مستودع عام واحد} two {مستودعين عامين} few {# مستودعات عامة} many {# مستودعًا عامًا} other {# مستودع عام}}",
+      "private": "مستخدمة في {priv, plural, zero {# مستودع خاص} one {مستودع خاص واحد} two {مستودعين خاصين} few {# مستودعات خاصة} many {# مستودعًا خاصًا} other {# مستودع خاص}}",
+      "mixed": "مستخدمة في {pub, plural, zero {# مستودع عام} one {مستودع عام واحد} two {مستودعين عامين} few {# مستودعات عامة} many {# مستودعًا عامًا} other {# مستودع عام}} · +{priv} خاصة"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: تصل أعداد المستودعات مع الاستخلاص المباشر",
+    "figure": {
+      "publicRepos": "{n, plural, zero {مستودعات عامة} one {مستودع عام} two {مستودعان عامان} few {مستودعات عامة} many {مستودعًا عامًا} other {مستودع عام}}",
+      "privateRepos": "{n, plural, zero {مستودعات خاصة} one {مستودع خاص} two {مستودعان خاصان} few {مستودعات خاصة} many {مستودعًا خاصًا} other {مستودع خاص}}",
+      "repos": "{n, plural, zero {مستودعات} one {مستودع} two {مستودعان} few {مستودعات} many {مستودعًا} other {مستودع}}",
+      "public": "عامة",
+      "private": "خاصة"
+    },
+    "curated": "مختارة"
+  },
+  "liveAge": {
+    "verified": "تم التحقق {age}",
+    "s": "قبل {s} ث",
+    "ms": "قبل {m} د و{s} ث",
+    "hm": "قبل {h} س و{m} د",
+    "dh": "قبل {d} ي و{h} س"
+  },
+  "pipeline": {
+    "eyebrow": "التسليم · من الإيداع إلى التشغيل",
+    "title": "مسار التسليم",
+    "provenance": "{count, plural, one {<fig>{n}</fig> سير عمل} other {<fig>{n}</fig> من مسارات العمل}} · مقروءة من .github عند البناء",
+    "provenanceHandSet": "مخطط توضيحي · إعداد يدوي",
+    "region": "مخطط مسار البناء",
+    "svgTitle": "مسار التسليم: تنتقل عملية الدفع (push) من GitHub عبر GitHub Actions وبناء Vercel إلى Fluid compute، الذي يصل إليه أيضًا GitHub webhook مباشرةً، وتستدعيه مهمة cron يومية؛ ثم تتفرّع الحوسبة عبر ناقل خدمات إلى الخدمات المذكورة أدناه.",
+    "fires": "يُنفَّذ <fig>{window}</fig> بتوقيت UTC (دقة خطة Hobby)",
+    "kinds": {
+      "source": "المصدر",
+      "ci": "CI",
+      "build": "البناء",
+      "runtime": "التشغيل",
+      "schedule": "الجدولة",
+      "store": "التخزين",
+      "gateway": "البوابة",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "البريد",
+      "auth": "المصادقة",
+      "search": "البحث"
+    },
+    "workflows": "{count, plural, zero {{n} مسار عمل} one {مسار عمل واحد} two {مساران للعمل} few {{n} مسارات عمل} many {{n} مسار عمل} other {{n} مسار عمل}}",
+    "apiRoutes": "{count, plural, zero {{n} مسار API} one {مسار API واحد} two {مساران API} few {{n} مسارات API} many {{n} مسار API} other {{n} مسار API}}",
+    "apiRoutesBare": "مسارات API",
+    "locales": "{count, plural, zero {{n} لغة} one {لغة واحدة} two {لغتان} few {{n} لغات} many {{n} لغة} other {{n} لغة}}",
+    "crons": "{count, plural, zero {{n} مهمة cron} one {مهمة cron} two {مهمتا cron} few {{n} مهام cron} many {{n} مهمة cron} other {{n} مهمة cron}}",
+    "daily": "يومياً · {time} UTC",
+    "services": {
+      "redis": "سجل الزوار · الموقع · SEO · منع التكرار",
+      "graphql": "الإحصاءات · المهارات · التقدم",
+      "spotify": "قيد التشغيل الآن",
+      "mail": "التواصل · تحقق Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "الجودة · تُحتسب عند البناء",
+    "title": "أدوات القياس",
+    "provenance": "حُسب عند البناء · <fig>{date}</fig>",
+    "provenanceBare": "حُسب عند البناء",
+    "unitLabel": "{count, plural, zero {مجموعات Vitest} one {مجموعة Vitest} two {مجموعتا Vitest} few {مجموعات Vitest} many {مجموعة Vitest} other {مجموعات Vitest}}",
+    "unitSub": "{count, plural, zero {{n} حالة اختبار} one {حالة اختبار واحدة} two {حالتا اختبار} few {{n} حالات اختبار} many {{n} حالة اختبار} other {{n} حالة اختبار}} · Vitest",
+    "e2eLabel": "{count, plural, zero {مجموعات متصفح} one {مجموعة متصفح} two {مجموعتا متصفح} few {مجموعات متصفح} many {مجموعة متصفح} other {مجموعات متصفح}}",
+    "e2eSub": "{count, plural, zero {{n} سيناريو} one {سيناريو واحد} two {سيناريوهان} few {{n} سيناريوهات} many {{n} سيناريو} other {{n} سيناريو}} · Playwright",
+    "apiLabel": "{count, plural, zero {مسارات API} one {مسار API} two {مساران API} few {مسارات API} many {مسار API} other {مسارات API}}",
+    "apiSub": "معالجات المسارات · {methods}",
+    "apiSubBare": "معالجات المسارات",
+    "tileLabel": "{figure} {label} — {sub} (يفتح المجلد على GitHub في تبويب جديد)"
+  },
+  "bom": {
+    "eyebrow": "قائمة المواد · هذا الموقع",
+    "title": "مم يتكوّن",
+    "provenance": "{source} · جرى التحقق عند البناء · <fig>{date}</fig>",
+    "provenanceBare": "{source} · جرى التحقق عند البناء",
+    "unreadable": "تعذّرت قراءة ملف البيان عند البناء، لذا لا تُعرض أي إصدارات.",
+    "packages": "{count, plural, one {الحزم: <fig>{n}</fig>} other {الحزم: <fig>{n}</fig>}}",
+    "packagesOf": "<fig>{n}</fig> من أصل <fig>{all}</fig> حزمة",
+    "built": "بُني <fig>{date}</fig>",
+    "groups": {
+      "core": "الأساس",
+      "3d-and-motion": "ثلاثي الأبعاد والحركة",
+      "data-and-services": "البيانات والخدمات",
+      "interface": "الواجهة",
+      "platform": "المنصة",
+      "media": "الوسائط",
+      "quality": "الجودة",
+      "build": "البناء",
+      "runtime": "وقت التشغيل",
+      "tooling": "الأدوات"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "اللغات",
+        "lay": "اللغة التي كُتب بها الكود نفسه."
+      },
+      "frameworks": {
+        "label": "الأطر",
+        "lay": "الهيكل الذي يُبنى عليه التطبيق: بنيته وأعرافه."
+      },
+      "libraries": {
+        "label": "المكتبات",
+        "lay": "لبنات جاهزة، تُضاف كل واحدة منها لتؤدي مهمة واحدة على أكمل وجه."
+      },
+      "tools": {
+        "label": "الأدوات",
+        "lay": "كل ما يعمل حول الشيفرة: الاختبار والتنسيق وقواعد البيانات والنشر."
+      },
+      "software": {
+        "label": "البرمجيات",
+        "lay": "الخدمات التي يستقر عليها العمل بعد اكتماله."
+      }
+    }
+  }
+}

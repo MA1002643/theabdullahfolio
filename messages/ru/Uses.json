@@ -1,0 +1,154 @@
+{
+  "page": {
+    "title": "МОЙ СЕТАП",
+    "subtitle": "инструменты — с проверкой"
+  },
+  "opensNewTab": "{name} (откроется в новой вкладке)",
+  "machine": {
+    "eyebrow": "Железо · вручную",
+    "title": "Машина",
+    "provenance": "{count, plural, one {<fig>{n}</fig> строка} other {<fig>{n}</fig> {count, plural, few {строки} many {строк} other {строки}}}} · подтверждено владельцем",
+    "seeItLive": "посмотреть вживую"
+  },
+  "bench": {
+    "eyebrow": "Окружение · вручную",
+    "title": "Рабочее место",
+    "provenance": "{count, plural, one {<fig>{n}</fig> станция} other {<fig>{n}</fig> {count, plural, few {станции} many {станций} other {станции}}}} · фрагмент {file}",
+    "extensions": "Расширения, к которым я тянусь",
+    "editorCaption": "Фрагмент {file} из моего VS Code в теме {theme}."
+  },
+  "stack": {
+    "eyebrowLive": "Стек · собран из репозиториев",
+    "eyebrowCurated": "Стек · отобранный набор",
+    "title": "Стек",
+    "provenanceLive": "вживую · {count, plural, one {<fig>{n}</fig> инструмент} other {<fig>{n}</fig> {count, plural, few {инструмента} many {инструментов} other {инструмента}}}}",
+    "provenanceCurated": "отобрано · {count, plural, one {<fig>{n}</fig> инструмент} other {<fig>{n}</fig> {count, plural, few {инструмента} many {инструментов} other {инструмента}}}} · {state, select, unreachable {GitHub недоступен} other {синхронизация с GitHub…}}",
+    "verifiedSr": "проверено по GitHub",
+    "verifiedStatus": "Стек проверен по GitHub.",
+    "cta": "ПОСМОТРЕТЬ РЕПОЗИТОРИИ",
+    "ctaLabel": "Посмотреть репозитории на GitHub (откроется в новой вкладке)",
+    "tally": "<count></count> из <total></total>",
+    "listLabel": "{label} — {count}",
+    "keyPublic": "публичные репозитории",
+    "keyPrivate": "приватные",
+    "keyRelative": "шкалы заданы относительно самого используемого инструмента",
+    "keyPending": "шкалы и число репозиториев появятся после живого обхода",
+    "repoCount": {
+      "public": "используется {pub, plural, one {в # публичном репозитории} few {в # публичных репозиториях} many {в # публичных репозиториях} other {в # публичных репозиториях}}",
+      "private": "используется {priv, plural, one {в # приватном репозитории} few {в # приватных репозиториях} many {в # приватных репозиториях} other {в # приватных репозиториях}}",
+      "mixed": "используется {pub, plural, one {в # публичном репозитории} few {в # публичных репозиториях} many {в # публичных репозиториях} other {в # публичных репозиториях}} · +{priv} приватных"
+    },
+    "meterLabel": "{name}: {sentence}",
+    "meterPending": "{name}: число репозиториев появится после живого обхода",
+    "figure": {
+      "publicRepos": "{n, plural, one {публичный репозиторий} few {публичных репозитория} many {публичных репозиториев} other {публичных репозитория}}",
+      "privateRepos": "{n, plural, one {приватный репозиторий} few {приватных репозитория} many {приватных репозиториев} other {приватных репозитория}}",
+      "repos": "{n, plural, one {репозиторий} few {репозитория} many {репозиториев} other {репозитория}}",
+      "public": "публичные",
+      "private": "приватные"
+    },
+    "curated": "отобрано"
+  },
+  "liveAge": {
+    "verified": "проверено {age}",
+    "s": "{s} с назад",
+    "ms": "{m} мин {s} с назад",
+    "hm": "{h} ч {m} мин назад",
+    "dh": "{d} д {h} ч назад"
+  },
+  "pipeline": {
+    "eyebrow": "Доставка · от коммита до вычислений",
+    "title": "Пайплайн",
+    "provenance": "{count, plural, one {<fig>{n}</fig> рабочий процесс} other {<fig>{n}</fig> {count, plural, few {рабочих процесса} many {рабочих процессов} other {рабочих процесса}}}} · читается из .github при сборке",
+    "provenanceHandSet": "схема · вручную",
+    "region": "Схема пайплайна сборки",
+    "svgTitle": "Конвейер доставки: пуш попадает из GitHub через GitHub Actions и сборку Vercel в Fluid compute; до него также напрямую доходит вебхук GitHub, а раз в сутки его вызывает cron. Дальше Fluid compute по сервисной шине обращается к сервисам, перечисленным ниже.",
+    "fires": "срабатывает <fig>{window}</fig> UTC (точность Hobby)",
+    "kinds": {
+      "source": "ИСТОЧНИК",
+      "ci": "CI",
+      "build": "СБОРКА",
+      "runtime": "РАНТАЙМ",
+      "schedule": "РАСПИСАНИЕ",
+      "store": "ХРАНИЛИЩЕ",
+      "gateway": "ШЛЮЗ",
+      "graphql": "GRAPHQL",
+      "rest": "REST",
+      "mail": "ПОЧТА",
+      "auth": "АВТОРИЗАЦИЯ",
+      "search": "ПОИСК"
+    },
+    "workflows": "{count, plural, one {{n} рабочий процесс} few {{n} рабочих процесса} many {{n} рабочих процессов} other {{n} рабочего процесса}}",
+    "apiRoutes": "{count, plural, one {{n} API-маршрут} few {{n} API-маршрута} many {{n} API-маршрутов} other {{n} API-маршрута}}",
+    "apiRoutesBare": "API-маршруты",
+    "locales": "{count, plural, one {{n} язык} few {{n} языка} many {{n} языков} other {{n} языка}}",
+    "crons": "{count, plural, one {cron-задача} few {{n} cron-задачи} many {{n} cron-задач} other {{n} cron-задачи}}",
+    "daily": "ежедневно · {time} UTC",
+    "services": {
+      "redis": "гостевая книга · локация · SEO · дедупликация",
+      "graphql": "статистика · навыки · прогресс",
+      "spotify": "сейчас играет",
+      "mail": "контакт · проверка через Abstract"
+    }
+  },
+  "instruments": {
+    "eyebrow": "Качество · считается при сборке",
+    "title": "Приборы",
+    "provenance": "посчитано при сборке · <fig>{date}</fig>",
+    "provenanceBare": "посчитано при сборке",
+    "unitLabel": "{count, plural, one {набор Vitest} few {набора Vitest} many {наборов Vitest} other {набора Vitest}}",
+    "unitSub": "{count, plural, one {{n} тест} few {{n} теста} many {{n} тестов} other {{n} теста}} · Vitest",
+    "e2eLabel": "{count, plural, one {браузерный набор} few {браузерных набора} many {браузерных наборов} other {браузерного набора}}",
+    "e2eSub": "{count, plural, one {{n} сценарий} few {{n} сценария} many {{n} сценариев} other {{n} сценария}} · Playwright",
+    "apiLabel": "{count, plural, one {API-маршрут} few {API-маршрута} many {API-маршрутов} other {API-маршрута}}",
+    "apiSub": "обработчики маршрутов · {methods}",
+    "apiSubBare": "обработчики маршрутов",
+    "tileLabel": "{figure} {label} — {sub} (открывает папку на GitHub в новой вкладке)"
+  },
+  "bom": {
+    "eyebrow": "Спецификация · этот сайт",
+    "title": "Из чего он сделан",
+    "provenance": "{source} · проверено при сборке · <fig>{date}</fig>",
+    "provenanceBare": "{source} · проверено при сборке",
+    "unreadable": "Не удалось прочитать манифест при сборке, поэтому версии не указаны.",
+    "packages": "{count, plural, one {Пакет: <fig>{n}</fig>} other {Пакетов: <fig>{n}</fig>}}",
+    "packagesOf": "<fig>{n}</fig> из <fig>{all}</fig> пакетов",
+    "built": "собрано <fig>{date}</fig>",
+    "groups": {
+      "core": "Ядро",
+      "3d-and-motion": "3D и анимация",
+      "data-and-services": "Данные и сервисы",
+      "interface": "Интерфейс",
+      "platform": "Платформа",
+      "media": "Медиа",
+      "quality": "Качество",
+      "build": "Сборка",
+      "runtime": "Среда выполнения",
+      "tooling": "Инструменты"
+    }
+  },
+  "toolCopy": {
+    "categories": {
+      "languages": {
+        "label": "Языки",
+        "lay": "На чём написан сам код."
+      },
+      "frameworks": {
+        "label": "Фреймворки",
+        "lay": "Каркас, на котором строится приложение: его структура и соглашения."
+      },
+      "libraries": {
+        "label": "Библиотеки",
+        "lay": "Готовые строительные блоки: каждый подключается, чтобы хорошо решать одну задачу."
+      },
+      "tools": {
+        "label": "Инструменты",
+        "lay": "Всё, что работает вокруг кода: тестирование, форматирование, базы данных и развёртывание."
+      },
+      "software": {
+        "label": "Программы",
+        "lay": "Сервисы, на которых живёт готовая работа."
+      }
+    }
+  }
+}

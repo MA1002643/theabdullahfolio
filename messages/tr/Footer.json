@@ -1,0 +1,98 @@
+{
+  "columns": {
+    "index": "İndeks",
+    "elsewhere": "Başka yerlerde"
+  },
+  "siteNav": "Site",
+  "identity": {
+    "role": "Yazılım Mühendisi",
+    "statement": "İngiltere'nin kuzeyinden hızlı, özenli web deneyimleri tasarlıyorum."
+  },
+  "availability": "Yeni rollere açığım",
+  "githubCta": {
+    "label": "Bu projeyi GitHub'da görüntüle",
+    "newTab": "(yeni sekmede açılır)",
+    "commits": "{count, plural, other {<num>{formatted}</num> commit}}",
+    "pushed": "gönderildi: {when}"
+  },
+  "manifest": {
+    "departures": "Kalkışlar",
+    "nowBoarding": "Biniş başladı",
+    "onTime": "Zamanında",
+    "links": {
+      "about": {
+        "label": "Hakkımda",
+        "desc": "Ben kimim"
+      },
+      "journey": {
+        "label": "Yolculuk",
+        "desc": "Şimdiye kadarki yol"
+      },
+      "qualifications": {
+        "label": "Yeterlilikler",
+        "desc": "Belgeler ve sertifikalar"
+      },
+      "cv": {
+        "label": "CV",
+        "desc": "Tüm özgeçmiş"
+      },
+      "projects": {
+        "label": "Projeler",
+        "desc": "Seçili işler"
+      },
+      "uses": {
+        "label": "Kullandıklarım",
+        "desc": "Neyle geliştiriyorum"
+      },
+      "notes": {
+        "label": "Notlar",
+        "desc": "Neden bu şekilde yapıldı"
+      },
+      "contact": {
+        "label": "İletişim",
+        "desc": "Merhaba de"
+      },
+      "guestbook": {
+        "label": "Ziyaretçi defteri",
+        "desc": "İzini bırak"
+      }
+    }
+  },
+  "elsewhere": {
+    "github": "GitHub profili (yeni sekmede açılır)",
+    "linkedin": "LinkedIn profili (yeni sekmede açılır)",
+    "resume": "CV'nin tamamını oku",
+    "linkLabel": "{command}, {handle}: {description}"
+  },
+  "location": {
+    "timeLabel": "{hasPeriod, select, yes {{town} yerel saati: {time} {period}} other {{town} yerel saati: {time}}}",
+    "placeLabel": "Konum: {town}",
+    "live": "CANLI"
+  },
+  "sound": {
+    "label": "Ses",
+    "on": "Açık",
+    "off": "Kapalı",
+    "turnOn": "Alt bilgi gitar sesini aç",
+    "turnOff": "Alt bilgi gitar sesini kapat",
+    "hoverLines": "Çizgilerin üzerine gel",
+    "nowPlaying": "Şimdi çalıyor — sakinleştirici bir gitar",
+    "turnOnPrompt": "Sakinleştirici bir gitar için sesi aç"
+  },
+  "privacy": {
+    "policy": "Gizlilik",
+    "choices": "Gizlilik tercihleri"
+  },
+  "copyright": {
+    "withYear": "© {year} {name}",
+    "noYear": "© {name}"
+  },
+  "terminal": {
+    "path": "~/başka-yerler",
+    "cmd": {
+      "github": "github'ı aç",
+      "linkedin": "linkedin'i aç",
+      "resume": "özgeçmişi aç"
+    }
+  }
+}

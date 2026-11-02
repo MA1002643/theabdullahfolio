@@ -1,0 +1,35 @@
+{
+  "links": {
+    "about": "自己紹介",
+    "projects": "プロジェクト",
+    "qualifications": "資格・学歴",
+    "contact": "お問い合わせ",
+    "journey": "歩み",
+    "past": "これまでの経歴",
+    "guestbook": "ゲストブック",
+    "uses": "使用ツール"
+  },
+  "routes": {
+    "home": "ホーム",
+    "about": "自己紹介",
+    "projects": "プロジェクト",
+    "qualifications": "資格・学歴",
+    "contact": "お問い合わせ",
+    "myPast": "これまでの経歴",
+    "journey": "歩み",
+    "guestbook": "ゲストブック",
+    "uses": "使用ツール",
+    "cv": "CV",
+    "notes": "ノート",
+    "privacy": "プライバシー"
+  },
+  "homeButton": {
+    "tooltip": "ホーム",
+    "srLabel": "ホームページへ移動"
+  },
+  "projectsButton": {
+    "label": "プロジェクト",
+    "tooltip": "プロジェクト",
+    "srLabel": "プロジェクトページへ移動"
+  }
+}

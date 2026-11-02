@@ -98,6 +98,14 @@ jobs:
       # without running one.
       - name: Vitest count is current
         run: node scripts/count-vitest-cases.mjs --check
+      # Issue #82. Fails on catalogue drift: a locale missing a key, a
+      # translation made from English that has since changed (lockfile hash),
+      # a translation whose placeholders / tags / select branches differ from
+      # English, or a content catalogue out of step with src/app/data.js.
+      # Missing keys would still render (English fallback), which is exactly
+      # why this has to fail here rather than be noticed by a visitor.
+      - name: Translation catalogues are complete and current
+        run: npm run i18n:audit
 
   vitest:
     name: Vitest (unit · property · fitness · component · api)
@@ -154,9 +162,17 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
+      # The pseudo-locale (tests/i18n/pseudo.spec.js): its catalogue is
+      # generated from messages/en, never committed, and must exist before the
+      # build compiles the catalogue imports. NEXT_PUBLIC_I18N_PSEUDO below
+      # routes /en-XA in THIS build only — Vercel never sets it, so production
+      # has no such locale; the sitemap, hreflang and the selector never list it.
+      - name: Pseudo-locale catalogue
+        run: npm run i18n:pseudo
       - name: Build
         run: npm run build
         env:
+          NEXT_PUBLIC_I18N_PSEUDO: '1'
           # The one REAL credential in this workflow, and the reason the bundle
           # scan below means something: if any code path inlined it into client
           # output, the scan finds its value there.
@@ -219,7 +235,7 @@ jobs:
           retention-days: 7
 
   quality:
-    name: Browser quality (a11y · security · perf · visual)
+    name: Browser quality (a11y · security · perf · i18n · visual)
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -237,9 +253,11 @@ jobs:
           path: .next.nosync
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run a11y, security and perf
+      # `i18n` is the pseudo-locale gate: every route in en-XA, failing on any
+      # plain English a catalogue never saw.
+      - name: Run a11y, security, perf and i18n
         id: quality
-        run: npx playwright test --project=a11y --project=security --project=perf
+        run: npx playwright test --project=a11y --project=security --project=perf --project=i18n
       # Visual regression compares against baselines rendered on this same
       # runner type by the "Visual baselines" workflow. The project arms itself
       # only once they are committed (playwright.config.mjs), so this step runs
@@ -257,9 +275,9 @@ jobs:
         env:
           PLAYWRIGHT_JUNIT_FILE: test-results-visual/playwright-junit.xml
           PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-visual
-      - name: Summarise a11y, security and perf
+      - name: Summarise a11y, security, perf and i18n
         if: ${{ always() && steps.quality.outcome != 'skipped' }}
-        run: node scripts/test-summary.mjs playwright "Browser quality · a11y, security, perf"
+        run: node scripts/test-summary.mjs playwright "Browser quality · a11y, security, perf, i18n"
       - name: Summarise visual regression
         if: ${{ always() && steps.visual.outcome != 'skipped' }}
         run: node scripts/test-summary.mjs playwright "Browser quality · visual" test-results-visual/playwright-junit.xml
@@ -339,7 +357,7 @@ jobs:
       # still remembers writing it.
       - name: Burn in
         if: ${{ steps.changed.outputs.specs != '' }}
-        run: npx playwright test ${{ steps.changed.outputs.specs }} --project=chromium --project=a11y --project=security --project=perf --repeat-each=5 --retries=0
+        run: npx playwright test ${{ steps.changed.outputs.specs }} --project=chromium --project=a11y --project=security --project=perf --project=i18n --repeat-each=5 --retries=0
       # No traces: with retries off, `trace: on-first-retry` never records, and
       # recording all ~1,200 runs would load the very job that measures flake
       # under load. The screenshot, video and error context still say where a

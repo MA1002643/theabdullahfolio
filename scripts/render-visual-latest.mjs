@@ -11,12 +11,13 @@
  * against (tests/visual/__screenshots__/), so the script empties it, renders
  * THERE, moves the result to __latest__, and puts the reviewed baselines back. Baselines are
  * replaced only when none exist yet (the first render arms the visual layer) or
- * when PROMOTE=1 asks for it. Then it writes __latest__/README.md: every view,
+ * when PROMOTE=1 asks for it; a view with no baseline at all (one added since the
+ * last promotion) is seeded from its first render. Then it writes __latest__/README.md: every view,
  * its image, and whether it differs from the baseline, so the diff that needs
  * review is listed rather than discovered.
  */
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -66,11 +67,25 @@ if (!adopted) {
 }
 rmSync(backup, { recursive: true, force: true });
 
+// 4b. A view added since the last promotion has no baseline to protect, so its
+// first render seeds one — exactly what the whole set does on a first run.
+// Reviewed baselines are never touched here: only a missing file is written.
+const seeded = [];
+for (const rel of pngs(LATEST)) {
+  const basePath = path.join(BASE, rel);
+  if (existsSync(basePath)) continue;
+  mkdirSync(path.dirname(basePath), { recursive: true });
+  cpSync(path.join(LATEST, rel), basePath);
+  seeded.push(rel);
+}
+
 // 5. The gallery.
 const rows = pngs(LATEST).map((rel) => {
   const latest = readFileSync(path.join(LATEST, rel));
   const basePath = path.join(BASE, rel);
-  const status = !existsSync(basePath)
+  const status = seeded.includes(rel)
+    ? '🆕 new view, seeded as its baseline'
+    : !existsSync(basePath)
     ? '🆕 no baseline'
     : Buffer.compare(latest, readFileSync(basePath)) === 0
       ? '✅ matches baseline'

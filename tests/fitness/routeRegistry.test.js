@@ -29,3 +29,21 @@ describe('route registry ⇄ browser-suite route list', () => {
     }
   });
 });
+
+describe('the localized browser routes (issue #82 follow-up)', async () => {
+  const { LOCALE_SAMPLES, LOCALIZED_ROUTES, ALL_ROUTES } = await import('../support/routes.js');
+  const { LOCALE_CODES, localeInfo } = await import('@/i18n/locales');
+
+  it('samples real, public locales, and one of them is right to left', () => {
+    for (const { code, dir } of LOCALE_SAMPLES) {
+      expect(LOCALE_CODES).toContain(code);
+      expect(localeInfo(code).dir).toBe(dir);
+    }
+    expect(LOCALE_SAMPLES.some((l) => l.dir === 'rtl')).toBe(true);
+  });
+
+  it('covers every route in every sampled locale, prefixed', () => {
+    expect(LOCALIZED_ROUTES).toHaveLength(ALL_ROUTES.length * LOCALE_SAMPLES.length);
+    for (const { path, code } of LOCALIZED_ROUTES) expect(path === `/${code}` || path.startsWith(`/${code}/`)).toBe(true);
+  });
+});
