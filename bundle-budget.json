@@ -1,21 +1,21 @@
 {
   "$comment": "First-load JS per route, gzipped bytes: measured + 10% headroom. Regenerate with `npm run test:bundle:update` and explain the change in review. See scripts/check-bundle-budget.mjs.",
   "routes": {
-    "/": 315392,
-    "/_global-error": 223232,
-    "/_not-found": 274432,
-    "/about": 352256,
-    "/contact": 324608,
-    "/cv": 299008,
-    "/guestbook": 336896,
-    "/journey": 321536,
-    "/my-past": 299008,
-    "/notes": 301056,
-    "/notes/[slug]": 299008,
-    "/privacy": 302080,
-    "/projects": 309248,
-    "/projects/[id]": 297984,
-    "/qualifications": 307200,
-    "/uses": 333824
+    "/_global-error": 152576,
+    "/_not-found": 152576,
+    "/[locale]": 351232,
+    "/[locale]/about": 394240,
+    "/[locale]/contact": 359424,
+    "/[locale]/cv": 334848,
+    "/[locale]/guestbook": 376832,
+    "/[locale]/journey": 361472,
+    "/[locale]/my-past": 332800,
+    "/[locale]/notes": 339968,
+    "/[locale]/notes/[slug]": 334848,
+    "/[locale]/privacy": 336896,
+    "/[locale]/projects": 348160,
+    "/[locale]/projects/[id]": 335872,
+    "/[locale]/qualifications": 343040,
+    "/[locale]/uses": 376832
   }
 }

@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { LOCALE_CODES } from '@/i18n/locales';
 
 // Catalogue text hygiene (issue #82). A translated string once carried the
 // six characters ` ` instead of the no-break space they name: written
@@ -19,12 +20,14 @@ const strings = (node, path = []) =>
     ? [[path.join('.'), node]]
     : Object.entries(node ?? {}).flatMap(([key, value]) => strings(value, [...path, key]));
 
-const locales = readdirSync(MESSAGES).filter(
-  (dir) => !dir.startsWith('_') && statSync(join(MESSAGES, dir)).isDirectory(),
-);
-
+// The registry, not a directory listing: `messages/en-XA/` (the pseudo-locale)
+// is gitignored and exists only where `npm run i18n:pseudo` has run, so
+// listing the folder made this file collect one more case on a machine that
+// had built the pseudo-locale than on CI's test job, and the count /uses
+// publishes failed `test:count --check`. The pseudo strings are a mechanical
+// transform of English, which is checked here already.
 describe('catalogue text', () => {
-  for (const locale of locales) {
+  for (const locale of LOCALE_CODES) {
     it(`${locale}: no string carries a literal escape sequence`, () => {
       const offenders = readdirSync(join(MESSAGES, locale))
         .filter((file) => file.endsWith('.json'))

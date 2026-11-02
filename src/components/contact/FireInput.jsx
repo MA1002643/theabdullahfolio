@@ -87,7 +87,13 @@ const FireInput = forwardRef(function FireInput(
       end = null;
     }
     if (end == null || end === input.value.length) {
-      input.scrollLeft = input.scrollWidth;
+      // In a right-to-left field (an Arabic value under dir="auto") the
+      // value's end is at the LEFT, and scrollLeft runs from 0 down to
+      // -(scrollWidth - clientWidth), so the same pin is the most negative
+      // value. The computed direction is the resolved one, re-read per
+      // sync because dir="auto" re-resolves as the value changes.
+      const rtl = getComputedStyle(input).direction === 'rtl';
+      input.scrollLeft = rtl ? -input.scrollWidth : input.scrollWidth;
     }
     overlay.textContent = input.value;
     overlay.style.transform = `translateX(${-input.scrollLeft}px)`;
@@ -124,12 +130,17 @@ const FireInput = forwardRef(function FireInput(
       />
       {/* Overlay is decorative — the real <input> above it owns all
           interaction, focus, validation, and AT semantics. */}
-      <div className="fire-input-overlay" aria-hidden="true">
-        {/* Same `dir` as the real input (issue #82): with dir="auto" an
-            Arabic value lays out right-to-left in the input, and the painted
-            copy has to resolve the same direction or the glyphs drift off
-            the caret. */}
-        <div ref={overlayRef} dir={rest.dir} className="fire-input-overlay-text" />
+      {/* Same `dir` as the real input (issue #82), and on the flex
+          CONTAINER, not the text: with dir="auto" an Arabic value lays out
+          right-to-left in the input, and the overlay's flex-start has to
+          follow that resolved direction or the painted copy sits at the
+          opposite edge from the caret. The text child inherits it (so its
+          `:dir(rtl)` gradient still matches) and must not carry its own
+          `dir` — dir="auto" skips descendants that set one, so the
+          container would then resolve from no text at all and fall back
+          to ltr. */}
+      <div className="fire-input-overlay" dir={rest.dir} aria-hidden="true">
+        <div ref={overlayRef} className="fire-input-overlay-text" />
       </div>
     </div>
   );
