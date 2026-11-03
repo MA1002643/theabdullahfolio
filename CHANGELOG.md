@@ -1460,6 +1460,14 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### Dependabot holds ESLint on 9 until the React plugins support 10 · 2026-11-03
+
+| | |
+|:--|:--|
+| **Why** | Dependabot PR [#182](https://github.com/MA1002643/theabdullahfolio/pull/182) bumped `eslint` 9.39.5 → 10.14.0, and its Vercel preview build failed at `npm install` with `ERESOLVE`. The newest `eslint-plugin-jsx-a11y` (6.10.2) and `eslint-plugin-react` (7.37.5) cap their `eslint` peer range at `^9`, and `eslint-config-next` depends on both, so no ESLint 10 tree resolves. `--legacy-peer-deps` would install it, but it would only hide plugins that were never tested against ESLint 10. |
+| **Change** | `.github/dependabot.yml` now ignores semver-major updates to `eslint`, the same way it holds `tailwindcss` and `three`. ESLint minors and patches still arrive. Remove the entry once both plugins publish an ESLint 10 peer range. |
+| **Checks** | Test-plan check: nothing to add (CI config only). Privacy check: nothing to change. i18n check: no visitor-facing text. `docs/seo.md`: nothing to change. |
+
 #### The intro seal plays only on visits that enter at `/` · 2026-10-31
 
 | | |
@@ -1584,6 +1592,15 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 | **Hand-copied figures are banned outright** | A count or measurement typed into prose is stale the week after and nothing flags it. **Two live instances were sitting in the tree**: `readNotes.js` said `docs/seo.md` "is 1,022 lines" when it had reached 1,257, and §16 of the document says "1,000-odd lines" about itself. The rule now asks for a figure **derived at build** (`countLines()` is named as the pattern), or hedged prose that cannot go wrong, or — if an exact number really must be written — a date beside it so a reader knows what to trust. |
 
 ### Fixed
+
+#### Flake burn-in no longer burns in `main`'s specs after "Update branch" · 2026-11-03
+
+| | |
+|:--|:--|
+| **Why** | The burn-in job on Dependabot's [#189](https://github.com/MA1002643/theabdullahfolio/pull/189) was cancelled at its 30-minute limit, with every test passing. #189 changes only `package.json`, but "Update branch" merged `main` into it, and that push's `before...head` range held every spec `main` had gained in the multilingual merge (#188): eight specs, × 5 repeats, across five projects. |
+| **Change** | `.github/workflows/ci.yml`: the "Find changed browser specs" step still takes the push's own range, then keeps only specs the branch itself changes against its base (`origin/<base>...head`). A merge-from-`main` or a rebase now burns in nothing that `main` brought in, and a push that changes a spec still burns it in. No timeout raised, and no extra Actions minutes. |
+| **Test-plan check** | **new** `tests/fitness/burnInRange.test.js` runs the workflow's own step against a scratch git repository. It fails on the old step and passes on the new one. `docs/testing.md`: the burn-in paragraph, the fitness table and a defects-table row. `tests/vitest-cases.json` regenerated (1,867). |
+| **Checks** | Privacy check: nothing to change. i18n check: no visitor-facing text. `docs/seo.md`: nothing to change. |
 
 #### Vitest 4 → 5, and the published test count it would have broken · 2026-10-24
 
