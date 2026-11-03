@@ -323,6 +323,7 @@ jobs:
           # push; a dispatch carries it as an input. All-zero means a new branch.
           BEFORE: ${{ github.event.before || inputs.burn_in_base }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           if printf '%s' "$BEFORE" | grep -Eq '^[0-9a-f]{40}$' && [ "$BEFORE" != 0000000000000000000000000000000000000000 ] \
              && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
@@ -334,7 +335,14 @@ jobs:
             echo "No earlier commit to compare against; nothing to burn in." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          specs=$(git diff --name-only --diff-filter=AM "$range" -- 'tests/**/*.spec.js' | tr '\n' ' ')
+          # Keep only specs the BRANCH itself changes against its base. A push
+          # that merges the base in ("Update branch") or rebases onto it brings
+          # the base's own spec changes into BEFORE...HEAD: the update of
+          # Dependabot's #189 (package.json only) burned in eight multilingual
+          # specs from main and hit the 30-minute timeout on 2026-11-03.
+          base="origin/${BASE_REF:-$DEFAULT_BRANCH}"
+          own=$(git diff --name-only --diff-filter=AM "$base...$HEAD_SHA" -- 'tests/**/*.spec.js' | sort)
+          specs=$(git diff --name-only --diff-filter=AM "$range" -- 'tests/**/*.spec.js' | sort | comm -12 - <(printf '%s\n' "$own") | tr '\n' ' ')
           echo "specs=$specs" >> "$GITHUB_OUTPUT"
           echo "Burn-in range: \`$range\` ($EVENT${ACTION:+ $ACTION})" >> "$GITHUB_STEP_SUMMARY"
           if [ -z "$specs" ]; then echo "No browser spec changed; nothing to burn in." >> "$GITHUB_STEP_SUMMARY"; fi

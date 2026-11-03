@@ -29,6 +29,13 @@ updates:
       # Upgrade three on its own branch, then remove this entry.
       - dependency-name: three
         update-types: [version-update:semver-minor, version-update:semver-major]
+      # ESLint 10 can't install yet: eslint-plugin-jsx-a11y 6.10.2 and
+      # eslint-plugin-react 7.37.5 (both pulled in by eslint-config-next too)
+      # cap their eslint peer at ^9, so npm stops with ERESOLVE. PR #182 broke
+      # the Vercel build that way on 2026-11-02. Remove this entry once both
+      # plugins publish an eslint 10 peer range.
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
     groups:
       production-minor-and-patch:
         dependency-type: production
