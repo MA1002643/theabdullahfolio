@@ -143,7 +143,7 @@ jobs:
           fail_ci_if_error: false
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage/
@@ -187,7 +187,7 @@ jobs:
       # is REQUIRED: the output lives in `.next.nosync` (next.config.mjs), and
       # upload-artifact@v4 silently skips dot-directories without it.
       - name: Upload build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: next-build
           path: |
@@ -226,7 +226,7 @@ jobs:
         run: node scripts/test-summary.mjs playwright "E2E · ${{ matrix.project }}"
       - name: Upload report and traces
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ matrix.project }}
           path: |
@@ -283,7 +283,7 @@ jobs:
         run: node scripts/test-summary.mjs playwright "Browser quality · visual" test-results-visual/playwright-junit.xml
       - name: Upload report, traces and visual diffs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-quality
           path: |
@@ -372,7 +372,7 @@ jobs:
       # failure stopped, which the log alone does not.
       - name: Upload report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-burn-in
           path: |
