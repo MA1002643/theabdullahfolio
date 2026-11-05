@@ -43,8 +43,8 @@ jobs:
       - name: Post welcome comment on first issue / PR
         uses: actions/first-interaction@v3
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-message: |
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          issue_message: |
             👋 Thanks for opening your first issue here.
 
             A few quick pointers so this gets resolved fast:
@@ -60,7 +60,7 @@ jobs:
 
             If you'd like to know how decisions are made on this project,
             see [GOVERNANCE.md](https://github.com/${{ github.repository }}/blob/main/GOVERNANCE.md).
-          pr-message: |
+          pr_message: |
             👋 Thanks for opening your first pull request here.
 
             Before review:
