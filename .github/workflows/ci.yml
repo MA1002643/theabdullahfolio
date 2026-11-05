@@ -136,7 +136,7 @@ jobs:
       # numbers. With it, PRs get a coverage-delta comment.
       - name: Upload coverage to Codecov
         if: ${{ always() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ env.CODECOV_TOKEN }}
           files: coverage/lcov.info
