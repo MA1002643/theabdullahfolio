@@ -85,7 +85,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Apply labels matching paths in .github/labeler.yml
-        uses: actions/labeler@v5
+        uses: actions/labeler@v7
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           # If .github/labeler.yml is missing the action exits cleanly
