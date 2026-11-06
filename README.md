@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
   <img src="https://img.shields.io/badge/Three.js-r162-000000?style=for-the-badge&logo=threedotjs&logoColor=white" alt="Three.js" />
-  <img src="https://img.shields.io/badge/Framer_Motion-11-FF0055?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
+  <img src="https://img.shields.io/badge/Framer_Motion-14-FF0055?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
 </p>
@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/code_style-prettier-F7B93E?style=flat-square&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/linter-eslint-4B32C3?style=flat-square&logo=eslint" alt="ESLint" />
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.18-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/last_synced-2026--10--25-ff6d05?style=flat-square" alt="Last synced" />
+  <img src="https://img.shields.io/badge/last_synced-2026--11--06-ff6d05?style=flat-square" alt="Last synced" />
 </p>
 <!-- QUALITY-BADGES:END -->
 
@@ -99,7 +99,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
   <img src="https://img.shields.io/badge/Three.js-r162-000000?style=flat-square&logo=threedotjs" alt="Three.js r162" />
   <img src="https://img.shields.io/badge/@react--three/fiber-9.8-white?style=flat-square" alt="@react-three/fiber 9.8" />
   <img src="https://img.shields.io/badge/@react--three/drei-10.7-white?style=flat-square" alt="@react-three/drei 10.7" />
-  <img src="https://img.shields.io/badge/Framer_Motion-11.18-FF0055?style=flat-square&logo=framer" alt="Framer Motion 11.18" />
+  <img src="https://img.shields.io/badge/Framer_Motion-14.6-FF0055?style=flat-square&logo=framer" alt="Framer Motion 14.6" />
 </p>
 
 | Technology | Version | Role |
@@ -107,7 +107,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | [Three.js](https://threejs.org/) | `^0.162` | WebGL 3D scene rendering |
 | [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) | `^9.8` | React reconciler for Three.js |
 | [@react-three/drei](https://github.com/pmndrs/drei) | `^10.7` | OrbitControls, Environment presets, HTML overlays |
-| [Framer Motion](https://www.framer.com/motion/) | `^11.18` | AnimatePresence, scroll transforms, spring physics, stagger orchestration |
+| [Framer Motion](https://www.framer.com/motion/) | `^14.6` | AnimatePresence, scroll transforms, spring physics, stagger orchestration |
 <!-- STACK-3D:END -->
 
 ### Data & Integration
@@ -117,12 +117,12 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 |------------|---------|------|
 | GitHub GraphQL API | — | Live stats, language breakdown, contribution data |
 | Spotify Web API | — | Live now-playing track for the floating widget — server-side refresh-token exchange (no secret reaches the browser) |
-| [Nodemailer](https://nodemailer.com/) | `^10.1` | SMTP email delivery for the contact form |
-| [react-hook-form](https://react-hook-form.com/) | `^7.90` | Form state management and validation |
+| [Nodemailer](https://nodemailer.com/) | `^10.3` | SMTP email delivery for the contact form |
+| [react-hook-form](https://react-hook-form.com/) | `^7.91` | Form state management and validation |
 | [AI SDK (`ai`)](https://sdk.vercel.ai/) | `^7.0` | `streamText` routed through the **Vercel AI Gateway** for the contact form's "Refine my message" rewrite (no provider SDK) |
-| [@upstash/redis](https://upstash.com/docs/redis) | `^1.38` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
+| [@upstash/redis](https://upstash.com/docs/redis) | `^1.40` | Serverless Redis backing the idempotent contact-send store + the footer's latest live-location fix |
 | [tz-lookup](https://github.com/darkskyapp/tz-lookup) | `^6.1` | Offline coordinates→IANA-timezone lookup for the footer's live-location clock |
-| [marked](https://marked.js.org/) | `^16.4` | Markdown → HTML for the `/notes` decision records, at build time only — never in a client bundle |
+| [marked](https://marked.js.org/) | `^18.1` | Markdown → HTML for the `/notes` decision records, at build time only — never in a client bundle |
 | [@vercel/analytics](https://vercel.com/analytics) | `^2.0` | Real-user performance monitoring |
 | [@vercel/speed-insights](https://vercel.com/docs/speed-insights) | `^2.0` | Core Web Vitals tracking |
 <!-- STACK-DATA:END -->
@@ -132,7 +132,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 <!-- STACK-UI:START -->
 | Technology | Version | Role |
 |------------|---------|------|
-| [Lucide React](https://lucide.dev/) | `^1.58.0` | Primary icon system |
+| [Lucide React](https://lucide.dev/) | `^1.66.0` | Primary icon system |
 | [React Icons](https://react-icons.github.io/react-icons/) | `^5.7` | Extended icon library |
 | [Sonner](https://sonner.emilkowal.ski/) | `^1.7` | Toast notification system |
 | [clsx](https://github.com/lukeed/clsx) | `^2.1` | Conditional class name utility |

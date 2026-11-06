@@ -6,7 +6,7 @@ import { abstractReputation, githubStatsPayload, sendMailOk } from '../fixtures/
 //
 // There are deliberately NO default handlers. Every suite states the network it
 // expects, so reading a test tells you what it depends on, and the server's
-// `onUnhandledRequest: 'error'` catches anything it forgot.
+// `onUnhandledFrame: 'error'` catches anything it forgot.
 export const defaultHandlers = [];
 
 const ABSTRACT = 'https://emailreputation.abstractapi.com/v1/';

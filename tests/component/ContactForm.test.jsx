@@ -155,7 +155,7 @@ describe('ContactForm — client validation', () => {
 
   it('sends nothing while the form is invalid', async () => {
     const { submit } = setup();
-    // No handler registered: any request fails the suite (onUnhandledRequest).
+    // No handler registered: any request fails the suite (onUnhandledFrame).
     await submit();
     await screen.findAllByRole('alert');
   });
