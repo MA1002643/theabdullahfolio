@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
           queries: security-extended
@@ -56,7 +56,7 @@ jobs:
       # ("Code scanning is not enabled", 2026-10-04), so the upload is skipped
       # while the repository is private and the gate below judges the SARIF
       # itself. Made public, the results also upload as code-scanning alerts.
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
         with:
           category: /language:javascript-typescript
           upload: ${{ github.event.repository.private && 'never' || 'always' }}
