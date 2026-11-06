@@ -320,7 +320,7 @@ describe('Abstract email-reputation check (MSW over real fetch)', () => {
 
   it('skips the lookup entirely for an address that is already malformed', async () => {
     const { POST } = await loadRoute();
-    // No handler registered: any request would fail the suite (onUnhandledRequest).
+    // No handler registered: any request would fail the suite (onUnhandledFrame).
     const res = await POST(post(validContactMessage({ email: 'not-an-email' })));
     expect(res.status).toBe(400);
   });

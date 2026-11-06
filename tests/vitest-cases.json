@@ -1,8 +1,8 @@
 {
-  "suites": 162,
-  "cases": 1870,
+  "suites": 163,
+  "cases": 1872,
   "byProject": {
-    "api": 73,
+    "api": 75,
     "component": 140,
     "fitness": 206,
     "property": 35,

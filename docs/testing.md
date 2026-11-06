@@ -387,6 +387,9 @@ the advisory.
   2026-09-29: **87.2%** over eight modules (79.6% on the first run, which
   exposed the two gaps the rank oracle and the contact-client suite now
   close). The `break` score of 85 in `stryker.config.mjs` is the ratchet.
+  Re-measured 2026-11-06 on Stryker 10.1 and Vitest 5: **87.46%**. Stryker
+  10.0 could not run Vitest 5's tests against a mutant, so from 2026-10-25 to
+  then the nightly read 11.88% (see the defects table).
 - **Flake burn-in**: on every push to a branch, each browser spec *that push*
   changed runs five times with retries off (capped at 30 minutes). The range is
   the push's own `before`, from whichever run survives the concurrency group:
@@ -564,6 +567,8 @@ future finding that genuinely needs its owner; anything not on it fails.
 | CI (bundle budget) | After every page moved under `app/[locale]/`, `bundle-budget.json` matched no built route: the gate listed each page as "gone" and "unbudgeted" and measured nothing, which hid about 33–42 kB (gzip) of first-load growth per page from #82's i18n runtime. | Re-baselined with `--update` (measured + 10%), the growth recorded in the changelog. A route rename always needs `--update` in the same change. |
 | Owner report (`/ur/contact`, field direction) | Typing started at the left in some contact fields and at the right in others. An empty `dir="auto"` field resolves left-to-right (no letters to go by), so on a right-to-left page the empty name, subject and message waited at the left, while the email, with no `dir`, followed the page to the right and laid typed addresses out right to left. | One rule: empty, a field carries no `dir` and inherits the page's; typed, it takes `auto` (name, subject, message) or `ltr` (email), on the field and its overlay alike (`applyTypedDirection`). `tests/e2e/rtl.spec.js` checks every field empty, with Urdu, with Latin and cleared, on `/contact` and `/ur/contact`. |
 | Dependency major (CI config) | Dependabot PR #181 moved `actions/first-interaction` v1 → v3 and changed only the version. v3 renamed every input to snake_case (`issue-message` → `issue_message`), so the welcome step would have run green and posted nothing to every first-time contributor. | Inputs renamed in `issue-triage.yml`. `workflowActionInputs` (fitness) fails on the old keys, naming each one. |
+| Mutation (nightly, the tool) | From the Vitest 5 merge (#171, 2026-10-24) the nightly mutation score fell from 87.2% to 11.88%, with 503 mutants "surviving" across all eight modules, `paging.js` at 0%. The suites had not weakened: `@stryker-mutator/vitest-runner` 10.0 did not support Vitest 5, and reported mutants whose tests it could not collect as survivors. Nightly went red for twelve nights while every PR stayed green, because mutation runs only nightly. | Stryker 10.1.1 (Dependabot #192), which adds Vitest 5 support and reports a collection failure as an error rather than a survivor. Re-measured: 87.46%. The `break: 85` threshold is what caught it. |
+| Hermetic network (dependency major) | msw 3 (Dependabot #193) renamed `server.listen`'s `onUnhandledRequest` to `onUnhandledFrame` and ignores the old name, falling back to `'warn'`. With only the version bumped, every suite stayed green and an unstubbed request went through to the real network. Shown against a loopback server: the request got a 200. | `MSW_LISTEN_OPTIONS` uses `onUnhandledFrame: 'error'`. **new** `tests/api/mswHermetic.test.js` sends an unstubbed request to a live loopback server and fails if it is answered; it fails on the old option name. |
 
 ## Maintenance
 
