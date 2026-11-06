@@ -131,7 +131,7 @@ jobs:
       # which is exactly the run a default `if: success()` would skip.
       - name: Upload Lighthouse reports
         if: ${{ always() && steps.lhci.outcome != 'skipped' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lighthouse-reports
           path: .lighthouseci/

@@ -1460,6 +1460,17 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### GitHub Actions majors: five Dependabot bumps, and the one that would have greeted nobody · 2026-11-05
+
+| | |
+|:--|:--|
+| **Ref** | Dependabot PRs [#184](https://github.com/MA1002643/theabdullahfolio/pull/184) (`codecov/codecov-action` 5 → 7), [#185](https://github.com/MA1002643/theabdullahfolio/pull/185) (`github/codeql-action` 3 → 4), [#186](https://github.com/MA1002643/theabdullahfolio/pull/186) (`actions/upload-artifact` 4 → 7), [#187](https://github.com/MA1002643/theabdullahfolio/pull/187) (`actions/labeler` 5 → 7) and [#181](https://github.com/MA1002643/theabdullahfolio/pull/181) (`actions/first-interaction` 1 → 3), landed together. |
+| **Review** | Each new major's `action.yml` was read against the inputs our workflows pass. `codecov-action` 7 still takes `token`, `files` and `fail_ci_if_error`. `upload-artifact` 7 keeps every input we use and pairs with the `download-artifact@v8` already here. `labeler` 7 keeps `repo-token`, `configuration-path`, `sync-labels` and the v5 config format. `codeql-action` 4 keeps the same `init` / `analyze` steps. Most of these majors exist to move off the deprecated Node 20 runtime. |
+| **What was wrong** | `first-interaction` 3 renamed every input to snake_case: `repo-token` → `repo_token`, `issue-message` → `issue_message`, `pr-message` → `pr_message`. #181 changed only the version. GitHub treats an unknown input as a warning, so the welcome job would have stayed green and posted nothing on every first issue or PR. |
+| **Fix** | `.github/workflows/issue-triage.yml`: the three inputs renamed. |
+| **Test-plan check** | **new** `tests/fitness/workflowActionInputs.test.js`: every `with:` key passed to a listed action must be one that action declares at the pinned major, and a new major of a listed action fails until its row is re-read. It fails on the old keys and names all three. `docs/testing.md`: a fitness-table row and a defects-table row. `tests/vitest-cases.json` regenerated (1,870). |
+| **Checks** | Privacy check: nothing to change (CI configuration only). i18n check: no visitor-facing text. `docs/seo.md`: nothing to change. |
+
 #### Dependabot holds ESLint on 9 until the React plugins support 10 · 2026-11-03
 
 | | |

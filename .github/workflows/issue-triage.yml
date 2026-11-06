@@ -41,10 +41,10 @@ jobs:
       pull-requests: write
     steps:
       - name: Post welcome comment on first issue / PR
-        uses: actions/first-interaction@v1
+        uses: actions/first-interaction@v3
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-message: |
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          issue_message: |
             👋 Thanks for opening your first issue here.
 
             A few quick pointers so this gets resolved fast:
@@ -60,7 +60,7 @@ jobs:
 
             If you'd like to know how decisions are made on this project,
             see [GOVERNANCE.md](https://github.com/${{ github.repository }}/blob/main/GOVERNANCE.md).
-          pr-message: |
+          pr_message: |
             👋 Thanks for opening your first pull request here.
 
             Before review:
@@ -85,7 +85,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Apply labels matching paths in .github/labeler.yml
-        uses: actions/labeler@v5
+        uses: actions/labeler@v7
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           # If .github/labeler.yml is missing the action exits cleanly
