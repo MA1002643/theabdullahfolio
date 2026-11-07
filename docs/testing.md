@@ -68,7 +68,7 @@ unit test would think to check:
 | `apiSurface` | The method map of every route is pinned; routes export only verbs and segment config; Node-only imports pin `runtime`; every request body is read through a byte ceiling; `CRON_SECRET` is compared only in constant time. |
 | `contactContract` | The contact form's client limits are never looser than the server's, and both read `src/lib/contactLimits.js`. |
 | `routeRegistry` | The browser suites' route list equals the sitemap registry. |
-| `testHygiene` | No focused or skipped tests; every `@quarantine` links an issue. |
+| `testHygiene` | No focused or skipped tests; every `@quarantine` and `@webkit-quarantine` links an issue. |
 | `browserScripts` | Every `npm run` script that runs `playwright test` builds first; the CI JUnit reporter keeps `includeRetries`, so the run summary can name flaky tests. |
 | `routeSegmentConfig` | No file under `src/app` re-exports route segment config (`dynamicParams`, `revalidate`, …) from a sibling: Next 15 reads it only from the file itself and silently applies the default otherwise. |
 | `escapeOwnership` | Every source that acts on Escape claims it with `claimEscape` (`src/lib/escapeKey.js`), and the privacy notice decides only after dispatch, so one press never both closes something and declines analytics. |
@@ -408,6 +408,15 @@ the advisory.
   `playwright.config.mjs`, so it no longer gates a merge. The nightly
   `quarantine` job sets `PW_INCLUDE_QUARANTINE=1` and runs only the tagged
   tests, so a parked test still runs every night until it is fixed.
+- **WebKit-only quarantine**: `@webkit-quarantine` parks a case on the
+  `webkit` and `mobile-safari` projects only. It is for failures of the CI
+  runner's Linux WebKit build that Apple's WebKit does not share. Every other
+  project still runs the case, so Chromium keeps gating it on every PR. The
+  nightly `quarantine-webkit` job runs the tagged cases on both WebKit
+  projects with `continue-on-error`: they stay visible without turning the
+  nightly red, and a pass there means the tag can go. The issue link is
+  enforced the same way (`testHygiene`). The cases parked this way, and why,
+  are in [#198](https://github.com/MA1002643/theabdullahfolio/issues/198).
 
 ## CI
 
@@ -415,7 +424,7 @@ the advisory.
 |---|---|---|
 | `ci.yml` | every push and PR, and dispatched onto each screenshot commit | lint + the browser-test count check + the translation audit (`npm run i18n:audit`) · Vitest + coverage · build → bundle scan + budget · E2E (chromium, mobile-chrome) · browser quality (a11y, security, perf and the pseudo-locale `i18n` gate, then visual, each with its own report and summary) · burn-in |
 | `security.yml` | PRs, `main`, weekly | CodeQL · OSV · Gitleaks · audit gate |
-| `nightly.yml` | daily | WebKit, Firefox, iPhone 14 · quarantined tests · mutation testing · every property at ≥ 20,000 runs |
+| `nightly.yml` | daily | WebKit, Firefox, iPhone 14 · quarantined tests · Linux-WebKit-quarantined cases (non-blocking) · mutation testing · every property at ≥ 20,000 runs |
 | `lighthouse.yml` | `main`; a PR only while it carries the `lighthouse` label | Lighthouse CI budgets |
 | `visual-baselines.yml` | every push (and manual, with `promote`) | render every view, commit `tests/visual/__latest__/` (and seed or promote the baselines) on any branch but `main` when a screenshot changed, then dispatch `ci.yml` and `security.yml` onto that commit |
 

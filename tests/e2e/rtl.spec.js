@@ -28,7 +28,8 @@ test.describe('left-to-right content in a right-to-left page', { tag: '@cross-br
   test.use({ contextOptions: { reducedMotion: 'reduce' } });
 
   for (const path of ['/ar/about', '/about']) {
-    test(`${path}: the footer email reads left to right, in order`, async ({ page }) => {
+    // React #418 on the CI runner's Linux WebKit only (#198); gated on Chromium.
+    test(`${path}: the footer email reads left to right, in order`, { tag: '@webkit-quarantine', annotation: { type: 'issue', description: 'https://github.com/MA1002643/theabdullahfolio/issues/198' } }, async ({ page }) => {
       await page.goto(path);
       await settle(page);
       const email = page.locator('.hover-text--decipher').first();
@@ -94,7 +95,7 @@ test.describe('left-to-right content in a right-to-left page', { tag: '@cross-br
     });
   }
 
-  test('/ar/about: the footer terminal keeps its handles left to right', async ({ page }) => {
+  test('/ar/about: the footer terminal keeps its handles left to right', { tag: '@webkit-quarantine', annotation: { type: 'issue', description: 'https://github.com/MA1002643/theabdullahfolio/issues/198' } }, async ({ page }) => {
     await page.goto('/ar/about');
     await settle(page);
     const terminal = page.locator('.footer-term');

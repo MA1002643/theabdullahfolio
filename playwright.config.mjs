@@ -45,6 +45,13 @@ const CI = Boolean(process.env.CI);
 // The subset every engine and device runs: journeys a visitor on ANY browser
 // takes. Engine-specific rendering is the visual layer's business, not this.
 const CROSS_BROWSER = /@cross-browser/;
+const INCLUDE_QUARANTINE = process.env.PW_INCLUDE_QUARANTINE === '1';
+const QUARANTINE = /@quarantine/;
+// Parked on the WebKit projects only (#198): cases that fail on the CI
+// runner's Linux WebKit build and pass in Apple's WebKit and on Chromium. They
+// stay in every other project's run, so Chromium still gates them on every PR,
+// and the nightly `quarantine-webkit` job keeps running them on WebKit.
+const WEBKIT_GREP_INVERT = INCLUDE_QUARANTINE ? undefined : [QUARANTINE, /@webkit-quarantine/];
 
 export default defineConfig({
   testDir: 'tests',
@@ -65,8 +72,9 @@ export default defineConfig({
   // every run, so it is not a merge gate, unless PW_INCLUDE_QUARANTINE=1. The
   // nightly `quarantine` job sets it and runs ONLY the tagged tests, so a
   // parked test keeps running, visibly, until it is fixed. Every project
-  // inherits this; none sets its own `grepInvert`.
-  grepInvert: process.env.PW_INCLUDE_QUARANTINE === '1' ? undefined : /@quarantine/,
+  // inherits this except the two WebKit ones below, which add
+  // `@webkit-quarantine` to it.
+  grepInvert: INCLUDE_QUARANTINE ? undefined : QUARANTINE,
   // One server, shared; parallel workers against it are fine (every spec is
   // read-only or stubs its writes), but CI runners are 4-core.
   workers: CI ? 2 : undefined,
@@ -116,7 +124,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, contextOptions: { reducedMotion: 'reduce' } },
     },
     { name: 'chromium', testDir: 'tests/e2e', dependencies: ['warm-desktop'], use: { ...devices['Desktop Chrome'] } },
-    { name: 'webkit', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['Desktop Safari'] } },
+    { name: 'webkit', testDir: 'tests/e2e', grep: CROSS_BROWSER, grepInvert: WEBKIT_GREP_INVERT, use: { ...devices['Desktop Safari'] } },
     { name: 'firefox', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['Desktop Firefox'] } },
     {
       name: 'mobile-chrome',
@@ -125,7 +133,7 @@ export default defineConfig({
       dependencies: ['warm-mobile'],
       use: { ...devices['Pixel 7'] },
     },
-    { name: 'mobile-safari', testDir: 'tests/e2e', grep: CROSS_BROWSER, use: { ...devices['iPhone 14'] } },
+    { name: 'mobile-safari', testDir: 'tests/e2e', grep: CROSS_BROWSER, grepInvert: WEBKIT_GREP_INVERT, use: { ...devices['iPhone 14'] } },
     // The three Desktop Chrome quality projects visit every route cold too, so
     // they share the desktop warm-up. Without it, PR #160's burn-in ran axe on
     // /qualifications while the warm-up encoded the same images, and the page
