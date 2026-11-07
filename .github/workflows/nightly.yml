@@ -138,6 +138,7 @@ jobs:
           path: |
             playwright-report/
             test-results/
+          retention-days: 7
 
   # `@webkit-quarantine` (#198): cases that fail only on this runner's Linux
   # WebKit build, and pass in Apple's WebKit and on Chromium (which still gates
