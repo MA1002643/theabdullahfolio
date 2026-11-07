@@ -32,8 +32,16 @@ jobs:
     # First-interaction welcome only makes sense on the initial open —
     # don't re-greet on subsequent commits or reopens. `github.event.action`
     # is `'opened'` for both `issues.opened` and `pull_request_target.opened`,
-    # so this single condition covers both surfaces.
-    if: github.event.action == 'opened'
+    # so this single condition covers both surfaces. Bots (Dependabot, the
+    # README sync) are never "first-time contributors".
+    #
+    # Not actions/first-interaction: v3 posts when EITHER of its checks
+    # passes, and its issue check passes for anyone who has never opened an
+    # issue, so every PR from such an author (every Dependabot PR) got the
+    # first-PR welcome. Its PR check also ignores the author. The step below
+    # asks the one question that matters: has this author opened an item of
+    # this kind here before?
+    if: github.event.action == 'opened' && github.event.sender.type != 'Bot'
     name: Welcome first-time contributors
     runs-on: ubuntu-latest
     permissions:
@@ -41,10 +49,13 @@ jobs:
       pull-requests: write
     steps:
       - name: Post welcome comment on first issue / PR
-        uses: actions/first-interaction@v3
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          issue_message: |
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.issue.user.login || github.event.pull_request.user.login }}
+          KIND: ${{ github.event_name == 'issues' && 'issue' || 'pr' }}
+          ISSUE_MESSAGE: |
             👋 Thanks for opening your first issue here.
 
             A few quick pointers so this gets resolved fast:
@@ -60,7 +71,7 @@ jobs:
 
             If you'd like to know how decisions are made on this project,
             see [GOVERNANCE.md](https://github.com/${{ github.repository }}/blob/main/GOVERNANCE.md).
-          pr_message: |
+          PR_MESSAGE: |
             👋 Thanks for opening your first pull request here.
 
             Before review:
@@ -74,6 +85,21 @@ jobs:
             CodeRabbit will leave automated review comments shortly. The
             maintainer will follow up — typical turnaround is within
             7 days per [MAINTAINERS.md](https://github.com/${{ github.repository }}/blob/main/MAINTAINERS.md#availability-and-response-expectations).
+        # Every user value reaches the script through env, never through an
+        # expression, so a crafted login or title cannot inject shell. The
+        # current item is excluded by number rather than counted on, because
+        # the search index can lag behind an item opened seconds ago.
+        run: |
+          earlier=$(gh api -X GET search/issues \
+            -f q="repo:$REPO is:$KIND author:$AUTHOR" -f per_page=100 \
+            --jq "[.items[] | select(.number != $NUMBER)] | length")
+          if [ "$earlier" != "0" ]; then
+            echo "Not a first $KIND from $AUTHOR; no welcome."
+            exit 0
+          fi
+          if [ "$KIND" = issue ]; then body="$ISSUE_MESSAGE"; else body="$PR_MESSAGE"; fi
+          gh api "repos/$REPO/issues/$NUMBER/comments" -f body="$body" > /dev/null
+          echo "Welcomed $AUTHOR on #$NUMBER."
 
   label-pr-by-area:
     # Only PRs need path-based labelling; issues are labelled by template.

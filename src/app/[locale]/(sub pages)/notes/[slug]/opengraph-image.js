@@ -2,14 +2,19 @@ import { ImageResponse } from 'next/og';
 import { sectionCard } from '@/lib/og/card';
 import { ogFonts } from '@/lib/og/assets';
 import { readNote, readNotes } from '@/lib/notes/readNotes';
+import { localeParams } from '@/i18n/staticParams';
 
 // Per-note share card, one per document, rendered at build time.
 //
 // `generateStaticParams` is repeated here rather than inherited: Next composes
 // the image route independently of `page.js`, so a card handler with no params
 // of its own would render on demand instead of being prerendered.
+// It names the locale as well, for the same reason: the `[locale]` layout's
+// list does not reach this handler, and slugs alone prerendered no card at all.
 export function generateStaticParams() {
-  return readNotes().map((note) => ({ slug: note.slug }));
+  return localeParams().flatMap(({ locale }) =>
+    readNotes().map((note) => ({ locale, slug: note.slug })),
+  );
 }
 
 // And `dynamicParams` has to be restated for the same reason. On its own

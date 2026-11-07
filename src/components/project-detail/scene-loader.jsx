@@ -1,10 +1,12 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { useDirection } from "@/i18n/useDirection"
 
 import { optionalChunk } from "@/lib/optionalChunk"
+import { canCreateWebGL } from "@/lib/webglSupport"
 
 // Client-side boundary that keeps the WebGL bundle OUT of the /projects/[id]
 // entry chunk (issue #83). scene.jsx is the only module in the route that
@@ -65,7 +67,15 @@ export function useScreenCopy() {
     }
 }
 
+// No WebGL context to be had (switched off, blocklisted, headless Firefox):
+// the same outcome as a chunk that failed to load. The page keeps its title,
+// description and links, and three.js is never asked, because it throws
+// rather than degrading. Probed after hydration, so the first render matches
+// the server's.
 export default function SceneLoader({ links }) {
     const copy = useScreenCopy()
+    const [webgl, setWebgl] = useState(false)
+    useEffect(() => setWebgl(canCreateWebGL()), [])
+    if (!webgl) return null
     return <ProjectScene links={links} copy={copy} />
 }

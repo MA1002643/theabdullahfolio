@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { onMediaChange } from '@/lib/mediaQuery';
 import { optionalChunk } from '@/lib/optionalChunk';
+import { canCreateWebGL } from '@/lib/webglSupport';
 
 // The WebGL canvas is loaded lazily and client-only: Three never enters a
 // route's critical bundle, and the import doesn't fire until the conditions
@@ -30,11 +31,18 @@ const AuroraDust = dynamic(optionalChunk(() => import('./AuroraDust'), 'AuroraDu
 // MotionConfig but could not reach this mount's media query (code review).
 // Off, the canvas unmounts and the static image shows, exactly as under the
 // OS preference; the query still rules whenever the page says nothing.
+//
+// A browser that cannot create a WebGL context gets the static image too
+// (`canCreateWebGL`): three.js throws there, and the throw used to blank the
+// whole route. The probe runs in the effect, after hydration, so the server
+// and the first client render agree.
 export default function AuroraDustMount({ enabled = true }) {
   const revealed = useLoaderRevealed();
   const [motionOk, setMotionOk] = useState(false);
+  const [webgl, setWebgl] = useState(false);
 
   useEffect(() => {
+    setWebgl(canCreateWebGL());
     if (typeof window === 'undefined' || !window.matchMedia) return undefined;
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const apply = () => setMotionOk(!mq.matches);
@@ -42,7 +50,7 @@ export default function AuroraDustMount({ enabled = true }) {
     return onMediaChange(mq, apply);
   }, []);
 
-  if (!enabled || !motionOk || !revealed) return null;
+  if (!enabled || !motionOk || !revealed || !webgl) return null;
 
   return (
     <div

@@ -34,6 +34,15 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
+// And only those locales. A one-segment path with a dot in it (`/favicon.ico`,
+// `/ads.txt`, a scanner's `/wp-config.php`) skips the proxy, whose matcher
+// leaves file-like paths alone, and arrives here as the "locale" `favicon.ico`.
+// With the param set open, Next answered those with a 500: the segment is
+// prerendered, and the `notFound()` below needs a request-time render it
+// refuses ("Page changed from static to dynamic at runtime"). Closed, such a
+// path gets the root 404 that `src/app/not-found.js` exists for.
+export const dynamicParams = false;
+
 /**
  * Root metadata, per locale. It was a static `metadata` export before #82;
  * it is `generateMetadata` now because the title, description, canonical,
