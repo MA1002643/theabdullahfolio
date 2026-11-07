@@ -59,7 +59,7 @@ describe('test hygiene', () => {
       codeOnly(read(file), { blankStrings: false })
         .split('\n')
         .map((line, i) => ({ line, n: i + 1 }))
-        .filter(({ line }) => line.includes('@quarantine') && !/#\d+|issues\/\d+/.test(line))
+        .filter(({ line }) => /@(webkit-)?quarantine/.test(line) && !/#\d+|issues\/\d+/.test(line))
         .map(({ n }) => `${file}:${n}`),
     );
     expect(offenders).toEqual([]);

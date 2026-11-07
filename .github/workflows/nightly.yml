@@ -138,6 +138,46 @@ jobs:
           path: |
             playwright-report/
             test-results/
+
+  # `@webkit-quarantine` (#198): cases that fail only on this runner's Linux
+  # WebKit build, and pass in Apple's WebKit and on Chromium (which still gates
+  # them on every PR). They are left out of the two WebKit projects above, and
+  # run here instead so they stay visible. `continue-on-error` keeps a known
+  # engine-only failure from turning the whole nightly red. A PASS here is the
+  # signal to drop the tag and close the issue.
+  quarantine-webkit:
+    name: Quarantined on Linux WebKit (@webkit-quarantine, non-blocking)
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: next-build
+          path: .next.nosync
+      - run: npx playwright install --with-deps webkit
+      - run: >-
+          npx playwright test --grep @webkit-quarantine --pass-with-no-tests
+          --project=webkit --project=mobile-safari
+        env:
+          PW_INCLUDE_QUARANTINE: '1'
+      - if: always()
+        run: node scripts/test-summary.mjs playwright "Nightly · quarantined on Linux WebKit"
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-quarantine-webkit
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7
 
   mutation:

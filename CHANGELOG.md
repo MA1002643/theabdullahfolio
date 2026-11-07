@@ -1618,6 +1618,16 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### Linux-WebKit-only E2E cases parked on the two WebKit projects, so the nightly can go green · 2026-11-07
+
+| | |
+|:--|:--|
+| **Ref** | [#198](https://github.com/MA1002643/theabdullahfolio/issues/198). Follows the entry below, whose "Still failing (Linux WebKit only)" row these are. |
+| **Why** | Six cases fail every night on the CI runner's Linux WebKit build (projects `webkit` and `mobile-safari`), and pass both in Apple's WebKit (Playwright on macOS) and on Chromium. They are: the privacy-notice Escape journey, the footer email on `/about` and `/ar/about`, the `/ar/about` footer terminal (all React #418), and `/qualifications` (the WebKit process crashes). The engine cannot be reproduced locally, so they kept the nightly red with no change in sight. The owner chose to park them rather than spend Actions minutes investigating on the runner. |
+| **Change** | **new** tag `@webkit-quarantine`: `playwright.config.mjs` gives the `webkit` and `mobile-safari` projects a `grepInvert` that adds it to `@quarantine`. Only those two projects drop the cases, so Chromium, mobile Chrome and Firefox still run them, and Chromium still gates them on every PR. **new** nightly job `quarantine-webkit` runs only the tagged cases on both WebKit projects with `continue-on-error`. A known engine-only failure stays visible without failing the nightly, and a pass there means the tag can go. Each tagged test links #198 in a Playwright `issue` annotation. |
+| **Test-plan check** | `testHygiene` now requires an issue link on `@webkit-quarantine` as well as `@quarantine`; it fails on a bare tag. Verified with `--list`: WebKit 53 → 47 cases per project, Chromium unchanged at 217, and 12 parked cases selected by the include run. `docs/testing.md`: the quarantine section, the CI table and the `testHygiene` row. |
+| **Checks** | Privacy check: nothing to change. i18n check: no visitor-facing text. `docs/seo.md`: nothing to change. |
+
 #### No WebGL no longer blanks every sub-page; `/favicon.ico` is a 404, not a 500; project and note share cards exist again · 2026-11-07
 
 | | |

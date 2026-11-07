@@ -21,7 +21,8 @@ async function openWithNotice(page, path) {
 }
 
 test.describe('privacy notice Escape', { tag: '@cross-browser' }, () => {
-  test('Escape closes the notice from anywhere, as a decline, without moving focus', async ({ page }) => {
+  // On the CI runner's Linux WebKit only, the header popover keeps Escape (#198).
+  test('Escape closes the notice from anywhere, as a decline, without moving focus', { tag: '@webkit-quarantine', annotation: { type: 'issue', description: 'https://github.com/MA1002643/theabdullahfolio/issues/198' } }, async ({ page }) => {
     await openWithNotice(page, '/');
     // Focus something on the page that is NOT inside the notice.
     await page.keyboard.press('Tab');
