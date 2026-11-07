@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og';
 import { projectsData } from '@/app/data';
 import { projectCard, sectionCard } from '@/lib/og/card';
 import { ogFonts } from '@/lib/og/assets';
+import { localeParams } from '@/i18n/staticParams';
 
 // Per-project share poster (issue #88 v2, tier 2). The route segment's
 // generateStaticParams + dynamicParams=false mean one card per project
@@ -16,8 +17,16 @@ export const contentType = 'image/png';
 // image handlers — without this pair the poster route builds as
 // server-rendered-on-demand. Restating both here is what makes all
 // eleven cards render at build time and serve static.
+//
+// Each pair names its locale too. This handler does not inherit the locale
+// list from the `[locale]` layout either, so a list of ids alone prerendered
+// NOTHING, and with the set closed every project's card answered 404 in every
+// language: the og:image each project page advertised was dead from the
+// multilingual merge (#188) until 2026-11-07.
 export function generateStaticParams() {
-  return projectsData.map((p) => ({ id: String(p.id) }));
+  return localeParams().flatMap(({ locale }) =>
+    projectsData.map((p) => ({ locale, id: String(p.id) })),
+  );
 }
 export const dynamicParams = false;
 

@@ -79,8 +79,14 @@ test.describe('contact form', { tag: '@cross-browser' }, () => {
 
   test('offline: holds the message, then delivers it on reconnect with the same key', async ({ page, context, expectErrors }) => {
     // Next's router prefetches linked routes; offline, those fail and Next logs
-    // it. Framework behaviour, not the form's, and only while offline.
-    expectErrors(/Failed to fetch RSC payload/, /ERR_INTERNET_DISCONNECTED/);
+    // it. Framework behaviour, not the form's, and only while offline. Each
+    // engine words the failed load its own way: Chromium names the network,
+    // WebKit says only "internal error" (nightly WebKit and iPhone runs).
+    expectErrors(
+      /Failed to fetch RSC payload/,
+      /ERR_INTERNET_DISCONNECTED/,
+      /Failed to load resource: WebKit encountered an internal error/,
+    );
     await context.setOffline(true);
     await expect(page.getByText(/You’re offline/)).toBeVisible();
     await fill(page);

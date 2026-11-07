@@ -16,11 +16,15 @@ vi.mock('next/dynamic', async () => {
   return { default: () => () => h('div', { 'data-testid': 'aurora-canvas' }) };
 });
 vi.mock('@/hooks/useLoaderRevealed', () => ({ useLoaderRevealed: () => true }));
+// jsdom has no WebGL, so the probe is told what this case's browser can do.
+let webgl;
+vi.mock('@/lib/webglSupport', () => ({ canCreateWebGL: () => webgl }));
 
 let osReduced;
 
 beforeEach(() => {
   osReduced = false;
+  webgl = true;
   vi.stubGlobal('matchMedia', (query) => ({
     matches: query === '(prefers-reduced-motion: reduce)' ? osReduced : false,
     media: query,
@@ -65,5 +69,11 @@ describe('AuroraDustMount — OS query, loader, and the page\'s own say', () => 
     expect(canvas(render(createElement(AuroraDustMount)))).toBe(null);
     cleanup();
     expect(canvas(render(createElement(AuroraDustMount, { enabled: true })))).toBe(null);
+  });
+
+  it('a browser that cannot create a WebGL context keeps the static image', () => {
+    // three.js throws there, and the throw used to take the whole route down.
+    webgl = false;
+    expect(canvas(render(createElement(AuroraDustMount)))).toBe(null);
   });
 });

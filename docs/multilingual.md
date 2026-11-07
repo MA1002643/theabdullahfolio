@@ -48,6 +48,14 @@ replacement for middleware). It does three things and refuses to do a fourth:
   prefers a supported language gets a one-time, dismissible suggestion written
   in that language instead.
 
+Paths that look like files (anything with a dot, such as `/favicon.ico` or
+`/ads.txt`) are not the proxy's business: its matcher leaves them alone, so
+static files are served untouched. When no such file exists, the request
+still reaches the `[locale]` segment, with `favicon.ico` as its "locale". That
+segment accepts only the real locales (`dynamicParams = false` in
+`src/app/[locale]/layout.js`), so the answer is a plain 404 from
+`src/app/not-found.js`. Before 2026-11-07 it was a 500.
+
 Three of next-intl's defaults are switched off, each for a reason written down
 beside it in `src/i18n/routing.js`. Automatic detection is off for the reason
 above. Its own cookie is off because it would turn "I followed one link to

@@ -968,6 +968,23 @@ build warning and the default (`true`) applies, which silently reopened both
 sets during the upgrade (fixed 2026-10-11; `tests/fitness/routeSegmentConfig.test.js`
 now fails on any re-export).
 
+**Under `[locale]` (#82), a closed set must also name the locale** (fixed
+2026-11-07). The multilingual merge put every route beneath a `[locale]`
+segment, and the card handlers do not inherit the layout's locale list any
+more than they inherit the page's ids. The two dynamic handlers still returned
+`{ id }` and `{ slug }` alone. With the set closed, that list matched no URL:
+the build prerendered no project or note card, and every project and note page
+advertised an `og:image` and `twitter:image` that answered **404**, in every
+language. The build still printed both routes as `●`. It was found by
+requesting the image URLs production served. Both now build their list from
+`localeParams()` × ids, the helper the static cards already used. The same
+check found the `[locale]` segment itself open: a one-segment path with a dot
+(`/favicon.ico`, `/ads.txt`, a scanner's `/wp-config.php`) skips the proxy,
+arrives as the "locale" `favicon.ico`, and was answered **500** ("Page changed
+from static to dynamic at runtime"), about 25 times in three days of logs. The
+layout now declares `dynamicParams = false`, so those are 404s.
+`tests/fitness/localeParamSets.test.js` fails on either gap.
+
 **You do not add `src/lib/seo/site.js` yourself** — `SHARED_ROUTE_SOURCES` is
 appended to every entry when `ROUTES` is built. It is there because the registry
 is itself published: a route's `title` and `description` become its `<title>`,
