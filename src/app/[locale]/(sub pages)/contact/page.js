@@ -48,7 +48,8 @@ export default async function Contact({ params }) {
         // other route using this exact backdrop (/about, /journey, /my-past)
         // already marks it decorative, so this was also the odd one out.
         alt=""
-        priority
+        loading="eager"
+        fetchPriority="low"
         sizes="100vw"
         className="fixed start-0 top-0 -z-50 h-full w-full object-cover object-center opacity-50"
       />

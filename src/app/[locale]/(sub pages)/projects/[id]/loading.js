@@ -21,7 +21,8 @@ export default function Loading() {
                 src={bg}
                 alt=""
                 fill
-                priority
+                loading="eager"
+                fetchPriority="low"
                 className="fixed top-0 left-0 w-full h-full object-cover object-center -z-10"
             />
             {/* The status wrapper is a client component so its label can be

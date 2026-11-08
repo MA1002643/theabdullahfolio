@@ -87,6 +87,57 @@ describe('LanguageSelector panel', () => {
   });
 });
 
+describe('LanguageSelector opening focus', () => {
+  // A tap that focused the search field raised the phone's keyboard over the
+  // list (owner report, 2026-11-07). Touch and pen focus the listbox instead;
+  // a mouse or the keyboard still lands in the field.
+  async function openWith(pointerType) {
+    renderInFooter();
+    const trigger = screen.getByRole('button', { name: /language/i });
+    if (pointerType) fireEvent.pointerDown(trigger, { pointerType });
+    await act(async () => fireEvent.click(trigger));
+    return trigger;
+  }
+
+  it('focuses the listbox, not the search field, after a touch tap', async () => {
+    await openWith('touch');
+    expect(screen.getByRole('listbox')).toHaveFocus();
+    expect(screen.getByRole('combobox')).not.toHaveFocus();
+  });
+
+  it('focuses the listbox after a pen press', async () => {
+    await openWith('pen');
+    expect(screen.getByRole('listbox')).toHaveFocus();
+  });
+
+  it('focuses the search field after a mouse click', async () => {
+    await openWith('mouse');
+    expect(screen.getByRole('combobox')).toHaveFocus();
+  });
+
+  it('focuses the search field when opened from the keyboard after an earlier tap', async () => {
+    const trigger = await openWith('touch');
+    await act(async () => fireEvent.click(trigger)); // tap again: closes
+    // Enter on a button raises a click with no pointerdown before it.
+    await act(async () => fireEvent.click(trigger));
+    expect(screen.getByRole('combobox')).toHaveFocus();
+  });
+
+  it('closes on Escape from the tap-focused listbox and returns focus', async () => {
+    const trigger = await openWith('touch');
+    await act(async () => fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' }));
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
+  });
+
+  it('sets the search text at 16px below sm, so iOS does not zoom into it', async () => {
+    await openWith('touch');
+    const field = screen.getByRole('combobox');
+    expect(field).toHaveClass('text-base');
+    expect(field.className).not.toMatch(/(^|\s)text-sm(\s|$)/);
+  });
+});
+
 describe('anchorPanel', () => {
   const viewport = { width: 1440, height: 900 };
   const rect = { top: 510, bottom: 540, left: 1150, right: 1256 };

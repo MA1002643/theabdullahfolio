@@ -1460,6 +1460,20 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### Website-wide lazy loading — load what each page needs, when it needs it, and measure it · 2026-11-07
+
+| | |
+|:--|:--|
+| **Ref** | [#55](https://github.com/MA1002643/theabdullahfolio/issues/55), rescoped on 2026-11-07 against `main` @ `80d5080`, from a production build (the bundle analyser) and an LCP probe of every route at 1440×900 and 390×844 @3x. The original brief predated `[locale]`, Next 16, #83 and #92: most of its paths no longer existed, and much of it was done. Decision record: `docs/seo.md` §19. |
+| **Images** | The deprecated `priority` is gone from `src/`. Each image now states one of three intents. **`preload`** is only on the two images that measured as an LCP: the home backdrop and the centre `/qualifications` certificate, both on a phone. **`loading="eager"` + `fetchPriority="low"`** is on every full-bleed background (no backdrop was ever an LCP candidate) and on the home laptop. Everything else stays lazy. **`eager` alone was not enough:** React 19's server renderer preloads up to ten non-lazy `<img>` per page unless one is `lazy` or `fetchPriority="low"`, so removing `priority` had left every preload in place. **Measured:** image preloads across the probe fell from 32 to 4. The LCP element is unchanged on every route. `/qualifications` on a phone reached LCP in 968 ms, down from 1,660 ms. |
+| **Deferred chunks** | **The Ember Passage runtime** (overlay, WebGL swarm, shader, ember field) is now one async chunk, `passageRuntime.js`, fetched in idle time. The provider keeps the phase machine and a small eager `PassageStill`, and each navigation picks live or still once, at the click. Reduced-motion visitors never download it, and a click that beats the download gets the still. **The `/about` dialogs** (`ExperienceBreakdownModal`, `ProjectProgressPopup`) are `next/dynamic` chunks, fetched in idle time or on pointer-over, focus or touch on their card, and mounted once they arrive. `useProjectProgress` moved up to the page, so the dialog still opens populated. **New primitives:** `src/lib/deferredChunk.js` (a memoised preload that forgets a failure, plus an `optionalChunk` loader), `src/lib/whenIdle.js` and `src/hooks/useDeferredMount.js`. **Measured (gzip first load):** every route is 6.3 kB lighter, and `/about` is 12.8 kB lighter (350.3 → 337.5 kB). `bundle-budget.json` was re-baselined with `--update`, so each ceiling dropped by 6–13 kB. |
+| **Not done, and why** | A generic `LazyMount` and a central `lazyImports.js` were **rejected**. No heavy module remains below the fold, and a central import map invites the static import the fitness test forbids. `LazyMotion` (about 40 kB, 383 call sites) is tracked in [#200](https://github.com/MA1002643/theabdullahfolio/issues/200). The consent notice becoming the LCP for first-time visitors on four routes is logged as an owner decision (`docs/seo.md` §19). |
+| **Files** | **new** `src/lib/deferredChunk.js`, `src/lib/whenIdle.js`, `src/hooks/useDeferredMount.js`, `src/components/pageTransition/passageRuntime.js`, `src/components/pageTransition/PassageStill.jsx` · `PageTransitionProvider.jsx`, `EmberPassageOverlay.jsx` (static branch → `PassageStill`) · `src/components/about/index.jsx`, `ProjectProgressPopup.jsx` (data as a prop) · the 15 background pages and `NotFoundClient.jsx`, `(home)/page.js`, `qualifications/Carousel.jsx`, `preloadCerts.js` (comment) · `bundle-budget.json` · `docs/seo.md` (§19, runbook step 7), `docs/testing.md`. |
+| **Test-plan check** | **Fitness:** **new** `imageLoadingPolicy` (no `priority`, an allowlisted and justified `preload`, no `eager` without `low`) and **new** `deferredChunks` (no static import of a deferred module from outside its graph, and each entry point still loaded through `import()`). Both fail on `main`. **Perf:** **new** `tests/perf/image-loading.spec.js`: every route at both sizes, every preload is an LCP candidate, and an LCP image is never lazy. It fails on all 15 routes on `main` and passes on this build. **Component:** **new** `pageTransitionDeferred.test.jsx` (reduced motion never imports the runtime; a click that beats the download gets the still; live once loaded) and a lazy-open case in `aboutPage.test.jsx`. **Unit:** **new** `deferredChunk.test.js`. **Ran on the production build:** perf (the new spec plus Web Vitals, CLS ≤ 0.1 on every route) and the chromium and mobile-chrome navigation and resilience suites (blocked-chunk chaos included): 227 passed. Vitest: 1,928 of 1,929 pass. The one failure, `tests/api/mswHermetic.test.js`, also fails on an untouched `main` checkout on this machine, so it predates this change. Counts regenerated (`npm run test:count`). |
+| **Project rule** | `CLAUDE.md` §5, *Every new element loads only when it is needed*: each new image, video, component, page or dependency gets its loading strategy in the commit that adds it, with a table of when to use `lazy`, `eager` + `fetchPriority="low"`, `preload` or a deferred chunk, when not to defer, and what CI does and does not enforce. |
+| **Privacy check** | Nothing to change: no storage key, cookie, processor or server-side data is added or altered. The deferred chunks are first-party static files. |
+| **i18n check** | No visitor-facing text added. `PassageStill` renders the same translated destination label, with the same joined-script tracking rule (`breaksWhenSplit`), as the static branch it was extracted from. |
+
 #### npm: five Dependabot PRs, a nightly that had been red for twelve days, and a test network that stopped being hermetic · 2026-11-06
 
 | | |
@@ -1617,6 +1631,17 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 | **Hand-copied figures are banned outright** | A count or measurement typed into prose is stale the week after and nothing flags it. **Two live instances were sitting in the tree**: `readNotes.js` said `docs/seo.md` "is 1,022 lines" when it had reached 1,257, and §16 of the document says "1,000-odd lines" about itself. The rule now asks for a figure **derived at build** (`countLines()` is named as the pattern), or hedged prose that cannot go wrong, or — if an exact number really must be written — a date beside it so a reader knows what to trust. |
 
 ### Fixed
+
+#### Language selector on a phone: a tap no longer raises the keyboard, and the sheet no longer scrolls sideways · 2026-11-07
+
+| | |
+|:--|:--|
+| **What was wrong** | Owner report from the deployed homepage on a phone. Tapping the language button opened the list and also focused its search field, so the keyboard came up over the list the visitor meant to scroll. Focusing the field then let the whole sheet scroll sideways: its text was 14px (`text-sm`), and iOS Safari zooms the page into any focused input smaller than 16px. |
+| **Fix** | The trigger records the type of the press that opened it. After a touch or pen press, focus goes to the listbox (`tabIndex={-1}`, with the same key handler and `aria-activedescendant` as the field), and the field waits until it is tapped. A mouse click, or Enter or Space on the trigger, still opens with the field focused, as the combobox pattern expects. The field is 16px below `sm` (`text-base sm:text-sm`) and has `min-w-0`, and the list has `overflow-x-hidden`. |
+| **Tests** | `tests/component/LanguageSelector.test.jsx`: focus after a touch, pen and mouse press, keyboard opening after an earlier tap, Escape from the tap-focused listbox, and the 16px field. **new** `tests/e2e/language-selector-mobile.spec.js`: at 390×844 with touch, on `/` and `/ar`, a tap leaves the field unfocused, the field computes to at least 16px, and the document, the panel and the list stay within the viewport before and after typing. All 4 new component tests and all 4 e2e tests fail against the old component. Passed locally on a production build in `chromium`, and, with a temporary `@cross-browser` tag, in `mobile-safari` (WebKit, iPhone 14) and `mobile-chrome`. The spec is not tagged `@cross-browser` in the repo, because `isMobile` is unsupported in Firefox. A row was added to the defects table in `docs/testing.md`, and `tests/browser-cases.json` and `tests/vitest-cases.json` were regenerated. |
+| **Privacy check** | Nothing to change: focus and styling only. |
+| **i18n check** | No new visitor-facing text. Checked in Arabic (right to left) by the e2e spec. |
+| **Files** | `src/components/i18n/LanguageSelector.jsx`, `tests/component/LanguageSelector.test.jsx`, `tests/e2e/language-selector-mobile.spec.js`, `docs/testing.md`, `tests/browser-cases.json`, `tests/vitest-cases.json` |
 
 #### Linux-WebKit-only E2E cases parked on the two WebKit projects, so the nightly can go green · 2026-11-07
 
@@ -3146,6 +3171,19 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 | **Details** | Stale root direct dependency on `@napi-rs/canvas@^1.0.0` from `package.json`. The version didn't satisfy any transitive consumer's range (`pdfjs-dist` wants `^0.1.80`, `pdf-parse` pins `0.1.80`) and only added install weight while masking the real resolution. |
 
 ### Security
+
+#### Repository made public, with secret scanning and push protection on · 2026-11-07
+
+| | |
+|:--|:--|
+| **What changed** | The repository went from private to public at the owner's request. Actions minutes had passed the plan's included 3,000 for the month (3,074 used), and standard runners are free on a public repository. GitHub secret scanning and push protection were enabled right after the switch; neither is available on a private personal repository. |
+| **Before the switch** | A full-history `gitleaks git` scan found no leaks across 469 commits. No workflow passes any secret except `GITHUB_TOKEN`, so a fork's pull request has nothing to read, and `issue-triage.yml`'s `pull_request_target` job never checks out the PR's code. |
+| **Project rule** | `CLAUDE.md` §1 no longer says the repository is private or that push protection is unavailable. It now says why the pre-commit diff check is still the real guard: push protection recognises only supported providers' token formats, not this project's own secrets (`CRON_SECRET`, the location-ingest tokens) or arbitrary passwords, and the Gitleaks job runs only after the value is public. |
+| **CodeQL** | `security.yml` already decides on each run whether to upload, from `github.event.repository.private`. It now uploads results as code-scanning alerts with no logic change, and still skips the upload if the repository is made private again. Only its comments were rewritten, to describe the repository as public. `docs/testing.md` (published at `/notes/testing`) had the same private-repository description of the CodeQL gate, which is now recast as history. |
+| **Test-plan check** | Nothing to add: a repository setting, a rule document and workflow comments, with no code or route change. `docs/testing.md` updated as above. |
+| **Privacy check** | Nothing to change: the site collects, stores and sends exactly what it did before. |
+| **i18n check** | No visitor-facing text (`/notes/*` is English by decision). |
+| **Files** | `CLAUDE.md`, `.github/workflows/security.yml`, `docs/testing.md`, `CHANGELOG.md` |
 
 #### Next 15.5.27 → 15.5.28 and zod 4.4.3 → 4.6.7: a critical RCE, a high DoS and a high memory-exhaustion advisory · 2026-10-23
 

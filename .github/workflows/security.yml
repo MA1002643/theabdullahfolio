@@ -37,9 +37,9 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
-    # `actions: read` is required on a private repository (the action reads
-    # its own workflow run). `security-events: write` is only used when the
-    # results are uploaded, which is only possible on a public one (below).
+    # `actions: read` lets the action read its own workflow run (required
+    # only while private). `security-events: write` uploads the results as
+    # code-scanning alerts, which needs a public repository (below).
     permissions:
       contents: read
       actions: read
@@ -52,10 +52,11 @@ jobs:
         with:
           languages: javascript-typescript
           queries: security-extended
-      # GitHub code scanning is not available on a private personal repository
-      # ("Code scanning is not enabled", 2026-10-04), so the upload is skipped
-      # while the repository is private and the gate below judges the SARIF
-      # itself. Made public, the results also upload as code-scanning alerts.
+      # The repository is public (since 2026-11-07), so the results upload as
+      # code-scanning alerts. Code scanning is not available on a private
+      # personal repository ("Code scanning is not enabled", 2026-10-04), so the
+      # upload is still skipped whenever the repository is private. Either way
+      # the gate below judges the SARIF itself.
       - uses: github/codeql-action/analyze@v4
         with:
           category: /language:javascript-typescript

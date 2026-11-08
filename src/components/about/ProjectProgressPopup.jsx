@@ -5,7 +5,6 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChevronDown, Lock, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { useProjectProgress } from "@/hooks/useProjectProgress";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { PROJECT_CATEGORY_COLORS } from "@/lib/categories";
 import { claimEscape } from "@/lib/escapeKey";
@@ -597,8 +596,10 @@ const FOCUSABLE_SELECTOR = [
  * project's GitHub Projects v2 BOARD — per-column item counts in the
  * board's own order, percent = Done / total items — plus a category
  * breakdown, a portfolio-wide completion donut, and a last-synced footer.
- * Data arrives via useProjectProgress (fetched at page mount + every 12 h,
- * last-good persisted), so the dialog almost always opens already populated.
+ * Data arrives as the `progress` prop: the page calls useProjectProgress
+ * (fetched at page mount + every 12 h, last-good persisted) and hands it
+ * down, because this dialog's own chunk is deferred until it is wanted
+ * (issue #55). It almost always opens already populated.
  *
  * Dialog chrome — a11y baseline, body scroll lock (incl. the iOS
  * position:fixed technique), Escape/backdrop close, focus trap + focus
@@ -610,11 +611,12 @@ const FOCUSABLE_SELECTOR = [
  * @param {boolean} props.open
  * @param {() => void} props.onClose
  * @param {React.RefObject<HTMLElement>} props.triggerRef - element that opened the popup
+ * @param {{ data: object|null, failed: boolean, refetch: () => void }} props.progress - useProjectProgress()
  */
-export default function ProjectProgressPopup({ open, onClose, triggerRef }) {
+export default function ProjectProgressPopup({ open, onClose, triggerRef, progress }) {
   const t = useTranslations("About");
   const prefersReducedMotion = useReducedMotion();
-  const { data, failed, refetch } = useProjectProgress();
+  const { data, failed, refetch } = progress;
   const dialogRef = useRef(null);
   const scrollRef = useRef(null);
   const closeButtonRef = useRef(null);

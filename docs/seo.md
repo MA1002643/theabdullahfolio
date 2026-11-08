@@ -905,7 +905,12 @@ baseline makes every query look new.
 5. Render a `<JsonLd>` block — `sectionPage()` unless a more specific type fits —
    passing `locale`, so `inLanguage` and the page `@id` follow it.
 6. Translate and audit (*Translations*, below).
-7. Run `npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js tests/unit/i18nAlternates.test.js tests/fitness/i18nCatalogues.test.js tests/fitness/i18nBudget.test.js`.
+7. Give the page's full-bleed background `loading="eager"` and
+   `fetchPriority="low"`, never `preload` (§19). A viewport-covering image is
+   never the LCP, and without the low hint React preloads it anyway. `preload`
+   is only for an image that measured as the route's LCP, and it then needs an
+   entry in `tests/fitness/imageLoadingPolicy.test.js`.
+8. Run `npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js tests/unit/i18nAlternates.test.js tests/fitness/i18nCatalogues.test.js tests/fitness/i18nBudget.test.js tests/fitness/imageLoadingPolicy.test.js`.
 
 **Skipping step 1 fails CI.** The drift test walks `src/app` on disk and fails
 on any `page.js` that is in neither the registry nor its own `EXCLUDED` map —
@@ -2258,3 +2263,103 @@ would paint the stack in English first.
 - **Browser-level coverage of locale URLs.** The E2E, axe and visual suites
   still walk the English URLs only (`docs/testing.md`, L5).
 - **The Auth.js sign-in pages** the guestbook hands off to are English.
+
+## 19. Loading what is needed, when it is needed (issue #55)
+
+### The issue was re-measured before it was built
+
+#55 was written before the `[locale]` move, the Next 16 upgrade, the three.js
+split (#83) and `optionalChunk` (#92). Most of its file paths no longer
+existed, and much of it was done. It was rescoped on 2026-11-07 against a
+production build: the bundle analyser for what each route's first load
+contains, and a Playwright probe of the LCP element on every route at
+1440×900 and 390×844 @3x.
+
+### What it found
+
+- **The shared floor is mostly irreducible.** About 250 kB (gzip) is common to
+  every route. React and the Next runtime are about 183 kB of it, and
+  framer-motion about 54 kB. Above that floor were two things nobody uses
+  before a click: the live Ember Passage (overlay, WebGL swarm, shader, ember
+  field) on every route, and `/about`'s two dialogs, a third of that route's
+  own code.
+- **No full-bleed background was ever an LCP candidate.** On every sub-page
+  the LCP is text (the title, a paragraph, the `MA` mark), painted in
+  80–200 ms. Chrome treats a viewport-covering image as a background. Yet all
+  fifteen backgrounds sent a `<link rel=preload>`, 32 image preloads across
+  the probe, competing with the fonts that LCP text needs.
+- **`priority` was not the whole cause.** Removing it changed nothing in the
+  HTML, which the new perf spec caught. React 19's server renderer emits its
+  own preload for up to ten non-lazy `<img>` elements per page, and skips
+  only `loading="lazy"` and `fetchPriority="low"` ones.
+
+### Decision: three image intents, enforced
+
+| Intent | Props | Where |
+| --- | --- | --- |
+| The measured LCP image | `preload` | The home backdrop (LCP on a phone) and the centre `/qualifications` certificate (LCP on a phone). |
+| Above the fold, never the LCP | `loading="eager"` + `fetchPriority="low"` | Every full-bleed background and the home laptop. It is fetched at parse time, behind what the LCP needs. |
+| Everything else | the default, `lazy` | Unchanged. |
+
+`priority` is deprecated in Next 16 and is gone from `src/`.
+`tests/fitness/imageLoadingPolicy.test.js` holds the source to the table: no
+`priority`, `preload` only in an allowlist that records the measurement behind
+each entry, and no `eager` without `low`. `tests/perf/image-loading.spec.js`
+holds the rendered page to it on every route at both sizes: every preloaded
+image is an LCP candidate at one of them, and an LCP image is never lazy. Both
+were run against `main` first and failed there.
+
+**Measured after (same build pipeline, same probe):** image preloads fell
+from 32 to 4. The LCP element is unchanged on every route. `/qualifications`
+on a phone, whose certificate no longer shares bandwidth with a backdrop,
+reached LCP in 968 ms instead of 1,660 ms. The other routes moved by a few
+milliseconds either way, within run-to-run noise.
+
+### Decision: chunks that load ahead of need, not on first render
+
+- **The Ember Passage runtime** is one async chunk
+  (`src/components/pageTransition/passageRuntime.js`). It is fetched in idle
+  time, which is when it was already being warmed. The provider keeps the
+  phase machine and a small eager `PassageStill`. Each navigation chooses live
+  or still once, at the click, so a chunk that lands mid-passage never swaps
+  the overlay. Reduced-motion visitors never download it, and a click that
+  beats the download gets the still.
+- **The `/about` dialogs** are `next/dynamic` chunks. They are fetched in idle
+  time, or on pointer-over, focus or touch on their card, and mounted once
+  they arrive. The progress data hook moved up to the page so the dialog
+  still opens populated.
+- **One primitive for both**, `src/lib/deferredChunk.js`: a memoised
+  `preload()` that forgets a failure so the next call retries, and an
+  `optionalChunk` loader, so a chunk that never arrives renders nothing
+  instead of blanking the page. `tests/fitness/deferredChunks.test.js` fails
+  on any static import that would pull these modules back into a first load.
+  The bundle budget cannot catch that: its 10 % headroom is larger than the
+  modules.
+
+**Measured:** every route's first load is 6.3 kB (gzip) lighter, and `/about`
+is 12.8 kB lighter (350.3 → 337.5 kB). `bundle-budget.json` was re-baselined,
+so the savings are now the ceiling.
+
+### Rejected
+
+- **A generic `LazyMount` (an IntersectionObserver wrapper).** No module is
+  still both heavy and below the fold. The only candidates were the `/about`
+  stat cards, which are server-rendered. `ssr: false` would remove real HTML
+  for crawlers and no-JS readers, and swap content for a skeleton (a CLS
+  risk), to save JS that hydration needs anyway.
+- **A central `lazyImports.js`.** A single file that imports every deferred
+  loader invites exactly the static import the fitness test forbids. Each
+  `deferredChunk` sits beside its consumer instead.
+- **Deferring `sonner`.** A toast fired from a mount effect is already lost
+  when the Toaster subscribes late. Lazy-loading it would widen that race.
+
+### Out of scope, and still open
+
+- **framer-motion's `LazyMotion`.** About 40 kB off every route, the largest
+  remaining win, but it touches 383 `motion.*` call sites in 98 files. It
+  is tracked in issue #200.
+- **The consent notice as LCP.** For a first-time visitor the notice arrives
+  1.1 s after the reveal, by design. On `/cv`, `/projects`, `/guestbook` and
+  `/projects/1` its paragraph is larger than the page's own LCP, so the field
+  LCP moves from about 0.1 s to 1.4–3 s. This is a consent-UX timing choice
+  for the owner, not a loading one.

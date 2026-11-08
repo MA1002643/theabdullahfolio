@@ -23,8 +23,10 @@ import { useReliableInView } from "@/hooks/useReliableInView";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 import { cardVariants, childVariants } from "./revealVariants";
 import { useViewportCountUp } from "@/hooks/useViewportCountUp";
-import { ExperienceBreakdownModal } from "./ExperienceBreakdownModal";
-import ProjectProgressPopup from "./ProjectProgressPopup";
+import dynamic from "next/dynamic";
+import { deferredChunk } from "@/lib/deferredChunk";
+import { useDeferredMount } from "@/hooks/useDeferredMount";
+import { useProjectProgress } from "@/hooks/useProjectProgress";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
 import { wordFill } from "@/lib/fireRamp";
@@ -35,6 +37,20 @@ import { wordChunks } from "@/components/ui/textSegments";
 import { useDataT } from "@/i18n/useDataT";
 import { localizeCategory } from "@/i18n/data";
 import { useAboutDigits } from "./aboutI18n";
+
+// The two dialogs the hero cards open are a third of this page's own code and
+// render nothing until a card is pressed, so they are not in the route's first
+// load (issue #55). Each is its own chunk, fetched in idle time or the moment
+// a pointer, focus or touch lands on its card (useDeferredMount), and mounted
+// once it is here. Client-only: a closed dialog has no server HTML to render.
+const experienceDialog = deferredChunk(
+  () => import("./ExperienceBreakdownModal"),
+  "ExperienceBreakdownModal",
+  (module) => module.ExperienceBreakdownModal,
+);
+const ExperienceBreakdownModal = dynamic(experienceDialog.loader, { ssr: false });
+const progressDialog = deferredChunk(() => import("./ProjectProgressPopup"), "ProjectProgressPopup");
+const ProjectProgressPopup = dynamic(progressDialog.loader, { ssr: false });
 
 const githubStatsStorageKey = (username) =>
   `github-stats:lastGood:${username}`;
@@ -732,6 +748,13 @@ const AboutDetails = () => {
   // overlay — same z-index regardless of which card opened it.
   const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
   const experienceTriggerRef = useRef(null);
+  // Deferred dialog chunks (issue #55): `*Ready` mounts each dialog once its
+  // chunk is here; `request*` fetches it early, on intent.
+  const [experienceDialogReady, requestExperienceDialog] = useDeferredMount(experienceDialog);
+  const [progressDialogReady, requestProgressDialog] = useDeferredMount(progressDialog);
+  // The progress dialog's data is fetched HERE, at page mount, not inside the
+  // dialog: the dialog's chunk is deferred, and it must still open populated.
+  const projectProgress = useProjectProgress();
   // Viewport observer for the count-up + banner. Deliberately a SEPARATE ref
   // on the inner (non-scaled) card div rather than reusing `experienceTriggerRef`
   // on the outer ItemLayout: the ItemLayout animates `scale 0 → 1` on entry, and
@@ -820,7 +843,9 @@ const AboutDetails = () => {
   }, [pulseExperienceCats, isExperienceCardInView]);
 
   const openExperienceModal = () => {
-    if (experienceData) setIsExperienceModalOpen(true);
+    if (!experienceData) return;
+    requestExperienceDialog();
+    setIsExperienceModalOpen(true);
   };
   const handleExperienceTriggerKeyDown = (e) => {
     // Standard button keyboard semantics — Enter or Space activates.
@@ -1224,7 +1249,10 @@ const AboutDetails = () => {
   // unconditionally.
   const [isProgressPopupOpen, setIsProgressPopupOpen] = useState(false);
   const progressTriggerRef = useRef(null);
-  const openProgressPopup = () => setIsProgressPopupOpen(true);
+  const openProgressPopup = () => {
+    requestProgressDialog();
+    setIsProgressPopupOpen(true);
+  };
   const handleProgressTriggerKeyDown = (e) => {
     // Standard button keyboard semantics — Enter or Space activates.
     // Prevent Space from scrolling the page.
@@ -1492,6 +1520,12 @@ const AboutDetails = () => {
           })}
           onClick={openProgressPopup}
           onKeyDown={handleProgressTriggerKeyDown}
+          // Intent prefetch for the deferred dialog (issue #55). Pointer OVER,
+          // not enter: the tilt hook owns onPointerEnter, and ItemLayout's
+          // `...rest` would silently replace it.
+          onPointerOver={requestProgressDialog}
+          onFocus={requestProgressDialog}
+          onTouchStart={requestProgressDialog}
           // Mirrors the "Years in the craft" card exactly: `!p-0` hands all
           // padding to the inner `repo-card-breathe` wrapper, and `group
           // relative` matches the sibling so the two feature cards share one
@@ -1678,6 +1712,10 @@ const AboutDetails = () => {
                 "aria-label": experienceCardLabel,
                 onClick: openExperienceModal,
                 onKeyDown: handleExperienceTriggerKeyDown,
+                // Intent prefetch, as on the projects card above.
+                onPointerOver: requestExperienceDialog,
+                onFocus: requestExperienceDialog,
+                onTouchStart: requestExperienceDialog,
               })}
           className={`group relative col-span-full xs:col-span-6 lg:col-span-4 text-accent !p-0 ${
             experienceState === "loading" ? "cursor-default" : "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/50"
@@ -1920,25 +1958,33 @@ const AboutDetails = () => {
       {/* Mounted at the section root (outside the grid) so its
           fixed-position backdrop covers the full viewport regardless
           of the years card's position in the layout. Modal manages its
-          own AnimatePresence + body scroll lock + focus restoration. */}
-      <ExperienceBreakdownModal
-        open={isExperienceModalOpen}
-        onClose={() => setIsExperienceModalOpen(false)}
-        data={experienceData}
-        triggerRef={experienceTriggerRef}
-        pulseRepoNames={experiencePulseRepoNames}
-        pulseRoleKeys={experiencePulseRoleKeys}
-      />
+          own AnimatePresence + body scroll lock + focus restoration.
+          Mounted once its deferred chunk is here (issue #55), then kept
+          mounted, so the exit animation and focus return run as before. */}
+      {(experienceDialogReady || isExperienceModalOpen) && (
+        <ExperienceBreakdownModal
+          open={isExperienceModalOpen}
+          onClose={() => setIsExperienceModalOpen(false)}
+          data={experienceData}
+          triggerRef={experienceTriggerRef}
+          pulseRepoNames={experiencePulseRepoNames}
+          pulseRoleKeys={experiencePulseRoleKeys}
+        />
+      )}
 
       {/* Project Progress popup (issue #48) — same section-root mounting
-          rationale as the modal above. Always mounted (not gated on open) so
-          its useProjectProgress hook fetches at page load and the dialog
-          opens already populated. */}
-      <ProjectProgressPopup
-        open={isProgressPopupOpen}
-        onClose={() => setIsProgressPopupOpen(false)}
-        triggerRef={progressTriggerRef}
-      />
+          rationale as the modal above. Its data comes from
+          `useProjectProgress` at the top of this component, which fetches at
+          page load whether or not the dialog's chunk has arrived, so the
+          dialog still opens already populated. */}
+      {(progressDialogReady || isProgressPopupOpen) && (
+        <ProjectProgressPopup
+          open={isProgressPopupOpen}
+          onClose={() => setIsProgressPopupOpen(false)}
+          triggerRef={progressTriggerRef}
+          progress={projectProgress}
+        />
+      )}
     </section>
   );
 };

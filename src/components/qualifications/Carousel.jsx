@@ -1113,11 +1113,13 @@ const Carousel3D = () => {
                         // contend for bandwidth — from five to one.
                         // Neighbours still pre-warm because they're in the DOM
                         // near the viewport; the browser just controls timing.
-                        // priority already gives the centre fetchpriority=high
-                        // + a preload link, so we only add an explicit low
-                        // hint to the neighbours to keep them off the centre
+                        // `preload` gives the centre a <link rel=preload> in the
+                        // head: it is the LCP on a phone (issue #55), so it is
+                        // one of the two images on the site allowed one (see
+                        // tests/fitness/imageLoadingPolicy.test.js). Neighbours
+                        // get an explicit low hint to keep them off the centre
                         // card's bandwidth.
-                        priority={absOffset === 0}
+                        preload={absOffset === 0}
                         loading={absOffset === 0 ? 'eager' : 'lazy'}
                         fetchPriority={absOffset === 0 ? undefined : 'low'}
                         className="object-cover"

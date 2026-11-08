@@ -79,6 +79,8 @@ unit test would think to check:
 | `i18nCatalogues` | Every file in `messages/en/` is a namespace `src/i18n/namespaces.js` loads (and every loaded namespace has a file), every English message parses as ICU, and the content catalogues are in step with `src/app/data.js` (`scripts/i18n-data.mjs --check`). The cross-locale audit is a separate CI step, below. |
 | `logicalCss` | `src/app/globals.css`, parsed with postcss so comments never count, sets no physical inline-axis box property (`margin-left`, `padding-right`, `border-left`, `text-align: left`, `float`, `clear`) outside a short allowlist where each entry says why. A physical margin looks fine in English and sits on the wrong side of every right-to-left page, which nothing else would notice. Also: a `:dir()` selector never shares a selector list (an older browser would drop the whole rule), and `--inline-sign` is 1 and -1. |
 | `i18nBudget` | What each route's client message provider receives stays at or under 8 kB gzipped, for every locale × route, measured through the same `loadMessages` → `pickMessages` path the page serialises. `/uses` alone is allowed 9 kB (owner decision, 2026-11-01): it server-renders a description for each of its 42 curated stack tiles, and Russian measured 8,279 bytes after everything not on screen at first paint was deferred. The fitness project runs with Vitest's on-disk module cache off, because a cached compile of the catalogue loader once made every locale measure as English (defects table). |
+| `imageLoadingPolicy` | No `next/image` uses the deprecated `priority`. `preload` appears only on an allowlisted image, and each entry records the route and viewport where that image measured as the LCP. An `eager` image that is not preloaded carries `fetchPriority="low"`, because without it React 19's server renderer preloads the image anyway (issue #55). |
+| `deferredChunks` | The modules kept out of every first load (the Ember Passage runtime, the `/about` dialogs) are statically imported only from inside their own deferred graph, and each entry point is still loaded through `import()`. The bundle budget cannot catch this: its 10 % headroom is larger than the modules (issue #55). |
 | `i18nCatalogueText` | No parsed catalogue string, in any locale, contains a literal escape sequence such as ` `: a real sentence never does, so one that does was double-escaped on its way into the JSON. |
 
 ### L2 · Unit and property-based tests
@@ -321,6 +323,11 @@ snapshot.
   the largest session window (shifts under 1 s apart, at most 5 s long), not
   the sum of every shift in the page's life. LCP is recorded as an annotation only, because
   runner timing is noise.
+- `image-loading.spec.js` (issue #55) loads every route at 1440×900 and
+  390×844 in one test, and enforces facts rather than timing: every image the
+  route preloads is an LCP candidate at one of the two sizes, and an LCP image
+  is never `loading="lazy"`. It failed on all 15 routes before #55, where every
+  full-bleed background was preloaded and never once the LCP.
 - `scripts/check-bundle-budget.mjs` computes first-load JS per route (gzip)
   from the `<script src>` tags in each route's prerendered HTML (module
   scripts only; a dynamic template is budgeted at its largest prerendered
@@ -354,12 +361,14 @@ snapshot.
   (checksum-verified) scans every commit on every event. The marketplace
   action needed a token to list a PR's commits, then scanned only those, so on
   a pull request it was neither working nor "full history".
-- **On a private repository.** GitHub code scanning is not available on a
-  private personal repository, so CodeQL cannot upload alerts there. The
-  workflow skips the upload while the repository is private and judges the
-  SARIF itself instead: any finding with a security severity of 7.0 or more
-  (high or critical) fails the job, and every finding is listed in the run
-  summary. Made public, the results upload as code-scanning alerts as well.
+- **CodeQL judges its own results.** Any finding with a security severity of
+  7.0 or more (high or critical) fails the job, and every finding is listed in
+  the run summary. The repository was private until 2026-11-07, and GitHub
+  code scanning is not available on a private personal repository, so the
+  workflow was built to skip the upload and keep this gate. Since the
+  repository went public, the results also upload as code-scanning alerts.
+  The upload still switches off automatically if the repository is ever made
+  private again.
 - **Gitleaks false positives** are recorded in `.gitleaksignore`, one
   fingerprint (commit, file, rule, line) per reviewed finding, never a path or
   a rule. A real secret added to the same file later is still caught.
@@ -585,6 +594,9 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (fitness parser) | `workflowActionInputs` stopped reading a step at a sibling key (`if:`, `id:`) between `uses:` and `with:`, so those inputs went unchecked. | The parser reads a step's keys in any order; a fixture case fails on the old parser. |
 | Production (Vercel logs) | A one-segment path with a dot (`/favicon.ico`, `/ads.txt`, `/wp-config.php`) answered 500: it skips the proxy, reaches `[locale]` as an unknown locale, and Next refuses the request-time render that `notFound()` needs. About 25 in three days. | `dynamicParams = false` on `src/app/[locale]/layout.js`: a 404. `localeParamSets` (fitness). |
 | Production (share cards) | Every project and note page advertised an `og:image` / `twitter:image` that answered 404, in every language, from the multilingual merge on: the card handlers listed ids without the locale, and a closed set prerendered none. | Params from `localeParams()` × ids. `localeParamSets` (fitness) fails on the old lists. |
+| Perf (image loading, #55) | Replacing the deprecated `priority` with `loading="eager"` on fifteen full-bleed backgrounds changed nothing in the HTML: every one still had a `<link rel=preload>` in the head. React 19's server renderer preloads up to ten non-lazy `<img>` per page and skips only `lazy` and `fetchPriority="low"`. A source-only check had passed. | `fetchPriority="low"` beside each `eager`. `image-loading.spec.js` caught it in the rendered page, and `imageLoadingPolicy` (fitness) now refuses an `eager` image without the hint. Image preloads across the probe fell from 32 to 4. |
+| Review (perf, the test) | The first `image-loading.spec.js` asserted only that each preloaded image was on screen. A fixed full-bleed background always is, so the spec passed on the `main` it was written to catch. | It now requires each preload to be an LCP candidate at desktop or phone size, with both sizes measured in one test. Run against `main`, it fails on all 15 routes. |
+| Production (owner, phone) | Tapping the homepage language selector focused its search field, which raised the keyboard over the list. Then focusing that field let the whole sheet scroll sideways: its text was 14px, and iOS Safari zooms the page into a focused input smaller than 16px. | A touch or pen press focuses the listbox, which handles the same keys; a mouse or keyboard still opens into the field. The field is 16px below `sm`. `LanguageSelector.test.jsx` covers focus by press type, and `language-selector-mobile.spec.js` taps through `/` and `/ar` at 390px with touch, measuring the panel, the list and the document against the viewport. Both fail on the old component. |
 
 ## Maintenance
 

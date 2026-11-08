@@ -27,6 +27,13 @@ import { claimEscape } from '@/lib/escapeKey';
 // `aria-activedescendant` through the options, so typing and choosing never
 // fight over focus.
 //
+// Except on a tap. Focusing the field from a touch or pen press raises the
+// phone's keyboard over a list the visitor most likely meant to scroll, so a
+// tap focuses the listbox instead and the field waits to be tapped itself.
+// The field's text is 16px below `sm` for the same reason: iOS Safari zooms
+// the page into any focused input smaller than that, and the zoomed page
+// scrolled sideways under the sheet.
+//
 // The panel is PORTALLED to <body> and positioned against the trigger's
 // viewport rect. Rendered in place it inherited two ancestors that broke it in
 // the footer: the <footer>'s `overflow-hidden` sliced the top off an upward
@@ -109,6 +116,10 @@ export default function LanguageSelector({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
+  // Whether opening moves focus into the search field (keyboard, mouse) or
+  // onto the listbox (touch, pen), set by the press that opened the panel.
+  const [focusSearch, setFocusSearch] = useState(true);
+  const pressTypeRef = useRef(null);
   const rootRef = useRef(null);
   const triggerRef = useRef(null);
   const inputRef = useRef(null);
@@ -150,7 +161,8 @@ export default function LanguageSelector({
     if (restoreFocus) triggerRef.current?.focus();
   }, []);
 
-  const openPanel = useCallback(() => {
+  const openPanel = useCallback((searchFirst = true) => {
+    setFocusSearch(searchFirst);
     setOpen(true);
     const index = LOCALES.findIndex((l) => l.code === locale);
     setActive(Math.max(0, index));
@@ -161,10 +173,12 @@ export default function LanguageSelector({
     setActive((i) => (flat.length === 0 ? 0 : Math.min(i, flat.length - 1)));
   }, [flat.length]);
 
-  // Focus the search field when the panel opens.
+  // Focus the search field when the panel opens, or the listbox after a tap.
   useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
+    if (!open) return;
+    if (focusSearch) inputRef.current?.focus();
+    else listRef.current?.focus({ preventScroll: true });
+  }, [open, focusSearch]);
 
   // Keep the active option scrolled into view.
   useEffect(() => {
@@ -300,7 +314,17 @@ export default function LanguageSelector({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-busy={pending || undefined}
-        onClick={() => (open ? close(false) : openPanel())}
+        onPointerDown={(e) => {
+          pressTypeRef.current = e.pointerType;
+        }}
+        onClick={() => {
+          // A click raised by Enter or Space has no pointerdown before it, so
+          // a stale press type is cleared here and keyboard opens search first.
+          const press = pressTypeRef.current;
+          pressTypeRef.current = null;
+          if (open) close(false);
+          else openPanel(press !== 'touch' && press !== 'pen');
+        }}
         onKeyDown={onTriggerKeyDown}
         className={`locale-trigger group inline-flex items-center gap-x-2 font-mono uppercase tracking-[0.14em] text-[#ffaa2a] transition-colors hover:text-[#ffd27a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffaa2a] ${
           isTile
@@ -364,7 +388,7 @@ export default function LanguageSelector({
                 placeholder={t('searchPlaceholder')}
                 autoComplete="off"
                 spellCheck={false}
-                className="w-full bg-transparent text-sm text-[#f3e7d3] placeholder:text-[#8a8a8a] focus:outline-none"
+                className="w-full min-w-0 bg-transparent text-base text-[#f3e7d3] placeholder:text-[#8a8a8a] focus:outline-none sm:text-sm"
               />
             </div>
 
@@ -373,7 +397,12 @@ export default function LanguageSelector({
               id={listId}
               role="listbox"
               aria-label={t('label')}
-              className="max-h-[min(22rem,55vh)] min-h-0 flex-1 overflow-y-auto overscroll-contain py-1.5"
+              // Focused instead of the field after a tap, so it takes the same
+              // keys: Escape still closes and hands focus back.
+              tabIndex={-1}
+              aria-activedescendant={activeCode ? optionId(activeCode) : undefined}
+              onKeyDown={onInputKeyDown}
+              className="max-h-[min(22rem,55vh)] min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain py-1.5 focus:outline-none"
             >
               {groups.length === 0 ? (
                 <p role="status" className="px-4 py-6 text-center text-sm text-[#a3a3a3]">

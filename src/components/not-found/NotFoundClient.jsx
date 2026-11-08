@@ -222,7 +222,8 @@ export default function NotFoundClient() {
       <Image
         src={bg}
         alt=""
-        priority
+        loading="eager"
+        fetchPriority="low"
         sizes="100vw"
         className="-z-50 fixed inset-0 w-full h-full object-cover object-center opacity-50"
       />

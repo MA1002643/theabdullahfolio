@@ -50,8 +50,8 @@ const warm = ({ src, ar }) => {
   const img = new Image();
   // Low priority: warming must never steal bandwidth from the destination
   // page's own critical resources during the transition. The carousel's centre
-  // card is <Image priority>, so the on-screen image still gets HIGH priority
-  // when it mounts, regardless of this hint.
+  // card is <Image preload>, so the on-screen image still gets its own head
+  // preload when it mounts, regardless of this hint.
   img.fetchPriority = 'low';
   if (props.sizes) img.sizes = props.sizes;
   if (props.srcSet) img.srcset = props.srcSet;

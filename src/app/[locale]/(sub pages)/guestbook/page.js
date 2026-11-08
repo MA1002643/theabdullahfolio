@@ -45,7 +45,8 @@ export default function Guestbook() {
         <Image
           src={bg}
           alt=""
-          priority
+          loading="eager"
+          fetchPriority="low"
           sizes="100vw"
           className="-z-50 fixed top-0 start-0 w-full h-full object-cover object-center opacity-50"
         />

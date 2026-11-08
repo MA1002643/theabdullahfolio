@@ -3,19 +3,19 @@
   "routes": {
     "/_global-error": 152576,
     "/_not-found": 152576,
-    "/[locale]": 351232,
-    "/[locale]/about": 394240,
-    "/[locale]/contact": 359424,
-    "/[locale]/cv": 334848,
-    "/[locale]/guestbook": 376832,
-    "/[locale]/journey": 361472,
-    "/[locale]/my-past": 332800,
-    "/[locale]/notes": 339968,
-    "/[locale]/notes/[slug]": 334848,
-    "/[locale]/privacy": 336896,
-    "/[locale]/projects": 348160,
-    "/[locale]/projects/[id]": 335872,
-    "/[locale]/qualifications": 343040,
-    "/[locale]/uses": 376832
+    "/[locale]": 344064,
+    "/[locale]/about": 380928,
+    "/[locale]/contact": 353280,
+    "/[locale]/cv": 327680,
+    "/[locale]/guestbook": 370688,
+    "/[locale]/journey": 355328,
+    "/[locale]/my-past": 325632,
+    "/[locale]/notes": 332800,
+    "/[locale]/notes/[slug]": 327680,
+    "/[locale]/privacy": 330752,
+    "/[locale]/projects": 340992,
+    "/[locale]/projects/[id]": 328704,
+    "/[locale]/qualifications": 336896,
+    "/[locale]/uses": 370688
   }
 }

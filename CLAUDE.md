@@ -8,17 +8,18 @@ loads this file automatically at the start of every session.
 ## 1. Never commit or push secrets
 
 **No API token, key, password, or other credential may ever enter a commit, a
-branch, or a push to GitHub.** This repository is currently private, but write
-every commit as if it were public: a private repository can be made public, and
-anything that lands in a commit stays in every clone, in forks, and in the
-history that would go public with it, even after the commit is deleted.
+branch, or a push to GitHub.** This repository is public (since 2026-11-07):
+every commit is readable by anyone the moment it is pushed, and anything that
+lands in a commit stays in every clone, in forks, and in the events API, even
+after the commit is deleted.
 
-Because the repository is private on a personal account, GitHub's secret
-scanning and push protection are not available (the API answers "Secret
-scanning is not available for this repository"). Nothing on GitHub blocks a
-secret at push time. The only automated check is the `Gitleaks (full history)`
-job in `.github/workflows/security.yml`, and it runs *after* the push. The
-pre-commit diff check below is the real guard.
+GitHub's secret scanning and push protection are enabled. Push protection
+blocks a push only when it recognises the token format of a supported provider
+(a GitHub PAT, for example). It does not recognise this project's own secrets,
+such as `CRON_SECRET` or the location-ingest tokens, or arbitrary passwords.
+The `Gitleaks (full history)` job in `.github/workflows/security.yml` runs
+*after* the push, when the value is already public. The pre-commit diff check
+below is still the real guard.
 
 This rule is absolute. It is not relaxed for "just a test key", "it's already
 revoked", "only on a feature branch", "it's in a comment", or "I'll remove it in
@@ -348,3 +349,66 @@ component that the pseudo-locale run never renders (a toast, an error, a
 closed popover), a physical Tailwind class (`ml-`, `left-`, `text-left`), a
 missing translator note, or a layout that is merely wrong in right to left
 without overflowing. As with §3, the check is a habit, not a gate.
+
+---
+
+## 5. Every new element loads only when it is needed
+
+Since issue #55, nothing reaches a visitor before it is needed. **Any new
+image, video, component, page or dependency gets the loading strategy that
+fits it in the same commit that adds it.** An agent decides this without
+being asked, then reports what it deferred, or why the element must load
+eagerly. "Lazy where relevant" is a decision for each element, not a default
+to apply everywhere: lazy-loading the LCP element, or server-rendered content
+that crawlers read, makes the site slower and worse.
+
+The policy and the measurements behind it are in `docs/seo.md` §19
+(published at `/notes/discoverability`). Read it before the first new element
+of a session.
+
+### What to do
+
+| If the new element is… | Then |
+| --- | --- |
+| An image below the fold, or one not shown on first paint (a carousel slide, a tab, a dialog) | The default: `next/image` without loading props, which is `lazy`. Nothing to add. |
+| An image above the fold that is not the LCP (a full-bleed background, a decorative device frame) | `loading="eager"` + `fetchPriority="low"`. Both: React 19 auto-preloads up to ten non-lazy `<img>` per page unless one of them is `fetchPriority="low"`. |
+| The image that is the measured LCP of its route | `preload`, and an entry with the measurement in `PRELOAD_ALLOWED` (`tests/fitness/imageLoadingPolicy.test.js`). Measure it first; never guess. `priority` is deprecated and banned. |
+| A video, iframe or embed | `preload="none"` or `"metadata"` plus a poster for video, `loading="lazy"` for iframes, and no autoplay download for anything off screen. |
+| A heavy client module not used on first render: a modal, popover, drawer, WebGL/canvas effect, editor, chart, a large library | Defer it with `deferredChunk` (`src/lib/deferredChunk.js`), mounted via `next/dynamic({ ssr: false })` or `useDeferredMount`. Prefetch it in idle time (`whenIdle`) and on intent (pointer-over, focus, touch); never only on click. Add it to `DEFERRED` / `ENTRIES` in `tests/fitness/deferredChunks.test.js`. |
+| Effect code that reduced-motion visitors never see | Skip the download entirely under reduced motion (the Ember Passage pattern in `PageTransitionProvider.jsx`). |
+| A new route | Check its LCP at 1440×900 and 390×844 before choosing any preload. The background rule above applies, and `tests/perf/image-loading.spec.js` covers the route once it is in `tests/support/routes.js`. |
+
+### When not to defer
+
+- **The LCP element, and anything above the fold that is visible on first
+  paint.** Deferring it trades a fast paint for a late one, or for layout shift.
+- **Server-rendered text and data.** `ssr: false` removes real HTML for
+  crawlers and no-JS readers and swaps content for a skeleton (a CLS risk).
+- **Small modules.** A deferred chunk costs a request; below a few kB it is
+  not worth it.
+- **A toast or anything a mount effect must reach.** The `sonner` Toaster is
+  deliberately eager.
+
+A deferred chunk must fail safe: a chunk that never arrives renders nothing
+(`optionalChunk`), never a blank page, and a first click that beats the
+download still works.
+
+### Then, before the commit
+
+1. Measure it: `npm run test:bundle` (re-baseline with `--update` only when
+   the change is a deliberate saving or a justified cost), plus the LCP check
+   above for anything above the fold.
+2. Tests (§3): the two fitness tests above, and a component test that the
+   deferred element still opens and is populated.
+3. Record it in the commit's `CHANGELOG.md` entry: what was deferred or
+   marked eager and why, or "lazy-loading check: nothing to defer".
+
+### What CI catches, and what it does not
+
+Enforced: `imageLoadingPolicy` (no `priority`, `preload` only from the
+allowlist, no `eager` without `low`), `deferredChunks` (no static import of a
+deferred module), `tests/perf/image-loading.spec.js` (every preload is an LCP
+candidate, and an LCP image is never lazy), and the first-load JS budget.
+**Not enforced:** a new heavy component that was never deferred and still fits
+the budget's 10 % headroom, a video or iframe without lazy loading, or a
+missing intent prefetch. As with §3, the check is a habit, not a gate.
