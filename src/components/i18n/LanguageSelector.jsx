@@ -286,6 +286,21 @@ export default function LanguageSelector({
     }
   };
 
+  // The listbox is focused instead of the field after a touch or pen opens the
+  // panel, and takes the same keys, with one exception. The search field sits
+  // just before it, so Shift+Tab moves there and the panel stays open: through
+  // `onInputKeyDown` the Tab branch would close the panel and hand focus to the
+  // trigger first, and a visitor on touch with a hardware keyboard could only
+  // reach search by closing and reopening the selector.
+  const onListKeyDown = (event) => {
+    if (event.key === 'Tab' && event.shiftKey) {
+      event.preventDefault();
+      inputRef.current?.focus();
+      return;
+    }
+    onInputKeyDown(event);
+  };
+
   const onTriggerKeyDown = (event) => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
@@ -406,10 +421,11 @@ export default function LanguageSelector({
               role="listbox"
               aria-label={t('label')}
               // Focused instead of the field after a tap, so it takes the same
-              // keys: Escape still closes and hands focus back.
+              // keys: Escape still closes and hands focus back. Shift+Tab is
+              // its own (see `onListKeyDown`).
               tabIndex={-1}
               aria-activedescendant={activeCode ? optionId(activeCode) : undefined}
-              onKeyDown={onInputKeyDown}
+              onKeyDown={onListKeyDown}
               className="max-h-[min(22rem,55vh)] min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain py-1.5 focus:outline-none"
             >
               {groups.length === 0 ? (

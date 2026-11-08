@@ -1632,6 +1632,18 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### Language selector: Shift+Tab from a tapped list reaches search instead of closing the panel · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of the touch-opening fix (the listbox takes focus after a touch or pen press). |
+| **Details** | The tap-focused listbox reused the search field's key handler, whose Tab branch closes the panel and focuses the trigger unconditionally, so that the browser's Tab continues from the trigger rather than from the end of `<body>`. From the listbox that ran for Shift+Tab too: the panel closed before the browser could move focus to the search field just before the list. A visitor using touch with a hardware keyboard (a tablet in a keyboard case) could only reach search by closing and reopening the selector. The listbox now has its own handler, `onListKeyDown`: Shift+Tab prevents the default, focuses the search field and leaves the panel open; every other key, plain Tab included, goes through the shared handler as before. |
+| **Tests** | `tests/component/LanguageSelector.test.jsx`: Shift+Tab from the listbox after a touch and after a pen press must focus the search field with the panel open and the default prevented (both fail on the previous code), and a plain Tab must still close the panel and return focus to the trigger. `tests/e2e/language-selector-mobile.spec.js`: a real tap, then a real Shift+Tab, must land in the search field with the panel open, and typing there filters the list, in `/` and `/ar`; passed in chromium, mobile-chrome, webkit and mobile-safari against a clean production build (Firefox does not launch locally and runs in CI). A row added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` and `tests/browser-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: focus handling only. |
+| **i18n check** | No visitor-facing text; the e2e case runs right to left in Arabic as well. |
+| **Files** | `src/components/i18n/LanguageSelector.jsx`, `tests/component/LanguageSelector.test.jsx`, `tests/e2e/language-selector-mobile.spec.js`, `docs/testing.md`, `tests/vitest-cases.json`, `tests/browser-cases.json` |
+
 #### `/qualifications`: the centre certificate is visible from the first paint, so its preload counts · 2026-11-08
 
 | | |

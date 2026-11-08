@@ -142,6 +142,34 @@ describe('LanguageSelector opening focus', () => {
     expect(trigger).toHaveFocus();
   });
 
+  // Touch with a hardware keyboard (review, 2026-11-08): the search field sits
+  // just before the tap-focused listbox, so Shift+Tab must reach it with the
+  // panel still open. Through the field's own handler, the Tab branch closed
+  // the panel and focused the trigger before the browser could move focus.
+  it.each(['touch', 'pen'])('moves from the %s-focused listbox to search on Shift+Tab, panel open', async (pointerType) => {
+    const trigger = await openWith(pointerType);
+    const list = screen.getByRole('listbox');
+    expect(list).toHaveFocus();
+
+    let notPrevented;
+    await act(async () => {
+      notPrevented = fireEvent.keyDown(list, { key: 'Tab', shiftKey: true });
+    });
+
+    // The default is taken over: focus is placed, not left to the browser.
+    expect(notPrevented).toBe(false);
+    expect(screen.getByRole('combobox')).toHaveFocus();
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
+  it('still closes and returns focus to the trigger on a plain Tab from the listbox', async () => {
+    const trigger = await openWith('touch');
+    await act(async () => fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Tab' }));
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
+  });
+
   it('sets the search text at 16px at every width, so iOS does not zoom into it', async () => {
     await openWith('touch');
     const field = screen.getByRole('combobox');

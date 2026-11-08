@@ -1,9 +1,9 @@
 {
   "suites": 176,
-  "cases": 1955,
+  "cases": 1958,
   "byProject": {
     "api": 75,
-    "component": 167,
+    "component": 170,
     "fitness": 242,
     "property": 35,
     "unit": 1436

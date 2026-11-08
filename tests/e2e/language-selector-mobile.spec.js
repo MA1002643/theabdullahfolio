@@ -89,6 +89,28 @@ test.describe('language selector on a phone', { tag: '@cross-browser' }, () => {
       await expect(page.locator('.locale-panel [role="option"]')).toHaveCount(1);
       expectInsideViewport(await widths(page));
     });
+
+    // Touch together with a hardware keyboard (a tablet with a keyboard
+    // case): after the tap the listbox has focus, and Shift+Tab must reach the
+    // search field just before it with the panel still open, not close it.
+    test(`${path}: Shift+Tab from the tapped list reaches search, panel open`, async ({ page }) => {
+      await page.goto(path);
+      await settle(page);
+      const trigger = page.locator('button.locale-trigger').first();
+      await trigger.tap();
+      const list = page.locator('.locale-panel [role="listbox"]');
+      await expect(list).toBeFocused();
+
+      await page.keyboard.press('Shift+Tab');
+      const field = page.locator('.locale-panel [role="combobox"]');
+      await expect(field).toBeFocused();
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+      await expect(list).toBeVisible();
+
+      // And the field works as the search it is.
+      await page.keyboard.type('deu');
+      await expect(page.locator('.locale-panel [role="option"]')).toHaveCount(1);
+    });
   }
 });
 
