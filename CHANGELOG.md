@@ -1632,6 +1632,19 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### `/about`: Escape cancels a dialog still downloading, and `/uses` focus lands a reveal already in motion · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of [#55](https://github.com/MA1002643/theabdullahfolio/issues/55) (deferred dialog chunks) and of the `/uses` focus-reveal fix. |
+| **Escape during the download** | The dialog's own Escape listener mounts with the dialog, so an Escape pressed while the chunk downloaded did nothing and the dialog opened later anyway. The page now cancels a pending open itself: a `document` keydown listener, claimed with `claimEscape`, exists only while an open flag is set and that dialog is not yet mounted. It detaches in the same commit the dialog mounts, so it never competes with the dialog's handler, and it leaves a press something else already claimed alone. |
+| **Focus during a running reveal** | `useStagedReveal` set `instant` only when focus arrived before the reveal was *scheduled*. Focus during the stagger delay or mid-tween left it false, and a new `transition` prop cannot reach a running framer tween anyway, because framer re-animates only values whose target changed. A Bench link could still sit clipped outside its mask. On focus the hook now settles every running layer under the element (**new** `settleRunningLayers`): each tween is stopped and its motion value jumped to the final keyframe, through framer's own visual elements. Not `animation.complete()`: in framer 11 a tween completed during its delay phase finishes on its *first* keyframe. |
+| **Tests** | **new** `aboutPendingDialogEscape.test.jsx`: each dialog module held behind a gate, Escape pressed (and claimed), import released; the dialog must stay closed, then open on a fresh press. An unclaimed Escape with nothing pending is left alone. `stagedRevealFocus.test.jsx`: two cases with real framer timing focus the link during the stagger delay and mid-tween (after `on` is true) and require the mask layer at rest within two frames. Every new case fails on the previous code. Two rows added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing new to defer; the dialogs stay deferred. `docs/seo.md` §19 updated to describe the pending-open behaviour. |
+| **Privacy check** | Nothing to change: dialog state, key handling and animation timing only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/about/index.jsx`, `src/components/uses/useStagedReveal.js`, **new** `tests/component/aboutPendingDialogEscape.test.jsx`, `tests/component/stagedRevealFocus.test.jsx`, `docs/testing.md`, `docs/seo.md`, `tests/vitest-cases.json` |
+
 #### `/about`: the two deferred dialogs can no longer open at once · 2026-11-08
 
 | | |

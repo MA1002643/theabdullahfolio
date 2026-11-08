@@ -26,6 +26,7 @@ import { useViewportCountUp } from "@/hooks/useViewportCountUp";
 import dynamic from "next/dynamic";
 import { deferredChunk } from "@/lib/deferredChunk";
 import { useDeferredMount } from "@/hooks/useDeferredMount";
+import { claimEscape } from "@/lib/escapeKey";
 import { useProjectProgress } from "@/hooks/useProjectProgress";
 import { ExperienceUpdateBanner } from "./ExperienceUpdateBanner";
 import { UpdateBanner } from "./UpdateBanner";
@@ -1262,6 +1263,30 @@ const AboutDetails = () => {
     setIsExperienceModalOpen(false);
     setIsProgressPopupOpen(true);
   };
+
+  // Escape cancels a PENDING open. A press that beats a dialog's chunk sets its
+  // open flag at once, but the dialog (and so its own Escape listener) mounts
+  // only when the chunk arrives. Without this, an Escape during the wait did
+  // nothing and the dialog opened later anyway. The listener exists only while
+  // an open flag is set and that dialog is NOT mounted, so it never competes
+  // with a mounted dialog's own handler: the moment the chunk lands, this
+  // effect's cleanup runs before the dialog's listener is added, in the same
+  // commit. A press something else already claimed (the ⌘K palette) is left
+  // alone.
+  const experienceOpenPending = isExperienceModalOpen && !experienceDialogReady;
+  const progressOpenPending = isProgressPopupOpen && !progressDialogReady;
+  useEffect(() => {
+    if (!experienceOpenPending && !progressOpenPending) return undefined;
+    const handler = (e) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      claimEscape(e);
+      if (experienceOpenPending) setIsExperienceModalOpen(false);
+      if (progressOpenPending) setIsProgressPopupOpen(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [experienceOpenPending, progressOpenPending]);
+
   const handleProgressTriggerKeyDown = (e) => {
     // Standard button keyboard semantics — Enter or Space activates.
     // Prevent Space from scrolling the page.

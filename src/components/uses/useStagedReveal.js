@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useInView } from 'framer-motion';
+import { useInView, visualElementStore } from 'framer-motion';
 import { PLATE_EASE } from './Plate';
 
 // Per-ELEMENT reveal gate for the /uses plates (owner correction 2026-09-06).
@@ -37,7 +37,58 @@ import { PLATE_EASE } from './Plate';
 // first sets `instant`: `on` at once, and callers pass it beside reduceMotion
 // to `staged`, which lands every layer at rest with a 0s transition. Focus
 // after the reveal changes nothing.
+//
+// "Before the reveal" means until the reveal has FINISHED, not until it was
+// scheduled (review, 2026-11-08). Focus can land in three windows:
+//   · pending, the gate shut or the delay not yet resolved: `instant` opens it
+//     with a 0s transition, as above;
+//   · running, the gate open and framer's tweens in their stagger delay or
+//     mid-flight: a new `transition` prop alone would NOT reach them, because
+//     framer re-animates only values whose target changed and the targets
+//     have not. So the running tweens are settled explicitly
+//     (`settleRunningLayers`): each one jumps to its end, and `instant` keeps
+//     any later change at 0s;
+//   · finished: nothing to do.
 export const REVEAL_MARGIN = '0px 0px -10% 0px';
+
+/**
+ * Jump every framer tween running under `root` (the root included) to its end.
+ * Returns whether any was running, i.e. whether the reveal had not finished.
+ *
+ * Goes through framer's own visual elements, so the motion values the layers
+ * render from are the ones that land: nothing writes to `style` behind framer's
+ * back, and nothing can overwrite the result on the next frame.
+ *
+ * Not `animation.complete()`: in framer 11 a tween completed during its delay
+ * phase finishes on its FIRST keyframe (the delay branch of the tick wins), so
+ * a station still waiting out its stagger would "complete" at 140% below its
+ * mask. The tween is stopped and its value jumped to the final keyframe.
+ */
+export function settleRunningLayers(root) {
+  if (!root) return false;
+  let running = false;
+  const nodes = [root, ...root.querySelectorAll('*')];
+  for (const node of nodes) {
+    const visual = visualElementStore.get(node);
+    if (!visual) continue;
+    visual.values.forEach((value) => {
+      if (!value.isAnimating()) return;
+      running = true;
+      const animation = value.animation;
+      const resolved = animation?.resolved;
+      const target =
+        resolved?.finalKeyframe ??
+        resolved?.keyframes?.at(-1) ??
+        animation?.options?.keyframes?.at(-1);
+      if (target == null) {
+        value.stop();
+        return;
+      }
+      value.jump(target);
+    });
+  }
+  return running;
+}
 const SAME_BEAT_MS = 200;
 
 export function useStagedReveal({
@@ -89,7 +140,14 @@ export function useStagedReveal({
     // `focusin` bubbles, so it also fires for the element itself when it is
     // the focusable one (an Instruments tile is the link).
     const onFocusIn = () => {
-      if (!playedRef.current) setInstant(true);
+      // Pending: not yet played (the ref trails `played` by one effect, so a
+      // reveal that has only just been scheduled also counts as pending).
+      if (!playedRef.current) {
+        setInstant(true);
+        return;
+      }
+      // Running: settle every layer still in its delay or mid-tween.
+      if (settleRunningLayers(el)) setInstant(true);
     };
     el.addEventListener('focusin', onFocusIn);
     return () => el.removeEventListener('focusin', onFocusIn);
