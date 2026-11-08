@@ -292,10 +292,20 @@ export default function LanguageSelector({
   // `onInputKeyDown` the Tab branch would close the panel and hand focus to the
   // trigger first, and a visitor on touch with a hardware keyboard could only
   // reach search by closing and reopening the selector.
+  //
+  // Space is the other: on a focused listbox it selects the active option, as
+  // Enter does (WAI-ARIA listbox pattern), and its default, scrolling the list,
+  // is prevented. It is handled here and never in `onInputKeyDown`, because in
+  // the search field Space is a character a visitor types.
   const onListKeyDown = (event) => {
     if (event.key === 'Tab' && event.shiftKey) {
       event.preventDefault();
       inputRef.current?.focus();
+      return;
+    }
+    if (event.key === ' ' || event.key === 'Spacebar') {
+      event.preventDefault();
+      if (flat[active]) choose(flat[active].code);
       return;
     }
     onInputKeyDown(event);

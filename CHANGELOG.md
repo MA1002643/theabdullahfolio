@@ -1632,6 +1632,19 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### Language selector: Space chooses from a tapped list, and CI installs no longer download ffmpeg · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of the touch-opening fix; CI run on `1713781`, where `npm ci` failed in every job. |
+| **Space on the list** | After a touch or pen opens the selector, focus is on the listbox, and Space fell through to the search field's handler, which has no Space case. ArrowDown then Space neither chose the highlighted language nor prevented the list scrolling; only Enter worked. `onListKeyDown` now takes Space (and the legacy `Spacebar`): it prevents the default and chooses the active option, as Enter does, per the WAI-ARIA listbox pattern. The search field's handler is unchanged, so Space is still typed there. |
+| **`npm ci` in CI** | GitHub Releases answered 504 and every job failed at `npm ci`, inside ffmpeg-static's install step, which downloads a ~70 MB ffmpeg build from there and exits 1 on any error. The package is a devDependency for the local asset scripts (`scripts/scene/`, `scripts/seo-pdf-metadata.mjs`); no CI step runs ffmpeg. All five workflows that install dependencies (`ci`, `nightly`, `visual-baselines`, `lighthouse`, `ai-code-review`) now set `FFMPEG_BIN: /usr/bin/true` at workflow level: the installer finds an existing file at that path, reports "installed already" and skips the download. `/usr/bin/true` rather than `/bin/true` because it exists on both Ubuntu and macOS. Local installs are unchanged. |
+| **Tests** | `tests/component/LanguageSelector.test.jsx`: ArrowDown then Space on the listbox after a touch and after a pen press must prevent the default, choose the highlighted language once, close the panel and return focus to the trigger (both fail on the previous code); Space in the search field is not prevented and chooses nothing. The `switchTo` mock is now one hoisted spy so a case can see the choice. `tests/e2e/language-selector-mobile.spec.js`: a real tap, ArrowDown and Space must switch the URL to the highlighted locale, in `/` and `/ar`; passed in chromium, mobile-chrome, webkit and mobile-safari against a clean production build (Firefox does not launch locally). **new** `tests/fitness/ciInstallHermetic.test.js`: every workflow that runs `npm ci` / `npm install` sets the variable (checked to fail with it removed). The skip itself was shown by running the installer against a download URL that cannot connect: exit 1 without the variable, "installed already" and exit 0 with it. actionlint reports nothing on the five workflows. Rows added to the defects and fitness tables in `docs/testing.md`; `tests/vitest-cases.json` and `tests/browser-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: key handling and CI configuration only. |
+| **i18n check** | No visitor-facing text; the e2e case runs right to left in Arabic as well. |
+| **Files** | `src/components/i18n/LanguageSelector.jsx`, `tests/component/LanguageSelector.test.jsx`, `tests/e2e/language-selector-mobile.spec.js`, `.github/workflows/ci.yml`, `.github/workflows/nightly.yml`, `.github/workflows/visual-baselines.yml`, `.github/workflows/lighthouse.yml`, `.github/workflows/ai-code-review.yml`, **new** `tests/fitness/ciInstallHermetic.test.js`, `docs/testing.md`, `tests/vitest-cases.json`, `tests/browser-cases.json` |
+
 #### Language selector: Shift+Tab from a tapped list reaches search instead of closing the panel · 2026-11-08
 
 | | |

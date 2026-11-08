@@ -111,6 +111,26 @@ test.describe('language selector on a phone', { tag: '@cross-browser' }, () => {
       await page.keyboard.type('deu');
       await expect(page.locator('.locale-panel [role="option"]')).toHaveCount(1);
     });
+
+    // Same visitor, choosing from the list: ArrowDown then Space selects the
+    // highlighted language, as Enter does, rather than scrolling the list.
+    test(`${path}: ArrowDown then Space on the tapped list switches language`, async ({ page }) => {
+      await page.goto(path);
+      await settle(page);
+      const before = new URL(page.url()).pathname;
+      await page.locator('button.locale-trigger').first().tap();
+      const list = page.locator('.locale-panel [role="listbox"]');
+      await expect(list).toBeFocused();
+
+      await page.keyboard.press('ArrowDown');
+      const highlighted = await list.getAttribute('aria-activedescendant');
+      const code = highlighted.split('-opt-').pop();
+      await page.keyboard.press(' ');
+
+      await expect(page.locator('.locale-panel')).toHaveCount(0);
+      await expect.poll(() => new URL(page.url()).pathname).not.toBe(before);
+      expect(new URL(page.url()).pathname).toBe(code === 'en' ? '/' : `/${code}`);
+    });
   }
 });
 

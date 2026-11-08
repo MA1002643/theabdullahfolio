@@ -19,12 +19,15 @@ vi.mock('@/i18n/navigation', () => ({
   Link: ({ href, prefetch, ...props }) => <a href={href} {...props} />,
 }));
 
+// One shared spy, so a case can see which language was chosen.
+const { switchTo } = vi.hoisted(() => ({ switchTo: vi.fn() }));
 vi.mock('@/i18n/useLocaleSwitch', () => ({
-  useLocaleSwitch: () => ({ switchTo: vi.fn(), pending: false }),
+  useLocaleSwitch: () => ({ switchTo, pending: false }),
 }));
 
 let savedMatchMedia;
 beforeEach(() => {
+  switchTo.mockClear();
   savedMatchMedia = window.matchMedia;
   window.matchMedia = (query) => ({
     matches: query.includes('reduce'),
@@ -160,6 +163,46 @@ describe('LanguageSelector opening focus', () => {
     expect(notPrevented).toBe(false);
     expect(screen.getByRole('combobox')).toHaveFocus();
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
+  // Space on the tap-focused listbox (review, 2026-11-08): it fell through to
+  // the search field's handler, which has no Space case, so ArrowDown then
+  // Space neither chose the highlighted language nor stopped the list
+  // scrolling. On a focused listbox Space selects, as Enter does.
+  it.each(['touch', 'pen'])('chooses the highlighted language on Space from the %s-focused listbox', async (pointerType) => {
+    const trigger = await openWith(pointerType);
+    const list = screen.getByRole('listbox');
+    await act(async () => fireEvent.keyDown(list, { key: 'ArrowDown' }));
+    const highlighted = list.getAttribute('aria-activedescendant');
+    expect(highlighted).toBeTruthy();
+    // The option id ends in the locale code (`…-opt-<code>`).
+    const expected = highlighted.split('-opt-').pop();
+
+    let notPrevented;
+    await act(async () => {
+      notPrevented = fireEvent.keyDown(list, { key: ' ' });
+    });
+
+    // No page or list scroll: the default is taken over.
+    expect(notPrevented).toBe(false);
+    expect(switchTo).toHaveBeenCalledTimes(1);
+    expect(switchTo.mock.calls[0][0]).toBe(expected);
+    // Closed and focus handed back, exactly as Enter does.
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
+  });
+
+  it('leaves Space to the search field, where it is typed, not a selection', async () => {
+    await openWith('mouse');
+    const field = screen.getByRole('combobox');
+    expect(field).toHaveFocus();
+    let notPrevented;
+    await act(async () => {
+      notPrevented = fireEvent.keyDown(field, { key: ' ' });
+    });
+    expect(notPrevented).toBe(true);
+    expect(switchTo).not.toHaveBeenCalled();
     expect(screen.getByRole('listbox')).toBeInTheDocument();
   });
 
