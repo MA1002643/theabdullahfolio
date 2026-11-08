@@ -126,6 +126,17 @@ animation: whatever the text, its pieces join back to the input, and for ASCII
 they are exactly the old `split('')` / `split(' ')`, which is what keeps the
 English pages unchanged.
 
+Two unit suites pin the deferred-loading primitives (#55).
+`deferredChunk.test.js` covers the loader: one shared download, a failure
+forgotten so the next call retries, a `preload` that never rejects, and a
+fallback that renders nothing. `whenIdle.test.js` covers the scheduler with
+both browser APIs stubbed on a fake `window`: the deadline handed to
+`requestIdleCallback`, cancellation before the callback runs (only its own),
+and the 200 ms `setTimeout` fallback with its `clearTimeout` cancel. The cancel
+matters for the Ember Passage provider: a reduced-motion visitor's first effect
+schedules the runtime download before hydration reports the real preference,
+and the re-render that follows must cancel it before idle arrives.
+
 ### L3 · Component tests
 
 `tests/support/setup-component.js` adds jest-dom matchers, the smallest
@@ -607,6 +618,7 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (deferred dialogs, #55) | Escape pressed while either `/about` dialog's chunk was downloading did nothing: the open flag was already set, but the dialog's own Escape listener mounts with the dialog, so the dialog opened later anyway. | The page cancels a pending open itself, claiming the press with `claimEscape`, through a listener that exists only while an open flag is set and that dialog is not mounted, so it never competes with a mounted dialog. **new** `aboutPendingDialogEscape.test.jsx` holds each dialog module behind a gate, presses Escape, then releases the import; it fails on the old code. |
 | Review (`/uses` focus reveal) | The first `instant` fix treated a reveal as finished once it was *scheduled*. Focus that arrived during the stagger delay or mid-tween left `instant` false, and a new `transition` prop cannot reach a running framer tween anyway (its target has not changed), so a Bench link could still sit clipped outside its mask. | `useStagedReveal` settles running layers explicitly (`settleRunningLayers`: stop each tween and jump its motion value to the final keyframe; framer 11's `complete()` lands on the *first* keyframe during the delay phase). Two cases in `stagedRevealFocus.test.jsx`, focus in the delay and mid-tween with real framer timing, fail on the old hook. |
 | Review (`/uses` editor frame) | The pending-focus fix depends on each caller passing `instant` to its transitions, and `EditorFrame` did not, although its code block is focusable (it scrolls sideways on a phone). Tab onto it before the frame revealed turned `on` true, then the screen ran its 0.65s unroll and the line-by-line typing on schedule, so focus landed on a shut screen and untyped lines. | `EditorFrame` treats `instant` as it treats reduced motion: every layer lands with a 0s transition and the typing and resting carets are not rendered. **new** `editorFrameFocus.test.jsx` renders the real component with the real `usesData.editorFrame`, focuses the `<pre>` before the reveal with real framer timing, and requires the frame open and every line typed within two frames; it fails on the old component. |
+| CI (`/uses` focus reveal) | The two running-reveal cases in `stagedRevealFocus.test.jsx` failed in CI and passed locally. `settleRunningLayers` read the layer's target from `value.animation.resolved`, a framer 11 internal; the repo pins framer 14, whose `AsyncMotionValueAnimation` has no `resolved`, so CI stopped the tween mid-way. The local `node_modules` still held framer 11.18.2 from before the upgrade, so every local run tested the wrong version. A second, intermittent fault surfaced on 14: `playedRef` trailed `played` by a passive effect, so a focus right after the reveal committed was misread as pending. | The resting value is read from the layer's own `animate` prop (public API, any version) and jumped to; `complete()` is only a fallback. `playedRef` is set in a layout effect. Verified in a clean `npm ci` copy (framer 14): the file 8 runs in 8, and the full CI command, 1,953 tests with coverage, green. |
 
 ## Maintenance
 

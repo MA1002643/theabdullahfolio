@@ -1632,6 +1632,31 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### CI: the `/uses` focus-reveal settle works on framer 14, the version the repo pins · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | CI failure on `82b0b9d`: two cases in `tests/component/stagedRevealFocus.test.jsx`. |
+| **Cause** | `settleRunningLayers` read where a running layer would land from `value.animation.resolved`, an internal of framer 11's animator. `package.json` and the lockfile pin framer-motion 14.6.0, whose `AsyncMotionValueAnimation` has no `resolved`, so CI found no target and only stopped the tween, leaving a Bench link 140% below its mask. Locally the tests passed because `node_modules` still held framer-motion 11.18.2 from before the upgrade: the earlier "framer 11 `complete()` lands on the first keyframe" note was measured on that stale install. |
+| **Fix** | The resting value now comes from the layer's own `animate` prop (a target object or a variant label; a keyframe list rests on its last entry), which is framer's public API on any version, and the motion value is jumped there. `animation.complete()` is only the fallback for a value the prop does not name (correct on 14). Running the file repeatedly on 14 also exposed an intermittent fault: `playedRef` trailed `played` by a passive effect, so a focus right after the reveal committed was misread as pending and set `instant` on an element already animating. It is now set in a layout effect. |
+| **Tests** | No new cases: the two CI failures are the regression tests. Verified in a clean copy installed with `npm ci` from the lockfile (framer-motion 14.6.0): `stagedRevealFocus` and `editorFrameFocus` 8 runs in 8, and the full CI command (`vitest run --coverage`) 1,953 of 1,953 with thresholds met. Still green on the stale framer 11 install. A row added to the defects table in `docs/testing.md`. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: animation timing only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/uses/useStagedReveal.js`, `docs/testing.md` |
+
+#### Unit coverage for the idle scheduler's native path and its cancel · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of [#55](https://github.com/MA1002643/theabdullahfolio/issues/55). |
+| **Details** | No test exercised `requestIdleCallback` / `cancelIdleCallback` in `src/lib/whenIdle.js`, though the Ember Passage provider relies on the returned cancel: its hydration-safe reduced-motion hook reports `false` on the first render, so a reduced-motion visitor's first effect schedules the runtime download and the re-render must cancel it before idle arrives. Test-only change; no source changed. |
+| **Tests** | **new** `tests/unit/whenIdle.test.js`, beside `deferredChunk.test.js`, with both schedulers stubbed on a fake `window` (the unit project runs in Node): `requestIdleCallback` gets the default 3000 ms deadline, or the caller's, as `{ timeout }`; the callback runs only when idle, with no arguments; cancel calls `cancelIdleCallback` with its own id, so the callback never runs and a second scheduled callback still does; the provider's schedule-then-cleanup sequence never starts the download; without a callable `requestIdleCallback` it falls back to a 200 ms `setTimeout` whatever deadline was asked for, cancelled through `clearTimeout`; with no `window` it schedules nothing and returns a no-op. Checked against four mutants of `whenIdle` (no-op idle cancel, missing `timeout`, a 0 ms fallback, no-op timeout cancel); each fails at least one case. `docs/testing.md` L2 describes both deferred-loading suites; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: tests only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | **new** `tests/unit/whenIdle.test.js`, `docs/testing.md`, `tests/vitest-cases.json` |
+
 #### `/uses`: the editor frame opens at once when Tab reaches its code block first · 2026-11-08
 
 | | |

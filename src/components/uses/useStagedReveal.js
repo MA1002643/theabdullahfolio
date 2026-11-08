@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useInView, visualElementStore } from 'framer-motion';
 import { PLATE_EASE } from './Plate';
 
@@ -59,10 +59,15 @@ export const REVEAL_MARGIN = '0px 0px -10% 0px';
  * render from are the ones that land: nothing writes to `style` behind framer's
  * back, and nothing can overwrite the result on the next frame.
  *
- * Not `animation.complete()`: in framer 11 a tween completed during its delay
- * phase finishes on its FIRST keyframe (the delay branch of the tick wins), so
- * a station still waiting out its stagger would "complete" at 140% below its
- * mask. The tween is stopped and its value jumped to the final keyframe.
+ * Where a layer comes to rest is read from the layer's own `animate` prop
+ * (`restingValue`), which is framer's public API, and the value is jumped
+ * there. Not from the running animation object: its shape is internal and
+ * changes between majors. The first cut read `animation.resolved`, which
+ * framer 11 has and framer 14 (the version this repo pins) does not, so in CI
+ * the tween was merely stopped mid-way while a stale local install passed.
+ * `animation.complete()` is only the fallback for a value the prop does not
+ * name: framer 14 completes correctly, but framer 11 completed a tween still
+ * in its delay on its FIRST keyframe.
  */
 export function settleRunningLayers(root) {
   if (!root) return false;
@@ -71,23 +76,34 @@ export function settleRunningLayers(root) {
   for (const node of nodes) {
     const visual = visualElementStore.get(node);
     if (!visual) continue;
-    visual.values.forEach((value) => {
+    visual.values.forEach((value, key) => {
       if (!value.isAnimating()) return;
       running = true;
-      const animation = value.animation;
-      const resolved = animation?.resolved;
-      const target =
-        resolved?.finalKeyframe ??
-        resolved?.keyframes?.at(-1) ??
-        animation?.options?.keyframes?.at(-1);
+      const target = restingValue(visual, key);
       if (target == null) {
-        value.stop();
+        value.animation?.complete?.();
         return;
       }
       value.jump(target);
     });
   }
   return running;
+}
+
+/**
+ * The value `key` comes to rest at, from the element's `animate` prop: a
+ * target object, or a variant label resolved through `variants`. A keyframe
+ * list rests on its last entry (the Bench caret's `[0, 1, 1, 0]` ends dark).
+ * `undefined` when the prop does not say (a function variant, or no prop).
+ */
+function restingValue(visual, key) {
+  const props = visual.getProps?.() ?? {};
+  let target = props.animate;
+  if (Array.isArray(target)) target = target.at(-1);
+  if (typeof target === 'string') target = props.variants?.[target];
+  if (!target || typeof target !== 'object') return undefined;
+  const value = target[key];
+  return Array.isArray(value) ? value.at(-1) : value;
 }
 const SAME_BEAT_MS = 200;
 
@@ -131,7 +147,12 @@ export function useStagedReveal({
   const played = reduceMotion || (gate && delay != null);
   const [instant, setInstant] = useState(false);
   const playedRef = useRef(played);
-  useEffect(() => {
+  // A layout effect, not a passive one: it runs in the same commit that
+  // reveals the element, before any input or test code can run. Updated
+  // passively, the ref trailed `played` by a tick, so a focus landing just
+  // after the reveal committed was misread as "pending" and set `instant` on
+  // an element that was already animating normally.
+  useLayoutEffect(() => {
     playedRef.current = played;
   }, [played]);
   useEffect(() => {
@@ -140,8 +161,7 @@ export function useStagedReveal({
     // `focusin` bubbles, so it also fires for the element itself when it is
     // the focusable one (an Instruments tile is the link).
     const onFocusIn = () => {
-      // Pending: not yet played (the ref trails `played` by one effect, so a
-      // reveal that has only just been scheduled also counts as pending).
+      // Pending: not yet played.
       if (!playedRef.current) {
         setInstant(true);
         return;
