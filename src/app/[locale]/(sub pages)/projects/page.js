@@ -49,7 +49,8 @@ export default async function Project({ params }) {
           decorative so screen readers skip it, matching the about and
           qualifications backdrops. */}
       <Image
-        priority
+        loading="eager"
+        fetchPriority="low"
         // NOT 100vw: this image is object-cover'd, so on any viewport
         // NARROWER than its 16:9 (portrait phones, iPads) it paints
         // height-bound at ~178vh CSS px wide (100vh × 16/9) with the sides

@@ -385,9 +385,13 @@ export default function Home() {
           for the old 1536x1024 murk plate: the blur hid its upscale, and the
           quality bump fought the resulting softness. The source is native
           2560x1440 now, so softening it away would defeat the point — and
-          dropping the quality override lets Next ship a smaller LCP image. */}
+          dropping the quality override lets Next ship a smaller LCP image.
+
+          `preload`: this backdrop IS the LCP on a phone (on a desktop the
+          <h1> is), so it is one of the two images on the site that earns a
+          <link rel=preload> in the head (issue #55). */}
       <Image
-        priority
+        preload
         sizes="(max-width: 639.98px) and (orientation: portrait) max(100vw, 115.6svh), max(100vw, 178vh)"
         src={bg}
         alt=""
@@ -711,10 +715,15 @@ export default function Home() {
                 : undefined
             }
           >
-            {/* Laptop */}
+            {/* Laptop. Eager at LOW priority, never preloaded (issue #55): it
+                is above the fold but never the LCP, so it must not compete with
+                the backdrop that is. `fetchPriority="low"` is also what stops
+                React 19's server renderer adding its own head preload, which
+                it does for any non-lazy <img>. */}
             <Image
               ref={laptopRef}
-              priority
+              loading="eager"
+              fetchPriority="low"
               src={laptop}
               // `alt=""` — decorative (issue #32, W7's alt-text audit). It was
               // `alt="laptop"`, which is the definition of an unhelpful alt: it

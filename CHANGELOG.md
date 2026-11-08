@@ -1460,6 +1460,20 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### Website-wide lazy loading — load what each page needs, when it needs it, and measure it · 2026-11-07
+
+| | |
+|:--|:--|
+| **Ref** | [#55](https://github.com/MA1002643/theabdullahfolio/issues/55), rescoped on 2026-11-07 against `main` @ `80d5080`, from a production build (the bundle analyser) and an LCP probe of every route at 1440×900 and 390×844 @3x. The original brief predated `[locale]`, Next 16, #83 and #92: most of its paths no longer existed, and much of it was done. Decision record: `docs/seo.md` §19. |
+| **Images** | The deprecated `priority` is gone from `src/`. Each image now states one of three intents. **`preload`** is only on the two images that measured as an LCP: the home backdrop and the centre `/qualifications` certificate, both on a phone. **`loading="eager"` + `fetchPriority="low"`** is on every full-bleed background (no backdrop was ever an LCP candidate) and on the home laptop. Everything else stays lazy. **`eager` alone was not enough:** React 19's server renderer preloads up to ten non-lazy `<img>` per page unless one is `lazy` or `fetchPriority="low"`, so removing `priority` had left every preload in place. **Measured:** image preloads across the probe fell from 32 to 4. The LCP element is unchanged on every route. `/qualifications` on a phone reached LCP in 968 ms, down from 1,660 ms. |
+| **Deferred chunks** | **The Ember Passage runtime** (overlay, WebGL swarm, shader, ember field) is now one async chunk, `passageRuntime.js`, fetched in idle time. The provider keeps the phase machine and a small eager `PassageStill`, and each navigation picks live or still once, at the click. Reduced-motion visitors never download it, and a click that beats the download gets the still. **The `/about` dialogs** (`ExperienceBreakdownModal`, `ProjectProgressPopup`) are `next/dynamic` chunks, fetched in idle time or on pointer-over, focus or touch on their card, and mounted once they arrive. `useProjectProgress` moved up to the page, so the dialog still opens populated. **New primitives:** `src/lib/deferredChunk.js` (a memoised preload that forgets a failure, plus an `optionalChunk` loader), `src/lib/whenIdle.js` and `src/hooks/useDeferredMount.js`. **Measured (gzip first load):** every route is 6.3 kB lighter, and `/about` is 12.8 kB lighter (350.3 → 337.5 kB). `bundle-budget.json` was re-baselined with `--update`, so each ceiling dropped by 6–13 kB. |
+| **Not done, and why** | A generic `LazyMount` and a central `lazyImports.js` were **rejected**. No heavy module remains below the fold, and a central import map invites the static import the fitness test forbids. `LazyMotion` (about 40 kB, 383 call sites) is tracked in [#200](https://github.com/MA1002643/theabdullahfolio/issues/200). The consent notice becoming the LCP for first-time visitors on four routes is logged as an owner decision (`docs/seo.md` §19). |
+| **Files** | **new** `src/lib/deferredChunk.js`, `src/lib/whenIdle.js`, `src/hooks/useDeferredMount.js`, `src/components/pageTransition/passageRuntime.js`, `src/components/pageTransition/PassageStill.jsx` · `PageTransitionProvider.jsx`, `EmberPassageOverlay.jsx` (static branch → `PassageStill`) · `src/components/about/index.jsx`, `ProjectProgressPopup.jsx` (data as a prop) · the 15 background pages and `NotFoundClient.jsx`, `(home)/page.js`, `qualifications/Carousel.jsx`, `preloadCerts.js` (comment) · `bundle-budget.json` · `docs/seo.md` (§19, runbook step 7), `docs/testing.md`. |
+| **Test-plan check** | **Fitness:** **new** `imageLoadingPolicy` (no `priority`, an allowlisted and justified `preload`, no `eager` without `low`) and **new** `deferredChunks` (no static import of a deferred module from outside its graph, and each entry point still loaded through `import()`). Both fail on `main`. **Perf:** **new** `tests/perf/image-loading.spec.js`: every route at both sizes, every preload is an LCP candidate, and an LCP image is never lazy. It fails on all 15 routes on `main` and passes on this build. **Component:** **new** `pageTransitionDeferred.test.jsx` (reduced motion never imports the runtime; a click that beats the download gets the still; live once loaded) and a lazy-open case in `aboutPage.test.jsx`. **Unit:** **new** `deferredChunk.test.js`. **Ran on the production build:** perf (the new spec plus Web Vitals, CLS ≤ 0.1 on every route) and the chromium and mobile-chrome navigation and resilience suites (blocked-chunk chaos included): 227 passed. Vitest: 1,928 of 1,929 pass. The one failure, `tests/api/mswHermetic.test.js`, also fails on an untouched `main` checkout on this machine, so it predates this change. Counts regenerated (`npm run test:count`). |
+| **Project rule** | `CLAUDE.md` §5, *Every new element loads only when it is needed*: each new image, video, component, page or dependency gets its loading strategy in the commit that adds it, with a table of when to use `lazy`, `eager` + `fetchPriority="low"`, `preload` or a deferred chunk, when not to defer, and what CI does and does not enforce. |
+| **Privacy check** | Nothing to change: no storage key, cookie, processor or server-side data is added or altered. The deferred chunks are first-party static files. |
+| **i18n check** | No visitor-facing text added. `PassageStill` renders the same translated destination label, with the same joined-script tracking rule (`breaksWhenSplit`), as the static branch it was extracted from. |
+
 #### npm: five Dependabot PRs, a nightly that had been red for twelve days, and a test network that stopped being hermetic · 2026-11-06
 
 | | |
@@ -1617,6 +1631,131 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 | **Hand-copied figures are banned outright** | A count or measurement typed into prose is stale the week after and nothing flags it. **Two live instances were sitting in the tree**: `readNotes.js` said `docs/seo.md` "is 1,022 lines" when it had reached 1,257, and §16 of the document says "1,000-odd lines" about itself. The rule now asks for a figure **derived at build** (`countLines()` is named as the pattern), or hedged prose that cannot go wrong, or — if an exact number really must be written — a date beside it so a reader knows what to trust. |
 
 ### Fixed
+
+#### CI: Gitleaks survives a GitHub Releases outage · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Security workflow run on `52852bc`: `Install gitleaks` failed with `curl: (22) … error: 504`. |
+| **Cause** | The same GitHub Releases outage that broke `npm ci`. The Gitleaks job downloaded its pinned release tarball with a single `curl`, so one 504 failed the job before it scanned a commit. The binary is required (it is the secret-scanning gate), so the download cannot be skipped the way ffmpeg-static's was. |
+| **Fix** | `.github/workflows/security.yml`: the tarball is cached with `actions/cache@v6` (inputs and `cache-hit` output read from its v6 `action.yml`), keyed on `GITLEAKS_VERSION` and `GITLEAKS_SHA256`, so after one successful run the job never reaches Releases; bumping either value moves the key. A cache miss downloads with `curl --retry 6 --retry-all-errors --retry-delay 10 --retry-max-time 300`: `--retry-all-errors` is what makes curl retry an HTTP error such as a 504, which plain `--retry` does not, and `-f` still fails the step once retries run out. The SHA-256 is verified on every run, whether the tarball came from the cache or the network. |
+| **Tests** | actionlint reports nothing on the workflow. The curl flags were run against a local server that answers 504 twice and then 200: two retried 504s, then the body and exit 0. The cache path is exercised on the first CI run (a miss that saves) and the next (a hit). Rows added to the defects table and the L9 description in `docs/testing.md`. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: CI configuration only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `.github/workflows/security.yml`, `docs/testing.md` |
+
+#### Language selector: Space chooses from a tapped list, and CI installs no longer download ffmpeg · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of the touch-opening fix; CI run on `1713781`, where `npm ci` failed in every job. |
+| **Space on the list** | After a touch or pen opens the selector, focus is on the listbox, and Space fell through to the search field's handler, which has no Space case. ArrowDown then Space neither chose the highlighted language nor prevented the list scrolling; only Enter worked. `onListKeyDown` now takes Space (and the legacy `Spacebar`): it prevents the default and chooses the active option, as Enter does, per the WAI-ARIA listbox pattern. The search field's handler is unchanged, so Space is still typed there. |
+| **`npm ci` in CI** | GitHub Releases answered 504 and every job failed at `npm ci`, inside ffmpeg-static's install step, which downloads a ~70 MB ffmpeg build from there and exits 1 on any error. The package is a devDependency for the local asset scripts (`scripts/scene/`, `scripts/seo-pdf-metadata.mjs`); no CI step runs ffmpeg. All five workflows that install dependencies (`ci`, `nightly`, `visual-baselines`, `lighthouse`, `ai-code-review`) now set `FFMPEG_BIN: /usr/bin/true` at workflow level: the installer finds an existing file at that path, reports "installed already" and skips the download. `/usr/bin/true` rather than `/bin/true` because it exists on both Ubuntu and macOS. Local installs are unchanged. |
+| **Tests** | `tests/component/LanguageSelector.test.jsx`: ArrowDown then Space on the listbox after a touch and after a pen press must prevent the default, choose the highlighted language once, close the panel and return focus to the trigger (both fail on the previous code); Space in the search field is not prevented and chooses nothing. The `switchTo` mock is now one hoisted spy so a case can see the choice. `tests/e2e/language-selector-mobile.spec.js`: a real tap, ArrowDown and Space must switch the URL to the highlighted locale, in `/` and `/ar`; passed in chromium, mobile-chrome, webkit and mobile-safari against a clean production build (Firefox does not launch locally). **new** `tests/fitness/ciInstallHermetic.test.js`: every workflow that runs `npm ci` / `npm install` sets the variable (checked to fail with it removed). The skip itself was shown by running the installer against a download URL that cannot connect: exit 1 without the variable, "installed already" and exit 0 with it. actionlint reports nothing on the five workflows. Rows added to the defects and fitness tables in `docs/testing.md`; `tests/vitest-cases.json` and `tests/browser-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: key handling and CI configuration only. |
+| **i18n check** | No visitor-facing text; the e2e case runs right to left in Arabic as well. |
+| **Files** | `src/components/i18n/LanguageSelector.jsx`, `tests/component/LanguageSelector.test.jsx`, `tests/e2e/language-selector-mobile.spec.js`, `.github/workflows/ci.yml`, `.github/workflows/nightly.yml`, `.github/workflows/visual-baselines.yml`, `.github/workflows/lighthouse.yml`, `.github/workflows/ai-code-review.yml`, **new** `tests/fitness/ciInstallHermetic.test.js`, `docs/testing.md`, `tests/vitest-cases.json`, `tests/browser-cases.json` |
+
+#### Language selector: Shift+Tab from a tapped list reaches search instead of closing the panel · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of the touch-opening fix (the listbox takes focus after a touch or pen press). |
+| **Details** | The tap-focused listbox reused the search field's key handler, whose Tab branch closes the panel and focuses the trigger unconditionally, so that the browser's Tab continues from the trigger rather than from the end of `<body>`. From the listbox that ran for Shift+Tab too: the panel closed before the browser could move focus to the search field just before the list. A visitor using touch with a hardware keyboard (a tablet in a keyboard case) could only reach search by closing and reopening the selector. The listbox now has its own handler, `onListKeyDown`: Shift+Tab prevents the default, focuses the search field and leaves the panel open; every other key, plain Tab included, goes through the shared handler as before. |
+| **Tests** | `tests/component/LanguageSelector.test.jsx`: Shift+Tab from the listbox after a touch and after a pen press must focus the search field with the panel open and the default prevented (both fail on the previous code), and a plain Tab must still close the panel and return focus to the trigger. `tests/e2e/language-selector-mobile.spec.js`: a real tap, then a real Shift+Tab, must land in the search field with the panel open, and typing there filters the list, in `/` and `/ar`; passed in chromium, mobile-chrome, webkit and mobile-safari against a clean production build (Firefox does not launch locally and runs in CI). A row added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` and `tests/browser-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: focus handling only. |
+| **i18n check** | No visitor-facing text; the e2e case runs right to left in Arabic as well. |
+| **Files** | `src/components/i18n/LanguageSelector.jsx`, `tests/component/LanguageSelector.test.jsx`, `tests/e2e/language-selector-mobile.spec.js`, `docs/testing.md`, `tests/vitest-cases.json`, `tests/browser-cases.json` |
+
+#### `/qualifications`: the centre certificate is visible from the first paint, so its preload counts · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | CI failure on `3042027` (Browser quality: `tests/perf/image-loading.spec.js`, `/qualifications`), failing on every run of this branch since [#55](https://github.com/MA1002643/theabdullahfolio/issues/55). Owner decision: render the centre card at once. |
+| **Cause** | The centre certificate carries `preload` as the route's phone LCP, but the carousel rendered every card at its entrance pose (sunk, opacity 0) until a double rAF after hydration began the ripple. Chrome judges an image at its first paint: a certificate that had already downloaded, on any warm or fast visit and in CI, painted invisibly and was never counted. The LCP fell to a paragraph, the preload bought nothing, and the spec reported "LCP at neither desktop nor phone size". A slower local machine measured after the fade and passed. Without JavaScript, no card was ever visible. |
+| **Fix** | `Carousel.jsx`: the centre card and its title banner never take the hidden pose (`hiddenPose = isHidden && absOffset !== 0`); they render at rest and opaque from the server HTML, and only the neighbours ripple out of the centre. Visible change: the centre certificate no longer fades and rises in; the ripple around it is unchanged. Reduced motion is unaffected (it skips the entrance anyway). |
+| **Tests** | **new** `tests/component/qualificationsFirstPaint.test.jsx`: server-renders the real carousel with motion on (the first state, before any effect) and requires the centre card and banner at opacity 1 and scale 1, the next card still at the entrance pose; it fails on the previous code. Verified in a clean `npm ci` production build: measured at CI speed (straight after `load`), the certificate was a candidate at neither size before and is the phone LCP after; `image-loading.spec.js` 30/30 on every route, the whole perf project 45/45, `/qualifications` a11y 39/39. A row added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | No new element. The certificate keeps `preload` (now borne out at CI speed); `PRELOAD_ALLOWED` unchanged. `docs/seo.md` §19 gains a dated correction beside the #55 decision. |
+| **Visual check** | Screenshots are taken after the entrance, where the wheel's pose is unchanged; review the `/qualifications` render in `tests/visual/__latest__/` on the next run. |
+| **Privacy check** | Nothing to change: rendering only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/qualifications/Carousel.jsx`, **new** `tests/component/qualificationsFirstPaint.test.jsx`, `docs/seo.md`, `docs/testing.md`, `tests/vitest-cases.json` |
+
+#### CI: the `/uses` focus-reveal settle works on framer 14, the version the repo pins · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | CI failure on `82b0b9d`: two cases in `tests/component/stagedRevealFocus.test.jsx`. |
+| **Cause** | `settleRunningLayers` read where a running layer would land from `value.animation.resolved`, an internal of framer 11's animator. `package.json` and the lockfile pin framer-motion 14.6.0, whose `AsyncMotionValueAnimation` has no `resolved`, so CI found no target and only stopped the tween, leaving a Bench link 140% below its mask. Locally the tests passed because `node_modules` still held framer-motion 11.18.2 from before the upgrade: the earlier "framer 11 `complete()` lands on the first keyframe" note was measured on that stale install. |
+| **Fix** | The resting value now comes from the layer's own `animate` prop (a target object or a variant label; a keyframe list rests on its last entry), which is framer's public API on any version, and the motion value is jumped there. `animation.complete()` is only the fallback for a value the prop does not name (correct on 14). Running the file repeatedly on 14 also exposed an intermittent fault: `playedRef` trailed `played` by a passive effect, so a focus right after the reveal committed was misread as pending and set `instant` on an element already animating. It is now set in a layout effect. |
+| **Tests** | No new cases: the two CI failures are the regression tests. Verified in a clean copy installed with `npm ci` from the lockfile (framer-motion 14.6.0): `stagedRevealFocus` and `editorFrameFocus` 8 runs in 8, and the full CI command (`vitest run --coverage`) 1,953 of 1,953 with thresholds met. Still green on the stale framer 11 install. A row added to the defects table in `docs/testing.md`. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: animation timing only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/uses/useStagedReveal.js`, `docs/testing.md` |
+
+#### Unit coverage for the idle scheduler's native path and its cancel · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of [#55](https://github.com/MA1002643/theabdullahfolio/issues/55). |
+| **Details** | No test exercised `requestIdleCallback` / `cancelIdleCallback` in `src/lib/whenIdle.js`, though the Ember Passage provider relies on the returned cancel: its hydration-safe reduced-motion hook reports `false` on the first render, so a reduced-motion visitor's first effect schedules the runtime download and the re-render must cancel it before idle arrives. Test-only change; no source changed. |
+| **Tests** | **new** `tests/unit/whenIdle.test.js`, beside `deferredChunk.test.js`, with both schedulers stubbed on a fake `window` (the unit project runs in Node): `requestIdleCallback` gets the default 3000 ms deadline, or the caller's, as `{ timeout }`; the callback runs only when idle, with no arguments; cancel calls `cancelIdleCallback` with its own id, so the callback never runs and a second scheduled callback still does; the provider's schedule-then-cleanup sequence never starts the download; without a callable `requestIdleCallback` it falls back to a 200 ms `setTimeout` whatever deadline was asked for, cancelled through `clearTimeout`; with no `window` it schedules nothing and returns a no-op. Checked against four mutants of `whenIdle` (no-op idle cancel, missing `timeout`, a 0 ms fallback, no-op timeout cancel); each fails at least one case. `docs/testing.md` L2 describes both deferred-loading suites; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: tests only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | **new** `tests/unit/whenIdle.test.js`, `docs/testing.md`, `tests/vitest-cases.json` |
+
+#### `/uses`: the editor frame opens at once when Tab reaches its code block first · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of the `/uses` focus-reveal fix. |
+| **Details** | `useStagedReveal` answers early focus with `instant`, but only callers that pass it to their transitions benefit, and `EditorFrame` did not. Its `<pre>` is focusable (`tabIndex={0}`, so a phone keyboard user can scroll it), so Tab could reach it before the frame revealed: `on` turned true, and the screen then ran its 0.65s clip unroll and the staggered line typing on their normal schedule, with focus on a shut screen and untyped lines. Under `instant` the frame now behaves as it does under reduced motion: every layer lands with a 0s transition, and the typing and resting carets are not rendered (they are decorative and `aria-hidden`). `initial` still reads `reduceMotion` alone, since it only applies on mount. |
+| **Tests** | **new** `tests/component/editorFrameFocus.test.jsx`: the real `EditorFrame` with the real `usesData.editorFrame`, plate not revealed, real framer timing. Focusing the `<pre>` must leave, within two frames, the frame at opacity 1, the screen's clip open and every line's clip fully typed, none still animating, no caret, and focus still on the block. It fails on the previous component. A row added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: animation timing only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/uses/EditorFrame.jsx`, **new** `tests/component/editorFrameFocus.test.jsx`, `docs/testing.md`, `tests/vitest-cases.json` |
+
+#### `/about`: Escape cancels a dialog still downloading, and `/uses` focus lands a reveal already in motion · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of [#55](https://github.com/MA1002643/theabdullahfolio/issues/55) (deferred dialog chunks) and of the `/uses` focus-reveal fix. |
+| **Escape during the download** | The dialog's own Escape listener mounts with the dialog, so an Escape pressed while the chunk downloaded did nothing and the dialog opened later anyway. The page now cancels a pending open itself: a `document` keydown listener, claimed with `claimEscape`, exists only while an open flag is set and that dialog is not yet mounted. It detaches in the same commit the dialog mounts, so it never competes with the dialog's handler, and it leaves a press something else already claimed alone. |
+| **Focus during a running reveal** | `useStagedReveal` set `instant` only when focus arrived before the reveal was *scheduled*. Focus during the stagger delay or mid-tween left it false, and a new `transition` prop cannot reach a running framer tween anyway, because framer re-animates only values whose target changed. A Bench link could still sit clipped outside its mask. On focus the hook now settles every running layer under the element (**new** `settleRunningLayers`): each tween is stopped and its motion value jumped to the final keyframe, through framer's own visual elements. Not `animation.complete()`: in framer 11 a tween completed during its delay phase finishes on its *first* keyframe. |
+| **Tests** | **new** `aboutPendingDialogEscape.test.jsx`: each dialog module held behind a gate, Escape pressed (and claimed), import released; the dialog must stay closed, then open on a fresh press. An unclaimed Escape with nothing pending is left alone. `stagedRevealFocus.test.jsx`: two cases with real framer timing focus the link during the stagger delay and mid-tween (after `on` is true) and require the mask layer at rest within two frames. Every new case fails on the previous code. Two rows added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing new to defer; the dialogs stay deferred. `docs/seo.md` §19 updated to describe the pending-open behaviour. |
+| **Privacy check** | Nothing to change: dialog state, key handling and animation timing only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/about/index.jsx`, `src/components/uses/useStagedReveal.js`, **new** `tests/component/aboutPendingDialogEscape.test.jsx`, `tests/component/stagedRevealFocus.test.jsx`, `docs/testing.md`, `docs/seo.md`, `tests/vitest-cases.json` |
+
+#### `/about`: the two deferred dialogs can no longer open at once · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of [#55](https://github.com/MA1002643/theabdullahfolio/issues/55) (deferred dialog chunks). |
+| **Details** | While a dialog's chunk was still downloading, its open flag was already true but no backdrop existed yet, so the other card stayed clickable. Pressing the Completed Projects card and then the Years card (or the reverse) before the chunks arrived mounted both dialogs open, each with its own focus trap and body-scroll lock. `openExperienceModal` and `openProgressPopup` now close the other dialog before opening their own: the latest request wins. |
+| **Tests** | `tests/component/aboutPage.test.jsx`: two new cases press one card and then the other before either chunk arrives, in both orders. Only the second dialog may appear, and the first card's `aria-expanded` must be `false`. Both cases fail on the previous code. A row added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing new to defer; the dialogs stay deferred. |
+| **Privacy check** | Nothing to change: dialog state only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/about/index.jsx`, `tests/component/aboutPage.test.jsx`, `docs/testing.md`, `tests/vitest-cases.json` |
+
+#### Language selector on a phone: a tap no longer raises the keyboard, and the sheet no longer scrolls sideways · 2026-11-07
+
+| | |
+|:--|:--|
+| **What was wrong** | Owner report from the deployed homepage on a phone. Tapping the language button opened the list and also focused its search field, so the keyboard came up over the list the visitor meant to scroll. Focusing the field then let the whole sheet scroll sideways: its text was 14px (`text-sm`), and iOS Safari zooms the page into any focused input smaller than 16px. |
+| **Fix** | The trigger records the type of the press that opened it. After a touch or pen press, focus goes to the listbox (`tabIndex={-1}`, with the same key handler and `aria-activedescendant` as the field), and the field waits until it is tapped. A mouse click, or Enter or Space on the trigger, still opens with the field focused, as the combobox pattern expects. The field is 16px below `sm` (`text-base sm:text-sm`) and has `min-w-0`, and the list has `overflow-x-hidden`. |
+| **Tests** | `tests/component/LanguageSelector.test.jsx`: focus after a touch, pen and mouse press, keyboard opening after an earlier tap, Escape from the tap-focused listbox, and the 16px field. **new** `tests/e2e/language-selector-mobile.spec.js`: at 390×844 with touch, on `/` and `/ar`, a tap leaves the field unfocused, the field computes to at least 16px, and the document, the panel and the list stay within the viewport before and after typing. All 4 new component tests and all 4 e2e tests fail against the old component. Passed locally on a production build in `chromium`, and, with a temporary `@cross-browser` tag, in `mobile-safari` (WebKit, iPhone 14) and `mobile-chrome`. The spec is not tagged `@cross-browser` in the repo, because `isMobile` is unsupported in Firefox. A row was added to the defects table in `docs/testing.md`, and `tests/browser-cases.json` and `tests/vitest-cases.json` were regenerated. |
+| **Privacy check** | Nothing to change: focus and styling only. |
+| **i18n check** | No new visitor-facing text. Checked in Arabic (right to left) by the e2e spec. |
+| **Files** | `src/components/i18n/LanguageSelector.jsx`, `tests/component/LanguageSelector.test.jsx`, `tests/e2e/language-selector-mobile.spec.js`, `docs/testing.md`, `tests/browser-cases.json`, `tests/vitest-cases.json` |
 
 #### Linux-WebKit-only E2E cases parked on the two WebKit projects, so the nightly can go green · 2026-11-07
 
@@ -3146,6 +3285,34 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 | **Details** | Stale root direct dependency on `@napi-rs/canvas@^1.0.0` from `package.json`. The version didn't satisfy any transitive consumer's range (`pdfjs-dist` wants `^0.1.80`, `pdf-parse` pins `0.1.80`) and only added install weight while masking the real resolution. |
 
 ### Security
+
+#### Review fixes: the language selector's press type and landscape zoom, deferred dialogs that stayed blank after a failed download, and the two `/uses` a11y flakes · 2026-11-08
+
+| | |
+|:--|:--|
+| **Cancelled tap** | A touch press that turned into a scroll raised `pointercancel` and no click, so the selector kept the recorded `touch` press type, and the next Enter or Space opened into the listbox rather than the search field. `onPointerCancel` now clears it. |
+| **Landscape zoom** | The search field's 16px stopped at `sm`: `sm:text-sm` returned it to 14px from 640px up, and an iPhone in landscape is 844px wide, so iOS Safari still zoomed into it there. The field is now 16px at every width (on desktop too, where it was 14px: holding it to touch through a pointer media query would rest on each engine's touch emulation, which could not be checked in Firefox locally). |
+| **Deferred dialogs** | `useDeferredMount` reported ready once the import *settled*. After a failed idle fetch, a dialog mounted, its loader's retry failed, and `next/dynamic` cached `optionalChunk`'s empty fallback, so the `/about` Experience and Project Progress dialogs stayed invisible for the visit even after a later fetch downloaded the real module. The `\|\| isOpen` bypasses in `about/index.jsx` did the same on a click that beat the download. Ready now means the import succeeded, a failure is retried on the next hover, focus, touch or open, and the bypasses are removed. A press that beats the download opens the dialog as soon as it arrives. |
+| **Tests** | **new** `tests/component/deferredMount.test.jsx`: the real `deferredChunk` → `optionalChunk` → `next/dynamic` path, with an import that fails twice (idle fetch, then an early click) and then succeeds. The dialog must appear; with every import failing it must never mount. `LanguageSelector.test.jsx`: pointerdown, pointercancel, then a keyboard click opens into the search field; no text size below 16px at any breakpoint. `language-selector-mobile.spec.js`: tagged `@cross-browser`, so mobile Safari and mobile Chrome run it, with the `isMobile` override (unsupported in Firefox) removed, plus a new 844×390 landscape block for `/` and `/ar`. All four new component cases fail on the previous code. The spec passed in chromium, webkit, mobile-chrome and mobile-safari; Firefox does not launch locally and runs in CI. Four rows added to the defects table in `docs/testing.md`. |
+| **`/uses` axe flake** | CI's a11y run failed `label-content-name-mismatch` on the three Instruments tiles, then passed on retry. Each tile's `aria-label` carried the final figure while the visible digits read 0 in server HTML or a value mid-count, so the name did not contain the visible text whenever axe scanned early. The tiles are now named from their content (an sr-only final figure, label, note and new-tab warning) with no `aria-label`. **new** `tests/component/usesInstruments.test.jsx` pins the name. |
+| **`/uses` keyboard flake** | The keyboard suite intermittently reported a Bench station link ("Claude Code") as obscured by its own note. Tab scrolled the station in and its reveal started, but the stagger delay held the link lowered out of its clipping mask, so focus sat on an invisible link (WCAG 2.4.11), for keyboard users too. `useStagedReveal` now returns `instant` when focus enters an element before it has revealed; the element reveals at once with a 0s transition. Wired into the Bench, Machine, Stack and Instruments plates, the four with focusable content inside a staged reveal. Focus after the reveal changes nothing. **new** `tests/component/stagedRevealFocus.test.jsx`, which fails on the old hook. |
+| **Lazy-loading check** | Nothing new to defer. The dialogs stay deferred; only the condition for mounting them changed. `docs/seo.md` §19 updated to match. |
+| **Privacy check** | Nothing to change: focus, styling and mount timing only. |
+| **i18n check** | One string reshaped: `Uses.instruments.tileLabel` became `Uses.instruments.tileOpens` (sr-only, the tile's new-tab warning), machine-translated into all nineteen locales with `npm run i18n:translate -- --ns Uses`; `npm run i18n:audit` reports 0 errors. The landscape selector case runs in Arabic (right to left) as well as English. |
+| **Files** | `src/components/i18n/LanguageSelector.jsx`, `src/hooks/useDeferredMount.js`, `src/components/about/index.jsx`, `src/components/uses/InstrumentsPlate.jsx`, `src/components/uses/useStagedReveal.js`, `BenchPlate.jsx`, `MachinePlate.jsx`, `StackPlate.jsx`, **new** `tests/component/stagedRevealFocus.test.jsx`, `messages/*/Uses.json`, `messages/.i18n-lock.json`, **new** `tests/component/usesInstruments.test.jsx`, `tests/component/LanguageSelector.test.jsx`, **new** `tests/component/deferredMount.test.jsx`, `tests/e2e/language-selector-mobile.spec.js`, `docs/testing.md`, `docs/seo.md`, `tests/browser-cases.json`, `tests/vitest-cases.json` |
+
+#### Repository made public, with secret scanning and push protection on · 2026-11-07
+
+| | |
+|:--|:--|
+| **What changed** | The repository went from private to public at the owner's request. Actions minutes had passed the plan's included 3,000 for the month (3,074 used), and standard runners are free on a public repository. GitHub secret scanning and push protection were enabled right after the switch; neither is available on a private personal repository. |
+| **Before the switch** | A full-history `gitleaks git` scan found no leaks across 469 commits. No workflow passes any secret except `GITHUB_TOKEN`, so a fork's pull request has nothing to read, and `issue-triage.yml`'s `pull_request_target` job never checks out the PR's code. |
+| **Project rule** | `CLAUDE.md` §1 no longer says the repository is private or that push protection is unavailable. It now says why the pre-commit diff check is still the real guard: push protection recognises only supported providers' token formats, not this project's own secrets (`CRON_SECRET`, the location-ingest tokens) or arbitrary passwords, and the Gitleaks job runs only after the value is public. |
+| **CodeQL** | `security.yml` already decides on each run whether to upload, from `github.event.repository.private`. It now uploads results as code-scanning alerts with no logic change, and still skips the upload if the repository is made private again. Only its comments were rewritten, to describe the repository as public. `docs/testing.md` (published at `/notes/testing`) had the same private-repository description of the CodeQL gate, which is now recast as history. |
+| **Test-plan check** | Nothing to add: a repository setting, a rule document and workflow comments, with no code or route change. `docs/testing.md` updated as above. |
+| **Privacy check** | Nothing to change: the site collects, stores and sends exactly what it did before. |
+| **i18n check** | No visitor-facing text (`/notes/*` is English by decision). |
+| **Files** | `CLAUDE.md`, `.github/workflows/security.yml`, `docs/testing.md`, `CHANGELOG.md` |
 
 #### Next 15.5.27 → 15.5.28 and zod 4.4.3 → 4.6.7: a critical RCE, a high DoS and a high memory-exhaustion advisory · 2026-10-23
 

@@ -60,7 +60,7 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
   const t = useTranslations('Uses');
   const { dir } = useDirection();
   const cut = CUT[dir];
-  const { ref, on, delay } = useStagedReveal({
+  const { ref, on, delay, instant } = useStagedReveal({
     revealed,
     reduceMotion,
     revealedAtRef,
@@ -68,7 +68,8 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
     step: ROW_STEP_S,
     base: ROW_BASE_S,
   });
-  const at = (offset, duration, ease) => staged(reduceMotion, delay, offset, duration, ease);
+  // `instant`: focus reached the row's link before the reveal, so it lands at once.
+  const at = (offset, duration, ease) => staged(reduceMotion || instant, delay, offset, duration, ease);
   const cutStart = 0.12;
   const afterCut = cutStart + CUT_S * 0.7;
 
@@ -204,7 +205,7 @@ function Nameplate({ rows, revealed, reduceMotion, revealedAtRef, tilt, tiltOn }
   // The plate's own gate: it rises as a whole while its first row starts
   // engraving. `data-lit` lets the CSS settle the frame's glow from a soft
   // bloom to the About card's rest value once it has landed.
-  const { ref, on, delay } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
+  const { ref, on, delay, instant } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
 
   return (
     <motion.div
@@ -216,7 +217,7 @@ function Nameplate({ rows, revealed, reduceMotion, revealedAtRef, tilt, tiltOn }
         padding: `${fluid(1.75)} ${fluid(1.5)} ${fluid(1.25)}`,
       }}
       {...(tiltOn ? tilt.handlers : {})}
-      {...riseProps(on, reduceMotion, staged(reduceMotion, delay, 0, 0.7), 20)}
+      {...riseProps(on, reduceMotion, staged(reduceMotion || instant, delay, 0, 0.7), 20)}
     >
       {tiltOn ? (
         <motion.div

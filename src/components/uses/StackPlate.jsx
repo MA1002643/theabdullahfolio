@@ -227,14 +227,14 @@ export default function StackPlate({ fallback }) {
 // the scale spring), and a CSS transition on it would lag the follow.
 function RepositoriesCta({ revealed, reduceMotion, revealedAtRef, magnet, magnetOn }) {
   const t = useTranslations('Uses');
-  const { ref, on, delay } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
+  const { ref, on, delay, instant } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
   const [hovered, setHovered] = useState(false);
   return (
     <motion.div
       ref={ref}
       className="uses-anim flex justify-center"
       style={{ marginTop: fluid(1.75) }}
-      {...riseProps(on, reduceMotion, staged(reduceMotion, delay, 0.1, 0.5), 10)}
+      {...riseProps(on, reduceMotion, staged(reduceMotion || instant, delay, 0.1, 0.5), 10)}
     >
       <motion.a
         href={`${profileGithubUrl}?tab=repositories`}

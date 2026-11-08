@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {API-маршрут} few {API-маршрута} many {API-маршрутов} other {API-маршрута}}",
     "apiSub": "обработчики маршрутов · {methods}",
     "apiSubBare": "обработчики маршрутов",
-    "tileLabel": "{figure} {label} — {sub} (открывает папку на GitHub в новой вкладке)"
+    "tileOpens": "(открывает папку на GitHub в новой вкладке)"
   },
   "bom": {
     "eyebrow": "Спецификация · этот сайт",

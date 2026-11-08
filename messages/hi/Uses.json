@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {API रूट} other {API रूट}}",
     "apiSub": "रूट हैंडलर · {methods}",
     "apiSubBare": "रूट हैंडलर",
-    "tileLabel": "{figure} {label} — {sub} (GitHub पर फ़ोल्डर नए टैब में खुलता है)"
+    "tileOpens": "(GitHub पर फ़ोल्डर नए टैब में खुलता है)"
   },
   "bom": {
     "eyebrow": "बिल ऑफ़ मैटेरियल्स · यह साइट",

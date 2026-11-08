@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {route API} other {route API}}",
     "apiSub": "route handler · {methods}",
     "apiSubBare": "route handler",
-    "tileLabel": "{figure} {label} — {sub} (apre la cartella su GitHub in una nuova scheda)"
+    "tileOpens": "(apre la cartella su GitHub in una nuova scheda)"
   },
   "bom": {
     "eyebrow": "Distinta base · questo sito",

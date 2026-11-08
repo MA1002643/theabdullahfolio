@@ -23,7 +23,8 @@ const QualificationsPage = () => {
           the point (the old 1024px source needed the 0.2px blur to hide its
           upscale). */}
       <Image
-        priority
+        loading="eager"
+        fetchPriority="low"
         // NOT 100vw: this image is object-cover'd, so on any viewport
         // NARROWER than the scene's 16:9 (every portrait phone, both iPad
         // orientations) it paints height-bound at ~178vh CSS px wide

@@ -106,15 +106,21 @@ export default function EditorFrame({
   const tilt = useCardTilt({ maxTilt: 4 });
   const tiltOn = USES_FLAGS.tilt && tilt.enabled;
   const { fileName, theme, lines, status = [] } = frame;
-  const { ref, on, delay } = useStagedReveal({
+  const { ref, on, delay, instant } = useStagedReveal({
     revealed,
     reduceMotion,
     revealedAtRef,
     amount: 0.2,
   });
   const { rows, end: typedEnd } = typingSchedule(lines);
+  // `instant`: Tab reached the code block (it is focusable, to scroll on a
+  // phone) before the frame revealed. Focus must not land on a shut screen or
+  // half-typed lines, so the frame opens fully typed at once, with no carets,
+  // exactly as under reduced motion. `initial` still reads `reduceMotion`
+  // alone: it only matters on mount, before any focus could arrive.
+  const still = reduceMotion || instant;
   const at = (offset, duration, ease) =>
-    staged(reduceMotion, delay, offset, duration, ease);
+    staged(still, delay, offset, duration, ease);
 
   return (
     <motion.figure
@@ -210,7 +216,7 @@ export default function EditorFrame({
                       </span>
                     ))}
                   </motion.code>
-                  {reduceMotion ? null : (
+                  {still ? null : (
                     <motion.span
                       aria-hidden="true"
                       className="uses-caret"
@@ -235,7 +241,7 @@ export default function EditorFrame({
                       }}
                     />
                   )}
-                  {last && !reduceMotion ? (
+                  {last && !still ? (
                     <motion.span
                       aria-hidden="true"
                       className="uses-caret"

@@ -17,9 +17,9 @@ import { usePathname, useRouter } from '@/i18n/navigation';
 import { localePrefix } from '@/i18n/locales';
 import { AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import EmberPassageOverlay from './EmberPassageOverlay';
-import { warmSwarm } from './emberSwarm';
-import { warmEmberField } from './emberField';
+import { deferredChunk } from '@/lib/deferredChunk';
+import { whenIdle } from '@/lib/whenIdle';
+import PassageStill from './PassageStill';
 import {
   FAILSAFE_MS,
   PUSH_AT_MS,
@@ -41,6 +41,12 @@ import {
 // for BOTH the destination pathname to arrive AND the minimum showcase time to
 // elapse — fast routes never scatter a half-formed mark, slow routes keep
 // the mark breathing as a de-facto loading indicator.
+//
+// The live passage (overlay, WebGL swarm, shader, ember field) is NOT in this
+// module's import graph (issue #55). It only ever draws after a click, so it
+// is its own async chunk, fetched in idle time; see passageRuntime.js.
+
+const passage = deferredChunk(() => import('./passageRuntime'), 'EmberPassage');
 
 const TransitionContext = createContext({
   navigate: null,
@@ -78,7 +84,15 @@ export default function PageTransitionProvider({ children }) {
 
   // 'idle' | 'covering' | 'holding' | 'revealing'
   const [phase, setPhase] = useState('idle');
-  const [target, setTarget] = useState(null); // { href, label, origin }
+  const [target, setTarget] = useState(null); // { href, label, origin, Overlay }
+
+  // The loaded passage runtime, or null until the idle-time download lands.
+  // Read through a ref by `navigate`, which must stay referentially stable.
+  const runtimeRef = useRef(null);
+  const reducedRef = useRef(prefersReducedMotion);
+  useEffect(() => {
+    reducedRef.current = prefersReducedMotion;
+  }, [prefersReducedMotion]);
 
   // Refs mirror state so `navigate` stays referentially stable — links all
   // over the tree consume it and shouldn't re-render on every phase change.
@@ -103,11 +117,34 @@ export default function PageTransitionProvider({ children }) {
   // Neither is required: a visitor who clicks before idle fires simply gets the
   // work done under the already-opaque cover, and a browser without WebGL never
   // gets here at all — the overlay's static branch handles both.
+  //
+  // The download of the runtime itself waits for idle too (issue #55), and
+  // under reduced motion it never happens: that visitor only ever sees the
+  // still, which is already here. The cleanup matters on the first render: the
+  // hydration-safe reduced-motion hook reports `false` until hydration ends,
+  // so a reduced-motion visitor's first effect schedules this and the
+  // re-render that follows cancels it before idle arrives.
   useEffect(() => {
     if (prefersReducedMotion) return undefined;
-    const cancelField = warmEmberField();
-    const cancelGate = warmSwarm();
+    let cancelled = false;
+    let cancelField = () => {};
+    let cancelGate = () => {};
+    const cancelIdle = whenIdle(() => {
+      passage.load().then(
+        (runtime) => {
+          if (cancelled) return;
+          runtimeRef.current = runtime;
+          cancelField = runtime.warmEmberField();
+          cancelGate = runtime.warmSwarm();
+        },
+        // optionalChunk's rule: a chunk the page is whole without may fail.
+        // Passages take the still, and each click asks for the chunk again.
+        () => {},
+      );
+    });
     return () => {
+      cancelled = true;
+      cancelIdle();
       cancelField();
       cancelGate();
     };
@@ -136,10 +173,25 @@ export default function PageTransitionProvider({ children }) {
       // nearest it lift first, so the page visibly comes apart at the button
       // they hit rather than everywhere at once. Optional — callers without a
       // pointer position leave it undefined and the overlay uses the centre.
+      // Live or still is decided ONCE, here. A runtime that finishes loading
+      // mid-passage must not swap the overlay under the visitor; it takes
+      // effect from the next click. A click that beat the download also asks
+      // for it, so that next click is live (never under reduced motion, which
+      // has no use for it).
+      const runtime = runtimeRef.current;
+      if (!runtime && !reducedRef.current) {
+        passage.load().then(
+          (loaded) => {
+            runtimeRef.current = loaded;
+          },
+          () => {},
+        );
+      }
       setTarget({
         href,
         label: deriveLabel(dest, opts.label, tNav),
         origin: opts.origin,
+        Overlay: runtime ? runtime.EmberPassageOverlay : PassageStill,
       });
       startedAtRef.current = performance.now();
       setPhase('covering');
@@ -213,7 +265,7 @@ export default function PageTransitionProvider({ children }) {
       {children}
       <AnimatePresence>
         {phase !== 'idle' && target && (
-          <EmberPassageOverlay
+          <target.Overlay
             key="ember-passage"
             phase={phase}
             label={target.label}

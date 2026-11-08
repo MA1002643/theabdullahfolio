@@ -264,7 +264,7 @@ flowchart LR
 | Accessibility | axe WCAG 2.2 AA on every route at two widths, in English, Arabic (right to left) and Japanese; measured keyboard focus, reduced-motion audit | `npm run test:a11y` |
 | Translation | A catalogue audit (missing, stale or structurally broken translations), and a **pseudo-locale** gate: CI renders every page in `en-XA`, where each catalogue string reads `[Ȧƀǿǿŭŭŧ ḿḗḗ]`, and fails on any plain English left. How the twenty languages were built: [/notes/multilingual](https://ma.codes/notes/multilingual) | `npm run i18n:audit` · `npm run test:i18n` |
 | Visual | Screenshots re-rendered on every push and committed to [`tests/visual/__latest__/`](tests/visual/__latest__/) (always current); reviewed baselines CI compares against | `npm run test:visual` · `npm run test:visual:update` |
-| Performance | CLS through load and full scroll; first-load JS budget per route; Lighthouse CI | `npm run test:perf` · `npm run test:bundle` |
+| Performance | CLS through load and full scroll; image preloads only on a measured LCP, at desktop and phone size; first-load JS budget per route; Lighthouse CI | `npm run test:perf` · `npm run test:bundle` |
 | Security | Served headers, hostile API requests, client-bundle secret scan, CodeQL, OSV, Gitleaks, an audit gate with expiring waivers | `npm run test:security` · `npm run test:audit` |
 | Meta | Ratcheted V8 coverage, Stryker mutation testing (nightly), flake burn-in of changed specs | `npm run test:coverage` · `npm run test:mutation` |
 

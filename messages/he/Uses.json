@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {נתיב API} other {נתיבי API}}",
     "apiSub": "מטפלי נתיבים · {methods}",
     "apiSubBare": "מטפלי נתיבים",
-    "tileLabel": "{figure} {label} — {sub} (פותח את התיקייה ב-GitHub בלשונית חדשה)"
+    "tileOpens": "(פותח את התיקייה ב-GitHub בלשונית חדשה)"
   },
   "bom": {
     "eyebrow": "רשימת רכיבים · האתר הזה",

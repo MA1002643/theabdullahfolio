@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, other {API rotası}}",
     "apiSub": "rota işleyicileri · {methods}",
     "apiSubBare": "rota işleyicileri",
-    "tileLabel": "{figure} {label} — {sub} (klasörü GitHub'da yeni sekmede açar)"
+    "tileOpens": "(klasörü GitHub'da yeni sekmede açar)"
   },
   "bom": {
     "eyebrow": "Malzeme listesi · bu site",

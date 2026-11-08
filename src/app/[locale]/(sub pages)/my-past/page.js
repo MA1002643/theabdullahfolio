@@ -51,7 +51,8 @@ export default async function MyPast({ params }) {
       <Image
         src={bg}
         alt=""
-        priority
+        loading="eager"
+        fetchPriority="low"
         sizes="100vw"
         className="fixed left-0 top-0 -z-50 h-full w-full object-cover object-center opacity-50"
       />

@@ -37,9 +37,9 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
-    # `actions: read` is required on a private repository (the action reads
-    # its own workflow run). `security-events: write` is only used when the
-    # results are uploaded, which is only possible on a public one (below).
+    # `actions: read` lets the action read its own workflow run (required
+    # only while private). `security-events: write` uploads the results as
+    # code-scanning alerts, which needs a public repository (below).
     permissions:
       contents: read
       actions: read
@@ -52,10 +52,11 @@ jobs:
         with:
           languages: javascript-typescript
           queries: security-extended
-      # GitHub code scanning is not available on a private personal repository
-      # ("Code scanning is not enabled", 2026-10-04), so the upload is skipped
-      # while the repository is private and the gate below judges the SARIF
-      # itself. Made public, the results also upload as code-scanning alerts.
+      # The repository is public (since 2026-11-07), so the results upload as
+      # code-scanning alerts. Code scanning is not available on a private
+      # personal repository ("Code scanning is not enabled", 2026-10-04), so the
+      # upload is still skipped whenever the repository is private. Either way
+      # the gate below judges the SARIF itself.
       - uses: github/codeql-action/analyze@v4
         with:
           category: /language:javascript-typescript
@@ -131,6 +132,13 @@ jobs:
   # needs no token and scans every commit on every event. Pinned and checked
   # against the release's published SHA-256; `.gitleaksignore` at the root is
   # read automatically, and --redact keeps any match out of the log.
+  #
+  # The release tarball is cached, keyed on the pinned version AND its
+  # checksum, so a run normally never touches GitHub Releases: on 2026-11-08
+  # Releases answered 504 and this job failed before scanning anything. A cache
+  # miss downloads with retries and backoff. The checksum is verified on every
+  # run, whether the tarball came from the cache or the network, so the cache
+  # cannot hand over anything the pin does not name.
   gitleaks:
     name: Gitleaks (full history)
     runs-on: ubuntu-latest
@@ -142,10 +150,26 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Restore the gitleaks release from cache
+        id: gitleaks-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/gitleaks-dl
+          key: gitleaks-${{ env.GITLEAKS_VERSION }}-${{ env.GITLEAKS_SHA256 }}-linux-x64
+      - name: Download gitleaks (cache miss, with retries)
+        if: ${{ steps.gitleaks-cache.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/gitleaks-dl"
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          # --retry-all-errors also retries HTTP errors such as a 504, which
+          # plain --retry does not; -f still fails the step once retries run out.
+          curl -sSfL --retry 6 --retry-all-errors --retry-delay 10 --retry-max-time 300 \
+            -o "$RUNNER_TEMP/gitleaks-dl/${tarball}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
       - name: Install gitleaks (pinned, checksum-verified)
         run: |
           tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
+          cd "$RUNNER_TEMP/gitleaks-dl"
           echo "${GITLEAKS_SHA256}  ${tarball}" | sha256sum -c -
           tar -xzf "$tarball" -C "$RUNNER_TEMP" gitleaks
       - name: Scan every commit

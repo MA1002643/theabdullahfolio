@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {rota de API} many {rotas de API} other {rotas de API}}",
     "apiSub": "route handlers · {methods}",
     "apiSubBare": "route handlers",
-    "tileLabel": "{figure} {label} — {sub} (abre a pasta no GitHub em uma nova aba)"
+    "tileOpens": "(abre a pasta no GitHub em uma nova aba)"
   },
   "bom": {
     "eyebrow": "Lista de materiais · este site",

@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {API روٹ} other {API روٹس}}",
     "apiSub": "روٹ ہینڈلرز · {methods}",
     "apiSubBare": "روٹ ہینڈلرز",
-    "tileLabel": "{figure} {label} — {sub} (GitHub پر فولڈر نئے ٹیب میں کھلتا ہے)"
+    "tileOpens": "(GitHub پر فولڈر نئے ٹیب میں کھلتا ہے)"
   },
   "bom": {
     "eyebrow": "بل آف میٹریلز · یہ سائٹ",
