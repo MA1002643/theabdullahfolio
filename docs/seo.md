@@ -2315,6 +2315,18 @@ on a phone, whose certificate no longer shares bandwidth with a backdrop,
 reached LCP in 968 ms instead of 1,660 ms. The other routes moved by a few
 milliseconds either way, within run-to-run noise.
 
+**Corrected (2026-11-08).** In CI the certificate was an LCP candidate at
+neither size, on every run since this decision landed. The carousel rendered
+every card, the centre one included, sunk and at opacity 0 until its entrance
+started after hydration, and Chrome judges an image at its first paint. A
+certificate that had already downloaded (any warm or fast visit, and CI)
+painted invisibly and was never counted; the LCP fell to a paragraph and the
+preload bought nothing. The measurement above only saw it because the image
+arrived after the entrance. The centre card now renders at rest and opaque
+from the server HTML, and only its neighbours ripple out, so the certificate
+is the phone LCP whenever it arrives, and a visitor without JavaScript sees
+it. Desktop's LCP is unchanged (text).
+
 ### Decision: chunks that load ahead of need, not on first render
 
 - **The Ember Passage runtime** is one async chunk

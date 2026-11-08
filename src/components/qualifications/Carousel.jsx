@@ -636,7 +636,8 @@ const Carousel3D = () => {
 
   // Centre-out entrance state machine (issue #52):
   //   'hidden'   — cards sit at the entrance-start pose (sunk into the stage,
-  //                opacity 0); no transition delays apply yet.
+  //                opacity 0); no transition delays apply yet. The centre card
+  //                is the exception: it is always at rest (see `hiddenPose`).
   //   'entering' — cards fly to their wheel positions, each ring delayed by
   //                absOffset × ENTRANCE_STAGGER_MS; banners lag their cards.
   //   'done'     — poses identical to 'entering' but every delay is cleared,
@@ -1009,6 +1010,17 @@ const Carousel3D = () => {
             const entranceDelayMs = absOffset * ENTRANCE_STAGGER_MS;
             const isHidden = entrancePhase === 'hidden';
             const isEntering = entrancePhase === 'entering';
+            // The CENTRE card never takes the hidden pose: it is rendered at
+            // rest, fully opaque, from the server HTML on, and only its
+            // neighbours ripple out from it. It is the route's preloaded LCP
+            // image (issue #55), and Chrome judges an image at its FIRST
+            // paint: rendered at opacity 0 until the entrance began (after
+            // hydration), a certificate that had already downloaded painted
+            // invisibly and was never counted, so the LCP fell to a paragraph
+            // and the preload bought nothing. Rendered visible, it paints the
+            // moment it arrives, and a visitor without JavaScript sees it too
+            // (before, every card stayed at opacity 0 without hydration).
+            const hiddenPose = isHidden && absOffset !== 0;
 
             const title = cardTitle(card);
 
@@ -1029,7 +1041,7 @@ const Carousel3D = () => {
                   // factor so the flight distance keeps its proportion to the
                   // card sizes; scale(0.5) is a ratio — resolution-independent
                   // — and stays static.
-                  transform: isHidden
+                  transform: hiddenPose
                     ? 'translateX(0px) translateZ(calc(-400px * var(--fluid-scale, 1))) rotateY(0deg) scale(0.5)'
                     : `translateX(${translateX}) translateZ(${translateZ}) rotateY(${rotateY}deg) scale(${scale})`,
                   zIndex: 100 - absOffset,
@@ -1044,7 +1056,7 @@ const Carousel3D = () => {
                   // further than RENDER_WINDOW would never render here
                   // (the early return above unmounts it), so the final
                   // 0 branch is just defensive.
-                  opacity: isHidden
+                  opacity: hiddenPose
                     ? 0
                     : absOffset <= OPAQUE_WINDOW
                       ? 1
@@ -1162,8 +1174,10 @@ const Carousel3D = () => {
                       // this one, so the banner can never appear before its
                       // card. In 'done' (incl. reduced motion) it's simply
                       // visible with no delay.
-                      opacity: isHidden ? 0 : 1,
-                      transform: isHidden
+                      // The centre card's banner rests with its card (see
+                      // `hiddenPose`).
+                      opacity: hiddenPose ? 0 : 1,
+                      transform: hiddenPose
                         ? 'translateY(20px) scaleX(0.8)'
                         : 'translateY(0px) scaleX(1)',
                       // Delay lives inside the shorthand — see the card note.

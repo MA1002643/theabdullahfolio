@@ -1632,6 +1632,20 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### `/qualifications`: the centre certificate is visible from the first paint, so its preload counts · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | CI failure on `3042027` (Browser quality: `tests/perf/image-loading.spec.js`, `/qualifications`), failing on every run of this branch since [#55](https://github.com/MA1002643/theabdullahfolio/issues/55). Owner decision: render the centre card at once. |
+| **Cause** | The centre certificate carries `preload` as the route's phone LCP, but the carousel rendered every card at its entrance pose (sunk, opacity 0) until a double rAF after hydration began the ripple. Chrome judges an image at its first paint: a certificate that had already downloaded, on any warm or fast visit and in CI, painted invisibly and was never counted. The LCP fell to a paragraph, the preload bought nothing, and the spec reported "LCP at neither desktop nor phone size". A slower local machine measured after the fade and passed. Without JavaScript, no card was ever visible. |
+| **Fix** | `Carousel.jsx`: the centre card and its title banner never take the hidden pose (`hiddenPose = isHidden && absOffset !== 0`); they render at rest and opaque from the server HTML, and only the neighbours ripple out of the centre. Visible change: the centre certificate no longer fades and rises in; the ripple around it is unchanged. Reduced motion is unaffected (it skips the entrance anyway). |
+| **Tests** | **new** `tests/component/qualificationsFirstPaint.test.jsx`: server-renders the real carousel with motion on (the first state, before any effect) and requires the centre card and banner at opacity 1 and scale 1, the next card still at the entrance pose; it fails on the previous code. Verified in a clean `npm ci` production build: measured at CI speed (straight after `load`), the certificate was a candidate at neither size before and is the phone LCP after; `image-loading.spec.js` 30/30 on every route, the whole perf project 45/45, `/qualifications` a11y 39/39. A row added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | No new element. The certificate keeps `preload` (now borne out at CI speed); `PRELOAD_ALLOWED` unchanged. `docs/seo.md` §19 gains a dated correction beside the #55 decision. |
+| **Visual check** | Screenshots are taken after the entrance, where the wheel's pose is unchanged; review the `/qualifications` render in `tests/visual/__latest__/` on the next run. |
+| **Privacy check** | Nothing to change: rendering only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/qualifications/Carousel.jsx`, **new** `tests/component/qualificationsFirstPaint.test.jsx`, `docs/seo.md`, `docs/testing.md`, `tests/vitest-cases.json` |
+
 #### CI: the `/uses` focus-reveal settle works on framer 14, the version the repo pins · 2026-11-08
 
 | | |
