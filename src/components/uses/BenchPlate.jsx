@@ -42,7 +42,7 @@ function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
   const t = useTranslations('Uses');
   // The role label slides in from the reading-start side (issue #82).
   const { sign } = useDirection();
-  const { ref, on, delay } = useStagedReveal({
+  const { ref, on, delay, instant } = useStagedReveal({
     revealed,
     reduceMotion,
     revealedAtRef,
@@ -51,7 +51,8 @@ function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
     base: 0.1,
     columnStagger: 0.16,
   });
-  const at = (offset, duration) => staged(reduceMotion, delay, offset, duration);
+  // `instant`: focus arrived before the reveal, so its link lands at once.
+  const at = (offset, duration) => staged(reduceMotion || instant, delay, offset, duration);
 
   return (
     <li

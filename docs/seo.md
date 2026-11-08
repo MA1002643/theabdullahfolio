@@ -2325,9 +2325,12 @@ milliseconds either way, within run-to-run noise.
   the overlay. Reduced-motion visitors never download it, and a click that
   beats the download gets the still.
 - **The `/about` dialogs** are `next/dynamic` chunks. They are fetched in idle
-  time, or on pointer-over, focus or touch on their card, and mounted once
-  they arrive. The progress data hook moved up to the page so the dialog
-  still opens populated.
+  time, or on pointer-over, focus or touch on their card, and mounted only
+  once an import has succeeded. Mounted earlier, after a failure or on a
+  click that beat the download, `next/dynamic` caches the empty fallback and
+  the dialog stays blank for the visit (fixed 2026-11-08). A press that beats
+  the download opens the dialog when it lands. The progress data hook moved
+  up to the page so the dialog still opens populated.
 - **One primitive for both**, `src/lib/deferredChunk.js`: a memoised
   `preload()` that forgets a failure so the next call retries, and an
   `optionalChunk` loader, so a chunk that never arrives renders nothing

@@ -123,6 +123,18 @@ describe('LanguageSelector opening focus', () => {
     expect(screen.getByRole('combobox')).toHaveFocus();
   });
 
+  it('focuses the search field from the keyboard after a tap cancelled by scrolling', async () => {
+    renderInFooter();
+    const trigger = screen.getByRole('button', { name: /language/i });
+    // A touch that becomes a scroll: pointerdown, then pointercancel, no click.
+    fireEvent.pointerDown(trigger, { pointerType: 'touch' });
+    fireEvent.pointerCancel(trigger, { pointerType: 'touch' });
+    // Enter on the button: a click with no pointerdown before it.
+    await act(async () => fireEvent.click(trigger));
+    expect(screen.getByRole('combobox')).toHaveFocus();
+    expect(screen.getByRole('listbox')).not.toHaveFocus();
+  });
+
   it('closes on Escape from the tap-focused listbox and returns focus', async () => {
     const trigger = await openWith('touch');
     await act(async () => fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' }));
@@ -130,11 +142,12 @@ describe('LanguageSelector opening focus', () => {
     expect(trigger).toHaveFocus();
   });
 
-  it('sets the search text at 16px below sm, so iOS does not zoom into it', async () => {
+  it('sets the search text at 16px at every width, so iOS does not zoom into it', async () => {
     await openWith('touch');
     const field = screen.getByRole('combobox');
     expect(field).toHaveClass('text-base');
-    expect(field.className).not.toMatch(/(^|\s)text-sm(\s|$)/);
+    // No smaller size at any breakpoint either: a phone in landscape is past `sm`.
+    expect(field.className).not.toMatch(/(^|\s)([a-z0-9-]+:)*text-(xs|sm)(\s|$)/);
   });
 });
 

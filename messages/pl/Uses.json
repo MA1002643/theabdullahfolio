@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {trasa API} few {trasy API} many {tras API} other {trasy API}}",
     "apiSub": "route handlery · {methods}",
     "apiSubBare": "route handlery",
-    "tileLabel": "{figure} {label} — {sub} (otwiera folder na GitHubie w nowej karcie)"
+    "tileOpens": "(otwiera folder na GitHubie w nowej karcie)"
   },
   "bom": {
     "eyebrow": "Zestawienie materiałów · ta strona",

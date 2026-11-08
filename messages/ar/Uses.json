@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, zero {مسارات API} one {مسار API} two {مساران API} few {مسارات API} many {مسار API} other {مسارات API}}",
     "apiSub": "معالجات المسارات · {methods}",
     "apiSubBare": "معالجات المسارات",
-    "tileLabel": "{figure} {label} — {sub} (يفتح المجلد على GitHub في تبويب جديد)"
+    "tileOpens": "(يفتح المجلد على GitHub في تبويب جديد)"
   },
   "bom": {
     "eyebrow": "قائمة المواد · هذا الموقع",

@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, other {APIルート}}",
     "apiSub": "ルートハンドラー · {methods}",
     "apiSubBare": "ルートハンドラー",
-    "tileLabel": "{figure} {label} — {sub}(GitHub のフォルダーを新しいタブで開きます)"
+    "tileOpens": "(GitHub 上のフォルダを新しいタブで開きます)"
   },
   "bom": {
     "eyebrow": "部品表 · このサイト",

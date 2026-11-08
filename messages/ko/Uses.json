@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, other {API 라우트}}",
     "apiSub": "라우트 핸들러 · {methods}",
     "apiSubBare": "라우트 핸들러",
-    "tileLabel": "{figure} {label} — {sub} (GitHub의 폴더를 새 탭에서 열어요)"
+    "tileOpens": "(GitHub의 폴더를 새 탭에서 열어요)"
   },
   "bom": {
     "eyebrow": "자재 명세서 · 이 사이트",

@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {API route} other {API routes}}",
     "apiSub": "route handlers · {methods}",
     "apiSubBare": "route handlers",
-    "tileLabel": "{figure} {label} — {sub} (opens the folder on GitHub in a new tab)"
+    "tileOpens": "(opens the folder on GitHub in a new tab)"
   },
   "bom": {
     "eyebrow": "Bill of materials · this site",

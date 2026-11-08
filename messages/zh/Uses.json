@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, other {API 路由}}",
     "apiSub": "路由处理器 · {methods}",
     "apiSubBare": "路由处理器",
-    "tileLabel": "{figure} {label} — {sub}（在新标签页中打开 GitHub 上的文件夹）"
+    "tileOpens": "（在新标签页中打开 GitHub 上的该文件夹）"
   },
   "bom": {
     "eyebrow": "物料清单 · 本站",

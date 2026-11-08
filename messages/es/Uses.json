@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {ruta de API} other {rutas de API}}",
     "apiSub": "manejadores de ruta · {methods}",
     "apiSubBare": "manejadores de ruta",
-    "tileLabel": "{figure} {label} — {sub} (abre la carpeta en GitHub en una pestaña nueva)"
+    "tileOpens": "(abre la carpeta en GitHub en una pestaña nueva)"
   },
   "bom": {
     "eyebrow": "Lista de materiales · este sitio",

@@ -28,6 +28,15 @@ import { PLATE_EASE } from './Plate';
 //
 // Reduced motion (OS or the ⌘K toggle): `on` is true from the first render
 // and `delay` is 0 — callers render every layer at rest with a 0s transition.
+//
+// Focus (CI, 2026-11-08): a Tab that lands inside an element that has not
+// revealed yet must find it on screen. Tab scrolls the element in, its gate
+// opens, and the stagger delay then holds a station's link lowered out of its
+// mask (or a tile at opacity 0) for up to ~0.3s: a focus ring on nothing, which
+// the keyboard suite caught as "obscured" (WCAG 2.4.11). So focus entering
+// first sets `instant`: `on` at once, and callers pass it beside reduceMotion
+// to `staged`, which lands every layer at rest with a 0s transition. Focus
+// after the reveal changes nothing.
 export const REVEAL_MARGIN = '0px 0px -10% 0px';
 const SAME_BEAT_MS = 200;
 
@@ -66,12 +75,31 @@ export function useStagedReveal({
     setDelay(d);
   }, [gate, delay, reduceMotion, revealedAtRef, index, step, base, columnStagger]);
 
+  // Under reduced motion the element is at rest from the first render; with
+  // motion it plays once its delay has been resolved (one effect tick).
+  const played = reduceMotion || (gate && delay != null);
+  const [instant, setInstant] = useState(false);
+  const playedRef = useRef(played);
+  useEffect(() => {
+    playedRef.current = played;
+  }, [played]);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduceMotion) return undefined;
+    // `focusin` bubbles, so it also fires for the element itself when it is
+    // the focusable one (an Instruments tile is the link).
+    const onFocusIn = () => {
+      if (!playedRef.current) setInstant(true);
+    };
+    el.addEventListener('focusin', onFocusIn);
+    return () => el.removeEventListener('focusin', onFocusIn);
+  }, [reduceMotion]);
+
   return {
     ref,
-    // Under reduced motion the element is at rest from the first render; with
-    // motion it plays once its delay has been resolved (one effect tick).
-    on: reduceMotion || (gate && delay != null),
-    delay: delay ?? 0,
+    on: played || instant,
+    delay: instant ? 0 : (delay ?? 0),
+    instant,
   };
 }
 

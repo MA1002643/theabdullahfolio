@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {API-Route} other {API-Routen}}",
     "apiSub": "Route-Handler · {methods}",
     "apiSubBare": "Route-Handler",
-    "tileLabel": "{figure} {label} — {sub} (öffnet den Ordner auf GitHub in einem neuen Tab)"
+    "tileOpens": "(öffnet den Ordner auf GitHub in einem neuen Tab)"
   },
   "bom": {
     "eyebrow": "Stückliste · diese Website",

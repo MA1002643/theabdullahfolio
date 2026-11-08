@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, other {API route}}",
     "apiSub": "route handler · {methods}",
     "apiSubBare": "route handler",
-    "tileLabel": "{figure} {label} — {sub} (mở thư mục trên GitHub trong tab mới)"
+    "tileOpens": "(mở thư mục trên GitHub trong thẻ mới)"
   },
   "bom": {
     "eyebrow": "Bảng vật tư · trang web này",

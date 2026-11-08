@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {مسیر API} other {مسیر API}}",
     "apiSub": "کنترل‌گرهای مسیر · {methods}",
     "apiSubBare": "کنترل‌گرهای مسیر",
-    "tileLabel": "{figure} {label} — {sub} (پوشه را در GitHub در زبانه‌ای جدید باز می‌کند)"
+    "tileOpens": "(پوشه را در GitHub در یک زبانهٔ جدید باز می‌کند)"
   },
   "bom": {
     "eyebrow": "صورت مواد · همین سایت",

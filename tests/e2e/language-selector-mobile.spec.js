@@ -10,41 +10,49 @@ import { expect, settle, test } from '../support/test.js';
 // that prevent it (a 16px field, nothing wider than the screen) and measures
 // the panel against the viewport, not against its own classes.
 //
-// Not @cross-browser: `isMobile` is unsupported in Firefox, and the desktop
-// projects have no touch. The touch emulation is set here instead.
+// @cross-browser: the zoom is Safari's, so this has to run in mobile Safari
+// (and mobile Chrome) rather than only on desktop Chromium. No `isMobile`
+// override, which Firefox does not support: the explicit viewport and
+// `hasTouch` give every project the tap conditions, and the two mobile
+// projects keep the rest of their device settings.
 
-test.describe('language selector on a phone', () => {
+// Everything that must fit: the document, the panel, and the list inside it.
+async function widths(page) {
+  return page.evaluate(() => {
+    const panel = document.querySelector('.locale-panel').getBoundingClientRect();
+    const list = document.querySelector('.locale-panel [role="listbox"]');
+    return {
+      viewport: window.innerWidth,
+      documentScroll: document.documentElement.scrollWidth,
+      panelLeft: panel.left,
+      panelRight: panel.right,
+      listScroll: list.scrollWidth,
+      listClient: list.clientWidth,
+      scrollX: window.scrollX,
+    };
+  });
+}
+
+function expectInsideViewport(w) {
+  expect(w.documentScroll).toBeLessThanOrEqual(w.viewport);
+  expect(w.panelLeft).toBeGreaterThanOrEqual(0);
+  expect(w.panelRight).toBeLessThanOrEqual(w.viewport);
+  expect(w.listScroll).toBeLessThanOrEqual(w.listClient);
+  expect(w.scrollX).toBe(0);
+}
+
+// Below 16px, iOS Safari zooms the page into the focused field.
+async function expectNoZoomFontSize(field) {
+  const fontSize = await field.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  expect(fontSize).toBeGreaterThanOrEqual(16);
+}
+
+test.describe('language selector on a phone', { tag: '@cross-browser' }, () => {
   test.use({
     viewport: { width: 390, height: 844 },
     hasTouch: true,
-    isMobile: true,
     contextOptions: { reducedMotion: 'reduce' },
   });
-
-  // Everything that must fit: the document, the panel, and the list inside it.
-  async function widths(page) {
-    return page.evaluate(() => {
-      const panel = document.querySelector('.locale-panel').getBoundingClientRect();
-      const list = document.querySelector('.locale-panel [role="listbox"]');
-      return {
-        viewport: window.innerWidth,
-        documentScroll: document.documentElement.scrollWidth,
-        panelLeft: panel.left,
-        panelRight: panel.right,
-        listScroll: list.scrollWidth,
-        listClient: list.clientWidth,
-        scrollX: window.scrollX,
-      };
-    });
-  }
-
-  function expectInsideViewport(w) {
-    expect(w.documentScroll).toBeLessThanOrEqual(w.viewport);
-    expect(w.panelLeft).toBeGreaterThanOrEqual(0);
-    expect(w.panelRight).toBeLessThanOrEqual(w.viewport);
-    expect(w.listScroll).toBeLessThanOrEqual(w.listClient);
-    expect(w.scrollX).toBe(0);
-  }
 
   for (const path of ['/', '/ar']) {
     test(`${path}: a tap opens the list without focusing the search field`, async ({ page }) => {
@@ -69,9 +77,7 @@ test.describe('language selector on a phone', () => {
       await field.tap();
       await expect(field).toBeFocused();
 
-      // Below 16px, iOS Safari zooms the page into the focused field.
-      const fontSize = await field.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-      expect(fontSize).toBeGreaterThanOrEqual(16);
+      await expectNoZoomFontSize(field);
       expectInsideViewport(await widths(page));
 
       // A swipe across the list moves nothing sideways.
@@ -81,6 +87,31 @@ test.describe('language selector on a phone', () => {
 
       await field.fill('deu');
       await expect(page.locator('.locale-panel [role="option"]')).toHaveCount(1);
+      expectInsideViewport(await widths(page));
+    });
+  }
+});
+
+// An iPhone turned sideways is 844px wide, past the `sm` line, so it gets the
+// anchored panel rather than the bottom sheet. The field was 14px from `sm` up,
+// and a tap on it zoomed the page there just as it once did in portrait.
+test.describe('language selector on a phone in landscape', { tag: '@cross-browser' }, () => {
+  test.use({
+    viewport: { width: 844, height: 390 },
+    hasTouch: true,
+    contextOptions: { reducedMotion: 'reduce' },
+  });
+
+  for (const path of ['/', '/ar']) {
+    test(`${path}: tapping the search field keeps it at 16px and the list inside the screen`, async ({ page }) => {
+      await page.goto(path);
+      await settle(page);
+      await page.locator('button.locale-trigger').first().tap();
+      const field = page.locator('.locale-panel [role="combobox"]');
+      await field.tap();
+      await expect(field).toBeFocused();
+
+      await expectNoZoomFontSize(field);
       expectInsideViewport(await widths(page));
     });
   }

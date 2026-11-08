@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, other {rute API}}",
     "apiSub": "route handler · {methods}",
     "apiSubBare": "route handler",
-    "tileLabel": "{figure} {label} — {sub} (membuka folder di GitHub pada tab baru)"
+    "tileOpens": "(membuka folder di GitHub pada tab baru)"
   },
   "bom": {
     "eyebrow": "Daftar komponen · situs ini",

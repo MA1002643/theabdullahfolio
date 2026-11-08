@@ -15,16 +15,21 @@ import { whenIdle } from '@/lib/whenIdle';
 // `next/dynamic` from fetching it during hydration: a lazy component starts
 // its import the moment it is rendered.
 //
-// A failed fetch still reports ready. The component then renders through
-// optionalChunk, which tries once more and renders nothing if that fails too:
-// the page is whole without it.
+// Ready means the import SUCCEEDED, never merely that it settled. Mounted
+// after a failure, `next/dynamic` would render through optionalChunk's empty
+// fallback and cache it, and the component would stay blank for the rest of
+// the visit even once a later fetch got the real module. A failure leaves
+// `ready` false instead; deferredChunk forgets it, so the next request (the
+// next hover, focus, touch or open) downloads again.
 
 export function useDeferredMount(chunk) {
   const [ready, setReady] = useState(false);
 
   const request = useCallback(() => {
-    const done = () => setReady(true);
-    chunk.load().then(done, done);
+    chunk.load().then(
+      () => setReady(true),
+      () => {},
+    );
   }, [chunk]);
 
   useEffect(() => whenIdle(request), [request]);

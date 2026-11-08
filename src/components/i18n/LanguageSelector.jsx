@@ -317,6 +317,12 @@ export default function LanguageSelector({
         onPointerDown={(e) => {
           pressTypeRef.current = e.pointerType;
         }}
+        // A touch that turns into a scroll is cancelled and raises no click,
+        // so the press it recorded is dropped here; otherwise the next Enter
+        // or Space would read it and open as if tapped.
+        onPointerCancel={() => {
+          pressTypeRef.current = null;
+        }}
         onClick={() => {
           // A click raised by Enter or Space has no pointerdown before it, so
           // a stale press type is cleared here and keyboard opens search first.
@@ -388,7 +394,9 @@ export default function LanguageSelector({
                 placeholder={t('searchPlaceholder')}
                 autoComplete="off"
                 spellCheck={false}
-                className="w-full min-w-0 bg-transparent text-base text-[#f3e7d3] placeholder:text-[#8a8a8a] focus:outline-none sm:text-sm"
+                // 16px at every width: iOS Safari zooms into a focused field
+                // smaller than that, and a phone in landscape is past `sm`.
+                className="w-full min-w-0 bg-transparent text-base text-[#f3e7d3] placeholder:text-[#8a8a8a] focus:outline-none"
               />
             </div>
 

@@ -1960,8 +1960,11 @@ const AboutDetails = () => {
           of the years card's position in the layout. Modal manages its
           own AnimatePresence + body scroll lock + focus restoration.
           Mounted once its deferred chunk is here (issue #55), then kept
-          mounted, so the exit animation and focus return run as before. */}
-      {(experienceDialogReady || isExperienceModalOpen) && (
+          mounted, so the exit animation and focus return run as before.
+          Never before: rendered while the chunk is still missing, next/dynamic
+          would cache optionalChunk's empty fallback for good. A press that
+          beats the download opens the dialog the moment it arrives. */}
+      {experienceDialogReady && (
         <ExperienceBreakdownModal
           open={isExperienceModalOpen}
           onClose={() => setIsExperienceModalOpen(false)}
@@ -1977,7 +1980,7 @@ const AboutDetails = () => {
           `useProjectProgress` at the top of this component, which fetches at
           page load whether or not the dialog's chunk has arrived, so the
           dialog still opens already populated. */}
-      {(progressDialogReady || isProgressPopupOpen) && (
+      {progressDialogReady && (
         <ProjectProgressPopup
           open={isProgressPopupOpen}
           onClose={() => setIsProgressPopupOpen(false)}

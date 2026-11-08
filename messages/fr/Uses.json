@@ -38,8 +38,8 @@
       "private": "utilisé dans {priv, plural, one {# dépôt privé} other {# dépôts privés}}",
       "mixed": "utilisé dans {pub, plural, one {# dépôt public} other {# dépôts publics}} · +{priv} privé(s)"
     },
-    "meterLabel": "{name}\u00a0: {sentence}",
-    "meterPending": "{name}\u00a0: le nombre de dépôts arrive avec l’exploration en direct",
+    "meterLabel": "{name} : {sentence}",
+    "meterPending": "{name} : le nombre de dépôts arrive avec l’exploration en direct",
     "figure": {
       "publicRepos": "{n, plural, one {dépôt public} other {dépôts publics}}",
       "privateRepos": "{n, plural, one {dépôt privé} other {dépôts privés}}",
@@ -51,10 +51,10 @@
   },
   "liveAge": {
     "verified": "vérifié {age}",
-    "s": "il y a {s}\u00a0s",
-    "ms": "il y a {m}\u00a0min {s}\u00a0s",
-    "hm": "il y a {h}\u00a0h {m}\u00a0min",
-    "dh": "il y a {d}\u00a0j {h}\u00a0h"
+    "s": "il y a {s} s",
+    "ms": "il y a {m} min {s} s",
+    "hm": "il y a {h} h {m} min",
+    "dh": "il y a {d} j {h} h"
   },
   "pipeline": {
     "eyebrow": "Livraison · du commit au calcul",
@@ -103,7 +103,7 @@
     "apiLabel": "{count, plural, one {route d'API} other {routes d'API}}",
     "apiSub": "gestionnaires de routes · {methods}",
     "apiSubBare": "gestionnaires de routes",
-    "tileLabel": "{figure} {label} — {sub} (ouvre le dossier sur GitHub dans un nouvel onglet)"
+    "tileOpens": "(ouvre le dossier sur GitHub dans un nouvel onglet)"
   },
   "bom": {
     "eyebrow": "Nomenclature · ce site",
@@ -135,7 +135,7 @@
       },
       "frameworks": {
         "label": "Frameworks",
-        "lay": "L'ossature sur laquelle repose une application\u00a0: sa structure et ses conventions."
+        "lay": "L'ossature sur laquelle repose une application : sa structure et ses conventions."
       },
       "libraries": {
         "label": "Bibliothèques",

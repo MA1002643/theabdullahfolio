@@ -59,7 +59,7 @@ function Meter({
   // The ruler etches in reading direction (issue #82): its scale origin and
   // the cutter's travel both start at the inline-start edge.
   const { isRtl } = useDirection();
-  const { ref, on, delay } = useStagedReveal({
+  const { ref, on, delay, instant } = useStagedReveal({
     revealed,
     reduceMotion,
     revealedAtRef,
@@ -68,7 +68,8 @@ function Meter({
     base: 0.1,
     columnStagger: COLUMN_S,
   });
-  const at = (offset, duration) => staged(reduceMotion, delay, offset, duration);
+  // `instant`: the tile was focused before it revealed, so it lands at once.
+  const at = (offset, duration) => staged(reduceMotion || instant, delay, offset, duration);
 
   // The count starts once the tile is down — watched from zero, not caught
   // mid-climb behind the deal — and replays on re-entry via the grid's live
@@ -110,7 +111,12 @@ function Meter({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={t('instruments.tileLabel', { figure: num(figure), label, sub })}
+      // Named from its content, not an aria-label. A label carried the FINAL
+      // figure while the visible digits read 0 (server HTML, which cannot know
+      // the reduced-motion preference) or a value mid-climb, so the visible
+      // text was not part of the name (WCAG 2.5.3): axe failed /uses in CI
+      // whenever it scanned before hydration. The name is now the sr-only
+      // final figure, the label, the note and the new-tab warning.
       data-lit={on ? 'true' : 'false'}
       className="uses-anim uses-meter custom-bg-abt group relative block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
       style={{
@@ -154,8 +160,9 @@ function Meter({
       )}
 
       <span className="flex items-baseline justify-between gap-3">
-        {/* The digits are aria-hidden while they climb; the link's label
-            carries the final value. */}
+        {/* The digits are aria-hidden while they climb; the sr-only copy
+            beside them carries the final value into the link's name. */}
+        <span className="sr-only">{num(figure)}</span>
         <motion.span
           className="uses-anim uses-figure font-semibold"
           aria-hidden="true"
@@ -176,14 +183,10 @@ function Meter({
         </motion.span>
       </span>
       {/* Word breaks between the stacked lines. They render nothing (block
-          siblings), but without them the visible text reads as one run,
-          "124VITEST SUITES1391 test cases", which no longer matches the
-          label's words (WCAG 2.5.3, axe label-content-name-mismatch). */}
+          siblings), but without them the name reads as one run,
+          "124Vitest suites1391 test cases". */}
       {' '}
-      <span
-        className="uses-label uses-mask mt-2 block font-mono uppercase text-[#ffaa2a]"
-        aria-hidden="true"
-      >
+      <span className="uses-label uses-mask mt-2 block font-mono uppercase text-[#ffaa2a]">
         <motion.span
           className="uses-anim uses-mask__in"
           initial={reduceMotion ? false : { y: '140%' }}
@@ -196,11 +199,12 @@ function Meter({
       {' '}
       <motion.span
         className="uses-anim uses-note mt-1 block text-foreground/60"
-        aria-hidden="true"
         {...riseProps(on, reduceMotion, at(0.38, 0.5), 6)}
       >
         {sub}
       </motion.span>
+      {' '}
+      <span className="sr-only">{t('instruments.tileOpens')}</span>
     </motion.a>
   );
 }
