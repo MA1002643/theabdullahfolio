@@ -842,9 +842,16 @@ const AboutDetails = () => {
     return () => clearTimeout(t);
   }, [pulseExperienceCats, isExperienceCardInView]);
 
+  // The two dialogs are mutually exclusive: the latest open request wins. While
+  // a dialog's chunk is still downloading its open flag is already true but no
+  // backdrop exists yet, so the other card stays clickable; without this, both
+  // dialogs would mount open with competing focus traps and scroll locks.
+  // (`setIsProgressPopupOpen` is declared further down this component; it is
+  // initialised long before any click can call this.)
   const openExperienceModal = () => {
     if (!experienceData) return;
     requestExperienceDialog();
+    setIsProgressPopupOpen(false);
     setIsExperienceModalOpen(true);
   };
   const handleExperienceTriggerKeyDown = (e) => {
@@ -1251,6 +1258,8 @@ const AboutDetails = () => {
   const progressTriggerRef = useRef(null);
   const openProgressPopup = () => {
     requestProgressDialog();
+    // Mutually exclusive with the years card's dialog (see openExperienceModal).
+    setIsExperienceModalOpen(false);
     setIsProgressPopupOpen(true);
   };
   const handleProgressTriggerKeyDown = (e) => {

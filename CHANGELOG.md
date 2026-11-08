@@ -1632,6 +1632,18 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### `/about`: the two deferred dialogs can no longer open at once · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of [#55](https://github.com/MA1002643/theabdullahfolio/issues/55) (deferred dialog chunks). |
+| **Details** | While a dialog's chunk was still downloading, its open flag was already true but no backdrop existed yet, so the other card stayed clickable. Pressing the Completed Projects card and then the Years card (or the reverse) before the chunks arrived mounted both dialogs open, each with its own focus trap and body-scroll lock. `openExperienceModal` and `openProgressPopup` now close the other dialog before opening their own: the latest request wins. |
+| **Tests** | `tests/component/aboutPage.test.jsx`: two new cases press one card and then the other before either chunk arrives, in both orders. Only the second dialog may appear, and the first card's `aria-expanded` must be `false`. Both cases fail on the previous code. A row added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing new to defer; the dialogs stay deferred. |
+| **Privacy check** | Nothing to change: dialog state only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/about/index.jsx`, `tests/component/aboutPage.test.jsx`, `docs/testing.md`, `tests/vitest-cases.json` |
+
 #### Language selector on a phone: a tap no longer raises the keyboard, and the sheet no longer scrolls sideways · 2026-11-07
 
 | | |

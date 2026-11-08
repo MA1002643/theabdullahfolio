@@ -80,6 +80,56 @@ describe('Deferred dialogs (issue #55)', () => {
     // Populated on first open, from the page's own fetch.
     expect(await findByRole('button', { name: /^culina, Web\. 50% complete/ })).toBeTruthy();
   });
+
+  // While a chunk downloads, its dialog's open flag is already true but there
+  // is no backdrop yet, so the other card is still clickable. Both dialogs then
+  // mounted open, each with its own focus trap and body-scroll lock. The open
+  // requests are mutually exclusive: the latest one wins.
+  const COMPLETE_EXPERIENCE = {
+    personalProjects: {
+      firstRepoDate: '2020-01-01',
+      months: 60,
+      display: '5+ years',
+      complete: true,
+      repos: [{ name: 'older', createdAt: '2020-01-01T00:00:00Z' }],
+    },
+    employment: { months: 90, display: '7+ years', roles: [] },
+    total: { months: 150, display: '12+ years' },
+  };
+
+  const renderBothCards = async () => {
+    server.use(
+      githubStatsApiHandler(),
+      http.get('*/api/experience-summary', () => HttpResponse.json(COMPLETE_EXPERIENCE)),
+      http.get('*/api/github-skills', () => new HttpResponse(null, { status: 503 })),
+    );
+    const { default: AboutDetails } = await import('@/components/about');
+    const utils = renderWithIntl(<AboutDetails />);
+    const projectsCard = utils.container.querySelector('[aria-haspopup="dialog"][aria-label^="Projects shipped"]');
+    // The years card becomes a button only once its data has landed.
+    const yearsCard = await utils.findByRole('button', { name: /^Years in the craft/ }, { timeout: 10_000 });
+    return { ...utils, projectsCard, yearsCard };
+  };
+
+  it('a second card pressed while the first dialog is loading replaces it', { timeout: 60_000 }, async () => {
+    const { projectsCard, yearsCard, findByRole, queryByRole } = await renderBothCards();
+    fireEvent.click(projectsCard);
+    fireEvent.click(yearsCard);
+    expect(await findByRole('dialog', { name: 'Experience by category' }, { timeout: 10_000 })).toBeTruthy();
+    expect(queryByRole('dialog', { name: 'Project progress' })).toBeNull();
+    expect(projectsCard.getAttribute('aria-expanded')).toBe('false');
+    expect(yearsCard.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('and the other way round', { timeout: 60_000 }, async () => {
+    const { projectsCard, yearsCard, findByRole, queryByRole } = await renderBothCards();
+    fireEvent.click(yearsCard);
+    fireEvent.click(projectsCard);
+    expect(await findByRole('dialog', { name: 'Project progress' }, { timeout: 10_000 })).toBeTruthy();
+    expect(queryByRole('dialog', { name: 'Experience by category' })).toBeNull();
+    expect(yearsCard.getAttribute('aria-expanded')).toBe('false');
+    expect(projectsCard.getAttribute('aria-expanded')).toBe('true');
+  });
 });
 
 describe('Project Progress dialog', () => {
