@@ -1632,6 +1632,19 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### CI: Gitleaks survives a GitHub Releases outage · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Security workflow run on `52852bc`: `Install gitleaks` failed with `curl: (22) … error: 504`. |
+| **Cause** | The same GitHub Releases outage that broke `npm ci`. The Gitleaks job downloaded its pinned release tarball with a single `curl`, so one 504 failed the job before it scanned a commit. The binary is required (it is the secret-scanning gate), so the download cannot be skipped the way ffmpeg-static's was. |
+| **Fix** | `.github/workflows/security.yml`: the tarball is cached with `actions/cache@v6` (inputs and `cache-hit` output read from its v6 `action.yml`), keyed on `GITLEAKS_VERSION` and `GITLEAKS_SHA256`, so after one successful run the job never reaches Releases; bumping either value moves the key. A cache miss downloads with `curl --retry 6 --retry-all-errors --retry-delay 10 --retry-max-time 300`: `--retry-all-errors` is what makes curl retry an HTTP error such as a 504, which plain `--retry` does not, and `-f` still fails the step once retries run out. The SHA-256 is verified on every run, whether the tarball came from the cache or the network. |
+| **Tests** | actionlint reports nothing on the workflow. The curl flags were run against a local server that answers 504 twice and then 200: two retried 504s, then the body and exit 0. The cache path is exercised on the first CI run (a miss that saves) and the next (a hit). Rows added to the defects table and the L9 description in `docs/testing.md`. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: CI configuration only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `.github/workflows/security.yml`, `docs/testing.md` |
+
 #### Language selector: Space chooses from a tapped list, and CI installs no longer download ffmpeg · 2026-11-08
 
 | | |

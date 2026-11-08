@@ -373,6 +373,9 @@ snapshot.
   (checksum-verified) scans every commit on every event. The marketplace
   action needed a token to list a PR's commits, then scanned only those, so on
   a pull request it was neither working nor "full history".
+  The release tarball is cached (keyed on the pinned version and checksum),
+  so a run normally never reaches GitHub Releases; a miss downloads with
+  retries, and the checksum is verified on every run, cached or not.
 - **CodeQL judges its own results.** Any finding with a security severity of
   7.0 or more (high or critical) fails the job, and every finding is listed in
   the run summary. The repository was private until 2026-11-07, and GitHub
@@ -624,6 +627,7 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (language selector) | After a touch or pen opened the selector, focus sat on the listbox, which reused the search field's key handler. Shift+Tab hit its unconditional Tab branch, which closed the panel and focused the trigger before the browser could move focus to the search field just before the list, so a visitor on touch with a hardware keyboard could only reach search by closing and reopening the selector. | The listbox has its own handler: Shift+Tab prevents the default, focuses the search field and leaves the panel open; every other key, plain Tab included, behaves as before. Two cases in `LanguageSelector.test.jsx` (touch, pen) fail on the old code; a plain-Tab case pins the close; `language-selector-mobile.spec.js` drives it with a real tap and a real Shift+Tab. |
 | Review (language selector) | On the tap-focused listbox Space fell through to the search field's handler, which has no Space case: ArrowDown then Space neither chose the highlighted language nor stopped the list scrolling. Only Enter worked. | The listbox handler takes Space: it prevents the default and chooses the active option, as Enter does (WAI-ARIA listbox). The search field keeps Space for typing. Two cases in `LanguageSelector.test.jsx` (touch, pen) fail on the old code, one pins that the field still types Space, and `language-selector-mobile.spec.js` presses real keys in four browsers. |
 | CI (`npm ci`) | Every job of a run failed at `npm ci`: GitHub Releases answered 504, and ffmpeg-static's install step, which downloads an ffmpeg binary from there, exits 1 on any error. No CI step runs ffmpeg; the package exists for the local asset scripts. | Every workflow that installs dependencies sets `FFMPEG_BIN: /usr/bin/true`, which makes the installer report "installed already" and skip the download (shown against a download URL that cannot connect). `ciInstallHermetic` fails a workflow that forgets it. |
+| CI (`security.yml`) | The same Releases outage failed Gitleaks before it scanned anything: its install step downloaded the pinned tarball from GitHub Releases with a single `curl` and got a 504. Unlike ffmpeg, the binary is needed, so the download cannot be skipped. | The tarball is cached with `actions/cache@v6`, keyed on the pinned version and its SHA-256, so normal runs never reach Releases. A miss downloads with `curl --retry 6 --retry-all-errors` (plain `--retry` does not retry HTTP errors), shown recovering from two 504s against a local server. The checksum is verified on every run, cached or not. |
 
 ## Maintenance
 
