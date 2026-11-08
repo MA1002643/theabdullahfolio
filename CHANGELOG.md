@@ -1632,6 +1632,18 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### `/uses`: the editor frame opens at once when Tab reaches its code block first · 2026-11-08
+
+| | |
+|:--|:--|
+| **Ref** | Review of the `/uses` focus-reveal fix. |
+| **Details** | `useStagedReveal` answers early focus with `instant`, but only callers that pass it to their transitions benefit, and `EditorFrame` did not. Its `<pre>` is focusable (`tabIndex={0}`, so a phone keyboard user can scroll it), so Tab could reach it before the frame revealed: `on` turned true, and the screen then ran its 0.65s clip unroll and the staggered line typing on their normal schedule, with focus on a shut screen and untyped lines. Under `instant` the frame now behaves as it does under reduced motion: every layer lands with a 0s transition, and the typing and resting carets are not rendered (they are decorative and `aria-hidden`). `initial` still reads `reduceMotion` alone, since it only applies on mount. |
+| **Tests** | **new** `tests/component/editorFrameFocus.test.jsx`: the real `EditorFrame` with the real `usesData.editorFrame`, plate not revealed, real framer timing. Focusing the `<pre>` must leave, within two frames, the frame at opacity 1, the screen's clip open and every line's clip fully typed, none still animating, no caret, and focus still on the block. It fails on the previous component. A row added to the defects table in `docs/testing.md`; `tests/vitest-cases.json` regenerated. |
+| **Lazy-loading check** | Nothing to defer. |
+| **Privacy check** | Nothing to change: animation timing only. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `src/components/uses/EditorFrame.jsx`, **new** `tests/component/editorFrameFocus.test.jsx`, `docs/testing.md`, `tests/vitest-cases.json` |
+
 #### `/about`: Escape cancels a dialog still downloading, and `/uses` focus lands a reveal already in motion · 2026-11-08
 
 | | |
