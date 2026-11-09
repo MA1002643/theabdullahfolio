@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
 import { useScroll, useTransform, m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useStaticMotion } from "@/components/motion/useStaticMotion";
 import { projectsData } from "@/app/data";
 import LanguagesCard from "./LanguagesCard";
 import GitHubStatsCard from "./StatsCard";
@@ -78,7 +79,13 @@ const RevealWord = ({ children, progress, range, index, total, gap = " " }) => {
   // opacity-only and *scroll-scrubbed* — the reader drives it with their own
   // scroll, no autonomous movement — so it isn't the kind of motion the setting
   // exists to suppress, and the copy still fully reveals as you reach it.
-  const opacity = useTransform(progress, range, [0, 1]);
+  //
+  // In the static motion mode (framer's features never arrived, issue #200)
+  // nothing subscribes to that MotionValue: it is sampled once per render, so
+  // a word read at 0 would stay invisible however far the reader scrolled.
+  // The words are simply shown there.
+  const scrubbed = useTransform(progress, range, [0, 1]);
+  const opacity = useStaticMotion() ? 1 : scrubbed;
   return (
     // Per-word ramp fill (darkens toward the paragraph's end) + opacity on the
     // SAME element, so a word's opacity fades its OWN clip. See wordFill.
@@ -2027,3 +2034,6 @@ const AboutDetails = () => {
 };
 
 export default AboutDetails;
+
+// For tests/component/motionStaticFallback.test.jsx (issue #200).
+export { RevealWord };

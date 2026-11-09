@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import { m, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useStaticMotion } from '@/components/motion/useStaticMotion';
 import { useTranslations } from 'next-intl';
 
 // The instrument panel, rebuilt as a clock: the years sit on the rim of a
@@ -71,6 +72,7 @@ const DialYear = ({
   beta,
   isActive,
   rotor,
+  staticAngle,
   canTab,
   interactive,
   reduceMotion,
@@ -78,10 +80,9 @@ const DialYear = ({
   formatYear,
   jumpLabel,
 }) => {
-  const opacity = useTransform(rotor, (r) => {
-    const away = Math.abs(beta + r);
-    return Math.max(0.12, Math.min(1, 1.08 - away / 52));
-  });
+  const tracked = useTransform(rotor, (r) => labelOpacity(beta, r));
+  // Static motion mode: a plain number from the elected era (see EraRail).
+  const opacity = staticAngle === null ? tracked : labelOpacity(beta, staticAngle);
 
   const Tag = interactive ? m.button : m.span;
 
@@ -162,6 +163,10 @@ const DialYear = ({
   );
 };
 
+// A year label's opacity for a rotor angle: full on the needle, dimming with
+// its distance around the rim, never below 0.12.
+const labelOpacity = (beta, r) => Math.max(0.12, Math.min(1, 1.08 - Math.abs(beta + r) / 52));
+
 // The complete face — bezel, rotor with graduations and years, needle —
 // rendered once per breakpoint variant off the SAME rotor MotionValue (a
 // MotionValue drives any number of subscribers, so both faces stay in
@@ -170,6 +175,7 @@ const DialFace = ({
   years,
   active,
   rotor,
+  staticAngle,
   ticks,
   interactive,
   visible,
@@ -204,7 +210,7 @@ const DialFace = ({
       />
 
       {/* The rotor — the one element the spring rotates. */}
-      <m.div className="absolute inset-0" style={{ rotate: rotor }}>
+      <m.div className="absolute inset-0" style={{ rotate: staticAngle ?? rotor }}>
         <div aria-hidden>
           {ticks.map(({ angle, silent }) => (
             <div
@@ -237,6 +243,7 @@ const DialFace = ({
             beta={-(maxYear - year) * STEP}
             isActive={active === year}
             rotor={rotor}
+            staticAngle={staticAngle}
             canTab={
               interactive &&
               visible &&
@@ -323,6 +330,15 @@ const EraRail = ({
 
   const rotor = reduceMotion ? stepped : wound;
 
+  // Static motion mode (framer's features never arrived, issue #200): nothing
+  // subscribes to a MotionValue there, so the dial would keep the angle it was
+  // first rendered at while `canTab` (computed from `active`) enabled the
+  // buttons of the CURRENT era, leaving focusable years off the visible arc.
+  // The angle and the label opacities come straight from `active` instead,
+  // as plain numbers that every re-render rewrites: the reduced-motion dial,
+  // snapped per era.
+  const staticAngle = useStaticMotion() ? rotorFor(active) : null;
+
   const jump = (year) => {
     document.getElementById(`era-${year}`)?.scrollIntoView({
       behavior: reduceMotion ? 'auto' : 'smooth',
@@ -352,6 +368,7 @@ const EraRail = ({
     years,
     active,
     rotor,
+    staticAngle,
     ticks,
     visible,
     maxYear,

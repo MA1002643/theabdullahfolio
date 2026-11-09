@@ -168,7 +168,7 @@ content mounted afterwards, and the layout provider. A gate that opens after
 the give-up still reveals what it gates, which the file checks on the real
 components the review named: `PageTitle` behind the intro loader, a `/uses`
 `Plate` behind its viewport trigger, the preference centre opened behind a
-nested `<AnimatePresence>`, and a guestbook card with its depth blur off.
+nested `<AnimatePresence>`, a guestbook card with its depth blur off, the `/about` paragraph's scrubbed words, and the `/journey` dial turning with the elected era.
 `arcSweepDelayedFeatures.test.jsx` plays the `/about` arcs before the
 features land, against the real `m`, and keeps the old `useAnimation` shape
 as a case that pins the defect (its controls are lost).
@@ -682,6 +682,7 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (#200, arcs) | The `/about` rank and activity arcs started `useAnimation` controls from an effect. A viewport trigger that fired before the features chunk reached no visual element, and the chunk's arrival did not rerun the effect, so the arc stayed empty until the card re-entered the viewport. | Declarative props from `arcSweep.js`, and a remount per play. |
 | Review (#200, nested presence) | `AnimatePresence` gives a child mounted after its first render its own presence, overriding the static fallback: the preference centre opened after a give-up was invisible while it took focus and locked scrolling, and so were guestbook cards when the layout chunk failed. | The site's `AnimatePresence` wrapper re-applies the static presence; a fitness rule bans framer's direct. |
 | Review (#200, gated content) | The first fallback only blocked the initial animation, and framer reads that once per element, so content behind a reveal gate (`PageTitle`, the `/uses` plates) stayed at its hidden target when the gate opened. | `MotionConfig isStatic`: styles follow props on every render, with no renderer. |
+| Review (#200, frozen motion values) | In static mode nothing subscribes to a MotionValue, so an effect made only of them froze at its first reading: the `/about` paragraph's scroll-scrubbed words stayed at opacity 0, and the `/journey` dial kept its first angle while `canTab` enabled the current era's year buttons, leaving focusable years off its visible arc. | `useStaticMotion()`: the words take opacity 1, and the dial's angle and label opacities come from `active` as plain numbers. |
 
 ## Maintenance
 

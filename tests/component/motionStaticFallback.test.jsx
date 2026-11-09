@@ -54,6 +54,9 @@ const { default: PageTitle } = await import('@/components/PageTitle');
 const { default: Plate } = await import('@/components/uses/Plate');
 const { default: PreferenceCentre } = await import('@/components/privacy/PreferenceCentre');
 const { default: MessageCard } = await import('@/components/guestbook/MessageCard');
+const { default: EraRail } = await import('@/components/journey/EraRail');
+const { RevealWord } = await import('@/components/about');
+const { motionValue } = actual;
 
 // An observer that reports every target in view, so a viewport gate opens.
 class SeeingObserver {
@@ -323,6 +326,66 @@ describe('motion static fallback', () => {
     expect(card.style.opacity).toBe('1');
     // The depth blur is motion values alone, frozen without a renderer: off.
     expect(card.style.filter).toBe('');
+  });
+
+  // Motion values in `style` are read once per render and never written in
+  // static mode: an effect made only of them has to come from props there.
+  it('shows the /about paragraph’s scroll-scrubbed words instead of freezing them at 0', () => {
+    const progress = motionValue(0);
+    render(
+      <MotionFeatures>
+        <p>
+          {['Architect', 'of', 'Enchantment'].map((word, i) => (
+            <RevealWord key={word} index={i} total={3} progress={progress} range={[i / 3, (i + 1) / 3]}>
+              {word}
+            </RevealWord>
+          ))}
+        </p>
+      </MotionFeatures>,
+    );
+    // Before giving up, the scrub holds them at 0 until the reader scrolls.
+    expect(screen.getByText('Architect').style.opacity).toBe('0');
+    giveUp();
+    for (const word of ['Architect', 'of', 'Enchantment']) {
+      expect(screen.getByText(word).style.opacity).toBe('1');
+    }
+  });
+
+  it('turns the /journey dial with the elected era, so tabbable years stay on its arc', () => {
+    const years = [2026, 2025, 2024, 2023, 2022, 2021];
+    const props = { years, visible: true, progress: motionValue(0), height: 1000, anchors: [], reduceMotion: false };
+    const ui = (active) => (
+      <MotionFeatures>
+        <EraRail {...props} active={active} />
+      </MotionFeatures>
+    );
+    const view = renderWithIntl(ui(2026));
+    giveUp();
+    view.rerender(ui(2022));
+
+    // The interactive face: the rotor carries the elected era's angle.
+    const nav = screen.getByRole('navigation');
+    const rotor = nav.querySelector('[style*="rotate"]');
+    expect(rotor.style.transform).toBe(`rotate(${(2026 - 2022) * 11.5}deg)`);
+
+    // The elected year sits on the needle at full strength, and every label
+    // is lit for the CURRENT angle, not the one the dial first rendered at:
+    // a tabbable year is one the dial is showing.
+    const buttons = within(nav).getAllByRole('button');
+    const active = buttons.find((b) => b.getAttribute('aria-current') === 'true');
+    const labelOf = (button) => button.parentElement.parentElement;
+    expect(labelOf(active).style.opacity).toBe('1');
+    const tabbable = buttons.filter((b) => b.tabIndex === 0);
+    expect(tabbable.length).toBeGreaterThan(1);
+    for (const button of tabbable) {
+      const year = years[buttons.indexOf(button)];
+      const away = Math.abs(year - 2022) * 11.5;
+      const expected = Math.max(0.12, Math.min(1, 1.08 - away / 52));
+      expect(Number(labelOf(button).style.opacity)).toBeCloseTo(expected);
+    }
+    // 2026, where the dial first rendered, is now dim and out of reach.
+    expect(buttons[0].tabIndex).toBe(-1);
+    expect(Number(labelOf(buttons[0]).style.opacity)).toBeLessThan(0.5);
   });
 
   it('applies to the layout provider on its own', () => {

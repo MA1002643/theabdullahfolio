@@ -2478,8 +2478,15 @@ single converted page reads as a zero saving.
 - **What static mode gives up:** hover, tap and `layout` do nothing, exits are
   instant, and a motion value in `style` is read once per render and never
   written. An effect built only from motion values freezes, so a component
-  that has one turns it off with `useStaticMotion()` (the guestbook card's
-  depth blur). The remount resets client state below the provider, which is
+  that has one turns it off with `useStaticMotion()`, or derives the value
+  from props there. The guestbook card drops its depth blur; the `/about`
+  paragraph's scroll-scrubbed words show at opacity 1 instead of freezing at
+  0; the `/journey` dial takes its angle and label opacities from the elected
+  era, so the years `canTab` makes focusable are the ones on its visible arc.
+  The rest were reviewed and freeze at a harmless resting value: the contact
+  button's fill and slice label, the timeline spine, comet and node parallax,
+  and the page-transition label (its overlay is removed by timers and route
+  state, not by a motion value). The remount resets client state below the provider, which is
   acceptable only because the visit's animations are not coming. The custom
   cursor keeps the native pointer until the features have committed, because
   before then its `m.*` dot cannot follow the pointer.
