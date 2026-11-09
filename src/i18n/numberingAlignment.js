@@ -119,9 +119,14 @@ export function installNumberingAlignment(win) {
   for (const name of PINNABLE) {
     const Original = win.Intl[name];
     if (typeof Original !== 'function') continue;
+    // `newTarget` is forwarded, not dropped: `class X extends Intl.NumberFormat`
+    // reaches this trap through `super()` with newTarget = X, and `new target()`
+    // would hand back a plain NumberFormat without X's prototype or methods.
     win.Intl[name] = new Proxy(Original, {
-      construct: (target, [locales, options]) => new target(pinNumbering(locales, options, pins), options),
-      apply: (target, thisArg, [locales, options]) => target.call(thisArg, pinNumbering(locales, options, pins), options),
+      construct: (target, [locales, options, ...rest], newTarget) =>
+        Reflect.construct(target, [pinNumbering(locales, options, pins), options, ...rest], newTarget),
+      apply: (target, thisArg, [locales, options, ...rest]) =>
+        Reflect.apply(target, thisArg, [pinNumbering(locales, options, pins), options, ...rest]),
     });
   }
 

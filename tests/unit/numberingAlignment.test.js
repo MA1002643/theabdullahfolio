@@ -137,6 +137,34 @@ describe('installNumberingAlignment', () => {
       expect(win.Intl.NumberFormat.supportedLocalesOf(['ar'])).toEqual(['ar']);
     });
 
+    // The regression (#198 review): the construct trap built `new target(...)`
+    // and dropped `newTarget`, so a subclass's `super()` returned a bare native
+    // instance, without the subclass's prototype or methods, in every locale.
+    it('keeps native subclassing working, for every wrapped constructor', () => {
+      class CustomNumber extends win.Intl.NumberFormat {
+        twice(n) {
+          return `${this.format(n)}|${this.format(n)}`;
+        }
+      }
+      for (const locale of ['ar', 'en-GB']) {
+        const nf = new CustomNumber(locale);
+        expect(nf).toBeInstanceOf(CustomNumber);
+        expect(Object.getPrototypeOf(nf)).toBe(CustomNumber.prototype);
+        expect(typeof nf.twice).toBe('function');
+      }
+      expect(new CustomNumber('ar').twice(11)).toBe('١١|١١');
+      expect(new CustomNumber('en-GB').twice(11)).toBe('11|11');
+
+      class CustomDate extends win.Intl.DateTimeFormat {}
+      class CustomRelative extends win.Intl.RelativeTimeFormat {}
+      const date = new CustomDate('ar', { day: 'numeric', timeZone: 'UTC' });
+      expect(date).toBeInstanceOf(CustomDate);
+      expect(date.format(new Date(Date.UTC(2026, 10, 8)))).toBe('٨');
+      const rel = new CustomRelative('ar', { numeric: 'always' });
+      expect(rel).toBeInstanceOf(CustomRelative);
+      expect(rel.format(-5, 'minute')).toMatch(/٥/);
+    });
+
     it('never touches a language the engine agrees on', () => {
       expect(new win.Intl.NumberFormat('en-GB').format(1234)).toBe('1,234');
     });

@@ -1757,6 +1757,16 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 | **i18n check** | No new visitor-facing text. Checked in Arabic (right to left) by the e2e spec. |
 | **Files** | `src/components/i18n/LanguageSelector.jsx`, `tests/component/LanguageSelector.test.jsx`, `tests/e2e/language-selector-mobile.spec.js`, `docs/testing.md`, `tests/browser-cases.json`, `tests/vitest-cases.json` |
 
+#### #198 review: subclassing an aligned `Intl` constructor · 2026-11-09
+
+| | |
+|:--|:--|
+| **Ref** | [#198](https://github.com/MA1002643/theabdullahfolio/issues/198), review finding on the entry below. |
+| **Fix** | Once the numbering alignment was installed, its `construct` trap built `new target(...)` and dropped `newTarget`. `class X extends Intl.NumberFormat` reaches the trap through `super()`, so it got back a plain native instance without `X`'s prototype or methods, in every locale and for all three wrapped constructors (`NumberFormat`, `DateTimeFormat`, `RelativeTimeFormat`). The trap now calls `Reflect.construct(target, args, newTarget)`; `apply` uses `Reflect.apply`, and both pass along any extra arguments. Only engines that disagree with the server's digits (Linux WebKit) ever had the wrappers. |
+| **Test-plan check** | `tests/unit/numberingAlignment.test.js`: **new** case that subclasses all three wrapped constructors, in a pinned locale (`ar`) and an unpinned one (`en-GB`). It checks `instanceof`, the prototype, a subclass method, and that the subclass still prints the server's digits. It fails against the previous commit. `docs/testing.md`: defects-table row. `tests/vitest-cases.json` regenerated. |
+| **Checks** | Privacy, i18n, lazy-loading: nothing to change. `docs/seo.md`, `docs/multilingual.md`, README: nothing to change. |
+| **Files** | `src/i18n/numberingAlignment.js`, `tests/unit/numberingAlignment.test.js`, `docs/testing.md`, `CHANGELOG.md`, `tests/vitest-cases.json` |
+
 #### #198 review: digits after a language switch, and the filter guard's blind spot · 2026-11-09
 
 | | |
