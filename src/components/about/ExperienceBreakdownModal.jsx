@@ -1,6 +1,6 @@
 "use client";
 
-import { animate, AnimatePresence, motion } from "framer-motion";
+import { animate, AnimatePresence, m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -335,7 +335,7 @@ function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false
         />
 
         {/* Personal arc — starts at 12 o'clock (after SVG -rotate-90) */}
-        <motion.circle
+        <m.circle
           cx="90"
           cy="90"
           r={radius}
@@ -350,7 +350,7 @@ function ExperienceDonut({ personalMonths, employmentMonths, unavailable = false
         />
 
         {/* Employment arc — rotated to start where personal ended (+gap) */}
-        <motion.circle
+        <m.circle
           cx="90"
           cy="90"
           r={radius}
@@ -410,7 +410,7 @@ function RoleBar({ role, maxMonths, index, containerRef, pulse = false }) {
   const leading = isYears ? Math.floor(role.months / 12) : role.months;
 
   return (
-    <motion.li
+    <m.li
       className="grid gap-1 py-2"
       style={{ gridTemplateColumns: "minmax(0, 1fr) auto" }}
       // Slide in from the left as this role's list scrolls into the dialog —
@@ -440,7 +440,7 @@ function RoleBar({ role, maxMonths, index, containerRef, pulse = false }) {
         className="col-span-2 h-1.5 rounded-full overflow-hidden"
         style={{ background: "rgba(244, 227, 184, 0.05)" }}
       >
-        <motion.div
+        <m.div
           className="h-full rounded-full"
           style={{
             background:
@@ -457,7 +457,7 @@ function RoleBar({ role, maxMonths, index, containerRef, pulse = false }) {
           }}
         />
       </div>
-    </motion.li>
+    </m.li>
   );
 }
 
@@ -840,7 +840,7 @@ export function ExperienceBreakdownModal({
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -848,7 +848,7 @@ export function ExperienceBreakdownModal({
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
           onClick={onClose}
         >
-          <motion.div
+          <m.div
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
@@ -951,7 +951,7 @@ export function ExperienceBreakdownModal({
 
             {/* Hero block — donut + legend. Stacks on mobile so the
                 donut stays large enough to read. Slides up as it enters view. */}
-            <motion.div
+            <m.div
               variants={upV}
               initial="hidden"
               whileInView="visible"
@@ -1040,10 +1040,10 @@ export function ExperienceBreakdownModal({
                   </dd>
                 </div>
               </dl>
-            </motion.div>
+            </m.div>
 
             <section ref={repoListRef} className="mb-7">
-              <motion.header
+              <m.header
                 variants={upV}
                 initial="hidden"
                 whileInView="visible"
@@ -1058,10 +1058,10 @@ export function ExperienceBreakdownModal({
                     {t("modal.newestFirst")}
                   </span>
                 )}
-              </motion.header>
+              </m.header>
               {repos.length > 0 ? (
                 <>
-                  <motion.ul
+                  <m.ul
                     role="list"
                     variants={listV}
                     initial="hidden"
@@ -1088,7 +1088,7 @@ export function ExperienceBreakdownModal({
                       // stagger untouched.
                       const isExtra = i >= REPO_INITIAL_LIMIT;
                       return (
-                        <motion.li
+                        <m.li
                           key={r.url ?? r.name}
                           variants={rowV}
                           {...(isExtra
@@ -1117,10 +1117,10 @@ export function ExperienceBreakdownModal({
                           >
                             {dateText}
                           </time>
-                        </motion.li>
+                        </m.li>
                       );
                     })}
-                  </motion.ul>
+                  </m.ul>
                   {hasMoreRepos && (
                     <button
                       type="button"
@@ -1144,7 +1144,7 @@ export function ExperienceBreakdownModal({
             </section>
 
             <section ref={employmentListRef}>
-              <motion.header
+              <m.header
                 variants={upV}
                 initial="hidden"
                 whileInView="visible"
@@ -1159,9 +1159,9 @@ export function ExperienceBreakdownModal({
                     {t("modal.relativeDuration")}
                   </span>
                 )}
-              </motion.header>
+              </m.header>
               {roles.length > 0 ? (
-                <motion.ul
+                <m.ul
                   role="list"
                   variants={listV}
                   initial="hidden"
@@ -1183,7 +1183,7 @@ export function ExperienceBreakdownModal({
                         // the leading-snug line-box padding above
                         // the role text, so the visible gap above
                         // and below the line reads as equal.
-                        <motion.li
+                        <m.li
                           variants={rowV}
                           role="presentation"
                           aria-hidden="true"
@@ -1199,7 +1199,7 @@ export function ExperienceBreakdownModal({
                       />
                     </Fragment>
                   ))}
-                </motion.ul>
+                </m.ul>
               ) : (
                 <p className="text-sm text-fire-amber">
                   {employmentAvailable
@@ -1210,8 +1210,8 @@ export function ExperienceBreakdownModal({
             </section>
             </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

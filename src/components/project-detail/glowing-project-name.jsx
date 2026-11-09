@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useEffect, useState } from "react";
 
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -29,7 +29,7 @@ export default function GlowingTitle({ text }) {
     return (
         <div className="relative inline-block">
             {/* Bloom Ring Behind Text */}
-            <motion.div
+            <m.div
                 initial={{ scale: 1, opacity: 0.4 }}
                 animate={
                     reduced
@@ -45,7 +45,7 @@ export default function GlowingTitle({ text }) {
             />
 
             {/* Main Title */}
-            <motion.h1
+            <m.h1
                 initial={{
                     filter: "brightness(0%)",
                     opacity: 0,
@@ -76,7 +76,7 @@ export default function GlowingTitle({ text }) {
                 translate="no"
             >
                 {text}
-            </motion.h1>
+            </m.h1>
         </div>
     );
 }

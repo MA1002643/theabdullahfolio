@@ -33,7 +33,7 @@
 // switch, defaulting off, that names all three scripts it governs.
 
 import { useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Check, Lock, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -208,7 +208,7 @@ function PreferenceDialog({ open }) {
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -218,7 +218,7 @@ function PreferenceDialog({ open }) {
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-0 backdrop-blur-md sm:items-center sm:p-4"
           onClick={closePrefs}
         >
-          <motion.div
+          <m.div
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
@@ -427,8 +427,8 @@ function PreferenceDialog({ open }) {
                 </button>
               </footer>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

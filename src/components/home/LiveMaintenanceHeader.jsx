@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import MetricPopover from './MetricPopover';
 import HoverHint from './HoverHint';
@@ -576,7 +576,7 @@ export default function LiveMaintenanceHeader() {
   const v = (variants) => (reduceMotion ? undefined : variants);
 
   return (
-    <motion.section
+    <m.section
       role="region"
       aria-live="off"
       aria-busy={isInitialLoading}
@@ -608,7 +608,7 @@ export default function LiveMaintenanceHeader() {
           orchestrated entrance moment. */}
       {/* `origin-left rtl:origin-right`: the hairline draws in reading
           direction, like the wipe it leads (issue #82). */}
-      <motion.div
+      <m.div
         aria-hidden="true"
         className="elite-divider absolute inset-x-[clamp(0.75rem,2.5vw,2rem)] top-0 h-px origin-left rtl:origin-right"
         initial={{ opacity: 0, scaleX: 0 }}
@@ -623,7 +623,7 @@ export default function LiveMaintenanceHeader() {
         {isInitialLoading ? (
           <HeaderSkeleton key="skeleton" reduceMotion={reduceMotion} />
         ) : (
-          <motion.div
+          <m.div
             key="content"
             variants={v(passThroughVariants)}
             initial={reduceMotion ? { opacity: 0 } : 'hidden'}
@@ -636,12 +636,12 @@ export default function LiveMaintenanceHeader() {
             }
             className="relative min-w-0"
           >
-            <motion.div
+            <m.div
               variants={v(isRtl ? WIPE_RTL : WIPE_LTR)}
               className="min-w-0"
             >
               {/* ── Desktop / tablet: segmented field strip ─────────────── */}
-              <motion.div
+              <m.div
                 variants={v(contentVariants)}
                 className="hidden min-w-0 items-center gap-x-[clamp(0.7rem,1.7vw,1.4rem)] sm:flex"
               >
@@ -649,7 +649,7 @@ export default function LiveMaintenanceHeader() {
                     legend: the instrument explains itself on hover/focus,
                     reusing the metric popover's floater and single-open
                     slot. */}
-                <motion.div variants={v(childVariants)} className="shrink-0">
+                <m.div variants={v(childVariants)} className="shrink-0">
                   <MetricPopover
                     id="work-popover-state"
                     metricLabel={t('legend.title')}
@@ -675,14 +675,14 @@ export default function LiveMaintenanceHeader() {
                       <DeliveryRail state={state} reduceMotion={reduceMotion} />
                     </span>
                   </MetricPopover>
-                </motion.div>
+                </m.div>
 
                 <FieldRule variants={v(ruleVariants)} />
 
                 {/* FOCUS — the strip's signature field. Hover/focus inside
                     pauses the queue rotation so the link never swaps under
                     an incoming click. */}
-                <motion.div
+                <m.div
                   variants={v(childVariants)}
                   className="flex min-w-0 flex-1 flex-col justify-center gap-y-1"
                   onKeyDown={handleQueueKeys}
@@ -739,12 +739,12 @@ export default function LiveMaintenanceHeader() {
                       {monitoringCopy}
                     </p>
                   )}
-                </motion.div>
+                </m.div>
 
                 <FieldRule variants={v(ruleVariants)} />
 
                 {/* METRICS */}
-                <motion.div variants={v(childVariants)} className="shrink-0">
+                <m.div variants={v(childVariants)} className="shrink-0">
                   <MetricPopover
                     id="work-popover-prs"
                     metricLabel={t('metric.prs')}
@@ -762,11 +762,11 @@ export default function LiveMaintenanceHeader() {
                       compressed={compressed}
                     />
                   </MetricPopover>
-                </motion.div>
+                </m.div>
 
                 <FieldRule variants={v(ruleVariants)} />
 
-                <motion.div variants={v(childVariants)} className="shrink-0">
+                <m.div variants={v(childVariants)} className="shrink-0">
                   <MetricPopover
                     id="work-popover-issues"
                     metricLabel={t('metric.issues')}
@@ -784,7 +784,7 @@ export default function LiveMaintenanceHeader() {
                       compressed={compressed}
                     />
                   </MetricPopover>
-                </motion.div>
+                </m.div>
 
                 {/* Pushes column sheds below 1000px — the rule travels with
                     its column so no divider ever dangles. */}
@@ -793,7 +793,7 @@ export default function LiveMaintenanceHeader() {
                   className="hidden min-[1000px]:block"
                 />
 
-                <motion.div
+                <m.div
                   variants={v(childVariants)}
                   className="hidden shrink-0 min-[1000px]:block"
                 >
@@ -814,7 +814,7 @@ export default function LiveMaintenanceHeader() {
                       compressed={compressed}
                     />
                   </MetricPopover>
-                </motion.div>
+                </m.div>
 
                 {/* ACTIVITY — 14-day commit trace. Sheds first (<1100px);
                     the rule travels with its column. Not a popover trigger:
@@ -825,7 +825,7 @@ export default function LiveMaintenanceHeader() {
                       variants={v(ruleVariants)}
                       className="hidden min-[1100px]:block"
                     />
-                    <motion.div
+                    <m.div
                       variants={v(childVariants)}
                       className="hidden shrink-0 min-[1100px]:block"
                     >
@@ -834,7 +834,7 @@ export default function LiveMaintenanceHeader() {
                         reduceMotion={reduceMotion}
                         compressed={compressed}
                       />
-                    </motion.div>
+                    </m.div>
                   </>
                 )}
 
@@ -852,7 +852,7 @@ export default function LiveMaintenanceHeader() {
                   content={syncHint}
                   reduceMotion={reduceMotion}
                 >
-                  <motion.div
+                  <m.div
                     variants={v(childVariants)}
                     className="flex min-w-[7.5rem] shrink-0 items-baseline justify-end gap-x-1.5 whitespace-nowrap"
                   >
@@ -868,16 +868,16 @@ export default function LiveMaintenanceHeader() {
                       reduceMotion={reduceMotion}
                     />
                     <span className="sr-only">{syncDetail}</span>
-                  </motion.div>
+                  </m.div>
                 </HoverHint>
-              </motion.div>
+              </m.div>
 
               {/* ── Mobile (<640px): three micro-rows ───────────────────── */}
-              <motion.div
+              <m.div
                 variants={v(contentVariants)}
                 className="flex min-w-0 flex-col gap-y-1.5 sm:hidden"
               >
-                <motion.div
+                <m.div
                   variants={v(childVariants)}
                   className="flex items-center justify-between gap-2"
                 >
@@ -905,15 +905,15 @@ export default function LiveMaintenanceHeader() {
                       <span className="sr-only">{syncDetail}</span>
                     </span>
                   </HoverHint>
-                </motion.div>
+                </m.div>
 
-                <motion.div
+                <m.div
                   variants={v(childVariants)}
                   aria-hidden="true"
                   className="elite-divider h-px opacity-50"
                 />
 
-                <motion.div
+                <m.div
                   variants={v(childVariants)}
                   className="flex min-w-0 flex-col gap-y-1"
                   onKeyDown={handleQueueKeys}
@@ -955,11 +955,11 @@ export default function LiveMaintenanceHeader() {
                       {monitoringCopy}
                     </p>
                   )}
-                </motion.div>
+                </m.div>
 
                 {/* Metric row — restores the counters on mobile (previously
                     hidden below sm). Collapses first under compression. */}
-                <motion.div
+                <m.div
                   variants={v(childVariants)}
                   className={`overflow-hidden transition-[max-height,opacity] duration-200 ${compressed ? 'max-h-0 opacity-0' : 'max-h-16 opacity-100'}`}
                 >
@@ -1017,21 +1017,21 @@ export default function LiveMaintenanceHeader() {
                       />
                     </MetricPopover>
                   </div>
-                </motion.div>
-              </motion.div>
-            </motion.div>
+                </m.div>
+              </m.div>
+            </m.div>
 
             {/* Read-head — rides the wipe's reveal edge, then dissolves.
                 Sibling of the clipped subtree so the clip never cuts it;
                 opacity-0 keeps it invisible whenever variants are off. */}
-            <motion.div
+            <m.div
               variants={v(isRtl ? HEAD_RTL : HEAD_LTR)}
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 start-0 w-full opacity-0"
             >
               <span className="elite-divider-v absolute inset-y-0 end-0 w-px" />
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -1040,7 +1040,7 @@ export default function LiveMaintenanceHeader() {
           {data ? t('error.snapshot') : t('error.fallback')}
         </p>
       )}
-    </motion.section>
+    </m.section>
   );
 }
 
@@ -1065,7 +1065,7 @@ function Eyebrow({ children, compressed = false, className = '' }) {
 function StateWord({ state, label, reduceMotion, compact = false }) {
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <motion.span
+      <m.span
         key={state}
         initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
         animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
@@ -1075,7 +1075,7 @@ function StateWord({ state, label, reduceMotion, compact = false }) {
         style={{ color: '#ff6d05', textShadow: 'none' }}
       >
         {label}
-      </motion.span>
+      </m.span>
     </AnimatePresence>
   );
 }
@@ -1118,7 +1118,7 @@ function DeliveryRail({ state, reduceMotion }) {
             {i > 0 && (
               <span className="relative h-px min-w-0 flex-1 bg-[rgba(255,170,42,0.3)]">
                 {!idle && i <= activeIdx && (
-                  <motion.span
+                  <m.span
                     key={`fill-${state}-${i}`}
                     // Fills from the reading-start side: the rail is a flex
                     // row, so it mirrors in RTL and the fill must too.
@@ -1133,7 +1133,7 @@ function DeliveryRail({ state, reduceMotion }) {
                 )}
               </span>
             )}
-            <motion.span
+            <m.span
               key={`${stage.key}-${state}`}
               initial={reduceMotion ? false : { opacity: 0.2 }}
               animate={{ opacity: 1 }}
@@ -1274,7 +1274,7 @@ function ActivityField({ trace, reduceMotion, compressed }) {
                 },
               };
               return (
-                <motion.span
+                <m.span
                   key={i}
                   variants={reduceMotion ? undefined : tickVariants}
                   className="w-[2px] shrink-0"
@@ -1328,7 +1328,7 @@ function ActivityField({ trace, reduceMotion, compressed }) {
               },
             };
             return (
-              <motion.span
+              <m.span
                 key={i}
                 variants={reduceMotion ? undefined : barVariants}
                 className="w-[2px] shrink-0"
@@ -1452,7 +1452,7 @@ function StateLegendPanel({ state, repoCount }) {
 // dangling rule.
 function FieldRule({ variants, className = '' }) {
   return (
-    <motion.span
+    <m.span
       variants={variants}
       aria-hidden="true"
       className={`elite-divider-v h-[clamp(1.9rem,3.4vw,2.5rem)] w-px shrink-0 self-center ${className}`}
@@ -1477,7 +1477,7 @@ function RollingDigits({ value, reduceMotion, locale }) {
     <span className="inline-flex" dir="ltr" aria-hidden="true">
       {digits.map((digit, i) => (
         <AnimatePresence key={i} mode="popLayout" initial={false}>
-          <motion.span
+          <m.span
             key={`${value}-${digit}`}
             initial={
               reduceMotion
@@ -1506,7 +1506,7 @@ function RollingDigits({ value, reduceMotion, locale }) {
             }
           >
             {digit}
-          </motion.span>
+          </m.span>
         </AnimatePresence>
       ))}
     </span>
@@ -1560,7 +1560,7 @@ function FocusLine({
       </span>
       <span className="min-w-0 flex-1">
         <AnimatePresence mode="wait" initial={false}>
-          <motion.span
+          <m.span
             key={`${focus.type}-${focus.number}`}
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 5 }}
             animate={
@@ -1586,7 +1586,7 @@ function FocusLine({
             {/* <bdi>: a GitHub title is untranslated Latin text; isolated, it
                 cannot reorder the punctuation around it in RTL (issue #82). */}
             <bdi>{focus.title}</bdi>
-          </motion.span>
+          </m.span>
         </AnimatePresence>
       </span>
     </span>
@@ -1647,7 +1647,7 @@ function FocusSubRow({
       className={`block overflow-hidden transition-[max-height,opacity] duration-200 ${compressed ? 'max-h-0 opacity-0' : 'max-h-4 opacity-100'} ${className}`}
     >
       <AnimatePresence mode="wait" initial={false}>
-        <motion.span
+        <m.span
           key={showSecondary ? 'secondary' : `primary-${repo ?? 'global'}`}
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 5 }}
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
@@ -1664,7 +1664,7 @@ function FocusSubRow({
                 repo: () => <bdi>{repo}</bdi>,
                 age: () => <ActiveAge iso={lastActivityAt} />,
               })}
-        </motion.span>
+        </m.span>
       </AnimatePresence>
     </span>
   );
@@ -1743,7 +1743,7 @@ function SyncValue({ meta, stale, reduceMotion, compact = false }) {
           style={{ border: '1px solid rgba(249, 209, 116, 0.6)' }}
         />
       ) : (
-        <motion.span
+        <m.span
           key={meta.lastUpdated ?? 'sync'}
           aria-hidden="true"
           className="h-[5px] w-[5px] shrink-0 rounded-full"
@@ -2058,7 +2058,7 @@ function HeaderSkeleton({ reduceMotion }) {
   );
 
   return (
-    <motion.div
+    <m.div
       key="skeleton"
       variants={skeletonContainerVariants}
       initial="hidden"
@@ -2073,7 +2073,7 @@ function HeaderSkeleton({ reduceMotion }) {
       aria-hidden
     >
       {skeletonBlocks}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -2089,7 +2089,7 @@ const skeletonChildVariants = {
 
 function SkeletonBlock({ reduceMotion, className, children }) {
   return (
-    <motion.div
+    <m.div
       variants={skeletonChildVariants}
       transition={
         reduceMotion ? { duration: 0.12 } : { duration: 0.35, ease: 'easeOut' }
@@ -2097,6 +2097,6 @@ function SkeletonBlock({ reduceMotion, className, children }) {
       className={className}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

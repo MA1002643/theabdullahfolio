@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 // Character pool the digits cycle through during a scramble.
@@ -134,7 +134,7 @@ export default function GlitchText({ text = '404', parallax }) {
       : '';
 
   return (
-    <motion.div
+    <m.div
       // Same gating pattern as every other entrance on this page:
       // reduced-motion users render directly at the `animate`
       // target via `initial={false}`, no transition. Both `scale`
@@ -184,6 +184,6 @@ export default function GlitchText({ text = '404', parallax }) {
           {displayed}
         </h1>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

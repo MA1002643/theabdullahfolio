@@ -65,7 +65,9 @@ export default defineConfig({
     // (issue #82). Every project inherits this through `extends: true`.
     server: { deps: { inline: [/next-intl/] } },
     projects: [
-      project('unit'),
+      // `setup-motion` (issue #200): components render `m.*`, which is inert
+      // outside the root layout's <LazyMotion>; see tests/support/motionDouble.js.
+      project('unit', { setupFiles: ['tests/support/setup-motion.js'] }),
       project('property', {
         setupFiles: ['tests/support/setup-property.js'],
         // A soak (FC_RUNS=20000, nightly.yml) runs each property up to 200×
@@ -83,7 +85,7 @@ export default defineConfig({
       project('fitness', { fsModuleCache: false }),
       project('component', {
         environment: 'jsdom',
-        setupFiles: ['tests/support/setup-component.js'],
+        setupFiles: ['tests/support/setup-motion.js', 'tests/support/setup-component.js'],
       }),
       project('api', { setupFiles: ['tests/support/setup-api.js'] }),
     ],

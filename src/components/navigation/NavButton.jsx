@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
   Home,
@@ -134,7 +134,7 @@ const NavButton = ({
     const baseDelay = 0.1;
     const delay = index != null ? baseDelay + index * 0.08 : baseDelay;
     return (
-      <motion.div
+      <m.div
         // Reduced motion drops the `scale` (a transform — actual movement) and
         // reveals with a plain fade, the same collapse the rest of the site
         // applies (issue #87). The fade itself is kept: it isn't vestibular
@@ -206,7 +206,7 @@ const NavButton = ({
             </span>
           </span>
         </NavLinkShell>
-      </motion.div>
+      </m.div>
     );
   }
 
@@ -244,7 +244,7 @@ const NavButton = ({
         zIndex,
       }}
     >
-      <motion.div
+      <m.div
         // Identical reveal to the two-column branch: opacity always, scale only
         // when motion is allowed. Pinned in BOTH targets for the same reason
         // stated there — an omitted `scale` leaves the last value in place.
@@ -369,7 +369,7 @@ const NavButton = ({
             </span>
           </span>
         </NavLinkShell>
-      </motion.div>
+      </m.div>
     </div>
   );
 };

@@ -82,7 +82,8 @@ unit test would think to check:
 | `logicalCss` | `src/app/globals.css`, parsed with postcss so comments never count, sets no physical inline-axis box property (`margin-left`, `padding-right`, `border-left`, `text-align: left`, `float`, `clear`) outside a short allowlist where each entry says why. A physical margin looks fine in English and sits on the wrong side of every right-to-left page, which nothing else would notice. Also: a `:dir()` selector never shares a selector list (an older browser would drop the whole rule), and `--inline-sign` is 1 and -1. |
 | `i18nBudget` | What each route's client message provider receives stays at or under 8 kB gzipped, for every locale × route, measured through the same `loadMessages` → `pickMessages` path the page serialises. `/uses` alone is allowed 9 kB (owner decision, 2026-11-01): it server-renders a description for each of its 42 curated stack tiles, and Russian measured 8,279 bytes after everything not on screen at first paint was deferred. The fitness project runs with Vitest's on-disk module cache off, because a cached compile of the catalogue loader once made every locale measure as English (defects table). |
 | `imageLoadingPolicy` | No `next/image` uses the deprecated `priority`. `preload` appears only on an allowlisted image, and each entry records the route and viewport where that image measured as the LCP. An `eager` image that is not preloaded carries `fetchPriority="low"`, because without it React 19's server renderer preloads the image anyway (issue #55). |
-| `deferredChunks` | The modules kept out of every first load (the Ember Passage runtime, the `/about` dialogs) are statically imported only from inside their own deferred graph, and each entry point is still loaded through `import()`. The bundle budget cannot catch this: its 10 % headroom is larger than the modules (issue #55). |
+| `deferredChunks` | The modules kept out of every first load (the Ember Passage runtime, the `/about` dialogs, framer-motion's feature modules) are statically imported only from inside their own deferred graph, and each entry point is still loaded through `import()`. The bundle budget cannot catch this: its 10 % headroom is larger than the modules (issues #55, #200). |
+| `lazyMotion` | framer-motion stays on `LazyMotion` (issue #200): no file in `src/` imports the `motion` component (or a namespace that includes it); `domAnimation` / `domMax` are imported only in `src/lib/motion/{features,layoutFeatures}.js`, which only the loader reaches, through `import()`; the root layout mounts a `strict` provider; and no file in the static graph of the three layouts every route renders imports an engine API (`animate`, `useAnimation`, `useAnimate`, …). That last rule is the 16 kB the intro loader's `animate()` held in every first load; `useSpring` is allowed, because deferring its one root-layout user measured as no saving. The `motion`, provider and engine rules failed on `main`; the feature-module rules have nothing to find there. |
 | `i18nCatalogueText` | No parsed catalogue string, in any locale, contains a literal escape sequence such as ` `: a real sentence never does, so one that does was double-escaped on its way into the JSON. |
 
 ### L2 · Unit and property-based tests
@@ -145,6 +146,19 @@ and the re-render that follows must cancel it before idle arrives.
 possible polyfills for APIs jsdom lacks, and the shared MSW server. Framer
 Motion animations are skipped so a visibility assertion never depends on how
 far a tween had run.
+
+**`m` is the full `motion` here** (issue #200). The site renders framer's `m.*`
+components, which take their renderer from the root layout's `<LazyMotion>`. A
+component test renders without that layout, and an `m.div` with no provider
+never animates and keeps its `initial` style, so every fade-in from opacity 0
+would fail `toBeVisible`. `tests/support/setup-motion.js` (the `unit` and
+`component` projects) maps `m` to `motion`, which is what every component
+rendered before the migration. A test file with its own
+`vi.mock('framer-motion', …)` spreads `withFullMotion(actual)` from
+`tests/support/motionDouble.js` instead of `actual`. The real asynchronous path
+is tested once, against the real `m`, in `lazyMotionFirstPaint.test.jsx`: the
+content is in the document before the features arrive, and the entrance plays
+when they do.
 
 **Copy comes from the real catalogues.** Components read their text through
 next-intl, so a test renders them with `renderWithIntl` from

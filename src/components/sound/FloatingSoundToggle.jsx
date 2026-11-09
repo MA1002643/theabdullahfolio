@@ -20,7 +20,7 @@
 // Positioned bottom-RIGHT to mirror the NowPlaying widget's bottom-left anchor
 // (both z-50), so the two never collide.
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { usePathname } from '@/i18n/navigation';
 import { Volume2, VolumeX } from 'lucide-react';
@@ -48,7 +48,7 @@ export default function FloatingSoundToggle() {
   return (
     <AnimatePresence>
       {visible && (
-        <motion.button
+        <m.button
           type="button"
           onClick={toggleSound}
           aria-pressed={soundOn}
@@ -83,7 +83,7 @@ export default function FloatingSoundToggle() {
           {/* Soft pulse ring while live — the same "genuinely on" cue the
               footer's SoundControl uses. Only rendered when on. */}
           {soundOn && !reduce && (
-            <motion.span
+            <m.span
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 rounded-full border border-[#ff6d05]/50"
               initial={{ opacity: 0.55, scale: 1 }}
@@ -96,7 +96,7 @@ export default function FloatingSoundToggle() {
           ) : (
             <VolumeX className="h-[1.15rem] w-[1.15rem]" strokeWidth={1.75} aria-hidden="true" />
           )}
-        </motion.button>
+        </m.button>
       )}
     </AnimatePresence>
   );

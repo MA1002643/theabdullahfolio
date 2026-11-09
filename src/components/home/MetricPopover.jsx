@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
+import { AnimatePresence, m, useIsPresent } from 'framer-motion';
 import HoverHint from './HoverHint';
 import { useStaggeredScrollReveal } from '@/hooks/useStaggeredScrollReveal';
 import { animateToTarget } from '@/utils/animationCurves';
@@ -96,7 +96,7 @@ const noMotionVariants = {
 // "leaving" can only be read from inside, with `useIsPresent`.
 function PresencePanel({ ref, ...props }) {
   const isPresent = useIsPresent();
-  return <motion.div ref={ref} {...props} inert={!isPresent} />;
+  return <m.div ref={ref} {...props} inert={!isPresent} />;
 }
 
 const OPEN_INTENT_MS = 120;
@@ -506,12 +506,12 @@ export default function MetricPopover({
       <div className="repo-card-breathe flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
         {/* Inner cascade orchestrator — staggers the header block, then the
             list, inheriting the panel's animation state. */}
-        <motion.div
+        <m.div
           variants={contentV}
           className="flex min-h-0 flex-1 flex-col p-4"
         >
           {panelContent ? (
-            <motion.div variants={sectionV}>{panelContent}</motion.div>
+            <m.div variants={sectionV}>{panelContent}</m.div>
           ) : (
             <>
               {/* SR summary: static full text, announced once per real change —
@@ -522,7 +522,7 @@ export default function MetricPopover({
               </p>
 
               {/* Header block slides up as one unit. */}
-              <motion.div
+              <m.div
                 variants={sectionV}
                 aria-hidden="true"
                 className="shrink-0"
@@ -565,7 +565,7 @@ export default function MetricPopover({
                   </p>
                 )}
                 <div aria-hidden="true" className="elite-divider mb-3 h-px" />
-              </motion.div>
+              </m.div>
 
               {/* Item list — its own scroll container AND the reveal observer's
               root: rows slide in from the left, staggered, and replay on
@@ -653,7 +653,7 @@ export default function MetricPopover({
                       </button>
                       <AnimatePresence initial={false}>
                         {isExpanded && (
-                          <motion.div
+                          <m.div
                             key="rows"
                             id={sectionId}
                             initial={
@@ -762,7 +762,7 @@ export default function MetricPopover({
                                 </li>
                               )}
                             </ul>
-                          </motion.div>
+                          </m.div>
                         )}
                       </AnimatePresence>
                     </li>
@@ -782,7 +782,7 @@ export default function MetricPopover({
               </ul>
             </>
           )}
-        </motion.div>
+        </m.div>
       </div>
     </PresencePanel>
   );

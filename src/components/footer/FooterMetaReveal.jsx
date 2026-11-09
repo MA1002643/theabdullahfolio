@@ -17,7 +17,7 @@
 // prefers-reduced-motion it collapses to a plain block fade — no flipping.
 
 import { useRef } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useFooterReveal } from './useFooterReveal';
 import { cn } from '@/lib/utils';
 import SoundControl from './SoundControl';
@@ -53,7 +53,7 @@ export default function FooterMetaReveal({
   const show = useFooterReveal(ref, 0.6);
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
       className={cn('relative', className)}
       variants={reduced ? fadeBlock : flapParent}
@@ -71,7 +71,7 @@ export default function FooterMetaReveal({
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#ff6d05]/25"
       />
       {!reduced && (
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 h-px origin-left bg-[#ff6d05] rtl:origin-right shadow-[0_0_10px_#ff6d05]"
           initial={{ scaleX: 0 }}
@@ -112,6 +112,6 @@ export default function FooterMetaReveal({
           </FlapItem>
         )}
       </div>
-    </motion.div>
+    </m.div>
   );
 }

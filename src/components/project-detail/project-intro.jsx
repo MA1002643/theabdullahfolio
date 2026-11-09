@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { m } from "framer-motion"
 import { useTranslations } from "next-intl"
 import GlowingTitle from "@/components/project-detail/glowing-project-name"
 
@@ -18,14 +18,14 @@ export default function ProjectIntro({ name, description, links }) {
     return (
         <section className="absolute top-14 sm:top-20 md:top-10 left-1/2 -translate-x-1/2 flex flex-col items-center justify-start text-center space-y-2 px-4 md:px-0 z-20">
             <GlowingTitle text={name || t("intro.fallbackName")} />
-            <motion.p
+            <m.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 1 }}
                 className="text-[1.1rem] sm:text-[1.3rem] md:text-[1.5rem] !font-thin text-shadow-neon-light-orange"
             >
                 {description || t("intro.fallbackDescription")}
-            </motion.p>
+            </m.p>
             {/* The accessible pair of the 3D laptop's buttons (issue #92): in
                 normal flow, so keyboard focus and screen readers land where the
                 links actually are. The in-scene copies are pointer-only. */}

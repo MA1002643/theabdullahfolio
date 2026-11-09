@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import React from "react";
 
 export default function InfinityLoader() {
@@ -17,13 +17,13 @@ export default function InfinityLoader() {
 
     return (
         <div className="flex items-center justify-center h-screen bg-black/80">
-            <motion.div
+            <m.div
                 className="flex gap-3 text-glow-stroke-neon"
                 initial="start"
                 animate="animate"
             >
                 {[0, 1, 2].map((i) => (
-                    <motion.div
+                    <m.div
                         key={i}
                         className="w-5 h-5 rounded-full bg-[#ff6d05]"
                         style={{
@@ -42,7 +42,7 @@ export default function InfinityLoader() {
                         }}
                     />
                 ))}
-            </motion.div>
+            </m.div>
         </div>
     );
 }

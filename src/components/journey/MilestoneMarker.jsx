@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 // The dot on the spine for one milestone. Not a whileInView island: `active`
 // arrives from the owning TimelineNode so the ring draw, the icon pop, the
@@ -42,7 +42,7 @@ const MilestoneMarker = ({ accent, Icon, active, reduceMotion }) => {
           stroke="rgba(255,255,255,0.08)"
           strokeWidth="2"
         />
-        <motion.circle
+        <m.circle
           cx="20"
           cy="20"
           r="18"
@@ -63,7 +63,7 @@ const MilestoneMarker = ({ accent, Icon, active, reduceMotion }) => {
       {/* One-shot ping — mounted only for the animated path, so the reduced
           branch never even carries the element. */}
       {active && !reduceMotion && (
-        <motion.span
+        <m.span
           className="absolute inset-0 rounded-full border"
           style={{ borderColor: accent }}
           initial={{ scale: 1, opacity: 0.5 }}
@@ -72,7 +72,7 @@ const MilestoneMarker = ({ accent, Icon, active, reduceMotion }) => {
         />
       )}
 
-      <motion.span
+      <m.span
         className="relative flex items-center justify-center"
         style={{ color: accent }}
         initial={false}
@@ -86,7 +86,7 @@ const MilestoneMarker = ({ accent, Icon, active, reduceMotion }) => {
         }
       >
         <Icon className="h-4 w-4" strokeWidth={2} />
-      </motion.span>
+      </m.span>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useTranslations } from 'next-intl';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
@@ -37,7 +37,7 @@ export default function DidYouMean({ suggestion }) {
   if (!suggestion) return null;
 
   return (
-    <motion.p
+    <m.p
       initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={
@@ -62,6 +62,6 @@ export default function DidYouMean({ suggestion }) {
           </TransitionLink>
         ),
       })}
-    </motion.p>
+    </m.p>
   );
 }

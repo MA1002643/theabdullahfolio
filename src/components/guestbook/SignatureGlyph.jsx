@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
@@ -38,7 +38,7 @@ export default function SignatureGlyph({ d, authorName, delay = 0, play = true }
       }
       className="mt-3 h-10 w-auto max-w-[9rem] overflow-visible [filter:drop-shadow(0_0_3px_rgba(255,109,5,0.7))] sm:h-12 sm:max-w-[10rem]"
     >
-      <motion.path
+      <m.path
         d={d}
         fill="none"
         stroke="#eab53e"

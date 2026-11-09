@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
-import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import { m, useInView, useScroll, useTransform } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useDirection } from '@/i18n/useDirection';
@@ -152,7 +152,7 @@ const TimelineNode = ({
               EVERY pill whatever the sway, on every width — the same
               on-the-timeline read as md+'s centred straddle. */}
           <div className="absolute start-[0.5rem] top-1/2 -translate-y-1/2 md:start-1/2 md:-translate-x-1/2 md:rtl:translate-x-1/2">
-            <motion.span
+            <m.span
               // Year in the page-title ember (owner correction — the era
               // labels belong to the same voice as MY JOURNEY itself).
               className="block whitespace-nowrap rounded-full border border-[#ff6d05]/40 bg-black/80 px-4 py-1 font-mono text-sm tracking-[0.2em] text-[#ff6d05] shadow-[0_0_12px_rgba(255,109,5,0.25)]"
@@ -167,7 +167,7 @@ const TimelineNode = ({
               }
             >
               {formatYear(milestone.year)}
-            </motion.span>
+            </m.span>
           </div>
         </div>
       )}
@@ -207,7 +207,7 @@ const TimelineNode = ({
             spine axis 1.375rem → card at ml-12 (3rem) on mobile; card width
             calc(50% - 4rem) leaves a 4rem gap minus the marker's radius on
             desktop. */}
-        <motion.div
+        <m.div
           aria-hidden
           className={clsx(
             // journey-connector: the card-hover energise hook in globals.css
@@ -241,7 +241,7 @@ const TimelineNode = ({
             hover lift lives on an INNER element (.journey-lift, plain CSS) so
             the CSS transform can never fight framer's x/y writes on this
             wrapper. */}
-        <motion.div
+        <m.div
           className={clsx(
             'relative ms-12 md:ms-0 md:w-[calc(50%-4rem)]',
             isLeft ? 'md:me-auto' : 'md:ms-auto',
@@ -262,7 +262,7 @@ const TimelineNode = ({
               {/* flex-wrap: the tenure span drops to its own line on narrow
                   phones instead of squeezing the pill (Lidl's is the widest
                   pairing). */}
-              <motion.div variants={childVariants} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <m.div variants={childVariants} className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span
                   className="journey-date rounded-full border px-2.5 py-0.5 font-mono"
                   style={{
@@ -297,21 +297,21 @@ const TimelineNode = ({
                     <ExternalLink className="h-3.5 w-3.5" strokeWidth={2} />
                   </a>
                 )}
-              </motion.div>
+              </m.div>
 
               {/* Title = the page-title ember, body = the contact intro's
                   per-word gold→ember fire ink (owner corrections, second
                   round — the flat #ffaa2a/#ffbb55 pairing was superseded). */}
-              <motion.h3 variants={childVariants} className="journey-title mt-2.5 font-bold text-[#ff6d05]">
+              <m.h3 variants={childVariants} className="journey-title mt-2.5 font-bold text-[#ff6d05]">
                 {milestone.title}
-              </motion.h3>
+              </m.h3>
 
-              <motion.p variants={childVariants} className="journey-desc mt-1.5 font-light">
+              <m.p variants={childVariants} className="journey-desc mt-1.5 font-light">
                 <FireText text={milestone.description} />
-              </motion.p>
+              </m.p>
 
               {milestone.tags.length > 0 && (
-                <motion.ul
+                <m.ul
                   variants={childVariants}
                   className="mt-3 flex list-none flex-wrap gap-1.5"
                 >
@@ -325,11 +325,11 @@ const TimelineNode = ({
                       {tag}
                     </li>
                   ))}
-                </motion.ul>
+                </m.ul>
               )}
             </article>
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </li>
   );

@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber"
 import * as THREE from "three"
 import { Html } from "@react-three/drei"
 import LaptopContent from "./laptop-content"
-import { motion } from "framer-motion"
+import { m } from "framer-motion"
 
 export default function LaptopModel({ position, links, copy }) {
     const groupRef = useRef(null)
@@ -241,13 +241,13 @@ export default function LaptopModel({ position, links, copy }) {
                 </mesh>
 
                 {/* Screen with HTML content */}
-                <motion.mesh position={[LCX, 0.68, 0]} rotation={[0, Math.PI, 0]}>
+                <m.mesh position={[LCX, 0.68, 0]} rotation={[0, Math.PI, 0]}>
                     <planeGeometry args={[2.1, 1.22]} />
                     <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.4} metalness={0.05} roughness={0.08} side={THREE.BackSide} />
                     <Html transform distanceFactor={1} occlude={false} zIndexRange={[100, 0]} className="w-[880px] h-[480px] overflow-hidden rounded-md">
                         <LaptopContent links={links} copy={copy} />
                     </Html>
-                </motion.mesh>
+                </m.mesh>
 
                 {/* Webcam and status lights */}
                 <mesh position={[0, 1.33, -0.005]} castShadow>

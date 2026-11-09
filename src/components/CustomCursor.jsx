@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { m, useMotionValue, useSpring } from 'framer-motion';
 import { onMediaChange } from '@/lib/mediaQuery';
 
 // ── Custom cursor ───────────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ export default function CustomCursor() {
 
   return (
     <div aria-hidden="true" className="custom-cursor-root">
-      <motion.div
+      <m.div
         className="custom-cursor-ring"
         style={{
           x: ringX,
@@ -174,13 +174,13 @@ export default function CustomCursor() {
           than mounted on demand, so the first hover never pays a mount. No
           reduced-motion branch is needed: this whole component disables
           itself under `prefers-reduced-motion` (see `enabled`). */}
-      <motion.div
+      <m.div
         className="custom-cursor-scrub"
         style={{ x: ringX, y: ringY }}
         animate={{ opacity: scrubbing && !pressed ? 1 : 0 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
       >
-        <motion.svg
+        <m.svg
           width="22"
           height="56"
           viewBox="0 0 22 56"
@@ -210,9 +210,9 @@ export default function CustomCursor() {
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-        </motion.svg>
-      </motion.div>
-      <motion.div
+        </m.svg>
+      </m.div>
+      <m.div
         className="custom-cursor-dot"
         style={{
           x: dotX,

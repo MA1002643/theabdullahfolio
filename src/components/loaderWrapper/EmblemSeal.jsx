@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 import { localeInfo } from '@/i18n/locales';
 import { useEmblemPointer } from '@/hooks/useEmblemPointer';
@@ -87,7 +87,7 @@ export default function EmblemSeal({ phase, reduced }) {
   const enter = (initial) => (reduced ? false : initial);
 
   return (
-    <motion.div
+    <m.div
       className="relative h-full w-full"
       style={sealStyle}
       {...handlers}
@@ -127,7 +127,7 @@ export default function EmblemSeal({ phase, reduced }) {
         </defs>
 
         {/* Whole-seal entrance: a quiet scale-up so nothing pops in cold. */}
-        <motion.g
+        <m.g
           style={{ transformOrigin: '512px 512px', transformBox: 'view-box' }}
           initial={enter({ opacity: 0, scale: 0.9 })}
           animate={{ opacity: 1, scale: 1 }}
@@ -136,7 +136,7 @@ export default function EmblemSeal({ phase, reduced }) {
           {/* (1) The inscription: the double rings stroke themselves on like a
               compass tracing the seal, outer pair first then inner pair. */}
           {RINGS.map((ring) => (
-            <motion.circle
+            <m.circle
               key={ring.r}
               cx={512}
               cy={512}
@@ -160,7 +160,7 @@ export default function EmblemSeal({ phase, reduced }) {
           <path id="emblem-botArc" d={BOT_ARC_D} fill="none" />
 
           {/* (3) The name engraves around the arcs, top then bottom. */}
-          <motion.text
+          <m.text
             fill="url(#emblem-flameText)"
             fontWeight="800"
             fontSize="88"
@@ -176,8 +176,8 @@ export default function EmblemSeal({ phase, reduced }) {
             <textPath href="#emblem-topArc" startOffset="50%" textAnchor="middle">
               {given}
             </textPath>
-          </motion.text>
-          <motion.text
+          </m.text>
+          <m.text
             fill="url(#emblem-flameText)"
             fontWeight="800"
             fontSize="88"
@@ -193,11 +193,11 @@ export default function EmblemSeal({ phase, reduced }) {
             <textPath href="#emblem-botArc" startOffset="50%" textAnchor="middle">
               {family}
             </textPath>
-          </motion.text>
+          </m.text>
 
           {/* (4) Side diamonds set into place — each group scales from its own
               centre so the ornaments pop where they belong, not from the middle. */}
-          <motion.g
+          <m.g
             fill="#EFC04A"
             style={{ transformOrigin: '185px 512px', transformBox: 'view-box' }}
             initial={enter({ opacity: 0, scale: 0.4 })}
@@ -207,8 +207,8 @@ export default function EmblemSeal({ phase, reduced }) {
             {DIAMONDS_LEFT.map((pts, i) => (
               <polygon key={`l${i}`} points={pts} />
             ))}
-          </motion.g>
-          <motion.g
+          </m.g>
+          <m.g
             fill="#EFC04A"
             style={{ transformOrigin: '839px 512px', transformBox: 'view-box' }}
             initial={enter({ opacity: 0, scale: 0.4 })}
@@ -218,14 +218,14 @@ export default function EmblemSeal({ phase, reduced }) {
             {DIAMONDS_RIGHT.map((pts, i) => (
               <polygon key={`r${i}`} points={pts} />
             ))}
-          </motion.g>
+          </m.g>
 
           {/* (5 + climax) The flame monogram. The bloom sits behind it; the
               whole group leans toward the cursor a touch more than the seal
               tilts, so it floats above the rings (parallax). */}
-          <motion.g style={flameStyle}>
+          <m.g style={flameStyle}>
             {/* Core ember bloom — the contained light that becomes the wipe. */}
-            <motion.circle
+            <m.circle
               cx={512}
               cy={520}
               r={150}
@@ -242,7 +242,7 @@ export default function EmblemSeal({ phase, reduced }) {
 
             {/* Cool gold outline — the line-art that the fill later overtakes. */}
             {!reduced && (
-              <motion.path
+              <m.path
                 d={MONO_D}
                 fill="none"
                 stroke="url(#emblem-flameMono)"
@@ -263,7 +263,7 @@ export default function EmblemSeal({ phase, reduced }) {
                 An SVG element's default clip reference box is its own fill-box,
                 so inset(100%→0% from the top) reveals the monogram bottom-up
                 within its own bounds. Shown whole under reduced motion. */}
-            <motion.path
+            <m.path
               d={MONO_D}
               fill="url(#emblem-flameMono)"
               fillRule="evenodd"
@@ -276,9 +276,9 @@ export default function EmblemSeal({ phase, reduced }) {
               }}
               transition={{ duration: reduced ? 0 : igniteSec * 0.8, ease: INK }}
             />
-          </motion.g>
-        </motion.g>
+          </m.g>
+        </m.g>
       </svg>
-    </motion.div>
+    </m.div>
   );
 }

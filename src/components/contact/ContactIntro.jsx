@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
@@ -74,7 +74,7 @@ export default function ContactIntro({ className = '', style }) {
       };
 
   return (
-    <motion.p
+    <m.p
       className={className}
       style={style}
       variants={container}
@@ -87,14 +87,14 @@ export default function ContactIntro({ className = '', style }) {
           {/* inline-block so the word can take transform + blur; the space
               between words is a regular breakable text node OUTSIDE the span so
               the paragraph still wraps naturally. */}
-          <motion.span
+          <m.span
             variants={word}
             style={{ display: 'inline-block', ...wordFill(i, words.length) }}
           >
             {w}
-          </motion.span>
+          </m.span>
         </Fragment>
       ))}
-    </motion.p>
+    </m.p>
   );
 }

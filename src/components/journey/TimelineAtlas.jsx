@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 import clsx from 'clsx';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 import { journeyData } from '@/app/data';
 import { formatNumber } from '@/i18n/format';
@@ -364,7 +364,7 @@ const TimelineAtlas = ({
   };
 
   return (
-    <motion.div
+    <m.div
       ref={rootRef}
       // journey-atlas: JourneyPalette's jump target (the palette's "overlap
       // atlas" action), the same id-anchor contract as the era-<year> lis.
@@ -752,7 +752,7 @@ const TimelineAtlas = ({
           <FireText text={t('atlas.key.stacked')} />
         </span>
       </p>
-    </motion.div>
+    </m.div>
   );
 };
 

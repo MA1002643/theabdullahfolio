@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { fluid } from '@/lib/fluidScale';
@@ -139,42 +139,42 @@ export default function Plate({
         style={{ columnGap: fluid(1) }}
       >
         {/* Ordinal — decorative: the heading carries the name. */}
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="uses-anim uses-ordinal font-mono leading-none"
           {...rise(0.06)}
         >
           {ordinal}
-        </motion.span>
+        </m.span>
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
           <div className="min-w-0">
-            <motion.p
+            <m.p
               className="uses-anim uses-eyebrow font-mono uppercase"
               {...rise(0.06)}
             >
               {eyebrow}
-            </motion.p>
-            <motion.h2
+            </m.p>
+            <m.h2
               id={headingId}
               className="uses-anim uses-title font-semibold"
               {...rise(0.1)}
             >
               {title}
-            </motion.h2>
+            </m.h2>
           </div>
           {provenance ? (
-            <motion.p
+            <m.p
               className="uses-anim uses-provenance font-mono uppercase text-foreground/60"
               {...rise(0.16)}
             >
               {provenance}
-            </motion.p>
+            </m.p>
           ) : null}
         </div>
       </header>
 
       {/* The hairline draws left→right as the plate arrives, then holds. */}
-      <motion.div
+      <m.div
         aria-hidden="true"
         className="uses-anim uses-rule"
         style={{ marginBlock: fluid(0.9) }}

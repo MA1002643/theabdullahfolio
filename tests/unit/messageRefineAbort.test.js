@@ -25,7 +25,8 @@ const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...option
 // is under test here; the hook's state is, and this makes the DOM mirror it.
 vi.mock('framer-motion', async (importOriginal) => {
   const actual = await importOriginal();
-  return { ...actual, AnimatePresence: ({ children }) => children ?? null };
+  const { withFullMotion } = await import('../support/motionDouble.js');
+  return { ...withFullMotion(actual), AnimatePresence: ({ children }) => children ?? null };
 });
 
 function streamedFetch() {

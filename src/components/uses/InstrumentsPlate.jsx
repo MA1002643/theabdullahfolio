@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useDirection } from '@/i18n/useDirection';
@@ -106,7 +106,7 @@ function Meter({
   const etch = at(ETCH_AT_S, ETCH_S);
 
   return (
-    <motion.a
+    <m.a
       ref={ref}
       href={href}
       target="_blank"
@@ -133,7 +133,7 @@ function Meter({
       transition={at(0, LAND_S)}
     >
       {/* The ruler etches in left→right behind its cutter. */}
-      <motion.span
+      <m.span
         aria-hidden="true"
         className="uses-anim uses-meter__ticks"
         style={{ originX: isRtl ? 1 : 0 }}
@@ -142,7 +142,7 @@ function Meter({
         transition={etch}
       />
       {reduceMotion ? null : (
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="uses-meter__etch"
           initial={{ left: isRtl ? '100%' : '0%', opacity: 0 }}
@@ -163,7 +163,7 @@ function Meter({
         {/* The digits are aria-hidden while they climb; the sr-only copy
             beside them carries the final value into the link's name. */}
         <span className="sr-only">{num(figure)}</span>
-        <motion.span
+        <m.span
           className="uses-anim uses-figure font-semibold"
           aria-hidden="true"
           initial={reduceMotion ? false : rest(0, 8)}
@@ -171,8 +171,8 @@ function Meter({
           transition={at(FIGURE_AT_S, FIGURE_S)}
         >
           <span ref={nodeRef}>{num(reduceMotion ? figure : 0)}</span>
-        </motion.span>
-        <motion.span
+        </m.span>
+        <m.span
           aria-hidden="true"
           className="uses-anim inline-flex"
           initial={reduceMotion ? false : rest(-6, 6)}
@@ -180,32 +180,32 @@ function Meter({
           transition={at(0.42, 0.45)}
         >
           <ArrowUpRight className="h-4 w-4 shrink-0 text-[#ffaa2a] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </motion.span>
+        </m.span>
       </span>
       {/* Word breaks between the stacked lines. They render nothing (block
           siblings), but without them the name reads as one run,
           "124Vitest suites1391 test cases". */}
       {' '}
       <span className="uses-label uses-mask mt-2 block font-mono uppercase text-[#ffaa2a]">
-        <motion.span
+        <m.span
           className="uses-anim uses-mask__in"
           initial={reduceMotion ? false : { y: '140%' }}
           animate={{ y: on ? '0%' : reduceMotion ? '0%' : '140%' }}
           transition={at(0.3, 0.55)}
         >
           {label}
-        </motion.span>
+        </m.span>
       </span>
       {' '}
-      <motion.span
+      <m.span
         className="uses-anim uses-note mt-1 block text-foreground/60"
         {...riseProps(on, reduceMotion, at(0.38, 0.5), 6)}
       >
         {sub}
-      </motion.span>
+      </m.span>
       {' '}
       <span className="sr-only">{t('instruments.tileOpens')}</span>
-    </motion.a>
+    </m.a>
   );
 }
 

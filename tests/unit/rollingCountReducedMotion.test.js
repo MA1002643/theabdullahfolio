@@ -12,7 +12,7 @@ const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...option
 // review): RollingCount now reads the shared useReducedMotion — the OS
 // preference OR the guestbook's manual switch, which reaches components as a
 // MotionConfig with reducedMotion="always" — and renders a stationary number
-// when motion is off. Everything framer is real except `motion.span`, which
+// when motion is off. Everything framer is real except `m.span`, which
 // becomes a probe so the test can tell a rolling count (a motion element with
 // an entry offset) from a stationary one (a plain span).
 
@@ -29,12 +29,12 @@ vi.mock('framer-motion', async (importOriginal) => {
       children,
     );
   });
-  return {
-    ...actual,
-    motion: new Proxy(actual.motion, {
-      get: (target, key) => (key === 'span' ? MotionSpan : target[key]),
-    }),
-  };
+  // The component renders `m.span` (issue #200); outside a LazyMotion `m` is
+  // the full `motion` (tests/support/motionDouble.js), probed the same way.
+  const probe = new Proxy(actual.motion, {
+    get: (target, key) => (key === 'span' ? MotionSpan : target[key]),
+  });
+  return { ...actual, motion: probe, m: probe };
 });
 vi.mock('@/hooks/useUiSound', () => ({ useUiSound: () => () => {} }));
 

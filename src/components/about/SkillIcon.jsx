@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -233,7 +233,7 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
     // off-screen. Animating transform/opacity here is safe: positioning is
     // measured via offsetWidth/offsetHeight (unaffected by transform), and `left`/
     // `top`/`visibility` stay on the inline style.
-    <motion.div
+    <m.div
       ref={ref}
       variants={panelV}
       initial="hidden"
@@ -274,13 +274,13 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
       <div className="repo-card-breathe rounded-lg overflow-hidden flex flex-col min-h-0 flex-1">
         {/* Inner cascade orchestrator — staggers the header block, then the list,
             inheriting the panel's animation state through the plain wrapper. */}
-        <motion.div
+        <m.div
           variants={contentV}
           className="p-4 flex flex-col min-h-0 flex-1"
           style={{ padding: fluid(1) }}
         >
           {/* Header block slides up as one unit (the card's childVariants). */}
-          <motion.div variants={sectionV} className="shrink-0">
+          <m.div variants={sectionV} className="shrink-0">
             <p className="abt-micro text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">{t("skillsCard.popover.eyebrow")}</p>
             <h3
               className="text-sm sm:text-base font-semibold mb-1 flex items-center gap-2"
@@ -331,7 +331,7 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
               </span>
             </p>
             <div aria-hidden="true" className="h-px elite-divider mb-3" />
-          </motion.div>
+          </m.div>
           {/* Repo list — each row slides in from the left, staggered, after the
               header. Same variants the Most Active Repository card's metric rows
               use. `overflow-x-hidden` clips the -16px slide so it can't flash a
@@ -386,9 +386,9 @@ export function SkillRepoPopover({ skill, anchorRect, onPointerEnter, onPointerL
               </li>
             )}
           </ul>
-        </motion.div>
+        </m.div>
       </div>
-    </motion.div>,
+    </m.div>,
     document.body,
   );
 }

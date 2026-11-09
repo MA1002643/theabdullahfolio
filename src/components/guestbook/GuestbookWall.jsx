@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useSession } from 'next-auth/react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -22,6 +22,8 @@ import {
 import { viewerFromSession } from '@/lib/guestbook/identity';
 import { PAGE_SIZE } from '@/lib/guestbook/paging';
 import { paletteShortcutLabel } from '@/components/commandPalette/shortcut';
+import { LayoutMotionFeatures } from '@/components/motion/MotionFeatures';
+import { loadLayoutFeatures } from '@/lib/motion/loadFeatures';
 import MessageCard from './MessageCard';
 import MessageInput from './MessageInput';
 import PresencePill from './PresencePill';
@@ -38,6 +40,11 @@ import WallPagination from './WallPagination';
 // Re-render cadence for the relative timestamps — once a minute keeps
 // "just now" honest for the cost of one state tick.
 const TIME_TICK_MS = 60 * 1000;
+
+// Start the layout-projection chunk with this route's own code, so it is
+// downloading while the wall's first fetch is in flight rather than after the
+// cards mount (issue #200).
+if (typeof window !== 'undefined') loadLayoutFeatures();
 
 // Render pagination (owner-directed): the wall mounts at most PAGE_SIZE cards
 // at a time (paging.js — the same constant the API's poll page uses). Two
@@ -62,7 +69,7 @@ const RETRY_BTN_CLASS =
 function WallSkeleton({ label }) {
   return (
     <>
-      <motion.ul
+      <m.ul
         aria-hidden="true"
         data-testid="gb-skeleton"
         initial={{ opacity: 0 }}
@@ -90,7 +97,7 @@ function WallSkeleton({ label }) {
             </div>
           </li>
         ))}
-      </motion.ul>
+      </m.ul>
       <p role="status" className="sr-only">
         {label}
       </p>
@@ -395,7 +402,7 @@ export default function GuestbookWall() {
           mount effect would still be null then. Reduced motion pins it
           visible with no transform. */}
       {!loading ? (
-        <motion.div
+        <m.div
           ref={setStripEl}
           initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -436,7 +443,7 @@ export default function GuestbookWall() {
               {t('wall.commands', { shortcut: paletteShortcutLabel() })}
             </p>
           ) : null}
-        </motion.div>
+        </m.div>
       ) : null}
 
       {/* Compose slot: the composer for a WRITE-CAPABLE session; the sign-in
@@ -479,7 +486,7 @@ export default function GuestbookWall() {
         // family, kept restrained), the lead line takes the chrome gold, and
         // the invitation is pink ON PURPOSE — it quotes the headline's pink
         // "LEAVE YOUR MARK" subtitle, so the echo is typographic and chromatic.
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="space-y-4 py-16 text-center"
@@ -496,7 +503,7 @@ export default function GuestbookWall() {
           <p className="text-xs text-[#fc83ff]/90">
             {t('wall.emptyInvite')}
           </p>
-        </motion.div>
+        </m.div>
       ) : (
         <>
           {/* Outer AnimatePresence (mode="wait", keyed by page) owns the
@@ -505,7 +512,7 @@ export default function GuestbookWall() {
               so first mount doesn't play a phantom flip — the cards' own
               cascade is the arrival. */}
           <AnimatePresence mode="wait" custom={pageDir} initial={false}>
-            <motion.ul
+            <m.ul
               key={page}
               custom={pageDir}
               variants={pageVariants}
@@ -514,6 +521,10 @@ export default function GuestbookWall() {
               exit="exit"
               className="space-y-4 sm:space-y-5"
             >
+              {/* The cards animate their `layout` (the reflow when one lands
+                  or leaves), the one thing on the site `domAnimation` does not
+                  cover, so this subtree alone loads `domMax` (issue #200). */}
+              <LayoutMotionFeatures>
               <AnimatePresence>
                 {visibleMessages.map((msg, i) => (
                   <MessageCard
@@ -531,7 +542,8 @@ export default function GuestbookWall() {
                   />
                 ))}
               </AnimatePresence>
-            </motion.ul>
+              </LayoutMotionFeatures>
+            </m.ul>
           </AnimatePresence>
           {/* A leaf whose cards are still on their way (a rail jump past the
               loaded prefix) holds its space with the ghosts; one whose fetch

@@ -1,10 +1,10 @@
 "use client";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Palette } from "lucide-react";
 import { useTranslations } from "next-intl";
 import TransitionLink from "@/components/pageTransition/TransitionLink";
 
-const NavLink = motion(TransitionLink);
+const NavLink = m.create(TransitionLink);
 // Logical insets so the island sits at the reading START in RTL, as it does
 // in LTR (issue #82). The palette glyph is not directional, so not mirrored.
 const ProjectsBtn = () => {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  motion,
+  m,
   useInView,
   useMotionTemplate,
   useScroll,
@@ -150,7 +150,7 @@ export default function MessageCard({
   };
 
   return (
-    <motion.li
+    <m.li
       ref={cardRef}
       id={message.id}
       layout={!reduceMotion}
@@ -179,7 +179,7 @@ export default function MessageCard({
           new arrival) — a one-shot ember bloom that settles back to the card's
           resting shadow. Skipped under reduced motion. */}
       {isNew && !reduceMotion ? (
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-xl"
           initial={{ boxShadow: '0 0 0px rgba(255, 109, 5, 0)' }}
@@ -329,12 +329,12 @@ export default function MessageCard({
       {/* Specular glare — pointer-tracked radial highlight over the card,
           driven per-frame by motion values (no React re-renders). */}
       {tiltOn ? (
-        <motion.div
+        <m.div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-[inherit]"
           style={glareStyle}
         />
       ) : null}
-    </motion.li>
+    </m.li>
   );
 }

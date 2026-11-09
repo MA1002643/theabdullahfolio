@@ -23,7 +23,8 @@ const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...option
 // the real one would keep ghost spans mounted under jsdom.
 vi.mock('framer-motion', async (importOriginal) => {
   const actual = await importOriginal();
-  return { ...actual, AnimatePresence: ({ children }) => children ?? null };
+  const { withFullMotion } = await import('../support/motionDouble.js');
+  return { ...withFullMotion(actual), AnimatePresence: ({ children }) => children ?? null };
 });
 
 const MESSAGE = {

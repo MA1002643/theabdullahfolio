@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { GitCommitVertical } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -83,7 +83,7 @@ function AnimatedTitle({ text, play }) {
     },
   };
   return (
-    <motion.h2
+    <m.h2
       variants={container}
       initial="hidden"
       animate={play ? "visible" : "hidden"}
@@ -95,17 +95,17 @@ function AnimatedTitle({ text, play }) {
         c === " " ? (
           <span key={i}>{" "}</span>
         ) : (
-          <motion.span
+          <m.span
             key={i}
             variants={charVariant}
             style={{ display: "inline-block" }}
             aria-hidden="true"
           >
             {c}
-          </motion.span>
+          </m.span>
         ),
       )}
-    </motion.h2>
+    </m.h2>
   );
 }
 
@@ -203,7 +203,7 @@ function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion, v
   // "Just rose" pulse on the NUMBER + LABEL together (never the date range).
   const pulse = heartbeat ? " skill-heartbeat" : "";
   return (
-    <motion.div
+    <m.div
       variants={variants}
       className="flex flex-col items-center justify-center flex-1 text-center min-w-0"
     >
@@ -226,7 +226,7 @@ function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion, v
       >
         {dateRange}
       </span>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -235,7 +235,7 @@ function StatBlock({ label, value, dateRange, playToken, prefersReducedMotion, v
 // A stagger item so it fades in between its two neighbouring columns.
 function Divider({ variants }) {
   return (
-    <motion.div
+    <m.div
       variants={variants}
       aria-hidden="true"
       className="hidden sm:block w-px self-stretch my-2 mx-1 shrink-0"
@@ -399,7 +399,7 @@ export default function StreakStatsCard({ data }) {
     // amber `custom-bg-abt` border). The card itself just fades in on
     // `settledInView`; the three stat sections inside cascade in sequence (see
     // the stagger container below), and both replay on every viewport re-entry.
-    <motion.div
+    <m.div
       ref={cardRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: settledInView ? 1 : 0 }}
@@ -436,7 +436,7 @@ export default function StreakStatsCard({ data }) {
           which stays pinned to the top like the sibling cards' headers (the
           root deliberately has no `justify-center`, which would drag the
           title toward the card's vertical middle when `h-full` stretches it). */}
-      <motion.div
+      <m.div
         variants={STAGGER_CONTAINER}
         initial="hidden"
         animate={settledInView ? "visible" : "hidden"}
@@ -457,7 +457,7 @@ export default function StreakStatsCard({ data }) {
 
         {/* Current Streak — count-up centred in a progress ring whose fill
             shows the current streak as a share of the longest. */}
-        <motion.div
+        <m.div
           variants={itemVariants}
           className="flex flex-col items-center justify-center flex-1 text-center min-w-0"
         >
@@ -491,7 +491,7 @@ export default function StreakStatsCard({ data }) {
                   sweep replays; pre-entry (playToken 0 → hasEntered false) it
                   holds empty. Reduced motion snaps to the filled offset. No
                   drop-shadow glow — the ring is a flat stroke. */}
-              <motion.circle
+              <m.circle
                 key={playToken}
                 cx="60"
                 cy="60"
@@ -522,7 +522,7 @@ export default function StreakStatsCard({ data }) {
               aria-hidden="true"
               className="absolute -top-0.5 left-1/2 -translate-x-1/2 -translate-y-1/2"
             >
-              <motion.span
+              <m.span
                 className="block origin-center"
                 animate={
                   prefersReducedMotion
@@ -542,7 +542,7 @@ export default function StreakStatsCard({ data }) {
                     filter: "drop-shadow(0 0 5px rgba(255,170,42,0.7))",
                   }}
                 />
-              </motion.span>
+              </m.span>
             </span>
             <StreakNumber
               target={current}
@@ -569,7 +569,7 @@ export default function StreakStatsCard({ data }) {
           >
             {range(currentStreak?.dateRange)}
           </span>
-        </motion.div>
+        </m.div>
 
         <Divider variants={itemVariants} />
 
@@ -583,7 +583,7 @@ export default function StreakStatsCard({ data }) {
           variants={itemVariants}
           heartbeat={pulsingFields.has("longestStreak")}
         />
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }

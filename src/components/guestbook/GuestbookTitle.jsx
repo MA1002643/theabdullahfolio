@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
 import { useScramble } from '@/hooks/useScramble';
@@ -72,7 +72,7 @@ export default function GuestbookTitle({ title, subtitle, id }) {
 
   return (
     <div id={id} className="page-title-block z-50 text-center">
-      <motion.h1
+      <m.h1
         aria-label={title}
         // Inline-block units are bidi-neutral: let the title's own text pick
         // its direction, or an English title on an RTL page reads backwards.
@@ -93,9 +93,9 @@ export default function GuestbookTitle({ title, subtitle, id }) {
             </span>
           ),
         )}
-      </motion.h1>
+      </m.h1>
       {subtitle ? (
-        <motion.div
+        <m.div
           variants={SUBTITLE_MOTION}
           initial={prefersReducedMotion ? 'visible' : 'hidden'}
           animate={play ? 'visible' : 'hidden'}
@@ -113,7 +113,7 @@ export default function GuestbookTitle({ title, subtitle, id }) {
             className="page-title-flank rounded-full"
             style={FLANK_PILL_STYLE}
           />
-        </motion.div>
+        </m.div>
       ) : null}
     </div>
   );

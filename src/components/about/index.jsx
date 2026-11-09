@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ItemLayout from "./ItemsLayout";
-import { useScroll, useTransform, motion } from "framer-motion";
+import { useScroll, useTransform, m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { projectsData } from "@/app/data";
 import LanguagesCard from "./LanguagesCard";
@@ -82,9 +82,9 @@ const RevealWord = ({ children, progress, range, index, total, gap = " " }) => {
   return (
     // Per-word ramp fill (darkens toward the paragraph's end) + opacity on the
     // SAME element, so a word's opacity fades its OWN clip. See wordFill.
-    <motion.span style={{ ...wordFill(index, total), opacity }}>
+    <m.span style={{ ...wordFill(index, total), opacity }}>
       {children}{gap}
-    </motion.span>
+    </m.span>
   );
 };
 
@@ -246,7 +246,7 @@ function ExperienceSplitBar({
             there's no meaningful width to draw, and the surviving segment
             already fills the bar at 100%. */}
         {personalAvailable && (
-          <motion.span
+          <m.span
             // Logical edge: the split fills from the reading start (issue #82).
             className="absolute inset-y-0 start-0"
             style={{
@@ -263,7 +263,7 @@ function ExperienceSplitBar({
           />
         )}
         {employmentAvailable && (
-          <motion.span
+          <m.span
             className="absolute inset-y-0"
             style={{
               insetInlineStart: `${personalPct}%`,
@@ -458,7 +458,7 @@ function ProjectsSplitBar({ breakdown, inView = true, pulseCategories = [] }) {
         style={{ background: "rgba(244, 227, 184, 0.06)" }}
       >
         {segments.map((s, i) => (
-          <motion.span
+          <m.span
             key={s.label}
             className="absolute inset-y-0"
             style={{
@@ -1589,7 +1589,7 @@ const AboutDetails = () => {
               visible, so the reveal plays in view instead of unseen behind the
               loader, and replays on a real scroll re-entry just like the repo
               card. */}
-          <motion.div
+          <m.div
             ref={completedProjectsRef}
             variants={cardVariants}
             initial="hidden"
@@ -1627,14 +1627,14 @@ const AboutDetails = () => {
             {/* Eyebrow — same uppercase micro-label treatment + amber tone as
                 the years card's "Years in the craft", so the two feature cards
                 announce themselves identically. */}
-            <motion.p
+            <m.p
               variants={childVariants}
               aria-hidden="true"
               className="abt-micro text-[10px] uppercase tracking-[0.22em] mb-2"
               style={{ color: "#ffaa2a", textShadow: "none" }}
             >
               {t("projectsCard.eyebrow")}
-            </motion.p>
+            </m.p>
             {/* Word breaks between the card's stacked parts: block and flex
                 siblings, so nothing renders, but the visible text must read
                 as separate words to match the card's name (WCAG 2.5.3). */}
@@ -1659,7 +1659,7 @@ const AboutDetails = () => {
                 homepage), every rule here is a utility class or an inline
                 style, and both `h1` and `div` are block-level so `display:
                 flex` resolves identically. Zero visual difference. */}
-            <motion.div
+            <m.div
               variants={childVariants}
               className="flex items-center gap-2 font-semibold w-full text-start text-2xl sm:text-5xl"
               // Fluid figure: 3rem = the sm:text-5xl anchor; the 1.5rem floor
@@ -1675,7 +1675,7 @@ const AboutDetails = () => {
               >
                 {t("projectsCard.unit", { count: projectsData.length })}
               </span>
-            </motion.div>
+            </m.div>
 
             {" "}
             {/* Two-segment category split bar (Web / System) — the "elite &
@@ -1683,13 +1683,13 @@ const AboutDetails = () => {
                 split, same track, animated fill, legend, and percentages.
                 Wrapped so it joins the stagger; its own segment fill still keys
                 off `inView`. */}
-            <motion.div variants={childVariants} className="w-full">
+            <m.div variants={childVariants} className="w-full">
               <ProjectsSplitBar
                 breakdown={PROJECT_CATEGORY_BREAKDOWN}
                 inView={isCompletedProjectsInView}
                 pulseCategories={pulseProjectCats}
               />
-            </motion.div>
+            </m.div>
 
             {/* Hover affordance — fades in on group-hover/focus, the exact
                 treatment (and copy pattern) of the years card's "View
@@ -1703,7 +1703,7 @@ const AboutDetails = () => {
             >
               {t("projectsCard.viewProgress")}
             </p>
-          </motion.div>
+          </m.div>
         </ItemLayout>
 
         <ItemLayout
@@ -1771,7 +1771,7 @@ const AboutDetails = () => {
               (the outer ItemLayout holds scale 0 until the loader lifts — see
               `revealWhen`) only turns true once the card is actually visible, so
               the reveal plays in view and replays on a real scroll re-entry. */}
-          <motion.div
+          <m.div
             ref={experienceInViewRef}
             variants={cardVariants}
             initial="hidden"
@@ -1799,21 +1799,21 @@ const AboutDetails = () => {
             {/* Eyebrow — uppercase micro-label sets the "feature card"
                 tone before the eye lands on the digit. Amber tone reads
                 a touch warmer than the digit's vivid orange below it. */}
-            <motion.p
+            <m.p
               variants={childVariants}
               aria-hidden="true"
               className="abt-micro text-[10px] uppercase tracking-[0.22em] mb-2"
               style={{ color: "#ffaa2a", textShadow: "none" }}
             >
               {tx("card.eyebrow")}
-            </motion.p>
+            </m.p>
             {" "}
 
             {/* `motion.div`, NOT `motion.h1` — see the note on the sibling
                 "completed projects" figure above. Same defect, same reason
                 (issue #32, W5: exactly one h1 per route), same zero-visual
                 change. */}
-            <motion.div
+            <m.div
               variants={childVariants}
               // `items-center` (not `items-baseline`): the Counter renders a
               // flex <div>, which doesn't expose a reliable text baseline to
@@ -1869,7 +1869,7 @@ const AboutDetails = () => {
                   —
                 </span>
               )}
-            </motion.div>
+            </m.div>
 
             {" "}
             {/* Two-segment split bar — Personal vs Employment as a share of
@@ -1878,7 +1878,7 @@ const AboutDetails = () => {
                 hidden only when both sources loaded and measured zero. Wrapped so
                 it joins the stagger; its own segment fill still keys off `inView`. */}
             {showExperienceSplit && (
-              <motion.div variants={childVariants} className="w-full">
+              <m.div variants={childVariants} className="w-full">
                 <ExperienceSplitBar
                   personalMonths={experienceData?.personalProjects?.months ?? 0}
                   employmentMonths={experienceData?.employment?.months ?? 0}
@@ -1891,7 +1891,7 @@ const AboutDetails = () => {
                   inView={isExperienceCardInView}
                   pulseCategories={pulseExperienceCats}
                 />
-              </motion.div>
+              </m.div>
             )}
 
             {/* Hover affordance — fades in on group-hover/focus so the
@@ -1905,7 +1905,7 @@ const AboutDetails = () => {
             >
               {tx("card.viewBreakdown")}
             </p>
-          </motion.div>
+          </m.div>
         </ItemLayout>
 
         {githubStats?.languages && <ItemLayout

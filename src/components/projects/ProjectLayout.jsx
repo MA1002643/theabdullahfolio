@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { m } from "framer-motion"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { useRouter } from "@/i18n/navigation"
 import TransitionLink from "@/components/pageTransition/TransitionLink"
@@ -50,7 +50,7 @@ const reducedItem = {
   show: { opacity: 1, transition: { duration: 0.3 } },
 }
 
-const ProjectLink = motion(TransitionLink)
+const ProjectLink = m.create(TransitionLink)
 
 // Mirrors the signals Next's own viewport prefetch stands down for
 // (saveData, 2g/slow-2g). navigator.connection is Chromium-only; where it

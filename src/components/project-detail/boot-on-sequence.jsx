@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import TypeOnChunks from "./typeon-chunks";
 
 // English fallback for the boot lines. The live copy arrives translated as
@@ -32,7 +32,7 @@ export default function LaptopBootSequence({ onComplete, messages, rtl = false }
     }, [currentIndex, bootMessages.length]);
 
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="w-full h-full bg-black text-green-400 font-mono p-4 rounded-lg overflow-y-auto"
@@ -43,6 +43,6 @@ export default function LaptopBootSequence({ onComplete, messages, rtl = false }
                 </p>
             ))}
             {currentIndex < bootMessages.length && <p className="blinking-cursor">_</p>}
-        </motion.div>
+        </m.div>
     );
 }

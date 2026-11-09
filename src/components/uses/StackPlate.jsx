@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import SliceLabel from '@/components/contact/SliceLabel';
@@ -230,13 +230,13 @@ function RepositoriesCta({ revealed, reduceMotion, revealedAtRef, magnet, magnet
   const { ref, on, delay, instant } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
   const [hovered, setHovered] = useState(false);
   return (
-    <motion.div
+    <m.div
       ref={ref}
       className="uses-anim flex justify-center"
       style={{ marginTop: fluid(1.75) }}
       {...riseProps(on, reduceMotion, staged(reduceMotion || instant, delay, 0.1, 0.5), 10)}
     >
-      <motion.a
+      <m.a
         href={`${profileGithubUrl}?tab=repositories`}
         target="_blank"
         rel="noopener noreferrer"
@@ -258,7 +258,7 @@ function RepositoriesCta({ revealed, reduceMotion, revealedAtRef, magnet, magnet
       >
         <SliceLabel text={t('stack.cta')} hovered={hovered} />
         <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-      </motion.a>
-    </motion.div>
+      </m.a>
+    </m.div>
   );
 }

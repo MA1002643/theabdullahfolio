@@ -11,7 +11,7 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { claimEscape } from '@/lib/escapeKey';
 
 // Styled replacement for the native `title` tooltip across the
@@ -318,7 +318,7 @@ export default function HoverHint({
   });
 
   const bubble = (
-    <motion.div
+    <m.div
       ref={bubbleRef}
       key="hint"
       id={id}
@@ -358,7 +358,7 @@ export default function HoverHint({
       <div className="break-words text-[11px] font-medium leading-snug text-[#f9d174]">
         {content}
       </div>
-    </motion.div>
+    </m.div>
   );
 
   return (

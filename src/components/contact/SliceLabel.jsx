@@ -9,7 +9,7 @@ import {
 } from 'react';
 import {
   animate,
-  motion,
+  m,
   useMotionValue,
   useTransform,
 } from 'framer-motion';
@@ -67,13 +67,13 @@ function SliceLetter({ char, band, progress }) {
       style={{ position: 'relative', display: 'inline-block', lineHeight: 1 }}
     >
       {/* upper half (in flow — defines the letter box) */}
-      <motion.span
+      <m.span
         style={{ display: 'block', y: topY, clipPath: 'inset(0 0 50% 0)' }}
       >
         {glyph}
-      </motion.span>
+      </m.span>
       {/* lower half (overlaps the upper exactly) */}
-      <motion.span
+      <m.span
         style={{
           position: 'absolute',
           inset: 0,
@@ -82,7 +82,7 @@ function SliceLetter({ char, band, progress }) {
         }}
       >
         {glyph}
-      </motion.span>
+      </m.span>
     </span>
   );
 }
@@ -212,7 +212,7 @@ export default function SliceLabel({ text, hovered }) {
           progress={progress}
         />
       ))}
-      <motion.span
+      <m.span
         data-blade
         style={{
           position: 'absolute',

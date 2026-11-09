@@ -9,7 +9,7 @@
 // Presentational + controlled: the parent owns `soundOn` and the toggle (which
 // also unlocks the AudioContext from the click gesture); see index.jsx.
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Volume2, VolumeX } from 'lucide-react';
@@ -32,7 +32,7 @@ function Equalizer({ active }) {
   return (
     <span className="flex h-3.5 items-end gap-[2px]" aria-hidden="true">
       {bars.map((i) => (
-        <motion.span
+        <m.span
           key={i}
           className="w-[2px] origin-bottom rounded-full bg-[#ff6d05]"
           style={{ height: '100%', opacity: active ? 1 : 0.35 }}
@@ -86,7 +86,7 @@ export default function SoundControl({ soundOn, onToggle, canHover = true, revea
     >
       {/* Soft pulse ring while live. */}
       {soundOn && !reduce && (
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-full border border-[#ff6d05]/50"
           initial={{ opacity: 0.55, scale: 1 }}

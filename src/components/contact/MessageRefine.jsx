@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMessageRefine } from '@/hooks/useMessageRefine';
@@ -111,7 +111,7 @@ export default function MessageRefine({
 
       <AnimatePresence initial={false} mode="wait">
         {showAffordance && (
-          <motion.button
+          <m.button
             key="affordance"
             type="button"
             className="refine-affordance"
@@ -125,13 +125,13 @@ export default function MessageRefine({
               ✦
             </span>
             {t('refine.affordance')}
-          </motion.button>
+          </m.button>
         )}
       </AnimatePresence>
 
       <AnimatePresence initial={false}>
         {showPanel && (
-          <motion.div
+          <m.div
             key="panel"
             className="refine-panel"
             role="group"
@@ -199,7 +199,7 @@ export default function MessageRefine({
                 </button>
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

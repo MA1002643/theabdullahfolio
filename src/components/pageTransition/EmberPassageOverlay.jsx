@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { m, useMotionValue, useTransform } from 'framer-motion';
 import { breaksWhenSplit } from '@/components/ui/textSegments';
 import { getSwarm } from './emberSwarm';
 import PassageStill from './PassageStill';
@@ -177,7 +177,7 @@ export default function EmberPassageOverlay({ phase, label, reduced, origin }) {
   // live branch
   // ---------------------------------------------------------------------------
   return (
-    <motion.div
+    <m.div
       className="fixed inset-0 z-[9980]"
       role="presentation"
       aria-hidden="true"
@@ -187,7 +187,7 @@ export default function EmberPassageOverlay({ phase, label, reduced, origin }) {
       <div ref={hostRef} className="absolute inset-0" />
 
       {layout ? (
-        <motion.div
+        <m.div
           // The SAME utility the homepage hero name uses, so the colour and the
           // glow are shared rather than re-approximated: #ff6d05 stroke, hollow
           // fill, and the three-layer drop-shadow halo.
@@ -222,8 +222,8 @@ export default function EmberPassageOverlay({ phase, label, reduced, origin }) {
           }}
         >
           {label}
-        </motion.div>
+        </m.div>
       ) : null}
-    </motion.div>
+    </m.div>
   );
 }
