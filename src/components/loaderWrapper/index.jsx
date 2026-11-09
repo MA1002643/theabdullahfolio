@@ -53,8 +53,16 @@ export default function LoaderWrapper({ children }) {
   // wrapper lives in the root layout and survives client navigation, so the
   // decision is per full page load: entering on /cv and then clicking Home
   // does not replay it. next-intl's usePathname is locale-free, so /fr is `/`.
+  //
+  // `window.__loaderDone` covers a REMOUNT in the same page load, which is
+  // not a new visit: the motion provider remounts its subtree when the
+  // animation chunk never arrives (src/components/motion/MotionFeatures.jsx),
+  // and without this a visitor still on `/` would watch the intro again. It is
+  // unset on the hydrating render, so that render still matches the server.
   const pathname = usePathname();
-  const [enteredOnHome] = useState(() => pathname === '/');
+  const [enteredOnHome] = useState(
+    () => pathname === '/' && !(typeof window !== 'undefined' && window.__loaderDone),
+  );
   const [showLoader, setShowLoader] = useState(enteredOnHome);
   // 'building' → 'built' → 'igniting' → 'reveal' → 'done'
   const [phase, setPhase] = useState('building');

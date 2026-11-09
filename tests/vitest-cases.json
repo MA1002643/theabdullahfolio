@@ -1,11 +1,11 @@
 {
-  "suites": 185,
-  "cases": 2002,
+  "suites": 188,
+  "cases": 2020,
   "byProject": {
     "api": 75,
-    "component": 176,
-    "fitness": 252,
+    "component": 185,
+    "fitness": 253,
     "property": 39,
-    "unit": 1460
+    "unit": 1468
   }
 }

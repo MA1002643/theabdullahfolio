@@ -15,7 +15,10 @@ beforeEach(() => {
   vi.stubGlobal('requestAnimationFrame', (cb) => frames.push(cb));
   vi.stubGlobal('cancelAnimationFrame', () => {});
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 const EASES = [(t) => t, (t) => 1 - Math.pow(1 - t, 3), (t) => t * t * (3 - 2 * t)];
 
@@ -33,9 +36,11 @@ describe('tweenValue properties', () => {
           let current = from;
           const written = [];
           const value = { get: () => current, set: (v) => written.push((current = v)) };
+          // One clock for the call and the frames (tweenValue counts from the call).
+          let now = 1000;
+          vi.spyOn(performance, 'now').mockImplementation(() => now);
           tweenValue(value, to, { duration, ease: EASES[easeIndex] });
 
-          let now = 1000;
           // Every scheduled gap, then one long one so the tween always finishes.
           for (const gap of [...gaps, duration * 1000 + 1]) {
             const queued = frames;

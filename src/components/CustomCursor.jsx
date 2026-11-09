@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { m, useMotionValue, useSpring } from 'framer-motion';
 import { onMediaChange } from '@/lib/mediaQuery';
+import { loadMotionFeatures } from '@/lib/motion/loadFeatures';
 
 // ── Custom cursor ───────────────────────────────────────────────────────────
 // Site-wide pointer: a crisp ember dot pinned to the real cursor + an outline
@@ -46,7 +47,19 @@ export default function CustomCursor() {
   // off-screen (-100), so hiding the OS cursor the instant we activate would
   // leave a brief window with NO visible cursor at all. Gate the cursor-hiding
   // on this so the swap only happens once the custom dot has somewhere to be.
+  //
+  // It also waits for framer's renderer (issue #200). The dot and ring are
+  // `m.*` elements, and until the LazyMotion features chunk lands they have no
+  // visual element: a motion value change writes nothing to the DOM, so the
+  // custom cursor would sit frozen while the OS cursor was already hidden. A
+  // position therefore counts only when it arrives AFTER the features have
+  // committed. This component waits on the same promise as the root
+  // <LazyMotion>, so both state updates resolve in one microtask checkpoint
+  // and React commits them in one render; the ref, which the pointer handler
+  // reads, flips in an effect after that commit. If the chunk never arrives
+  // the native cursor simply stays.
   const [located, setLocated] = useState(false);
+  const rendererReady = useRef(false);
 
   // Dot tracks the raw pointer (no lag); the ring springs toward its own target,
   // which is the pointer — or a point leaned toward a hovered element's centre.
@@ -74,6 +87,22 @@ export default function CustomCursor() {
     };
   }, []);
 
+  const [featuresLoaded, setFeaturesLoaded] = useState(false);
+  useEffect(() => {
+    let live = true;
+    loadMotionFeatures().then(() => {
+      if (live) setFeaturesLoaded(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  // Flipped in an effect, so only after the commit that also handed the
+  // `m.*` elements their renderer.
+  useEffect(() => {
+    rendererReady.current = featuresLoaded;
+  }, [featuresLoaded]);
+
   // Hide the OS cursor across the whole document while the custom one is live —
   // but only once we actually know where the pointer is, so there's never a
   // flash of "no cursor" between activation and the first pointer event.
@@ -93,9 +122,10 @@ export default function CustomCursor() {
       const y = e.clientY;
       dotX.set(x);
       dotY.set(y);
-      // First real position — now it's safe to hide the OS cursor (no flash).
-      // Cheap to call every move: React bails when the value is unchanged.
-      setLocated(true);
+      // First real position the renderer can draw: now it's safe to hide the
+      // OS cursor (no flash). Cheap to call every move: React bails when the
+      // value is unchanged.
+      if (rendererReady.current) setLocated(true);
 
       const el =
         e.target instanceof Element ? e.target.closest(INTERACTIVE) : null;
