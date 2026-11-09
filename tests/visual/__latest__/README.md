@@ -1,6 +1,6 @@
 # Latest visual render
 
-Rendered for `3acd876` by `.github/workflows/visual-baselines.yml` on every push (issue #92).
+Rendered for `886ebff` by `.github/workflows/visual-baselines.yml` on every push (issue #92).
 These are the CURRENT screenshots. The reviewed baselines CI compares against live in
 `../__screenshots__/`; promote a render to baseline by running the workflow with `promote: true`.
 
