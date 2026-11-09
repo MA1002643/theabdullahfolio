@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 // Long track / artist names get the premium treatment: instead of a hard "…"
@@ -52,7 +52,7 @@ export default function Marquee({ text, active = false, className = '' }) {
 
   return (
     <div ref={wrapRef} className={`overflow-hidden ${className}`}>
-      <motion.span
+      <m.span
         ref={textRef}
         dir="auto"
         className="inline-block whitespace-nowrap will-change-transform"
@@ -85,7 +85,7 @@ export default function Marquee({ text, active = false, className = '' }) {
         }
       >
         {text}
-      </motion.span>
+      </m.span>
     </div>
   );
 }

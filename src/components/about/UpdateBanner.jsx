@@ -2,7 +2,8 @@
 
 import { Fragment } from "react";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { m } from "framer-motion";
+import { AnimatePresence } from "@/components/motion/AnimatePresence";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fluidText } from "@/lib/fluidScale";
 import { glyphUnits } from "@/components/ui/textSegments";
@@ -89,7 +90,7 @@ function EmberLayer({ emberColor, emberShadow }) {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {EMBERS.map((e, i) => (
-        <motion.span
+        <m.span
           key={i}
           aria-hidden="true"
           className="absolute rounded-full"
@@ -173,7 +174,7 @@ function AnimatedMessage({ message, prefersReducedMotion }) {
     },
   };
   return (
-    <motion.span
+    <m.span
       variants={container}
       initial="hidden"
       animate="visible"
@@ -197,17 +198,17 @@ function AnimatedMessage({ message, prefersReducedMotion }) {
           return <Fragment key={i}> </Fragment>;
         }
         return (
-          <motion.span
+          <m.span
             key={i}
             variants={charVariant}
             aria-hidden="true"
             className="inline-block text-fire-amber"
           >
             {c}
-          </motion.span>
+          </m.span>
         );
       })}
-    </motion.span>
+    </m.span>
   );
 }
 
@@ -289,7 +290,7 @@ export function UpdateBanner({ message, visible, srPrefix = "", variant = "orang
 
       <AnimatePresence onExitComplete={onExitComplete}>
         {showVisual && (
-          <motion.div
+          <m.div
             key="update-banner"
             initial={containerInitial}
             animate={containerAnimate}
@@ -308,7 +309,7 @@ export function UpdateBanner({ message, visible, srPrefix = "", variant = "orang
             {!prefersReducedMotion && (
               <>
                 {/* Layer 2 — Aurora ribbon drifting behind everything */}
-                <motion.span
+                <m.span
                   aria-hidden="true"
                   className="absolute inset-0"
                   initial={{ opacity: 0, x: "-15%" }}
@@ -327,7 +328,7 @@ export function UpdateBanner({ message, visible, srPrefix = "", variant = "orang
                 />
 
                 {/* Layer 3 — Radial pinprick flash on entrance */}
-                <motion.span
+                <m.span
                   aria-hidden="true"
                   className="absolute inset-0 rounded-lg"
                   initial={{ opacity: 0.9, scale: 0 }}
@@ -340,7 +341,7 @@ export function UpdateBanner({ message, visible, srPrefix = "", variant = "orang
                 />
 
                 {/* Layer 4 — Single-pass shimmer sweep */}
-                <motion.span
+                <m.span
                   aria-hidden="true"
                   className="absolute inset-y-0 w-[60%]"
                   initial={{ x: "-180%" }}
@@ -365,7 +366,7 @@ export function UpdateBanner({ message, visible, srPrefix = "", variant = "orang
               message={message}
               prefersReducedMotion={prefersReducedMotion}
             />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>

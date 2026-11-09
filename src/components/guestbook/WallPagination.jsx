@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -130,7 +131,7 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
         className="relative hidden h-8 w-full max-w-[280px] cursor-pointer sm:block"
       >
         <span className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-[#f9d174]/20" />
-        <motion.span
+        <m.span
           className="absolute start-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[#ff6d05]/0 via-[#ff6d05]/60 to-[#ff6d05] rtl:bg-gradient-to-l"
           animate={{ width: `${pct}%` }}
           transition={slide}
@@ -155,7 +156,7 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
             ...(isRtl ? { backgroundPosition: 'right' } : {}),
           }}
         />
-        <motion.span
+        <m.span
           className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ff6d05] shadow-[0_0_10px_2px_rgba(255,109,5,0.55)] rtl:translate-x-1/2"
           animate={{ [startSide]: `${pct}%` }}
           transition={slide}
@@ -173,7 +174,7 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
               carry — numbers speak in one colour across the site's cards. */}
           <span className="relative inline-flex h-[1.4em] w-[2ch] items-center justify-center overflow-hidden align-middle">
             <AnimatePresence mode="popLayout" initial={false} custom={dir}>
-              <motion.span
+              <m.span
                 key={page}
                 custom={dir}
                 variants={reduceMotion ? undefined : DIGIT_VARIANTS}
@@ -184,7 +185,7 @@ export default function WallPagination({ page, pageCount, dir, onPage }) {
                 className="absolute font-semibold tabular-nums text-[#ff6d05]"
               >
                 {twoDigits(page + 1)}
-              </motion.span>
+              </m.span>
             </AnimatePresence>
           </span>
           <span className="text-[#fc83ff]/60"> / </span>

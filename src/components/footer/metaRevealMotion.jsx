@@ -15,7 +15,7 @@
 // the trailing ones are still 0.)
 
 import { Fragment } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { glyphUnits, wordChunks } from '@/components/ui/textSegments';
 
 export const FLAP_EASE = [0.22, 1, 0.36, 1];
@@ -50,9 +50,9 @@ const GLYPH_STYLE = {
 // flap tick, so it joins the cascade without being split per-glyph.
 export function FlapItem({ children, className }) {
   return (
-    <motion.span variants={flapChild} className={className} style={GLYPH_STYLE}>
+    <m.span variants={flapChild} className={className} style={GLYPH_STYLE}>
       {children}
-    </motion.span>
+    </m.span>
   );
 }
 
@@ -102,9 +102,9 @@ export function SplitFlapText({ text, as: Tag = 'span', className }) {
             style={{ display: 'inline-flex', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
           >
             {glyphUnits(word).map((ch, ci) => (
-              <motion.span key={ci} variants={flapChild} style={GLYPH_STYLE}>
+              <m.span key={ci} variants={flapChild} style={GLYPH_STYLE}>
                 {ch}
-              </motion.span>
+              </m.span>
             ))}
           </span>
         </Fragment>

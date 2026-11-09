@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@/i18n/navigation';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 
 import { useLoaderRevealed } from '@/hooks/useLoaderRevealed';
@@ -148,7 +148,7 @@ function Standfirst({ revealed, reduceMotion }) {
       };
 
   return (
-    <motion.p
+    <m.p
       className="note-anim max-w-prose font-light"
       style={{
         ...PROSE,
@@ -168,17 +168,17 @@ function Standfirst({ revealed, reduceMotion }) {
           {/* inline-block so the word can take a transform and a blur; the
               space stays a bare text node OUTSIDE the span so the paragraph
               still wraps naturally. */}
-          <motion.span
+          <m.span
             className="note-anim-word"
             variants={word}
             style={{ display: 'inline-block', ...wordFill(i, words.length) }}
           >
             {w}
-          </motion.span>
+          </m.span>
           {gap}
         </Fragment>
       ))}
-    </motion.p>
+    </m.p>
   );
 }
 
@@ -256,7 +256,7 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
           state. Decorative; the link carries the semantics. */}
       <span aria-hidden="true" className="note-record__track" />
 
-      <motion.span
+      <m.span
         aria-hidden="true"
         className="note-anim note-record__rail"
         initial={reduceMotion ? false : { scaleY: 0 }}
@@ -264,7 +264,7 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
         transition={t(0.08, 0.7)}
       />
 
-      <motion.span
+      <m.span
         aria-hidden="true"
         className="note-anim note-record__node"
         initial={reduceMotion ? false : { opacity: 0, scale: 0 }}
@@ -284,7 +284,7 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
               simply opens across it. It is also the safe arrangement — an
               ancestor's clip-path is a paint-time clip, so it applies to the
               promoted layer the clipped-gradient child rasterises into. */}
-          <motion.span
+          <m.span
             // The title is the document's own, and the documents are English
             // only (issue #82): marked so, which also keeps the left→right
             // typesetting wipe running in the title's own direction.
@@ -305,12 +305,12 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
             transition={t(0.2, 0.75)}
           >
             <span className="note-record__title">{note.title}</span>
-          </motion.span>
+          </m.span>
         </Link>
       </h2>
 
       {note.summary ? (
-        <motion.p
+        <m.p
           lang="en"
           dir="ltr"
           className="note-anim note-record__summary max-w-prose font-light"
@@ -318,13 +318,13 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
           {...rise(0.36, 0.55)}
         >
           {note.summary}
-        </motion.p>
+        </m.p>
       ) : null}
 
       {/* The line count is READ from the file, not estimated. It is the honest
           measure for a technical record and it is checkable — the source path
           beside it says exactly which file to check it against. */}
-      <motion.p
+      <m.p
         className="note-anim note-anim-track note-record__readout font-mono uppercase"
         style={{
           marginTop: fluid(0.7),
@@ -353,7 +353,7 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
         <span className="note-record__source" dir="ltr" translate="no">
           {note.source}
         </span>
-      </motion.p>
+      </m.p>
     </li>
   );
 }

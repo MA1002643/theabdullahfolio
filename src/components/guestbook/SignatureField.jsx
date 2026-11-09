@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { wordChunks } from '@/components/ui/textSegments';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -228,7 +228,7 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
       </div>
 
       {open ? (
-        <motion.div
+        <m.div
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -269,7 +269,7 @@ export default function SignatureField({ onSignatureChange, resetSignal }) {
             labelId={marksLabelId}
             label={noPointer ? t('signature.pickMark') : t('signature.orPickMark')}
           />
-        </motion.div>
+        </m.div>
       ) : null}
     </div>
   );

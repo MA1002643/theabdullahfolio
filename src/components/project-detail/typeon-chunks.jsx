@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 // `rtl` reveals from the right edge instead (issue #82): the type-on should
 // start where the line starts. A prop, not useDirection(): this renders inside
@@ -9,7 +9,7 @@ const inset = (amount, rtl) =>
 
 export default function TypeOnChunks({ text, rtl = false }) {
     return (
-        <motion.span
+        <m.span
             initial={{
                 clipPath: inset("100%", rtl), // fully hidden
             }}
@@ -29,6 +29,6 @@ export default function TypeOnChunks({ text, rtl = false }) {
             className="inline-block overflow-hidden will-change-transform"
         >
             {text}
-        </motion.span>
+        </m.span>
     );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useCardTilt } from '@/hooks/useCardTilt';
 import { USES_FLAGS } from '@/lib/flags';
@@ -123,7 +123,7 @@ export default function EditorFrame({
     staged(still, delay, offset, duration, ease);
 
   return (
-    <motion.figure
+    <m.figure
       ref={ref}
       className="uses-anim uses-editor relative isolate m-0 overflow-hidden rounded-xl"
       style={tiltOn ? tilt.style : undefined}
@@ -133,7 +133,7 @@ export default function EditorFrame({
       {...(tiltOn ? tilt.handlers : {})}
     >
       {tiltOn ? (
-        <motion.div
+        <m.div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-10 rounded-xl"
           style={tilt.glareStyle}
@@ -148,7 +148,7 @@ export default function EditorFrame({
           a left-to-right editor showing JSON, so it stays `dir="ltr"` in an
           RTL document (issue #82): the gutter, the typing wipe left→right and
           the carets all describe that screen, not the page around it. */}
-      <motion.div
+      <m.div
         dir="ltr"
         // A picture of an editor: its tab, code and status bar are what the
         // screen literally shows, so none of it is translated (the caption
@@ -187,7 +187,7 @@ export default function EditorFrame({
             const last = i === lines.length - 1;
             return (
               <div key={i} className="uses-editor__line">
-                <motion.span
+                <m.span
                   className="uses-anim uses-editor__gutter"
                   aria-hidden="true"
                   initial={reduceMotion ? false : { opacity: 0 }}
@@ -195,12 +195,12 @@ export default function EditorFrame({
                   transition={at(start, 0.2)}
                 >
                   {i + 1}
-                </motion.span>
+                </m.span>
                 {/* Shrink-to-fit wrapper (`justify-self: start`): the wipe runs
                   over the TEXT's width, so 0→100% is one keystroke per
                   character however wide the column is. */}
                 <span className="uses-editor__typed">
-                  <motion.code
+                  <m.code
                     className="uses-anim uses-anim-clip"
                     initial={
                       reduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }
@@ -215,9 +215,9 @@ export default function EditorFrame({
                         {tok.text}
                       </span>
                     ))}
-                  </motion.code>
+                  </m.code>
                   {still ? null : (
-                    <motion.span
+                    <m.span
                       aria-hidden="true"
                       className="uses-caret"
                       initial={{ left: '0%', opacity: 0 }}
@@ -242,7 +242,7 @@ export default function EditorFrame({
                     />
                   )}
                   {last && !still ? (
-                    <motion.span
+                    <m.span
                       aria-hidden="true"
                       className="uses-caret"
                       style={{ left: '100%' }}
@@ -265,7 +265,7 @@ export default function EditorFrame({
         {/* Status bar — the real theme, encoding, indentation and formatter. */}
         <div className="uses-editor__status" aria-hidden="true">
           {status.map((s, i) => (
-            <motion.span
+            <m.span
               key={s}
               className="uses-anim"
               initial={reduceMotion ? false : { opacity: 0, y: 4 }}
@@ -273,10 +273,10 @@ export default function EditorFrame({
               transition={at(typedEnd + i * 0.08, 0.4)}
             >
               {s}
-            </motion.span>
+            </m.span>
           ))}
         </div>
-      </motion.div>
-    </motion.figure>
+      </m.div>
+    </m.figure>
   );
 }

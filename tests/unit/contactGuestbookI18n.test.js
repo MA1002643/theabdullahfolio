@@ -26,7 +26,8 @@ import { IntlWrapper, messagesFor } from '../support/intl.jsx';
 
 vi.mock('framer-motion', async (importOriginal) => {
   const actual = await importOriginal();
-  return { ...actual, AnimatePresence: ({ children }) => children };
+  const { withFullMotion } = await import('../support/motionDouble.js');
+  return { ...withFullMotion(actual), AnimatePresence: ({ children }) => children };
 });
 
 // The pill's figure rolls in; pin it to the target so the label is readable.

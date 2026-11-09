@@ -1,10 +1,10 @@
 'use client';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Home } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import TransitionLink from '@/components/pageTransition/TransitionLink';
 
-const NavLink = motion(TransitionLink);
+const NavLink = m.create(TransitionLink);
 
 // The house glyph is not a direction, so it is not mirrored under RTL; the
 // tooltip opens on the reading-END side via logical insets (issue #82).

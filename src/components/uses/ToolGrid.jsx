@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useViewportCountUp } from '@/hooks/useViewportCountUp';
 import { fluid } from '@/lib/fluidScale';
@@ -109,16 +109,16 @@ function CategoryHead({
     <div ref={ref}>
       <div className="uses-stack__head flex items-baseline">
         <h3 id={headingId} className="uses-stack__cat uses-mask m-0 font-mono uppercase">
-          <motion.span
+          <m.span
             className="uses-anim uses-mask__in"
             initial={reduceMotion ? false : { y: '140%' }}
             animate={{ y: on ? '0%' : '140%' }}
             transition={at(0, 0.55)}
           >
             {label}
-          </motion.span>
+          </m.span>
         </h3>
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="uses-anim uses-stack__rule"
           initial={reduceMotion ? false : { scaleX: 0 }}
@@ -127,7 +127,7 @@ function CategoryHead({
         />
         {/* The digits are aria-hidden while they climb; the section's
             aria-labelled list below carries the count. */}
-        <motion.p
+        <m.p
           ref={tallyRef}
           className="uses-anim uses-stack__tally m-0 font-mono uppercase tabular-nums"
           initial={reduceMotion ? false : { opacity: 0 }}
@@ -149,15 +149,15 @@ function CategoryHead({
               </span>
             ),
           })}
-        </motion.p>
+        </m.p>
       </div>
       {lay ? (
-        <motion.p
+        <m.p
           className="uses-anim uses-stack__lay m-0"
           {...riseProps(on, reduceMotion, at(0.16, 0.5), 6)}
         >
           {lay}
-        </motion.p>
+        </m.p>
       ) : null}
     </div>
   );
@@ -167,7 +167,7 @@ function ReadingKey({ counted, revealed, reduceMotion, revealedAtRef }) {
   const t = useTranslations('Uses');
   const { ref, on, delay } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
   return (
-    <motion.p
+    <m.p
       ref={ref}
       className="uses-anim uses-stack__key m-0 font-mono uppercase text-foreground/60"
       style={{ marginTop: fluid(1.2) }}
@@ -186,7 +186,7 @@ function ReadingKey({ counted, revealed, reduceMotion, revealedAtRef }) {
       ) : (
         t('stack.keyPending')
       )}
-    </motion.p>
+    </m.p>
   );
 }
 

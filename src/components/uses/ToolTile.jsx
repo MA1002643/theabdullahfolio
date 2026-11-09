@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useDirection } from '@/i18n/useDirection';
 import { useViewportCountUp } from '@/hooks/useViewportCountUp';
@@ -206,7 +206,7 @@ export default function ToolTile({
   const counting = on && landed && meterInView;
 
   return (
-    <motion.li
+    <m.li
       ref={ref}
       className="uses-anim uses-tool flex min-w-0 flex-col"
       data-slug={item.slug}
@@ -229,7 +229,7 @@ export default function ToolTile({
             is framer's on the image, so the two never fight over one
             inline `transform`. */}
         <span className="uses-tool__icon block">
-          <motion.img
+          <m.img
             className="uses-anim"
             src={getIconUrl(item.slug, item.source)}
             alt=""
@@ -253,7 +253,7 @@ export default function ToolTile({
           />
         </span>
         <span className="uses-tool__name uses-mask block min-w-0">
-          <motion.span
+          <m.span
             className="uses-anim uses-mask__in truncate"
             // A tool's name: translate="no" (the pseudo-locale gate reads it).
             translate="no"
@@ -262,9 +262,9 @@ export default function ToolTile({
             transition={at(0.18, 0.55)}
           >
             {item.displayName}
-          </motion.span>
+          </m.span>
         </span>
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="uses-anim uses-tool__rank font-mono tabular-nums"
           // The rank sits at the inline end, so it slides in from that side.
@@ -273,15 +273,15 @@ export default function ToolTile({
           transition={at(0.3, 0.45)}
         >
           {rank}
-        </motion.span>
+        </m.span>
       </div>
 
-      <motion.p
+      <m.p
         className="uses-anim uses-tool__desc"
         {...riseProps(on, reduceMotion, at(0.26, 0.5), 6)}
       >
         {description}
-      </motion.p>
+      </m.p>
 
       {/* Track first at full width, figure beneath: every bar on the plate
           is the same length, so fills compare across cards. */}
@@ -307,7 +307,7 @@ export default function ToolTile({
             />
           ))}
         </div>
-        <motion.p
+        <m.p
           className="uses-anim uses-tool__figure m-0 font-mono"
           aria-hidden="true"
           {...riseProps(on, reduceMotion, at(FIGURE_AT_S, 0.45), 4)}
@@ -329,8 +329,8 @@ export default function ToolTile({
             : counted
               ? '—'
               : t('stack.curated')}
-        </motion.p>
+        </m.p>
       </div>
-    </motion.li>
+    </m.li>
   );
 }

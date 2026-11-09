@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useAnimation } from "framer-motion";
+import { m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import {
     Activity,
@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { fastStartSlowFinish } from "@/utils/animationCurves";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
+import { arcSweep } from "./arcSweep";
 import { fluid, fluidText } from "@/lib/fluidScale";
 import { useTranslations } from "next-intl";
 import { glyphUnits } from "@/components/ui/textSegments";
@@ -124,7 +125,7 @@ function AnimatedTitle({ text, play }) {
         },
     };
     return (
-        <motion.h2
+        <m.h2
             variants={container}
             initial="hidden"
             animate={play ? "visible" : "hidden"}
@@ -133,16 +134,16 @@ function AnimatedTitle({ text, play }) {
             aria-label={text}
         >
             {chars.map((c, i) => (
-                <motion.span
+                <m.span
                     key={i}
                     variants={charVariant}
                     style={{ display: "inline-block" }}
                     aria-hidden="true"
                 >
                     {c === " " ? " " : c}
-                </motion.span>
+                </m.span>
             ))}
-        </motion.h2>
+        </m.h2>
     );
 }
 
@@ -210,13 +211,13 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
     }, [playToken, target, pulseOnComplete, prefersReducedMotion]);
 
     return (
-        <motion.div
+        <m.div
             variants={metricRowVariantsFor(sign)}
             whileHover={prefersReducedMotion ? undefined : { x: 5 * sign, transition: { duration: 0.18 } }}
             className="flex items-center justify-between gap-2 w-full px-2 py-1.5 rounded-md hover:bg-[#ff6d05]/5 transition-colors"
         >
             <div className="flex items-center gap-2 min-w-0">
-                <motion.span
+                <m.span
                     whileHover={prefersReducedMotion ? undefined : { scale: 1.25, rotate: 6 }}
                     transition={{ type: "spring", stiffness: 400 }}
                     className="flex-shrink-0"
@@ -225,7 +226,7 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
                         className="w-4 h-4 sm:w-5 sm:h-5"
                         style={{ color: AMBER, width: fluidText(1.25, 1), height: fluidText(1.25, 1) }}
                     />
-                </motion.span>
+                </m.span>
                 <span
                     className={`text-xs sm:text-sm md:text-base truncate text-fire-amber${heartbeat ? " skill-heartbeat" : ""}`}
                     style={{ textShadow: "none", fontSize: fluidText(1, 0.75) }}
@@ -233,7 +234,7 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
                     {label}
                 </span>
             </div>
-            <motion.span
+            <m.span
                 animate={pulse ? { scale: [1, 1.18, 1], transition: { duration: 0.4, ease: "easeOut" } } : { scale: 1 }}
                 onAnimationComplete={() => pulse && setPulse(false)}
                 // `heartbeat` is the post-banner "this stat just rose" opacity pulse
@@ -246,8 +247,8 @@ function MetricRow({ icon: Icon, label, value, playToken, pulseOnComplete = fals
                     toLocaleString() output. */}
                 <span className="sr-only">{digits.grouped(target)}</span>
                 <span aria-hidden="true">{digits.grouped(display)}</span>
-            </motion.span>
-        </motion.div>
+            </m.span>
+        </m.div>
     );
 }
 
@@ -261,27 +262,11 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
     const t = useTranslations("About");
     const radius = 70;
     const circumference = 2 * Math.PI * radius;
-    const controls = useAnimation();
     // Fraction filled follows the prior contract (percentile/100), clamped so
     // a stray >100 / <0 percentile can't over/under-draw the arc.
     const fraction = Math.min(Math.max(Number(percentile) || 0, 0), 100) / 100;
     const finalOffset = circumference * (1 - fraction);
-
-    useEffect(() => {
-        if (prefersReducedMotion) {
-            controls.start({ strokeDashoffset: finalOffset, transition: { duration: 0 } });
-            return;
-        }
-        if (playToken === 0) {
-            controls.set({ strokeDashoffset: circumference });
-            return;
-        }
-        controls.set({ strokeDashoffset: circumference });
-        controls.start({
-            strokeDashoffset: finalOffset,
-            transition: { duration: DURATION_MS / 1000, ease: fastStartSlowFinish },
-        });
-    }, [playToken, finalOffset, circumference, controls, prefersReducedMotion]);
+    const arc = arcSweep({ playToken, finalOffset, circumference, prefersReducedMotion });
 
     return (
         <div
@@ -293,7 +278,7 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
         >
             {/* Breathing radial glow behind the ring — the "beyond elite"
                 flourish. Held static (no pulse) under reduced motion. */}
-            <motion.div
+            <m.div
                 aria-hidden="true"
                 className="absolute inset-2 rounded-full"
                 style={{
@@ -313,7 +298,11 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
                     the repo card's arc track. */}
                 <circle cx="80" cy="80" r={radius} stroke={ARC_TRACK} strokeWidth="6" fill="transparent" />
                 {/* Progress arc — orange, sweeps in on entry. */}
-                <motion.circle
+                {/* Declarative sweep, remounted per play: ./arcSweep.js says why. */}
+                <m.circle
+                    key={arc.key}
+                    initial={arc.initial}
+                    animate={arc.animate}
                     cx="80"
                     cy="80"
                     r={radius}
@@ -322,8 +311,7 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
                     fill="transparent"
                     strokeLinecap="round"
                     strokeDasharray={circumference}
-                    initial={{ strokeDashoffset: prefersReducedMotion ? finalOffset : circumference }}
-                    animate={controls}
+                    transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION_MS / 1000, ease: fastStartSlowFinish }}
                     style={{ rotate: -90, transformOrigin: "80px 80px" }}
                 />
             </svg>
@@ -499,7 +487,7 @@ export default function GitHubStatsCard({ data, userName, isUpdated, diffMessage
     ].map((stat) => ({ ...stat, label: t(`statsCard.metrics.${stat.field}`) }));
 
     return (
-        <motion.div
+        <m.div
             ref={cardRef}
             variants={cardVariants}
             initial="hidden"
@@ -523,7 +511,7 @@ export default function GitHubStatsCard({ data, userName, isUpdated, diffMessage
                 the API is down or we're showing kept/snapshot data it's omitted
                 entirely rather than asserting "live" over stale data. The title
                 + icon always render. */}
-            <motion.div variants={childVariants} className="mb-2">
+            <m.div variants={childVariants} className="mb-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <Activity className="w-5 h-5 flex-shrink-0" style={{ color: AMBER }} />
                     {/* The account's display name is a proper name (untranslated); the
@@ -532,7 +520,7 @@ export default function GitHubStatsCard({ data, userName, isUpdated, diffMessage
                 </div>
                 {isLive && (
                     <div className="flex items-center gap-2 mt-1.5">
-                        <motion.span
+                        <m.span
                             aria-hidden="true"
                             className="inline-block w-1.5 h-1.5 rounded-full"
                             style={{ background: ORANGE, boxShadow: `0 0 6px ${ORANGE}` }}
@@ -544,10 +532,10 @@ export default function GitHubStatsCard({ data, userName, isUpdated, diffMessage
                         </span>
                     </div>
                 )}
-            </motion.div>
+            </m.div>
 
             {/* Animated hairline divider — fills from the left on entry. */}
-            <motion.div
+            <m.div
                 aria-hidden="true"
                 className="h-px elite-divider mb-4 origin-left rtl:origin-right"
                 variants={{
@@ -558,12 +546,12 @@ export default function GitHubStatsCard({ data, userName, isUpdated, diffMessage
 
             {/* Metric column + rank arc — column full-width on mobile (labels
                 left, values right), side-by-side and centered at sm+. */}
-            <motion.div
+            <m.div
                 variants={childVariants}
                 className="flex flex-col items-center gap-4 sm:gap-6 sm:flex-row sm:flex-wrap sm:justify-center"
                 style={{ gap: fluid(1.5) }}
             >
-                <motion.div
+                <m.div
                     variants={metricContainerVariants}
                     className="flex flex-col gap-1 w-full sm:w-auto sm:flex-1 sm:min-w-[220px]"
                 >
@@ -579,17 +567,17 @@ export default function GitHubStatsCard({ data, userName, isUpdated, diffMessage
                             prefersReducedMotion={prefersReducedMotion}
                         />
                     ))}
-                </motion.div>
+                </m.div>
 
-                <motion.div variants={childVariants} className="flex items-center justify-center flex-shrink-0">
+                <m.div variants={childVariants} className="flex items-center justify-center flex-shrink-0">
                     <RankArc
                         level={data.level}
                         percentile={parseFloat(data.percentile)}
                         playToken={playToken}
                         prefersReducedMotion={prefersReducedMotion}
                     />
-                </motion.div>
-            </motion.div>
-        </motion.div>
+                </m.div>
+            </m.div>
+        </m.div>
     );
 }

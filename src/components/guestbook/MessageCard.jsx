@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  motion,
+  m,
   useInView,
   useMotionTemplate,
   useScroll,
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCardTilt } from '@/hooks/useCardTilt';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
+import { useStaticMotion } from '@/components/motion/useStaticMotion';
 import { timeAgo } from '@/lib/guestbook/timeAgo';
 import ReactionBar from './ReactionBar';
 import SignatureGlyph from './SignatureGlyph';
@@ -62,7 +63,11 @@ export default function MessageCard({
   // — opacity belongs to the entrance/exit animations and a style motion
   // value would override them.
   const cardRef = useRef(null);
-  const depthOn = GUESTBOOK_FLAGS.scrollChoreography && !reduceMotion;
+  // Off in the static motion mode too (no features chunk, issue #200): the
+  // blur is motion values alone, which nothing writes there, so it would
+  // freeze at its first reading, a card blurred for the rest of the visit.
+  const staticMotion = useStaticMotion();
+  const depthOn = GUESTBOOK_FLAGS.scrollChoreography && !reduceMotion && !staticMotion;
   const { scrollYProgress } = useScroll({
     target: cardRef,
     offset: ['start end', 'start 0.65'],
@@ -150,7 +155,7 @@ export default function MessageCard({
   };
 
   return (
-    <motion.li
+    <m.li
       ref={cardRef}
       id={message.id}
       layout={!reduceMotion}
@@ -179,7 +184,7 @@ export default function MessageCard({
           new arrival) — a one-shot ember bloom that settles back to the card's
           resting shadow. Skipped under reduced motion. */}
       {isNew && !reduceMotion ? (
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-xl"
           initial={{ boxShadow: '0 0 0px rgba(255, 109, 5, 0)' }}
@@ -329,12 +334,12 @@ export default function MessageCard({
       {/* Specular glare — pointer-tracked radial highlight over the card,
           driven per-frame by motion values (no React re-renders). */}
       {tiltOn ? (
-        <motion.div
+        <m.div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-[inherit]"
           style={glareStyle}
         />
       ) : null}
-    </motion.li>
+    </m.li>
   );
 }

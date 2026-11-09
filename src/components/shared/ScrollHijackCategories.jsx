@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import { onMediaChange } from '@/lib/mediaQuery';
@@ -293,7 +293,7 @@ const CategoryItem = ({
   });
 
   return (
-    <motion.button
+    <m.button
       ref={itemRef}
       type="button"
       data-category={label}
@@ -357,7 +357,7 @@ const CategoryItem = ({
           (<span ref={countRef}>0</span>)
         </span>
       )}
-    </motion.button>
+    </m.button>
   );
 };
 
@@ -690,7 +690,7 @@ const ScrollHijackCategories = ({
   }, [active, activeIndex, scrollItemIntoView]);
 
   return (
-    <motion.div
+    <m.div
       ref={outerRef}
       className={`w-full ${className}`}
       style={style}
@@ -796,7 +796,7 @@ const ScrollHijackCategories = ({
           </>
         )}
       </div>
-    </motion.div>
+    </m.div>
   );
 };
 

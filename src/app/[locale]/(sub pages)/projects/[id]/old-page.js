@@ -1,5 +1,5 @@
 "use client";
-import { motion, useScroll, useTransform, useSpring, useMotionValue, useAnimation } from "framer-motion";
+import { m, useScroll, useTransform, useSpring, useMotionValue, useAnimation } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 import { FaReact, FaNodeJs, FaDatabase, FaLock, FaCreditCard, FaComments, FaCog, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 
@@ -110,34 +110,34 @@ const ProjectPage = () => {
       `}</style>
 
       {/* Progress bar */}
-      <motion.div
+      <m.div
         className="fixed top-0 left-0 h-0.5 bg-gradient-to-r from-orange-500 to-amber-500 z-50"
         style={{ width: progressWidth, transformOrigin: "0%" }}
       />
 
       {/* Aurora parallax background */}
-      <motion.div
+      <m.div
         className="fixed inset-0 -z-10 opacity-20"
         style={{ x: auroraX, y: auroraY }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-transparent to-amber-500/20" />
-      </motion.div>
+      </m.div>
 
       {/* Lantern sweep effect */}
-      <motion.div
+      <m.div
         className="fixed inset-0 -z-10 pointer-events-none"
         initial={{ x: "-100%", opacity: 0 }}
         animate={{ x: "100%", opacity: [0, 0.3, 0] }}
         transition={{ duration: 1.2, delay: 0.5, ease: "easeInOut" }}
       >
         <div className="w-1/3 h-full bg-gradient-radial from-amber-500/30 via-orange-500/10 to-transparent blur-3xl" />
-      </motion.div>
+      </m.div>
 
       {/* Hero Section */}
       <section className="absolute top-40 sm:top-28 md:top-14 left-1/2 -translate-x-1/2 flex flex-col items-center justify-start text-center space-y-2 px-4 md:px-0">
 
         {/* Title with neon effect */}
-        <motion.h1
+        <m.h1
           initial={{ opacity: 0, filter: "brightness(0)" }}
           animate={{
             opacity: 1,
@@ -148,17 +148,17 @@ const ProjectPage = () => {
           style={neonTextStyle}
         >
           E-Commerce Dashboard
-        </motion.h1>
+        </m.h1>
 
         {/* Breathing glow ring */}
-        <motion.div
+        <m.div
           className="absolute -z-10 w-full h-24 bg-gradient-radial from-amber-500/20 to-transparent blur-2xl"
           animate={{ scale: [1, 1.02, 1] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         />
 
         {/* Tagline with type-on effect */}
-        <motion.p
+        <m.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
@@ -166,10 +166,10 @@ const ProjectPage = () => {
           style={neonTextStyle}
         >
           {displayedText}
-        </motion.p>
+        </m.p>
 
         {/* Laptop Showcase */}
-        <motion.div
+        <m.div
           ref={laptopRef}
           className="relative flex items-center justify-center w-full max-w-[90vw] md:max-w-[40em] h-[13em] sm:h-[15em] md:h-[18em] mb-10"
           style={{
@@ -190,14 +190,14 @@ const ProjectPage = () => {
           </div>
 
           {/* Screen boot sequence with scan line */}
-          <motion.div
+          <m.div
             className="absolute top-[10%] sm:top-[9%] left-[12%] sm:left-[12%] md:left-[20%] h-[61%] sm:h-[63%] w-[75%] sm:w-[76%] md:w-[60%] overflow-hidden rounded-xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.4 }}
           >
             {/* Scan line effect */}
-            <motion.div
+            <m.div
               className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/50 to-transparent h-8 -z-10"
               initial={{ y: "-10%" }}
               animate={{ y: "110%" }}
@@ -208,21 +208,21 @@ const ProjectPage = () => {
             <div className="w-full h-full overflow-y-auto bg-gradient-to-b from-black/85 to-black/60 backdrop-blur-md flex flex-row items-stretch justify-between p-4 text-gray-200 gap-4 text-left laptop-scroll">
 
               {/* LEFT PANEL */}
-              <motion.div
+              <m.div
                 className="w-[100%] sm:w-[60%] flex flex-col space-y-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.5, staggerChildren: 0.06 }}
               >
                 {/* Quick badges with float animation */}
-                <motion.div
+                <m.div
                   className="flex flex-wrap gap-1"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 1.6, type: "spring", stiffness: 200 }}
                 >
                   {badges.map((badge, i) => (
-                    <motion.span
+                    <m.span
                       key={i}
                       className="text-[0.6rem] border border-amber-500/50 px-2 py-[1px] rounded-full bg-black/30 text-amber-300"
                       animate={{ y: [0, -2, 0] }}
@@ -234,12 +234,12 @@ const ProjectPage = () => {
                       }}
                     >
                       {badge}
-                    </motion.span>
+                    </m.span>
                   ))}
-                </motion.div>
+                </m.div>
 
                 {/* Tools & Frameworks with slide */}
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, x: -24 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 1.7, duration: 0.5 }}
@@ -250,10 +250,10 @@ const ProjectPage = () => {
                   <div className="flex gap-2 text-sm text-amber-200/80">
                     <FaReact /> <FaNodeJs /> <FaDatabase /> <FaCog />
                   </div>
-                </motion.div>
+                </m.div>
 
                 {/* Project Overview */}
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, x: -24 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 1.8, duration: 0.5 }}
@@ -264,11 +264,11 @@ const ProjectPage = () => {
                   <p className="text-[0.85rem] text-amber-100/80 mb-2">
                     This platform streamlines e-commerce workflows through a unified dashboard and live analytics.
                   </p>
-                </motion.div>
+                </m.div>
 
                 {/* Problem → Solution with divider line */}
-                <motion.div className="relative">
-                  <motion.div
+                <m.div className="relative">
+                  <m.div
                     initial={{ opacity: 0, x: 24 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 1.9, duration: 0.5 }}
@@ -276,21 +276,21 @@ const ProjectPage = () => {
                     <p className="text-[0.8rem] text-amber-100/60">
                       It solves the complexity of managing multiple tools by offering a centralized, intuitive interface.
                     </p>
-                  </motion.div>
+                  </m.div>
 
                   {/* Golden divider line */}
-                  <motion.svg
+                  <m.svg
                     className="absolute -right-2 top-0 h-full w-1"
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
                     transition={{ delay: 2, duration: 0.8 }}
                   >
                     <line x1="0" y1="0" x2="0" y2="100%" stroke="rgba(251, 191, 36, 0.5)" strokeWidth="2" />
-                  </motion.svg>
-                </motion.div>
+                  </m.svg>
+                </m.div>
 
                 {/* Features with stagger & hover glow */}
-                <motion.div
+                <m.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 2, staggerChildren: 0.1 }}
@@ -298,7 +298,7 @@ const ProjectPage = () => {
                   <h3 className="text-amber-400 text-xs font-semibold uppercase mb-2">Features</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {features.map((f, i) => (
-                      <motion.div
+                      <m.div
                         key={i}
                         className="flex items-start gap-2 text-[0.68rem] p-2 rounded border border-transparent hover:border-amber-500/50 transition-all duration-300"
                         initial={{ opacity: 0, y: 6 }}
@@ -314,19 +314,19 @@ const ProjectPage = () => {
                           <p className="font-medium text-amber-200">{f.title}</p>
                           <p className="text-amber-100/70">{f.desc}</p>
                         </div>
-                      </motion.div>
+                      </m.div>
                     ))}
                   </div>
-                </motion.div>
+                </m.div>
 
                 {/* CTA Buttons inside screen */}
-                <motion.div
+                <m.div
                   className="flex gap-3 mt-4"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 2.5, type: "spring" }}
                 >
-                  <motion.button
+                  <m.button
                     className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/50 rounded text-xs text-amber-200 font-semibold"
                     whileHover={{
                       scale: 1.05,
@@ -336,8 +336,8 @@ const ProjectPage = () => {
                   >
                     <FaExternalLinkAlt size={10} />
                     Live Demo
-                  </motion.button>
-                  <motion.button
+                  </m.button>
+                  <m.button
                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-700/30 border border-gray-500/50 rounded text-xs text-gray-300 font-semibold"
                     whileHover={{
                       scale: 1.05,
@@ -347,12 +347,12 @@ const ProjectPage = () => {
                   >
                     <FaGithub size={10} />
                     GitHub
-                  </motion.button>
-                </motion.div>
-              </motion.div>
+                  </m.button>
+                </m.div>
+              </m.div>
 
               {/* RIGHT PANEL - Image Gallery */}
-              <motion.div
+              <m.div
                 className="w-[38%] h-full hidden sm:block sticky top-0 self-start overflow-hidden rounded-lg border border-amber-500/40 bg-black/50 p-1"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -360,7 +360,7 @@ const ProjectPage = () => {
               >
                 <div className="relative w-full h-full">
                   {images.map((src, index) => (
-                    <motion.img
+                    <m.img
                       key={index}
                       src={src}
                       alt={`slide-${index}`}
@@ -372,10 +372,10 @@ const ProjectPage = () => {
                     />
                   ))}
                 </div>
-              </motion.div>
+              </m.div>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       </section>
     </div>
   );

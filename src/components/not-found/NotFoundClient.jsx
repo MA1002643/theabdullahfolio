@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Briefcase, GraduationCap, History, Phone, Route, User, Wrench } from 'lucide-react';
 import Image from 'next/image';
@@ -248,7 +249,7 @@ export default function NotFoundClient() {
               shifting when message text length changes. */}
           <div className="flex h-7 items-center">
             <AnimatePresence mode="wait">
-              <motion.p
+              <m.p
                 key={messageIndex}
                 // Entrance + exit both use `y` transforms, so both
                 // are gated on reduced-motion. The rotation interval
@@ -268,11 +269,11 @@ export default function NotFoundClient() {
                 className="text-base text-fire-amber sm:text-lg"
               >
                 {t(`messages.${ROTATING_MESSAGES[messageIndex]}`)}
-              </motion.p>
+              </m.p>
             </AnimatePresence>
           </div>
 
-          <motion.p
+          <m.p
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={
@@ -284,7 +285,7 @@ export default function NotFoundClient() {
             style={{ color: "#ffaa2a", textShadow: "none" }}
           >
             {t('subtitle')}
-          </motion.p>
+          </m.p>
         </div>
 
         {/* Contextual recovery — only renders when the mistyped path
@@ -298,7 +299,7 @@ export default function NotFoundClient() {
 
         <ReturnPortal />
 
-        <motion.div
+        <m.div
           initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={
@@ -319,7 +320,7 @@ export default function NotFoundClient() {
               <span className="elite-cta-text">{tNav(`routes.${navKey}`)}</span>
             </Link>
           ))}
-        </motion.div>
+        </m.div>
       </div>
 
       {/* Keyboard hint — gated on `hasHover` (true only when the
@@ -339,7 +340,7 @@ export default function NotFoundClient() {
           server output never claims an H key; the hint fades in
           after hydration on capable devices. */}
       {hasHover && (
-        <motion.p
+        <m.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2, duration: 0.6 }}
@@ -347,7 +348,7 @@ export default function NotFoundClient() {
           style={{ color: "rgba(255, 170, 42, 0.55)", textShadow: "none" }}
         >
           {t('keyHint', { key: 'H' })}
-        </motion.p>
+        </m.p>
       )}
     </main>
   );

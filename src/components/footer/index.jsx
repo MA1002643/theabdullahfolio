@@ -27,7 +27,7 @@
 // /qualifications, /projects and /contact without per-page duplication.
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { localeInfo } from '@/i18n/locales';
@@ -81,7 +81,7 @@ function ColumnHeading({ children }) {
 function FooterReveal({ as = 'div', variants, className, children, ...rest }) {
   const ref = useRef(null);
   const revealed = useFooterReveal(ref, 0.2);
-  const MotionTag = motion[as];
+  const MotionTag = m[as];
   return (
     <MotionTag
       ref={ref}

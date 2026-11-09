@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { MONO_D, MONO_VIEWBOX } from '@/components/emblem/monogram';
 import { breaksWhenSplit } from '@/components/ui/textSegments';
 import { EMBER_PALETTE } from './passagePalette';
@@ -23,7 +23,7 @@ export default function PassageStill({ phase, label }) {
   const shaped = breaksWhenSplit(label);
 
   return (
-    <motion.div
+    <m.div
       className="fixed inset-0 z-[9980] flex flex-col items-center justify-center"
       role="presentation"
       aria-hidden="true"
@@ -65,6 +65,6 @@ export default function PassageStill({ phase, label }) {
       >
         {label}
       </div>
-    </motion.div>
+    </m.div>
   );
 }

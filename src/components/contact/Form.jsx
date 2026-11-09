@@ -10,12 +10,12 @@ import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
-  AnimatePresence,
   animate,
-  motion,
+  m,
   useMotionValue,
   useTransform,
 } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useDirection } from '@/i18n/useDirection';
 
@@ -250,8 +250,8 @@ function SendingLabel({ fill, reduced, word }) {
             x2={box.x + box.w}
             y2="0"
           >
-            <motion.stop offset={bodyBack} stopColor="#fff" stopOpacity="1" />
-            <motion.stop offset={bodyFront} stopColor="#fff" stopOpacity="0" />
+            <m.stop offset={bodyBack} stopColor="#fff" stopOpacity="1" />
+            <m.stop offset={bodyFront} stopColor="#fff" stopOpacity="0" />
           </linearGradient>
           <mask
             id={id.body}
@@ -280,9 +280,9 @@ function SendingLabel({ fill, reduced, word }) {
             x2={box.x + box.w}
             y2="0"
           >
-            <motion.stop offset={edgeBack} stopColor="#000" />
-            <motion.stop offset={edgeMid} stopColor="#fff" />
-            <motion.stop offset={edgeFront} stopColor="#000" />
+            <m.stop offset={edgeBack} stopColor="#000" />
+            <m.stop offset={edgeMid} stopColor="#fff" />
+            <m.stop offset={edgeFront} stopColor="#000" />
           </linearGradient>
           <mask
             id={id.tip}
@@ -324,7 +324,7 @@ function SendingLabel({ fill, reduced, word }) {
 
       {/* 3 — white-hot leading edge, flickering as it advances. */}
       {ready && !reduced && (
-        <motion.g style={{ opacity: tipOpacity }}>
+        <m.g style={{ opacity: tipOpacity }}>
           <text x="0" y="0" fill="#ffe7c0" mask={`url(#${id.tip})`} direction="ltr">
             {word}
             <animate
@@ -334,7 +334,7 @@ function SendingLabel({ fill, reduced, word }) {
               repeatCount="indefinite"
             />
           </text>
-        </motion.g>
+        </m.g>
       )}
 
       {/* 4 — the trailing dots. Two synced layers per dot: a dim base that
@@ -360,7 +360,7 @@ function SendingLabel({ fill, reduced, word }) {
         ))}
       {ready &&
         dots.xs.map((x, i) => (
-          <motion.text
+          <m.text
             key={`dot-lit-${i}`}
             x={x}
             y="0"
@@ -380,7 +380,7 @@ function SendingLabel({ fill, reduced, word }) {
                 repeatCount="indefinite"
               />
             )}
-          </motion.text>
+          </m.text>
         ))}
     </svg>
   );
@@ -425,7 +425,7 @@ function SentLabel({ reduced, label, sign }) {
         aria-hidden="true"
         style={{ overflow: 'visible' }}
       >
-        <motion.path
+        <m.path
           d="M4 12.5 L9.5 18 L20 6.5"
           stroke="#ff6d05"
           strokeWidth="2.5"
@@ -436,13 +436,13 @@ function SentLabel({ reduced, label, sign }) {
           transition={{ duration: 0.45, ease: [0.65, 0, 0.35, 1], delay: 0.08 }}
         />
       </svg>
-      <motion.span
+      <m.span
         initial={reduced ? { opacity: 1 } : { opacity: 0, x: -5 * sign }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.32, ease: 'easeOut', delay: 0.28 }}
       >
         {label}
-      </motion.span>
+      </m.span>
     </span>
   );
 }
@@ -471,7 +471,7 @@ function HeldLabel({ reduced, label, sign }) {
         aria-hidden="true"
         style={{ overflow: 'visible' }}
       >
-        <motion.circle
+        <m.circle
           cx="12"
           cy="12"
           r="8.5"
@@ -481,7 +481,7 @@ function HeldLabel({ reduced, label, sign }) {
           animate={{ pathLength: 1 }}
           transition={{ duration: 0.5, ease: [0.65, 0, 0.35, 1] }}
         />
-        <motion.path
+        <m.path
           d="M12 12 L12 7.5 M12 12 L15 13.5"
           stroke="#ff6d05"
           strokeWidth="2.2"
@@ -492,13 +492,13 @@ function HeldLabel({ reduced, label, sign }) {
           transition={{ duration: 0.3, delay: 0.4 }}
         />
       </svg>
-      <motion.span
+      <m.span
         initial={reduced ? { opacity: 1 } : { opacity: 0, x: -5 * sign }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.32, ease: 'easeOut', delay: 0.3 }}
       >
         {label}
-      </motion.span>
+      </m.span>
     </span>
   );
 }
@@ -663,7 +663,7 @@ function FormContent({ onReset, queue }) {
 
   return (
     <>
-      <motion.form
+      <m.form
         ref={formRef}
         variants={container}
         initial="hidden"
@@ -685,7 +685,7 @@ function FormContent({ onReset, queue }) {
             or clear the form entirely. */}
         <AnimatePresence>
           {draft.restored && (
-            <motion.div
+            <m.div
               key="draft-restored"
               className="draft-restored w-full"
               role="status"
@@ -716,7 +716,7 @@ function FormContent({ onReset, queue }) {
                   {tc('draft.clear')}
                 </button>
               </span>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
@@ -724,7 +724,7 @@ function FormContent({ onReset, queue }) {
           <h2 className="text-[2em] text-amethyst-neon">Message Me</h2>
         </motion.div> */}
 
-        <motion.div variants={item} className="w-full">
+        <m.div variants={item} className="w-full">
           <div
             className={`float-field${sending ? ' field-charge' : ''}${clearing ? ' field-clearing' : ''}`}
             style={{ '--charge-delay': '0ms' }}
@@ -758,7 +758,7 @@ function FormContent({ onReset, queue }) {
               {t('fields.name')}
             </label>
           </div>
-        </motion.div>
+        </m.div>
         {/* Validation errors ride the fluid scale with a 0.75rem legibility
             floor (issue #9): feedback may shrink with the page but never below
             readable. The inline margins override the scaled space-y so each
@@ -777,7 +777,7 @@ function FormContent({ onReset, queue }) {
             {errors.name.message}
           </span>
         )}
-        <motion.div variants={item} className="w-full">
+        <m.div variants={item} className="w-full">
           <div
             className={`float-field${sending ? ' field-charge' : ''}${clearing ? ' field-clearing' : ''}`}
             style={{ '--charge-delay': '120ms' }}
@@ -808,7 +808,7 @@ function FormContent({ onReset, queue }) {
               {t('fields.email')}
             </label>
           </div>
-        </motion.div>
+        </m.div>
         {errors.email && (
           <span
             id="email-error"
@@ -823,7 +823,7 @@ function FormContent({ onReset, queue }) {
             {errors.email.message}
           </span>
         )}
-        <motion.div variants={item} className="w-full">
+        <m.div variants={item} className="w-full">
           <div
             className={`float-field${sending ? ' field-charge' : ''}${clearing ? ' field-clearing' : ''}`}
             style={{ '--charge-delay': '240ms' }}
@@ -851,7 +851,7 @@ function FormContent({ onReset, queue }) {
               {t('fields.subject')}
             </label>
           </div>
-        </motion.div>
+        </m.div>
         {errors.subject && (
           <span
             id="subject-error"
@@ -866,7 +866,7 @@ function FormContent({ onReset, queue }) {
             {errors.subject.message}
           </span>
         )}
-        <motion.div variants={item} className="w-full">
+        <m.div variants={item} className="w-full">
           <div
             className={`float-field float-field--area${sending ? ' field-charge' : ''}${clearing ? ' field-clearing' : ''}`}
             style={{ '--charge-delay': '360ms' }}
@@ -897,7 +897,7 @@ function FormContent({ onReset, queue }) {
               {t('fields.message')}
             </label>
           </div>
-        </motion.div>
+        </m.div>
         {errors.message && (
           <span
             id="message-error"
@@ -933,7 +933,7 @@ function FormContent({ onReset, queue }) {
             staggered in (delay), so it isn't sitting on screen during the
             form's entrance. Stays in the DOM / a11y tree throughout; reduced
             motion gets a plain fade with no slide. */}
-        <motion.div
+        <m.div
           initial={reduced ? { opacity: 0 } : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut', delay: CTA_REVEAL_DELAY }}
@@ -941,7 +941,7 @@ function FormContent({ onReset, queue }) {
           {/* One continuous pill across idle → sending → sent (no shape/colour
               swap). Its content morphs in place; its size is locked by the
               always-mounted "SEND MESSAGE!" halves below. */}
-          <motion.button
+          <m.button
             id="submit-btn"
             name="submit"
             type="submit"
@@ -1006,7 +1006,7 @@ function FormContent({ onReset, queue }) {
                 single ripple that expands and fades once, replacing the old
                 double-halo glow. */}
             {clearing && !reduced && (
-              <motion.span
+              <m.span
                 aria-hidden="true"
                 className="absolute inset-0 rounded-full"
                 style={{
@@ -1023,7 +1023,7 @@ function FormContent({ onReset, queue }) {
                 centred over the locked footprint. One object, one palette. */}
             <AnimatePresence>
               {sending && (
-                <motion.span
+                <m.span
                   key="sending"
                   aria-hidden="true"
                   style={STATE_OVERLAY}
@@ -1033,10 +1033,10 @@ function FormContent({ onReset, queue }) {
                   transition={{ duration: 0.25 }}
                 >
                   <SendingLabel fill={fill} reduced={reduced} word={t('submit.sending')} />
-                </motion.span>
+                </m.span>
               )}
               {launch === 'check' && (
-                <motion.span
+                <m.span
                   key="sent"
                   aria-hidden="true"
                   style={STATE_OVERLAY}
@@ -1046,10 +1046,10 @@ function FormContent({ onReset, queue }) {
                   transition={{ duration: 0.3 }}
                 >
                   <SentLabel reduced={reduced} label={t('submit.sent')} sign={sign} />
-                </motion.span>
+                </m.span>
               )}
               {queued && (
-                <motion.span
+                <m.span
                   key="held"
                   aria-hidden="true"
                   style={STATE_OVERLAY}
@@ -1059,11 +1059,11 @@ function FormContent({ onReset, queue }) {
                   transition={{ duration: 0.3 }}
                 >
                   <HeldLabel reduced={reduced} label={t('submit.held')} sign={sign} />
-                </motion.span>
+                </m.span>
               )}
             </AnimatePresence>
-          </motion.button>
-        </motion.div>
+          </m.button>
+        </m.div>
 
         {/* Connection-aware status: reassures the visitor their message is safely
             held while offline and will send itself on reconnect. Hidden in the
@@ -1073,7 +1073,7 @@ function FormContent({ onReset, queue }) {
             {queued || queue.pending > 0 ? t('status.held') : t('status.offline')}
           </p>
         )}
-      </motion.form>
+      </m.form>
     </>
   );
 }

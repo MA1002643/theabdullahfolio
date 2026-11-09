@@ -53,7 +53,7 @@
 // question is asked.
 
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
@@ -268,7 +268,7 @@ export default function PrivacyNotice() {
       </span>
 
       {open ? (
-        <motion.section
+        <m.section
           ref={panelRef}
           // A region, NOT a dialog: no `aria-modal`, no focus trap, and the page
           // behind it stays operable. Labelled so it is reachable as a landmark
@@ -386,7 +386,7 @@ export default function PrivacyNotice() {
               </button>
             </div>
           </div>
-        </motion.section>
+        </m.section>
       ) : null}
     </>
   );

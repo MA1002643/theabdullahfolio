@@ -1,6 +1,6 @@
 "use client";
 
-import { animate, motion } from "framer-motion";
+import { animate, m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -151,7 +151,7 @@ function AnimatedTitle({ text, play }) {
     visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.35, ease: "easeOut" } },
   };
   return (
-    <motion.h2
+    <m.h2
       variants={container}
       initial="hidden"
       animate={play ? "visible" : "hidden"}
@@ -163,12 +163,12 @@ function AnimatedTitle({ text, play }) {
         c === " " ? (
           <span key={i}>{" "}</span>
         ) : (
-          <motion.span key={i} variants={charVariant} style={{ display: "inline-block" }} aria-hidden="true">
+          <m.span key={i} variants={charVariant} style={{ display: "inline-block" }} aria-hidden="true">
             {c}
-          </motion.span>
+          </m.span>
         ),
       )}
-    </motion.h2>
+    </m.h2>
   );
 }
 
@@ -1244,7 +1244,7 @@ export default function SkillsCard({ username }) {
   });
 
   return (
-    <motion.div
+    <m.div
       ref={cardRef}
       variants={cardV}
       initial="hidden"
@@ -1262,7 +1262,7 @@ export default function SkillsCard({ username }) {
         onExitComplete={() => setBannerExiting(false)}
       />
 
-      <motion.div variants={headerV} className="mb-4">
+      <m.div variants={headerV} className="mb-4">
         <AnimatedTitle text={t("skillsCard.title")} play={settledInView} />
         <p
           className="abt-micro-md flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.18em]"
@@ -1281,7 +1281,7 @@ export default function SkillsCard({ username }) {
               {isLive && (
                 <>
                   <span aria-hidden="true">·</span>
-                  <motion.span
+                  <m.span
                     aria-hidden="true"
                     className="inline-block w-1.5 h-1.5 rounded-full"
                     style={{ background: "#ff6d05", boxShadow: "0 0 6px #ff6d05" }}
@@ -1300,7 +1300,7 @@ export default function SkillsCard({ username }) {
             <span>{t("skillsCard.noneDetected")}</span>
           )}
         </p>
-      </motion.div>
+      </m.div>
 
       {groups.length === 0 ? (
         // Live-only grid: while the crawl is in flight (or returned nothing) a
@@ -1309,7 +1309,7 @@ export default function SkillsCard({ username }) {
           className="flex items-center gap-2 py-6 text-[11px] uppercase tracking-[0.18em]"
           style={{ color: "rgba(255, 170, 42, 0.6)" }}
         >
-          <motion.span
+          <m.span
             aria-hidden="true"
             className="inline-block w-1.5 h-1.5 rounded-full"
             style={{ background: "#ff6d05", boxShadow: "0 0 6px #ff6d05" }}
@@ -1330,6 +1330,6 @@ export default function SkillsCard({ username }) {
           canHover={canHover}
         />
       )}
-    </motion.div>
+    </m.div>
   );
 }

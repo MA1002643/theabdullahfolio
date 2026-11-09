@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ArrowDownRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useDataT } from '@/i18n/useDataT';
@@ -80,7 +80,7 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
       style={{ paddingBlock: fluid(0.75) }}
     >
       {index > 0 ? (
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="uses-anim uses-row__rule"
           initial={reduceMotion ? false : { scaleX: 0 }}
@@ -93,7 +93,7 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
         {/* The stamp: tracking settles wide→column as it lands. The guard
             class pins `letter-spacing: inherit` (the dt's own 0.18em) under
             reduced motion on the first paint. */}
-        <motion.span
+        <m.span
           className="uses-anim uses-anim-track inline-block"
           initial={reduceMotion ? false : { opacity: 0, letterSpacing: '0.42em' }}
           animate={
@@ -104,13 +104,13 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
           transition={at(0.04, 0.6)}
         >
           {row.label}
-        </motion.span>
+        </m.span>
       </dt>
 
       <dd className="uses-value min-w-0 font-light">
         <span className="relative block">
           {/* The cut — a clip wipe over the fire ink… */}
-          <motion.span
+          <m.span
             className="uses-anim uses-anim-clip block"
             initial={reduceMotion ? false : { clipPath: cut.shut }}
             animate={{
@@ -119,13 +119,13 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
             transition={at(cutStart, CUT_S, CUT_EASE)}
           >
             <FireText text={row.value} />
-          </motion.span>
+          </m.span>
           {/* …and the cutter riding its front: same duration, same ease, so
               the lit edge sits exactly on the wipe. Lit for the middle of
               the travel, dark at both ends. Not rendered under reduced
               motion — there is no cut to lead. */}
           {reduceMotion ? null : (
-            <motion.span
+            <m.span
               aria-hidden="true"
               className="uses-cutter"
               initial={{ left: cut.from, opacity: 0 }}
@@ -143,22 +143,22 @@ function MachineRow({ row, index, revealed, reduceMotion, revealedAtRef }) {
           )}
         </span>
         {row.note ? (
-          <motion.span
+          <m.span
             className="uses-anim uses-note mt-1 block text-foreground/60"
             {...riseProps(on, reduceMotion, at(afterCut, 0.5), 6)}
           >
             {row.note}
-          </motion.span>
+          </m.span>
         ) : null}
         {row.href ? (
-          <motion.a
+          <m.a
             href={row.href}
             className="uses-anim uses-xref mt-1.5 inline-flex items-center gap-1 font-mono uppercase text-[#ffaa2a] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6d05]"
             {...riseProps(on, reduceMotion, at(afterCut + 0.1, 0.5), 6)}
           >
             {row.hrefLabel || t('machine.seeItLive')}
             <ArrowDownRight aria-hidden="true" className="h-3 w-3" />
-          </motion.a>
+          </m.a>
         ) : null}
       </dd>
     </div>
@@ -208,7 +208,7 @@ function Nameplate({ rows, revealed, reduceMotion, revealedAtRef, tilt, tiltOn }
   const { ref, on, delay, instant } = useStagedReveal({ revealed, reduceMotion, revealedAtRef });
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
       className="uses-anim uses-nameplate custom-bg-abt relative isolate overflow-hidden rounded-xl"
       data-lit={on ? 'true' : 'false'}
@@ -220,7 +220,7 @@ function Nameplate({ rows, revealed, reduceMotion, revealedAtRef, tilt, tiltOn }
       {...riseProps(on, reduceMotion, staged(reduceMotion || instant, delay, 0, 0.7), 20)}
     >
       {tiltOn ? (
-        <motion.div
+        <m.div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-xl"
           style={tilt.glareStyle}
@@ -239,6 +239,6 @@ function Nameplate({ rows, revealed, reduceMotion, revealedAtRef, tilt, tiltOn }
           />
         ))}
       </dl>
-    </motion.div>
+    </m.div>
   );
 }

@@ -31,6 +31,10 @@ const DEFERRED = {
   // The /about dialogs: a third of that route's own code before #55.
   'src/components/about/ExperienceBreakdownModal.jsx': [],
   'src/components/about/ProjectProgressPopup.jsx': [],
+  // framer-motion's animation features (issue #200), loaded after the first
+  // paint by src/lib/motion/loadFeatures.js.
+  'src/lib/motion/features.js': [],
+  'src/lib/motion/layoutFeatures.js': [],
 };
 
 // The entry points, each of which must actually be loaded lazily somewhere,
@@ -39,6 +43,8 @@ const ENTRIES = [
   'src/components/pageTransition/passageRuntime.js',
   'src/components/about/ExperienceBreakdownModal.jsx',
   'src/components/about/ProjectProgressPopup.jsx',
+  'src/lib/motion/features.js',
+  'src/lib/motion/layoutFeatures.js',
 ];
 
 const SOURCES = walk('src', /\.(m?js|jsx)$/);

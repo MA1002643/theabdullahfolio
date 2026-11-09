@@ -1,9 +1,9 @@
 "use client";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 export default function LanternSweep() {
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, x: -120 }}
             animate={{ opacity: [0, 1, 0], x: [-120, 120, 260] }}
             transition={{
@@ -28,6 +28,6 @@ export default function LanternSweep() {
                     blur-[90px]
                 "
             />
-        </motion.div>
+        </m.div>
     );
 }

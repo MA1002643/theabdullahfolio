@@ -28,7 +28,8 @@ const renderIntl = (ui, options) => render(ui, { wrapper: IntlWrapper, ...option
 // jsdom, and it is not what is under test.
 vi.mock('framer-motion', async (importOriginal) => {
   const actual = await importOriginal();
-  return { ...actual, AnimatePresence: ({ children }) => children ?? null };
+  const { withFullMotion } = await import('../support/motionDouble.js');
+  return { ...withFullMotion(actual), AnimatePresence: ({ children }) => children ?? null };
 });
 
 function renderRail(props) {

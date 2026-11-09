@@ -1,6 +1,7 @@
 "use client";
 
-import { animate, AnimatePresence, motion } from "framer-motion";
+import { animate, m } from "framer-motion";
+import { AnimatePresence } from "@/components/motion/AnimatePresence";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChevronDown, Lock, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -231,7 +232,7 @@ function OverallRing({ percent }) {
           strokeWidth={strokeWidth}
         />
         {/* Arc — starts at 12 o'clock (after the SVG -rotate-90) */}
-        <motion.circle
+        <m.circle
           cx="90"
           cy="90"
           r={radius}
@@ -286,7 +287,7 @@ function MiniRing({ percent, color, tracked, containerRef }) {
         strokeWidth="3"
       />
       {tracked && percent > 0 && (
-        <motion.circle
+        <m.circle
           cx="20"
           cy="20"
           r={radius}
@@ -319,7 +320,7 @@ function CategoryRow({ label, count, total, color, index, containerRef }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
 
   return (
-    <motion.li
+    <m.li
       variants={prefersReducedMotion ? revealNoMotion : revealRow}
       initial="hidden"
       whileInView="visible"
@@ -343,7 +344,7 @@ function CategoryRow({ label, count, total, color, index, containerRef }) {
         className="col-span-2 h-1.5 rounded-full overflow-hidden"
         style={{ background: "rgba(244, 227, 184, 0.05)" }}
       >
-        <motion.div
+        <m.div
           className="h-full rounded-full"
           style={{ background: color, boxShadow: `0 0 8px ${color}73` }}
           initial={prefersReducedMotion ? { width: `${pct}%` } : { width: 0 }}
@@ -352,7 +353,7 @@ function CategoryRow({ label, count, total, color, index, containerRef }) {
           transition={{ duration: 0.9, delay: 0.2 + index * 0.12, ease: "easeOut" }}
         />
       </div>
-    </motion.li>
+    </m.li>
   );
 }
 
@@ -383,7 +384,7 @@ function PipelineBar({ project, containerRef }) {
       {ordered
         .filter((c) => c.count > 0)
         .map((c, i) => (
-          <motion.span
+          <m.span
             key={c.name}
             style={{ background: statusColor(c.name) }}
             initial={prefersReducedMotion ? { width: seg(c.count) } : { width: 0 }}
@@ -429,7 +430,7 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
       : t("progress.row.notTracked");
 
   return (
-    <motion.li
+    <m.li
       variants={prefersReducedMotion ? revealNoMotion : revealRow}
       initial="hidden"
       whileInView="visible"
@@ -481,7 +482,7 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
 
       <AnimatePresence initial={false}>
         {expanded && (
-          <motion.div
+          <m.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -546,10 +547,10 @@ function ProjectRow({ project, containerRef, expanded, onToggle, index }) {
                 </a>
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
-    </motion.li>
+    </m.li>
   );
 }
 
@@ -814,7 +815,7 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef, progre
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -822,7 +823,7 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef, progre
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
           onClick={onClose}
         >
-          <motion.div
+          <m.div
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
@@ -897,7 +898,7 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef, progre
                     {/* Hero — portfolio donut + headline counters. Only a
                         real measurement earns the ring; the fallback payload
                         gets an honest "sync unavailable" note instead. */}
-                    <motion.div
+                    <m.div
                       variants={upV}
                       initial="hidden"
                       whileInView="visible"
@@ -954,12 +955,12 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef, progre
                           {t("progress.unavailable")}
                         </p>
                       )}
-                    </motion.div>
+                    </m.div>
 
                     {/* Category breakdown — static truth from data.js, so it
                         renders on every payload variant. */}
                     <section className="mb-7">
-                      <motion.header
+                      <m.header
                         variants={upV}
                         initial="hidden"
                         whileInView="visible"
@@ -972,7 +973,7 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef, progre
                         <span className="text-[10px] uppercase tracking-[0.16em] text-[#d4af7a]">
                           {t("progress.projectCount", { count: data.totalProjects })}
                         </span>
-                      </motion.header>
+                      </m.header>
                       {/* Capped at ~5 rows: past that the list scrolls WITHIN
                           itself (house thin ember scrollbar), keeping the
                           dialog's own height stable however many categories
@@ -1013,7 +1014,7 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef, progre
 
                     {/* Per-project completion — the live heart of the popup. */}
                     <section>
-                      <motion.header
+                      <m.header
                         variants={upV}
                         initial="hidden"
                         whileInView="visible"
@@ -1026,7 +1027,7 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef, progre
                         <span className="text-[10px] uppercase tracking-[0.16em] text-[#d4af7a]">
                           {t("progress.liveFrom")}
                         </span>
-                      </motion.header>
+                      </m.header>
                       {/* Same 5-row cap as the category list — with eleven
                           boards the list scrolls within itself, so the
                           dialog stays one calm height and rows (ring, bar,
@@ -1083,8 +1084,8 @@ export default function ProjectProgressPopup({ open, onClose, triggerRef, progre
                 )}
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

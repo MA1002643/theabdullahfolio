@@ -15,8 +15,8 @@ import { usePageTransition } from './PageTransitionProvider';
 // `transitionLabel` is the name engraved under the monogram mid-passage
 // (falls back to a prettified route segment in the provider).
 //
-// forwardRef so `motion(TransitionLink)` works wherever the codebase already
-// does `motion(Link)`.
+// forwardRef so `m.create(TransitionLink)` works wherever the codebase already
+// does `m.create(Link)`.
 
 const isModifiedClick = (e) =>
   e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;

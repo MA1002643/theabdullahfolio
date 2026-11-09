@@ -18,7 +18,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
 import { availability } from './footer-data';
@@ -49,7 +49,7 @@ export default function AvailabilityStatus({ className }) {
         aria-hidden="true"
       >
         {!reduced && (
-          <motion.span
+          <m.span
             className="absolute h-2.5 w-2.5 rounded-full bg-[#ff6d05] blur-[2px]"
             initial={{ opacity: 0.4, scale: 1 }}
             animate={{ opacity: [0.4, 0.75, 0.4], scale: [1, 2.3, 1] }}

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useDirection } from '@/i18n/useDirection';
 import FireText from '@/components/shared/FireText';
@@ -73,9 +73,9 @@ function LedgerGroup({ group, index, revealed, reduceMotion, revealedAtRef }) {
   return (
     <dl ref={ref} className="m-0">
       <dt className="uses-eyebrow uses-mask font-mono uppercase" style={{ marginBottom: fluid(0.4) }}>
-        <motion.span className="uses-anim uses-mask__in" {...maskRise(on, reduceMotion, at(0, 0.5))}>
+        <m.span className="uses-anim uses-mask__in" {...maskRise(on, reduceMotion, at(0, 0.5))}>
           {t.has(groupKey) ? t(groupKey) : group.label}
-        </motion.span>
+        </m.span>
       </dt>
       {group.items.map((item, i) => {
         const rowAt = 0.12 + i * ROW_S;
@@ -90,14 +90,14 @@ function LedgerGroup({ group, index, revealed, reduceMotion, revealedAtRef }) {
                 fallback the clipped fill sits over — it also paints
                 `truncate`'s ellipsis, which the clip never reaches. */}
             <span className="uses-ledger__name uses-mask min-w-0 text-[#ffd27d]" translate="no">
-              <motion.span
+              <m.span
                 className="uses-anim uses-mask__in truncate"
                 {...maskRise(on, reduceMotion, at(rowAt, 0.5))}
               >
                 <FireText text={item.name} />
-              </motion.span>
+              </m.span>
             </span>
-            <motion.span
+            <m.span
               aria-hidden="true"
               className="uses-anim uses-ledger__leader"
               style={{ originX: isRtl ? 1 : 0 }}
@@ -105,7 +105,7 @@ function LedgerGroup({ group, index, revealed, reduceMotion, revealedAtRef }) {
               animate={{ scaleX: on ? 1 : reduceMotion ? 1 : 0 }}
               transition={at(rowAt + 0.08, 0.45)}
             />
-            <motion.span
+            <m.span
               // The number is the readout, so it rests in the page title's
               // ember (owner ask, same day). The stamp still lands a hair
               // large and BRIGHTER — the ramp's gold head — and settles to
@@ -122,7 +122,7 @@ function LedgerGroup({ group, index, revealed, reduceMotion, revealedAtRef }) {
               transition={at(rowAt + 0.24, 0.55)}
             >
               {item.installed ?? item.version}
-            </motion.span>
+            </m.span>
           </dd>
         );
       })}
@@ -144,7 +144,7 @@ function Foot({ facts, total, index, revealed, reduceMotion, revealedAtRef }) {
   });
   const all = facts?.bom?.total ?? null;
   return (
-    <motion.p
+    <m.p
       ref={ref}
       className="uses-anim uses-caption font-mono uppercase text-foreground/60"
       style={{ marginTop: fluid(1.25) }}
@@ -177,7 +177,7 @@ function Foot({ facts, total, index, revealed, reduceMotion, revealedAtRef }) {
           · {t.rich('bom.built', { date: stamp, fig: figTag })}
         </>
       ) : null}
-    </motion.p>
+    </m.p>
   );
 }
 

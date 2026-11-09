@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { Languages, X } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { localeInfo, matchLocale } from '@/i18n/locales';
@@ -106,7 +107,7 @@ export default function LocaleSuggestion() {
   return (
     <AnimatePresence>
       {offer && copy ? (
-        <motion.aside
+        <m.aside
           key="locale-suggestion"
           role="region"
           aria-label={copy.region}
@@ -148,7 +149,7 @@ export default function LocaleSuggestion() {
               {interpolate(copy.dismiss, { current: here.endonym })}
             </button>
           </div>
-        </motion.aside>
+        </m.aside>
       ) : null}
     </AnimatePresence>
   );

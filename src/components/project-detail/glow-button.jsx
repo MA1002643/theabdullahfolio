@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 // A real external link styled as the scene's glowing button (issue #92). It
 // used to be a <motion.button> that accepted `href` and ignored it, so "Live
@@ -12,7 +12,7 @@ import { motion } from "framer-motion";
 // accessibility tree; ProjectIntro renders the accessible pair in normal flow.
 export function GlowButton({ children, href, label, inert3d = false }) {
     return (
-        <motion.a
+        <m.a
             href={href}
             target="_blank"
             rel="noopener noreferrer"
@@ -52,7 +52,7 @@ export function GlowButton({ children, href, label, inert3d = false }) {
     "
         >
             {/* Ripple glow layer */}
-            <motion.span
+            <m.span
                 initial={{ scale: 0, opacity: 0 }}
                 whileHover={{ scale: 1.5, opacity: 0.3 }}
                 transition={{ duration: 0.55, ease: "easeOut" }}
@@ -64,7 +64,7 @@ export function GlowButton({ children, href, label, inert3d = false }) {
             />
 
             <span className="relative z-10">{children}</span>
-        </motion.a>
+        </m.a>
 
     );
 }

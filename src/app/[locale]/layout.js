@@ -5,6 +5,7 @@ import { hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import CustomCursor from '@/components/CustomCursor';
 import LoaderWrapper from '@/components/loaderWrapper';
+import MotionFeatures from '@/components/motion/MotionFeatures';
 import MotionPreferences from '@/components/MotionPreferences';
 import PageTransitionProvider from '@/components/pageTransition/PageTransitionProvider';
 import GlobalToaster from '@/components/GlobalToaster';
@@ -197,6 +198,11 @@ export default async function LocaleLayout({ children, params }) {
               subtrees read it: <PrivacyGate /> inside the transition provider,
               and <ConsentedAnalytics /> at the end of <body>. It renders no
               DOM node of its own, so the page's layout is unchanged. */}
+          {/* framer-motion's features, loaded after the first paint (issue
+              #200). Outermost of the client providers because every `m.*`
+              component on the page needs it, the custom cursor and the toaster
+              outside <MotionPreferences> included. No DOM node of its own. */}
+          <MotionFeatures>
           <ConsentProvider>
             {/* Owns the footer guitar track's <audio> element + on/off state.
                 MUST sit in the root layout: the (sub pages) layout that renders
@@ -251,6 +257,7 @@ export default async function LocaleLayout({ children, params }) {
                 platform they would 404 on every load. */}
             <ConsentedAnalytics vercel={Boolean(process.env.VERCEL)} />
           </ConsentProvider>
+          </MotionFeatures>
         </IntlScope>
       </body>
     </html>

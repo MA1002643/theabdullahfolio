@@ -2,7 +2,8 @@
 
 import React, { useEffect } from 'react';
 import clsx from 'clsx';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { m, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useStaticMotion } from '@/components/motion/useStaticMotion';
 import { useTranslations } from 'next-intl';
 
 // The instrument panel, rebuilt as a clock: the years sit on the rim of a
@@ -71,6 +72,7 @@ const DialYear = ({
   beta,
   isActive,
   rotor,
+  staticAngle,
   canTab,
   interactive,
   reduceMotion,
@@ -78,15 +80,14 @@ const DialYear = ({
   formatYear,
   jumpLabel,
 }) => {
-  const opacity = useTransform(rotor, (r) => {
-    const away = Math.abs(beta + r);
-    return Math.max(0.12, Math.min(1, 1.08 - away / 52));
-  });
+  const tracked = useTransform(rotor, (r) => labelOpacity(beta, r));
+  // Static motion mode: a plain number from the elected era (see EraRail).
+  const opacity = staticAngle === null ? tracked : labelOpacity(beta, staticAngle);
 
-  const Tag = interactive ? motion.button : motion.span;
+  const Tag = interactive ? m.button : m.span;
 
   return (
-    <motion.div
+    <m.div
       className="absolute left-1/2 top-1/2 h-0 w-0"
       style={{
         transform: `rotate(${beta}deg) translateX(-${RADIUS}px)`,
@@ -158,9 +159,13 @@ const DialYear = ({
           />
         </Tag>
       </div>
-    </motion.div>
+    </m.div>
   );
 };
+
+// A year label's opacity for a rotor angle: full on the needle, dimming with
+// its distance around the rim, never below 0.12.
+const labelOpacity = (beta, r) => Math.max(0.12, Math.min(1, 1.08 - Math.abs(beta + r) / 52));
 
 // The complete face — bezel, rotor with graduations and years, needle —
 // rendered once per breakpoint variant off the SAME rotor MotionValue (a
@@ -170,6 +175,7 @@ const DialFace = ({
   years,
   active,
   rotor,
+  staticAngle,
   ticks,
   interactive,
   visible,
@@ -204,7 +210,7 @@ const DialFace = ({
       />
 
       {/* The rotor — the one element the spring rotates. */}
-      <motion.div className="absolute inset-0" style={{ rotate: rotor }}>
+      <m.div className="absolute inset-0" style={{ rotate: staticAngle ?? rotor }}>
         <div aria-hidden>
           {ticks.map(({ angle, silent }) => (
             <div
@@ -237,6 +243,7 @@ const DialFace = ({
             beta={-(maxYear - year) * STEP}
             isActive={active === year}
             rotor={rotor}
+            staticAngle={staticAngle}
             canTab={
               interactive &&
               visible &&
@@ -249,7 +256,7 @@ const DialFace = ({
             jumpLabel={jumpLabel(year)}
           />
         ))}
-      </motion.div>
+      </m.div>
     </div>
 
     {/* The needle — anchored to the screen edge in the gutter OUTSIDE the
@@ -323,6 +330,15 @@ const EraRail = ({
 
   const rotor = reduceMotion ? stepped : wound;
 
+  // Static motion mode (framer's features never arrived, issue #200): nothing
+  // subscribes to a MotionValue there, so the dial would keep the angle it was
+  // first rendered at while `canTab` (computed from `active`) enabled the
+  // buttons of the CURRENT era, leaving focusable years off the visible arc.
+  // The angle and the label opacities come straight from `active` instead,
+  // as plain numbers that every re-render rewrites: the reduced-motion dial,
+  // snapped per era.
+  const staticAngle = useStaticMotion() ? rotorFor(active) : null;
+
   const jump = (year) => {
     document.getElementById(`era-${year}`)?.scrollIntoView({
       behavior: reduceMotion ? 'auto' : 'smooth',
@@ -352,6 +368,7 @@ const EraRail = ({
     years,
     active,
     rotor,
+    staticAngle,
     ticks,
     visible,
     maxYear,
@@ -364,7 +381,7 @@ const EraRail = ({
   return (
     <>
       {/* lg+ — the interactive instrument. */}
-      <motion.nav
+      <m.nav
         aria-label={t('eraRail.label')}
         dir="ltr"
         className="pointer-events-none fixed right-0 top-1/2 z-30 hidden lg:block"
@@ -373,13 +390,13 @@ const EraRail = ({
         transition={{ duration: reduceMotion ? 0 : 0.4, ease: 'easeOut' }}
       >
         <DialFace {...faceProps} interactive />
-      </motion.nav>
+      </m.nav>
 
       {/* Below lg — the decorative echo: same face, same rotor, behind the
           cards at negative z where their backdrop-blur softens it (the
           ghost-year depth trick), half strength, and inert to every input.
           A div, not a nav — it navigates nothing. */}
-      <motion.div
+      <m.div
         aria-hidden
         dir="ltr"
         className="pointer-events-none fixed right-0 top-1/2 -z-10 select-none lg:hidden"
@@ -388,7 +405,7 @@ const EraRail = ({
         transition={{ duration: reduceMotion ? 0 : 0.4, ease: 'easeOut' }}
       >
         <DialFace {...faceProps} interactive={false} />
-      </motion.div>
+      </m.div>
     </>
   );
 };

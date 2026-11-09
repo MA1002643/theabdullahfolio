@@ -15,7 +15,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { localePrefix } from '@/i18n/locales';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { deferredChunk } from '@/lib/deferredChunk';
 import { whenIdle } from '@/lib/whenIdle';

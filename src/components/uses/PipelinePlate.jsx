@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { intlTag } from '@/i18n/format';
 import { fluid } from '@/lib/fluidScale';
@@ -268,7 +268,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
             <g key={e.id}>
               {/* A dashed edge (the webhook) fades in: framer's pathLength
                   draw owns stroke-dasharray, so it cannot also carry dashes. */}
-              <motion.path
+              <m.path
                 d={e.d}
                 className="uses-pipeline__edge"
                 fill="none"
@@ -277,7 +277,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
                 {...(e.dashed ? fadeMotion(e.drawDelay, 0.45) : strokeMotion(e.drawDelay))}
               />
               {flow && !e.dashed ? (
-                <motion.path
+                <m.path
                   d={e.d}
                   className="uses-pipeline__drift"
                   fill="none"
@@ -286,7 +286,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
                 />
               ) : null}
               {e.head ? (
-                <motion.path
+                <m.path
                   d={headPath(e.head)}
                   className="uses-pipeline__head"
                   {...fadeMotion(e.drawDelay + 0.42)}
@@ -297,7 +297,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
 
           {/* Nodes — rise in as their edge lands. */}
           {graph.nodes.map((n) => (
-            <motion.g
+            <m.g
               key={n.id}
               className="uses-anim"
               ref={(el) => {
@@ -383,7 +383,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
                   els.current.ripples[n.id] = el;
                 }}
               />
-            </motion.g>
+            </m.g>
           ))}
 
           {/* Comets — one rider per edge, positioned by the engine. */}
@@ -426,7 +426,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
 
           {/* The single rake of light — once, after the draw, then gone. */}
           {draw ? (
-            <motion.rect
+            <m.rect
               aria-hidden="true"
               y="0"
               width="170"
@@ -459,7 +459,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
           with the window Vercel's Hobby plan actually fires it in. Hidden
           when the build could not read the workflows: never a typed list. */}
       {graph.workflows ? (
-        <motion.p
+        <m.p
           className="uses-anim uses-caption font-mono text-foreground/60"
           style={{ marginTop: fluid(0.8) }}
           initial={reduceMotion ? false : { opacity: 0 }}
@@ -509,7 +509,7 @@ function Schematic({ facts, revealed, reduceMotion }) {
               </span>
             </>
           ) : null}
-        </motion.p>
+        </m.p>
       ) : null}
     </div>
   );

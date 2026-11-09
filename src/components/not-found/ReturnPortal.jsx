@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Home } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -31,7 +31,7 @@ export default function ReturnPortal() {
   const tNav = useTranslations('Nav');
 
   return (
-    <motion.div
+    <m.div
       // `initial={false}` makes framer render in the animate state
       // with no transition — clean way to skip the entrance for
       // reduced-motion users without losing the spec.
@@ -61,7 +61,7 @@ export default function ReturnPortal() {
         {/* The pulsing ring is purely decorative. It sits on top of
             the link but is pointer-events:none so clicks/taps fall
             through to the Link underneath. */}
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-full border border-[#ff6d05]/20"
           animate={
@@ -76,6 +76,6 @@ export default function ReturnPortal() {
           }
         />
       </TransitionLink>
-    </motion.div>
+    </m.div>
   );
 }

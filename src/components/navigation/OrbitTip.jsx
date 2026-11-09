@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -116,7 +117,7 @@ const ScrubPictogram = ({ animate }) => (
       strokeLinejoin="round"
     />
     {/* the cursor, riding its demonstration loop */}
-    <motion.g
+    <m.g
       animate={animate ? { y: [-8, 8] } : { y: 0 }}
       transition={
         animate
@@ -136,7 +137,7 @@ const ScrubPictogram = ({ animate }) => (
         stroke="#0a1420"
         strokeWidth="0.75"
       />
-    </motion.g>
+    </m.g>
   </svg>
 );
 
@@ -261,7 +262,7 @@ const OrbitTip = ({ interacted }) => {
     >
       <AnimatePresence>
         {visible && (
-          <motion.div
+          <m.div
             // Reduced motion keeps the fade (appearing is not vestibular
             // motion) and drops the rise — the same collapse the nav
             // buttons' own reveal applies (issue #87).
@@ -313,7 +314,7 @@ const OrbitTip = ({ interacted }) => {
             >
               <X size={13} strokeWidth={2} />
             </button>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

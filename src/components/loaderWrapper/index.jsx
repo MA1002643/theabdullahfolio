@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import {
-  AnimatePresence,
-  animate as fmAnimate,
-  motion,
+  cubicBezier,
+  m,
   useMotionTemplate,
   useMotionValue,
   useMotionValueEvent,
   useTransform,
 } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { tweenValue } from '@/lib/motion/tweenValue';
 import { useLocale } from 'next-intl';
 import { usePathname } from '@/i18n/navigation';
 import { DEFAULT_LOCALE } from '@/i18n/locales';
@@ -29,6 +30,13 @@ import {
 // easeOutCubic for the build-progress counter: energetic off the start, settles
 // deliberately as the seal nears completion.
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+// The radial wipe's ease-in-out, the curve it had as `[0.65, 0, 0.35, 1]`.
+const easeWipe = cubicBezier(0.65, 0, 0.35, 1);
+
+// Both tweens below run through `tweenValue`, not framer's `animate()`: this
+// component is in every route's static graph, and importing `animate()` held
+// framer's whole animation engine in every first load (issue #200).
+// tests/fitness/lazyMotion.test.js keeps engine imports out of the root graph.
 
 export default function LoaderWrapper({ children }) {
   // The intro plays only when a visit ENTERS on the homepage. Measured on
@@ -45,8 +53,16 @@ export default function LoaderWrapper({ children }) {
   // wrapper lives in the root layout and survives client navigation, so the
   // decision is per full page load: entering on /cv and then clicking Home
   // does not replay it. next-intl's usePathname is locale-free, so /fr is `/`.
+  //
+  // `window.__loaderDone` covers a REMOUNT in the same page load, which is
+  // not a new visit: the motion provider remounts its subtree when the
+  // animation chunk never arrives (src/components/motion/MotionFeatures.jsx),
+  // and without this a visitor still on `/` would watch the intro again. It is
+  // unset on the hydrating render, so that render still matches the server.
   const pathname = usePathname();
-  const [enteredOnHome] = useState(() => pathname === '/');
+  const [enteredOnHome] = useState(
+    () => pathname === '/' && !(typeof window !== 'undefined' && window.__loaderDone),
+  );
   const [showLoader, setShowLoader] = useState(enteredOnHome);
   // 'building' → 'built' → 'igniting' → 'reveal' → 'done'
   const [phase, setPhase] = useState('building');
@@ -167,7 +183,7 @@ export default function LoaderWrapper({ children }) {
     }
 
     // Counter rides the inscription.
-    const controls = fmAnimate(progress, 100, {
+    const controls = tweenValue(progress, 100, {
       duration: BUILD_DURATION_MS / 1000,
       ease: easeOutCubic,
     });
@@ -191,9 +207,9 @@ export default function LoaderWrapper({ children }) {
   // Drive the radial wipe once the reveal beat begins.
   useEffect(() => {
     if (phase !== 'reveal' || prefersReducedMotion) return;
-    const controls = fmAnimate(revealRadius, 150, {
+    const controls = tweenValue(revealRadius, 150, {
       duration: REVEAL_DURATION_MS / 1000,
-      ease: [0.65, 0, 0.35, 1],
+      ease: easeWipe,
     });
     return () => controls.stop();
   }, [phase, revealRadius, prefersReducedMotion]);
@@ -245,7 +261,7 @@ export default function LoaderWrapper({ children }) {
 
       <AnimatePresence>
         {showLoader && (
-          <motion.div
+          <m.div
             key="loader-overlay"
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black"
             initial={{ opacity: 1 }}
@@ -262,7 +278,7 @@ export default function LoaderWrapper({ children }) {
             <div className="relative flex flex-col items-center justify-center">
               {/* The seal. On the reveal beat it scales up and dissolves into
                   ember light, so the bloom and the page-wipe read as one. */}
-              <motion.div
+              <m.div
                 className="h-[clamp(15rem,42vmin,19rem)] w-[clamp(15rem,42vmin,19rem)]"
                 animate={
                   wipeActive
@@ -284,11 +300,11 @@ export default function LoaderWrapper({ children }) {
                 }
               >
                 <EmblemSeal phase={phase} reduced={prefersReducedMotion} />
-              </motion.div>
+              </m.div>
 
               {/* Quiet build counter — the inscription is the real progress, so
                   this stays small and bows out the moment the seal is forged. */}
-              <motion.div
+              <m.div
                 className="loader-percent mt-7 text-sm font-medium tracking-[0.45em] text-[#ff6d05]"
                 style={{
                   fontFamily: "'Helvetica Neue', 'Arial', sans-serif",
@@ -302,9 +318,9 @@ export default function LoaderWrapper({ children }) {
                 {locale === DEFAULT_LOCALE
                   ? `${displayProgress}%`
                   : formatNumber(Number(displayProgress) / 100, locale, { style: 'percent' })}
-              </motion.div>
+              </m.div>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -312,7 +328,7 @@ export default function LoaderWrapper({ children }) {
           clip it. The bloom's leading edge, expanding into the wipe. */}
       <AnimatePresence>
         {showLoader && wipeActive && (
-          <motion.div
+          <m.div
             key="portal-ring"
             className="pointer-events-none fixed left-1/2 top-1/2 z-[10000] rounded-full"
             style={{

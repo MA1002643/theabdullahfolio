@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { usePathname } from '@/i18n/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Music } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -200,7 +201,7 @@ export default function NowPlaying() {
   // the track and expands on hover; it just isn't a link.
   const trackUrl = track.trackUrl || null;
   const hasLink = Boolean(trackUrl);
-  const Card = hasLink ? motion.a : motion.div;
+  const Card = hasLink ? m.a : m.div;
   // The <a href> is a link: focusable for free, and role=link exposes its
   // aria-label + aria-expanded natively. The non-link branch is instead a
   // disclosure BUTTON: role="button" + tabIndex={0} + onClick/onKeyDown make it
@@ -244,7 +245,7 @@ export default function NowPlaying() {
   const ariaLabel = hasLink ? t('cardLabelLink', ariaValues) : t('cardLabel', ariaValues);
 
   return (
-    <motion.div
+    <m.div
       // `floating-bottom-anchor` owns the BOTTOM offset (globals.css): it folds
       // in the safe-area inset and `--consent-lift`, so the card steps up out
       // of the way of the #141 privacy notice on a first visit and back down
@@ -302,7 +303,7 @@ export default function NowPlaying() {
           {/* ── Expanded console (grows the card upward) ───────────────────── */}
           <AnimatePresence initial={false}>
             {showExpanded && (
-              <motion.div
+              <m.div
                 key="panel"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -409,7 +410,7 @@ export default function NowPlaying() {
                       'linear-gradient(90deg, transparent, rgb(255 205 91 / 0.45) 20%, rgb(255 205 91 / 0.45) 80%, transparent)',
                   }}
                 />
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -471,7 +472,7 @@ export default function NowPlaying() {
             {/* Track title + artist, crossfading on track change */}
             <div className="min-w-0 flex-1">
               <AnimatePresence mode="wait">
-                <motion.div
+                <m.div
                   key={trackId}
                   initial={reduceMotion ? false : { opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -497,12 +498,12 @@ export default function NowPlaying() {
                   >
                     {track.artist}
                   </p>
-                </motion.div>
+                </m.div>
               </AnimatePresence>
             </div>
           </div>
         </Card>
       </HoverHint>
-    </motion.div>
+    </m.div>
   );
 }

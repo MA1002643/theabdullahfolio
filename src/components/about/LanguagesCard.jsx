@@ -1,6 +1,6 @@
 "use client";
 
-import { animate, motion } from "framer-motion";
+import { animate, m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import React, {
   useCallback,
@@ -135,7 +135,7 @@ function AnimatedTitle({ text, play }) {
     },
   };
   return (
-    <motion.h2
+    <m.h2
       variants={container}
       initial="hidden"
       animate={play ? "visible" : "hidden"}
@@ -144,16 +144,16 @@ function AnimatedTitle({ text, play }) {
       aria-label={text}
     >
       {chars.map((c, i) => (
-        <motion.span
+        <m.span
           key={i}
           variants={charVariant}
           style={{ display: "inline-block" }}
           aria-hidden="true"
         >
           {c === " " ? " " : c}
-        </motion.span>
+        </m.span>
       ))}
-    </motion.h2>
+    </m.h2>
   );
 }
 
@@ -500,7 +500,7 @@ export default function LanguagesCard({ data, isLive = false }) {
   }, [activeLang, changedRepoKeys]);
 
   return (
-    <motion.div
+    <m.div
       ref={cardRef}
       // Entrance choreography is the GitHub Stats card's, 1:1 (`cardVariants` +
       // `childVariants` + the per-char title). Driven off `settledInView` —
@@ -531,7 +531,7 @@ export default function LanguagesCard({ data, isLive = false }) {
       />
 
       {/* Header — title + an analytics-style meta line. */}
-      <motion.div variants={childV} className="mb-5">
+      <m.div variants={childV} className="mb-5">
         {/* Title — per-character blur-in in vivid orange (#ff6d05), the exact
             treatment + hue the "… GitHub Stats" card uses, so the side-by-side
             pair share one headline animation and colour. */}
@@ -554,7 +554,7 @@ export default function LanguagesCard({ data, isLive = false }) {
               <span aria-hidden="true">·</span>
               {/* Pulsing live dot — same keyframes, loop, and reduced-motion
                   handling as StatsCard's "Live GitHub Metrics" dot. */}
-              <motion.span
+              <m.span
                 aria-hidden="true"
                 className="inline-block w-1.5 h-1.5 rounded-full"
                 style={{ background: "#ff6d05", boxShadow: "0 0 6px #ff6d05" }}
@@ -573,13 +573,13 @@ export default function LanguagesCard({ data, isLive = false }) {
             </>
           )}
         </p>
-      </motion.div>
+      </m.div>
 
       {/* Combined horizontal stacked bar — decorative; the list below
           carries the same data accessibly. `relative` anchors the one-shot
           sheen overlay; per-segment right borders draw crisp dividers
           between colours without changing layout width (border-box). */}
-      <motion.div
+      <m.div
         variants={childV}
         aria-hidden="true"
         className="relative w-full h-2 md:h-3 rounded-full overflow-hidden flex mb-5 bg-gray-700/30"
@@ -607,7 +607,7 @@ export default function LanguagesCard({ data, isLive = false }) {
         {playToken > 0 && !prefersReducedMotion && (
           <span key={playToken} className="lang-bar-sheen" aria-hidden="true" />
         )}
-      </motion.div>
+      </m.div>
 
       {/* Language list — a single column on mobile AND tablet (incl. iPad-
           landscape at `lg`/1024, where this card is already half-width beside
@@ -624,7 +624,7 @@ export default function LanguagesCard({ data, isLive = false }) {
           all 10 — matching the wider canvas to a fuller list. The decorative
           proportion bar above still reflects every language, so it stays a
           complete overview regardless of how many rows are listed. */}
-      <motion.ul
+      <m.ul
         variants={listContainerV}
         className="grid grid-cols-1 xl:grid-cols-2 gap-y-3 gap-x-6 pt-2 text-sm md:text-base xl:text-sm"
         // 0.875rem = the xl:text-sm value in force at the 1440 anchor (the
@@ -653,7 +653,7 @@ export default function LanguagesCard({ data, isLive = false }) {
             onRepoClose={scheduleClose}
           />
         ))}
-      </motion.ul>
+      </m.ul>
 
       {/* Repo-breakdown popover — portaled to <body> so it escapes the card's
           `overflow-hidden`. Rendered only while a row with a known breakdown
@@ -686,7 +686,7 @@ export default function LanguagesCard({ data, isLive = false }) {
           onPointerLeave={scheduleClose}
         />
       )}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -828,7 +828,7 @@ function AnimatedLangLabel({
     //     React-controlled `opacity` (dim) + `transform` (nudge). Keeping these
     //     off the motion.li avoids clobbering framer's entrance transform/opacity
     //     (and vice-versa); the two opacities simply compose.
-    <motion.li
+    <m.li
       variants={variants}
       className={hiddenUntilXl ? "hidden xl:block" : "block"}
     >
@@ -955,7 +955,7 @@ function AnimatedLangLabel({
         })}
       </span>
       </div>
-    </motion.li>
+    </m.li>
   );
 }
 
@@ -1114,7 +1114,7 @@ function LanguageRepoPopover({
     // Panel springs up as a unit, gated on `pos` so the reveal begins the instant
     // it's positioned. Positioning is measured via offsetWidth/offsetHeight
     // (unaffected by transform); `left`/`top`/`visibility` stay on the inline style.
-    <motion.div
+    <m.div
       ref={ref}
       variants={panelV}
       initial="hidden"
@@ -1166,13 +1166,13 @@ function LanguageRepoPopover({
       <div className="repo-card-breathe rounded-lg overflow-hidden flex flex-col min-h-0 flex-1">
         {/* Inner cascade orchestrator — staggers the header block, then the list,
             inheriting the panel's animation state through the plain wrapper. */}
-        <motion.div
+        <m.div
           variants={contentV}
           className="p-4 flex flex-col min-h-0 flex-1"
           style={{ padding: fluid(1) }}
         >
           {/* Header — stays fixed while the repo list below scrolls. */}
-          <motion.div variants={sectionV} className="shrink-0">
+          <m.div variants={sectionV} className="shrink-0">
             {/* Eyebrow — same microlabel treatment as the modal's "Career
                 snapshot". */}
             <p className="abt-micro text-[10px] uppercase tracking-[0.22em] text-[#ffaa2a] mb-1">
@@ -1193,7 +1193,7 @@ function LanguageRepoPopover({
               <span className="truncate">{lang.language}</span>
             </h3>
             <div aria-hidden="true" className="h-px elite-divider mb-3" />
-          </motion.div>
+          </m.div>
           {/* Repo list — each row slides in from the left, staggered, after the
               header. `overflow-x-hidden` clips the -16px slide so it can't flash a
               horizontal scrollbar; scrolls within the viewport-bounded panel so a
@@ -1290,9 +1290,9 @@ function LanguageRepoPopover({
               );
             })}
           </ul>
-        </motion.div>
+        </m.div>
       </div>
-    </motion.div>,
+    </m.div>,
     document.body,
   );
 }

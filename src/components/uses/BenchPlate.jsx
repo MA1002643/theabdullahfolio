@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useDataT } from '@/i18n/useDataT';
@@ -61,7 +61,7 @@ function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
       style={{ paddingBlock: fluid(0.7) }}
     >
       {index > 0 ? (
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="uses-anim uses-row__rule"
           initial={reduceMotion ? false : { scaleX: 0 }}
@@ -70,17 +70,17 @@ function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
         />
       ) : null}
       <span className="uses-label font-mono uppercase text-[#ffaa2a]">
-        <motion.span
+        <m.span
           className="uses-anim inline-block"
           initial={reduceMotion ? false : { opacity: 0, x: -12 * sign }}
           animate={on ? { opacity: 1, x: 0 } : { opacity: 0, x: reduceMotion ? 0 : -12 * sign }}
           transition={at(0.02, 0.5)}
         >
           {item.role}
-        </motion.span>
+        </m.span>
       </span>
       <span className="uses-value uses-mask font-medium">
-        <motion.span
+        <m.span
           className="uses-anim uses-mask__in"
           initial={reduceMotion ? false : { y: '140%' }}
           animate={{ y: on || reduceMotion ? '0%' : '140%' }}
@@ -109,15 +109,15 @@ function Station({ item, index, revealed, reduceMotion, revealedAtRef }) {
               <FireText text={item.name} />
             </span>
           )}
-        </motion.span>
+        </m.span>
       </span>
       {item.detail ? (
-        <motion.span
+        <m.span
           className="uses-anim uses-note text-foreground/60"
           {...riseProps(on, reduceMotion, at(0.3, 0.5), 6)}
         >
           {item.detail}
-        </motion.span>
+        </m.span>
       ) : null}
     </li>
   );
@@ -141,18 +141,18 @@ function Extensions({ extensions, index, revealed, reduceMotion, revealedAtRef }
       className="relative grid min-w-0 gap-y-1.5 md:col-span-3"
       style={{ paddingBlock: fluid(0.7) }}
     >
-      <motion.span
+      <m.span
         className="uses-anim uses-label inline-block font-mono uppercase text-[#ffaa2a]"
         initial={reduceMotion ? false : { opacity: 0, x: -12 * sign }}
         animate={on ? { opacity: 1, x: 0 } : { opacity: 0, x: reduceMotion ? 0 : -12 * sign }}
         transition={staged(reduceMotion, delay, 0, 0.5)}
       >
         {t('bench.extensions')}
-      </motion.span>
+      </m.span>
       {/* Extension names, as the marketplace lists them: translate="no". */}
       <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0" translate="no">
         {extensions.map((ext, i) => (
-          <motion.li
+          <m.li
             key={ext}
             className="uses-anim uses-chipmark rounded-full border border-[#ffcd5b]/35 px-2 py-0.5 font-mono text-foreground/70"
             initial={reduceMotion ? false : { opacity: 0, scale: 0.6, y: 6 }}
@@ -166,7 +166,7 @@ function Extensions({ extensions, index, revealed, reduceMotion, revealedAtRef }
             }
           >
             {ext}
-          </motion.li>
+          </m.li>
         ))}
       </ul>
     </li>

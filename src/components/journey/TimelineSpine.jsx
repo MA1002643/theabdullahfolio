@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useId, useMemo } from 'react';
-import { motion, useTransform } from 'framer-motion';
+import { m, useTransform } from 'framer-motion';
 import { buildSpineGeometry } from './spineGeometry';
 
 // The serpentine rail the whole page hangs off. The container measures every
@@ -122,7 +122,7 @@ const TimelineSpine = ({
                 lies about speed). One-shot, so the per-frame stroke-repaint
                 cost that rules dashes out for the scroll reveal never
                 applies; reduced motion renders the track already drawn. */}
-            <motion.path
+            <m.path
               d={geometry.d}
               fill="none"
               stroke={`url(#${id.track})`}
@@ -145,7 +145,7 @@ const TimelineSpine = ({
           {/* Charged fill — clip-path reveal on the wrapper div (composited),
               gradient pinned to page space so ember stays at 2026 and gold
               only ever arrives at the Bolton College foot. */}
-          <motion.div
+          <m.div
             className="absolute inset-0"
             style={{ clipPath: clip }}
           >
@@ -188,7 +188,7 @@ const TimelineSpine = ({
                 strokeLinecap="round"
               />
             </svg>
-          </motion.div>
+          </m.div>
         </>
       )}
 
@@ -200,7 +200,7 @@ const TimelineSpine = ({
         <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[10px] tracking-[0.3em] text-[#ff6d05] rtl:-scale-x-100">
           {nowLabel}
         </span>
-        <motion.span
+        <m.span
           className="block h-3 w-3 rounded-full bg-[#ff6d05]"
           animate={
             reduceMotion
@@ -227,7 +227,7 @@ const TimelineSpine = ({
           beacon and read as a fire tail). Animated path only, and only once
           the geometry exists (height 0 would park it on the beacon). */}
       {!reduceMotion && geometry && (
-        <motion.div
+        <m.div
           className="absolute left-0 top-0"
           style={{ x: cometX, y: cometY }}
         >
@@ -238,7 +238,7 @@ const TimelineSpine = ({
                 '0 0 6px #ff6d05, 0 0 18px rgba(255,109,5,0.75), 0 0 36px rgba(255,109,5,0.35)',
             }}
           />
-        </motion.div>
+        </m.div>
       )}
     </div>
   );

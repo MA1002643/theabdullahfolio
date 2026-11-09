@@ -910,7 +910,9 @@ baseline makes every query look new.
    never the LCP, and without the low hint React preloads it anyway. `preload`
    is only for an image that measured as the route's LCP, and it then needs an
    entry in `tests/fitness/imageLoadingPolicy.test.js`.
-8. Run `npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js tests/unit/i18nAlternates.test.js tests/fitness/i18nCatalogues.test.js tests/fitness/i18nBudget.test.js tests/fitness/imageLoadingPolicy.test.js`.
+8. Animate with framer's `m.*` (and `m.create(X)`), never `motion.*`, and
+   keep `animate()` / `useAnimation` out of layouts (§20).
+9. Run `npx vitest run tests/unit/sitemapDrift.test.js tests/unit/metadataContract.test.js tests/unit/i18nAlternates.test.js tests/fitness/i18nCatalogues.test.js tests/fitness/i18nBudget.test.js tests/fitness/imageLoadingPolicy.test.js tests/fitness/lazyMotion.test.js`.
 
 **Skipping step 1 fails CI.** The drift test walks `src/app` on disk and fails
 on any `page.js` that is in neither the registry nor its own `EXCLUDED` map —
@@ -2376,8 +2378,174 @@ so the savings are now the ceiling.
 - **framer-motion's `LazyMotion`.** About 40 kB off every route, the largest
   remaining win, but it touches 383 `motion.*` call sites in 98 files. It
   is tracked in issue #200.
+  **Closed (2026-11-09), §20.** `LazyMotion` alone measured 16 kB, not 40.
+  The rest of the estimate was real, but the intro loader's imperative
+  `animate()` held it in every first load. With both changes, eight routes
+  are about 32 kB lighter and the five with their own animation-engine users
+  14–16 kB lighter.
 - **The consent notice as LCP.** For a first-time visitor the notice arrives
   1.1 s after the reveal, by design. On `/cv`, `/projects`, `/guestbook` and
   `/projects/1` its paragraph is larger than the page's own LCP, so the field
   LCP moves from about 0.1 s to 1.4–3 s. This is a consent-UX timing choice
   for the owner, not a loading one.
+
+## 20. framer-motion on LazyMotion (issue #200)
+
+### The estimate was re-measured before it was built
+
+#55's analyser put framer-motion at about 54 kB (gzip) of the shared floor and
+estimated that `LazyMotion` would take about 40 kB off every route. Issue #200
+made measuring that the first step, with "stop and record a no" as a valid
+outcome. It was measured on 2026-11-09 against `main` at `4c1cec3`, in a clean
+`npm ci` copy, with `next build --webpack` and `scripts/check-bundle-budget.mjs`.
+
+The working tree's own `node_modules` held framer-motion 11.18.2 against the
+lockfile's 14.6.0, and a measurement taken there would have described a library
+the site does not ship.
+
+The whole converted tree was measured, not one route. Until every shared layout
+component renders `m`, the full `motion` proxy stays in the shared chunk, and a
+single converted page reads as a zero saving.
+
+### What it found
+
+| Route | before | `m` + async features | + the loader off the engine |
+| --- | ---: | ---: | ---: |
+| `/` | 321.5 kB | 305.2 kB | 289.7 kB |
+| `/my-past` (the floor) | 306.8 kB | 290.6 kB | 275.3 kB |
+| `/guestbook` | 342.1 kB | 326.6 kB | 311.7 kB |
+| `/about` | 358.4 kB | 343.6 kB | 342.5 kB |
+| `/uses` | 341.5 kB | 325.2 kB | 326.1 kB |
+
+- **`LazyMotion` alone is 16 kB**, below the ~20 kB the issue had named as the
+  point to stop.
+- **The rest was the animation engine** (`JSAnimation`, the WAAPI transforms,
+  the keyframe resolvers), still in a shared static chunk on all twelve
+  pages. `LazyMotion` cannot move it, because an import of an engine API puts
+  it in the importing chunk. One module in the root layout did that: the intro
+  loader, whose two motion-value tweens used framer's imperative `animate()`.
+  That `animate()` also accepts elements and objects, so it brought the DOM
+  renderer as well, which is most of what `domAnimation` defers.
+- **`useSpring` is not the cause**, though it looked like it. The custom
+  cursor, the intro seal and the footer CTA all use it in the root graph.
+  Deferring the cursor was built and measured: no route moved by more than
+  0.5 kB, either way. Its spring path does not reach the engine. The change
+  was reverted.
+- **`/about`, `/contact`, `/projects`, `/qualifications` and `/uses`** keep
+  route-local engine users (count-ups, `useAnimation` cards). They took the
+  16 kB and no more.
+
+### Decision: `m` everywhere, features after the first paint
+
+- **One `LazyMotion strict`** wraps the whole document body in
+  `src/app/[locale]/layout.js` (`src/components/motion/MotionFeatures.jsx`).
+  It sits outside `MotionPreferences`, because the custom cursor and the toaster
+  render outside that, and an `m.*` component with no `LazyMotion` above it
+  has no renderer: it never animates. `strict` makes a stray `motion.*` throw in
+  development.
+- **`domAnimation` loads asynchronously** from `src/lib/motion/features.js`,
+  reached only through the `import()` in `src/lib/motion/loadFeatures.js`.
+  The download starts when that module evaluates, in parallel with hydration,
+  not when `LazyMotion` mounts. LazyMotion calls its loader only from an
+  effect, after hydration has committed.
+- **The loader never rejects.** LazyMotion has no error path. A rejected loader
+  would leave every `m.*` element at its server-rendered `initial` style for the
+  visit, so a fade-in from opacity 0 would stay invisible text. A failed
+  download retries after 1 s, then 3 s.
+- **It gives up on a bound (review, 2026-11-09).** Retrying is not a fallback
+  when the chunk is gone for good, a file deleted by a deploy for example.
+  After three failed attempts or 8 s with no features, the loader tells
+  `MotionFeatures`, which remounts its subtree in framer's static mode:
+  `MotionConfig isStatic` plus a presence context with `initial: false`
+  (`src/components/motion/staticMotion.js`). Every `m.*` then renders from
+  its props alone, at its `animate` target, on every render, with no
+  renderer. The page shows each entrance at its end state, and a reveal gate
+  that opens later (the intro loader, a viewport trigger) still takes effect,
+  because it re-renders the element. A presence-only fallback was tried first
+  and rejected in review: framer reads presence once per element, so gated
+  headlines (`PageTitle`, the `/uses` plates) stayed at their hidden
+  targets.
+- **Giving up is final.** No further attempt is made, and a request that lands
+  late is ignored. A static tree cannot take the renderer back, and the custom
+  cursor, which waits on the same promise, would hide the native pointer over
+  a dot that no longer moves. The next full page load animates again.
+- **Every `<AnimatePresence>` is the site's**
+  (`src/components/motion/AnimatePresence.jsx`). framer's gives a child that
+  mounts after its first render a presence of its own, which would override
+  the static one: the preference centre opened after a give-up rendered at
+  opacity 0 while it took focus and locked scrolling. In static mode the
+  wrapper hands each child the static presence again. Otherwise it is framer's.
+- **What static mode gives up:** hover, tap and `layout` do nothing, exits are
+  instant, and a motion value in `style` is read once per render and never
+  written. An effect built only from motion values freezes, so a component
+  that has one turns it off with `useStaticMotion()`, or derives the value
+  from props there. The guestbook card drops its depth blur; the `/about`
+  paragraph's scroll-scrubbed words show at opacity 1 instead of freezing at
+  0; the `/journey` dial takes its angle and label opacities from the elected
+  era, so the years `canTab` makes focusable are the ones on its visible arc.
+  The rest were reviewed and freeze at a harmless resting value: the contact
+  button's fill and slice label, the timeline spine, comet and node parallax,
+  and the page-transition label (its overlay is removed by timers and route
+  state, not by a motion value). The remount resets client state below the provider, which is
+  acceptable only because the visit's animations are not coming. The custom
+  cursor keeps the native pointer until the features have committed, because
+  before then its `m.*` dot cannot follow the pointer.
+- **Animate with props, not controls.** `useAnimation` controls reach only an
+  element whose visual element has subscribed, and on LazyMotion there is
+  none until the chunk lands: the `/about` score arcs lost a viewport trigger
+  that beat the download and stayed empty. They now take declarative props
+  from `src/components/about/arcSweep.js` and remount once per play, and
+  framer plays a mount entrance it missed when the features arrive.
+- **A separate React root needs its own provider.** drei's `<Html>` (the
+  laptop screen on `/projects/[id]`) mounts in a root that inherits no
+  context, so it wraps its children in `<MotionFeatures>`. The loader is
+  memoised, so that costs no second download. `tests/fitness/lazyMotion.test.js`
+  requires it for every `<Html>`.
+- **Until the features land**, an element shows its `initial` style, and when
+  they land framer plays the entrance it missed (`manuallyAnimateOnMount`,
+  pinned by `tests/component/lazyMotionFirstPaint.test.jsx`). That is the same
+  server HTML a visitor saw before, held for the length of one chunk download
+  that has usually finished by the time hydration does.
+- **The one `layout` animation**, the guestbook wall's card reflow, gets
+  `domMax` from a nested `LazyMotion` around the wall alone
+  (`src/lib/motion/layoutFeatures.js`), so only `/guestbook` downloads layout
+  projection.
+- **The loader's tweens** run through `src/lib/motion/tweenValue.js`: a
+  30-line requestAnimationFrame tween with the same duration and easing
+  (`cubicBezier` is a few hundred bytes of `motion-utils`).
+- **A codemod, not hand edits.** `scripts/codemods/lazy-motion.mjs` rewrote
+  85 files (383 JSX sites and three `motion(X)` factories). It parses with
+  Babel, rewrites only identifiers that resolve to the framer import, and
+  refuses any site where `m` is shadowed. Its output was committed on its own.
+
+`tests/fitness/lazyMotion.test.js` holds all of this to the source. No `motion`
+import exists anywhere. The feature bundles are imported only by their two
+modules, and those are reached only through `import()`. The root layout mounts a
+strict provider. And no file in the static graph of the three layouts every
+route renders imports an engine API. The `motion`, provider and engine rules
+failed on `main`. The bundle budget cannot do this job: its 10 % headroom is
+about 30 kB, almost the whole saving.
+
+**Measured after:** `bundle-budget.json` was re-baselined. Each route keeps the
+lower of its old and new ceiling, so ten ceilings fell and none rose. The four
+routes whose committed ceiling was already tighter than measured + 10 % keep it.
+
+### Rejected
+
+- **`domMax` everywhere.** One component animates `layout`. Loading
+  projection for every visitor would hand back much of the saving to spare one
+  route a request.
+- **A lazy `import()` of framer's `animate` in the loader.** The counter would
+  start one request late and drift out of step with the loader's `setTimeout`
+  beats, and the chunk would carry the engine anyway.
+- **Deferring the custom cursor.** Built, measured as no saving, reverted
+  (above).
+- **Replacing framer-motion with CSS or a smaller library.** 98 files of
+  choreography, scroll scrubs and springs, for a similar saving.
+
+### Out of scope, and still open
+
+- **The five routes' own engine users.** `/about`'s count-ups and
+  `useAnimation` cards, and `/uses`' count-ups, cost only their own routes.
+  Moving them would mean reworking each piece of choreography for a
+  route-local gain of up to 16 kB.

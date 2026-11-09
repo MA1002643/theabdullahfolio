@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import clsx from "clsx";
 import { forwardRef } from "react";
@@ -68,7 +68,7 @@ const ItemLayout = forwardRef(function ItemLayout(
         };
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
       initial={initial}
       {...reveal}
@@ -104,13 +104,13 @@ const ItemLayout = forwardRef(function ItemLayout(
           `overflow-hidden` that would clip custom-bg-abt's outer amber glow.
           Only rendered when tilt is actually armed (hover + no reduced motion). */}
       {tiltOn && (
-        <motion.div
+        <m.div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-[inherit]"
           style={glareStyle}
         />
       )}
-    </motion.div>
+    </m.div>
   );
 });
 

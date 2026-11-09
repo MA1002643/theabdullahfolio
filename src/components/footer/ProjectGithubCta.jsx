@@ -24,7 +24,7 @@
 // a calm, static etched plate with nothing missing.
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ArrowUpRight, createLucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -190,7 +190,7 @@ export default function ProjectGithubCta() {
   };
 
   return (
-    <motion.a
+    <m.a
       ref={ref}
       href={projectGithubUrl}
       target="_blank"
@@ -218,7 +218,7 @@ export default function ProjectGithubCta() {
         {/* Self-drawing git graph */}
         <span className="gh-cta__graph" aria-hidden="true">
           <svg viewBox="0 0 92 26" fill="none">
-            <motion.path
+            <m.path
               d={BRANCH_D}
               className="gh-cta__branch"
               initial={{ pathLength: reduced ? 1 : 0 }}
@@ -226,7 +226,7 @@ export default function ProjectGithubCta() {
               transition={branchTransition}
             />
             {NODES.map((n, i) => (
-              <motion.circle
+              <m.circle
                 key={i}
                 cx={n.cx}
                 cy={n.cy}
@@ -238,7 +238,7 @@ export default function ProjectGithubCta() {
                 transition={{ delay: reduced ? 0 : 0.35 + i * 0.18 }}
               />
             ))}
-            <motion.circle
+            <m.circle
               cx={88}
               cy={19}
               r={3.4}
@@ -297,6 +297,6 @@ export default function ProjectGithubCta() {
         )}
         {!reduced && <span className="gh-cta__caret" />}
       </span>
-    </motion.a>
+    </m.a>
   );
 }

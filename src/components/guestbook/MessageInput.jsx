@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
@@ -188,7 +189,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
   };
 
   return (
-    <motion.form
+    <m.form
       onSubmit={handleSubmit}
       {...(glareOn ? tiltHandlers : {})}
       className="relative rounded-xl custom-bg-abt p-3 transition-shadow duration-300 focus-within:shadow-[0_0_2px_#ff8400,0_0_20px_rgba(255,109,5,0.35)] sm:p-4"
@@ -198,7 +199,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
           same Keep/Clear pair. */}
       <AnimatePresence>
         {draftLayer.restored && (
-          <motion.div
+          <m.div
             key="draft-restored"
             className="draft-restored mb-3 w-full"
             role="status"
@@ -229,7 +230,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
                 {tc('draft.clear')}
               </button>
             </span>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -307,7 +308,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
             disabled button never lights up. The transition names its
             properties — never bare `transition`, which would smear the
             magnetic pull's per-frame transform (issue #47 lesson). */}
-        <motion.button
+        <m.button
           type="submit"
           disabled={!canSend}
           aria-label={t('composer.send')}
@@ -320,7 +321,7 @@ export default function MessageInput({ user, onSubmit, submitting }) {
               orange the contact form's SEND MESSAGE! CTA carries. */}
           {/* The paper plane points "forward": mirrored in RTL. */}
           <Send aria-hidden="true" className="h-4 w-4 text-[#ff6d05] rtl:-scale-x-100" />
-        </motion.button>
+        </m.button>
       </div>
 
       {/* AI "polish my mark": streams a cleaner one-line rewrite the visitor
@@ -351,12 +352,12 @@ export default function MessageInput({ user, onSubmit, submitting }) {
           driven per-frame by motion values (no React re-renders). Pointer-
           transparent so the input and buttons beneath keep all interaction. */}
       {glareOn ? (
-        <motion.div
+        <m.div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-[inherit]"
           style={glareStyle}
         />
       ) : null}
-    </motion.form>
+    </m.form>
   );
 }

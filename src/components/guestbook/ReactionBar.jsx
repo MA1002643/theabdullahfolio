@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLocale, useTranslations } from 'next-intl';
 import { REACTIONS } from '@/lib/guestbook/reactions';
@@ -90,7 +91,7 @@ function RollingCount({ value: raw }) {
         <span className="inline-block">{value}</span>
       ) : (
         <AnimatePresence mode="popLayout" initial={false}>
-          <motion.span
+          <m.span
             key={raw}
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -99,7 +100,7 @@ function RollingCount({ value: raw }) {
             className="inline-block"
           >
             {value}
-          </motion.span>
+          </m.span>
         </AnimatePresence>
       )}
     </span>

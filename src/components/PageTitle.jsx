@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { m, useInView } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLoaderRevealed } from "@/hooks/useLoaderRevealed";
 import { glyphUnits } from "@/components/ui/textSegments";
@@ -147,7 +147,7 @@ export default function PageTitle({ title, subtitle, subtitleLang, id, replayOnV
           #ff6d05 fill so each letter renders as a filled orange glyph (closing
           the M / W hollow gap on CONTACT ME / ABOUT ME). The -webkit-text-stroke
           + drop-shadow halo apply to the descendant letter spans automatically. */}
-      <motion.h1
+      <m.h1
         aria-label={title}
         variants={TITLE_CONTAINER}
         initial={initial}
@@ -160,7 +160,7 @@ export default function PageTitle({ title, subtitle, subtitleLang, id, replayOnV
               {" "}
             </span>
           ) : (
-            <motion.span
+            <m.span
               key={i}
               aria-hidden="true"
               variants={LETTER}
@@ -170,12 +170,12 @@ export default function PageTitle({ title, subtitle, subtitleLang, id, replayOnV
               className="inline-block [will-change:transform,filter,opacity]"
             >
               {char}
-            </motion.span>
+            </m.span>
           )
         )}
-      </motion.h1>
+      </m.h1>
       {subtitle ? (
-        <motion.div
+        <m.div
           variants={SUBTITLE_MOTION}
           initial={initial}
           animate={play ? "visible" : "hidden"}
@@ -198,7 +198,7 @@ export default function PageTitle({ title, subtitle, subtitleLang, id, replayOnV
             className="page-title-flank rounded-full"
             style={FLANK_PILL_STYLE}
           />
-        </motion.div>
+        </m.div>
       ) : null}
     </div>
   );

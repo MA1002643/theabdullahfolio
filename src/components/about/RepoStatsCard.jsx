@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useAnimation } from "framer-motion";
+import { m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
@@ -21,6 +21,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { fastStartSlowFinish } from "@/utils/animationCurves";
+import { arcSweep } from "./arcSweep";
 // Card-level + per-child entrance variants are shared so the "Projects shipped"
 // and "Years in the craft" feature cards reveal with the IDENTICAL gesture.
 import { cardVariants, childVariants } from "./revealVariants";
@@ -120,7 +121,7 @@ function AnimatedTitle({ text, play, heartbeat = false }) {
   };
   return (
     // Per-char spans make some screen readers announce the title letter-by-letter; aria-label + aria-hidden chars restores a clean accessible name.
-    <motion.h3
+    <m.h3
       variants={container}
       initial="hidden"
       animate={play ? "visible" : "hidden"}
@@ -131,16 +132,16 @@ function AnimatedTitle({ text, play, heartbeat = false }) {
       aria-label={text}
     >
       {chars.map((c, i) => (
-        <motion.span
+        <m.span
           key={i}
           variants={charVariant}
           style={{ display: "inline-block" }}
           aria-hidden="true"
         >
           {c === " " ? " " : c}
-        </motion.span>
+        </m.span>
       ))}
-    </motion.h3>
+    </m.h3>
   );
 }
 
@@ -227,7 +228,7 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
   }, [playToken, target, isDate, value, pulseOnComplete, prefersReducedMotion]);
 
   return (
-    <motion.div
+    <m.div
       variants={metricRowVariantsFor(sign)}
       // Hover transforms (`x: 5` slide, icon scale/rotate) are tiny but they
       // are still motion. Skip them when the user has opted out. The nudge
@@ -236,7 +237,7 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
       className="flex items-center justify-between gap-2 w-full px-2 py-1 rounded-md hover:bg-[#ff6d05]/5 transition-colors"
     >
       <div className="flex items-center gap-2 min-w-0">
-        <motion.span
+        <m.span
           whileHover={prefersReducedMotion ? undefined : { scale: 1.25, rotate: 6 }}
           transition={{ type: "spring", stiffness: 400 }}
           className={`flex-shrink-0${beatClass}`}
@@ -245,7 +246,7 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
             className="w-4 h-4"
             style={{ color: "#ffaa2a", width: fluidText(1, 0.875), height: fluidText(1, 0.875) }}
           />
-        </motion.span>
+        </m.span>
         <span
           className={`text-xs sm:text-sm truncate text-fire-amber${beatClass}`}
           style={{ textShadow: "none", fontSize: fluidText(0.875, 0.75) }}
@@ -253,7 +254,7 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
           {label}
         </span>
       </div>
-      <motion.span
+      <m.span
         animate={pulse ? { scale: [1, 1.18, 1], transition: { duration: 0.4, ease: "easeOut" } } : { scale: 1 }}
         onAnimationComplete={() => pulse && setPulse(false)}
         // `beatClass` is the post-banner "this value just rose" opacity pulse
@@ -284,8 +285,8 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
         <span aria-hidden="true" translate={isDate ? 'no' : undefined}>
           {isDate ? display : digits.grouped(display)}
         </span>
-      </motion.span>
-    </motion.div>
+      </m.span>
+    </m.div>
   );
 }
 
@@ -293,7 +294,6 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
 function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, prefersReducedMotion = false }) {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
-  const controls = useAnimation();
   const target = Math.min(Math.round(score), maxScore);
   // Initialize at the final value when reduced motion is requested so the
   // displayed number is correct on the very first paint, no count-up.
@@ -312,29 +312,14 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
   // the explicit `Math.min(...)` clamp is no longer needed.
   const finalOffset = circumference * (1 - target / maxScore);
 
-  // Arc fill: drives strokeDashoffset from "empty" to the final fill amount
+  // Arc fill: sweeps strokeDashoffset from "empty" to the final fill amount
   // using the same easing the numeric counters use, so the arc and the number
-  // inside it land together as a single elite gesture. Under reduced motion
-  // the same final offset is set with `duration: 0`, so the arc paints in
-  // place without any sweep. Otherwise we wait for a real viewport entry
-  // (`playToken > 0`) and snap back to `circumference` first so a re-entry
-  // trigger animates the sweep again from empty — without that the second
-  // play would have nothing to animate (already at `finalOffset`).
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      controls.start({
-        strokeDashoffset: finalOffset,
-        transition: { duration: 0 },
-      });
-      return;
-    }
-    if (playToken === 0) return;
-    controls.set({ strokeDashoffset: circumference });
-    controls.start({
-      strokeDashoffset: finalOffset,
-      transition: { duration: DURATION / 1000, ease: fastStartSlowFinish },
-    });
-  }, [playToken, finalOffset, circumference, controls, prefersReducedMotion]);
+  // inside it land together as a single elite gesture. Under reduced motion it
+  // rests at the fill, with no sweep. Otherwise it waits for a real viewport
+  // entry (`playToken > 0`), and each play remounts the circle so a re-entry
+  // sweeps again from empty. Declarative, not `useAnimation` controls, so a
+  // play that fires before framer's features arrive is not lost (./arcSweep.js).
+  const arc = arcSweep({ playToken, finalOffset, circumference, prefersReducedMotion });
 
   // Numeric count-up: identical sprint-then-settle behaviour as MetricRow.
   // Skipped entirely under reduced motion — the score reads as the final
@@ -395,7 +380,8 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
             strokeWidth="5"
             fill="transparent"
           />
-          <motion.circle
+          <m.circle
+            key={arc.key}
             cx="45"
             cy="45"
             r={radius}
@@ -404,19 +390,19 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
             fill="transparent"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            // Initial offset depends on motion preference:
+            // Initial offset depends on motion preference (./arcSweep.js):
             //   - Animated path: start empty (`circumference`) so the arc
             //     can sweep up to `finalOffset` during the entrance.
             //   - Reduced-motion path: start AT the final offset so the
-            //     arc is already filled on first paint. Without this, the
-            //     useAnimation effect below would only adjust the offset
-            //     after first paint, producing a single-frame flash of an
-            //     empty arc — exactly the kind of motion artifact users
-            //     who opted out of animation should not see.
-            initial={{
-              strokeDashoffset: prefersReducedMotion ? finalOffset : circumference,
-            }}
-            animate={controls}
+            //     arc is already filled on first paint, with no single-frame
+            //     flash of an empty arc.
+            initial={arc.initial}
+            animate={arc.animate}
+            transition={
+              prefersReducedMotion
+                ? { duration: 0 }
+                : { duration: DURATION / 1000, ease: fastStartSlowFinish }
+            }
             style={{ rotate: -90, transformOrigin: "45px 45px" }}
           />
         </svg>
@@ -649,7 +635,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
   ];
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
       variants={cardVariants}
       initial="hidden"
@@ -666,7 +652,7 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
       />
 
       {/* Title + Most-Active badge */}
-      <motion.div variants={childVariants} className="flex items-start justify-between gap-3 flex-wrap mb-3">
+      <m.div variants={childVariants} className="flex items-start justify-between gap-3 flex-wrap mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <Monitor
             className="w-5 h-5 flex-shrink-0"
@@ -692,10 +678,10 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
         >
           <span className="text-fire-amber">{t("repoCard.badge")}</span>
         </span>
-      </motion.div>
+      </m.div>
 
       {/* Description */}
-      <motion.p
+      <m.p
         variants={childVariants}
         className="text-sm font-light mb-4 text-fire-amber"
         style={{ textShadow: "none", fontSize: fluidText(0.875, 0.75) }}
@@ -706,11 +692,11 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
         {/* The description is the repo owner's own text (untranslated); only
             the API's "No description" placeholder is localised. */}
         {localizeWirePlaceholder(description, locale, t)}
-      </motion.p>
+      </m.p>
 
       {/* Language */}
-      <motion.div variants={childVariants} className="flex items-center gap-2 mb-4">
-        <motion.div
+      <m.div variants={childVariants} className="flex items-center gap-2 mb-4">
+        <m.div
           className="w-3 h-3 rounded-full flex-shrink-0"
           style={{
             backgroundColor: languageColor,
@@ -749,14 +735,14 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
         >
           {localizeWirePlaceholder(language, locale, t)}
         </span>
-      </motion.div>
+      </m.div>
 
       {/* Metric column + activity arc. On mobile the column takes full width
           (so labels sit at the left edge and values at the right edge of the
           card) and the arc stacks beneath, centered. On sm+ they sit
           side-by-side, centered as a pair. */}
-      <motion.div variants={childVariants} className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-center">
-        <motion.div
+      <m.div variants={childVariants} className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-center">
+        <m.div
           variants={metricContainerVariants}
           // On mobile: w-full so each MetricRow's justify-between pins the
           // label to the card's left edge and the value to the right edge.
@@ -768,9 +754,9 @@ export default function ReadmeStatsCard({ data, isUpdated, diffMessage, pulseFie
           {metrics.map((m) => (
             <MetricRow key={m.id} {...m} playToken={playToken} heartbeat={m.field ? pulsing.has(m.field) : false} prefersReducedMotion={prefersReducedMotion} />
           ))}
-        </motion.div>
+        </m.div>
         <ActivityArc score={activityScore} playToken={playToken} heartbeat={pulsing.has("activityScore")} prefersReducedMotion={prefersReducedMotion} />
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }

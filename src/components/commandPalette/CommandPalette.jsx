@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { LOCALES } from '@/i18n/locales';
 import { useLocaleSwitch } from '@/i18n/useLocaleSwitch';
@@ -127,7 +127,7 @@ export default function CommandPalette({ actions, includeLanguages = true }) {
         onClick={pal.close}
       />
 
-      <motion.div
+      <m.div
         role="dialog"
         aria-modal="true"
         aria-label={t('dialog')}
@@ -243,7 +243,7 @@ export default function CommandPalette({ actions, includeLanguages = true }) {
         >
           {pal.filtered.length === 0 ? t('empty') : null}
         </p>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

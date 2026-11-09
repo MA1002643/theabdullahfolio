@@ -1,5 +1,6 @@
 "use client";
-import { motion, AnimatePresence } from "framer-motion";
+import { m } from "framer-motion";
+import { AnimatePresence } from "@/components/motion/AnimatePresence";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import ProjectLayout from "./ProjectLayout";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -234,7 +235,7 @@ const ProjectList = ({ projects }) => {
     // the old 4xl (56rem) at scale 1; space-y-* becomes a flex gap so the
     // title → strip → list rhythm is one scaled property, not per-child
     // margins.
-    <motion.div
+    <m.div
       variants={listVariants}
       initial="hidden"
       animate="show"
@@ -286,7 +287,7 @@ const ProjectList = ({ projects }) => {
           the entrance so the pause between filters reads as a beat, not
           a wait. */}
       <AnimatePresence mode="wait">
-        <motion.div
+        <m.div
           key={active}
           variants={listVariants}
           initial="hidden"
@@ -317,9 +318,9 @@ const ProjectList = ({ projects }) => {
               </h3>
             </div>
           )}
-        </motion.div>
+        </m.div>
       </AnimatePresence>
-    </motion.div>
+    </m.div>
   );
 };
 

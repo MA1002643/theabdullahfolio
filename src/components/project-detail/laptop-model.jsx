@@ -5,7 +5,8 @@ import { useFrame } from "@react-three/fiber"
 import * as THREE from "three"
 import { Html } from "@react-three/drei"
 import LaptopContent from "./laptop-content"
-import { motion } from "framer-motion"
+import MotionFeatures from "@/components/motion/MotionFeatures"
+import { m } from "framer-motion"
 
 export default function LaptopModel({ position, links, copy }) {
     const groupRef = useRef(null)
@@ -241,13 +242,22 @@ export default function LaptopModel({ position, links, copy }) {
                 </mesh>
 
                 {/* Screen with HTML content */}
-                <motion.mesh position={[LCX, 0.68, 0]} rotation={[0, Math.PI, 0]}>
+                <m.mesh position={[LCX, 0.68, 0]} rotation={[0, Math.PI, 0]}>
                     <planeGeometry args={[2.1, 1.22]} />
                     <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.4} metalness={0.05} roughness={0.08} side={THREE.BackSide} />
                     <Html transform distanceFactor={1} occlude={false} zIndexRange={[100, 0]} className="w-[880px] h-[480px] overflow-hidden rounded-md">
-                        <LaptopContent links={links} copy={copy} />
+                        {/* drei mounts <Html> children in a SEPARATE React root,
+                            which inherits none of the layout's context, the
+                            LazyMotion provider included (issue #200). Without
+                            its own provider every `m.*` on the screen has no
+                            renderer: the boot sequence stays at opacity 0 and
+                            the content never enters. The loader is memoised,
+                            so this costs no second download. */}
+                        <MotionFeatures>
+                            <LaptopContent links={links} copy={copy} />
+                        </MotionFeatures>
                     </Html>
-                </motion.mesh>
+                </m.mesh>
 
                 {/* Webcam and status lights */}
                 <mesh position={[0, 1.33, -0.005]} castShadow>

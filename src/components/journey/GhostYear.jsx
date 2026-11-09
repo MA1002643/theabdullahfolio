@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useLocale } from 'next-intl';
 import { intlTag } from '@/i18n/format';
 
@@ -36,7 +36,7 @@ const GhostYear = ({ year, visible, reduceMotion }) => {
     return WESTERN.map((d) => fmt.format(Number(d)));
   }, [locale]);
   return (
-    <motion.div
+    <m.div
       aria-hidden
       dir="ltr"
       className="journey-ghost-year pointer-events-none fixed right-[4vw] top-1/2 -z-10 hidden -translate-y-1/2 select-none md:flex"
@@ -46,7 +46,7 @@ const GhostYear = ({ year, visible, reduceMotion }) => {
     >
       {String(year).split('').map((digit, column) => (
         <span key={column} className="block h-[1em] overflow-hidden">
-          <motion.span
+          <m.span
             className="flex flex-col"
             initial={false}
             animate={{ y: `-${Number(digit)}em` }}
@@ -61,10 +61,10 @@ const GhostYear = ({ year, visible, reduceMotion }) => {
                 {d}
               </span>
             ))}
-          </motion.span>
+          </m.span>
         </span>
       ))}
-    </motion.div>
+    </m.div>
   );
 };
 

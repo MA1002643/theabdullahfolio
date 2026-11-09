@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { signIn } from 'next-auth/react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -41,7 +41,7 @@ export default function SignInPrompt({ reauth = false }) {
   const on = (magnet) => GUESTBOOK_FLAGS.magnetic && Boolean(magnet.style);
 
   return (
-    <motion.div
+    <m.div
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 15 }}
       animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -105,7 +105,7 @@ export default function SignInPrompt({ reauth = false }) {
           </p>
         ) : null}
         <div className="flex flex-wrap items-center justify-center gap-3">
-        <motion.button
+        <m.button
           type="button"
           onClick={() => signIn('github')}
           style={on(magnetGithub) ? magnetGithub.style : undefined}
@@ -114,8 +114,8 @@ export default function SignInPrompt({ reauth = false }) {
         >
           <FaGithub aria-hidden="true" className="h-4 w-4" />
           {t('signIn.github')}
-        </motion.button>
-        <motion.button
+        </m.button>
+        <m.button
           type="button"
           onClick={() => signIn('google')}
           style={on(magnetGoogle) ? magnetGoogle.style : undefined}
@@ -124,9 +124,9 @@ export default function SignInPrompt({ reauth = false }) {
         >
           <FaGoogle aria-hidden="true" className="h-4 w-4" />
           {t('signIn.google')}
-        </motion.button>
+        </m.button>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
