@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
 import HoverHint from './HoverHint';
 import { useStaggeredScrollReveal } from '@/hooks/useStaggeredScrollReveal';
 import { animateToTarget } from '@/utils/animationCurves';
@@ -85,6 +85,19 @@ const noMotionVariants = {
   visible: { opacity: 1, x: 0, y: 0, scale: 1 },
   exit: { opacity: 0, transition: { duration: 0.12 } },
 };
+
+// The panel, inert from the moment it starts to leave (issue #198). A closed
+// popover's panel stays mounted while its exit fade runs: a fraction of a
+// second in Chromium, but one to three seconds in Linux WebKit. Until now it
+// stayed a live `role="dialog"` the whole time, so the privacy notice's
+// last-resort Escape, which stands down while any dialog is open, swallowed a
+// second press made during the fade, and the fading panel still took clicks.
+// AnimatePresence keeps the element's last props (frozen at `open`), so
+// "leaving" can only be read from inside, with `useIsPresent`.
+function PresencePanel({ ref, ...props }) {
+  const isPresent = useIsPresent();
+  return <motion.div ref={ref} {...props} inert={!isPresent} />;
+}
 
 const OPEN_INTENT_MS = 120;
 const CLOSE_GRACE_MS = 200;
@@ -462,7 +475,7 @@ export default function MetricPopover({
   const sectionV = reduceMotion ? noMotionVariants : sectionVariants;
 
   const panel = (
-    <motion.div
+    <PresencePanel
       ref={panelRef}
       key="panel"
       id={id}
@@ -771,7 +784,7 @@ export default function MetricPopover({
           )}
         </motion.div>
       </div>
-    </motion.div>
+    </PresencePanel>
   );
 
   return (

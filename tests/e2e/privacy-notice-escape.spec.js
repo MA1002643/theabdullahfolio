@@ -21,8 +21,7 @@ async function openWithNotice(page, path) {
 }
 
 test.describe('privacy notice Escape', { tag: '@cross-browser' }, () => {
-  // On the CI runner's Linux WebKit only, the header popover keeps Escape (#198).
-  test('Escape closes the notice from anywhere, as a decline, without moving focus', { tag: '@webkit-quarantine', annotation: { type: 'issue', description: 'https://github.com/MA1002643/theabdullahfolio/issues/198' } }, async ({ page }) => {
+  test('Escape closes the notice from anywhere, as a decline, without moving focus', async ({ page }) => {
     await openWithNotice(page, '/');
     // Focus something on the page that is NOT inside the notice.
     await page.keyboard.press('Tab');
@@ -79,5 +78,25 @@ test.describe('privacy notice Escape', { tag: '@cross-browser' }, () => {
     await page.getByLabel('Full Name', { exact: true }).click();
     await page.keyboard.press('Escape');
     await expect(notice(page)).toBeVisible();
+  });
+});
+
+// Desktop Chromium only (no @cross-browser): the race below exists on every
+// engine, so one engine is enough to hold it, and on a phone the first Tab stop
+// is not the popover trigger.
+test.describe('privacy notice Escape during a popover fade', () => {
+  // A closed popover's panel stays mounted while it fades out, and it used to
+  // stay a live role="dialog" too, so the notice stood down for a second press
+  // made during the fade. Linux WebKit keeps the panel for one to three
+  // seconds, which is how the case above found it (#198), but the window
+  // exists on every engine: two presses back to back land inside it anywhere.
+  test('a second Escape made while the popover fades out reaches the notice', async ({ page }) => {
+    await openWithNotice(page, '/');
+    await page.keyboard.press('Tab');
+    const panel = page.getByRole('dialog', { name: 'Delivery pipeline' });
+    await expect(panel).toBeVisible(); // the first stop opens its popover on focus
+    await page.keyboard.press('Escape'); // closes the popover...
+    await page.keyboard.press('Escape'); // ...and this one, mid-fade, is the notice's
+    await expect(notice(page)).toHaveCount(0);
   });
 });

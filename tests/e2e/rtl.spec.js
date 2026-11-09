@@ -13,23 +13,38 @@ import { expect, settle, test } from '../support/test.js';
 // Tagged @cross-browser: bidi resolution is the engine's, and WebKit and
 // Firefox are exactly where an RTL layout differs from Chromium's.
 
-// The glyphs of a per-character effect, joined in VISUAL order (left to right).
+// The glyphs of a per-character effect, joined in VISUAL order: line by line,
+// top to bottom, and left to right within a line. Every glyph is an
+// inline-block, so a narrow phone can wrap the address between any two of them.
+// Sorting by x alone once read a wrapped `...gmail.co` + `m` as
+// `...abdullamh...gmail.co` on Linux WebKit's iPhone, whose fonts set the
+// address one glyph wider than the line (#198). A glyph joins a line when its
+// vertical centre falls inside that line's first glyph. The effect paints a
+// space as a no-break space; it reads as a space.
 async function visualText(locator) {
-  return locator.evaluate((root) =>
-    [...root.querySelectorAll('.hover-text__char')]
-      .map((el) => ({ x: el.getBoundingClientRect().left, ch: el.dataset.char }))
-      .sort((a, b) => a.x - b.x)
-      .map((g) => (g.ch === ' ' ? ' ' : g.ch))
-      .join(''),
-  );
+  return locator.evaluate((root) => {
+    const glyphs = [...root.querySelectorAll('.hover-text__char')].map((el) => {
+      const box = el.getBoundingClientRect();
+      return { x: box.left, top: box.top, bottom: box.bottom, ch: el.dataset.char };
+    });
+    const lines = [];
+    for (const g of [...glyphs].sort((a, b) => a.top - b.top)) {
+      const mid = (g.top + g.bottom) / 2;
+      const line = lines.find((l) => mid > l.top && mid < l.bottom);
+      if (line) line.glyphs.push(g);
+      else lines.push({ top: g.top, bottom: g.bottom, glyphs: [g] });
+    }
+    return lines
+      .map((l) => l.glyphs.sort((a, b) => a.x - b.x).map((g) => (g.ch === ' ' ? ' ' : g.ch)).join(''))
+      .join('');
+  });
 }
 
 test.describe('left-to-right content in a right-to-left page', { tag: '@cross-browser' }, () => {
   test.use({ contextOptions: { reducedMotion: 'reduce' } });
 
   for (const path of ['/ar/about', '/about']) {
-    // React #418 on the CI runner's Linux WebKit only (#198); gated on Chromium.
-    test(`${path}: the footer email reads left to right, in order`, { tag: '@webkit-quarantine', annotation: { type: 'issue', description: 'https://github.com/MA1002643/theabdullahfolio/issues/198' } }, async ({ page }) => {
+    test(`${path}: the footer email reads left to right, in order`, async ({ page }) => {
       await page.goto(path);
       await settle(page);
       const email = page.locator('.hover-text--decipher').first();
@@ -95,7 +110,7 @@ test.describe('left-to-right content in a right-to-left page', { tag: '@cross-br
     });
   }
 
-  test('/ar/about: the footer terminal keeps its handles left to right', { tag: '@webkit-quarantine', annotation: { type: 'issue', description: 'https://github.com/MA1002643/theabdullahfolio/issues/198' } }, async ({ page }) => {
+  test('/ar/about: the footer terminal keeps its handles left to right', async ({ page }) => {
     await page.goto('/ar/about');
     await settle(page);
     const terminal = page.locator('.footer-term');

@@ -19,7 +19,9 @@ import LocaleSuggestion from '@/components/i18n/LocaleSuggestion';
 import JsonLd from '@/components/seo/JsonLd';
 import IntlScope from '@/i18n/IntlScope';
 import { fontVariableClasses, scriptFontStyle } from '@/i18n/fonts';
-import { localeInfo } from '@/i18n/locales';
+import { intlTag } from '@/i18n/format';
+import { LOCALE_CODES, localeInfo } from '@/i18n/locales';
+import { serverNumbering } from '@/i18n/numberingAlignment';
 import { routing } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo/canonical';
 import { ogLocales, routeCopy } from '@/lib/og/meta';
@@ -42,6 +44,14 @@ export function generateStaticParams() {
 // refuses ("Page changed from static to dynamic at runtime"). Closed, such a
 // path gets the root 404 that `src/app/not-found.js` exists for.
 export const dynamicParams = false;
+
+// The numbering system THIS server's ICU uses for every site language, the
+// same string on every page. A browser with an older ICU (Linux WebKit) would
+// pick different digits for `ar` and hydrate every number differently from
+// this HTML, so src/instrumentation-client.js reads it and aligns them (issue
+// #198). All languages, not only the page's, because a language switch is a
+// soft navigation that never re-runs that alignment.
+const SERVER_NUMBERING = serverNumbering(LOCALE_CODES.map(intlTag));
 
 /**
  * Root metadata, per locale. It was a static `metadata` export before #82;
@@ -169,7 +179,7 @@ export default async function LocaleLayout({ children, params }) {
   const { dir, hreflang } = localeInfo(locale);
 
   return (
-    <html lang={hreflang} dir={dir}>
+    <html lang={hreflang} dir={dir} data-numbering={SERVER_NUMBERING}>
       {/* suppressHydrationWarning: extensions (Grammarly, LastPass, …) stamp
           `data-*` attributes onto <body> before React hydrates, which reports a
           false attribute mismatch. It covers this element's own attributes
