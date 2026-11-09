@@ -23,12 +23,17 @@ import { deferredChunk } from '@/lib/deferredChunk';
 //    So the loader also GIVES UP, on a bound: after GIVE_UP_AFTER_FAILURES
 //    failed attempts, or GIVE_UP_AFTER_MS with no features, whichever comes
 //    first (a request that hangs never fails). Giving up does not reject. It
-//    tells `onGiveUp` listeners, and <MotionFeatures> answers by rendering its
-//    subtree at the final state of every entrance, with no renderer at all
-//    (src/components/motion/MotionFeatures.jsx). Retries carry on behind it,
-//    so a chunk that lands late still brings the animations back.
+//    tells `onGiveUp` listeners, and <MotionFeatures> answers by remounting
+//    its subtree in framer's static mode, at the final state of every
+//    entrance, with no renderer at all (src/components/motion/MotionFeatures.jsx).
+//    Giving up is FINAL: no further attempt, and a request already in flight
+//    that lands late is ignored, so the promise stays pending. A static tree
+//    cannot pick the renderer up again, and anything else waiting on the
+//    promise (the custom cursor hides the OS pointer once it resolves) would
+//    act on features the page is not using.
 
-const RETRY_MS = [1_000, 3_000, 10_000];
+// The waits before attempts 2 and 3. A third failure gives up.
+const RETRY_MS = [1_000, 3_000];
 export const GIVE_UP_AFTER_FAILURES = 3;
 export const GIVE_UP_AFTER_MS = 8_000;
 
@@ -37,7 +42,7 @@ const noop = () => {};
 /**
  * Wraps a `deferredChunk` whose module's default export is a feature bundle
  * into a LazyMotion loader: memoised, and resolving once the chunk lands,
- * however many attempts that takes. The returned loader also carries
+ * or stays pending for good once it has given up. The returned loader also carries
  * `onGiveUp(listener)`, which calls `listener` once the bound above passes
  * without the features (at once if it already has) and returns an
  * unsubscribe. Exported for tests/unit/loadMotionFeatures.test.js.
@@ -69,18 +74,20 @@ export function resilient(
           chunk
             .load()
             .then((module) => {
+              if (gaveUp) return;
               loaded = true;
               clearTimeout(deadline);
               resolve(module.default);
             })
             .catch((error) => {
+              if (gaveUp) return;
               if (attempt === 0 && process.env.NODE_ENV !== 'production') {
                 // The name only, as optionalChunk logs it: never the error itself.
                 console.warn('[motion] animation features failed to load; retrying.', error?.name ?? 'Error');
               }
-              setTimeout(tryLoad, RETRY_MS[Math.min(attempt, RETRY_MS.length - 1)]);
               attempt += 1;
               if (attempt >= giveUpAfterFailures) giveUp();
+              else setTimeout(tryLoad, RETRY_MS[Math.min(attempt - 1, RETRY_MS.length - 1)]);
             });
         tryLoad();
       });

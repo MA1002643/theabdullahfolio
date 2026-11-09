@@ -2451,20 +2451,44 @@ single converted page reads as a zero saving.
 - **The loader never rejects.** LazyMotion has no error path. A rejected loader
   would leave every `m.*` element at its server-rendered `initial` style for the
   visit, so a fade-in from opacity 0 would stay invisible text. A failed
-  download retries at 1 s, 3 s, then every 10 s.
+  download retries after 1 s, then 3 s.
 - **It gives up on a bound (review, 2026-11-09).** Retrying is not a fallback
   when the chunk is gone for good, a file deleted by a deploy for example.
   After three failed attempts or 8 s with no features, the loader tells
-  `MotionFeatures`, which remounts its subtree under a presence context with
-  `initial: false`. That is framer's own "initial animation blocked" path:
-  each `m.*` seeds its style from its `animate` target, with no renderer, so
-  the page shows every entrance at its end state. The remount resets client
-  state below the provider, which is acceptable only because the visit's
-  animations are not coming. Retries continue, and a late chunk brings them
-  back. Content opened later inside an `<AnimatePresence>` still starts at
-  `initial`, because that component supplies its own presence. The custom
+  `MotionFeatures`, which remounts its subtree in framer's static mode:
+  `MotionConfig isStatic` plus a presence context with `initial: false`
+  (`src/components/motion/staticMotion.js`). Every `m.*` then renders from
+  its props alone, at its `animate` target, on every render, with no
+  renderer. The page shows each entrance at its end state, and a reveal gate
+  that opens later (the intro loader, a viewport trigger) still takes effect,
+  because it re-renders the element. A presence-only fallback was tried first
+  and rejected in review: framer reads presence once per element, so gated
+  headlines (`PageTitle`, the `/uses` plates) stayed at their hidden
+  targets.
+- **Giving up is final.** No further attempt is made, and a request that lands
+  late is ignored. A static tree cannot take the renderer back, and the custom
+  cursor, which waits on the same promise, would hide the native pointer over
+  a dot that no longer moves. The next full page load animates again.
+- **Every `<AnimatePresence>` is the site's**
+  (`src/components/motion/AnimatePresence.jsx`). framer's gives a child that
+  mounts after its first render a presence of its own, which would override
+  the static one: the preference centre opened after a give-up rendered at
+  opacity 0 while it took focus and locked scrolling. In static mode the
+  wrapper hands each child the static presence again. Otherwise it is framer's.
+- **What static mode gives up:** hover, tap and `layout` do nothing, exits are
+  instant, and a motion value in `style` is read once per render and never
+  written. An effect built only from motion values freezes, so a component
+  that has one turns it off with `useStaticMotion()` (the guestbook card's
+  depth blur). The remount resets client state below the provider, which is
+  acceptable only because the visit's animations are not coming. The custom
   cursor keeps the native pointer until the features have committed, because
   before then its `m.*` dot cannot follow the pointer.
+- **Animate with props, not controls.** `useAnimation` controls reach only an
+  element whose visual element has subscribed, and on LazyMotion there is
+  none until the chunk lands: the `/about` score arcs lost a viewport trigger
+  that beat the download and stayed empty. They now take declarative props
+  from `src/components/about/arcSweep.js` and remount once per play, and
+  framer plays a mount entrance it missed when the features arrive.
 - **A separate React root needs its own provider.** drei's `<Html>` (the
   laptop screen on `/projects/[id]`) mounts in a root that inherits no
   context, so it wraps its children in `<MotionFeatures>`. The loader is

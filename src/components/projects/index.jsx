@@ -1,5 +1,6 @@
 "use client";
-import { m, AnimatePresence } from "framer-motion";
+import { m } from "framer-motion";
+import { AnimatePresence } from "@/components/motion/AnimatePresence";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import ProjectLayout from "./ProjectLayout";
 import { useEffect, useMemo, useRef, useState } from "react";

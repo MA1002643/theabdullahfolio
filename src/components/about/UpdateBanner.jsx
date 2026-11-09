@@ -2,7 +2,8 @@
 
 import { Fragment } from "react";
 
-import { AnimatePresence, m } from "framer-motion";
+import { m } from "framer-motion";
+import { AnimatePresence } from "@/components/motion/AnimatePresence";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fluidText } from "@/lib/fluidScale";
 import { glyphUnits } from "@/components/ui/textSegments";

@@ -50,7 +50,7 @@ describe('resilient feature loader', () => {
   // invisible. The loader gives up on a bound, still without rejecting, and
   // <MotionFeatures> renders the final state (tests/component/motionStaticFallback.test.jsx).
   describe('giving up', () => {
-    it('gives up after three failed attempts, and keeps retrying behind it', async () => {
+    it('gives up after three failed attempts, and then stops for good', async () => {
       vi.useFakeTimers();
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       let attempts = 0;
@@ -70,12 +70,27 @@ describe('resilient feature loader', () => {
       await vi.advanceTimersByTimeAsync(3_000); // attempt 3
       expect(attempts).toBe(3);
       expect(gaveUp).toHaveBeenCalledTimes(1);
-      expect(settled).not.toHaveBeenCalled();
 
-      await vi.advanceTimersByTimeAsync(10_000);
-      expect(attempts).toBe(4);
-      expect(gaveUp).toHaveBeenCalledTimes(1);
+      // A static tree cannot use features that land later, so none are fetched.
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(attempts).toBe(3);
+      expect(settled).not.toHaveBeenCalled();
       warn.mockRestore();
+    });
+
+    it('ignores a hanging request that lands after the deadline', async () => {
+      vi.useFakeTimers();
+      let land;
+      const load = resilient(
+        deferredChunk(() => new Promise((resolve) => (land = resolve)), 'test'),
+        { giveUpAfterMs: 8_000 },
+      );
+      const settled = vi.fn();
+      load().then(settled, settled);
+      await vi.advanceTimersByTimeAsync(8_000);
+      land({ default: {} });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(settled).not.toHaveBeenCalled();
     });
 
     it('gives up on a request that hangs, at the deadline', async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { m, useAnimation } from "framer-motion";
+import { m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
@@ -21,6 +21,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { fastStartSlowFinish } from "@/utils/animationCurves";
+import { arcSweep } from "./arcSweep";
 // Card-level + per-child entrance variants are shared so the "Projects shipped"
 // and "Years in the craft" feature cards reveal with the IDENTICAL gesture.
 import { cardVariants, childVariants } from "./revealVariants";
@@ -293,7 +294,6 @@ function MetricRow({ icon: Icon, label, value, playToken, isDate = false, pulseO
 function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, prefersReducedMotion = false }) {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
-  const controls = useAnimation();
   const target = Math.min(Math.round(score), maxScore);
   // Initialize at the final value when reduced motion is requested so the
   // displayed number is correct on the very first paint, no count-up.
@@ -312,29 +312,14 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
   // the explicit `Math.min(...)` clamp is no longer needed.
   const finalOffset = circumference * (1 - target / maxScore);
 
-  // Arc fill: drives strokeDashoffset from "empty" to the final fill amount
+  // Arc fill: sweeps strokeDashoffset from "empty" to the final fill amount
   // using the same easing the numeric counters use, so the arc and the number
-  // inside it land together as a single elite gesture. Under reduced motion
-  // the same final offset is set with `duration: 0`, so the arc paints in
-  // place without any sweep. Otherwise we wait for a real viewport entry
-  // (`playToken > 0`) and snap back to `circumference` first so a re-entry
-  // trigger animates the sweep again from empty — without that the second
-  // play would have nothing to animate (already at `finalOffset`).
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      controls.start({
-        strokeDashoffset: finalOffset,
-        transition: { duration: 0 },
-      });
-      return;
-    }
-    if (playToken === 0) return;
-    controls.set({ strokeDashoffset: circumference });
-    controls.start({
-      strokeDashoffset: finalOffset,
-      transition: { duration: DURATION / 1000, ease: fastStartSlowFinish },
-    });
-  }, [playToken, finalOffset, circumference, controls, prefersReducedMotion]);
+  // inside it land together as a single elite gesture. Under reduced motion it
+  // rests at the fill, with no sweep. Otherwise it waits for a real viewport
+  // entry (`playToken > 0`), and each play remounts the circle so a re-entry
+  // sweeps again from empty. Declarative, not `useAnimation` controls, so a
+  // play that fires before framer's features arrive is not lost (./arcSweep.js).
+  const arc = arcSweep({ playToken, finalOffset, circumference, prefersReducedMotion });
 
   // Numeric count-up: identical sprint-then-settle behaviour as MetricRow.
   // Skipped entirely under reduced motion — the score reads as the final
@@ -396,6 +381,7 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
             fill="transparent"
           />
           <m.circle
+            key={arc.key}
             cx="45"
             cy="45"
             r={radius}
@@ -404,19 +390,19 @@ function ActivityArc({ score, maxScore = 10000, playToken, heartbeat = false, pr
             fill="transparent"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            // Initial offset depends on motion preference:
+            // Initial offset depends on motion preference (./arcSweep.js):
             //   - Animated path: start empty (`circumference`) so the arc
             //     can sweep up to `finalOffset` during the entrance.
             //   - Reduced-motion path: start AT the final offset so the
-            //     arc is already filled on first paint. Without this, the
-            //     useAnimation effect below would only adjust the offset
-            //     after first paint, producing a single-frame flash of an
-            //     empty arc — exactly the kind of motion artifact users
-            //     who opted out of animation should not see.
-            initial={{
-              strokeDashoffset: prefersReducedMotion ? finalOffset : circumference,
-            }}
-            animate={controls}
+            //     arc is already filled on first paint, with no single-frame
+            //     flash of an empty arc.
+            initial={arc.initial}
+            animate={arc.animate}
+            transition={
+              prefersReducedMotion
+                ? { duration: 0 }
+                : { duration: DURATION / 1000, ease: fastStartSlowFinish }
+            }
             style={{ rotate: -90, transformOrigin: "45px 45px" }}
           />
         </svg>

@@ -33,7 +33,8 @@
 // switch, defaulting off, that names all three scripts it governs.
 
 import { useEffect, useRef } from 'react';
-import { AnimatePresence, m } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Check, Lock, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';

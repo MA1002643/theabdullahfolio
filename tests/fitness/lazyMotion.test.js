@@ -168,6 +168,19 @@ describe('framer-motion on LazyMotion', () => {
     for (const tag of lazy) expect(tag, 'Every LazyMotion is strict.').toMatch(/\bstrict\b/);
   });
 
+  // framer's AnimatePresence hands a child that mounts after its first render
+  // a presence of its own, which overrides the static fallback's: a dialog
+  // opened after the features chunk gave up rendered at opacity 0 while it
+  // took focus. The site's wrapper re-applies the static presence.
+  it('renders AnimatePresence only through the site wrapper', () => {
+    const wrapper = 'src/components/motion/AnimatePresence.jsx';
+    const offenders = SOURCES.filter((file) => file !== wrapper).filter((file) =>
+      framerImports(file).some(({ names }) => names.includes('AnimatePresence')),
+    );
+    expect(offenders, "Import { AnimatePresence } from '@/components/motion/AnimatePresence'.").toEqual([]);
+    expect(framerImports(wrapper).some(({ names }) => names.includes('AnimatePresence'))).toBe(true);
+  });
+
   // drei's <Html> renders its children in a separate React root, which does
   // not inherit the layout's LazyMotion: an `m.*` inside it has no renderer
   // and stays at its `initial` style (the laptop screen's boot sequence sat

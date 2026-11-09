@@ -1,6 +1,6 @@
 "use client";
 
-import { m, useAnimation } from "framer-motion";
+import { m } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import {
     Activity,
@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { fastStartSlowFinish } from "@/utils/animationCurves";
 import { useViewportCountTrigger } from "@/hooks/useViewportCountTrigger";
 import { UpdateBanner } from "./UpdateBanner";
+import { arcSweep } from "./arcSweep";
 import { fluid, fluidText } from "@/lib/fluidScale";
 import { useTranslations } from "next-intl";
 import { glyphUnits } from "@/components/ui/textSegments";
@@ -261,27 +262,11 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
     const t = useTranslations("About");
     const radius = 70;
     const circumference = 2 * Math.PI * radius;
-    const controls = useAnimation();
     // Fraction filled follows the prior contract (percentile/100), clamped so
     // a stray >100 / <0 percentile can't over/under-draw the arc.
     const fraction = Math.min(Math.max(Number(percentile) || 0, 0), 100) / 100;
     const finalOffset = circumference * (1 - fraction);
-
-    useEffect(() => {
-        if (prefersReducedMotion) {
-            controls.start({ strokeDashoffset: finalOffset, transition: { duration: 0 } });
-            return;
-        }
-        if (playToken === 0) {
-            controls.set({ strokeDashoffset: circumference });
-            return;
-        }
-        controls.set({ strokeDashoffset: circumference });
-        controls.start({
-            strokeDashoffset: finalOffset,
-            transition: { duration: DURATION_MS / 1000, ease: fastStartSlowFinish },
-        });
-    }, [playToken, finalOffset, circumference, controls, prefersReducedMotion]);
+    const arc = arcSweep({ playToken, finalOffset, circumference, prefersReducedMotion });
 
     return (
         <div
@@ -313,7 +298,11 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
                     the repo card's arc track. */}
                 <circle cx="80" cy="80" r={radius} stroke={ARC_TRACK} strokeWidth="6" fill="transparent" />
                 {/* Progress arc — orange, sweeps in on entry. */}
+                {/* Declarative sweep, remounted per play: ./arcSweep.js says why. */}
                 <m.circle
+                    key={arc.key}
+                    initial={arc.initial}
+                    animate={arc.animate}
                     cx="80"
                     cy="80"
                     r={radius}
@@ -322,8 +311,7 @@ function RankArc({ level, percentile, playToken, prefersReducedMotion }) {
                     fill="transparent"
                     strokeLinecap="round"
                     strokeDasharray={circumference}
-                    initial={{ strokeDashoffset: prefersReducedMotion ? finalOffset : circumference }}
-                    animate={controls}
+                    transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION_MS / 1000, ease: fastStartSlowFinish }}
                     style={{ rotate: -90, transformOrigin: "80px 80px" }}
                 />
             </svg>

@@ -10,12 +10,12 @@ import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
-  AnimatePresence,
   animate,
   m,
   useMotionValue,
   useTransform,
 } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useDirection } from '@/i18n/useDirection';
 

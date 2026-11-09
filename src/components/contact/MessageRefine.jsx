@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AnimatePresence, m } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMessageRefine } from '@/hooks/useMessageRefine';

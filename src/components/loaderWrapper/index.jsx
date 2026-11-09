@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import {
-  AnimatePresence,
   cubicBezier,
   m,
   useMotionTemplate,
@@ -10,6 +9,7 @@ import {
   useMotionValueEvent,
   useTransform,
 } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { tweenValue } from '@/lib/motion/tweenValue';
 import { useLocale } from 'next-intl';

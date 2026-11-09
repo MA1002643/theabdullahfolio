@@ -9,7 +9,8 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, m, useIsPresent } from 'framer-motion';
+import { m, useIsPresent } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import HoverHint from './HoverHint';
 import { useStaggeredScrollReveal } from '@/hooks/useStaggeredScrollReveal';
 import { animateToTarget } from '@/utils/animationCurves';

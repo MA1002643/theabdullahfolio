@@ -11,7 +11,8 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, m } from 'framer-motion';
+import { m } from 'framer-motion';
+import { AnimatePresence } from '@/components/motion/AnimatePresence';
 import { claimEscape } from '@/lib/escapeKey';
 
 // Styled replacement for the native `title` tooltip across the

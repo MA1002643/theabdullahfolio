@@ -83,7 +83,7 @@ unit test would think to check:
 | `i18nBudget` | What each route's client message provider receives stays at or under 8 kB gzipped, for every locale × route, measured through the same `loadMessages` → `pickMessages` path the page serialises. `/uses` alone is allowed 9 kB (owner decision, 2026-11-01): it server-renders a description for each of its 42 curated stack tiles, and Russian measured 8,279 bytes after everything not on screen at first paint was deferred. The fitness project runs with Vitest's on-disk module cache off, because a cached compile of the catalogue loader once made every locale measure as English (defects table). |
 | `imageLoadingPolicy` | No `next/image` uses the deprecated `priority`. `preload` appears only on an allowlisted image, and each entry records the route and viewport where that image measured as the LCP. An `eager` image that is not preloaded carries `fetchPriority="low"`, because without it React 19's server renderer preloads the image anyway (issue #55). |
 | `deferredChunks` | The modules kept out of every first load (the Ember Passage runtime, the `/about` dialogs, framer-motion's feature modules) are statically imported only from inside their own deferred graph, and each entry point is still loaded through `import()`. The bundle budget cannot catch this: its 10 % headroom is larger than the modules (issues #55, #200). |
-| `lazyMotion` | framer-motion stays on `LazyMotion` (issue #200): no file in `src/` imports the `motion` component (or a namespace that includes it); `domAnimation` / `domMax` are imported only in `src/lib/motion/{features,layoutFeatures}.js`, which only the loader reaches, through `import()`; every `LazyMotion` is `strict` and the root layout mounts one; every drei `<Html>` body (a separate React root, which inherits no provider) holds its own `<MotionFeatures>`; and no file in the static graph of the three layouts every route renders imports an engine API (`animate`, `useAnimation`, `useAnimate`, …). That last rule is the 16 kB the intro loader's `animate()` held in every first load; `useSpring` is allowed, because deferring its one root-layout user measured as no saving. The `motion`, provider and engine rules failed on `main`; the feature-module rules have nothing to find there. |
+| `lazyMotion` | framer-motion stays on `LazyMotion` (issue #200): no file in `src/` imports the `motion` component (or a namespace that includes it); `domAnimation` / `domMax` are imported only in `src/lib/motion/{features,layoutFeatures}.js`, which only the loader reaches, through `import()`; every `LazyMotion` is `strict` and the root layout mounts one; every drei `<Html>` body (a separate React root, which inherits no provider) holds its own `<MotionFeatures>`; `AnimatePresence` is imported only through the site wrapper, `src/components/motion/AnimatePresence.jsx`; and no file in the static graph of the three layouts every route renders imports an engine API (`animate`, `useAnimation`, `useAnimate`, …). That last rule is the 16 kB the intro loader's `animate()` held in every first load; `useSpring` is allowed, because deferring its one root-layout user measured as no saving. The `motion`, provider and engine rules failed on `main`; the feature-module rules have nothing to find there. |
 | `i18nCatalogueText` | No parsed catalogue string, in any locale, contains a literal escape sequence such as ` `: a real sentence never does, so one that does was double-escaped on its way into the JSON. |
 
 ### L2 · Unit and property-based tests
@@ -160,16 +160,23 @@ is tested once, against the real `m`, in `lazyMotionFirstPaint.test.jsx`: the
 content is in the document before the features arrive, and the entrance plays
 when they do.
 
-Three more files cover what happens when the features are late or never come,
+Four more files cover what happens when the features are late or never come,
 each against a stubbed loader. In `motionStaticFallback.test.jsx` the elements
 hold their `initial` style while the chunk is only late. Once the loader gives
 up, they render at their final state: inherited variants, the last keyframe,
-content mounted afterwards, and the layout provider.
+content mounted afterwards, and the layout provider. A gate that opens after
+the give-up still reveals what it gates, which the file checks on the real
+components the review named: `PageTitle` behind the intro loader, a `/uses`
+`Plate` behind its viewport trigger, the preference centre opened behind a
+nested `<AnimatePresence>`, and a guestbook card with its depth blur off.
+`arcSweepDelayedFeatures.test.jsx` plays the `/about` arcs before the
+features land, against the real `m`, and keeps the old `useAnimation` shape
+as a case that pins the defect (its controls are lost).
 `customCursorDelayedFeatures.test.jsx` keeps the native cursor until a
 pointer position arrives after the features. `loaderWrapperRemount.test.jsx`
 checks that the remount the fallback causes does not replay the intro.
 `loadMotionFeatures.test.js` pins the bound itself: three failed attempts or
-8 s, never once the features have landed, and never a rejection.
+8 s, never once the features have landed, never a rejection, and nothing fetched or resolved after it has given up.
 
 **Copy comes from the real catalogues.** Components read their text through
 next-intl, so a test renders them with `renderWithIntl` from
@@ -669,9 +676,12 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Nightly (Linux WebKit, privacy notice) | A closed header popover's panel stayed mounted, and a live `role="dialog"`, through its exit fade, so the notice's last-resort Escape stood down for a second press made during the fade. Linux WebKit holds the panel for one to three seconds, so the test's presses 400 ms apart all landed inside it, but the window exists on every engine. | The leaving panel is `inert` (`useIsPresent` in `MetricPopover`), and the notice ignores inert dialogs. **new** e2e case: two presses back to back reach the notice. It fails on Chromium with the fix undone. |
 | Nightly (Linux WebKit iPhone, test bug) | `rtl.spec.js` read the footer email's glyphs sorted by `x` alone. The runner's fonts set the address one glyph too wide for 390px, its last `m` wrapped to a second line, and the test read `…abdullamh…gmail.co`. The page was right: each glyph is an inline-block, so the line may break between any two. | `visualText()` reads line by line, then left to right. |
 | Review (#200, separate root) | drei's `<Html>` mounts the laptop screen in its own React root, which does not inherit the layout's `LazyMotion`, so every `m.*` on `/projects/[id]`'s screen had no renderer: the boot sequence stayed at opacity 0. | The screen gets its own `<MotionFeatures>`; the `lazyMotion` fitness rule requires one in every `<Html>`. |
-| Review (#200, no terminal fallback) | The feature loader retried forever, so a chunk gone for good (deleted by a deploy) kept every entrance at its `initial` style for the visit: page content invisible after a successful hydration. | The loader gives up after three failures or 8 s, without rejecting, and the provider remounts its subtree under `initial: false` presence, which renders every `m.*` at its `animate` target with no renderer. |
+| Review (#200, no terminal fallback) | The feature loader retried forever, so a chunk gone for good (deleted by a deploy) kept every entrance at its `initial` style for the visit: page content invisible after a successful hydration. | The loader gives up after three failures or 8 s, without rejecting, and the provider remounts its subtree in framer's static mode, which renders every `m.*` at its `animate` target with no renderer. |
 | Review (#200, cursor) | The custom cursor hid the OS cursor on the first pointer move, but before the features land its `m.*` dot cannot follow a motion value, so the visitor had a frozen cursor and no native one. | A position counts only after the features have committed; if they never do, the native cursor stays. |
 | Review (#200, tween clock) | `tweenValue` started its clock on the first frame while the intro loader's beats start at the call, so a late first frame left the counter under 100 % at the build beat and stopped the wipe short. | The clock starts at `performance.now()` on invocation; the tests stub it on the same clock as rAF. |
+| Review (#200, arcs) | The `/about` rank and activity arcs started `useAnimation` controls from an effect. A viewport trigger that fired before the features chunk reached no visual element, and the chunk's arrival did not rerun the effect, so the arc stayed empty until the card re-entered the viewport. | Declarative props from `arcSweep.js`, and a remount per play. |
+| Review (#200, nested presence) | `AnimatePresence` gives a child mounted after its first render its own presence, overriding the static fallback: the preference centre opened after a give-up was invisible while it took focus and locked scrolling, and so were guestbook cards when the layout chunk failed. | The site's `AnimatePresence` wrapper re-applies the static presence; a fitness rule bans framer's direct. |
+| Review (#200, gated content) | The first fallback only blocked the initial animation, and framer reads that once per element, so content behind a reveal gate (`PageTitle`, the `/uses` plates) stayed at its hidden target when the gate opened. | `MotionConfig isStatic`: styles follow props on every render, with no renderer. |
 
 ## Maintenance
 

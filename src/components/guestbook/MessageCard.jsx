@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCardTilt } from '@/hooks/useCardTilt';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
+import { useStaticMotion } from '@/components/motion/useStaticMotion';
 import { timeAgo } from '@/lib/guestbook/timeAgo';
 import ReactionBar from './ReactionBar';
 import SignatureGlyph from './SignatureGlyph';
@@ -62,7 +63,11 @@ export default function MessageCard({
   // — opacity belongs to the entrance/exit animations and a style motion
   // value would override them.
   const cardRef = useRef(null);
-  const depthOn = GUESTBOOK_FLAGS.scrollChoreography && !reduceMotion;
+  // Off in the static motion mode too (no features chunk, issue #200): the
+  // blur is motion values alone, which nothing writes there, so it would
+  // freeze at its first reading, a card blurred for the rest of the visit.
+  const staticMotion = useStaticMotion();
+  const depthOn = GUESTBOOK_FLAGS.scrollChoreography && !reduceMotion && !staticMotion;
   const { scrollYProgress } = useScroll({
     target: cardRef,
     offset: ['start end', 'start 0.65'],

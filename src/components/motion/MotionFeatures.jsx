@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LazyMotion, PresenceContext } from 'framer-motion';
+import { LazyMotion, MotionConfig, PresenceContext } from 'framer-motion';
 
 import { loadLayoutFeatures, loadMotionFeatures } from '@/lib/motion/loadFeatures';
+
+import { STATIC_PRESENCE } from './staticMotion';
 
 // framer-motion on LazyMotion (issue #200). Every animated element on the site
 // is an `m.*` component, which renders with framer's small core and takes its
@@ -26,27 +28,21 @@ import { loadLayoutFeatures, loadMotionFeatures } from '@/lib/motion/loadFeature
 // <MotionFeatures>. The loader is memoised, so that costs no second download.
 
 // When the loader gives up on the chunk (src/lib/motion/loadFeatures.js), the
-// subtree is mounted again under this presence context. `initial: false` is
-// framer's own "initial animation blocked" signal: an `m.*` element then seeds
-// its style from its `animate` target (the LAST keyframe of an array) instead
-// of from `initial`. That happens while the element is created, without the
-// renderer the chunk would have brought, so the page shows every entrance at
-// its end state: visible text, not text stuck at opacity 0. An element with
-// only `whileInView` gets no seeded style at all, which is also visible.
+// subtree is mounted again in STATIC mode: `MotionConfig isStatic` plus the
+// static presence (./staticMotion.js). framer then renders every `m.*` from
+// its props alone, at its `animate` target, on every render, with no renderer:
+// the page shows each entrance at its end state, and a gate that opens later
+// (the intro loader, a viewport trigger) still reveals what it gates, because
+// it re-renders the element. Nested <AnimatePresence> boundaries re-apply the
+// static presence to their children (./AnimatePresence.jsx), so a dialog
+// opened afterwards is visible too. Hover, tap and `layout` do nothing.
 //
-// It takes a REMOUNT, because framer reads presence once, when an element
-// first renders. That loses client state below the provider, and it is the
-// right trade only for a visit whose animations are never coming. Content
-// opened later inside an <AnimatePresence> gets that component's own presence
-// context and still starts at `initial`; the page's own content does not.
-const STATIC_PRESENCE = {
-  id: 'motion-static',
-  initial: false,
-  isPresent: true,
-  custom: undefined,
-  onExitComplete: undefined,
-  register: () => () => {},
-};
+// It takes a REMOUNT: framer reads `isStatic` once per element and branches
+// its hooks on it, so flipping it on a mounted tree would break React's hook
+// order. That loses client state below the provider, which is the right trade
+// only for a visit whose animations are never coming. Giving up is final (the
+// loader fetches nothing more), so a static tree stays static: the next full
+// page load animates again.
 
 /** True once `loader` has given up on its chunk. */
 function useGaveUp(loader) {
@@ -61,8 +57,10 @@ function Provider({ loader, children }) {
     <LazyMotion features={loader} strict>
       {gaveUp ? (
         // A different element type at this position: React mounts the subtree
-        // afresh, which is what makes framer read the new presence.
-        <PresenceContext.Provider value={STATIC_PRESENCE}>{children}</PresenceContext.Provider>
+        // afresh, which is what makes framer read the static config.
+        <MotionConfig isStatic>
+          <PresenceContext.Provider value={STATIC_PRESENCE}>{children}</PresenceContext.Provider>
+        </MotionConfig>
       ) : (
         children
       )}
