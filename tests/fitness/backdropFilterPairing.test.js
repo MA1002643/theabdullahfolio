@@ -19,8 +19,9 @@ import { read, stripComments, walk } from '../support/source.js';
 // That is why this guards the pairing everywhere, not only on that page: which
 // pages are "safe" is not something anyone can see from the code.
 //
-// What it checks: every `className` in src/, as written (string literals and
-// the literal parts of template strings, conditional branches included). The
+// What it checks: every `className` in src/, as written: string literals, the
+// literal parts of template strings, and the strings inside a template's
+// `${…}` interpolations, every conditional branch included. The
 // classes that set each property are READ from globals.css, so a new class
 // that sets `filter` is covered without editing this file, and Tailwind's own
 // filter utilities are matched by name.
@@ -52,15 +53,83 @@ function classesSetting() {
   return { backdrop, filter };
 }
 
-// The class tokens a className attribute can apply: quoted strings anywhere in
-// the attribute's expression, and a template literal's text.
+// A tiny scanner over a JS expression, from `start`, until the `}` that closes
+// it (or the end of the text). Every string literal it meets is pushed onto
+// `out`: quoted strings, a template's literal text, AND the strings inside a
+// template's `${…}` interpolations, recursively. The last is the case a regex
+// cannot do: `custom-bg-abt ${on ? 'text-fire-amber' : ''}` puts the crashing
+// pair on one element whenever `on` is true. Returns the index after the `}`.
+function scanExpression(text, start, out) {
+  let i = start;
+  let depth = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < text.length && text[j] !== c) j += text[j] === '\\' ? 2 : 1;
+      out.push(text.slice(i + 1, j));
+      i = j + 1;
+    } else if (c === '`') {
+      i = scanTemplate(text, i + 1, out);
+    } else if (c === '{') {
+      depth += 1;
+      i += 1;
+    } else if (c === '}') {
+      if (depth === 0) return i + 1;
+      depth -= 1;
+      i += 1;
+    } else {
+      i += 1;
+    }
+  }
+  return i;
+}
+
+// From just after an opening backtick: the literal text is pushed in pieces (an
+// interpolation splits it, so a class can never be glued across one), and each
+// `${…}` is scanned as an expression. Returns the index after the closing tick.
+function scanTemplate(text, start, out) {
+  let i = start;
+  let piece = '';
+  while (i < text.length && text[i] !== '`') {
+    if (text[i] === '\\') {
+      piece += text.slice(i, i + 2);
+      i += 2;
+    } else if (text[i] === '$' && text[i + 1] === '{') {
+      out.push(piece);
+      piece = '';
+      i = scanExpression(text, i + 2, out);
+    } else {
+      piece += text[i];
+      i += 1;
+    }
+  }
+  out.push(piece);
+  return i + 1;
+}
+
+/** Every string literal a className value can contribute, as written. */
+function classNameLiterals(source, at) {
+  const out = [];
+  const c = source[at];
+  if (c === '"' || c === "'") {
+    const end = source.indexOf(c, at + 1);
+    out.push(source.slice(at + 1, end === -1 ? undefined : end));
+  } else if (c === '{') {
+    scanExpression(source, at + 1, out);
+  }
+  return out;
+}
+
+// The class tokens each className attribute can apply: every literal in its
+// value, all branches of every conditional together.
 function classNameTokens(source) {
   const found = [];
-  const attr = /className=(?:"([^"]*)"|'([^']*)'|\{((?:[^{}]|\{[^{}]*\})*)\})/g;
-  for (const m of source.matchAll(attr)) {
-    const text = m[1] ?? m[2] ?? [...m[3].matchAll(/(["'`])((?:(?!\1).)*)\1/gs)].map((s) => s[2].replace(/\$\{[^}]*\}/g, ' ')).join(' ');
+  for (const m of source.matchAll(/className=/g)) {
+    const at = m.index + m[0].length;
     const line = source.slice(0, m.index).split('\n').length;
-    const tokens = text
+    const tokens = classNameLiterals(source, at)
+      .join(' ')
       .split(/\s+/)
       .filter(Boolean)
       .map((t) => t.replace(/^!/, '').split(':').pop());
@@ -77,6 +146,22 @@ describe('backdrop-filter and filter stay on separate elements', () => {
     // has lost its anchor and needs a fresh look rather than a quiet pass.
     expect(backdrop.has('custom-bg-abt')).toBe(true);
     expect(filter.has('text-fire-amber')).toBe(true);
+  });
+
+  it('reads the class literals inside template interpolations', () => {
+    // The regression (#198 review): matching the template as one string and
+    // blanking its `${…}` dropped the conditional branch, so this crashing
+    // pair passed the guard.
+    const tokens = (src) => classNameTokens(src).map((f) => f.tokens);
+    expect(tokens("<b className={`custom-bg-abt ${enabled ? 'text-fire-amber' : ''}`} />")).toEqual([
+      ['custom-bg-abt', 'text-fire-amber'],
+    ]);
+    // Nested templates and a call inside the interpolation, and no class glued
+    // across an interpolation boundary.
+    expect(tokens('<b className={clsx(`a${x ? `b ${y ? "c" : \'d\'}` : cn({ e: 1 }, "f")}g`)} />')).toEqual([
+      ['a', 'b', 'c', 'd', 'f', 'g'],
+    ]);
+    expect(tokens('<b className="x y" /><i className=\'z\' />')).toEqual([['x', 'y'], ['z']]);
   });
 
   it('no className combines a backdrop-filter class with a filter class', () => {

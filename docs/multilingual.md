@@ -98,10 +98,13 @@ The server and most browsers (Chromium, Firefox, Apple's WebKit) ship a
 current ICU. Linux WebKit, the engine behind GNOME Web, uses the operating
 system's, which can be years older. There, every number on an Arabic page
 hydrated differently from the HTML it arrived in, and React threw the page
-away and re-rendered it. So the server now writes the numbering system it used
-onto `<html data-numbering>`, and before hydration an engine that would pick a
-different one is told to use the server's (`src/i18n/numberingAlignment.js`,
-run from `src/instrumentation-client.js`). The server's CLDR stays the
+away and re-rendered it. So the server now writes the numbering system it uses
+for every site language onto `<html data-numbering>`, and before hydration an
+engine that would pick a different one for any of them is told to use the
+server's (`src/i18n/numberingAlignment.js`, run from
+`src/instrumentation-client.js`). Every language, not only the page's, because
+switching language is a soft navigation that never runs that step again, and
+the new language's numbers are formatted before the new `<html lang>` lands. The server's CLDR stays the
 reference, still with nothing hard-coded per language. A browser that already
 agrees, which is nearly every browser, is not touched at all.
 
