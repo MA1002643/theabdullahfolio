@@ -1214,10 +1214,15 @@ const Carousel3D = () => {
           style={{ marginBottom: fluid(1) }}
         >
           <div className="z-10 flex" style={{ gap: fluid(1.5) }}>
+            {/* The amber text sits on an inner span, never on the button
+                itself: `.custom-bg-abt` brings `backdrop-filter`, and
+                `.text-fire-amber` brings `filter`. The two on ONE element
+                crashed Linux WebKit's web process on load (issue #198), and
+                tests/fitness/backdropFilterPairing.test.js keeps them apart. */}
             <button
               type="button"
               onClick={prevSlide}
-              className="custom-bg-abt text-fire-amber"
+              className="custom-bg-abt"
               style={{
                 textShadow: 'none',
                 padding: `${fluid(0.5)} ${fluid(1)}`,
@@ -1225,12 +1230,12 @@ const Carousel3D = () => {
                 fontSize: fluidText(1, 0.875),
               }}
             >
-              {t('carousel.prev')}
+              <span className="text-fire-amber">{t('carousel.prev')}</span>
             </button>
             <button
               type="button"
               onClick={nextSlide}
-              className="custom-bg-abt text-fire-amber"
+              className="custom-bg-abt"
               style={{
                 textShadow: 'none',
                 padding: `${fluid(0.5)} ${fluid(1)}`,
@@ -1238,7 +1243,7 @@ const Carousel3D = () => {
                 fontSize: fluidText(1, 0.875),
               }}
             >
-              {t('carousel.next')}
+              <span className="text-fire-amber">{t('carousel.next')}</span>
             </button>
           </div>
         </div>

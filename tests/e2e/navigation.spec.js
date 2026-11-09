@@ -8,10 +8,7 @@ import { expect, settle, test } from '../support/test.js';
 
 test.describe('every route renders', { tag: '@cross-browser' }, () => {
   for (const path of ALL_ROUTES) {
-    // /qualifications crashes the CI runner's Linux WebKit process on load (not
-    // Apple's WebKit): parked on those two projects only, still gated on Chromium.
-    const parked = path === '/qualifications' ? { tag: '@webkit-quarantine', annotation: { type: 'issue', description: 'https://github.com/MA1002643/theabdullahfolio/issues/198' } } : {};
-    test(`${path} — 200, one <h1>, a real title, and no errors`, parked, async ({ page }) => {
+    test(`${path} — 200, one <h1>, a real title, and no errors`, async ({ page }) => {
       const response = await page.goto(path);
       expect(response.status()).toBe(200);
       await settle(page);
@@ -21,7 +18,7 @@ test.describe('every route renders', { tag: '@cross-browser' }, () => {
       await expect(page.locator('main')).toHaveCount(1);
     });
 
-    test(`${path} — never scrolls sideways`, parked, async ({ page }) => {
+    test(`${path} — never scrolls sideways`, async ({ page }) => {
       await page.goto(path);
       await settle(page);
       // A horizontal scrollbar on a phone is the most common responsive

@@ -71,6 +71,7 @@ unit test would think to check:
 | `testHygiene` | No focused or skipped tests; every `@quarantine` and `@webkit-quarantine` links an issue. |
 | `browserScripts` | Every `npm run` script that runs `playwright test` builds first; the CI JUnit reporter keeps `includeRetries`, so the run summary can name flaky tests. |
 | `routeSegmentConfig` | No file under `src/app` re-exports route segment config (`dynamicParams`, `revalidate`, …) from a sibling: Next 15 reads it only from the file itself and silently applies the default otherwise. |
+| `backdropFilterPairing` | No `className` combines a class that sets `backdrop-filter` with one that sets `filter` (both read from `globals.css`, plus Tailwind's own filter utilities). That pair on one element crashed Linux WebKit's web process on every load of `/qualifications`. |
 | `escapeOwnership` | Every source that acts on Escape claims it with `claimEscape` (`src/lib/escapeKey.js`), and the privacy notice decides only after dispatch, so one press never both closes something and declines analytics. |
 | `tailwindToolchain` | The installed Tailwind major is the one `package.json` declares, and `postcss.config.js` and `src/app/globals.css` are wired the way that major expects. A major bump that changes only the version fails here, not only in `next build`, and not at all on a Vercel deploy that restores a cached `node_modules`. |
 | `burnInRange` | Runs `ci.yml`'s own "Find changed browser specs" step against a scratch git repository: a push that only merges `main` into a branch burns in nothing, and a push that adds a spec still burns it in. |
@@ -439,8 +440,15 @@ the advisory.
   nightly `quarantine-webkit` job runs the tagged cases on both WebKit
   projects with `continue-on-error`: they stay visible without turning the
   nightly red, and a pass there means the tag can go. The issue link is
-  enforced the same way (`testHygiene`). The cases parked this way, and why,
-  are in [#198](https://github.com/MA1002643/theabdullahfolio/issues/198).
+  enforced the same way (`testHygiene`). Nothing carries the tag today: the
+  six cases first parked this way
+  ([#198](https://github.com/MA1002643/theabdullahfolio/issues/198)) were
+  three real defects and one test bug, all fixed, and the job passes with no
+  tests to run. "Cannot reproduce locally" turned out to be wrong: the
+  official Playwright image (`mcr.microsoft.com/playwright:v<version>-noble`,
+  native arm64 on Apple silicon) runs the same Linux WebKit, and reproduced
+  10 of the 12 failures on its first run. Reach for it before parking a
+  WebKit-only case.
 
 ## CI
 
@@ -628,6 +636,10 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (language selector) | On the tap-focused listbox Space fell through to the search field's handler, which has no Space case: ArrowDown then Space neither chose the highlighted language nor stopped the list scrolling. Only Enter worked. | The listbox handler takes Space: it prevents the default and chooses the active option, as Enter does (WAI-ARIA listbox). The search field keeps Space for typing. Two cases in `LanguageSelector.test.jsx` (touch, pen) fail on the old code, one pins that the field still types Space, and `language-selector-mobile.spec.js` presses real keys in four browsers. |
 | CI (`npm ci`) | Every job of a run failed at `npm ci`: GitHub Releases answered 504, and ffmpeg-static's install step, which downloads an ffmpeg binary from there, exits 1 on any error. No CI step runs ffmpeg; the package exists for the local asset scripts. | Every workflow that installs dependencies sets `FFMPEG_BIN: /usr/bin/true`, which makes the installer report "installed already" and skip the download (shown against a download URL that cannot connect). `ciInstallHermetic` fails a workflow that forgets it. |
 | CI (`security.yml`) | The same Releases outage failed Gitleaks before it scanned anything: its install step downloaded the pinned tarball from GitHub Releases with a single `curl` and got a 504. Unlike ffmpeg, the binary is needed, so the download cannot be skipped. | The tarball is cached with `actions/cache@v6`, keyed on the pinned version and its SHA-256, so normal runs never reach Releases. A miss downloads with `curl --retry 6 --retry-all-errors` (plain `--retry` does not retry HTTP errors), shown recovering from two 504s against a local server. The checksum is verified on every run, cached or not. |
+| Nightly (Linux WebKit, `/qualifications`) | The WebKit web process crashed on every load, JavaScript or not. Bisected to two of 2,015 CSS rules, then to one element: the carousel's Prev/Next buttons wore `.custom-bg-abt` (`backdrop-filter`) and `.text-fire-amber` (`filter: drop-shadow`) together. GNOME Web and other WebKitGTK browsers run this engine, so real visitors lost the tab too. | The amber moved onto an inner `<span>`. **new** fitness `backdropFilterPairing` keeps the two properties off one element's classes. |
+| Nightly (Linux WebKit, `/ar/about`) | React #418 on every `/ar` page with a number: the system ICU 74 that Linux WebKit uses formats bare `ar` with Arabic-Indic digits ("١١"), while Node, Chromium and Apple's WebKit use current CLDR's Western digits ("11"). The catalogue formats its own numbers (`{count, number}`), so `intlTag()` could not fix it alone. | The layout stamps the server's numbering system on `<html data-numbering>`, and `src/instrumentation-client.js` aligns an engine that disagrees before hydration (`src/i18n/numberingAlignment.js`). Engines that agree are untouched. Unit tests, plus a fast-check property for `pinNumbering`. |
+| Nightly (Linux WebKit, privacy notice) | A closed header popover's panel stayed mounted, and a live `role="dialog"`, through its exit fade, so the notice's last-resort Escape stood down for a second press made during the fade. Linux WebKit holds the panel for one to three seconds, so the test's presses 400 ms apart all landed inside it, but the window exists on every engine. | The leaving panel is `inert` (`useIsPresent` in `MetricPopover`), and the notice ignores inert dialogs. **new** e2e case: two presses back to back reach the notice. It fails on Chromium with the fix undone. |
+| Nightly (Linux WebKit iPhone, test bug) | `rtl.spec.js` read the footer email's glyphs sorted by `x` alone. The runner's fonts set the address one glyph too wide for 390px, its last `m` wrapped to a second line, and the test read `…abdullamh…gmail.co`. The page was right: each glyph is an inline-block, so the line may break between any two. | `visualText()` reads line by line, then left to right. |
 
 ## Maintenance
 

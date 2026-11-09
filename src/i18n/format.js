@@ -9,8 +9,11 @@ import { DEFAULT_LOCALE, localeInfo } from './locales';
 // So every `Intl.*` call takes its tag from here: 'en-GB' for English, the
 // registry's hreflang (`zh-Hans`, `ar`, ...) for everything else, which is also
 // what makes each locale use its own CLDR numbering system without anything
-// being hard-coded (Arabic-Indic digits in `ar`, extended Arabic-Indic in
-// `fa`, Western digits in `ur` and `hi`, as their CLDR defaults say).
+// being hard-coded (extended Arabic-Indic in `fa`, Western digits in `ur` and
+// `hi`, as their CLDR defaults say). Those defaults move between CLDR versions:
+// current CLDR gives `ar` Western digits, where older ICU builds gave
+// Arabic-Indic. The server's choice wins, so the browser cannot hydrate
+// different digits; see numberingAlignment.js (issue #198).
 
 /** The BCP 47 tag to hand to `Intl.*` for a URL locale. */
 export function intlTag(locale) {

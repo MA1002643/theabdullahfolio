@@ -183,13 +183,17 @@ export default function PrivacyNotice() {
   // is not enough: listeners on `window` (the 404 shortcut, the orbit tip, the
   // about popovers) run AFTER this one, so the decision waits until dispatch is
   // over. The dialog and field checks read the page as it was at the press,
-  // before a dialog's own Escape handler has closed it.
+  // before a dialog's own Escape handler has closed it. An INERT dialog does
+  // not count: that is one already closed and fading out (MetricPopover's
+  // PresencePanel), and a press made during its fade is meant for the notice
+  // (issue #198).
   useEffect(() => {
     if (!open) return undefined;
     const cancels = new Set();
     const onKeyDown = (event) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
+      const dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]');
+      if ([...dialogs].some((dialog) => !dialog.closest('[inert]'))) return;
       const target = event.target;
       if (
         target instanceof HTMLElement &&

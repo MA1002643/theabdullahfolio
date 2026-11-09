@@ -91,6 +91,20 @@ Numbers, dates and relative times ("5 minutes ago") are formatted by the
 browser's `Intl` APIs with each language's own conventions, including its own
 digits. None of that is hand-coded.
 
+"Its own digits" turned out to depend on who you ask. Which digits a language
+uses by default is CLDR data, and CLDR changes: current CLDR gives Arabic
+Western digits ("11"), while older ICU builds still give Arabic-Indic ("١١").
+The server and most browsers (Chromium, Firefox, Apple's WebKit) ship a
+current ICU. Linux WebKit, the engine behind GNOME Web, uses the operating
+system's, which can be years older. There, every number on an Arabic page
+hydrated differently from the HTML it arrived in, and React threw the page
+away and re-rendered it. So the server now writes the numbering system it used
+onto `<html data-numbering>`, and before hydration an engine that would pick a
+different one is told to use the server's (`src/i18n/numberingAlignment.js`,
+run from `src/instrumentation-client.js`). The server's CLDR stays the
+reference, still with nothing hard-coded per language. A browser that already
+agrees, which is nearly every browser, is not touched at all.
+
 ## Translating without trusting the translator
 
 The nineteen non-English catalogues are machine-translated through the Vercel

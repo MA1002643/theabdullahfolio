@@ -167,9 +167,14 @@ export default async function LocaleLayout({ children, params }) {
   // reading request headers, so the page stays prerenderable.
   setRequestLocale(locale);
   const { dir, hreflang } = localeInfo(locale);
+  // The numbering system THIS server's ICU uses for the page's language. A
+  // browser with an older ICU (Linux WebKit) would pick different digits for
+  // `ar` and hydrate every number differently from this HTML, so
+  // src/instrumentation-client.js reads this and aligns it (issue #198).
+  const numbering = new Intl.NumberFormat(hreflang).resolvedOptions().numberingSystem;
 
   return (
-    <html lang={hreflang} dir={dir}>
+    <html lang={hreflang} dir={dir} data-numbering={numbering}>
       {/* suppressHydrationWarning: extensions (Grammarly, LastPass, …) stamp
           `data-*` attributes onto <body> before React hydrates, which reports a
           false attribute mismatch. It covers this element's own attributes
