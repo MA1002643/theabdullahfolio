@@ -70,8 +70,6 @@
     "section": "Reis",
     "jumpYear": "Ga naar {year}",
     "eraHint": "tijdperk",
-    "jumpAtlas": "Ga naar de overlap-atlas",
-    "openCv": "Open het CV (PDF)",
-    "openCvHint": "de papieren versie"
+    "jumpAtlas": "Ga naar de overlap-atlas"
   }
 }

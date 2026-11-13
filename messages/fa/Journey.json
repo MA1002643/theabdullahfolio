@@ -70,8 +70,6 @@
     "section": "سفر",
     "jumpYear": "رفتن به {year}",
     "eraHint": "دوره",
-    "jumpAtlas": "رفتن به اطلس هم‌پوشانی",
-    "openCv": "باز کردن CV (PDF)",
-    "openCvHint": "نسخهٔ کاغذی"
+    "jumpAtlas": "رفتن به اطلس هم‌پوشانی"
   }
 }

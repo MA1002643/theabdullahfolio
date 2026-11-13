@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { createTranslator } from 'next-intl';
-import { SITE_ROUTES, routeActions, routesExcept } from '@/components/commandPalette/routes';
+import { SITE_ROUTES } from '@/components/commandPalette/routes';
+import { getPaletteActions, resetPaletteRegistry } from '@/components/commandPalette/registry';
 import paletteMessages from '../../messages/en/UsesPalette.json';
 import { renderWithIntl } from '../support/intl.jsx';
 
@@ -12,24 +13,7 @@ import { renderWithIntl } from '../support/intl.jsx';
 // itself is exercised through the builder because everything it adds is
 // wiring (router, transition provider, clipboard, toast).
 
-// The palette routes through the locale-aware navigation (issue #82).
-vi.mock('@/i18n/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock('@/components/pageTransition/PageTransitionProvider', () => ({
-  usePageTransition: () => ({ navigate: null }),
-}));
 vi.mock('sonner', () => ({ toast: vi.fn() }));
-// The shared palette, reduced to the action list it was handed.
-vi.mock('@/components/commandPalette/CommandPalette', () => ({
-  default: ({ actions }) => (
-    <ul>
-      {actions.map((a) => (
-        <li key={a.id} data-id={a.id}>
-          {a.label}
-        </li>
-      ))}
-    </ul>
-  ),
-}));
 
 const setReducedMotion = (matches) => {
   vi.stubGlobal('matchMedia', (query) => ({
@@ -53,6 +37,7 @@ beforeEach(() => {
 afterEach(() => {
   delete Element.prototype.scrollIntoView;
   document.body.innerHTML = '';
+  resetPaletteRegistry();
   vi.unstubAllGlobals();
 });
 
@@ -72,7 +57,6 @@ async function build(overrides = {}) {
     t,
     frameLines: LINES,
     motionOn: true,
-    go: vi.fn(),
     copyText: vi.fn(),
     openExternal: vi.fn(),
     toggleMotion: vi.fn(),
@@ -82,7 +66,7 @@ async function build(overrides = {}) {
 }
 
 describe('buildUsesActions — the action list', () => {
-  it('lists six plate jumps, the two page actions, every other route, and the motion toggle', async () => {
+  it('lists six plate jumps, the two page actions and the motion toggle', async () => {
     const { actions } = await build();
     const ids = actions.map((a) => a.id);
     expect(ids.slice(0, 6)).toEqual([
@@ -98,7 +82,7 @@ describe('buildUsesActions — the action list', () => {
     expect(ids.at(-1)).toBe('toggle-motion');
 
     const sections = new Set(actions.map((a) => a.section));
-    expect(sections).toEqual(new Set(['Uses', 'Navigate', 'Preferences']));
+    expect(sections).toEqual(new Set(['Uses', 'Preferences']));
 
     // Plate jumps read "Jump to 00 The machine" with the ordinal as the hint.
     const machine = actions.find((a) => a.id === 'jump-machine');
@@ -106,20 +90,13 @@ describe('buildUsesActions — the action list', () => {
     expect(machine.hint).toBe('00');
   });
 
-  it('navigates to every site route except /uses, through the shared registry', async () => {
+  // Issue #41: the sitewide palette supplies every route jump (minus the
+  // current page — tests/unit/siteActions.test.js), so a page's own list must
+  // not carry a second copy of them.
+  it('carries no route jumps of its own: the sitewide palette supplies them', async () => {
     const { actions } = await build();
-    const hrefs = actions.filter((a) => a.section === 'Navigate').map((a) => a.hint);
-    expect(hrefs).toEqual(routesExcept('/uses').map((r) => r.href));
-    expect(hrefs).not.toContain('/uses');
-    expect(hrefs).toEqual(expect.arrayContaining(['/', '/journey', '/guestbook', '/my-past']));
-    // The registry itself carries the new route for the other two palettes.
+    expect(actions.some((a) => a.section === 'Navigate' || a.id.startsWith('go-'))).toBe(false);
     expect(SITE_ROUTES.map((r) => r.href)).toContain('/uses');
-  });
-
-  it('a route action performs through `go` with href and label', async () => {
-    const { actions, deps } = await build();
-    actions.find((a) => a.id === 'go-journey').perform();
-    expect(deps.go).toHaveBeenCalledWith('/journey', 'Journey');
   });
 
   it('copy-settings writes exactly the editor frame lines, newline-joined', async () => {
@@ -173,17 +150,22 @@ describe('plate jumps — reduced motion is read when the action runs', () => {
 });
 
 // The palette's copy is fetched at mount, not shipped with the page (issue
-// #82, the 8 kB budget). Until it lands the palette still offers every route
-// jump; the page's own actions then arrive in the locale's words.
-describe('UsesPalette — deferred copy', () => {
-  it('offers the route jumps at once and its own actions once the locale’s copy is in', async () => {
+// #82, the 8 kB budget). Until it lands the page contributes nothing (the
+// sitewide palette still offers everything else); its own actions then arrive
+// in the locale's words, and leave the palette when the page unmounts.
+describe('UsesPalette — deferred copy, contributed to the sitewide palette', () => {
+  it('contributes its own actions once the locale’s copy is in, and withdraws them on unmount', async () => {
     const { default: UsesPalette } = await import('@/components/uses/UsesPalette');
     const fa = (await import('../../messages/fa/UsesPalette.json')).default;
-    const { container } = renderWithIntl(<UsesPalette frame={{ lines: LINES }} />, { locale: 'fa' });
-    const ids = () => [...container.querySelectorAll('li')].map((li) => li.dataset.id);
-    expect(ids()).toEqual(routeActions(routesExcept('/uses'), () => {}).map((a) => a.id));
-    expect(ids()).not.toContain('copy-settings');
+    const { container, unmount } = renderWithIntl(<UsesPalette frame={{ lines: LINES }} />, {
+      locale: 'fa',
+    });
+    expect(container.innerHTML).toBe('');
+    const ids = () => getPaletteActions().map((a) => a.id);
+    expect(ids()).toEqual([]);
     await waitFor(() => expect(ids()).toContain('copy-settings'));
-    expect(container.querySelector('[data-id="copy-settings"]').textContent).toBe(fa.copySettings);
+    expect(getPaletteActions().find((a) => a.id === 'copy-settings').label).toBe(fa.copySettings);
+    unmount();
+    expect(ids()).toEqual([]);
   });
 });

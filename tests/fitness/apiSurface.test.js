@@ -54,6 +54,11 @@ describe('API surface — the shape of src/app/api', () => {
     // Adding, removing or widening an endpoint changes the attack surface.
     // This map makes that change visible in review instead of incidental.
     expect(surface).toEqual({
+      // Issue #41: the palette's Ask. Public and unauthenticated by design,
+      // so it is throttled per hashed IP AND by a global daily breaker before
+      // the model is called (src/lib/ask/ratelimit.js); hostile requests in
+      // tests/security/api-hardening.spec.js.
+      '/api/ask': ['POST'],
       '/api/auth/[...nextauth]': ['GET', 'POST'],
       '/api/daily-warmup': ['GET'],
       '/api/experience-summary': ['GET'],

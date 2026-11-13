@@ -133,6 +133,31 @@ A catalogue audit runs in CI on every push. It fails on a missing key, a
 translation whose English has changed since it was made, a broken ICU
 structure, or a catalogue file the app never loads.
 
+## Translating the notes
+
+These notes were English-only at first. They were translated on 2026-11-10,
+at the owner's request. The two longest are edited on almost every commit, so
+a translation of a whole file would be out of date after the next one. The
+unit of translation is smaller:
+
+- **One block at a time.** Each document is cut into markdown blocks, with
+  each table row as a block of its own. Each translation is stored under a
+  hash of its English block. Editing a paragraph makes only that paragraph
+  stale, in every language, and `npm run notes:translate` sends only the
+  stale blocks.
+- **Code is never sent.** Fenced code, and any block with no letters in it,
+  reads the same in every language and is copied as it is.
+- **The markdown is checked, not trusted.** A translated block that loses an
+  inline code span, changes a link target, adds a table cell or drops a list
+  item is rejected and retried, the way a broken placeholder is.
+- **A stale block stays English and says so.** Until it is translated again,
+  it renders in English, marked `lang="en"` so a screen reader switches
+  voice. A line above the note tells the reader, in their language, that some
+  passages are still in English.
+
+The line count under each note still counts the English file, because that
+is the file a reader can open and check.
+
 ## Right to left is a layout, not a translation
 
 Arabic, Hebrew, Persian and Urdu set `dir="rtl"` on the page, and that only
@@ -147,7 +172,7 @@ works if the layout was written to be mirrored:
   all reverse their drag, wheel and arrow keys.
 - **Some things must not mirror.** An email address, a terminal, a code
   editor and a number run read left to right in every language. They sit in
-  `dir="ltr"` islands, and so do the English-only notes.
+  `dir="ltr"` islands, and so does any code inside a translated note.
 - **Letters that join must not be split.** The site animates some text one
   letter at a time, which would break Arabic and Devanagari, where letters
   change shape when they join. A shared splitter cuts those scripts by word
@@ -163,8 +188,11 @@ Japanese and Korean use each platform's system fonts, one stack per language.
 Each page ships only the messages it renders at first paint, and a fitness
 test measures what one page hands the browser, per language, against a
 gzipped budget of 8 kB. Copy that only appears on demand is fetched when it
-is wanted: the privacy preferences dialog, the `/uses` ⌘K commands, and the
-descriptions of tools the live crawl turns up. `/uses` is the one page
+is wanted: the privacy preferences dialog, the `/uses` ⌘K commands, the
+sitewide palette's own commands and its Ask copy (`PaletteSite`, fetched in
+idle time), and the descriptions of tools the live crawl turns up. Answers
+from Ask are generated in the reader's language: the model is told the
+language by its English name, and the question itself is sent as typed. `/uses` is the one page
 allowed 9 kB, because it server-renders a description for each of its 42
 curated tools so the stack reads in the visitor's language from the first
 frame.
@@ -223,11 +251,11 @@ The last row is the reason the other checks exist.
 
 ## What is still English, on purpose
 
-- **These engineering notes and the privacy policy's body.** The privacy
-  policy is a statement whose wording matters, and a machine translation of
-  it would be a different statement. Both pages say so in the reader's
-  language, mark the English as `lang="en"` for screen readers, and point
-  their canonical at the English page.
+- **The privacy policy's body.** It is a statement whose wording matters,
+  and a machine translation of it would be a different statement. The page
+  says so in the reader's language, marks the English as `lang="en"` for
+  screen readers, and points its canonical at the English page. These notes
+  were on this list until 2026-11-10.
 - **Share-card images.** The image renderer has no Arabic shaping, so cards
   stay in English rather than showing broken Arabic.
 - **Guestbook entries.** Visitors' words are kept as written.
@@ -238,6 +266,7 @@ The last row is the reason the other checks exist.
 |---|---|
 | Audit every catalogue | `npm run i18n:audit` |
 | Translate what changed | `npm run i18n:translate` |
+| Translate the notes' changed passages | `npm run notes:translate` |
 | Generate the pseudo-locale | `npm run i18n:pseudo` |
 | Build with it and crawl every page in `en-XA` | `npm run test:i18n` |
 | Accessibility scan, English, Arabic and Japanese | `npm run test:a11y` |

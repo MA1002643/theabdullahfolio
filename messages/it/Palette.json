@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "vai naviga apri salta percorso pagina sezione",
     "language": "lingua traduci traduzione locale idioma"
-  }
+  },
+  "triggerTitle": "Cerca e chiedi",
+  "triggerHint": "{shortcut} · Chiedi a Claude del mio lavoro",
+  "triggerHintTouch": "Chiedi a Claude del mio lavoro"
 }

@@ -70,8 +70,6 @@
     "section": "Parcours",
     "jumpYear": "Aller à {year}",
     "eraHint": "période",
-    "jumpAtlas": "Aller à l'atlas des chevauchements",
-    "openCv": "Ouvrir le CV (PDF)",
-    "openCvHint": "la version papier"
+    "jumpAtlas": "Aller à l'atlas des chevauchements"
   }
 }

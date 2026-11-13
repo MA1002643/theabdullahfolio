@@ -70,8 +70,6 @@
     "section": "Trayectoria",
     "jumpYear": "Ir a {year}",
     "eraHint": "época",
-    "jumpAtlas": "Ir al atlas de solapamiento",
-    "openCv": "Abrir el CV (PDF)",
-    "openCvHint": "la versión en papel"
+    "jumpAtlas": "Ir al atlas de solapamiento"
   }
 }

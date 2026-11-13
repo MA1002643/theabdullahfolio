@@ -1,0 +1,7 @@
+{
+  "meta.curated.discoverability": "Search-result description of the 'Discoverability' engineering note. Aim for roughly 110–160 characters in Latin scripts (fewer in CJK); it is shown whole in search results.",
+  "meta.composed": "Fallback search-result description for an engineering note that has no curated one. {title} is the note's (translated) title, {n} its line count, already formatted.",
+  "note.partial": "Notice above a translated engineering note when some of its paragraphs were edited recently and have not been re-translated yet, so they are shown in English.",
+  "note.crumbs.home": "Breadcrumb name of the site's home page, published in structured data (search results). One word.",
+  "note.crumbs.notes": "Breadcrumb name of the /notes index page (the engineering notes), published in structured data. One word, as the Notes page's own title."
+}

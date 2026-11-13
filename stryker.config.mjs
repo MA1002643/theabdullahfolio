@@ -25,6 +25,10 @@ export default {
     'src/utils/rankCalculator.js',
     'src/lib/contact.js',
     'src/lib/optionalChunk.js',
+    // Issue #41: the palette's ranked matcher and the Ask wire format — both
+    // pure, both pinned by fast-check properties as well as examples.
+    'src/lib/palette/match.js',
+    'src/lib/ask/protocol.js',
   ],
   // perTest: each mutant re-runs only the tests that executed its line, so a
   // mutant costs seconds, not the whole 1,200-test estate.

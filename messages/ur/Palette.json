@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "جانا چلو کودنا راستہ صفحہ نیویگیٹ go jump route page",
     "language": "زبان ترجمہ لوکیل language translate locale"
-  }
+  },
+  "triggerTitle": "تلاش اور سوال",
+  "triggerHint": "{shortcut} · Claude سے میرے کام کے بارے میں پوچھیں",
+  "triggerHintTouch": "Claude سے میرے کام کے بارے میں پوچھیں"
 }

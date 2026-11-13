@@ -70,8 +70,6 @@
     "section": "経歴",
     "jumpYear": "{year}年へ移動",
     "eraHint": "年代",
-    "jumpAtlas": "重なりアトラスへ移動",
-    "openCv": "CV（PDF）を開く",
-    "openCvHint": "紙版"
+    "jumpAtlas": "重なりアトラスへ移動"
   }
 }

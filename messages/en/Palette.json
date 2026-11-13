@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "go jump route page",
     "language": "language translate locale"
-  }
+  },
+  "triggerTitle": "Search & Ask",
+  "triggerHint": "{shortcut} · Ask Claude about my work",
+  "triggerHintTouch": "Ask Claude about my work"
 }

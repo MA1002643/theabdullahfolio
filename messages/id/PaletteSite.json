@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Proyek",
+    "actions": "Aksi",
+    "recent": "Terbaru",
+    "ask": "Tanya"
+  },
+  "keywords": {
+    "projects": "proyek karya buat aplikasi app repositori project",
+    "actions": "aksi tindakan jalankan lakukan action",
+    "copyLink": "salin tautan link url bagikan",
+    "openCv": "cv resume riwayat hidup unduh download",
+    "viewSource": "sumber kode source code github",
+    "copyEmail": "email surel alamat kontak salin",
+    "backToTop": "gulir atas naik scroll top",
+    "ask": "tanya pertanyaan jawaban ask",
+    "fit": "kecocokan lowongan pekerjaan peran posisi deskripsi persyaratan kualifikasi cocok job fit"
+  },
+  "actions": {
+    "copyLink": "Salin tautan halaman ini",
+    "openCv": "Buka CV (PDF)",
+    "viewSource": "Lihat sumber situs ini",
+    "copyEmail": "Salin alamat email",
+    "backToTop": "Kembali ke atas",
+    "linkCopied": "Tautan disalin",
+    "emailCopied": "Alamat email disalin",
+    "clipboardUnavailable": "Tidak dapat mengakses papan klip"
+  },
+  "ask": {
+    "option": "Tanya Claude: “{query}”",
+    "start": "Tanyakan apa saja kepada Claude…",
+    "resume": "Lanjutkan: “{title}”",
+    "suggestions": {
+      "strongest": "Apa proyek terkuatnya?",
+      "stack": "Teknologi apa yang paling sering ia gunakan?",
+      "experience": "Pengalaman rekayasa perangkat lunak apa yang ia miliki?",
+      "live": "Apa yang sedang ia kerjakan saat ini?"
+    },
+    "inputLabel": "Pertanyaan Anda",
+    "placeholder": "Tanyakan tentang karya Muhammad…",
+    "back": "kembali",
+    "answerLabel": "Jawaban",
+    "thinking": "Membaca situs…",
+    "ready": "Jawaban siap",
+    "enterRetry": "Tekan Enter untuk mencoba lagi.",
+    "disclaimer": "Ditulis oleh Claude berdasarkan konten situs ini. Jawaban bisa saja keliru.",
+    "errors": {
+      "unavailable": "Fitur Tanya sedang tidak tersedia.",
+      "rateLimited": "Pertanyaannya cukup banyak. Tunggu sebentar ya.",
+      "budget": "Fitur Tanya beristirahat hari ini. Coba lagi besok.",
+      "offline": "Anda sedang offline. Fitur Tanya memerlukan koneksi.",
+      "invalid": "Pertanyaan itu terlalu pendek atau terlalu panjang.",
+      "failed": "Terjadi kendala."
+    },
+    "optionsLabel": "Sumber dan pertanyaan lanjutan",
+    "sources": "Sumber",
+    "followups": "Tanyakan selanjutnya",
+    "live": "langsung",
+    "meta": "{facts, number} fakta · {steps, plural, =0 {tanpa pengecekan langsung} other {# pengecekan langsung}} · {seconds} dtk · {model}",
+    "sourceLabels": {
+      "github": "Aktivitas GitHub",
+      "progress": "Progres proyek",
+      "work": "Pekerjaan saat ini",
+      "bench": "Alat kerja harian",
+      "stack": "Tumpukan teknologi",
+      "site": "Cara situs ini dibangun"
+    },
+    "trace": {
+      "label": "Langkah yang ditempuh",
+      "plan": "Rencana",
+      "snapshot": "salinan tersimpan",
+      "get_github_activity": {
+        "running": "Memeriksa aktivitas GitHub secara langsung…",
+        "done": "GitHub: {commits, plural, other {# commit}}, {contributions, plural, other {# kontribusi}} tahun ini, rentetan terpanjang {streak, plural, other {# hari}}",
+        "failed": "Aktivitas GitHub tidak tersedia"
+      },
+      "get_project_progress": {
+        "running": "Membaca papan proyek secara langsung…",
+        "done": "Papan proyek: {tracked, number} dilacak, {overall, number}% selesai secara keseluruhan",
+        "failed": "Papan proyek tidak tersedia"
+      },
+      "get_current_work": {
+        "running": "Memeriksa pekerjaan saat ini…",
+        "done": "Pekerjaan saat ini: {prs, plural, other {# pull request terbuka}}, {pushes, plural, other {# push terbaru}}",
+        "failed": "Pekerjaan saat ini tidak tersedia"
+      },
+      "other": {
+        "running": "Memeriksa…",
+        "done": "Telah diperiksa",
+        "failed": "Pemeriksaan tidak tersedia"
+      }
+    },
+    "chat": {
+      "sidebar": "Percakapan",
+      "newChat": "Percakapan baru",
+      "fit": "Periksa deskripsi pekerjaan",
+      "commands": "Perintah",
+      "noChats": "Percakapan Anda akan muncul di sini.",
+      "turns": "{count, plural, other {# pertanyaan}}",
+      "introTitle": "Tanyakan tentang karya Muhammad",
+      "introBody": "Jawaban bersumber dari konten situs ini, lengkap dengan sumbernya. Ketik pertanyaan Anda sendiri di bawah, atau mulai dari salah satu pertanyaan berikut.",
+      "tryAsking": "Coba tanyakan",
+      "followupPlaceholder": "Ajukan pertanyaan lanjutan…",
+      "send": "Kirim",
+      "stop": "Hentikan jawaban",
+      "stopped": "Dihentikan."
+    }
+  },
+  "fit": {
+    "command": "Cocokkan deskripsi pekerjaan dengan pengalamannya",
+    "title": "Cek kecocokan peran",
+    "inputLabel": "Deskripsi pekerjaan",
+    "placeholder": "Tempel deskripsi pekerjaan…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter untuk memeriksa",
+    "submit": "Cek kecocokan",
+    "running": "Membaca peran…",
+    "tooShort": "Tempel sedikit lebih banyak dari deskripsi pekerjaan (minimal {min, number} karakter).",
+    "rowsLabel": "Persyaratan",
+    "summary": "{strong} kuat · {partial} sebagian · {gap} tidak ditampilkan",
+    "verdicts": {
+      "strong": "Kuat",
+      "partial": "Sebagian",
+      "gap": "Tidak ditampilkan"
+    },
+    "ready": "Cek kecocokan siap",
+    "disclaimer": "“Tidak ditampilkan” berarti situs ini tidak menyebutkannya, bukan berarti ia tidak mampu. Ditulis oleh Claude berdasarkan konten situs ini; hasilnya bisa saja keliru."
+  }
+}

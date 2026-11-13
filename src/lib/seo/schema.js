@@ -418,13 +418,20 @@ export function projectPage(
  * already carries freshness as `lastmod`, derived from the file's real git
  * history rather than from a literal typed in here.
  *
- * @param {{slug: string, title: string, description?: string}} note A record
- *   from `readNotes()` — `description` is its opening paragraph, and is pruned
- *   when the document has none.
+ * Translated since 2026-11-10: with a `locale`, the node describes THAT
+ * locale's document — its prefixed URL as `@id` and `url`, and its own
+ * `inLanguage`. Unlike `#project`, an article is the text itself, not an
+ * entity several languages describe, so a translation is a different article
+ * at a different address, and sharing one `@id` would merge the two.
+ *
+ * @param {{slug: string, title: string, description?: string, locale?: string}} note
+ *   A record from `readNotes()` — `description` is its opening paragraph, and
+ *   is pruned when the document has none.
  * @returns {object} A JSON-LD document containing the article and its trail.
  */
-export function notePage({ slug, title, description, crumbs = {} }) {
+export function notePage({ slug, title, description, locale, crumbs = {} }) {
   const path = `/notes/${slug}`;
+  const url = pageUrl(path, locale);
 
   return {
     '@context': 'https://schema.org',
@@ -434,8 +441,8 @@ export function notePage({ slug, title, description, crumbs = {} }) {
         // `#article`, matching `#project`'s precedent: the fragment names what
         // the node IS, so a consumer holding the id can tell an article from
         // the page that renders it without dereferencing anything.
-        '@id': `${absoluteUrl(path)}#article`,
-        url: absoluteUrl(path),
+        '@id': `${url}#article`,
+        url,
         // Both, and deliberately the same string. `headline` is the property
         // Google reads for an article; `name` is the one a generic CreativeWork
         // consumer reads. There is one title, so stating it twice states no
@@ -449,13 +456,16 @@ export function notePage({ slug, title, description, crumbs = {} }) {
         // how the site works. Authorship is the true claim; subject is not.
         author: ref(PERSON_ID),
         isPartOf: ref(WEBSITE_ID),
-        inLanguage: 'en-GB',
+        inLanguage: languageTag(locale),
       },
-      breadcrumbList([
-        { name: crumbs.home ?? 'Home', path: '/' },
-        { name: crumbs.notes ?? 'Notes', path: '/notes' },
-        { name: title, path },
-      ]),
+      breadcrumbList(
+        [
+          { name: crumbs.home ?? 'Home', path: '/' },
+          { name: crumbs.notes ?? 'Notes', path: '/notes' },
+          { name: title, path },
+        ],
+        locale,
+      ),
     ],
   };
 }

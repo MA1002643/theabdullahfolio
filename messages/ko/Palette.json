@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "이동 가기 페이지 경로 탐색 go jump route page",
     "language": "언어 번역 로케일 지역 language translate locale"
-  }
+  },
+  "triggerTitle": "검색 및 질문",
+  "triggerHint": "{shortcut} · 제 작업에 대해 Claude에게 물어보세요",
+  "triggerHintTouch": "제 작업에 대해 Claude에게 물어보세요"
 }

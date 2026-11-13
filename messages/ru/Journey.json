@@ -70,8 +70,6 @@
     "section": "Путь",
     "jumpYear": "Перейти к {year}",
     "eraHint": "эпоха",
-    "jumpAtlas": "Перейти к атласу наложения",
-    "openCv": "Открыть CV (PDF)",
-    "openCvHint": "бумажная версия"
+    "jumpAtlas": "Перейти к атласу наложения"
   }
 }

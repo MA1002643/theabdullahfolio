@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "پروژه‌ها",
+    "actions": "اقدام‌ها",
+    "recent": "اخیر",
+    "ask": "پرسش"
+  },
+  "keywords": {
+    "projects": "پروژه پروژه‌ها کار ساخت برنامه اپلیکیشن مخزن ریپازیتوری project work build app repository",
+    "actions": "اقدام عملیات اجرا انجام action run do",
+    "copyLink": "کپی پیوند لینک نشانی اشتراک‌گذاری اشتراک copy link url share",
+    "openCv": "رزومه سی‌وی دانلود بارگیری cv resume download",
+    "viewSource": "منبع کد کد منبع سورس گیت‌هاب source code github",
+    "copyEmail": "ایمیل رایانامه نشانی تماس کپی email address contact copy",
+    "backToTop": "بالا بازگشت اسکرول بالای صفحه scroll top up",
+    "ask": "پرسش بپرس سؤال سوال پاسخ جواب ask question answer",
+    "fit": "تناسب شغل نقش موقعیت شرح وظایف آگهی استخدام الزامات نیازمندی‌ها مهارت‌ها job role fit description requirements"
+  },
+  "actions": {
+    "copyLink": "کپی پیوند این صفحه",
+    "openCv": "باز کردن CV (PDF)",
+    "viewSource": "مشاهدهٔ کد منبع این سایت",
+    "copyEmail": "کپی نشانی ایمیل",
+    "backToTop": "بازگشت به بالا",
+    "linkCopied": "پیوند کپی شد",
+    "emailCopied": "نشانی ایمیل کپی شد",
+    "clipboardUnavailable": "دسترسی به کلیپ‌بورد ممکن نشد"
+  },
+  "ask": {
+    "option": "پرسیدن از Claude: «{query}»",
+    "start": "هر چیزی از Claude بپرسید…",
+    "resume": "ادامه: «{title}»",
+    "suggestions": {
+      "strongest": "قوی‌ترین پروژهٔ او کدام است؟",
+      "stack": "او بیشتر از کدام فناوری‌ها استفاده می‌کند؟",
+      "experience": "او چه تجربهٔ مهندسی‌ای دارد؟",
+      "live": "الان روی چه چیزی کار می‌کند؟"
+    },
+    "inputLabel": "پرسش شما",
+    "placeholder": "دربارهٔ کارهای Muhammad بپرسید…",
+    "back": "بازگشت",
+    "answerLabel": "پاسخ",
+    "thinking": "در حال خواندن سایت…",
+    "ready": "پاسخ آماده است",
+    "enterRetry": "برای تلاش دوباره Enter را بزنید.",
+    "disclaimer": "این پاسخ را Claude بر پایهٔ محتوای خود این سایت نوشته است و ممکن است اشتباه باشد.",
+    "errors": {
+      "unavailable": "بخش پرسش اکنون در دسترس نیست.",
+      "rateLimited": "پرسش‌ها پشت‌سرهم زیاد شد. کمی صبر کنید.",
+      "budget": "بخش پرسش برای امروز استراحت می‌کند. فردا دوباره امتحان کنید.",
+      "offline": "شما آفلاین هستید. بخش پرسش به اتصال اینترنت نیاز دارد.",
+      "invalid": "این پرسش بیش از حد کوتاه یا بلند است.",
+      "failed": "انجام نشد."
+    },
+    "optionsLabel": "منابع و پرسش‌های بعدی",
+    "sources": "منابع",
+    "followups": "پرسش بعدی",
+    "live": "زنده",
+    "meta": "{facts, number} واقعیت · {steps, plural, =0 {بدون بررسی زنده} one {# بررسی زنده} other {# بررسی زنده}} · {seconds} ثانیه · {model}",
+    "sourceLabels": {
+      "github": "فعالیت GitHub",
+      "progress": "پیشرفت پروژه‌ها",
+      "work": "کار فعلی",
+      "bench": "ابزارهای کار روزمره",
+      "stack": "پشته فناوری",
+      "site": "نحوه ساخت این سایت"
+    },
+    "trace": {
+      "label": "گام‌های انجام‌شده",
+      "plan": "برنامه",
+      "snapshot": "نسخه ذخیره‌شده",
+      "get_github_activity": {
+        "running": "در حال بررسی زنده فعالیت GitHub…",
+        "done": "GitHub: {commits, plural, one {# کامیت} other {# کامیت}}، {contributions, plural, one {# مشارکت} other {# مشارکت}} در امسال، طولانی‌ترین رشته {streak, plural, one {# روز} other {# روز}}",
+        "failed": "فعالیت GitHub در دسترس نیست"
+      },
+      "get_project_progress": {
+        "running": "در حال خواندن زنده بردهای پروژه…",
+        "done": "بوردهای پروژه: {tracked, number} مورد در حال پیگیری، در مجموع {overall, number}% تکمیل‌شده",
+        "failed": "بردهای پروژه در دسترس نیستند"
+      },
+      "get_current_work": {
+        "running": "در حال بررسی کار فعلی…",
+        "done": "کار فعلی: {prs, plural, one {# پول‌ریکوئست باز} other {# پول‌ریکوئست باز}}، {pushes, plural, one {# پوش اخیر} other {# پوش اخیر}}",
+        "failed": "کار فعلی در دسترس نیست"
+      },
+      "other": {
+        "running": "در حال بررسی…",
+        "done": "بررسی شد",
+        "failed": "بررسی در دسترس نیست"
+      }
+    },
+    "chat": {
+      "sidebar": "گفتگوها",
+      "newChat": "گفتگوی تازه",
+      "fit": "بررسی یک آگهی شغلی",
+      "commands": "دستورها",
+      "noChats": "گفتگوهای شما اینجا نمایش داده می‌شود.",
+      "turns": "{count, plural, one {# پرسش} other {# پرسش}}",
+      "introTitle": "درباره کارهای محمد بپرسید",
+      "introBody": "پاسخ‌ها از محتوای همین سایت و همراه با منبع می‌آیند. پرسش خودتان را در کادر پایین بنویسید یا با یکی از این نمونه‌ها شروع کنید.",
+      "tryAsking": "نمونه پرسش‌ها",
+      "followupPlaceholder": "پرسش بعدی را بنویسید…",
+      "send": "ارسال",
+      "stop": "توقف پاسخ",
+      "stopped": "متوقف شد."
+    }
+  },
+  "fit": {
+    "command": "مقایسه شرح شغل با تجربه‌های او",
+    "title": "بررسی تناسب با نقش",
+    "inputLabel": "شرح شغل",
+    "placeholder": "شرح شغل را اینجا جای‌گذاری کنید…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter برای بررسی",
+    "submit": "بررسی تناسب",
+    "running": "در حال خواندن شرح نقش…",
+    "tooShort": "کمی بیشتر از شرح شغل را جای‌گذاری کنید (دست‌کم {min, number} نویسه).",
+    "rowsLabel": "الزامات",
+    "summary": "{strong} قوی · {partial} جزئی · {gap} نمایش داده نشده",
+    "verdicts": {
+      "strong": "قوی",
+      "partial": "جزئی",
+      "gap": "نمایش داده نشده"
+    },
+    "ready": "بررسی تناسب آماده است",
+    "disclaimer": "«نمایش داده نشده» یعنی این سایت به آن اشاره‌ای نکرده است، نه اینکه او از انجامش ناتوان است. این متن را Claude بر پایه محتوای این سایت نوشته است و ممکن است خطا داشته باشد."
+  }
+}

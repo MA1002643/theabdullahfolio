@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "المشاريع",
+    "actions": "الإجراءات",
+    "recent": "الأحدث",
+    "ask": "اسأل"
+  },
+  "keywords": {
+    "projects": "مشاريع مشروع عمل أعمال بناء تطبيق مستودع project work build app repository",
+    "actions": "إجراء إجراءات تنفيذ تشغيل action run do",
+    "copyLink": "نسخ رابط الرابط عنوان مشاركة copy link url share",
+    "openCv": "سيرة ذاتية السيرة الذاتية تحميل تنزيل cv resume download",
+    "viewSource": "مصدر الكود الشيفرة المصدرية برمجي source code github",
+    "copyEmail": "بريد إلكتروني عنوان البريد تواصل نسخ email address contact copy",
+    "backToTop": "أعلى الصفحة تمرير صعود للأعلى scroll top up",
+    "ask": "اسأل سؤال أسئلة جواب إجابة ask question answer",
+    "fit": "وظيفة دور ملاءمة وصف متطلبات مناسبة سيرة job role fit description requirements"
+  },
+  "actions": {
+    "copyLink": "نسخ رابط هذه الصفحة",
+    "openCv": "فتح السيرة الذاتية (PDF)",
+    "viewSource": "عرض الشيفرة المصدرية لهذا الموقع",
+    "copyEmail": "نسخ عنوان البريد الإلكتروني",
+    "backToTop": "العودة إلى الأعلى",
+    "linkCopied": "تم نسخ الرابط",
+    "emailCopied": "تم نسخ عنوان البريد الإلكتروني",
+    "clipboardUnavailable": "تعذّر الوصول إلى الحافظة"
+  },
+  "ask": {
+    "option": "اسأل Claude: «{query}»",
+    "start": "اسأل Claude أي شيء…",
+    "resume": "متابعة: «{title}»",
+    "suggestions": {
+      "strongest": "ما أقوى مشروع لديه؟",
+      "stack": "ما التقنيات التي يستخدمها أكثر من غيرها؟",
+      "experience": "ما الخبرة الهندسية التي يمتلكها؟",
+      "live": "على ماذا يعمل الآن؟"
+    },
+    "inputLabel": "سؤالك",
+    "placeholder": "اسأل عن أعمال Muhammad…",
+    "back": "رجوع",
+    "answerLabel": "الإجابة",
+    "thinking": "جارٍ قراءة الموقع…",
+    "ready": "الإجابة جاهزة",
+    "enterRetry": "اضغط Enter للمحاولة مرة أخرى.",
+    "disclaimer": "كتبها Claude اعتمادًا على محتوى هذا الموقع نفسه، وقد تكون خاطئة.",
+    "errors": {
+      "unavailable": "خدمة «اسأل» غير متاحة حاليًا.",
+      "rateLimited": "أسئلة كثيرة في وقت قصير. امنحها لحظة من فضلك.",
+      "budget": "خدمة «اسأل» في استراحة اليوم. جرّب مجددًا غدًا.",
+      "offline": "أنت غير متصل بالإنترنت. تحتاج خدمة «اسأل» إلى اتصال.",
+      "invalid": "السؤال قصير جدًا أو طويل جدًا.",
+      "failed": "لم تنجح العملية."
+    },
+    "optionsLabel": "المصادر والأسئلة التالية",
+    "sources": "المصادر",
+    "followups": "اسأل بعد ذلك",
+    "live": "مباشر",
+    "meta": "معلومات: {facts, number} · {steps, plural, =0 {بلا فحوصات مباشرة} one {فحص مباشر واحد} two {فحصان مباشران} few {# فحوصات مباشرة} many {# فحصًا مباشرًا} other {# فحص مباشر}} · {seconds} ث · {model}",
+    "sourceLabels": {
+      "github": "نشاط GitHub",
+      "progress": "تقدّم المشاريع",
+      "work": "العمل الحالي",
+      "bench": "أدوات العمل اليومية",
+      "stack": "التقنيات المستخدمة",
+      "site": "كيف بُني هذا الموقع"
+    },
+    "trace": {
+      "label": "الخطوات المتّبعة",
+      "plan": "الخطة",
+      "snapshot": "نسخة محفوظة",
+      "get_github_activity": {
+        "running": "جارٍ فحص نشاط GitHub المباشر…",
+        "done": "GitHub: {commits, plural, zero {# إيداع} one {إيداع واحد} two {إيداعان} few {# إيداعات} many {# إيداعًا} other {# إيداع}}، {contributions, plural, zero {# مساهمة} one {مساهمة واحدة} two {مساهمتان} few {# مساهمات} many {# مساهمة} other {# مساهمة}} هذا العام، وأطول سلسلة متتالية: {streak, plural, zero {# يوم} one {يوم واحد} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}",
+        "failed": "نشاط GitHub غير متاح"
+      },
+      "get_project_progress": {
+        "running": "جارٍ قراءة لوحات المشاريع المباشرة…",
+        "done": "لوحات المشاريع: {tracked, number} قيد التتبع، واكتمال {overall, number}% إجمالًا",
+        "failed": "لوحات المشاريع غير متاحة"
+      },
+      "get_current_work": {
+        "running": "جارٍ فحص العمل الحالي…",
+        "done": "العمل الحالي: {prs, plural, zero {# طلب سحب مفتوح} one {طلب سحب مفتوح واحد} two {طلبا سحب مفتوحان} few {# طلبات سحب مفتوحة} many {# طلب سحب مفتوح} other {# طلب سحب مفتوح}}، {pushes, plural, zero {# دفعة حديثة} one {دفعة حديثة واحدة} two {دفعتان حديثتان} few {# دفعات حديثة} many {# دفعة حديثة} other {# دفعة حديثة}}",
+        "failed": "العمل الحالي غير متاح"
+      },
+      "other": {
+        "running": "جارٍ الفحص…",
+        "done": "تم الفحص",
+        "failed": "الفحص غير متاح"
+      }
+    },
+    "chat": {
+      "sidebar": "المحادثات",
+      "newChat": "محادثة جديدة",
+      "fit": "فحص وصف وظيفي",
+      "commands": "الأوامر",
+      "noChats": "ستظهر محادثاتك هنا.",
+      "turns": "{count, plural, zero {لا أسئلة} one {سؤال واحد} two {سؤالان} few {# أسئلة} many {# سؤالًا} other {# سؤال}}",
+      "introTitle": "اسأل عن أعمال محمد",
+      "introBody": "تأتي الإجابات من محتوى هذا الموقع نفسه، مع ذكر المصادر. اكتب سؤالك في الأسفل، أو ابدأ بأحد هذه الأسئلة.",
+      "tryAsking": "جرّب أن تسأل",
+      "followupPlaceholder": "اطرح سؤالًا آخر…",
+      "send": "إرسال",
+      "stop": "إيقاف الإجابة",
+      "stopped": "تم الإيقاف."
+    }
+  },
+  "fit": {
+    "command": "قارن وصفًا وظيفيًا بخبرته",
+    "title": "فحص ملاءمة الدور",
+    "inputLabel": "الوصف الوظيفي",
+    "placeholder": "الصق الوصف الوظيفي…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter للفحص",
+    "submit": "افحص الملاءمة",
+    "running": "جارٍ قراءة الدور…",
+    "tooShort": "الصق جزءًا أكبر من الوصف الوظيفي (لا يقل عن {min, number} حرفًا).",
+    "rowsLabel": "المتطلبات",
+    "summary": "{strong} قوي · {partial} جزئي · {gap} غير ظاهر",
+    "verdicts": {
+      "strong": "قوي",
+      "partial": "جزئي",
+      "gap": "غير ظاهر"
+    },
+    "ready": "فحص الملاءمة جاهز",
+    "disclaimer": "«غير ظاهر» تعني أن هذا الموقع لا يذكر المتطلب، لا أن صاحبه عاجز عنه. كتب هذا Claude اعتمادًا على محتوى الموقع، وقد يكون خاطئًا."
+  }
+}

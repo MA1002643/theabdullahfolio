@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import { marked } from 'marked';
 
+import { DEFAULT_LOCALE, localizePath } from '@/i18n/locales';
+import { assembleNote } from '@/lib/notes/segments';
 import { noteMetaDescription } from '@/lib/seo/noteMeta';
 
 // The engineering notes (issue #32, W8) — `docs/*.md`, served as pages.
@@ -44,6 +46,27 @@ import { noteMetaDescription } from '@/lib/seo/noteMeta';
 // the call site, which is why the constraint is written down here.
 
 const DOCS_DIR = 'docs';
+
+// ── Translations (2026-11-10, reversing issue #82's "English on purpose") ────
+// Each note is published in every locale. The translations are not whole
+// files: `docs/i18n/<locale>/<file>.json` maps the hash of each English block
+// to its translation (see `segments.js` for why the unit is a block), written
+// by `npm run notes:translate`. A block with no entry renders its English, in
+// a `lang="en"` island, and is counted so the page can say so. The cache is
+// committed and reviewed like the catalogues, and the trust boundary below
+// still holds: it is files in this repository, never fetched, never input.
+export const NOTES_I18N_DIR = path.join(DOCS_DIR, 'i18n');
+
+/** A locale's translation cache for one document, or an empty one. */
+function readCache(root, locale, base) {
+  try {
+    return JSON.parse(
+      readFileSync(path.join(root, NOTES_I18N_DIR, locale, `${base}.json`), 'utf8'),
+    );
+  } catch {
+    return {};
+  }
+}
 
 /**
  * Turn a filename into the URL slug it is served at.
@@ -169,8 +192,57 @@ export function summaryOf(markdown) {
     .replace(/[*_`]/g, '');
 }
 
-/** Every note, newest-first by nothing in particular — see the sort below. */
-export function readNotes(root = process.cwd()) {
+/**
+ * The same note in another locale: title, summary, description and the
+ * markdown to render, from the English record and the locale's cache.
+ *
+ * `lines` and `source` stay the English file's, because the page says
+ * "Source: docs/seo.md · N lines" — a fact about the committed file, which is
+ * what a reader can go and check.
+ *
+ * `titleLang` / `summaryLang` say which language each string actually came out
+ * in, so the page can mark an untranslated one `lang="en"` for a screen reader
+ * rather than assuming the whole record is in the URL's language.
+ */
+function localise(record, locale, root) {
+  if (locale === DEFAULT_LOCALE) {
+    return {
+      ...record,
+      titleLang: locale,
+      summaryLang: locale,
+      body: record.markdown,
+      untranslated: 0,
+    };
+  }
+  const base = path.basename(record.source, '.md');
+  const cache = readCache(root, locale, base);
+  // Twice: plain for the strings published as text (a summary must not open
+  // on an island's `<div>`), marked for the body rendered as HTML.
+  const plain = assembleNote(record.markdown, cache);
+  const marked = assembleNote(record.markdown, cache, { markFallback: true });
+  const title = titleOf(plain.markdown, record.title);
+  const summary = summaryOf(plain.markdown);
+  const localized = { title, summary };
+  return {
+    ...record,
+    title,
+    summary,
+    titleLang: plain.titleTranslated ? locale : DEFAULT_LOCALE,
+    summaryLang: summary !== null && summary !== record.summary ? locale : DEFAULT_LOCALE,
+    description: noteMetaDescription(record, { locale, localized, root }),
+    body: marked.markdown,
+    untranslated: marked.fallback,
+  };
+}
+
+/**
+ * Every note, newest-first by nothing in particular — see the sort below.
+ *
+ * @param {{locale?: string, root?: string}} [options] `locale` is the URL
+ *   locale the records are read in (English by default); `root` the
+ *   repository root.
+ */
+export function readNotes({ locale = DEFAULT_LOCALE, root = process.cwd() } = {}) {
   let files = [];
   try {
     files = readdirSync(path.join(root, DOCS_DIR)).filter((f) =>
@@ -204,7 +276,11 @@ export function readNotes(root = process.cwd()) {
       // reads four of its own fields. `description` is what the two machine
       // surfaces publish — see `noteMeta.js` for why it is computed once here
       // instead of falling back differently at each of them.
-      return { ...record, description: noteMetaDescription(record) };
+      return localise(
+        { ...record, description: noteMetaDescription(record, { root }) },
+        locale,
+        root,
+      );
     })
     // Longest first. With one document this is arbitrary; with several it puts
     // the most substantial record at the top, which is the right default for an
@@ -212,9 +288,9 @@ export function readNotes(root = process.cwd()) {
     .sort((a, b) => b.lines - a.lines);
 }
 
-/** One note by slug, or null. */
-export function readNote(slug, root = process.cwd()) {
-  return readNotes(root).find((note) => note.slug === slug) ?? null;
+/** One note by slug, or null. Takes `readNotes`' options. */
+export function readNote(slug, options) {
+  return readNotes(options).find((note) => note.slug === slug) ?? null;
 }
 
 /**
@@ -225,9 +301,9 @@ export function readNote(slug, root = process.cwd()) {
  * the same defect the /cv masthead avoided and which the e2e suite's
  * "exactly one h1" check would catch.
  */
-export function renderNote(markdown) {
+export function renderNote(markdown, locale = DEFAULT_LOCALE) {
   const withoutTitle = markdown.replace(/^#\s+.+?\n/, '');
-  return makeScrollersFocusable(marked.parse(withoutTitle, {
+  const html = makeScrollersFocusable(marked.parse(withoutTitle, {
     // GitHub-flavoured tables and strikethrough, which docs/seo.md uses
     // throughout — several of its decision records ARE tables.
     gfm: true,
@@ -237,6 +313,27 @@ export function renderNote(markdown) {
     // render every paragraph as a ragged column.
     breaks: false,
   }));
+  return localizeLinks(html, locale);
+}
+
+/**
+ * Point a note's links to other notes at the reader's language.
+ *
+ * The documents link to each other by site path (`[How this site is tested]
+ * (/notes/testing)`). Left as written, a reader on `/ja/notes/…` following one
+ * lands on the English page. Only `/notes/…` is rewritten, never any other
+ * site path: `/cv.pdf`, `/api/…` and the asset paths are not localized routes,
+ * and prefixing one would turn a working link into a 404.
+ *
+ * Exported for the unit test, which needs constructed input the corpus may not
+ * contain.
+ */
+export function localizeLinks(html, locale = DEFAULT_LOCALE) {
+  if (locale === DEFAULT_LOCALE) return html;
+  return html.replace(
+    /href="(\/notes(?:\/[^"#?]*)?)([#?][^"]*)?"/g,
+    (_, route, rest = '') => `href="${localizePath(route, locale)}${rest}"`,
+  );
 }
 
 /**

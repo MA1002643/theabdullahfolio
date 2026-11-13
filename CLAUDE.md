@@ -325,6 +325,11 @@ first localized component of a session.
    missing, say which variable is unset (rule §1): do not hand-write
    nineteen translations, and do not ship English copied into the other
    locales.
+   The engineering notes are translated too: when a commit edits any
+   `docs/*.md` (which §2 makes almost every commit), run
+   `npm run notes:translate`. It sends only the changed blocks; until it runs,
+   those passages show in English with a notice. `-- --check` lists what is
+   untranslated.
 2. Audit: `npm run i18n:audit` must report 0 errors. Review its
    identical-to-English warnings rather than ignoring them.
 3. Look at it in the browser in a right-to-left locale (`/ar/…` or `/ur/…`) and
@@ -412,3 +417,158 @@ candidate, and an LCP image is never lazy), and the first-load JS budget.
 **Not enforced:** a new heavy component that was never deferred and still fits
 the budget's 10 % headroom, a video or iframe without lazy loading, or a
 missing intent prefetch. As with §3, the check is a habit, not a gate.
+
+---
+
+## 6. Every new animated element works on LazyMotion
+
+Since issue #200, framer-motion's animation features are not in any route's
+first load. They arrive in their own chunk after the first paint, through one
+`<LazyMotion strict>` in the root layout (`src/components/motion/MotionFeatures.jsx`).
+**Any new element that animates, and any change that adds animation to an
+existing one, is checked against this rule in the same commit.** An agent does
+this without being asked, then reports what it checked, or that the change
+adds no animation.
+
+Three facts drive every rule below:
+
+1. **An `m.*` element has no renderer until the chunk lands.** It shows its
+   server-rendered `initial` style and ignores imperative commands. When the
+   features arrive, framer plays the entrance the element missed, but only one
+   described by props.
+2. **The chunk can never arrive.** After three failed attempts or 8 s the
+   loader gives up for good, and the provider remounts the page in framer's
+   static mode (`MotionConfig isStatic`). There every `m.*` renders at its
+   `animate` target, recomputed from props on every render, and **nothing
+   subscribes to a MotionValue**: a value in `style` is read once and frozen.
+3. **Context does not cross a separate React root.** A subtree mounted with its
+   own root (drei's `<Html>`, a portal into a new root) sees no `LazyMotion`.
+
+The reasoning, and what was measured, is in `docs/seo.md` §20 (published at
+`/notes/discoverability`). Read it before the first animated element of a
+session.
+
+### What to do
+
+| If the new element… | Then |
+| --- | --- |
+| Animates at all | Render `m.*` (or `m.create(Component)`) from `framer-motion`, never `motion.*`. `motion` carries every feature back into the first load, and `strict` throws on it in development. `scripts/codemods/lazy-motion.mjs` converts a file mechanically. |
+| Enters, leaves or mounts conditionally | Import `AnimatePresence` from `@/components/motion/AnimatePresence`, never from `framer-motion`. The site's wrapper keeps a child mounted later visible in static mode; framer's own would render it at `initial`, invisible. |
+| Plays on a trigger (viewport entry, a click, data arriving) | Describe the end state with props: `animate` bound to state, `key` to replay. Not `useAnimation` / `useAnimate` controls started from an effect: a trigger that fires before the chunk reaches no visual element and is lost. `src/components/about/arcSweep.js` is the pattern. |
+| Is gated (hidden until the loader lifts, or until it is in view) | Drive the gate through state into `animate` (`animate={revealed ? 'visible' : 'hidden'}`). Static mode re-renders on that state and reveals it. Never make visibility depend on `onAnimationComplete`, which never fires there. |
+| Takes a style from a MotionValue (`useTransform`, `useSpring`, `useScroll`, `useMotionTemplate`) | Decide what it shows in static mode, where the value freezes at its first reading. If that reading can hide content (opacity 0, a clip, an off-screen transform), or contradict state (a dial at a stale angle while its buttons are focusable), read `useStaticMotion()` and use a plain value instead: `1`, or one derived from props. The `/about` `RevealWord` and the `/journey` `EraRail` are the pattern. A purely decorative freeze is fine; say so. |
+| Is in the static graph of the root layouts (the chrome, a provider, anything every route renders) | No engine API: `animate`, `useAnimation`, `useAnimate` and the rest are banned there. Tween a value with `src/lib/motion/tweenValue.js`, drive it with `m` props, or defer the component (§5). |
+| Animates `layout` | Wrap only its subtree in `<LayoutMotionFeatures>`, as the guestbook wall does. Never load `domMax` globally. |
+| Renders in a separate React root | Wrap the root's children in their own `<MotionFeatures>`. The loader is memoised, so it costs no second download. |
+| Hides the native cursor, or anything else that waits on the animation | Wait for the features to commit (`loadMotionFeatures()` resolved, then an effect). If they never come, the native behaviour stays. `CustomCursor.jsx` is the pattern. |
+| Moves on its own | §3's rule applies too: stop under `prefers-reduced-motion`, read through `src/hooks/useReducedMotion.js`. |
+
+### Then, before the commit
+
+1. Tests (§3): a component test that renders the element under the real
+   `LazyMotion`, through `vi.importActual('framer-motion')`. The suite's setup
+   otherwise maps `m` to the full `motion`. Cover features that arrive late,
+   and features that never arrive: `tests/component/motionStaticFallback.test.jsx`
+   gives up on purpose and is the place to add a case.
+2. `npx vitest run tests/fitness/lazyMotion.test.js`, and `npm run test:bundle`
+   if the element is in a shared layout.
+3. Record it in the commit's `CHANGELOG.md` entry: what animates and how it
+   behaves with late and with missing features, or "LazyMotion check: no
+   animation added".
+
+### What CI catches, and what it does not
+
+Enforced by `tests/fitness/lazyMotion.test.js`: no `motion` import anywhere in
+`src/`; `domAnimation` / `domMax` only in the two feature modules, reached only
+through the loader's `import()`; every `LazyMotion` is `strict` and the root
+layout mounts one; no engine API in the root layouts' static graph;
+`AnimatePresence` only through the site wrapper; and a `<MotionFeatures>`
+inside every drei `<Html>`. **Not enforced:** controls started from an effect,
+a gate built on `onAnimationComplete`, a MotionValue style that freezes hidden
+in static mode, or a new kind of separate React root. Each of those passes CI
+and shows up only to a visitor whose chunk is late or missing. As with §3, the
+check is a habit, not a gate.
+
+---
+
+## 7. Every new element is considered for the ⌘K palette
+
+Since issue #41 the site has one command palette, mounted by the root layout
+on every route and in every locale. It is how a keyboard user, or anyone in a
+hurry, reaches the site: every route, every project, the page's own landmarks,
+the sitewide actions, and Ask. **Any new page, component, feature, piece of
+content or action is checked against the palette in the same commit that adds
+it.** An agent does this without being asked, then reports what it added to
+the palette, or why the element does not belong there.
+
+This is a decision for each element, not a default. A palette that lists
+everything is as hard to use as one that lists nothing: a command earns its
+row when a visitor would plausibly want to *go to* or *do* that thing by
+typing, and would otherwise have to hunt for it.
+
+How the palette works is described at the top of
+`src/components/commandPalette/SitePalette.jsx` (the list order, what is eager
+and what is deferred) and `src/components/commandPalette/registry.js` (page
+contributions). Read them before the first palette change of a session.
+
+### What to do
+
+| If the new element… | Then |
+| --- | --- |
+| Is a new page or route | Add it to `SITE_ROUTES` in `src/components/commandPalette/routes.js`, with a `navKey` whose name lives in `messages/<locale>/Nav.json` (`routes.<navKey>`). Every indexable route must be there: `tests/unit/siteActions.test.js` fails until it is. A route that is not indexable is a decision: list it if a visitor would navigate to it, and say so either way. |
+| Is a new project, journey entry or `/uses` item in `src/app/data.js` | Nothing to add by hand: projects reach the palette through `src/lib/palette/projects.js`, and all three reach Ask through `buildFacts()` in `src/lib/ask/corpus.js`. Check it appears (and is citable) rather than assuming. |
+| Gives a page landmarks a visitor would jump to: sections, eras, plates, an atlas, a form | Contribute page commands with `usePaletteActions` from a `<Page>Palette.jsx` config component that renders nothing. `JourneyPalette.jsx`, `UsesPalette.jsx` and `GuestbookPalette.jsx` are the pattern. They show only while that page is mounted, above Navigate. |
+| Is an action a visitor could want from any page: copy, open, download, toggle a setting (sound, consent, language) | Add it to `buildSiteActions` in `src/components/commandPalette/siteActions.js`, with its copy in `messages/<locale>/PaletteSite.json` and English search terms in `ENGLISH_KEYWORDS`. Side effects arrive through `deps`, so the unit test can pass spies. |
+| Opens something inside the palette (a panel, a view) rather than finishing | `keepOpen: true`, so running it does not close the dialog; and `noRecent: true` if replaying it from Recent would make no sense. |
+| Adds facts Ask should be able to answer and cite, from a source `buildFacts()` does not already read | Add a fact to `src/lib/ask/corpus.js` with a stable id and an `href` the visitor can follow. A fact with no route behind it cannot be linked as a source. |
+| Duplicates a command that already exists (a page's own "Open CV" beside the sitewide one) | Do not add it. Reuse the existing command. Two commands with one id share a React key and a DOM id, and selecting the second resolves to the first (the `/journey` `open-cv` defect in `docs/testing.md`). |
+
+### Rules every command follows
+
+- **A unique, stable id.** Unique across the page's contributions *and* the
+  sitewide actions (prefix page commands with the page: `journey-…`, `uses-…`).
+  Stable because Recent stores ids (`src/lib/palette/recents.js`): renaming an
+  id silently drops it from every visitor's Recent.
+- **Localized like any other UI (§4).** Labels, hints and section names come
+  from the catalogues. Keywords carry the translated terms *and* the English
+  ones, so an English query still finds the command from any locale. Route
+  jumps are translated by the palette from their `navKey`; do not translate
+  them again.
+- **Safe at perform time.** `perform` reads what it needs when it runs, not
+  when the list was built: reduced motion through `matchMedia`, the current
+  URL, whether the target still exists. A command for something hidden or
+  disabled is not offered.
+- **No new eager weight (§5).** Page palettes are small config components;
+  anything heavy a command opens is deferred like the Ask panel.
+
+### When not to add a command
+
+- Decorative or ambient elements: backgrounds, effects, animation, loaders.
+- Content that is read in place: a paragraph, a card, a single form field.
+- Anything already one keypress away on every page, unless the palette adds
+  something (search by name, a jump inside a long page).
+- Anything for one visitor state only that the palette cannot know about
+  (mid-submit, a toast).
+
+### Then, before the commit
+
+1. Tests (§3): a route is covered by `tests/unit/siteActions.test.js`; a
+   sitewide action gets a case there (it exists, its side effect fires); page
+   commands get a test that they register, label and perform (see
+   `tests/unit/usesPalette.test.jsx`). If a page contributes commands, assert
+   that its rows' ids are unique next to the sitewide ones
+   (`tests/component/SitePalette.test.jsx` does this for `/journey`).
+2. Open the palette on the page, in English and in a right-to-left locale, and
+   run the new command from the keyboard.
+3. Record it in the commit's `CHANGELOG.md` entry: the commands added and
+   where, or "palette check: nothing to add" with the reason.
+
+### What CI catches, and what it does not
+
+Enforced: `siteActions.test.js` fails when an indexable route in
+`src/lib/seo/site.js` is missing from `SITE_ROUTES`, and the `/journey` case
+in `SitePalette.test.jsx` fails on a duplicate row id there. **Not enforced:**
+a new page landmark or action with no command, a page contribution whose id
+collides with a sitewide one on any other page, an untranslated command label
+(the pseudo-locale run never opens the palette), or a fact Ask cannot cite. As
+with §3, the check is a habit, not a gate.

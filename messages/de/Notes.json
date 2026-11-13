@@ -9,6 +9,17 @@
     "title": "NOTIZ",
     "breadcrumb": "Brotkrumennavigation",
     "allNotes": "Alle Notizen",
-    "source": "Quelle: {source} · {count, plural, one {{n} Zeile} other {{n} Zeilen}}"
+    "source": "Quelle: {source} · {count, plural, one {{n} Zeile} other {{n} Zeilen}}",
+    "partial": "Einige Abschnitte unten sind noch nicht übersetzt und erscheinen deshalb auf Englisch.",
+    "crumbs": {
+      "home": "Startseite",
+      "notes": "Notizen"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Warum jede Entscheidung zur Auffindbarkeit dieser Seite so getroffen wurde, was verworfen wurde und was sie gekostet hat – die Entwicklungsdoku neben dem Code."
+    },
+    "composed": "Dokumentation einer Technikentscheidung – {title}. {n} Zeilen aus der eigenen Dokumentation dieses Repositorys."
   }
 }

@@ -1,40 +1,26 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import CommandPalette from '@/components/commandPalette/CommandPalette';
-import { routeActions, routesExcept } from '@/components/commandPalette/routes';
-import { usePageTransition } from '@/components/pageTransition/PageTransitionProvider';
+import { usePaletteActions } from '@/components/commandPalette/registry';
 import { useGuestbookPrefs } from '@/hooks/useGuestbookPrefs';
 import { GUESTBOOK_FLAGS } from '@/lib/flags';
 import { togglePref } from '@/lib/guestbook/prefs';
 
-// The guestbook's action set for the shared CommandPalette. The palette
+// The guestbook's commands for the sitewide ⌘K palette. The palette
 // component knows nothing about this page — all guestbook specifics live in
-// this config, which is exactly the seam the sitewide-palette issue will
-// reuse with its own action list.
-//
-// Route jumps go through the Stone Passage (usePageTransition().navigate) so
-// palette navigation looks identical to clicking the nav ring; a missing
-// provider degrades to a plain router.push. The route list itself is the
-// shared commandPalette/routes.js registry (issue #37) minus this page.
+// this config. Since issue #41 they are CONTRIBUTED to the one palette the
+// root layout mounts (usePaletteActions) instead of feeding a palette of the
+// page's own; that palette supplies the route jumps, so this list has none.
 
 export default function GuestbookPalette() {
-  const router = useRouter();
-  const { navigate } = usePageTransition();
   const prefs = useGuestbookPrefs();
   // Labels, sections, hints and search keywords in the visitor's language
   // (issue #82); the shared route jumps word themselves (commandPalette/routes).
   const t = useTranslations('Guestbook');
 
   const actions = useMemo(() => {
-    const go = (href, label) => {
-      if (navigate) navigate(href, { label });
-      else router.push(href);
-    };
-
     const list = [
       {
         id: 'leave-message',
@@ -51,7 +37,6 @@ export default function GuestbookPalette() {
           }
         },
       },
-      ...routeActions(routesExcept('/guestbook'), go),
     ];
 
     if (GUESTBOOK_FLAGS.sound) {
@@ -74,7 +59,8 @@ export default function GuestbookPalette() {
     });
 
     return list;
-  }, [navigate, router, prefs.sound, prefs.motion, t]);
+  }, [prefs.sound, prefs.motion, t]);
 
-  return <CommandPalette actions={actions} />;
+  usePaletteActions('guestbook', actions);
+  return null;
 }

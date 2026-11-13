@@ -70,8 +70,6 @@
     "section": "历程",
     "jumpYear": "跳转至 {year}",
     "eraHint": "年代",
-    "jumpAtlas": "跳转至重叠全景图",
-    "openCv": "打开 CV（PDF）",
-    "openCvHint": "纸质版"
+    "jumpAtlas": "跳转至重叠全景图"
   }
 }

@@ -138,7 +138,13 @@ test.describe('crawl control', () => {
     //
     // 424 → 425 on 2026-11-01: `/notes/multilingual`, the engineering note on
     // how the twenty languages were built (English-only, listed once).
-    expect(urls).toHaveLength(425);
+    //
+    // 425 → 501 on 2026-11-13: the notes are translated (since 2026-11-10, per
+    // block from docs/i18n), so `/notes` and its three notes each became a
+    // cluster of twenty URLs instead of one. 21 pages × 20 = 420, plus
+    // (/notes + 3 notes) × 20 = 80, plus /privacy (still English-only, listed
+    // once) = 501.
+    expect(urls).toHaveLength(501);
     expect(new Set(urls).size).toBe(urls.length);
 
     // The acceptance criterion is "every URL in the sitemap returns 200,

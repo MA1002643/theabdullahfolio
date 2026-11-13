@@ -9,6 +9,17 @@
     "title": "NOTA",
     "breadcrumb": "Percorso di navigazione",
     "allNotes": "Tutte le note",
-    "source": "Fonte: {source} · {count, plural, one {{n} riga} other {{n} righe}}"
+    "source": "Fonte: {source} · {count, plural, one {{n} riga} other {{n} righe}}",
+    "partial": "Alcuni passaggi qui sotto non sono ancora stati tradotti, quindi compaiono in inglese.",
+    "crumbs": {
+      "home": "Home",
+      "notes": "Note"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Perché è stata presa ogni decisione sulla reperibilità di questo sito, cosa è stato scartato e quanto è costato: il registro tecnico accanto al codice."
+    },
+    "composed": "Registro delle decisioni tecniche — {title}. {n} righe tratte dalla documentazione di questo repository."
   }
 }

@@ -70,8 +70,6 @@
     "section": "Jornada",
     "jumpYear": "Ir para {year}",
     "eraHint": "era",
-    "jumpAtlas": "Ir para o atlas de sobreposição",
-    "openCv": "Abrir o CV (PDF)",
-    "openCvHint": "a versão em papel"
+    "jumpAtlas": "Ir para o atlas de sobreposição"
   }
 }

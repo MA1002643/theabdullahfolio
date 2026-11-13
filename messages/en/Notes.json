@@ -9,6 +9,17 @@
     "title": "NOTE",
     "breadcrumb": "Breadcrumb",
     "allNotes": "All notes",
-    "source": "Source: {source} · {count, plural, one {{n} line} other {{n} lines}}"
+    "source": "Source: {source} · {count, plural, one {{n} line} other {{n} lines}}",
+    "partial": "Some passages below are not translated yet, so they appear in English.",
+    "crumbs": {
+      "home": "Home",
+      "notes": "Notes"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Why each discoverability decision on this site was taken, what was rejected, and what it cost — the engineering record kept beside the code."
+    },
+    "composed": "Engineering decision record — {title}. {n} lines from this repository's own documentation."
   }
 }

@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Projecten",
+    "actions": "Acties",
+    "recent": "Recent",
+    "ask": "Vraag"
+  },
+  "keywords": {
+    "projects": "project projecten werk bouwen app repository",
+    "actions": "actie acties uitvoeren doen",
+    "copyLink": "kopieer link url delen",
+    "openCv": "cv resume cv-bestand downloaden",
+    "viewSource": "bron broncode source code github",
+    "copyEmail": "e-mail mail adres contact kopiëren",
+    "backToTop": "scroll boven omhoog bovenaan",
+    "ask": "vraag vragen stellen antwoord",
+    "fit": "vacature functie rol match geschiktheid omschrijving eisen vereisten job fit"
+  },
+  "actions": {
+    "copyLink": "Link naar deze pagina kopiëren",
+    "openCv": "CV openen (PDF)",
+    "viewSource": "Broncode van deze site bekijken",
+    "copyEmail": "E-mailadres kopiëren",
+    "backToTop": "Terug naar boven",
+    "linkCopied": "Link gekopieerd",
+    "emailCopied": "E-mailadres gekopieerd",
+    "clipboardUnavailable": "Geen toegang tot het klembord"
+  },
+  "ask": {
+    "option": "Vraag het aan Claude: “{query}”",
+    "start": "Vraag Claude van alles…",
+    "resume": "Verder met: “{title}”",
+    "suggestions": {
+      "strongest": "Wat is zijn sterkste project?",
+      "stack": "Welke technologieën gebruikt hij het meest?",
+      "experience": "Welke ervaring heeft hij als software-engineer?",
+      "live": "Waar werkt hij op dit moment aan?"
+    },
+    "inputLabel": "Je vraag",
+    "placeholder": "Vraag naar het werk van Muhammad…",
+    "back": "terug",
+    "answerLabel": "Antwoord",
+    "thinking": "De site wordt gelezen…",
+    "ready": "Antwoord klaar",
+    "enterRetry": "Druk op Enter om het opnieuw te proberen.",
+    "disclaimer": "Geschreven door Claude, op basis van de inhoud van deze site. Kan fouten bevatten.",
+    "errors": {
+      "unavailable": "Vraag is op dit moment niet beschikbaar.",
+      "rateLimited": "Dat zijn nogal wat vragen. Even geduld.",
+      "budget": "Vraag rust vandaag uit. Probeer het morgen opnieuw.",
+      "offline": "Je bent offline. Vraag heeft een verbinding nodig.",
+      "invalid": "Die vraag is te kort of te lang.",
+      "failed": "Dat is niet gelukt."
+    },
+    "optionsLabel": "Bronnen en vervolgvragen",
+    "sources": "Bronnen",
+    "followups": "Vraag daarna",
+    "live": "live",
+    "meta": "{facts, number} feiten · {steps, plural, =0 {geen live controles} one {# live controle} other {# live controles}} · {seconds} s · {model}",
+    "sourceLabels": {
+      "github": "GitHub-activiteit",
+      "progress": "Projectvoortgang",
+      "work": "Huidig werk",
+      "bench": "Dagelijkse tools",
+      "stack": "Techstack",
+      "site": "Hoe deze site is gebouwd"
+    },
+    "trace": {
+      "label": "Gezette stappen",
+      "plan": "Plan",
+      "snapshot": "opgeslagen momentopname",
+      "get_github_activity": {
+        "running": "Live GitHub-activiteit controleren…",
+        "done": "GitHub: {commits, plural, one {# commit} other {# commits}}, {contributions, plural, one {# bijdrage} other {# bijdragen}} dit jaar, langste reeks {streak, plural, one {# dag} other {# dagen}}",
+        "failed": "GitHub-activiteit niet beschikbaar"
+      },
+      "get_project_progress": {
+        "running": "Live projectborden lezen…",
+        "done": "Projectborden: {tracked, number} gevolgd, {overall, number}% voltooid in totaal",
+        "failed": "Projectborden niet beschikbaar"
+      },
+      "get_current_work": {
+        "running": "Huidig werk controleren…",
+        "done": "Huidig werk: {prs, plural, one {# openstaande pull request} other {# openstaande pull requests}}, {pushes, plural, one {# recente push} other {# recente pushes}}",
+        "failed": "Huidig werk niet beschikbaar"
+      },
+      "other": {
+        "running": "Controleren…",
+        "done": "Gecontroleerd",
+        "failed": "Controle niet beschikbaar"
+      }
+    },
+    "chat": {
+      "sidebar": "Gesprekken",
+      "newChat": "Nieuw gesprek",
+      "fit": "Vacature checken",
+      "commands": "Commando’s",
+      "noChats": "Je gesprekken verschijnen hier.",
+      "turns": "{count, plural, one {# vraag} other {# vragen}}",
+      "introTitle": "Vraag naar het werk van Muhammad",
+      "introBody": "Antwoorden komen uit de eigen content van deze site, met bronnen. Typ hieronder je eigen vraag, of begin met een van deze.",
+      "tryAsking": "Probeer eens",
+      "followupPlaceholder": "Stel een vervolgvraag…",
+      "send": "Verstuur",
+      "stop": "Stop met antwoorden",
+      "stopped": "Gestopt."
+    }
+  },
+  "fit": {
+    "command": "Vergelijk een vacaturetekst met zijn ervaring",
+    "title": "Functiematch",
+    "inputLabel": "Vacaturetekst",
+    "placeholder": "Plak een vacaturetekst…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter om te controleren",
+    "submit": "Match controleren",
+    "running": "De functie lezen…",
+    "tooShort": "Plak wat meer van de vacaturetekst (minstens {min, number} tekens).",
+    "rowsLabel": "Vereisten",
+    "summary": "{strong} sterk · {partial} gedeeltelijk · {gap} niet getoond",
+    "verdicts": {
+      "strong": "Sterk",
+      "partial": "Gedeeltelijk",
+      "gap": "Niet getoond"
+    },
+    "ready": "Matchcontrole gereed",
+    "disclaimer": "“Niet getoond” betekent dat deze site het niet vermeldt, niet dat hij het niet kan. Geschreven door Claude op basis van de inhoud van deze site; kan fouten bevatten."
+  }
+}

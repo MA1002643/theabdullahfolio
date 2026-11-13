@@ -84,7 +84,7 @@ unit test would think to check:
 | `imageLoadingPolicy` | No `next/image` uses the deprecated `priority`. `preload` appears only on an allowlisted image, and each entry records the route and viewport where that image measured as the LCP. An `eager` image that is not preloaded carries `fetchPriority="low"`, because without it React 19's server renderer preloads the image anyway (issue #55). |
 | `deferredChunks` | The modules kept out of every first load (the Ember Passage runtime, the `/about` dialogs, framer-motion's feature modules) are statically imported only from inside their own deferred graph, and each entry point is still loaded through `import()`. The bundle budget cannot catch this: its 10 % headroom is larger than the modules (issues #55, #200). |
 | `lazyMotion` | framer-motion stays on `LazyMotion` (issue #200): no file in `src/` imports the `motion` component (or a namespace that includes it); `domAnimation` / `domMax` are imported only in `src/lib/motion/{features,layoutFeatures}.js`, which only the loader reaches, through `import()`; every `LazyMotion` is `strict` and the root layout mounts one; every drei `<Html>` body (a separate React root, which inherits no provider) holds its own `<MotionFeatures>`; `AnimatePresence` is imported only through the site wrapper, `src/components/motion/AnimatePresence.jsx`; and no file in the static graph of the three layouts every route renders imports an engine API (`animate`, `useAnimation`, `useAnimate`, …). That last rule is the 16 kB the intro loader's `animate()` held in every first load; `useSpring` is allowed, because deferring its one root-layout user measured as no saving. The `motion`, provider and engine rules failed on `main`; the feature-module rules have nothing to find there. |
-| `i18nCatalogueText` | No parsed catalogue string, in any locale, contains a literal escape sequence such as ` `: a real sentence never does, so one that does was double-escaped on its way into the JSON. |
+| `i18nCatalogueText` | No parsed catalogue string, in any locale, contains a literal escape sequence such as `\u00a0`: a real sentence never does, so one that does was double-escaped on its way into the JSON. |
 
 ### L2 · Unit and property-based tests
 
@@ -119,6 +119,17 @@ property out of the soak silently, so `testHygiene` fails on one. (Until
 one file. The first real soak of all of them found a test bug within seconds:
 see the defects table.)
 
+The translated engineering notes (2026-11-10) have their own unit file,
+`notesTranslation.test.js`. Each of the three shipped documents must rebuild
+byte for byte from its blocks, because every locale's page is assembled from
+those same blocks. A block with no translation must come back as its English,
+counted, and inside a `lang="en"` island, but never inside a table, where the
+island would end the table. The validator must reject lost inline code, a
+moved link target, an extra table cell, a dropped list item, a changed
+heading level and a dropped HTML tag. Links between notes must keep the
+reader's locale and leave every other path alone. A note read in French must
+take its description from the same source as its English.
+
 Two property suites guard the translation work (#82).
 `i18nCatalogue.property.test.js` checks the round-trip the translation script
 writes every locale through: flattening a catalogue and rebuilding it in
@@ -139,6 +150,36 @@ and the 200 ms `setTimeout` fallback with its `clearTimeout` cancel. The cancel
 matters for the Ember Passage provider: a reduced-motion visitor's first effect
 schedules the runtime download before hydration reports the real preference,
 and the re-render that follows must cancel it before idle arrives.
+
+Two property suites guard the sitewide ⌘K palette (#41).
+`paletteMatch.property.test.js` holds the ranked matcher to its contract for
+any list and query, over an alphabet with case, accents and spaces so random
+queries actually hit. It returns exactly the actions that match. Its highlight
+ranges are sorted, disjoint, inside the original label, and spell the query.
+Typing more never adds a result, and the order is deterministic with each
+section contiguous. Its first run produced a counterexample to that last
+property: with an empty query the matcher hands the registry back untouched,
+so contiguity is only the ranker's promise once it ranks, and the property is
+now scoped that way. `askProtocol.property.test.js` holds the Ask wire format:
+however a network splits the NDJSON body, mid-line or mid-character, byte or
+string chunks decode to exactly the encoded events, and malformed or
+unknown-shaped lines vanish. `askCitations.property.test.js` holds the parser that turns the model's
+`[[P2]]` markers into citations. Whatever the text and however the stream is
+cut, it emits the same events, only citable ids survive, in the order they
+were written, and the visible text loses nothing but the markers.
+`askRoute.test.js` drives `/api/ask` with the model replaced by scripted AI SDK
+parts. Every refusal (unconfigured, malformed, too long, oversized, a job
+description out of bounds, rate-limited, over the daily budget) happens
+before the model. The agent is given the cached instructions, its four tools,
+a bounded loop, and a scrubbed question and history. An early model failure,
+or a stream with no output at all, keeps its real status. Nothing the visitor
+typed reaches a log line. `askStream.test.js` pins the part-by-part mapping a
+visitor sees: citations and their sources, a plan retracted into the trace, live
+steps running then done or failed, sanitised follow-ups, the source cap, and
+fit rows that name only real facts. `askLiveTools.test.js` covers the live
+tools with the route handlers injected. A failing handler or one past the
+six-second timeout becomes `unavailable`, never a throw, and a snapshot is
+marked not live.
 
 ### L3 · Component tests
 
@@ -189,6 +230,26 @@ English these refactored components render was pinned to the pre-#82 strings
 before the copy moved (`workSignal.test.js`, `aboutDiffs.test.js`,
 `projectMetaLocale.test.js` and others), so "unchanged in English" is a test
 result rather than a claim.
+
+`SitePalette.test.jsx` renders the sitewide palette as the root layout mounts
+it, with its deferred chunks (the panel, the Ask view and the fit check)
+loading for real through `next/dynamic`. Only the router, the Ember Passage,
+the toaster and `fetch` are doubles. It covers a page's contributed commands,
+ranking and highlighting, Recent, and focus returning to the trigger. For Ask,
+an agent run streamed in five-byte chunks must show the plan, the live checks
+(pluralised on the raw count), the answer with numbered citations, only the
+sources the palette can place, the provenance line, and follow-ups that send
+the conversation so far. The Ask view is a chat (sidebar, thread, composer),
+and its conversations live in an in-memory store that each test resets. The
+suite opens an empty conversation and types a question into it, asks a typed
+follow-up in the same thread, and checks that a new conversation sends no
+history. Esc, or the sidebar's Commands button, goes back to the full list
+with the conversation kept, Continue reopens it, and a second Esc closes.
+Stop, and closing the palette, both abort the request in flight. For the fit check, a
+pasted job description becomes honestly labelled rows with clickable
+evidence, a long paste into the palette jumps straight there, and Tab stays
+inside the dialog. axe runs over the answered Ask view in English and Arabic
+and over the fit check.
 
 ### L4 · API integration tests
 
@@ -391,6 +452,10 @@ snapshot.
 - `api-hardening.spec.js` sends hostile requests over HTTP: forged and missing
   bearers, header injection, oversized and malformed bodies, anonymous writes,
   forged webhook signatures, and checks no error leaks a stack trace.
+  `/api/ask` (#41) answers only `POST`, and refuses six hostile bodies
+  (malformed, 64 KB, a tag-smuggling injection, wrong field types, an
+  oversized fit check, a flood of history turns) with a `no-store` 503 before
+  any model, because the test server has no gateway credential.
 - `scripts/scan-client-bundle.mjs` scans everything a browser can download for
   the **values** of configured credentials, server-only credential **names**
   in client JS, and token **shapes** (GitHub, OpenAI, Anthropic, AWS, Slack,
@@ -539,6 +604,12 @@ itself. `LITERAL_WORDS` in `tests/support/pseudo.js` allows one word (sonner's
 translator never see it, and Vercel never sets the flag: production has no
 `/en-XA`. A unit test pins both.
 
+The same script writes `docs/i18n/en-XA/` (gitignored too): every block of
+every note in pseudo text, with code, link targets, tags and URLs left as
+they are (`pseudoMarkdown` in `scripts/notes-lib.mjs`). The notes are crawled
+like any other route. A note title, summary or paragraph read from the English
+file instead of the translation cache therefore fails as plain English.
+
 **The translation audit** (`npm run i18n:audit`, also in the lint job) first
 checks that `messages/en/Data.json` is still what `scripts/i18n-data.mjs`
 derives from `src/app/data.js`, then diffs every locale's catalogue against
@@ -683,6 +754,22 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (#200, nested presence) | `AnimatePresence` gives a child mounted after its first render its own presence, overriding the static fallback: the preference centre opened after a give-up was invisible while it took focus and locked scrolling, and so were guestbook cards when the layout chunk failed. | The site's `AnimatePresence` wrapper re-applies the static presence; a fitness rule bans framer's direct. |
 | Review (#200, gated content) | The first fallback only blocked the initial animation, and framer reads that once per element, so content behind a reveal gate (`PageTitle`, the `/uses` plates) stayed at its hidden target when the gate opened. | `MotionConfig isStatic`: styles follow props on every render, with no renderer. |
 | Review (#200, frozen motion values) | In static mode nothing subscribes to a MotionValue, so an effect made only of them froze at its first reading: the `/about` paragraph's scroll-scrubbed words stayed at opacity 0, and the `/journey` dial kept its first angle while `canTab` enabled the current era's year buttons, leaving focusable years off its visible arc. | `useStaticMotion()`: the words take opacity 1, and the dial's angle and label opacities come from `active` as plain numbers. |
+| Review (#41, test server credentials) | `playwright.config.mjs` blanked every outbound credential except `VERCEL_OIDC_TOKEN`, which `vercel env pull` writes into `.env.local`. `/api/refine-message` and the new `/api/ask` both count it as a configured gateway, so locally the Playwright server would attempt an authenticated model call that only the fetch sandbox stopped. | Blanked with its siblings. `api-hardening.spec.js` now pins the deterministic 503 for `/api/ask`. |
+| Unit (#41, `privacyInventory`) | The palette's Recent list first read storage through an injected `store` object, which the inventory test cannot see: it finds storage by the literal `localStorage.getItem(...)` call shape. The key would have been written undisclosed. The test failed with "discloses keys nothing in src/ reads". | `recents.js` calls `window.localStorage` directly, with a comment saying why. The key is in `STORAGE_KEYS`. |
+| Fitness (#41, `i18nCatalogueText`) | The translation run wrote French non-breaking spaces as the literal six characters `\u00a0`: six of them, in four `PaletteSite` strings (the Ask label and the three suggested questions), each of which would have printed on the page. | Converted to real U+00A0 characters across every locale's new catalogue. |
+| Fitness (#41, `i18nCatalogueText`, again) | The run that translated the Ask chat copy wrote the same literal six-character `\u00a0` into one new French string, `ask.resume`. The guard caught it before it reached the page. | Fixed to a real U+00A0 by hand. The translator keeps making this mistake, which is why the check is a gate and not a review step. |
+| Browser (#41, Ask chat in Arabic at 390 px) | The small section labels ("Sources", "Conversations") are uppercase, monospaced and letter-spaced. In Arabic that spacing pulled the letters out of their joins, and the monospaced header title rendered the same way. No automated layer flags it: axe reads the text, and the pseudo-locale run is Latin. | `rtl:font-sans rtl:tracking-normal` on every translated label in `AskPanel.jsx`; numbers, keys and paths keep mono. Found by looking, which is what §4 step 3 of `CLAUDE.md` is for. |
+| Review (#41, a second hotkey) | Splitting the palette hook left `useCommandPalette` calling `usePaletteOpen()` unconditionally for its fallback controller, so the deferred panel subscribed its own ⌘K listener even when handed the sitewide controller, toggling an unread state on every press. | `usePaletteOpen({ listen: false })`; `useCommandPalette.test.js` fails if a controlled engine adds a `keydown` listener. |
+| Unit (#41, empty 200) | The Ask event generator always ends with `done`, so a model that produced nothing at all went out as a 200 holding only `[meta, done]`: the empty success the route exists to prevent. | `respond` treats a first `done` as no output and answers 500 (`askRoute.test.js`, both modes). |
+| Unit (#41, history order) | `sanitiseHistory` kept the last two entries before validating them, so one malformed turn silently cost the visitor a valid one. | Validates first, then keeps the last two (`askRoute.test.js`, `askCorpus.test.js`). |
+| Component (#41, empty sources) | `{ kind: 'source', ...s }` let a source's own `kind` (project, live) overwrite the option type, so every source rendered as an empty follow-up, unlabelled and not navigable. | The option type is `role`; `SitePalette.test.jsx` asserts the numbered labels and keyboard navigation. |
+| Live run (#41, plural) | The trace read "1 recent pushes": counts were passed as formatted strings, which ICU cannot pluralise. | Raw numbers and plural messages in every locale; a regression case in `SitePalette.test.jsx`. |
+| Review (#41, grounding) | The first live fit check marked i18n and Vercel as gaps: true of the corpus, false of the owner. | Derived facts for project languages, the `/uses` stack and this site's engineering; `askCorpus.test.js` checks the derived figures against `package.json` and the case counts. |
+| Translation validator (notes, 2026-11-10) | This document's `i18nCatalogueText` row was meant to show the escape text `\u00a0`, but it held a real non-breaking space between the backticks, so the published page showed an empty code span. Found because no translation could copy an invisible character byte for byte, and the notes validator rejected the row in every locale. | The source now spells out `\u00a0`. |
+| Review (#41, Recent in English) | Recent entries were copied from the actions before `CommandPalette` translated the route jumps (`navKey`), and appended after that pass, so a remembered route showed its English label on every non-English page. | Each Recent entry is resolved against the localized list by `recentOf`, keeping its own `recent:<id>` and the Recent section. `SitePalette` checks a remembered `go-journey` in German. |
+| Review (#41, duplicate id) | `/journey` contributed an `open-cv` command with the same id as the sitewide one: duplicate React keys, two `palette-opt-open-cv` elements, and selecting the second resolved `aria-activedescendant` and the scroll-follow to the first. | The contributed command is removed (the global one runs on every route). `SitePalette` asserts every option id on `/journey` is unique. |
+| Review (#41, citation cutoff) | `MAX_MARKER` bounded only a marker still waiting for `]]`, so `[[P2` + 50 spaces + `]]` was a citation in one delta and literal text when `]]` arrived separately. The chunking property never noticed: its generator rarely built a span that long, and its oracle had no cutoff. | The cutoff applies to completed and open markers alike. `askCitations.test.js` covers both chunkings; the property generator now pads across the cutoff and its oracle models it. |
+| Review (#41, spending limit) | Without Redis, `/api/ask` fell back to module-scoped counters. On a serverless deployment each instance has its own, and a cold start resets it, so `ASK_DAILY_LIMIT` capped one instance per boot rather than the deployment: scaling out or restarting bought more questions. | In-memory limits are allowed only under `NODE_ENV` development and test; anywhere else with no shared store the route answers 503 `unconfigured` before reading the body, and both limiter gates fail closed on their own. `askRoute.test.js` pins the refusal under production (malformed body included, model never called, reason logged once), the limiter counting nothing while refusing, and dev still answering. |
 
 ## Maintenance
 

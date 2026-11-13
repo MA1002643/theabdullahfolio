@@ -70,8 +70,6 @@
     "section": "यात्रा",
     "jumpYear": "{year} पर जाएँ",
     "eraHint": "दौर",
-    "jumpAtlas": "ओवरलैप एटलस पर जाएँ",
-    "openCv": "CV खोलें (PDF)",
-    "openCvHint": "पेपर वर्ज़न"
+    "jumpAtlas": "ओवरलैप एटलस पर जाएँ"
   }
 }

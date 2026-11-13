@@ -221,6 +221,11 @@ export default defineConfig({
       ABSTRACT_API_KEY: '',
       OPENAI_API_KEY: '',
       AI_GATEWAY_API_KEY: '',
+      // The gateway's OTHER credential (issue #41): `vercel env pull` writes a
+      // real OIDC token into .env.local, and /api/refine-message and /api/ask
+      // both count it as "configured". Unblanked, the test server would try
+      // an authenticated model call that only the fetch sandbox stopped.
+      VERCEL_OIDC_TOKEN: '',
       GSC_SERVICE_ACCOUNT_KEY: '',
       NEXT_PUBLIC_GA_MEASUREMENT_ID: '',
       // Mail too, and not by blanking alone: /api/send-mail does not use

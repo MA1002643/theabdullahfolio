@@ -67,8 +67,11 @@ export const SERVER_NAMESPACES = ['Meta'];
  * for its locale alongside the live crawl (see useToolCopy.jsx).
  * `UsesPalette` is /uses' ⌘K copy, fetched at mount by UsesPalette.jsx and
  * never read before the palette opens.
+ * `PaletteSite` is the sitewide palette's own copy (issue #41: its Projects,
+ * Actions, Recent and Ask), fetched in idle time by usePaletteSiteCopy.js, so
+ * it costs no route's client-message budget.
  */
-export const DEFERRED_NAMESPACES = ['UsesTools', 'UsesPalette'];
+export const DEFERRED_NAMESPACES = ['UsesTools', 'UsesPalette', 'PaletteSite'];
 
 export const NAMESPACES = [
   ...new Set([

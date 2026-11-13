@@ -70,8 +70,6 @@
     "section": "Werdegang",
     "jumpYear": "Zu {year} springen",
     "eraHint": "Epoche",
-    "jumpAtlas": "Zum Überlappungsatlas springen",
-    "openCv": "CV öffnen (PDF)",
-    "openCvHint": "die Papierversion"
+    "jumpAtlas": "Zum Überlappungsatlas springen"
   }
 }

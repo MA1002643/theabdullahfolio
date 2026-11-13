@@ -28,7 +28,7 @@
 // on disk with no registry entry fails CI.
 
 import { projectsData } from '@/app/data';
-import { readNotes } from '@/lib/notes/readNotes';
+import { NOTES_I18N_DIR, readNotes } from '@/lib/notes/readNotes';
 import { LOCALES } from '@/i18n/locales';
 import { absoluteUrl, alternatesFor } from '@/lib/seo/canonical';
 import { lastModifiedFor } from '@/lib/seo/lastModified';
@@ -157,7 +157,7 @@ export const NOTE_SHARED_SOURCES = [
 // built by the same `alternatesFor()` that writes the <head> tags, so the
 // sitemap and the documents cannot disagree about which URLs are siblings.
 //
-// English-only documents (the notes, the privacy policy) are listed ONCE, at
+// English-only documents (the privacy policy) are listed ONCE, at
 // their English URL, with no alternates: their locale URLs canonicalise to the
 // English one, and a sitemap may list only canonical URLs.
 //
@@ -216,12 +216,22 @@ export default function sitemap() {
   // edit genuinely does touch all of them — each note is its own document with
   // its own history, and dating them together would restamp every note whenever
   // one was edited.
-  const noteEntries = readNotes().map((note) => ({
-    url: absoluteUrl(`/notes/${note.slug}`),
-    lastModified: lastModifiedFor([note.source, ...NOTE_SHARED_SOURCES]),
-    changeFrequency: 'monthly',
-    priority: 0.5,
-  }));
+  //
+  // Translated since 2026-11-10, so each note is a cluster of twenty URLs like
+  // a project page. The cluster's date also watches the translation caches and
+  // the catalogues: re-translating a passage changes what the locale URLs say.
+  const noteEntries = readNotes().flatMap((note) =>
+    localized(`/notes/${note.slug}`, {
+      lastModified: lastModifiedFor([
+        note.source,
+        ...NOTE_SHARED_SOURCES,
+        NOTES_I18N_DIR,
+        ...MESSAGE_SOURCES,
+      ]),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    }),
+  );
 
   // The CV PDF is deliberately ABSENT (owner call 2026-09-26). It was listed
   // here while it was indexable by decision (F6); it now declares /cv as its

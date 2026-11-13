@@ -9,6 +9,17 @@
     "title": "GHI CHÚ",
     "breadcrumb": "Đường dẫn điều hướng",
     "allNotes": "Tất cả ghi chú",
-    "source": "Nguồn: {source} · {count, plural, other {{n} dòng}}"
+    "source": "Nguồn: {source} · {count, plural, other {{n} dòng}}",
+    "partial": "Một số đoạn bên dưới chưa được dịch nên vẫn hiển thị bằng tiếng Anh.",
+    "crumbs": {
+      "home": "Trang chủ",
+      "notes": "Ghi chú"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Vì sao từng quyết định về khả năng được tìm thấy trên trang này được đưa ra, điều gì đã bị loại bỏ và cái giá phải trả — hồ sơ kỹ thuật lưu cạnh mã nguồn."
+    },
+    "composed": "Hồ sơ quyết định kỹ thuật — {title}. {n} dòng trích từ tài liệu của chính kho mã này."
   }
 }

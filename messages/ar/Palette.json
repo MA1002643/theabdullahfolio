@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "انتقال اذهب تنقل صفحة مسار وجهة go page",
     "language": "لغة ترجمة تغيير اللغة لغات language locale"
-  }
+  },
+  "triggerTitle": "ابحث واسأل",
+  "triggerHint": "{shortcut} · اسأل Claude عن أعمالي",
+  "triggerHintTouch": "اسأل Claude عن أعمالي"
 }

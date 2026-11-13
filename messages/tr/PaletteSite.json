@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Projeler",
+    "actions": "Eylemler",
+    "recent": "Son kullanılanlar",
+    "ask": "Sor"
+  },
+  "keywords": {
+    "projects": "proje projeler iş çalışma uygulama depo repo geliştirme",
+    "actions": "eylem eylemler işlem çalıştır yap",
+    "copyLink": "kopyala bağlantı link url paylaş",
+    "openCv": "cv özgeçmiş indir pdf",
+    "viewSource": "kaynak kod github depo",
+    "copyEmail": "e-posta eposta mail adres iletişim kopyala",
+    "backToTop": "yukarı en üst başa dön kaydır",
+    "ask": "sor soru cevap yanıt claude",
+    "fit": "iş rol uyum uygunluk tanım ilan gereksinimler gereklilikler pozisyon eşleşme"
+  },
+  "actions": {
+    "copyLink": "Bu sayfanın bağlantısını kopyala",
+    "openCv": "CV'yi aç (PDF)",
+    "viewSource": "Bu sitenin kaynağını görüntüle",
+    "copyEmail": "E-posta adresini kopyala",
+    "backToTop": "Başa dön",
+    "linkCopied": "Bağlantı kopyalandı",
+    "emailCopied": "E-posta adresi kopyalandı",
+    "clipboardUnavailable": "Panoya erişilemedi"
+  },
+  "ask": {
+    "option": "Claude'a sor: “{query}”",
+    "start": "Claude'a istediğini sor…",
+    "resume": "Devam et: “{title}”",
+    "suggestions": {
+      "strongest": "En güçlü projesi hangisi?",
+      "stack": "En çok hangi teknolojileri kullanıyor?",
+      "experience": "Nasıl bir mühendislik deneyimi var?",
+      "live": "Şu anda ne üzerinde çalışıyor?"
+    },
+    "inputLabel": "Sorun",
+    "placeholder": "Muhammad'ın çalışmalarını sor…",
+    "back": "geri",
+    "answerLabel": "Yanıt",
+    "thinking": "Site okunuyor…",
+    "ready": "Yanıt hazır",
+    "enterRetry": "Tekrar denemek için Enter'a bas.",
+    "disclaimer": "Claude tarafından, bu sitenin kendi içeriğinden yazıldı. Yanlış olabilir.",
+    "errors": {
+      "unavailable": "Sor şu anda kullanılamıyor.",
+      "rateLimited": "Epey soru oldu. Biraz bekle.",
+      "budget": "Sor bugünlük dinleniyor. Yarın tekrar dene.",
+      "offline": "Çevrimdışısın. Sor için internet bağlantısı gerekir.",
+      "invalid": "Bu soru çok kısa ya da çok uzun.",
+      "failed": "Olmadı."
+    },
+    "optionsLabel": "Kaynaklar ve devam soruları",
+    "sources": "Kaynaklar",
+    "followups": "Sıradaki soru",
+    "live": "canlı",
+    "meta": "{facts, number} bilgi · {steps, plural, =0 {canlı kontrol yok} other {# canlı kontrol}} · {seconds} sn · {model}",
+    "sourceLabels": {
+      "github": "GitHub etkinliği",
+      "progress": "Proje ilerlemesi",
+      "work": "Güncel çalışma",
+      "bench": "Günlük araçlar",
+      "stack": "Teknoloji yığını",
+      "site": "Bu site nasıl yapıldı"
+    },
+    "trace": {
+      "label": "Atılan adımlar",
+      "plan": "Plan",
+      "snapshot": "kayıtlı kopya",
+      "get_github_activity": {
+        "running": "Canlı GitHub etkinliği kontrol ediliyor…",
+        "done": "GitHub: {commits, plural, other {# commit}}, bu yıl {contributions, plural, other {# katkı}}, en uzun seri {streak, plural, other {# gün}}",
+        "failed": "GitHub etkinliğine ulaşılamadı"
+      },
+      "get_project_progress": {
+        "running": "Canlı proje panoları okunuyor…",
+        "done": "Proje panoları: {tracked, number} takipte, genel olarak %{overall, number} tamamlandı",
+        "failed": "Proje panolarına ulaşılamadı"
+      },
+      "get_current_work": {
+        "running": "Güncel çalışma kontrol ediliyor…",
+        "done": "Güncel çalışma: {prs, plural, other {# açık pull request}}, {pushes, plural, other {# son push}}",
+        "failed": "Güncel çalışmaya ulaşılamadı"
+      },
+      "other": {
+        "running": "Kontrol ediliyor…",
+        "done": "Kontrol edildi",
+        "failed": "Kontrol yapılamadı"
+      }
+    },
+    "chat": {
+      "sidebar": "Sohbetler",
+      "newChat": "Yeni sohbet",
+      "fit": "İş ilanını kontrol et",
+      "commands": "Komutlar",
+      "noChats": "Sohbetlerin burada görünecek.",
+      "turns": "{count, plural, other {# soru}}",
+      "introTitle": "Muhammed'in çalışmalarını sor",
+      "introBody": "Yanıtlar, kaynaklarıyla birlikte bu sitenin kendi içeriğinden gelir. Sorunu aşağıya yaz ya da bunlardan biriyle başla.",
+      "tryAsking": "Şunları sorabilirsin",
+      "followupPlaceholder": "Devam sorusu sor…",
+      "send": "Gönder",
+      "stop": "Yanıtı durdur",
+      "stopped": "Durduruldu."
+    }
+  },
+  "fit": {
+    "command": "Bir iş ilanını onun deneyimiyle karşılaştır",
+    "title": "Role uyum kontrolü",
+    "inputLabel": "İş ilanı",
+    "placeholder": "Bir iş ilanı yapıştır…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "Kontrol için {key} + Enter",
+    "submit": "Uyumu kontrol et",
+    "running": "Rol okunuyor…",
+    "tooShort": "İş ilanından biraz daha yapıştır (en az {min, number} karakter).",
+    "rowsLabel": "Gereksinimler",
+    "summary": "{strong} güçlü · {partial} kısmi · {gap} gösterilmemiş",
+    "verdicts": {
+      "strong": "Güçlü",
+      "partial": "Kısmi",
+      "gap": "Gösterilmemiş"
+    },
+    "ready": "Uyum kontrolü hazır",
+    "disclaimer": "“Gösterilmemiş”, bu sitede yer almadığı anlamına gelir; onun bunu yapamayacağı anlamına gelmez. Claude tarafından bu sitenin içeriğinden yazıldı; hatalı olabilir."
+  }
+}

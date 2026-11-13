@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Dự án",
+    "actions": "Thao tác",
+    "recent": "Gần đây",
+    "ask": "Hỏi"
+  },
+  "keywords": {
+    "projects": "dự án công việc xây dựng ứng dụng kho mã project work build app repository",
+    "actions": "thao tác hành động chạy làm action run do",
+    "copyLink": "sao chép liên kết đường dẫn url chia sẻ copy link share",
+    "openCv": "cv sơ yếu lý lịch hồ sơ tải xuống resume download",
+    "viewSource": "mã nguồn source code github",
+    "copyEmail": "email địa chỉ thư liên hệ sao chép contact copy",
+    "backToTop": "cuộn lên đầu trang trên scroll top up",
+    "ask": "hỏi câu hỏi trả lời ask question answer",
+    "fit": "vị trí công việc phù hợp mô tả yêu cầu tuyển dụng việc làm job role fit description requirements"
+  },
+  "actions": {
+    "copyLink": "Sao chép liên kết trang này",
+    "openCv": "Mở CV (PDF)",
+    "viewSource": "Xem mã nguồn của trang web này",
+    "copyEmail": "Sao chép địa chỉ email",
+    "backToTop": "Lên đầu trang",
+    "linkCopied": "Đã sao chép liên kết",
+    "emailCopied": "Đã sao chép địa chỉ email",
+    "clipboardUnavailable": "Không truy cập được bộ nhớ tạm"
+  },
+  "ask": {
+    "option": "Hỏi Claude: “{query}”",
+    "start": "Hỏi Claude bất cứ điều gì…",
+    "resume": "Tiếp tục: “{title}”",
+    "suggestions": {
+      "strongest": "Dự án nào là điểm mạnh nhất của anh ấy?",
+      "stack": "Anh ấy dùng công nghệ nào nhiều nhất?",
+      "experience": "Anh ấy có kinh nghiệm kỹ thuật gì?",
+      "live": "Hiện giờ anh ấy đang làm gì?"
+    },
+    "inputLabel": "Câu hỏi của bạn",
+    "placeholder": "Hỏi về công việc của Muhammad…",
+    "back": "quay lại",
+    "answerLabel": "Câu trả lời",
+    "thinking": "Đang đọc trang web…",
+    "ready": "Câu trả lời đã sẵn sàng",
+    "enterRetry": "Nhấn Enter để thử lại.",
+    "disclaimer": "Do Claude viết dựa trên nội dung của chính trang web này. Câu trả lời có thể sai.",
+    "errors": {
+      "unavailable": "Tính năng Hỏi hiện chưa dùng được.",
+      "rateLimited": "Bạn hỏi khá nhiều rồi đấy. Hãy chờ một lát nhé.",
+      "budget": "Hôm nay tính năng Hỏi đã nghỉ. Mai bạn quay lại thử nhé.",
+      "offline": "Bạn đang ngoại tuyến. Tính năng Hỏi cần có kết nối mạng.",
+      "invalid": "Câu hỏi này quá ngắn hoặc quá dài.",
+      "failed": "Không thành công."
+    },
+    "optionsLabel": "Nguồn và câu hỏi tiếp theo",
+    "sources": "Nguồn",
+    "followups": "Hỏi tiếp",
+    "live": "trực tiếp",
+    "meta": "{facts, number} dữ kiện · {steps, plural, =0 {không có lần kiểm tra trực tiếp} other {# lần kiểm tra trực tiếp}} · {seconds} giây · {model}",
+    "sourceLabels": {
+      "github": "Hoạt động trên GitHub",
+      "progress": "Tiến độ dự án",
+      "work": "Công việc hiện tại",
+      "bench": "Công cụ dùng hằng ngày",
+      "stack": "Bộ công nghệ",
+      "site": "Cách xây dựng trang này"
+    },
+    "trace": {
+      "label": "Các bước đã thực hiện",
+      "plan": "Kế hoạch",
+      "snapshot": "bản lưu sẵn",
+      "get_github_activity": {
+        "running": "Đang kiểm tra hoạt động GitHub trực tiếp…",
+        "done": "GitHub: {commits, plural, other {# commit}}, {contributions, plural, other {# đóng góp}} trong năm nay, chuỗi dài nhất {streak, plural, other {# ngày}}",
+        "failed": "Không có dữ liệu hoạt động GitHub"
+      },
+      "get_project_progress": {
+        "running": "Đang đọc bảng dự án trực tiếp…",
+        "done": "Bảng dự án: đang theo dõi {tracked, number}, hoàn thành {overall, number}% tổng thể",
+        "failed": "Không có dữ liệu bảng dự án"
+      },
+      "get_current_work": {
+        "running": "Đang kiểm tra công việc hiện tại…",
+        "done": "Công việc hiện tại: {prs, plural, other {# pull request đang mở}}, {pushes, plural, other {# lần push gần đây}}",
+        "failed": "Không có dữ liệu công việc hiện tại"
+      },
+      "other": {
+        "running": "Đang kiểm tra…",
+        "done": "Đã kiểm tra",
+        "failed": "Không thể kiểm tra"
+      }
+    },
+    "chat": {
+      "sidebar": "Cuộc trò chuyện",
+      "newChat": "Cuộc trò chuyện mới",
+      "fit": "Kiểm tra mô tả công việc",
+      "commands": "Lệnh",
+      "noChats": "Các cuộc trò chuyện của bạn sẽ hiện ở đây.",
+      "turns": "{count, plural, other {# câu hỏi}}",
+      "introTitle": "Hỏi về công việc của Muhammad",
+      "introBody": "Câu trả lời được lấy từ chính nội dung của trang này, kèm nguồn. Hãy nhập câu hỏi của bạn bên dưới, hoặc bắt đầu bằng một gợi ý sau.",
+      "tryAsking": "Thử hỏi",
+      "followupPlaceholder": "Hỏi tiếp…",
+      "send": "Gửi",
+      "stop": "Dừng trả lời",
+      "stopped": "Đã dừng."
+    }
+  },
+  "fit": {
+    "command": "Đối chiếu mô tả công việc với kinh nghiệm của anh ấy",
+    "title": "Kiểm tra mức độ phù hợp",
+    "inputLabel": "Mô tả công việc",
+    "placeholder": "Dán mô tả công việc vào đây…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter để kiểm tra",
+    "submit": "Kiểm tra",
+    "running": "Đang đọc vị trí tuyển dụng…",
+    "tooShort": "Hãy dán thêm một chút nội dung mô tả công việc (tối thiểu {min, number} ký tự).",
+    "rowsLabel": "Yêu cầu",
+    "summary": "{strong} rõ ràng · {partial} một phần · {gap} chưa thể hiện",
+    "verdicts": {
+      "strong": "Rõ ràng",
+      "partial": "Một phần",
+      "gap": "Chưa thể hiện"
+    },
+    "ready": "Kết quả kiểm tra đã sẵn sàng",
+    "disclaimer": "“Chưa thể hiện” nghĩa là trang này không đề cập đến mục đó, không có nghĩa là anh ấy không làm được. Do Claude viết dựa trên nội dung của trang này; kết quả có thể sai."
+  }
+}

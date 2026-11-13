@@ -9,6 +9,17 @@
     "title": "ノート",
     "breadcrumb": "パンくずリスト",
     "allNotes": "すべてのノート",
-    "source": "ソース: {source} · {count, plural, other {{n} 行}}"
+    "source": "ソース: {source} · {count, plural, other {{n} 行}}",
+    "partial": "以下の一部の段落は未翻訳のため、英語のまま表示しています。",
+    "crumbs": {
+      "home": "ホーム",
+      "notes": "ノート"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "このサイトの発見性に関する各判断の理由、見送った案、そのコストを記録した、コードと並べて管理しているエンジニアリング記録です。"
+    },
+    "composed": "エンジニアリングの意思決定記録：{title}。このリポジトリ自身のドキュメントから{n}行を収録しています。"
   }
 }

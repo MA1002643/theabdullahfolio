@@ -711,8 +711,9 @@ describe('sitemap contents', () => {
     // update, and the update that gets forgotten is the one that matters.
     //
     // Since issue #82 a TRANSLATED page is one <url> per locale (Google's
-    // sitemap form of hreflang); an English-only document — the notes, the
-    // privacy policy — is one <url>, at its English address.
+    // sitemap form of hreflang); an English-only document — the privacy
+    // policy — is one <url>, at its English address. The notes are translated
+    // (2026-11-10), so each is a cluster like a project page.
     const { LOCALES } = await import('@/i18n/locales');
     const { isTranslated } = await import('@/lib/seo/site');
     const indexable = ROUTES.filter((route) => route.indexable);
@@ -720,7 +721,7 @@ describe('sitemap contents', () => {
       indexable.filter((route) => isTranslated(route.path)).length * LOCALES.length +
       indexable.filter((route) => !isTranslated(route.path)).length +
       projectsData.length * LOCALES.length +
-      notes.length;
+      notes.length * LOCALES.length;
     expect(urls).toHaveLength(expectedCount);
 
     // No duplicates. Two entries for one URL is not an error a validator

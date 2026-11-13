@@ -16,8 +16,9 @@ import { leaks } from '../support/pseudo.js';
 // What is NOT English-that-leaked, and is skipped:
 //   • `translate="no"` subtrees — the HTML attribute for "not to be
 //     translated": names, code, a visitor's own guestbook words;
-//   • `lang="en"` islands — content declared English by decision (the notes,
-//     the privacy body: `EnglishOnly`), already announced to the reader;
+//   • `lang="en"` islands — content declared English by decision (the privacy
+//     body: `EnglishOnly`), or a note passage not re-translated yet, both
+//     announced to the reader;
 //   • `code`, `pre`, `kbd`, `samp` — literal by definition — and `time`,
 //     whose content is Intl output: CLDR has no data for a pseudo-locale, so
 //     it formats as English here and correctly everywhere else (i18nFormat);
@@ -78,7 +79,7 @@ async function collect(page) {
 }
 
 // The document title, unless the page DECLARES itself English: a page that is
-// English by decision (the notes, the privacy policy — `translated: false` in
+// English by decision (the privacy policy — `translated: false` in
 // src/lib/og/meta.js) canonicalises to its unprefixed English URL, so that
 // declaration is read off the page rather than kept as a list here.
 function titleLeaks(title, canonical, literalH1) {

@@ -274,6 +274,22 @@ export const PROCESSORS = [
     source: 'src/app/api/refine-message/route.js',
   },
   {
+    name: 'Vercel AI Gateway → Anthropic',
+    role: 'Ask and the fit check, in the command palette',
+    detail:
+      'If you choose "Ask Claude" in the ⌘K command palette, your question is ' +
+      'sent to Anthropic\'s Claude through the gateway, together with the ' +
+      'language you are reading in, the path of the page you are on and, for ' +
+      'a follow-up, your previous two questions and their answers from the same ' +
+      'panel. If you use the fit check, the job description you paste is sent ' +
+      'instead. The answer is written from this site\'s own content and from ' +
+      'public figures about my GitHub work; nothing about you is looked up. ' +
+      'Neither your question nor a pasted job description is stored or logged ' +
+      'by this site: the request is answered and gone.',
+    initiated: 'Only when you ask a question or run a fit check',
+    source: 'src/app/api/ask/route.js',
+  },
+  {
     name: 'GitHub / Google',
     role: 'Sign-in',
     detail:
@@ -375,6 +391,24 @@ export const SERVER_DATA = [
       'instance does.',
     visibility: 'Nobody.',
     source: 'src/app/api/refine-message/route.js',
+  },
+  {
+    what: 'Ask throttle',
+    contains:
+      'Your IP address, SHA-256 hashed, as the key of a counter of how many ' +
+      'questions you asked in the last minute. Never your question.',
+    retention: 'About a minute, then the counter expires on its own.',
+    visibility: 'Nobody. It exists so one person cannot spend the whole day\'s questions.',
+    source: 'src/lib/ask/ratelimit.js',
+  },
+  {
+    what: 'Ask daily total',
+    contains:
+      'One number per day: how many questions everyone asked in total. ' +
+      'Nothing about who asked or what.',
+    retention: 'Two days, then it expires on its own.',
+    visibility: 'Nobody. It pauses Ask for the day once a spending limit is reached.',
+    source: 'src/lib/ask/ratelimit.js',
   },
   {
     what: 'A contact message',
@@ -494,6 +528,14 @@ export const STORAGE_KEYS = [
     purpose:
       'Whether you dismissed the "this site is available in your language" ' +
       'offer, so it is made once rather than on every visit.',
+  },
+  {
+    key: 'palette:recent:v1',
+    kind: 'localStorage',
+    group: 'interface',
+    purpose:
+      'The last few commands you ran from the ⌘K palette, so they are at the ' +
+      'top next time. Only which commands, never what you typed.',
   },
   {
     key: 'nav-orbit-tip:dismissed',
@@ -721,4 +763,4 @@ export const RIGHTS = [
  *
  * Bump it when the substance changes. Leave it alone for a reworded sentence.
  */
-export const POLICY_UPDATED = '2026-10-25';
+export const POLICY_UPDATED = '2026-11-10';

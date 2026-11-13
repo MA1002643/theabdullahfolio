@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "प्रोजेक्ट",
+    "actions": "क्रियाएँ",
+    "recent": "हाल के",
+    "ask": "पूछें"
+  },
+  "keywords": {
+    "projects": "प्रोजेक्ट काम बनाना ऐप रिपॉज़िटरी project work build app repository",
+    "actions": "क्रिया कार्रवाई चलाना करना action run do",
+    "copyLink": "लिंक कॉपी यूआरएल शेयर साझा copy link url share",
+    "openCv": "सीवी रिज़्यूमे बायोडाटा डाउनलोड cv resume download",
+    "viewSource": "सोर्स स्रोत कोड गिटहब source code github",
+    "copyEmail": "ईमेल पता संपर्क कॉपी email address contact copy",
+    "backToTop": "स्क्रॉल ऊपर शीर्ष टॉप scroll top up",
+    "ask": "पूछें सवाल प्रश्न जवाब उत्तर ask question answer",
+    "fit": "job role fit description requirements नौकरी पद जॉब डिस्क्रिप्शन आवश्यकताएँ योग्यता मिलान"
+  },
+  "actions": {
+    "copyLink": "इस पेज का लिंक कॉपी करें",
+    "openCv": "CV खोलें (PDF)",
+    "viewSource": "इस साइट का सोर्स देखें",
+    "copyEmail": "ईमेल पता कॉपी करें",
+    "backToTop": "ऊपर जाएँ",
+    "linkCopied": "लिंक कॉपी हो गया",
+    "emailCopied": "ईमेल पता कॉपी हो गया",
+    "clipboardUnavailable": "क्लिपबोर्ड तक पहुँच नहीं मिली"
+  },
+  "ask": {
+    "option": "Claude से पूछें: “{query}”",
+    "start": "Claude से कुछ भी पूछें…",
+    "resume": "जारी रखें: “{title}”",
+    "suggestions": {
+      "strongest": "उनका सबसे मज़बूत प्रोजेक्ट कौन-सा है?",
+      "stack": "वे सबसे ज़्यादा किन तकनीकों का इस्तेमाल करते हैं?",
+      "experience": "उन्हें इंजीनियरिंग का कैसा अनुभव है?",
+      "live": "वह अभी किस पर काम कर रहे हैं?"
+    },
+    "inputLabel": "आपका सवाल",
+    "placeholder": "Muhammad के काम के बारे में पूछें…",
+    "back": "वापस",
+    "answerLabel": "जवाब",
+    "thinking": "साइट पढ़ी जा रही है…",
+    "ready": "जवाब तैयार है",
+    "enterRetry": "दोबारा कोशिश करने के लिए Enter दबाएँ।",
+    "disclaimer": "इस साइट की अपनी सामग्री के आधार पर Claude द्वारा लिखा गया। इसमें गलती हो सकती है।",
+    "errors": {
+      "unavailable": "पूछने की सुविधा अभी उपलब्ध नहीं है।",
+      "rateLimited": "काफ़ी सारे सवाल हो गए। ज़रा रुककर फिर कोशिश करें।",
+      "budget": "आज के लिए पूछने की सुविधा आराम कर रही है। कल फिर कोशिश करें।",
+      "offline": "आप ऑफ़लाइन हैं। पूछने के लिए इंटरनेट कनेक्शन चाहिए।",
+      "invalid": "यह सवाल बहुत छोटा या बहुत लंबा है।",
+      "failed": "यह नहीं हो पाया।"
+    },
+    "optionsLabel": "स्रोत और अगले सवाल",
+    "sources": "स्रोत",
+    "followups": "आगे पूछें",
+    "live": "लाइव",
+    "meta": "{facts, number} तथ्य · {steps, plural, =0 {कोई लाइव जाँच नहीं} one {# लाइव जाँच} other {# लाइव जाँचें}} · {seconds} सेकंड · {model}",
+    "sourceLabels": {
+      "github": "GitHub गतिविधि",
+      "progress": "प्रोजेक्ट की प्रगति",
+      "work": "मौजूदा काम",
+      "bench": "रोज़ के औज़ार",
+      "stack": "टेक्नोलॉजी स्टैक",
+      "site": "यह साइट कैसे बनी है"
+    },
+    "trace": {
+      "label": "उठाए गए कदम",
+      "plan": "योजना",
+      "snapshot": "सहेजा हुआ स्नैपशॉट",
+      "get_github_activity": {
+        "running": "लाइव GitHub गतिविधि देखी जा रही है…",
+        "done": "GitHub: {commits, plural, one {# commit} other {# commits}}, इस साल {contributions, plural, one {# contribution} other {# contributions}}, सबसे लंबी streak {streak, plural, one {# दिन} other {# दिन}}",
+        "failed": "GitHub गतिविधि उपलब्ध नहीं है"
+      },
+      "get_project_progress": {
+        "running": "लाइव प्रोजेक्ट बोर्ड पढ़े जा रहे हैं…",
+        "done": "Project boards: {tracked, number} ट्रैक किए गए, कुल मिलाकर {overall, number}% पूरे",
+        "failed": "प्रोजेक्ट बोर्ड उपलब्ध नहीं हैं"
+      },
+      "get_current_work": {
+        "running": "मौजूदा काम देखा जा रहा है…",
+        "done": "मौजूदा काम: {prs, plural, one {# खुला pull request} other {# खुले pull requests}}, {pushes, plural, one {# हालिया push} other {# हालिया pushes}}",
+        "failed": "मौजूदा काम उपलब्ध नहीं है"
+      },
+      "other": {
+        "running": "जाँच हो रही है…",
+        "done": "जाँच पूरी हुई",
+        "failed": "जाँच उपलब्ध नहीं है"
+      }
+    },
+    "chat": {
+      "sidebar": "बातचीत",
+      "newChat": "नई बातचीत",
+      "fit": "जॉब डिस्क्रिप्शन जाँचें",
+      "commands": "कमांड",
+      "noChats": "आपकी बातचीत यहाँ दिखाई देगी।",
+      "turns": "{count, plural, one {# प्रश्न} other {# प्रश्न}}",
+      "introTitle": "मुहम्मद के काम के बारे में पूछें",
+      "introBody": "उत्तर इसी साइट की अपनी सामग्री से, स्रोतों के साथ दिए जाते हैं। अपना सवाल नीचे लिखें, या इनमें से किसी से शुरू करें।",
+      "tryAsking": "ये पूछकर देखें",
+      "followupPlaceholder": "अगला सवाल पूछें…",
+      "send": "भेजें",
+      "stop": "जवाब देना रोकें",
+      "stopped": "रोका गया।"
+    }
+  },
+  "fit": {
+    "command": "किसी जॉब डिस्क्रिप्शन को उनके अनुभव से मिलाकर देखें",
+    "title": "भूमिका से मेल की जाँच",
+    "inputLabel": "जॉब डिस्क्रिप्शन",
+    "placeholder": "जॉब डिस्क्रिप्शन यहाँ पेस्ट करें…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "जाँचने के लिए {key} + Enter",
+    "submit": "मेल जाँचें",
+    "running": "भूमिका पढ़ी जा रही है…",
+    "tooShort": "जॉब डिस्क्रिप्शन थोड़ा और पेस्ट करें (कम से कम {min, number} अक्षर)।",
+    "rowsLabel": "आवश्यकताएँ",
+    "summary": "{strong} मज़बूत · {partial} आंशिक · {gap} साइट पर नहीं दिखा",
+    "verdicts": {
+      "strong": "मज़बूत",
+      "partial": "आंशिक",
+      "gap": "साइट पर नहीं दिखा"
+    },
+    "ready": "मेल की जाँच तैयार है",
+    "disclaimer": "“साइट पर नहीं दिखा” का मतलब है कि इस साइट पर इसका ज़िक्र नहीं है, यह नहीं कि वह इसे कर नहीं सकते। यह Claude ने इस साइट की सामग्री से लिखा है; इसमें गलती हो सकती है।"
+  }
+}

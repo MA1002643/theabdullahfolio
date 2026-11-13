@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "פרויקטים",
+    "actions": "פעולות",
+    "recent": "אחרונים",
+    "ask": "שאלות"
+  },
+  "keywords": {
+    "projects": "פרויקטים פרויקט עבודה בנייה אפליקציה מאגר project work build app repository",
+    "actions": "פעולה פעולות הרצה ביצוע action run do",
+    "copyLink": "העתקה קישור כתובת שיתוף copy link url share",
+    "openCv": "קורות חיים קו\"ח הורדה cv resume download",
+    "viewSource": "מקור קוד קוד מקור גיטהאב source code github",
+    "copyEmail": "אימייל מייל דוא\"ל כתובת יצירת קשר העתקה email address contact copy",
+    "backToTop": "גלילה למעלה חזרה לראש העמוד scroll top up",
+    "ask": "שאלה שאלות תשובה ask question answer",
+    "fit": "התאמה משרה תפקיד תיאור דרישות מועמדות קורות חיים בדיקה"
+  },
+  "actions": {
+    "copyLink": "העתקת קישור לעמוד הזה",
+    "openCv": "פתיחת CV (PDF)",
+    "viewSource": "צפייה בקוד המקור של האתר",
+    "copyEmail": "העתקת כתובת האימייל",
+    "backToTop": "חזרה לראש העמוד",
+    "linkCopied": "הקישור הועתק",
+    "emailCopied": "כתובת האימייל הועתקה",
+    "clipboardUnavailable": "אין גישה ללוח ההעתקה"
+  },
+  "ask": {
+    "option": "שאלו את Claude: ”{query}“",
+    "start": "אפשר לשאול את Claude כל דבר…",
+    "resume": "המשך: “{title}”",
+    "suggestions": {
+      "strongest": "מהו הפרויקט החזק ביותר שלו?",
+      "stack": "באילו טכנולוגיות הוא משתמש יותר מכול?",
+      "experience": "איזה ניסיון הנדסי יש לו?",
+      "live": "על מה הוא עובד עכשיו?"
+    },
+    "inputLabel": "השאלה שלכם",
+    "placeholder": "שאלו על העבודה של Muhammad…",
+    "back": "חזרה",
+    "answerLabel": "תשובה",
+    "thinking": "קורא את האתר…",
+    "ready": "התשובה מוכנה",
+    "enterRetry": "הקישו Enter כדי לנסות שוב.",
+    "disclaimer": "נכתב על ידי Claude מתוך התוכן של האתר עצמו. ייתכן שיש בו טעויות.",
+    "errors": {
+      "unavailable": "אפשרות השאלות אינה זמינה כרגע.",
+      "rateLimited": "זה הרבה שאלות בבת אחת. תנו לזה רגע.",
+      "budget": "אפשרות השאלות נחה להיום. נסו שוב מחר.",
+      "offline": "אתם לא מחוברים לרשת. אפשרות השאלות דורשת חיבור.",
+      "invalid": "השאלה קצרה מדי או ארוכה מדי.",
+      "failed": "זה לא הצליח."
+    },
+    "optionsLabel": "מקורות ושאלות המשך",
+    "sources": "מקורות",
+    "followups": "מה לשאול הלאה",
+    "live": "חי",
+    "meta": "{facts, number} עובדות · {steps, plural, =0 {ללא בדיקות חיות} one {בדיקה חיה אחת} two {# בדיקות חיות} other {# בדיקות חיות}} · {seconds} שנ׳ · {model}",
+    "sourceLabels": {
+      "github": "פעילות ב-GitHub",
+      "progress": "התקדמות הפרויקטים",
+      "work": "עבודה נוכחית",
+      "bench": "כלי עבודה יומיומיים",
+      "stack": "סט טכנולוגיות",
+      "site": "איך האתר הזה נבנה"
+    },
+    "trace": {
+      "label": "השלבים שבוצעו",
+      "plan": "תוכנית",
+      "snapshot": "עותק שמור",
+      "get_github_activity": {
+        "running": "בודק פעילות חיה ב-GitHub…",
+        "done": "GitHub: {commits, plural, one {קומיט אחד} two {# קומיטים} other {# קומיטים}}, {contributions, plural, one {תרומה אחת} two {# תרומות} other {# תרומות}} השנה, הרצף הארוך ביותר: {streak, plural, one {יום אחד} two {יומיים} other {# ימים}}",
+        "failed": "פעילות GitHub אינה זמינה"
+      },
+      "get_project_progress": {
+        "running": "קורא לוחות פרויקטים חיים…",
+        "done": "לוחות פרויקטים: {tracked, number} במעקב, {overall, number}% הושלמו בסך הכול",
+        "failed": "לוחות הפרויקטים אינם זמינים"
+      },
+      "get_current_work": {
+        "running": "בודק על מה עובדים כרגע…",
+        "done": "עבודה נוכחית: {prs, plural, one {PR פתוח אחד} two {# PR פתוחים} other {# PR פתוחים}}, {pushes, plural, one {דחיפה אחרונה אחת} two {# דחיפות אחרונות} other {# דחיפות אחרונות}}",
+        "failed": "העבודה הנוכחית אינה זמינה"
+      },
+      "other": {
+        "running": "בודק…",
+        "done": "נבדק",
+        "failed": "הבדיקה אינה זמינה"
+      }
+    },
+    "chat": {
+      "sidebar": "שיחות",
+      "newChat": "שיחה חדשה",
+      "fit": "בדיקת תיאור משרה",
+      "commands": "פקודות",
+      "noChats": "השיחות שלכם יופיעו כאן.",
+      "turns": "{count, plural, one {שאלה #} two {# שאלות} other {# שאלות}}",
+      "introTitle": "שאלו על העבודה של מוחמד",
+      "introBody": "התשובות מבוססות על התוכן של האתר עצמו, וכוללות מקורות. אפשר להקליד שאלה משלכם למטה, או להתחיל באחת מאלה.",
+      "tryAsking": "אפשר לשאול",
+      "followupPlaceholder": "שאלת המשך…",
+      "send": "שליחה",
+      "stop": "עצירת התשובה",
+      "stopped": "נעצרה."
+    }
+  },
+  "fit": {
+    "command": "בדיקת תיאור משרה מול הניסיון שלו",
+    "title": "בדיקת התאמה לתפקיד",
+    "inputLabel": "תיאור המשרה",
+    "placeholder": "הדביקו כאן תיאור משרה…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter לבדיקה",
+    "submit": "בדיקת התאמה",
+    "running": "קורא את התפקיד…",
+    "tooShort": "הדביקו עוד קצת מתיאור המשרה (לפחות {min, number} תווים).",
+    "rowsLabel": "דרישות",
+    "summary": "{strong} חזקות · {partial} חלקיות · {gap} לא מוצגות",
+    "verdicts": {
+      "strong": "חזקה",
+      "partial": "חלקית",
+      "gap": "לא מוצגת"
+    },
+    "ready": "בדיקת ההתאמה מוכנה",
+    "disclaimer": "„לא מוצגת” אומר שהאתר לא מזכיר זאת, ולא שהוא אינו מסוגל לעשות זאת. נכתב על ידי Claude על סמך תוכן האתר; ייתכנו טעויות."
+  }
+}

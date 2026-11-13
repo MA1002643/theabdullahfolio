@@ -58,10 +58,10 @@ describe('useCommandPalette — every exit lands in the same state', () => {
     input.focus();
     // A query that keeps SEVERAL results (every label has an "e"), so the
     // selection clamp cannot mask a missing reset.
-    act(() => {
-      result.current.setQuery('e');
-      result.current.setActiveIndex(2);
-    });
+    // Two acts: a new query puts the selection back on the best match
+    // (issue #41, ranked results), so the index is moved after it lands.
+    act(() => result.current.setQuery('e'));
+    act(() => result.current.setActiveIndex(2));
     expect(result.current.filtered).toHaveLength(3);
     expect(result.current.activeIndex).toBe(2);
 
@@ -170,5 +170,21 @@ describe('useCommandPalette — the intro loader', () => {
     const [, waiting] = add.mock.calls.find(([type]) => type === 'loaderuncovered');
     unmount();
     expect(remove).toHaveBeenCalledWith('loaderuncovered', waiting);
+  });
+});
+
+// Issue #41: the sitewide palette hands the list engine its own controller.
+// The engine must then register no ⌘K listener of its own — one hotkey,
+// one listener, or every press also toggles a state nobody reads.
+describe('useCommandPalette — with a controller', () => {
+  it('follows the controller and adds no keydown listener of its own', () => {
+    const add = vi.spyOn(window, 'addEventListener');
+    const controller = { open: true, close: vi.fn(), closes: 0 };
+    const { result } = renderHook(() => useCommandPalette(ACTIONS, controller));
+    expect(result.current.open).toBe(true);
+    expect(add.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(0);
+    act(() => result.current.close());
+    expect(controller.close).toHaveBeenCalledTimes(1);
+    add.mockRestore();
   });
 });

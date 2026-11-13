@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Projekty",
+    "actions": "Akcje",
+    "recent": "Ostatnie",
+    "ask": "Zapytaj"
+  },
+  "keywords": {
+    "projects": "projekt projekty praca prace aplikacja aplikacje repozytorium kod project work app",
+    "actions": "akcja akcje działanie uruchom wykonaj action run",
+    "copyLink": "kopiuj skopiuj link odnośnik adres url udostępnij copy share",
+    "openCv": "cv życiorys resume pobierz otwórz download",
+    "viewSource": "źródło kod źródłowy repozytorium github source code",
+    "copyEmail": "email e-mail mail adres kontakt kopiuj skopiuj contact copy",
+    "backToTop": "góra początek przewiń do góry top scroll up",
+    "ask": "zapytaj pytanie odpowiedź zadaj ask question answer",
+    "fit": "praca stanowisko dopasowanie opis wymagania oferta rekrutacja job role fit description requirements"
+  },
+  "actions": {
+    "copyLink": "Skopiuj link do tej strony",
+    "openCv": "Otwórz CV (PDF)",
+    "viewSource": "Zobacz kod źródłowy strony",
+    "copyEmail": "Skopiuj adres e-mail",
+    "backToTop": "Wróć na górę",
+    "linkCopied": "Skopiowano link",
+    "emailCopied": "Skopiowano adres e-mail",
+    "clipboardUnavailable": "Brak dostępu do schowka"
+  },
+  "ask": {
+    "option": "Zapytaj Claude: „{query}”",
+    "start": "Zapytaj Claude o cokolwiek…",
+    "resume": "Kontynuuj: „{title}”",
+    "suggestions": {
+      "strongest": "Jaki jest jego najmocniejszy projekt?",
+      "stack": "Jakich technologii używa najczęściej?",
+      "experience": "Jakie ma doświadczenie inżynierskie?",
+      "live": "Nad czym teraz pracuje?"
+    },
+    "inputLabel": "Twoje pytanie",
+    "placeholder": "Zapytaj o pracę Muhammada…",
+    "back": "wróć",
+    "answerLabel": "Odpowiedź",
+    "thinking": "Czytam stronę…",
+    "ready": "Odpowiedź gotowa",
+    "enterRetry": "Naciśnij Enter, aby spróbować ponownie.",
+    "disclaimer": "Odpowiedź napisał Claude na podstawie treści tej strony. Może zawierać błędy.",
+    "errors": {
+      "unavailable": "Funkcja Zapytaj jest teraz niedostępna.",
+      "rateLimited": "To sporo pytań naraz. Daj mi chwilę.",
+      "budget": "Funkcja Zapytaj odpoczywa do końca dnia. Spróbuj jutro.",
+      "offline": "Jesteś offline. Funkcja Zapytaj wymaga połączenia.",
+      "invalid": "To pytanie jest za krótkie lub za długie.",
+      "failed": "Coś poszło nie tak."
+    },
+    "optionsLabel": "Źródła i kolejne pytania",
+    "sources": "Źródła",
+    "followups": "Zapytaj dalej",
+    "live": "live",
+    "meta": "{facts, plural, one {# fakt} few {# fakty} many {# faktów} other {# faktu}} · {steps, plural, =0 {brak kontroli na żywo} one {# kontrola na żywo} few {# kontrole na żywo} many {# kontroli na żywo} other {# kontroli na żywo}} · {seconds} s · {model}",
+    "sourceLabels": {
+      "github": "Aktywność na GitHub",
+      "progress": "Postępy w projektach",
+      "work": "Bieżąca praca",
+      "bench": "Narzędzia na co dzień",
+      "stack": "Stos technologiczny",
+      "site": "Jak zbudowano tę stronę"
+    },
+    "trace": {
+      "label": "Wykonane kroki",
+      "plan": "Plan",
+      "snapshot": "zapisana kopia",
+      "get_github_activity": {
+        "running": "Sprawdzam aktywność na GitHub na żywo…",
+        "done": "GitHub: {commits, plural, one {# commit} few {# commity} many {# commitów} other {# commitu}}, {contributions, plural, one {# wkład} few {# wkłady} many {# wkładów} other {# wkładu}} w tym roku, najdłuższa seria: {streak, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
+        "failed": "Aktywność na GitHub niedostępna"
+      },
+      "get_project_progress": {
+        "running": "Odczytuję tablice projektów na żywo…",
+        "done": "Tablice projektów: {tracked, number} śledzonych, łącznie ukończono {overall, number}%",
+        "failed": "Tablice projektów niedostępne"
+      },
+      "get_current_work": {
+        "running": "Sprawdzam bieżącą pracę…",
+        "done": "Bieżąca praca: {prs, plural, one {# otwarty pull request} few {# otwarte pull requesty} many {# otwartych pull requestów} other {# otwartego pull requesta}}, {pushes, plural, one {# niedawny push} few {# niedawne pushe} many {# niedawnych pushy} other {# niedawnego pusha}}",
+        "failed": "Bieżąca praca niedostępna"
+      },
+      "other": {
+        "running": "Sprawdzam…",
+        "done": "Sprawdzono",
+        "failed": "Sprawdzenie niedostępne"
+      }
+    },
+    "chat": {
+      "sidebar": "Rozmowy",
+      "newChat": "Nowa rozmowa",
+      "fit": "Sprawdź ofertę pracy",
+      "commands": "Polecenia",
+      "noChats": "Tutaj pojawią się Twoje rozmowy.",
+      "turns": "{count, plural, one {# pytanie} few {# pytania} many {# pytań} other {# pytania}}",
+      "introTitle": "Zapytaj o pracę Muhammada",
+      "introBody": "Odpowiedzi powstają na podstawie treści tej strony i zawierają źródła. Wpisz własne pytanie poniżej albo zacznij od jednego z tych.",
+      "tryAsking": "Spróbuj zapytać",
+      "followupPlaceholder": "Zadaj pytanie uzupełniające…",
+      "send": "Wyślij",
+      "stop": "Przerwij odpowiadanie",
+      "stopped": "Przerwano."
+    }
+  },
+  "fit": {
+    "command": "Sprawdź opis stanowiska pod kątem jego doświadczenia",
+    "title": "Sprawdzenie dopasowania do roli",
+    "inputLabel": "Opis stanowiska",
+    "placeholder": "Wklej opis stanowiska…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter, aby sprawdzić",
+    "submit": "Sprawdź dopasowanie",
+    "running": "Czytam opis roli…",
+    "tooShort": "Wklej nieco więcej opisu stanowiska (co najmniej {min, number} znaków).",
+    "rowsLabel": "Wymagania",
+    "summary": "mocne: {strong} · częściowe: {partial} · niewykazane: {gap}",
+    "verdicts": {
+      "strong": "Mocne",
+      "partial": "Częściowe",
+      "gap": "Niewykazane"
+    },
+    "ready": "Sprawdzenie dopasowania gotowe",
+    "disclaimer": "„Niewykazane” oznacza, że ta strona o tym nie wspomina, a nie że on tego nie potrafi. Opracowane przez Claude na podstawie treści tej strony; może zawierać błędy."
+  }
+}

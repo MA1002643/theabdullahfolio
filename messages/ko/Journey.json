@@ -70,8 +70,6 @@
     "section": "여정",
     "jumpYear": "{year}년으로 이동",
     "eraHint": "시대",
-    "jumpAtlas": "겹침 아틀라스로 이동",
-    "openCv": "CV 열기 (PDF)",
-    "openCvHint": "종이 버전"
+    "jumpAtlas": "겹침 아틀라스로 이동"
   }
 }
