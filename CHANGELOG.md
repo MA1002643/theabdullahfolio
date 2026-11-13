@@ -1503,6 +1503,19 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### Project rules: every new element is considered for the ⌘K palette · 2026-11-13
+
+| | |
+|:--|:--|
+| **Ref** | Owner request, following issue [#41](https://github.com/MA1002643/theabdullahfolio/issues/41) (the sitewide palette). |
+| **Rule** | `CLAUDE.md` §7: any new page, component, feature, content or action is checked against the palette in the same commit, and the result is reported. A decision table covers where each kind of element goes: a route to `SITE_ROUTES`; page landmarks to a `<Page>Palette.jsx` through `usePaletteActions`; sitewide actions to `siteActions.js`; facts to the Ask corpus; duplicates nowhere. It also states the rules every command follows (a unique, stable id, because Recent stores ids; localized labels with English keywords beside them; safe at perform time; no eager weight), when not to add a command, the checks before a commit, and what CI does and does not enforce. |
+| **Tests** | Test-plan check: nothing to add (a rules document; the tests it names already exist). |
+| **Lazy-loading check** | Nothing to defer. |
+| **LazyMotion check** | No animation added. |
+| **Privacy check** | Nothing to change. |
+| **i18n check** | No visitor-facing text. |
+| **Files** | `CLAUDE.md` |
+
 #### framer-motion on `LazyMotion` — about 32 kB off most routes' first load · 2026-11-09
 
 | | |
