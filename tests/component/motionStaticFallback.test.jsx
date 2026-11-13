@@ -2,6 +2,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { cssValue } from '../support/css.js';
 import { renderWithIntl } from '../support/intl.jsx';
 
 // The terminal fallback for framer's features chunk (issue #200).
@@ -131,7 +132,9 @@ describe('motion static fallback', () => {
     const title = screen.getByRole('heading', { name: 'Title' });
     expect(title.style.opacity).toBe('1');
     expect(title.style.transform).toBe('none');
-    expect(screen.getByText('Inherited').style.clipPath).toBe('inset(0 0% 0 0)');
+    expect(screen.getByText('Inherited').style.clipPath).toBe(
+      cssValue('clip-path', 'inset(0 0% 0 0)'),
+    );
     // The LAST keyframe, not the first.
     expect(screen.getByText('Keyframes').style.opacity).toBe('0.9');
     // No animate target: no seeded style, so the CSS default (visible).

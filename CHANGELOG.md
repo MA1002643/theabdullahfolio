@@ -1503,6 +1503,20 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### Dependencies: six PRs landed, two test-harness defects fixed, TypeScript 7 held · 2026-11-13
+
+| | |
+|:--|:--|
+| **Ref** | Dependabot PRs [#204](https://github.com/MA1002643/theabdullahfolio/pull/204) (`actions/stale` 9 → 11), [#205](https://github.com/MA1002643/theabdullahfolio/pull/205) (production group: `framer-motion` 14.9.1, `lucide-react` 1.70, `marked` 18.1.3, `@vercel/speed-insights` 2.1), [#206](https://github.com/MA1002643/theabdullahfolio/pull/206) (dev group: `@playwright/test` 1.65, `@vitest/coverage-v8` 5.1, `msw` 3.0.4, `@next/bundle-analyzer` and `eslint-config-next` 16.4.5), [#207](https://github.com/MA1002643/theabdullahfolio/pull/207) (`sonner` 1 → 2) and [#208](https://github.com/MA1002643/theabdullahfolio/pull/208) (`jsdom` 30 → 31), plus the README sync bot's [#211](https://github.com/MA1002643/theabdullahfolio/pull/211). Landed together with one regenerated lockfile, because each npm PR rewrites `package-lock.json`. [#209](https://github.com/MA1002643/theabdullahfolio/pull/209) (`typescript` 5.9 → 7.0) was closed instead (below). |
+| **Review: the majors** | **`actions/stale` 11.** v10 moves the action to the Node 24 runtime, and v11 converts its internals to ESM. Neither removes or renames an input `.github/workflows/stale.yml` uses. **`sonner` 2.** Every prop `GlobalToaster` passes (`position`, `dir`, `containerAriaLabel`, `toastOptions.style` / `classNames`) and every call the app makes (`toast`, `toast.success`, `toast.error`) is unchanged. The behaviour change is that a newly subscribed `<Toaster>` now replays toasts that are still active, so a toast fired before the Toaster mounts is no longer lost. The workaround in `projects/index.jsx` (stash, then fire on loader reveal) still works and was left alone. **`jsdom` 31** is test-only. |
+| **Fixed: toasts leaking between component tests** | Sonner 2's replay brought the previous test's toast into the next test's Toaster, and four `ContactForm` cases failed on duplicate text. `tests/support/setup-component.js` now calls `toast.dismiss()` after `cleanup()`. |
+| **Fixed: tests pinned to jsdom's CSS strings** | jsdom 31 serialises inline styles as CSSOM and browsers do, so assertions on the authored string (`inset(0 0% 0 0)`, a `calc()` inside `max()`, a two-argument `translate()`) failed against unchanged components. **new** `tests/support/css.js` (`cssValue`) runs the expected value through the same serialiser. `wallPaginationTicks`, `motionStaticFallback` and `Navigation` use it or an optional-argument parser. |
+| **Held: TypeScript 7** | #209 failed Lint with `typescript-eslint does not support TS 7.0`: typescript-eslint 8.72.2, pulled in by `eslint-config-next`, peers on `typescript <6.1.0`. `.github/dependabot.yml` now ignores TypeScript majors, as it does ESLint's. Remove the entry once typescript-eslint publishes a TS 7 range. |
+| **Lockfile** | Regenerated from the merged `package.json` with `npm install` on Node 24. `jsdom` resolves to 31.0.1. `three` stays at r162 and `typescript` at 5.9.3. |
+| **README** | Versions re-synced with `.github/scripts/update-readme.js` (Framer Motion 14.9, Sonner 2.0, Lucide 1.70, Speed Insights 2.1). |
+| **Test-plan check** | Two defects-table rows in `docs/testing.md`. No test added or removed, so `tests/vitest-cases.json` is unchanged (2,188). Verified locally: Vitest 2,188/2,188, `npm run lint` 0 errors, `npm run build`, `npm run test:bundle` with every route within budget. |
+| **Checks** | Privacy check: nothing to change (no new host, processor, storage key or server-side data). i18n check: no visitor-facing text. Lazy-loading check: nothing to defer. LazyMotion check: no animation added. Palette check: nothing to add. `docs/seo.md`: nothing to change. |
+
 #### Project rules: every new element is considered for the ⌘K palette · 2026-11-13
 
 | | |

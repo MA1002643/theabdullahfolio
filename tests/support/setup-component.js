@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
+import { toast } from 'sonner';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
 import { MSW_LISTEN_OPTIONS, server } from './msw/server.js';
@@ -64,6 +65,13 @@ window.HTMLElement.prototype.scrollIntoView ??= function scrollIntoView() {};
 beforeAll(() => server.listen(MSW_LISTEN_OPTIONS));
 afterEach(() => {
   cleanup();
+  // sonner's toast store is module state that outlives any <Toaster>, and
+  // since sonner 2 a newly mounted <Toaster> replays every toast still active
+  // in it. Without this, the next test's Toaster shows the last test's
+  // "Message sent successfully!" too, and a text query finds two (#207).
+  // Dismissing after cleanup() means no Toaster is subscribed, so nothing
+  // re-renders outside act().
+  toast.dismiss();
   server.resetHandlers();
   window.localStorage.clear();
   vi.restoreAllMocks();
