@@ -1503,6 +1503,17 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Changed
 
+#### Dependencies: the re-scan's two minor-and-patch groups · 2026-11-13
+
+| | |
+|:--|:--|
+| **Ref** | Dependabot PRs [#213](https://github.com/MA1002643/theabdullahfolio/pull/213) (production group: `next` 16.4.6, `framer-motion` 14.12.0, `ai` 7.0.166, `nodemailer` 10.5.0, `marked` 18.2.0, `next-intl` 4.14.10, `lucide-react` 1.71.0) and [#214](https://github.com/MA1002643/theabdullahfolio/pull/214) (dev group: `@next/bundle-analyzer` and `eslint-config-next` 16.4.6, `@testing-library/user-event` 14.6.9). Dependabot opened both straight after #212 because that PR changed `.github/dependabot.yml`. Landed together so `package-lock.json` is written once. |
+| **Review** | Minor and patch only, no code changes needed. Both PRs passed their full CI, including both E2E projects and the browser-quality run. |
+| **Lockfile** | Checked with `npm install` on Node 24: the merged lockfile was already consistent, so nothing changed. `three` stays at r162 and `typescript` at 5.9.3. |
+| **README** | Versions re-synced with `.github/scripts/update-readme.js` (Framer Motion 14.12, Nodemailer 10.5, marked 18.2, Lucide 1.71). |
+| **Test-plan check** | Nothing to add. Verified locally: Vitest 2,188/2,188, `npm run lint` 0 errors, `npm run build`, `npm run test:bundle` with every route within budget. |
+| **Checks** | Privacy check: nothing to change (no new host, processor, storage key or server-side data). i18n check: no visitor-facing text. Lazy-loading check: nothing to defer. LazyMotion check: no animation added. Palette check: nothing to add. `docs/seo.md`: nothing to change. |
+
 #### Dependencies: six PRs landed, two test-harness defects fixed, TypeScript 7 held · 2026-11-13
 
 | | |
