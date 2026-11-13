@@ -1693,6 +1693,21 @@ _Scope: the eleven-layer Testing v2 system (#92) and the fifteen defects it caug
 
 ### Fixed
 
+#### Ask: no shared limit store, no answers, outside dev and tests · 2026-11-13
+
+| | |
+|:--|:--|
+| **Ref** | Review of issue [#41](https://github.com/MA1002643/theabdullahfolio/issues/41) (cost controls, §4.5). |
+| **Cause** | Without Redis, `src/lib/ask/ratelimit.js` fell back to module-scoped counters for both the per-visitor window and the global daily breaker. On a serverless deployment each instance has its own module scope, and a cold start resets it, so `ASK_DAILY_LIMIT` capped one instance per boot rather than total model use: scaling out or restarting bypassed the spending limit. |
+| **Fix** | In-memory limits are allowed only under `NODE_ENV` development or test (`inMemoryLimitsAllowed`); an unset or any other value counts as deployed. Elsewhere, with no Redis, `/api/ask` answers a quiet 503 `unconfigured` right after the gateway check, before the rate limiter, the body or the model (`askLimitsEnforceable`), and logs the missing variables once per instance (names only). Both limiter gates also fail closed on their own and count nothing while refusing, so no future caller can count in memory by accident. The check is read per request, so `next build` is unaffected. The client already maps `unconfigured` to "Ask isn't available". |
+| **Tests** | `tests/unit/askRoute.test.js`, four cases: under production with no Redis, every request is refused with 503 and `no-store` (malformed JSON included), the model is never called, and the reason is logged exactly once; the limiter returns `unconfigured` and leaves the in-memory day untouched; the environment matrix (only development and test allow memory; Redis makes any environment enforceable); `next dev` still answers. The first three fail without the fix. The e2e hardening spec is unchanged: its server has no gateway credential, which still refuses first. Row added to the defects table in `docs/testing.md`. |
+| **Docs** | `docs/seo.md` (a dated "tightened 2026-11-13" note beside the two-budgets decision, which is left as written), `.env.example`, `README.md`. |
+| **Lazy-loading check** | Nothing to defer. |
+| **LazyMotion check** | No animation added. |
+| **Privacy check** | Nothing to change: the Ask throttle and daily-total rows describe what is stored and where it lives in production (Redis), which is unchanged; the change only refuses requests. |
+| **i18n check** | No visitor-facing text: the refusal reuses the existing `unconfigured` code and its translated message. |
+| **Files** | `src/lib/ask/ratelimit.js`, `src/app/api/ask/route.js`, `tests/unit/askRoute.test.js`, `docs/seo.md`, `docs/testing.md` and their translation caches, `.env.example`, `README.md` |
+
 #### CI: sitemap count and visual baselines after the sitewide palette and translated notes · 2026-11-13
 
 | | |

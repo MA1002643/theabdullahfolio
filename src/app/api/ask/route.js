@@ -16,7 +16,7 @@ import {
 import { createLiveTools, suggestFollowups } from '@/lib/ask/liveTools';
 import { encodeEvent } from '@/lib/ask/protocol';
 import { FIT_ROW, askEvents, fitEvents } from '@/lib/ask/stream';
-import { checkAskRateLimit, checkDailyBudget } from '@/lib/ask/ratelimit';
+import { askLimitsEnforceable, checkAskRateLimit, checkDailyBudget } from '@/lib/ask/ratelimit';
 import { PAYLOAD_TOO_LARGE, readJsonBody } from '@/lib/guestbook/body';
 
 // Pin the Node.js runtime, matching the repo's other API routes (the AI SDK +
@@ -156,6 +156,19 @@ async function respond(events, req, prelude) {
   );
 }
 
+// Once per instance, so the reason is in the logs without flooding them: the
+// visitor only sees "not available", and the owner needs to know why.
+let warnedNoSharedLimits = false;
+function warnNoSharedLimits() {
+  if (warnedNoSharedLimits) return;
+  warnedNoSharedLimits = true;
+  console.error(
+    'ask refused: no shared rate-limit store. Set KV_REST_API_URL + KV_REST_API_TOKEN ' +
+      '(or UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN); in-memory limits are ' +
+      'per instance and would not enforce ASK_DAILY_LIMIT.',
+  );
+}
+
 function failure(err, req) {
   if (err?.name === 'AbortError' || req.signal.aborted) {
     return json({ error: 'aborted', message: 'Request cancelled.' }, 499);
@@ -183,8 +196,19 @@ export async function POST(req) {
     return json({ error: 'unconfigured', message: 'Ask is not available right now.' }, 503);
   }
 
+  // No shared store outside dev and tests: the limits would be per instance
+  // and reset on every cold start, so ASK_DAILY_LIMIT would cap nothing.
+  // Refuse rather than spend unbounded (src/lib/ask/ratelimit.js).
+  if (!askLimitsEnforceable()) {
+    warnNoSharedLimits();
+    return json({ error: 'unconfigured', message: 'Ask is not available right now.' }, 503);
+  }
+
   // Throttle before reading the body or touching the model.
   const visitor = await checkAskRateLimit(clientIp(req));
+  if (visitor.reason === 'unconfigured') {
+    return json({ error: 'unconfigured', message: 'Ask is not available right now.' }, 503);
+  }
   if (!visitor.ok) {
     return json(
       { error: 'rate_limited', message: 'Too many questions — try again in a moment.' },
@@ -228,6 +252,9 @@ export async function POST(req) {
   // The daily breaker is checked only for valid input, so a malformed flood
   // spends the per-visitor window but not everyone's daily budget.
   const budget = await checkDailyBudget(Date.now(), undefined, mode === 'fit' ? FIT_LIMITS.budgetWeight : 1);
+  if (budget.reason === 'unconfigured') {
+    return json({ error: 'unconfigured', message: 'Ask is not available right now.' }, 503);
+  }
   if (!budget.ok) {
     return json(
       { error: 'budget', message: 'Ask is resting for today.' },

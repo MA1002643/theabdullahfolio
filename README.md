@@ -407,6 +407,7 @@ RECEIVER_EMAIL=recipient@example.com
 # REFINE_MODEL=anthropic/claude-haiku-4.5
 # ⌘K palette "Ask Claude" (/api/ask) — same gateway credential. ASK_MODEL overrides
 # the model; ASK_DAILY_LIMIT is the global daily ceiling on questions (default 300).
+# Ask needs KV_REST_API_* outside `next dev`: without a shared counter it refuses (503).
 # ASK_MODEL=anthropic/claude-haiku-5.5
 # ASK_DAILY_LIMIT=300
 

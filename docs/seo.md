@@ -2673,6 +2673,14 @@ called, so a flood keeps the breaker shut instead of probing it. Both are in
 otherwise. Both are disclosed on `/privacy`, and the question itself is neither
 stored nor logged: error logs carry the error's name and status only.
 
+(tightened 2026-11-13) "In memory otherwise" now applies only under `next dev`
+and the test runner. On a serverless deployment an in-memory counter belongs to
+one instance and resets on every cold start, so scaling out or restarting
+multiplied `ASK_DAILY_LIMIT` and the breaker bounded nothing. Anywhere else,
+with no Upstash credentials, `/api/ask` answers a quiet 503 before it reads the
+body, and logs the reason once per instance. A spending limit that only holds
+on one machine is not a limit, so Ask refuses rather than spend unbounded.
+
 ### Out of scope, and still open
 
 - **Multi-turn chat.** One question, one answer, by decision. A conversation

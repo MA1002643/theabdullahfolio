@@ -14,7 +14,16 @@
 //     many IPs as it likes. This can, whatever the traffic looks like.
 //     redis available → the shared counter; otherwise an in-memory one.
 //
-// Both answer { ok: true } or { ok: false, reason, retryAfterSeconds }.
+// The in-memory fallbacks are for `next dev` and the test runner ONLY. On a
+// serverless deployment every instance has its own module scope and loses it
+// on a cold start, so an in-memory "daily" counter is really a per-instance,
+// per-boot counter: scaling out or restarting multiplies ASK_DAILY_LIMIT, and
+// the breaker no longer bounds spend at all. Anywhere else, with no Redis,
+// both gates FAIL CLOSED (reason 'unconfigured'), and /api/ask refuses before
+// reading the body (`askLimitsEnforceable`). Same rule, same reason, as the
+// guestbook's refusal of its file store in production (guestbook/store.js).
+//
+// Both answer { ok: true } or { ok: false, reason, retryAfterSeconds? }.
 // Disclosed in src/lib/privacy/inventory.js (SERVER_DATA, rate-limit row).
 import { createHash } from 'node:crypto';
 import { Ratelimit } from '@upstash/ratelimit';
@@ -29,6 +38,27 @@ export function dailyLimit(env = process.env) {
   const n = Number.parseInt(env.ASK_DAILY_LIMIT ?? '', 10);
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_DAILY_LIMIT;
 }
+
+/**
+ * Whether process-local counters may stand in for Redis: only under
+ * `next dev` (NODE_ENV=development) and the test runner (NODE_ENV=test).
+ * Anything else, including an unset NODE_ENV, counts as deployed: fail closed.
+ */
+export function inMemoryLimitsAllowed(env = process.env) {
+  return env.NODE_ENV === 'development' || env.NODE_ENV === 'test';
+}
+
+/**
+ * Whether the Ask limits can actually hold here: shared storage, or an
+ * environment where per-process counting is acceptable. Read per call, not at
+ * module load, so `next build` (which evaluates the route module under
+ * NODE_ENV=production, with no credentials in CI) is unaffected.
+ */
+export function askLimitsEnforceable(env = process.env, shared = redisAvailable) {
+  return shared || inMemoryLimitsAllowed(env);
+}
+
+const UNCONFIGURED = Object.freeze({ ok: false, reason: 'unconfigured' });
 
 export function askLimitKey(ip) {
   return createHash('sha256')
@@ -79,6 +109,7 @@ export async function checkAskRateLimit(ip, now = Date.now()) {
       retryAfterSeconds: Math.max(1, Math.ceil((reset - now) / 1000)),
     };
   }
+  if (!inMemoryLimitsAllowed()) return UNCONFIGURED;
   return memoryWindow(key, now);
 }
 
@@ -107,6 +138,9 @@ export async function checkDailyBudget(now = Date.now(), limit = dailyLimit(), w
     // wherever in it the first question landed.
     if (count === units) await redis.expire(key, 2 * 24 * 60 * 60);
   } else {
+    // A per-instance count would not cap the deployment's spend (see the
+    // module note), so outside dev and tests there is no budget to grant.
+    if (!inMemoryLimitsAllowed()) return UNCONFIGURED;
     if (memoryDay.key !== key) memoryDay = { key, count: 0 };
     memoryDay.count += units;
     count = memoryDay.count;

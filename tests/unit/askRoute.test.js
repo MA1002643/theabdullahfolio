@@ -140,6 +140,74 @@ describe('POST /api/ask — refusals before the model', () => {
   });
 });
 
+// Regression: without Redis the limits fell back to module-scoped counters,
+// which on a serverless deployment are per instance and reset on every cold
+// start, so ASK_DAILY_LIMIT capped nothing across the deployment. Outside dev
+// and tests, no shared store now means no answers at all.
+describe('POST /api/ask — no shared limit store outside dev and tests', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('refuses every request under production, before the body or the model, and logs why once', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const { POST } = await import('@/app/api/ask/route');
+      for (const body of [{ question: 'What has he built?' }, { question: 'And testing?' }]) {
+        answer([{ type: 'text-delta', text: 'should never stream' }]);
+        const res = await POST(post(body, { ip: freshIp() }));
+        expect(res.status).toBe(503);
+        expect(res.headers.get('cache-control')).toContain('no-store');
+        expect((await res.json()).error).toBe('unconfigured');
+      }
+      // Refused before the body is read: even malformed JSON gets the 503.
+      const malformed = await POST(new Request('http://localhost/api/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{',
+      }));
+      expect(malformed.status).toBe(503);
+      expect(streamText).not.toHaveBeenCalled();
+      const why = log.mock.calls.filter(([m]) => String(m).startsWith('ask refused: no shared rate-limit store'));
+      expect(why).toHaveLength(1);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('fails closed in the limiter itself, and counts nothing while refusing', async () => {
+    const { checkAskRateLimit, checkDailyBudget } = await import('@/lib/ask/ratelimit');
+    const now = Date.UTC(2026, 10, 13, 12);
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(await checkAskRateLimit(freshIp(), now)).toEqual({ ok: false, reason: 'unconfigured' });
+    for (let i = 0; i < 3; i += 1) {
+      expect(await checkDailyBudget(now, 1)).toEqual({ ok: false, reason: 'unconfigured' });
+    }
+    // Back under the test runner, the refused calls left no trace in the
+    // in-memory day: a budget of one still has its one.
+    vi.stubEnv('NODE_ENV', 'test');
+    expect((await checkDailyBudget(now, 1)).ok).toBe(true);
+    expect((await checkDailyBudget(now, 1)).ok).toBe(false);
+  });
+
+  it('allows in-memory limits only under development and test; Redis makes any environment enforceable', async () => {
+    const { askLimitsEnforceable, inMemoryLimitsAllowed } = await import('@/lib/ask/ratelimit');
+    expect(inMemoryLimitsAllowed({ NODE_ENV: 'development' })).toBe(true);
+    expect(inMemoryLimitsAllowed({ NODE_ENV: 'test' })).toBe(true);
+    for (const NODE_ENV of ['production', 'staging', '', undefined]) {
+      expect(inMemoryLimitsAllowed({ NODE_ENV })).toBe(false);
+      expect(askLimitsEnforceable({ NODE_ENV }, false)).toBe(false);
+      expect(askLimitsEnforceable({ NODE_ENV }, true)).toBe(true);
+    }
+  });
+
+  it('still answers under next dev with no Redis', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const { POST } = await import('@/app/api/ask/route');
+    answer([{ type: 'text-delta', text: 'ok' }]);
+    expect((await POST(post({ question: 'Is he available?' }, { ip: freshIp() }))).status).toBe(200);
+  });
+});
+
 describe('POST /api/ask — the agent call', () => {
   it('gives the model the cached instructions, the live tools, a bounded loop and the delimited question', async () => {
     const { POST } = await import('@/app/api/ask/route');
