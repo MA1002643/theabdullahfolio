@@ -48,10 +48,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+// The DOM writes `translate(x, 0px)` back as `translate(x)` (jsdom 31, as
+// browsers do), so the second argument is optional and defaults to 0.
 const translate = (el) => {
-  const [, x, y] = el
+  const [, x, y = '0'] = el
     .closest('[style*="translate"]')
-    .style.transform.match(/translate\((-?[\d.e+-]+)px, (-?[\d.e+-]+)px\)/);
+    .style.transform.match(/translate\((-?[\d.e+-]+)px(?:, (-?[\d.e+-]+)px)?\)/);
   return { x: Number(x), y: Number(y) };
 };
 

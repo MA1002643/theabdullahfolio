@@ -7,6 +7,7 @@ import WallPagination, {
   tickStyle,
   tickTiles,
 } from '@/components/guestbook/WallPagination';
+import { cssValue } from '../support/css.js';
 import { IntlWrapper } from '../support/intl.jsx';
 
 // Issue #82: these components read their copy through next-intl, so every
@@ -124,10 +125,10 @@ describe('WallPagination — the rail is constant-size in the wall', () => {
     const { rerender, onPage } = renderRail({ pageCount: 19 });
     const lit = () => rail().children[3].style.clipPath;
     // At 0% the clip still admits the first tick's own pixel.
-    expect(lit()).toContain('calc(100% - 1px)');
+    expect(lit()).toBe(cssValue('clip-path', 'inset(0 max(0px, calc(100% - 1px)) 0 0)'));
     rerender(createElement(WallPagination, { page: 18, pageCount: 19, dir: 1, onPage }));
     // At 100% the right inset would go negative; it is floored at 0.
-    expect(lit()).toContain('max(0px, calc(0% - 1px))');
+    expect(lit()).toBe(cssValue('clip-path', 'inset(0 max(0px, calc(0% - 1px)) 0 0)'));
   });
 
   it('the controls that matter are untouched: prev/next, the live line, click-to-jump', () => {

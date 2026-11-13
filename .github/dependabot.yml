@@ -36,6 +36,13 @@ updates:
       # plugins publish an eslint 10 peer range.
       - dependency-name: eslint
         update-types: [version-update:semver-major]
+      # TypeScript 7 (the native port) can't lint yet: typescript-eslint
+      # 8.72.2, pulled in by eslint-config-next, peers on typescript <6.1.0
+      # and exits with "typescript-eslint does not support TS 7.0", which
+      # failed the Lint job on PR #209 (2026-11-09). Remove this entry once
+      # typescript-eslint publishes a TS 7 peer range.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
     groups:
       production-minor-and-patch:
         dependency-type: production
