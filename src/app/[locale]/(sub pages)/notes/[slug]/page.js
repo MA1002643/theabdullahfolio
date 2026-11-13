@@ -4,7 +4,6 @@ import { Link } from '@/i18n/navigation';
 import IntlScope from '@/i18n/IntlScope';
 import { intlTag } from '@/i18n/format';
 import { DEFAULT_LOCALE } from '@/i18n/locales';
-import EnglishOnly from '@/components/i18n/EnglishOnly';
 import { notFound } from 'next/navigation';
 
 import bg from '../../../../../../public/background/contact-bg.png';
@@ -30,13 +29,13 @@ export const dynamicParams = false;
 // `params` is a Promise from Next 15; synchronous access is deprecated.
 export async function generateMetadata({ params }) {
   const { slug, locale } = await params;
-  const note = readNote(slug);
+  const note = readNote(slug, { locale });
   if (!note) return {};
   return sectionMetadata({
-    // English-only document (issue #82): canonical → the English URL, no
-    // hreflang alternates. See `alternatesFor` for why.
+    // Translated since 2026-11-10 (it was English-only under issue #82): each
+    // locale is canonical in its own language, with the full hreflang set.
     locale,
-    translated: false,
+    translated: true,
     title: note.title,
     // Composed in `src/lib/seo/noteMeta.js` and attached by `readNotes()`, so
     // this and the JSON-LD below publish one string. The fallback that used to
@@ -51,10 +50,12 @@ export async function generateMetadata({ params }) {
 export default async function NotePage({ params }) {
   const { slug, locale } = await params;
   setRequestLocale(locale);
-  const note = readNote(slug);
+  const note = readNote(slug, { locale });
   if (!note) notFound();
 
-  const html = renderNote(note.markdown);
+  // `body`, not `markdown`: the document in this locale, with any block not
+  // yet translated kept in English inside a `lang="en"` island.
+  const html = renderNote(note.body, locale);
   const t = await getTranslations({ locale, namespace: 'Notes' });
 
   return (
@@ -68,6 +69,8 @@ export default async function NotePage({ params }) {
         data={notePage({
           slug: note.slug,
           title: note.title,
+          locale,
+          crumbs: { home: t('note.crumbs.home'), notes: t('note.crumbs.notes') },
           // The same string `generateMetadata` publishes. These had separate
           // fallbacks — a composed sentence in the head, the bare title here —
           // so a note could describe itself one way to a crawler reading the
@@ -105,13 +108,14 @@ export default async function NotePage({ params }) {
           screen-reader user cannot already get from the scroll position. */}
       <div className="note-progress" aria-hidden="true" />
 
-      {/* The eyebrow word is chrome and translates; the subtitle is the
-          document's own (English) title, marked as such off the English
-          route so a screen reader switches voice for it. */}
+      {/* The eyebrow word is chrome; the subtitle is the document's own
+          title, in this locale's translation. Marked `lang="en"` only if the
+          title has no translation yet, so a screen reader switches voice for
+          exactly the words that are English. */}
       <PageTitle
         title={t('note.title')}
         subtitle={note.title}
-        subtitleLang={locale === DEFAULT_LOCALE ? undefined : 'en'}
+        subtitleLang={note.titleLang === locale ? undefined : DEFAULT_LOCALE}
         replayOnView
       />
 
@@ -135,16 +139,22 @@ export default async function NotePage({ params }) {
             is the line that would have to change: the only input is a markdown
             file committed to this repository and reviewed in a pull request.
             It is never user input and never fetched. */}
-        {/* English-only by decision (issue #82 — the route's metadata
-            canonicalises to the English URL): the wrapper marks the prose
-            `lang="en" dir="ltr"` and, in any other locale, says so above it
-            in the reader's language. */}
-        <EnglishOnly>
-          <div
-            className="note-prose"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
-        </EnglishOnly>
+        {/* A passage edited since the last translation pass renders in English
+            until `npm run notes:translate` reaches it. Said here, in the
+            reader's language, rather than left for them to wonder whether the
+            translation broke. Never shown in English. */}
+        {note.untranslated > 0 ? (
+          <p
+            role="note"
+            className="mb-6 rounded-lg border border-[#ffcd5b33] bg-black/30 px-4 py-3 text-sm leading-relaxed text-[#d4d4d4]"
+          >
+            {t('note.partial')}
+          </p>
+        ) : null}
+        <div
+          className="note-prose"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
 
         <p className="mt-16 border-t border-white/10 pt-6 font-mono text-xs uppercase tracking-wider text-gold-soft">
           {t('note.source', {

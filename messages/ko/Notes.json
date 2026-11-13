@@ -9,6 +9,17 @@
     "title": "노트",
     "breadcrumb": "탐색 경로",
     "allNotes": "모든 노트",
-    "source": "출처: {source} · {count, plural, other {{n}줄}}"
+    "source": "출처: {source} · {count, plural, other {{n}줄}}",
+    "partial": "아래 일부 단락은 아직 번역되지 않아 영어로 표시돼요.",
+    "crumbs": {
+      "home": "홈",
+      "notes": "노트"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "이 사이트의 검색 노출 관련 결정을 왜 내렸는지, 무엇을 배제했는지, 어떤 대가가 따랐는지 코드 옆에 함께 남긴 엔지니어링 기록입니다."
+    },
+    "composed": "엔지니어링 결정 기록 — {title}. 이 저장소의 문서에서 가져온 {n}줄입니다."
   }
 }

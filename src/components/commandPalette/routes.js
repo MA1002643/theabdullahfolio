@@ -19,6 +19,12 @@ export const SITE_ROUTES = [
   { label: 'Guestbook', href: '/guestbook', navKey: 'guestbook' },
   { label: 'Uses', href: '/uses', navKey: 'uses' },
   { label: 'My Past', href: '/my-past', navKey: 'myPast' },
+  // Added with the sitewide palette (issue #41): the three registry routes
+  // the per-page palettes never listed. Every indexable route in
+  // src/lib/seo/site.js is now reachable from ⌘K (tests/unit/siteActions.test.js).
+  { label: 'CV', href: '/cv', navKey: 'cv' },
+  { label: 'Notes', href: '/notes', navKey: 'notes' },
+  { label: 'Privacy', href: '/privacy', navKey: 'privacy' },
 ];
 
 // Every route except the page the palette is mounted on — nobody needs a

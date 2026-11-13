@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Projekte",
+    "actions": "Aktionen",
+    "recent": "Zuletzt",
+    "ask": "Fragen"
+  },
+  "keywords": {
+    "projects": "projekte projekt arbeit arbeiten bauen app anwendung repository",
+    "actions": "aktion aktionen ausführen tun",
+    "copyLink": "link kopieren url teilen adresse",
+    "openCv": "cv lebenslauf resume download herunterladen pdf",
+    "viewSource": "quelle quellcode code github repository",
+    "copyEmail": "email e-mail adresse kontakt kopieren",
+    "backToTop": "nach oben scrollen anfang start",
+    "ask": "fragen frage antwort claude",
+    "fit": "Stelle Job Rolle Passung Eignung Beschreibung Anforderungen Stellenanzeige Abgleich"
+  },
+  "actions": {
+    "copyLink": "Link zu dieser Seite kopieren",
+    "openCv": "CV öffnen (PDF)",
+    "viewSource": "Quellcode dieser Website ansehen",
+    "copyEmail": "E-Mail-Adresse kopieren",
+    "backToTop": "Nach oben",
+    "linkCopied": "Link kopiert",
+    "emailCopied": "E-Mail-Adresse kopiert",
+    "clipboardUnavailable": "Zugriff auf die Zwischenablage nicht möglich"
+  },
+  "ask": {
+    "option": "Claude fragen: „{query}“",
+    "start": "Frag Claude, was du willst …",
+    "resume": "Fortsetzen: „{title}“",
+    "suggestions": {
+      "strongest": "Welches ist sein stärkstes Projekt?",
+      "stack": "Welche Technologien nutzt er am häufigsten?",
+      "experience": "Welche Erfahrung hat er in der Softwareentwicklung?",
+      "live": "Woran arbeitet er gerade?"
+    },
+    "inputLabel": "Deine Frage",
+    "placeholder": "Frag nach Muhammads Arbeit …",
+    "back": "zurück",
+    "answerLabel": "Antwort",
+    "thinking": "Die Website wird gelesen …",
+    "ready": "Antwort fertig",
+    "enterRetry": "Drücke die Eingabetaste, um es erneut zu versuchen.",
+    "disclaimer": "Von Claude auf Grundlage der Inhalte dieser Website geschrieben. Die Antwort kann falsch sein.",
+    "errors": {
+      "unavailable": "Fragen ist gerade nicht verfügbar.",
+      "rateLimited": "Das waren viele Fragen. Gönn dir einen Moment Pause.",
+      "budget": "Fragen macht für heute Pause. Versuch es morgen wieder.",
+      "offline": "Du bist offline. Fragen braucht eine Verbindung.",
+      "invalid": "Die Frage ist zu kurz oder zu lang.",
+      "failed": "Das hat nicht geklappt."
+    },
+    "optionsLabel": "Quellen und Anschlussfragen",
+    "sources": "Quellen",
+    "followups": "Als Nächstes fragen",
+    "live": "live",
+    "meta": "{facts, number} Fakten · {steps, plural, =0 {keine Live-Abfragen} one {# Live-Abfrage} other {# Live-Abfragen}} · {seconds} s · {model}",
+    "sourceLabels": {
+      "github": "GitHub-Aktivität",
+      "progress": "Projektfortschritt",
+      "work": "Aktuelle Arbeit",
+      "bench": "Tägliche Werkzeuge",
+      "stack": "Technologie-Stack",
+      "site": "So entsteht diese Website"
+    },
+    "trace": {
+      "label": "Durchgeführte Schritte",
+      "plan": "Plan",
+      "snapshot": "gespeicherter Stand",
+      "get_github_activity": {
+        "running": "Live-Aktivität auf GitHub wird abgefragt…",
+        "done": "GitHub: {commits, plural, one {# Commit} other {# Commits}}, {contributions, plural, one {# Beitrag} other {# Beiträge}} in diesem Jahr, längste Serie {streak, plural, one {# Tag} other {# Tage}}",
+        "failed": "GitHub-Aktivität nicht verfügbar"
+      },
+      "get_project_progress": {
+        "running": "Live-Projektboards werden gelesen…",
+        "done": "Projekt-Boards: {tracked, number} erfasst, insgesamt zu {overall, number} % abgeschlossen",
+        "failed": "Projektboards nicht verfügbar"
+      },
+      "get_current_work": {
+        "running": "Aktuelle Arbeit wird geprüft…",
+        "done": "Aktuelle Arbeit: {prs, plural, one {# offener Pull Request} other {# offene Pull Requests}}, {pushes, plural, one {# aktueller Push} other {# aktuelle Pushes}}",
+        "failed": "Aktuelle Arbeit nicht verfügbar"
+      },
+      "other": {
+        "running": "Wird geprüft…",
+        "done": "Geprüft",
+        "failed": "Prüfung nicht verfügbar"
+      }
+    },
+    "chat": {
+      "sidebar": "Unterhaltungen",
+      "newChat": "Neue Unterhaltung",
+      "fit": "Stellenanzeige prüfen",
+      "commands": "Befehle",
+      "noChats": "Hier erscheinen deine Unterhaltungen.",
+      "turns": "{count, plural, one {# Frage} other {# Fragen}}",
+      "introTitle": "Frag nach Muhammads Arbeit",
+      "introBody": "Die Antworten stammen aus den Inhalten dieser Website, mit Quellenangaben. Stell unten deine eigene Frage oder starte mit einer der folgenden.",
+      "tryAsking": "Probier zum Beispiel",
+      "followupPlaceholder": "Stell eine Anschlussfrage …",
+      "send": "Senden",
+      "stop": "Antwort stoppen",
+      "stopped": "Gestoppt."
+    }
+  },
+  "fit": {
+    "command": "Stellenbeschreibung mit seiner Erfahrung abgleichen",
+    "title": "Passungsprüfung",
+    "inputLabel": "Stellenbeschreibung",
+    "placeholder": "Stellenbeschreibung einfügen…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter zum Prüfen",
+    "submit": "Passung prüfen",
+    "running": "Die Stelle wird gelesen…",
+    "tooShort": "Füge noch etwas mehr von der Stellenbeschreibung ein (mindestens {min, number} Zeichen).",
+    "rowsLabel": "Anforderungen",
+    "summary": "{strong} stark · {partial} teilweise · {gap} nicht belegt",
+    "verdicts": {
+      "strong": "Stark",
+      "partial": "Teilweise",
+      "gap": "Nicht belegt"
+    },
+    "ready": "Passungsprüfung bereit",
+    "disclaimer": "„Nicht belegt“ heißt nur, dass diese Website es nicht erwähnt – nicht, dass er es nicht kann. Von Claude auf Grundlage der Inhalte dieser Website verfasst; Fehler sind möglich."
+  }
+}

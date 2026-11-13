@@ -53,6 +53,7 @@ Built without a UI template or design kit, this project demonstrates deep fronte
 | **Orbital Navigation** | Trigonometric button ring on one viewport-derived ellipse — a fixed `0.204` tilt at every width, sized so the outermost button always clears the screen edge, anchored to the laptop's **measured base** and raised 15% of the laptop's own height above it (`ORBIT_RAISE`) so it circles the artwork's lower body at the same pose on every viewport, and depth-sorted per frame so the ring passes *behind* the laptop on the far half of each lap and in front of it on the near half; staggered reveal, two-column fallback below 480px. **The ring is an instrument, not just an ornament** (issue #105): wheel/touchpad over the ring or the laptop spins it, the ring band takes an angular touch-drag, the laptop doubles as a vertical scrubber — hover-driven on any hover-capable pointer (a desktop mouse, or an iPad the moment a trackpad/Magic Keyboard attaches, via a live `(hover: hover) and (pointer: fine)` query), drag-driven on touch — and `←` / `→` from any focused button turns it exactly one button slot. **The ring has real physics**: release a drag while still moving and it coasts on momentum with exponential friction (launch speed = an EMA of the hand's own deg/s at release; a held release never flicks), stopping dead the moment a button is hovered; touch drags tick a haptic detent at every 45° slot crossing where the hardware supports it. The ambient spin pauses while the visitor is engaged and eases back in after a 1.5s quiet period. The gesture is signposted twice over: the site cursor grows breathing ↑ ↓ chevrons over the laptop (`data-cursor="scrub"`, with a native `ns-resize` fallback for reduced-motion users), and a one-time dismissible tip (`localStorage`-remembered, auto-dismissed on first interaction, `role="status"`) leads with the laptop gesture in plain words beside an animated cursor-over-laptop pictogram — worded per capability, so a touch-only tablet is told to slide and drag, never to hover — and not rendered at all below 480px, where the two-column layout has no orbit to teach (nor does a column tap burn the remembered dismissal) |
 | **3D Project Viewer** | Interactive Three.js scene — procedural laptop model with canvas-generated keyboard texture, 40+ mesh objects, auto-rotate orbit controls |
 | **Aurora Parallax** | Multi-layer scroll + mouse-tilt parallax with `useScroll()` / `useTransform()` depth mapping |
+| **⌘K palette + AI research assistant** | One keyboard-first command palette on every page and in every language ([#41](https://github.com/MA1002643/theabdullahfolio/issues/41)): ranked, accent-insensitive matching with highlighted matches, page-contributed commands, Recent, and a floating trigger styled as Now Playing's sibling. **Ask** is a small agent on Claude (via the Vercel AI Gateway). It answers from a registry of 42 citable facts derived from the site's own data, calls **live tools** for GitHub activity, project progress and current work (the existing route handlers, in process), and streams a visible reasoning trace, an answer with numbered citations, linked sources, follow-ups with short conversation memory, and a provenance line. The **fit check** assesses a pasted job description requirement by requirement as structured output: strong, partial or not shown, with cited evidence. Links come only from cited facts, never from the model. Rate-limited per hashed IP with a global daily circuit breaker; a prompt-cache breakpoint on the instructions; all of it in deferred chunks |
 | **Eleven-layer test system** | Static and fitness rules, property-based and model-based tests, component, API, cross-browser E2E, axe + keyboard + motion accessibility, visual, performance, security and mutation testing, all gating CI, and each layer had to catch a real defect before it counted. See [Testing & Quality](#-testing--quality). |
 | **Cinematic Boot Sequence** | Typewriter-style terminal messages with `clipPath` chunk reveals and sequential timing |
 | **Animated GitHub Stats** | Live GraphQL API → fast-start/slow-finish count-ups, a breathing SVG rank arc, hover-spotlight metric rows, and a per-stat change banner (e.g. "Total Stars +5 \| Total Commits +50"); a "Live GitHub Metrics" label that hides on stale/fallback data; diff-based change detection with 10-min polling |
@@ -168,7 +169,7 @@ graph TD
             API --> Stats["/api/github-stats<br/>/api/github-skills<br/>/api/project-progress"]
             API --> Exp["/api/experience-summary"]
             API --> Work["/api/work-status<br/>/api/github-webhook"]
-            API --> Mail["/api/send-mail<br/>/api/refine-message"]
+            API --> Mail["/api/send-mail<br/>/api/refine-message<br/>/api/ask"]
             API --> Foot["/api/location<br/>/api/project-repo"]
             API --> Music["/api/spotify"]
         end
@@ -297,9 +298,9 @@ theabdullahfolio/
 │   │   ├── navigation/         # Orbital nav ring — trig positioning, one fitted ellipse, per-frame depth, wheel/drag/scrub/keyboard control + first-visit tip
 │   │   ├── home/               # Live maintenance header · engraved role line · causeway scene layers
 │   │   ├── about/              # Live GitHub stat / streak / language / skills cards + diff banners
-│   │   ├── journey/            # Scroll-charged career timeline — self-drawing serpentine spine + curve-riding comet, ghost-year odometer, scroll-wound time-true clock dial, overlap atlas (lane-packed Gantt of concurrent roles, sticky lane labels centred across their column, NOW-clamped bars, grid-only −/+ zoom that opens at 100% on every screen), per-card tenure readouts, end-cap tally + CV hand-off, and its own ⌘K palette action set
-│   │   ├── uses/               # /uses setup page — six provenance-stamped plates: engraved hardware nameplate, DOM editor frame, live stack ledger with two-tone usage meters, self-drawing pipeline schematic with a live packet flow, build-counted meter tiles dealt in with an etched ruler, a lockfile-resolved package ledger of the whole manifest that prints row by row, and its ⌘K action set
-│   │   ├── commandPalette/     # Shared ⌘K palette component + the site route registry every page palette reads
+│   │   ├── journey/            # Scroll-charged career timeline — self-drawing serpentine spine + curve-riding comet, ghost-year odometer, scroll-wound time-true clock dial, overlap atlas (lane-packed Gantt of concurrent roles, sticky lane labels centred across their column, NOW-clamped bars, grid-only −/+ zoom that opens at 100% on every screen), per-card tenure readouts, end-cap tally + CV hand-off, and its own ⌘K commands, contributed to the sitewide palette
+│   │   ├── uses/               # /uses setup page — six provenance-stamped plates: engraved hardware nameplate, DOM editor frame, live stack ledger with two-tone usage meters, self-drawing pipeline schematic with a live packet flow, build-counted meter tiles dealt in with an etched ruler, a lockfile-resolved package ledger of the whole manifest that prints row by row, and its ⌘K commands, contributed to the sitewide palette
+│   │   ├── commandPalette/     # The sitewide ⌘K palette: eager shell (SitePalette, trigger, contributor registry), deferred panel + Ask view, route registry
 │   │   ├── projects/           # Category-filtered project grid (AnimatePresence)
 │   │   ├── project-detail/     # Three.js laptop scene · aurora parallax · boot sequence
 │   │   ├── contact/            # Elite contact form · GLSL aurora · AI refine · fire fields
@@ -342,6 +343,7 @@ theabdullahfolio/
 | `/api/github-webhook` | HMAC-verified cache-bust on `push` / `pull_request` / `issues` |
 | `/api/send-mail` | Nodemailer SMTP + Upstash-Redis idempotent send claim |
 | `/api/refine-message` | AI "Refine my message" stream via the Vercel AI Gateway (contact + guestbook editorial modes) |
+| `/api/ask` | The ⌘K palette's research assistant ([#41](https://github.com/MA1002643/theabdullahfolio/issues/41)). `POST { question, locale, path, history }` runs an agent (fact registry + three live tools, at most four steps); `POST { mode: 'fit', job, locale }` returns structured requirement rows. Both stream NDJSON (`meta` · `step` · `retract` · `text` · `cite` · `source` · `followups` · `fit-row` · `done` · `error`), and every link is a registry fact. Limits: 6/min per hashed IP, a daily ceiling (`ASK_DAILY_LIMIT`, fit = 3), a 24 KB body; `503` when the gateway is unconfigured |
 | `/api/guestbook` | Guestbook wall — `GET` serves one cursor-paged, newest-first page (`?limit=` ≤ 50, `?cursor=`) plus the wall's separately-counted total; `POST` / `DELETE` are session-gated, identity from the OAuth session only (`/reactions`, `/presence` alongside); a message `id` not shaped like a minted one (`src/lib/guestbook/messageId.js`) is a `400` on `DELETE` and `/reactions` before any rate-limit or storage work |
 | `/api/auth/[...nextauth]` | Auth.js OAuth route (GitHub · Google) that signs a visitor in for the guestbook — `GET` / `POST` handlers from `next-auth` |
 | `/api/daily-warmup` · `/api/repo-refresh` | Cron orchestrator + cache warmer (bearer-authenticated) |
@@ -403,6 +405,10 @@ RECEIVER_EMAIL=recipient@example.com
 # dev set a gateway key instead. REFINE_MODEL overrides the default model slug.
 # AI_GATEWAY_API_KEY=your-vercel-ai-gateway-key
 # REFINE_MODEL=anthropic/claude-haiku-4.5
+# ⌘K palette "Ask Claude" (/api/ask) — same gateway credential. ASK_MODEL overrides
+# the model; ASK_DAILY_LIMIT is the global daily ceiling on questions (default 300).
+# ASK_MODEL=anthropic/claude-haiku-5.5
+# ASK_DAILY_LIMIT=300
 
 # Route-wide footer — project CTA + contact email (issue #30; all optional)
 # NEXT_PUBLIC_PROJECT_REPO defaults to "theabdullahfolio"; set it (with
@@ -538,7 +544,10 @@ What it covers:
   to its own documentation. The index's entrance is the one client-side piece,
   and it hands the boundary **only the five display fields** — never the
   document body, which would otherwise be serialised into the HTML of the page
-  that merely links to it.
+  that merely links to it. The notes are published in all twenty languages:
+  `npm run notes:translate` translates each document a markdown block at a
+  time into `docs/i18n/<locale>/`, sending only the blocks whose English has
+  changed. A passage not yet re-translated shows in English, with a notice.
 - **Every measurement script behind one consent gate**
   ([#141](https://github.com/MA1002643/theabdullahfolio/issues/141)). GA4,
   Vercel Web Analytics and Speed Insights all render inside

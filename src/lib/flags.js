@@ -60,3 +60,14 @@ export const USES_FLAGS = {
   // route jumps, motion toggle).
   commandPalette: true,
 };
+
+// The sitewide ⌘K palette (issue #41) — same discipline: each layer dies with
+// a one-line flip at its mount point (SitePalette).
+export const PALETTE_FLAGS = {
+  // The palette itself, on every route: hotkey, trigger, panel. Off → no
+  // palette anywhere (the page configs' contributions have nowhere to show).
+  site: true,
+  // "Ask Claude" — grounded answers through /api/ask. Off → the palette is a
+  // command list only; the endpoint stays, unreached.
+  ask: true,
+};

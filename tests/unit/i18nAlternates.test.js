@@ -48,13 +48,20 @@ describe('alternatesFor — translated pages', () => {
 
 describe('alternatesFor — English-only documents', () => {
   it('canonicalises a locale URL to the English URL and claims no translations', () => {
-    expect(alternatesFor('/notes/testing', { locale: 'ar', translated: false })).toEqual({
-      canonical: `${ORIGIN}/notes/testing`,
+    expect(alternatesFor('/privacy', { locale: 'ar', translated: false })).toEqual({
+      canonical: `${ORIGIN}/privacy`,
     });
   });
 
-  it('marks exactly the notes and the privacy policy untranslated', () => {
+  it('marks exactly the privacy policy untranslated', () => {
+    // The notes left this list on 2026-11-10, when they were translated.
     const untranslated = ROUTES.filter((r) => !isTranslated(r.path)).map((r) => r.path);
-    expect(untranslated.sort()).toEqual(['/notes', '/privacy']);
+    expect(untranslated.sort()).toEqual(['/privacy']);
+  });
+
+  it('gives a translated note its own canonical and the full hreflang set', () => {
+    const { canonical, languages } = alternatesFor('/notes/testing', { locale: 'ar' });
+    expect(canonical).toBe(`${ORIGIN}/ar/notes/testing`);
+    expect(languages['x-default']).toBe(`${ORIGIN}/notes/testing`);
   });
 });

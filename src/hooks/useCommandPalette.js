@@ -1,99 +1,57 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { claimEscape } from '@/lib/escapeKey';
+import { rankActions } from '@/lib/palette/match';
+import { usePaletteOpen } from '@/hooks/usePaletteOpen';
 
-// State + keyboard engine for the shared command palette
-// (src/components/commandPalette). Extracted from the component so the
-// rendering stays under the size guideline and so a future global mount
-// (the sitewide palette issue) can drive the same logic from anywhere.
+// List engine for the shared command palette (src/components/commandPalette).
+// Extracted from the component so the rendering stays under the size
+// guideline; split again for issue #41 so the sitewide palette can keep the
+// open state and hotkey (usePaletteOpen) eager while this half ships in the
+// deferred panel chunk.
 //
-// Owns: open/close (⌘K / Ctrl+K toggle, Esc), the filter query, arrow-key
-// selection over the filtered list, and focus restoration to whatever had
-// focus before the palette opened. The component only renders.
-export function useCommandPalette(actions) {
-  const [open, setOpen] = useState(false);
+// Owns: the filter query, ranked matching (src/lib/palette/match.js), arrow-key
+// selection over the ranked list, and running an action. Open/close comes from
+// `controller` — the sitewide palette passes its own — or, when none is given,
+// from a usePaletteOpen of this hook's own, so a standalone palette works as
+// it always did.
+export function useCommandPalette(actions, controller) {
+  const own = usePaletteOpen({ listen: !controller });
+  const ctl = controller ?? own;
+  const { open, close: closePalette, closes } = ctl;
+
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
-  const restoreFocusRef = useRef(null);
-  // Cancels a deferred open (see the hotkey below); null when none waits.
-  const pendingOpenRef = useRef(null);
 
-  // The ONE close path. Every way out of the palette — Esc, running an
-  // action, and the hotkey pressed while open — must come through here so
-  // the next open starts clean (empty query, selection at the top) and focus
-  // goes back to whatever had it before the palette took it.
-  const close = useCallback(() => {
-    setOpen(false);
+  // Every exit lands in the same state: query empty, selection at the top.
+  // Keyed on the controller's close counter, so a close that did not come
+  // through this hook (the trigger, the hotkey) resets the list too.
+  useEffect(() => {
     setQuery('');
     setActiveIndex(0);
-    const el = restoreFocusRef.current;
-    if (el && typeof el.focus === 'function') el.focus();
-  }, []);
+  }, [closes]);
 
-  // Global hotkey. ⌘K on mac, Ctrl+K elsewhere — matching both
-  // unconditionally is what every palette does; nobody has a legitimate
-  // Ctrl+K binding on a portfolio site. Opening and closing are separate
-  // branches on purpose: the first cut toggled `open` in a functional
-  // updater, which left the query, the selection and the focus hand-back
-  // untouched on the way OUT — only Esc reset them. Reading `open` from the
-  // closure (re-subscribing on toggle is trivially cheap) lets the closing
-  // branch reuse close() instead of duplicating it.
-  //
-  // Under the intro loader the page is `inert` (components/loaderWrapper), and
-  // the component's focus() on its input is a silent no-op there. Opening
-  // anyway left the dialog up with nothing focused, so Esc and the arrows
-  // (handled on the input) did nothing, and the focus effect, keyed on `open`
-  // alone, never retried. So a ⌘K pressed while covered is DEFERRED to the
-  // `loaderuncovered` event, which fires once `inert` is gone. Not
-  // `loaderdone`: that fires when the reveal starts, still inert. A second ⌘K
-  // while waiting cancels it, as it would close an open palette.
+  const close = useCallback(() => {
+    setQuery('');
+    setActiveIndex(0);
+    closePalette();
+  }, [closePalette]);
+
+  // `actions` is a list, or a builder of one from the query — for rows whose
+  // existence depends on what is typed (the palette's Ask row, its Recent
+  // group), derived in the same render as the ranking that uses them.
+  const { items: filtered, ranges } = useMemo(
+    () => rankActions(typeof actions === 'function' ? actions(query) : actions, query),
+    [actions, query],
+  );
+
+  // A new query puts the selection back on the best match.
   useEffect(() => {
-    const onKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        if (open) {
-          close();
-          return;
-        }
-        if (pendingOpenRef.current) {
-          pendingOpenRef.current();
-          return;
-        }
-        restoreFocusRef.current = document.activeElement;
-        if (window.__loaderCovered) {
-          const onUncovered = () => {
-            pendingOpenRef.current = null;
-            setOpen(true);
-          };
-          window.addEventListener('loaderuncovered', onUncovered, { once: true });
-          pendingOpenRef.current = () => {
-            window.removeEventListener('loaderuncovered', onUncovered);
-            pendingOpenRef.current = null;
-          };
-          return;
-        }
-        setOpen(true);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, close]);
+    setActiveIndex(0);
+  }, [query]);
 
-  // A deferred open must not outlive the palette that asked for it.
-  useEffect(() => () => pendingOpenRef.current?.(), []);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return actions;
-    return actions.filter((a) =>
-      `${a.label} ${a.hint || ''} ${a.keywords || ''} ${a.section || ''}`
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [actions, query]);
-
-  // Selection follows the list: a filter change clamps it back into range.
+  // Selection follows the list: a list change clamps it back into range.
   useEffect(() => {
     setActiveIndex((i) => Math.min(i, Math.max(0, filtered.length - 1)));
   }, [filtered.length]);
@@ -101,6 +59,12 @@ export function useCommandPalette(actions) {
   const run = useCallback(
     (action) => {
       if (!action) return;
+      // `keepOpen` actions change what the palette shows (Ask) rather than
+      // leaving it, so they run in place.
+      if (action.keepOpen) {
+        action.perform();
+        return;
+      }
       close();
       // Perform AFTER close so focus restoration never fights an action that
       // moves focus itself (e.g. "leave a message" focusing the input).
@@ -111,6 +75,7 @@ export function useCommandPalette(actions) {
 
   const onInputKeyDown = useCallback(
     (e) => {
+      if (e.isComposing) return; // an IME is still building the word
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setActiveIndex((i) => (i + 1) % Math.max(1, filtered.length));
@@ -142,6 +107,7 @@ export function useCommandPalette(actions) {
     query,
     setQuery,
     filtered,
+    ranges,
     activeIndex,
     setActiveIndex,
     run,

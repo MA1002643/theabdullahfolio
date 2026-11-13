@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "前往 跳转 导航 路由 页面 go jump route page",
     "language": "语言 翻译 切换 区域 本地化 language translate locale"
-  }
+  },
+  "triggerTitle": "搜索与提问",
+  "triggerHint": "{shortcut} · 向 Claude 询问我的作品",
+  "triggerHintTouch": "向 Claude 询问我的作品"
 }

@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "프로젝트",
+    "actions": "동작",
+    "recent": "최근",
+    "ask": "질문"
+  },
+  "keywords": {
+    "projects": "프로젝트 작업 빌드 앱 저장소 project work build app repository",
+    "actions": "동작 실행 작업 action run do",
+    "copyLink": "링크 복사 주소 공유 copy link url share",
+    "openCv": "이력서 경력 다운로드 cv resume download",
+    "viewSource": "소스 코드 소스코드 깃허브 source code github",
+    "copyEmail": "이메일 주소 연락 복사 email address contact copy",
+    "backToTop": "맨 위 위로 스크롤 top scroll up",
+    "ask": "질문 문의 답변 ask question answer",
+    "fit": "job role fit description requirements 채용 공고 직무 적합도 적합성 요건 자격 요건 지원"
+  },
+  "actions": {
+    "copyLink": "이 페이지 링크 복사",
+    "openCv": "CV 열기 (PDF)",
+    "viewSource": "이 사이트 소스 보기",
+    "copyEmail": "이메일 주소 복사",
+    "backToTop": "맨 위로",
+    "linkCopied": "링크를 복사했어요",
+    "emailCopied": "이메일 주소를 복사했어요",
+    "clipboardUnavailable": "클립보드에 접근할 수 없어요"
+  },
+  "ask": {
+    "option": "Claude에게 질문: “{query}”",
+    "start": "Claude에게 무엇이든 물어보세요…",
+    "resume": "이어서 하기: “{title}”",
+    "suggestions": {
+      "strongest": "가장 인상적인 프로젝트는 무엇인가요?",
+      "stack": "어떤 기술을 가장 많이 사용하나요?",
+      "experience": "어떤 엔지니어링 경력이 있나요?",
+      "live": "지금 어떤 작업을 하고 있나요?"
+    },
+    "inputLabel": "질문",
+    "placeholder": "Muhammad의 작업에 대해 물어보세요…",
+    "back": "뒤로",
+    "answerLabel": "답변",
+    "thinking": "사이트를 읽는 중이에요…",
+    "ready": "답변이 준비되었어요",
+    "enterRetry": "Enter를 눌러 다시 시도하세요.",
+    "disclaimer": "이 사이트의 콘텐츠를 바탕으로 Claude가 작성했어요. 틀린 내용이 있을 수 있어요.",
+    "errors": {
+      "unavailable": "지금은 질문 기능을 사용할 수 없어요.",
+      "rateLimited": "질문이 많았어요. 잠시만 기다려 주세요.",
+      "budget": "질문 기능은 오늘 쉬고 있어요. 내일 다시 시도해 주세요.",
+      "offline": "오프라인 상태예요. 질문 기능은 인터넷 연결이 필요해요.",
+      "invalid": "질문이 너무 짧거나 너무 길어요.",
+      "failed": "제대로 처리되지 않았어요."
+    },
+    "optionsLabel": "출처 및 이어서 물어볼 질문",
+    "sources": "출처",
+    "followups": "이어서 질문하기",
+    "live": "실시간",
+    "meta": "근거 {facts, number}건 · {steps, plural, =0 {실시간 확인 없음} other {실시간 확인 #회}} · {seconds}초 · {model}",
+    "sourceLabels": {
+      "github": "GitHub 활동",
+      "progress": "프로젝트 진행 현황",
+      "work": "현재 작업",
+      "bench": "일상 업무 도구",
+      "stack": "기술 스택",
+      "site": "이 사이트의 구축 방식"
+    },
+    "trace": {
+      "label": "진행한 단계",
+      "plan": "계획",
+      "snapshot": "저장된 스냅샷",
+      "get_github_activity": {
+        "running": "GitHub 활동을 실시간으로 확인하는 중…",
+        "done": "GitHub: 커밋 {commits, plural, other {#개}}, 올해 기여 {contributions, plural, other {#건}}, 최장 연속 기록 {streak, plural, other {#일}}",
+        "failed": "GitHub 활동을 확인할 수 없어요"
+      },
+      "get_project_progress": {
+        "running": "프로젝트 보드를 실시간으로 읽는 중…",
+        "done": "프로젝트 보드: {tracked, number}개 추적 중, 전체 {overall, number}% 완료",
+        "failed": "프로젝트 보드를 확인할 수 없어요"
+      },
+      "get_current_work": {
+        "running": "현재 작업을 확인하는 중…",
+        "done": "현재 작업: 열린 PR {prs, plural, other {#개}}, 최근 푸시 {pushes, plural, other {#건}}",
+        "failed": "현재 작업을 확인할 수 없어요"
+      },
+      "other": {
+        "running": "확인하는 중…",
+        "done": "확인 완료",
+        "failed": "확인할 수 없어요"
+      }
+    },
+    "chat": {
+      "sidebar": "대화",
+      "newChat": "새 대화",
+      "fit": "채용 공고 적합도 확인",
+      "commands": "명령어",
+      "noChats": "대화 내용이 여기에 표시돼요.",
+      "turns": "{count, plural, other {질문 #개}}",
+      "introTitle": "무함마드의 작업에 대해 물어보세요",
+      "introBody": "답변은 이 사이트의 콘텐츠를 바탕으로 하며 출처를 함께 보여드려요. 아래에 직접 질문을 입력하거나 추천 질문으로 시작해 보세요.",
+      "tryAsking": "이런 질문은 어때요?",
+      "followupPlaceholder": "이어서 질문하기…",
+      "send": "보내기",
+      "stop": "답변 중지",
+      "stopped": "중지됨."
+    }
+  },
+  "fit": {
+    "command": "채용 공고와 그의 경력이 얼마나 맞는지 확인하기",
+    "title": "직무 적합도 확인",
+    "inputLabel": "채용 공고",
+    "placeholder": "채용 공고를 붙여넣어 주세요…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter로 확인",
+    "submit": "적합도 확인",
+    "running": "직무를 읽는 중…",
+    "tooShort": "채용 공고를 조금 더 붙여넣어 주세요(최소 {min, number}자).",
+    "rowsLabel": "요건",
+    "summary": "{strong}개 충분 · {partial}개 부분 · {gap}개 미확인",
+    "verdicts": {
+      "strong": "충분",
+      "partial": "부분",
+      "gap": "미확인"
+    },
+    "ready": "적합도 확인 결과가 준비되었어요",
+    "disclaimer": "'미확인'은 이 사이트에 언급이 없다는 뜻이며, 그가 할 수 없다는 뜻이 아닙니다. 이 사이트의 내용을 바탕으로 Claude가 작성했으며, 오류가 있을 수 있어요."
+  }
+}

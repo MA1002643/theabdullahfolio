@@ -9,6 +9,17 @@
     "title": "NOTITIE",
     "breadcrumb": "Kruimelpad",
     "allNotes": "Alle notities",
-    "source": "Bron: {source} · {count, plural, one {{n} regel} other {{n} regels}}"
+    "source": "Bron: {source} · {count, plural, one {{n} regel} other {{n} regels}}",
+    "partial": "Een aantal passages hieronder is nog niet vertaald en staat daarom in het Engels.",
+    "crumbs": {
+      "home": "Home",
+      "notes": "Notities"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Waarom elke beslissing over vindbaarheid op deze site is genomen, wat is afgewezen en wat het kostte — het technische logboek naast de code."
+    },
+    "composed": "Technisch beslissingsdossier — {title}. {n} regels uit de eigen documentatie van deze repository."
   }
 }

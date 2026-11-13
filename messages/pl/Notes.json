@@ -9,6 +9,17 @@
     "title": "NOTATKA",
     "breadcrumb": "Ścieżka nawigacji",
     "allNotes": "Wszystkie notatki",
-    "source": "Źródło: {source} · {count, plural, one {{n} linia} few {{n} linie} many {{n} linii} other {{n} linii}}"
+    "source": "Źródło: {source} · {count, plural, one {{n} linia} few {{n} linie} many {{n} linii} other {{n} linii}}",
+    "partial": "Niektóre fragmenty poniżej nie zostały jeszcze przetłumaczone, dlatego widnieją po angielsku.",
+    "crumbs": {
+      "home": "Start",
+      "notes": "Notatki"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Dlaczego podjęto każdą decyzję dotyczącą widoczności tej strony, co odrzucono i ile to kosztowało — zapis inżynieryjny prowadzony obok kodu."
+    },
+    "composed": "Zapis decyzji inżynieryjnej — {title}. {n} linii z dokumentacji tego repozytorium."
   }
 }

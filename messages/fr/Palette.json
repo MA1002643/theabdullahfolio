@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "aller accéder page route navigation destination",
     "language": "langue traduire traduction locale"
-  }
+  },
+  "triggerTitle": "Chercher et demander",
+  "triggerHint": "{shortcut} · Interrogez Claude sur mon travail",
+  "triggerHintTouch": "Interrogez Claude sur mon travail"
 }

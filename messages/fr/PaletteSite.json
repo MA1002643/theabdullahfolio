@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Projets",
+    "actions": "Actions",
+    "recent": "Récents",
+    "ask": "Demander"
+  },
+  "keywords": {
+    "projects": "projets projet travail réalisation application app dépôt repository",
+    "actions": "actions action exécuter lancer faire",
+    "copyLink": "copier lien url partager",
+    "openCv": "cv curriculum résumé télécharger pdf",
+    "viewSource": "source code code-source github",
+    "copyEmail": "e-mail email courriel adresse contact copier",
+    "backToTop": "haut remonter défiler début",
+    "ask": "demander question réponse poser",
+    "fit": "poste offre emploi adéquation correspondance description exigences compétences profil candidature"
+  },
+  "actions": {
+    "copyLink": "Copier le lien de cette page",
+    "openCv": "Ouvrir le CV (PDF)",
+    "viewSource": "Voir le code source de ce site",
+    "copyEmail": "Copier l’adresse e-mail",
+    "backToTop": "Retour en haut",
+    "linkCopied": "Lien copié",
+    "emailCopied": "Adresse e-mail copiée",
+    "clipboardUnavailable": "Impossible d’accéder au presse-papiers"
+  },
+  "ask": {
+    "option": "Demander à Claude : « {query} »",
+    "start": "Posez n’importe quelle question à Claude…",
+    "resume": "Reprendre : « {title} »",
+    "suggestions": {
+      "strongest": "Quel est son meilleur projet ?",
+      "stack": "Quelles technologies utilise-t-il le plus ?",
+      "experience": "Quelle expérience en ingénierie a-t-il ?",
+      "live": "Sur quoi travaille-t-il en ce moment ?"
+    },
+    "inputLabel": "Votre question",
+    "placeholder": "Posez une question sur le travail de Muhammad…",
+    "back": "retour",
+    "answerLabel": "Réponse",
+    "thinking": "Lecture du site…",
+    "ready": "Réponse prête",
+    "enterRetry": "Appuyez sur Entrée pour réessayer.",
+    "disclaimer": "Rédigée par Claude à partir du contenu de ce site. Elle peut être erronée.",
+    "errors": {
+      "unavailable": "La fonction Demander n’est pas disponible pour le moment.",
+      "rateLimited": "Voilà beaucoup de questions. Patientez un instant.",
+      "budget": "La fonction Demander se repose pour aujourd’hui. Revenez demain.",
+      "offline": "Vous êtes hors ligne. La fonction Demander nécessite une connexion.",
+      "invalid": "Cette question est trop courte ou trop longue.",
+      "failed": "Cela n’a pas fonctionné."
+    },
+    "optionsLabel": "Sources et questions de suivi",
+    "sources": "Sources",
+    "followups": "Poser ensuite",
+    "live": "direct",
+    "meta": "{facts, number} faits · {steps, plural, =0 {aucune vérification en direct} one {# vérification en direct} many {# vérifications en direct} other {# vérifications en direct}} · {seconds} s · {model}",
+    "sourceLabels": {
+      "github": "Activité GitHub",
+      "progress": "Avancement des projets",
+      "work": "Travail en cours",
+      "bench": "Outils du quotidien",
+      "stack": "Stack technique",
+      "site": "Conception de ce site"
+    },
+    "trace": {
+      "label": "Étapes réalisées",
+      "plan": "Plan",
+      "snapshot": "copie enregistrée",
+      "get_github_activity": {
+        "running": "Consultation de l’activité GitHub en direct…",
+        "done": "GitHub\n: {commits, plural, one {# commit} many {# de commits} other {# commits}}, {contributions, plural, one {# contribution} many {# de contributions} other {# contributions}} cette année, plus longue série : {streak, plural, one {# jour} many {# de jours} other {# jours}}",
+        "failed": "Activité GitHub indisponible"
+      },
+      "get_project_progress": {
+        "running": "Lecture des tableaux de projet en direct…",
+        "done": "Tableaux de projet : {tracked, number} suivis, {overall, number} % d’avancement global",
+        "failed": "Tableaux de projet indisponibles"
+      },
+      "get_current_work": {
+        "running": "Consultation du travail en cours…",
+        "done": "Travaux en cours : {prs, plural, one {# pull request ouverte} many {# de pull requests ouvertes} other {# pull requests ouvertes}}, {pushes, plural, one {# push récent} many {# de pushes récents} other {# pushes récents}}",
+        "failed": "Travail en cours indisponible"
+      },
+      "other": {
+        "running": "Vérification…",
+        "done": "Vérifié",
+        "failed": "Vérification indisponible"
+      }
+    },
+    "chat": {
+      "sidebar": "Conversations",
+      "newChat": "Nouvelle conversation",
+      "fit": "Analyser une offre d’emploi",
+      "commands": "Commandes",
+      "noChats": "Vos conversations apparaîtront ici.",
+      "turns": "{count, plural, one {# question} many {# de questions} other {# questions}}",
+      "introTitle": "Posez vos questions sur le travail de Muhammad",
+      "introBody": "Les réponses proviennent du contenu de ce site, avec leurs sources. Saisissez votre propre question ci-dessous ou commencez par l’une de celles-ci.",
+      "tryAsking": "Essayez de demander",
+      "followupPlaceholder": "Poser une question complémentaire…",
+      "send": "Envoyer",
+      "stop": "Arrêter la réponse",
+      "stopped": "Arrêtée."
+    }
+  },
+  "fit": {
+    "command": "Comparer une offre d’emploi à son expérience",
+    "title": "Analyse d’adéquation au poste",
+    "inputLabel": "Description du poste",
+    "placeholder": "Collez une description de poste…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Entrée pour analyser",
+    "submit": "Analyser l’adéquation",
+    "running": "Lecture du poste…",
+    "tooShort": "Collez un peu plus de la description du poste (au moins {min, number} caractères).",
+    "rowsLabel": "Exigences",
+    "summary": "{strong} solide(s) · {partial} partiel(s) · {gap} non démontré(s)",
+    "verdicts": {
+      "strong": "Solide",
+      "partial": "Partiel",
+      "gap": "Non démontré"
+    },
+    "ready": "Analyse d’adéquation prête",
+    "disclaimer": "« Non démontré » signifie que ce site n’en fait pas mention, et non qu’il en est incapable. Rédigé par Claude à partir du contenu de ce site ; des erreurs sont possibles."
+  }
+}

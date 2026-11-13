@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "برو رفتن پرش مسیر صفحه go page route",
     "language": "زبان ترجمه محلی زبان‌ها language translate locale"
-  }
+  },
+  "triggerTitle": "جستجو و پرسش",
+  "triggerHint": "{shortcut} · از Claude درباره کارهای من بپرسید",
+  "triggerHintTouch": "از Claude درباره کارهای من بپرسید"
 }

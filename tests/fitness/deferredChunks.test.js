@@ -35,6 +35,29 @@ const DEFERRED = {
   // paint by src/lib/motion/loadFeatures.js.
   'src/lib/motion/features.js': [],
   'src/lib/motion/layoutFeatures.js': [],
+  // The sitewide ⌘K palette (issue #41): the panel and its ranked matcher,
+  // the Ask view and the fit check, the stream client they share and the
+  // in-memory conversation store. SitePalette, in every route's
+  // first load, reaches them only through import(). The palette component
+  // shows the Ask panel it is HANDED; it never imports it.
+  'src/components/commandPalette/CommandPalette.jsx': [],
+  'src/components/commandPalette/Highlight.jsx': ['src/components/commandPalette/CommandPalette.jsx'],
+  'src/lib/palette/match.js': ['src/hooks/useCommandPalette.js'],
+  'src/hooks/useCommandPalette.js': ['src/components/commandPalette/CommandPalette.jsx'],
+  'src/components/commandPalette/AskPanel.jsx': [],
+  'src/components/commandPalette/FitPanel.jsx': [],
+  'src/components/commandPalette/useAsk.js': [
+    'src/components/commandPalette/AskPanel.jsx',
+    'src/components/commandPalette/FitPanel.jsx',
+    'src/components/commandPalette/askSession.js',
+  ],
+  // The Ask conversations: read by the panel's "Continue" row and by the Ask
+  // view, both deferred.
+  'src/components/commandPalette/askSession.js': [
+    'src/components/commandPalette/AskPanel.jsx',
+    'src/components/commandPalette/CommandPalette.jsx',
+  ],
+  'src/lib/ask/protocol.js': ['src/components/commandPalette/useAsk.js', 'src/app/api/ask/route.js'],
 };
 
 // The entry points, each of which must actually be loaded lazily somewhere,
@@ -45,6 +68,9 @@ const ENTRIES = [
   'src/components/about/ProjectProgressPopup.jsx',
   'src/lib/motion/features.js',
   'src/lib/motion/layoutFeatures.js',
+  'src/components/commandPalette/CommandPalette.jsx',
+  'src/components/commandPalette/AskPanel.jsx',
+  'src/components/commandPalette/FitPanel.jsx',
 ];
 
 const SOURCES = walk('src', /\.(m?js|jsx)$/);

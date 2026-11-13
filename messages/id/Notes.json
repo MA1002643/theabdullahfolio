@@ -9,6 +9,17 @@
     "title": "CATATAN",
     "breadcrumb": "Navigasi rinci",
     "allNotes": "Semua catatan",
-    "source": "Sumber: {source} · {count, plural, other {{n} baris}}"
+    "source": "Sumber: {source} · {count, plural, other {{n} baris}}",
+    "partial": "Beberapa bagian di bawah ini belum diterjemahkan, sehingga tampil dalam bahasa Inggris.",
+    "crumbs": {
+      "home": "Beranda",
+      "notes": "Catatan"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Alasan di balik setiap keputusan discoverability di situs ini, apa yang ditolak, dan biayanya — catatan rekayasa yang disimpan bersama kode."
+    },
+    "composed": "Catatan keputusan rekayasa — {title}. {n} baris dari dokumentasi repositori ini sendiri."
   }
 }

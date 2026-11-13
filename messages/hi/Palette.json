@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "जाएँ पेज रूट नेविगेट go jump route page",
     "language": "भाषा अनुवाद लोकेल language translate locale"
-  }
+  },
+  "triggerTitle": "खोजें और पूछें",
+  "triggerHint": "{shortcut} · Claude से मेरे काम के बारे में पूछें",
+  "triggerHintTouch": "Claude से मेरे काम के बारे में पूछें"
 }

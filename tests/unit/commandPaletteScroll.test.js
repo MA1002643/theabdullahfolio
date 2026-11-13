@@ -103,10 +103,12 @@ describe('CommandPalette — the active option follows the keyboard into view', 
     for (let i = 0; i < 5; i++) fireEvent.keyDown(input, { key: 'ArrowDown' });
     scrollSpy.mockClear();
 
-    // "Action 2" matches 2, 20–29: index 5 is now act-24, a different row.
+    // "Action 2" matches 2, 20–29. Results are ranked since issue #41, so a
+    // new query puts the selection on the best match — the exact label
+    // "Action 2" — and that row, not the old index 5, is scrolled to.
     fireEvent.change(input, { target: { value: 'Action 2' } });
-    expect(input.getAttribute('aria-activedescendant')).toBe('palette-opt-act-24');
-    expect(scrollSpy.mock.contexts.at(-1)).toBe(rowOf('act-24'));
+    expect(input.getAttribute('aria-activedescendant')).toBe('palette-opt-act-2');
+    expect(scrollSpy.mock.contexts.at(-1)).toBe(rowOf('act-2'));
   });
 
   it('a pointer hover selects without scrolling — the cursor is already on the row', () => {

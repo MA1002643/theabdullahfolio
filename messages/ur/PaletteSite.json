@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "پراجیکٹس",
+    "actions": "اقدامات",
+    "recent": "حالیہ",
+    "ask": "پوچھیں"
+  },
+  "keywords": {
+    "projects": "پراجیکٹ پراجیکٹس کام ایپ ریپوزٹری project work build app repository",
+    "actions": "اقدام عمل کریں action run do",
+    "copyLink": "کاپی لنک یو آر ایل شیئر copy link url share",
+    "openCv": "سی وی ریزیومے ڈاؤن لوڈ cv resume download",
+    "viewSource": "سورس کوڈ گِٹ ہب source code github",
+    "copyEmail": "ای میل پتہ رابطہ کاپی email address contact copy",
+    "backToTop": "اوپر اسکرول واپس scroll top up",
+    "ask": "پوچھیں سوال جواب ask question answer",
+    "fit": "نوکری عہدہ کردار موزونیت فِٹ تفصیل ضروریات تقاضے job role fit description requirements"
+  },
+  "actions": {
+    "copyLink": "اس صفحے کا لنک کاپی کریں",
+    "openCv": "CV کھولیں (PDF)",
+    "viewSource": "اس سائٹ کا سورس دیکھیں",
+    "copyEmail": "ای میل پتہ کاپی کریں",
+    "backToTop": "واپس اوپر",
+    "linkCopied": "لنک کاپی ہو گیا",
+    "emailCopied": "ای میل پتہ کاپی ہو گیا",
+    "clipboardUnavailable": "کلپ بورڈ تک رسائی نہیں ہو سکی"
+  },
+  "ask": {
+    "option": "Claude سے پوچھیں: «{query}»",
+    "start": "Claude سے کچھ بھی پوچھیں…",
+    "resume": "جاری رکھیں: “{title}”",
+    "suggestions": {
+      "strongest": "ان کا سب سے مضبوط پراجیکٹ کون سا ہے؟",
+      "stack": "وہ سب سے زیادہ کون سی ٹیکنالوجیز استعمال کرتے ہیں؟",
+      "experience": "انہیں انجینئرنگ کا کیا تجربہ حاصل ہے؟",
+      "live": "وہ اس وقت کس چیز پر کام کر رہے ہیں؟"
+    },
+    "inputLabel": "آپ کا سوال",
+    "placeholder": "Muhammad کے کام کے بارے میں پوچھیں…",
+    "back": "واپس",
+    "answerLabel": "جواب",
+    "thinking": "سائٹ پڑھی جا رہی ہے…",
+    "ready": "جواب تیار ہے",
+    "enterRetry": "دوبارہ کوشش کے لیے Enter دبائیں۔",
+    "disclaimer": "یہ جواب Claude نے اسی سائٹ کے مواد سے لکھا ہے۔ اس میں غلطی ہو سکتی ہے۔",
+    "errors": {
+      "unavailable": "پوچھنے کی سہولت فی الحال دستیاب نہیں۔",
+      "rateLimited": "آپ نے کافی سوال پوچھ لیے ہیں۔ ذرا دیر ٹھہریں۔",
+      "budget": "پوچھنے کی سہولت آج آرام کر رہی ہے۔ کل دوبارہ کوشش کریں۔",
+      "offline": "آپ آف لائن ہیں۔ پوچھنے کے لیے انٹرنیٹ درکار ہے۔",
+      "invalid": "یہ سوال بہت چھوٹا یا بہت لمبا ہے۔",
+      "failed": "بات نہیں بن سکی۔"
+    },
+    "optionsLabel": "ذرائع اور اگلے سوالات",
+    "sources": "ذرائع",
+    "followups": "اگلا سوال",
+    "live": "براہِ راست",
+    "meta": "{facts, number} حقائق · {steps, plural, =0 {کوئی براہِ راست جانچ نہیں} one {# براہِ راست جانچ} other {# براہِ راست جانچیں}} · {seconds} سیکنڈ · {model}",
+    "sourceLabels": {
+      "github": "GitHub سرگرمی",
+      "progress": "منصوبوں کی پیش رفت",
+      "work": "موجودہ کام",
+      "bench": "روزمرہ کے اوزار",
+      "stack": "ٹیکنالوجی اسٹیک",
+      "site": "یہ سائٹ کیسے بنی"
+    },
+    "trace": {
+      "label": "اٹھائے گئے اقدامات",
+      "plan": "منصوبہ",
+      "snapshot": "محفوظ شدہ نقل",
+      "get_github_activity": {
+        "running": "GitHub کی براہِ راست سرگرمی دیکھی جا رہی ہے…",
+        "done": "GitHub: {commits, plural, one {# کمٹ} other {# کمٹس}}، اس سال {contributions, plural, one {# شراکت} other {# شراکتیں}}، سب سے طویل سلسلہ {streak, plural, one {# دن} other {# دن}}",
+        "failed": "GitHub کی سرگرمی دستیاب نہیں"
+      },
+      "get_project_progress": {
+        "running": "منصوبوں کے براہِ راست بورڈز پڑھے جا رہے ہیں…",
+        "done": "پراجیکٹ بورڈز: {tracked, number} زیرِ نگرانی، مجموعی طور پر {overall, number}% مکمل",
+        "failed": "پراجیکٹ بورڈز دستیاب نہیں"
+      },
+      "get_current_work": {
+        "running": "موجودہ کام دیکھا جا رہا ہے…",
+        "done": "موجودہ کام: {prs, plural, one {# کھلی پل ریکویسٹ} other {# کھلی پل ریکویسٹس}}، {pushes, plural, one {# حالیہ پش} other {# حالیہ پشز}}",
+        "failed": "موجودہ کام دستیاب نہیں"
+      },
+      "other": {
+        "running": "جانچ جاری ہے…",
+        "done": "جانچ مکمل",
+        "failed": "جانچ دستیاب نہیں"
+      }
+    },
+    "chat": {
+      "sidebar": "گفتگوئیں",
+      "newChat": "نئی گفتگو",
+      "fit": "جاب ڈسکرپشن جانچیں",
+      "commands": "کمانڈز",
+      "noChats": "آپ کی گفتگوئیں یہاں نظر آئیں گی۔",
+      "turns": "{count, plural, one {# سوال} other {# سوالات}}",
+      "introTitle": "محمد کے کام کے بارے میں پوچھیں",
+      "introBody": "جوابات اسی سائٹ کے اپنے مواد سے، حوالوں کے ساتھ دیے جاتے ہیں۔ نیچے اپنا سوال لکھیں، یا ان میں سے کسی سے آغاز کریں۔",
+      "tryAsking": "یہ پوچھ کر دیکھیں",
+      "followupPlaceholder": "اگلا سوال پوچھیں…",
+      "send": "بھیجیں",
+      "stop": "جواب روکیں",
+      "stopped": "روک دیا گیا۔"
+    }
+  },
+  "fit": {
+    "command": "کسی جاب ڈسکرپشن کو ان کے تجربے سے ملا کر دیکھیں",
+    "title": "عہدے سے موزونیت کی جانچ",
+    "inputLabel": "جاب ڈسکرپشن",
+    "placeholder": "جاب ڈسکرپشن یہاں پیسٹ کریں…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "جانچنے کے لیے {key} + Enter",
+    "submit": "موزونیت جانچیں",
+    "running": "عہدے کی تفصیل پڑھی جا رہی ہے…",
+    "tooShort": "جاب ڈسکرپشن کا کچھ مزید حصہ پیسٹ کریں (کم از کم {min, number} حروف)۔",
+    "rowsLabel": "ضروریات",
+    "summary": "{strong} مضبوط · {partial} جزوی · {gap} ظاہر نہیں",
+    "verdicts": {
+      "strong": "مضبوط",
+      "partial": "جزوی",
+      "gap": "ظاہر نہیں"
+    },
+    "ready": "موزونیت کی جانچ تیار ہے",
+    "disclaimer": "“ظاہر نہیں” کا مطلب ہے کہ اس سائٹ پر اس کا ذکر نہیں، یہ نہیں کہ وہ یہ کام کر نہیں سکتے۔ یہ Claude نے اس سائٹ کے مواد سے لکھا ہے؛ اس میں غلطی ہو سکتی ہے۔"
+  }
+}

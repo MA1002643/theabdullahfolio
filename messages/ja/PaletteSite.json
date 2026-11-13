@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "プロジェクト",
+    "actions": "アクション",
+    "recent": "最近",
+    "ask": "質問"
+  },
+  "keywords": {
+    "projects": "プロジェクト 作品 制作 アプリ リポジトリ project work build app repository",
+    "actions": "アクション 実行 操作 action run do",
+    "copyLink": "リンク コピー URL 共有 copy link url share",
+    "openCv": "CV 履歴書 職務経歴書 ダウンロード cv resume download",
+    "viewSource": "ソース ソースコード コード GitHub source code github",
+    "copyEmail": "メール メールアドレス 連絡 コピー email address contact copy",
+    "backToTop": "トップ 上 スクロール 戻る scroll top up",
+    "ask": "質問 聞く 回答 ask question answer",
+    "fit": "求人 職務 適合 適性 要件 募集要項 job role fit description requirements"
+  },
+  "actions": {
+    "copyLink": "このページのリンクをコピー",
+    "openCv": "CV(PDF)を開く",
+    "viewSource": "このサイトのソースを見る",
+    "copyEmail": "メールアドレスをコピー",
+    "backToTop": "ページの先頭へ戻る",
+    "linkCopied": "リンクをコピーしました",
+    "emailCopied": "メールアドレスをコピーしました",
+    "clipboardUnavailable": "クリップボードにアクセスできませんでした"
+  },
+  "ask": {
+    "option": "Claudeに質問:「{query}」",
+    "start": "Claudeに何でも質問…",
+    "resume": "続きから：「{title}」",
+    "suggestions": {
+      "strongest": "最も優れたプロジェクトは何ですか?",
+      "stack": "最もよく使う技術は何ですか?",
+      "experience": "どのようなエンジニアリング経験がありますか?",
+      "live": "今、どんなことに取り組んでいますか?"
+    },
+    "inputLabel": "質問",
+    "placeholder": "Muhammadの仕事について質問する…",
+    "back": "戻る",
+    "answerLabel": "回答",
+    "thinking": "サイトを読んでいます…",
+    "ready": "回答の準備ができました",
+    "enterRetry": "Enterキーでもう一度お試しください。",
+    "disclaimer": "このサイトの内容をもとにClaudeが作成しました。誤りを含む場合があります。",
+    "errors": {
+      "unavailable": "現在、質問機能はご利用いただけません。",
+      "rateLimited": "質問が続いていますね。少し待ってからお試しください。",
+      "budget": "質問機能は本日はお休みです。明日またお試しください。",
+      "offline": "オフラインです。質問機能にはネット接続が必要です。",
+      "invalid": "質問が短すぎるか、長すぎます。",
+      "failed": "うまくいきませんでした。"
+    },
+    "optionsLabel": "情報源と次の質問",
+    "sources": "情報源",
+    "followups": "次に聞く",
+    "live": "ライブ",
+    "meta": "{facts, number}件の事実 · {steps, plural, other {ライブ確認#件}} · {seconds}秒 · {model}",
+    "sourceLabels": {
+      "github": "GitHubのアクティビティ",
+      "progress": "プロジェクトの進捗",
+      "work": "現在の作業",
+      "bench": "日常で使うツール",
+      "stack": "技術スタック",
+      "site": "このサイトの作り方"
+    },
+    "trace": {
+      "label": "実行した手順",
+      "plan": "計画",
+      "snapshot": "保存済みスナップショット",
+      "get_github_activity": {
+        "running": "GitHubの最新アクティビティを確認中…",
+        "done": "GitHub:{commits, plural, other {#件のコミット}}、今年は{contributions, plural, other {#件のコントリビューション}}、最長ストリークは{streak, plural, other {#日}}です",
+        "failed": "GitHubのアクティビティを取得できません"
+      },
+      "get_project_progress": {
+        "running": "最新のプロジェクトボードを読み込み中…",
+        "done": "プロジェクトボード:{tracked, number}件を追跡中、全体の進捗は{overall, number}%です",
+        "failed": "プロジェクトボードを取得できません"
+      },
+      "get_current_work": {
+        "running": "現在の作業を確認中…",
+        "done": "現在の作業:{prs, plural, other {オープン中のプルリクエストが#件}}、{pushes, plural, other {直近のプッシュが#件}}",
+        "failed": "現在の作業を取得できません"
+      },
+      "other": {
+        "running": "確認中…",
+        "done": "確認済み",
+        "failed": "確認できません"
+      }
+    },
+    "chat": {
+      "sidebar": "会話",
+      "newChat": "新しい会話",
+      "fit": "求人票をチェック",
+      "commands": "コマンド",
+      "noChats": "会話はここに表示されます。",
+      "turns": "{count, plural, other {#件の質問}}",
+      "introTitle": "ムハンマドの仕事について質問する",
+      "introBody": "回答はこのサイト自体の内容に基づき、出典を付けてお届けします。下の欄に質問を入力するか、次の例からお選びください。",
+      "tryAsking": "質問の例",
+      "followupPlaceholder": "続けて質問…",
+      "send": "送信",
+      "stop": "回答を停止",
+      "stopped": "停止しました。"
+    }
+  },
+  "fit": {
+    "command": "求人票を彼の経験と照らし合わせる",
+    "title": "職務適合チェック",
+    "inputLabel": "求人票",
+    "placeholder": "求人票を貼り付けてください…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter で確認",
+    "submit": "適合を確認",
+    "running": "求人内容を読み込み中…",
+    "tooShort": "求人票をもう少し貼り付けてください({min, number}文字以上)。",
+    "rowsLabel": "要件",
+    "summary": "適合 {strong} · 一部適合 {partial} · 記載なし {gap}",
+    "verdicts": {
+      "strong": "適合",
+      "partial": "一部適合",
+      "gap": "記載なし"
+    },
+    "ready": "適合チェックの準備ができました",
+    "disclaimer": "「記載なし」は、このサイトに言及がないという意味であり、彼にできないという意味ではありません。このサイトの内容をもとにClaudeが作成しており、誤りを含む場合があります。"
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Projects",
+    "actions": "Actions",
+    "recent": "Recent",
+    "ask": "Ask"
+  },
+  "keywords": {
+    "projects": "project work build app repository",
+    "actions": "action run do",
+    "copyLink": "copy link url share",
+    "openCv": "cv resume download",
+    "viewSource": "source code github",
+    "copyEmail": "email address contact copy",
+    "backToTop": "scroll top up",
+    "ask": "ask question answer",
+    "fit": "job role fit description requirements"
+  },
+  "actions": {
+    "copyLink": "Copy link to this page",
+    "openCv": "Open CV (PDF)",
+    "viewSource": "View this site's source",
+    "copyEmail": "Copy email address",
+    "backToTop": "Back to top",
+    "linkCopied": "Link copied",
+    "emailCopied": "Email address copied",
+    "clipboardUnavailable": "Couldn't reach the clipboard"
+  },
+  "ask": {
+    "option": "Ask Claude: “{query}”",
+    "start": "Ask Claude anything…",
+    "resume": "Continue: “{title}”",
+    "suggestions": {
+      "strongest": "What is his strongest project?",
+      "stack": "Which technologies does he use most?",
+      "experience": "What engineering experience does he have?",
+      "live": "What is he working on right now?"
+    },
+    "inputLabel": "Your question",
+    "placeholder": "Ask about Muhammad's work…",
+    "back": "back",
+    "answerLabel": "Answer",
+    "thinking": "Reading the site…",
+    "ready": "Answer ready",
+    "enterRetry": "Press Enter to try again.",
+    "disclaimer": "Written by Claude from this site's own content. It can be wrong.",
+    "errors": {
+      "unavailable": "Ask isn't available right now.",
+      "rateLimited": "That's a lot of questions. Give it a moment.",
+      "budget": "Ask is resting for today. Try again tomorrow.",
+      "offline": "You're offline. Ask needs a connection.",
+      "invalid": "That question is too short or too long.",
+      "failed": "That didn't work."
+    },
+    "optionsLabel": "Sources and follow-up questions",
+    "sources": "Sources",
+    "followups": "Ask next",
+    "live": "live",
+    "meta": "{facts, number} facts · {steps, plural, =0 {no live checks} one {# live check} other {# live checks}} · {seconds} s · {model}",
+    "sourceLabels": {
+      "github": "GitHub activity",
+      "progress": "Project progress",
+      "work": "Current work",
+      "bench": "Day-to-day tools",
+      "stack": "Technology stack",
+      "site": "How this site is built"
+    },
+    "trace": {
+      "label": "Steps taken",
+      "plan": "Plan",
+      "snapshot": "stored snapshot",
+      "get_github_activity": {
+        "running": "Checking live GitHub activity…",
+        "done": "GitHub: {commits, plural, one {# commit} other {# commits}}, {contributions, plural, one {# contribution} other {# contributions}} this year, longest streak {streak, plural, one {# day} other {# days}}",
+        "failed": "GitHub activity unavailable"
+      },
+      "get_project_progress": {
+        "running": "Reading live project boards…",
+        "done": "Project boards: {tracked, number} tracked, {overall, number}% complete overall",
+        "failed": "Project boards unavailable"
+      },
+      "get_current_work": {
+        "running": "Checking current work…",
+        "done": "Current work: {prs, plural, one {# open pull request} other {# open pull requests}}, {pushes, plural, one {# recent push} other {# recent pushes}}",
+        "failed": "Current work unavailable"
+      },
+      "other": {
+        "running": "Checking…",
+        "done": "Checked",
+        "failed": "Check unavailable"
+      }
+    },
+    "chat": {
+      "sidebar": "Conversations",
+      "newChat": "New conversation",
+      "fit": "Check a job description",
+      "commands": "Commands",
+      "noChats": "Your conversations will appear here.",
+      "turns": "{count, plural, one {# question} other {# questions}}",
+      "introTitle": "Ask about Muhammad's work",
+      "introBody": "Answers come from this site's own content, with sources. Type your own question below, or start with one of these.",
+      "tryAsking": "Try asking",
+      "followupPlaceholder": "Ask a follow-up…",
+      "send": "Send",
+      "stop": "Stop answering",
+      "stopped": "Stopped."
+    }
+  },
+  "fit": {
+    "command": "Check a job description against his experience",
+    "title": "Role fit check",
+    "inputLabel": "Job description",
+    "placeholder": "Paste a job description…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter to check",
+    "submit": "Check fit",
+    "running": "Reading the role…",
+    "tooShort": "Paste a little more of the job description (at least {min, number} characters).",
+    "rowsLabel": "Requirements",
+    "summary": "{strong} strong · {partial} partial · {gap} not shown",
+    "verdicts": {
+      "strong": "Strong",
+      "partial": "Partial",
+      "gap": "Not shown"
+    },
+    "ready": "Fit check ready",
+    "disclaimer": "“Not shown” means this site does not mention it, not that he cannot do it. Written by Claude from this site’s content; it can be wrong."
+  }
+}

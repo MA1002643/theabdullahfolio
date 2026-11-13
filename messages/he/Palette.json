@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "מעבר ניווט נתיב עמוד דף יעד לך go",
     "language": "שפה תרגום לוקאל שפות שינוי language"
-  }
+  },
+  "triggerTitle": "חיפוש ושאלות",
+  "triggerHint": "{shortcut} · אפשר לשאול את Claude על העבודות שלי",
+  "triggerHintTouch": "אפשר לשאול את Claude על העבודות שלי"
 }

@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "pergi buka pindah menuju rute halaman navigasi go jump",
     "language": "bahasa terjemahan terjemahkan lokal locale language translate"
-  }
+  },
+  "triggerTitle": "Cari & Tanya",
+  "triggerHint": "{shortcut} · Tanya Claude tentang karya saya",
+  "triggerHintTouch": "Tanya Claude tentang karya saya"
 }

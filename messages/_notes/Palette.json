@@ -1,5 +1,8 @@
 {
   "keywords.navigate": "Extra search words (space-separated) that find the navigation commands. Not shown.",
   "keywords.language": "Extra search words (space-separated) that find the language commands. Not shown.",
-  "placeholder": "Hint inside the command palette's search field; ends with an ellipsis."
+  "placeholder": "Hint inside the command palette's search field; ends with an ellipsis.",
+  "triggerTitle": "Title on the floating button that opens the command palette and its AI assistant. Two or three words; \"&\" may be written out.",
+  "triggerHint": "Small line under the title on desktop. {shortcut} is the keyboard shortcut (⌘K or Ctrl+K) — keep it first. \"Claude\" is a product name (the AI model): never translate it. \"my work\" is the site owner speaking.",
+  "triggerHintTouch": "The same line for touch devices, without the shortcut. \"Claude\" is a product name: never translate it."
 }

@@ -9,6 +9,17 @@
     "title": "नोट",
     "breadcrumb": "ब्रेडक्रंब",
     "allNotes": "सभी नोट्स",
-    "source": "स्रोत: {source} · {count, plural, one {{n} पंक्ति} other {{n} पंक्तियाँ}}"
+    "source": "स्रोत: {source} · {count, plural, one {{n} पंक्ति} other {{n} पंक्तियाँ}}",
+    "partial": "नीचे के कुछ अंशों का अनुवाद अभी नहीं हुआ है, इसलिए वे अंग्रेज़ी में दिखाए गए हैं।",
+    "crumbs": {
+      "home": "होम",
+      "notes": "नोट्स"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "इस साइट पर discoverability से जुड़ा हर फ़ैसला क्यों लिया गया, क्या छोड़ा गया और उसकी क्या क़ीमत चुकानी पड़ी — कोड के साथ रखा गया engineering रिकॉर्ड।"
+    },
+    "composed": "Engineering निर्णय रिकॉर्ड — {title}। इस रिपॉज़िटरी के अपने दस्तावेज़ों की {n} पंक्तियाँ।"
   }
 }

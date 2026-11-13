@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "перейти переход открыть страница раздел маршрут навигация go",
     "language": "язык перевод локаль локализация сменить language"
-  }
+  },
+  "triggerTitle": "Поиск и вопросы",
+  "triggerHint": "{shortcut} · Спросите Claude о моих работах",
+  "triggerHintTouch": "Спросите Claude о моих работах"
 }

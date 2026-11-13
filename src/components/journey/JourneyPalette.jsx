@@ -3,25 +3,20 @@
 import { useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { intlTag } from '@/i18n/format';
-import { useRouter } from '@/i18n/navigation';
-import CommandPalette from '@/components/commandPalette/CommandPalette';
-import { routeActions, routesExcept } from '@/components/commandPalette/routes';
-import { usePageTransition } from '@/components/pageTransition/PageTransitionProvider';
+import { usePaletteActions } from '@/components/commandPalette/registry';
 import { journeyData } from '@/app/data';
 import { resumeUrl } from '@/components/footer/footer-data';
 
-// /journey's action set for the shared CommandPalette — the same seam
+// /journey's commands for the sitewide ⌘K palette — the same seam
 // GuestbookPalette cut for issue #40: the palette component knows nothing
-// about this page, all journey specifics live in this config. Era jumps
+// about this page, all journey specifics live in this config. Since issue #41
+// the page no longer mounts a palette of its own: it CONTRIBUTES these
+// commands to the one SitePalette mounts (usePaletteActions), which also
+// supplies the route jumps, so this list carries none. Era jumps
 // reuse the EraRail clock's own anchor contract (the `era-<year>` li ids and
 // centre-block scrollIntoView), with reduced motion honoured at perform time
 // — matchMedia here, not the framer hook, because the action list is memoed
 // once and a perform-time read can never go stale.
-//
-// Route jumps go through the Stone Passage (usePageTransition().navigate) so
-// palette navigation looks identical to clicking the nav ring; a missing
-// provider degrades to a plain router.push. The route list itself is the
-// shared commandPalette/routes.js registry (issue #37) minus this page.
 
 // One jump per era, in the page's own newest-first order (journeyData is
 // grouped by year, so the Set walk preserves it).
@@ -35,8 +30,6 @@ const jumpTo = (id) => {
 };
 
 export default function JourneyPalette() {
-  const router = useRouter();
-  const { navigate } = usePageTransition();
   const t = useTranslations('Journey');
   const locale = useLocale();
 
@@ -45,10 +38,6 @@ export default function JourneyPalette() {
   // an English query still finds the action from any locale.
   const actions = useMemo(() => {
     const year = new Intl.NumberFormat(intlTag(locale), { useGrouping: false });
-    const go = (href, label) => {
-      if (navigate) navigate(href, { label });
-      else router.push(href);
-    };
 
     return [
       ...ERA_YEARS.map((y) => ({
@@ -78,9 +67,9 @@ export default function JourneyPalette() {
         // travels with the call if the target ever moves off-origin).
         perform: () => window.open(resumeUrl, '_blank', 'noopener,noreferrer'),
       },
-      ...routeActions(routesExcept('/journey'), go),
     ];
-  }, [navigate, router, t, locale]);
+  }, [t, locale]);
 
-  return <CommandPalette actions={actions} />;
+  usePaletteActions('journey', actions);
+  return null;
 }

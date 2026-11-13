@@ -252,3 +252,40 @@ export function pseudoCatalogue(tree) {
   }
   return tree;
 }
+
+// ── House style per language ────────────────────────────────────────────────
+// Register is a real decision per language, made once here rather than left to
+// each batch to guess (and come out inconsistent across a page).
+export const REGISTER = {
+  es: 'Use "tú" consistently; neutral international Spanish (avoid regionalisms).',
+  pt: 'Brazilian Portuguese, "você", natural and warm.',
+  fr: 'Use "vous". French typography: non-breaking space before : ; ! ? and inside « ».',
+  de: 'Use "du" (the convention of developer portfolios and tech products). Compound nouns natural, no anglicisms where a common German word exists.',
+  ru: 'Use "вы" (lowercase). Natural, not bureaucratic.',
+  zh: 'Simplified Chinese (zh-Hans). Use full-width punctuation (，。：？！). No spaces between CJK and Latin is acceptable but keep brand names in Latin script.',
+  ja: 'です/ます polite form. Full-width punctuation (、。). Keep it concise.',
+  ko: '합니다/해요 polite style consistently (prefer 해요 for UI, 합니다 for longer prose). Natural Korean spacing.',
+  ar: 'Modern Standard Arabic. Arabic punctuation (، ؛ ؟). Gender-neutral where possible.',
+  ur: 'Natural modern Urdu in Nastaliq-friendly wording; Urdu punctuation (، ۔ ؟).',
+  fa: 'Modern Persian; Persian punctuation (، ؛ ؟); use ZWNJ (half-space) correctly.',
+  he: 'Modern Hebrew; prefer gender-neutral or plural forms for addressing the reader.',
+  hi: 'Natural modern Hindi (Devanagari); common English tech terms may stay in Latin script where Indian developers use them.',
+  it: 'Use "tu". Natural, concise.',
+  tr: 'Use "sen" for UI, natural and concise.',
+  vi: 'Natural Vietnamese; "bạn" for the reader.',
+  pl: 'Natural Polish; address the reader with informal second person where UI-like, neutral forms in prose.',
+  nl: 'Use "je/jij". Natural, concise.',
+  id: 'Use "Anda". Natural, concise.',
+};
+
+// "Muhammad Abdullah" is in this list for PROSE only (summaries, alt text,
+// metadata), where it stays in Latin script as the name the CV and the profiles
+// carry. Where the name is DISPLAYED as the site's masthead it is read from
+// `Common.owner`, which is hand-set per locale (see HAND_SET).
+export const NEVER_TRANSLATE = [
+  'Muhammad Abdullah', 'ma.codes', 'GitHub', 'Vercel', 'Next.js', 'React', 'TypeScript', 'JavaScript',
+  'Node.js', 'Tailwind CSS', 'Spotify', 'LinkedIn', 'Google', 'MMU', 'Bolton', 'Greater Manchester',
+  'Claude Code', 'Visual Studio Code', 'Lighthouse', 'Playwright', 'OwnTracks', 'PR', 'CV',
+  'project names (theabdullahfolio, AfaaqX, culina, colophon, dhun, plenary, auxo, clearway, vigil, tailorhawk)',
+  'organisation names (Unisys, Lidl GB, KFC, Showsec, C365Cloud, Adullam Homes Housing Association, Constant Security Services, Bolton College, Jodrell Bank)',
+];

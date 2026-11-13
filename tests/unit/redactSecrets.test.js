@@ -169,6 +169,8 @@ describe('the secret allowlist covers the environment it protects', () => {
     MULTI_REPO_HEADER: 'a rollout kill-switch',
     WORK_STATUS_AI_ENABLED: 'an on/off flag for the AI rewrite',
     REFINE_MODEL: 'a model identifier',
+    ASK_MODEL: 'a model identifier (issue #41)',
+    ASK_DAILY_LIMIT: 'a number: the daily ceiling on Ask questions (issue #41)',
     SPOTIFY_DEMO: 'forces the bundled demo track on',
     SPOTIFY_AUTH_ALLOW_REMOTE:
       'allows the one-time token helper off loopback — dangerous to SET, but its value is a boolean',

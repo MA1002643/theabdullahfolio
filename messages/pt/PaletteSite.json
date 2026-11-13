@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Projetos",
+    "actions": "Ações",
+    "recent": "Recentes",
+    "ask": "Perguntar"
+  },
+  "keywords": {
+    "projects": "projeto projetos trabalho obra app aplicativo repositório",
+    "actions": "ação ações executar fazer",
+    "copyLink": "copiar link url compartilhar",
+    "openCv": "cv currículo curriculo baixar download",
+    "viewSource": "fonte código codigo github",
+    "copyEmail": "email e-mail endereço contato copiar",
+    "backToTop": "rolar topo subir voltar",
+    "ask": "perguntar pergunta resposta",
+    "fit": "vaga cargo função adequação compatibilidade fit descrição requisitos"
+  },
+  "actions": {
+    "copyLink": "Copiar link desta página",
+    "openCv": "Abrir CV (PDF)",
+    "viewSource": "Ver o código-fonte deste site",
+    "copyEmail": "Copiar endereço de e-mail",
+    "backToTop": "Voltar ao topo",
+    "linkCopied": "Link copiado",
+    "emailCopied": "Endereço de e-mail copiado",
+    "clipboardUnavailable": "Não foi possível acessar a área de transferência"
+  },
+  "ask": {
+    "option": "Perguntar ao Claude: “{query}”",
+    "start": "Pergunte qualquer coisa ao Claude…",
+    "resume": "Continuar: “{title}”",
+    "suggestions": {
+      "strongest": "Qual é o projeto mais forte dele?",
+      "stack": "Quais tecnologias ele mais usa?",
+      "experience": "Que experiência em engenharia ele tem?",
+      "live": "No que ele está trabalhando agora?"
+    },
+    "inputLabel": "Sua pergunta",
+    "placeholder": "Pergunte sobre o trabalho do Muhammad…",
+    "back": "voltar",
+    "answerLabel": "Resposta",
+    "thinking": "Lendo o site…",
+    "ready": "Resposta pronta",
+    "enterRetry": "Pressione Enter para tentar de novo.",
+    "disclaimer": "Escrita pelo Claude a partir do conteúdo deste site. Pode conter erros.",
+    "errors": {
+      "unavailable": "O Perguntar não está disponível no momento.",
+      "rateLimited": "São muitas perguntas de uma vez. Espere um instante.",
+      "budget": "O Perguntar está descansando por hoje. Tente de novo amanhã.",
+      "offline": "Você está offline. O Perguntar precisa de conexão.",
+      "invalid": "Essa pergunta é curta ou longa demais.",
+      "failed": "Não deu certo."
+    },
+    "optionsLabel": "Fontes e perguntas de acompanhamento",
+    "sources": "Fontes",
+    "followups": "Perguntar em seguida",
+    "live": "ao vivo",
+    "meta": "{facts, number} fatos · {steps, plural, =0 {nenhuma verificação ao vivo} one {# verificação ao vivo} other {# verificações ao vivo}} · {seconds} s · {model}",
+    "sourceLabels": {
+      "github": "Atividade no GitHub",
+      "progress": "Progresso dos projetos",
+      "work": "Trabalho atual",
+      "bench": "Ferramentas do dia a dia",
+      "stack": "Stack de tecnologia",
+      "site": "Como este site é construído"
+    },
+    "trace": {
+      "label": "Etapas realizadas",
+      "plan": "Plano",
+      "snapshot": "cópia armazenada",
+      "get_github_activity": {
+        "running": "Verificando a atividade ao vivo no GitHub…",
+        "done": "GitHub: {commits, plural, one {# commit} many {# de commits} other {# commits}}, {contributions, plural, one {# contribuição} many {# de contribuições} other {# contribuições}} este ano, maior sequência: {streak, plural, one {# dia} many {# de dias} other {# dias}}",
+        "failed": "Atividade no GitHub indisponível"
+      },
+      "get_project_progress": {
+        "running": "Lendo os quadros de projetos ao vivo…",
+        "done": "Quadros de projeto: {tracked, number} acompanhados, {overall, number}% concluído no geral",
+        "failed": "Quadros de projetos indisponíveis"
+      },
+      "get_current_work": {
+        "running": "Verificando o trabalho atual…",
+        "done": "Trabalho atual: {prs, plural, one {# pull request aberto} many {# de pull requests abertos} other {# pull requests abertos}}, {pushes, plural, one {# push recente} many {# de pushes recentes} other {# pushes recentes}}",
+        "failed": "Trabalho atual indisponível"
+      },
+      "other": {
+        "running": "Verificando…",
+        "done": "Verificado",
+        "failed": "Verificação indisponível"
+      }
+    },
+    "chat": {
+      "sidebar": "Conversas",
+      "newChat": "Nova conversa",
+      "fit": "Analisar uma vaga",
+      "commands": "Comandos",
+      "noChats": "Suas conversas vão aparecer aqui.",
+      "turns": "{count, plural, one {# pergunta} many {# de perguntas} other {# perguntas}}",
+      "introTitle": "Pergunte sobre o trabalho do Muhammad",
+      "introBody": "As respostas vêm do conteúdo deste site, com as fontes. Digite sua própria pergunta abaixo ou comece por uma destas.",
+      "tryAsking": "Experimente perguntar",
+      "followupPlaceholder": "Faça outra pergunta…",
+      "send": "Enviar",
+      "stop": "Parar resposta",
+      "stopped": "Interrompida."
+    }
+  },
+  "fit": {
+    "command": "Comparar uma descrição de vaga com a experiência dele",
+    "title": "Verificação de adequação à vaga",
+    "inputLabel": "Descrição da vaga",
+    "placeholder": "Cole uma descrição de vaga…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter para verificar",
+    "submit": "Verificar adequação",
+    "running": "Lendo a vaga…",
+    "tooShort": "Cole um pouco mais da descrição da vaga (pelo menos {min, number} caracteres).",
+    "rowsLabel": "Requisitos",
+    "summary": "{strong} forte · {partial} parcial · {gap} não demonstrado",
+    "verdicts": {
+      "strong": "Forte",
+      "partial": "Parcial",
+      "gap": "Não demonstrado"
+    },
+    "ready": "Verificação de adequação pronta",
+    "disclaimer": "“Não demonstrado” significa que este site não menciona o item, e não que ele não consiga fazê-lo. Escrito pelo Claude a partir do conteúdo deste site; pode conter erros."
+  }
+}

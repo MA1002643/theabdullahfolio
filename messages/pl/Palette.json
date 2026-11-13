@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "idź przejdź skocz trasa strona nawigacja podstrona",
     "language": "język tłumaczenie wersja językowa lokalizacja locale language"
-  }
+  },
+  "triggerTitle": "Szukaj i pytaj",
+  "triggerHint": "{shortcut} · Zapytaj Claude o moją pracę",
+  "triggerHintTouch": "Zapytaj Claude o moją pracę"
 }

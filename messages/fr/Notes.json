@@ -9,6 +9,17 @@
     "title": "NOTE",
     "breadcrumb": "Fil d’Ariane",
     "allNotes": "Toutes les notes",
-    "source": "Source\u00a0: {source} · {count, plural, one {{n} ligne} many {{n} lignes} other {{n} lignes}}"
+    "source": "Source : {source} · {count, plural, one {{n} ligne} many {{n} lignes} other {{n} lignes}}",
+    "partial": "Certains passages ci-dessous ne sont pas encore traduits ; ils apparaissent donc en anglais.",
+    "crumbs": {
+      "home": "Accueil",
+      "notes": "Notes"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Pourquoi chaque choix de visibilité a été retenu sur ce site, ce qui a été écarté et ce qu’il a coûté : le journal technique tenu à côté du code."
+    },
+    "composed": "Journal de décision technique : {title}. {n} lignes tirées de la propre documentation de ce dépôt."
   }
 }

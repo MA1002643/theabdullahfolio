@@ -11,6 +11,7 @@ import { wordFill } from '@/lib/fireRamp';
 import { fluid, fluidText } from '@/lib/fluidScale';
 import { DEFAULT_LOCALE } from '@/i18n/locales';
 import { intlTag } from '@/i18n/format';
+import { useDirection } from '@/i18n/useDirection';
 
 // The /notes index body — the standfirst and the record list (issue #32, W8).
 //
@@ -71,8 +72,8 @@ const RECORD_STAGGER = 0.14;
 const SAME_BEAT_MS = 200;
 
 // The standfirst is the catalogue's (Notes.index.intro, issue #82) — it is
-// page chrome describing the documents, so it translates even though the
-// documents themselves stay English.
+// page chrome describing the documents. The documents' own titles and
+// summaries are translated separately, per block, in docs/i18n/.
 
 /**
  * The standfirst's words, each with the separator that follows it. English
@@ -201,7 +202,19 @@ function Standfirst({ revealed, reduceMotion }) {
 function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
   // `tr`, not `t`: this component's `t` is its transition helper below.
   const tr = useTranslations('Notes');
+  const { isRtl } = useDirection();
   const ref = useRef(null);
+  // The record's own strings are translated per block (docs/i18n/), so each
+  // says which language it actually came out in: one not translated yet is
+  // still English, and is marked so for a screen reader. The typesetting
+  // wipe runs in the TITLE's direction — from the right for an Arabic title,
+  // from the left for an English one inside an Arabic page.
+  const titleIsEnglish = note.titleLang === DEFAULT_LOCALE;
+  const summaryIsEnglish = note.summaryLang === DEFAULT_LOCALE;
+  const titleLangProps = titleIsEnglish ? { lang: 'en', dir: 'ltr' } : {};
+  const summaryLangProps = summaryIsEnglish ? { lang: 'en', dir: 'ltr' } : {};
+  const HIDDEN_CLIP = isRtl && !titleIsEnglish ? 'inset(0 0 0 100%)' : 'inset(0 100% 0 0)';
+  const SHOWN_CLIP = 'inset(0 0% 0 0%)';
   // `amount: 'some'` with a negative bottom margin rather than a fraction of
   // the element: a record with a long summary can be taller than a phone
   // viewport, and a fraction of it could then never be satisfied — the /uses
@@ -285,20 +298,16 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
               ancestor's clip-path is a paint-time clip, so it applies to the
               promoted layer the clipped-gradient child rasterises into. */}
           <m.span
-            // The title is the document's own, and the documents are English
-            // only (issue #82): marked so, which also keeps the left→right
-            // typesetting wipe running in the title's own direction.
-            lang="en"
-            dir="ltr"
+            {...titleLangProps}
             className="note-anim-clip inline-block [will-change:clip-path,transform]"
             initial={
-              reduceMotion ? false : { clipPath: 'inset(0 100% 0 0)', y: 6 }
+              reduceMotion ? false : { clipPath: HIDDEN_CLIP, y: 6 }
             }
             animate={
               on
-                ? { clipPath: 'inset(0 0% 0 0)', y: 0 }
+                ? { clipPath: SHOWN_CLIP, y: 0 }
                 : {
-                    clipPath: reduceMotion ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)',
+                    clipPath: reduceMotion ? SHOWN_CLIP : HIDDEN_CLIP,
                     y: reduceMotion ? 0 : 6,
                   }
             }
@@ -311,8 +320,7 @@ function Record({ note, index, revealed, reduceMotion, revealedAtRef }) {
 
       {note.summary ? (
         <m.p
-          lang="en"
-          dir="ltr"
+          {...summaryLangProps}
           className="note-anim note-record__summary max-w-prose font-light"
           style={{ ...PROSE, marginTop: fluid(0.5) }}
           {...rise(0.36, 0.55)}

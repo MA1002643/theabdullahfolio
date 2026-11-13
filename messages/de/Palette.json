@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "gehen springen navigieren wechseln öffnen Seite Route Ziel",
     "language": "Sprache übersetzen Übersetzung Lokalisierung Locale Deutsch Englisch"
-  }
+  },
+  "triggerTitle": "Suchen & Fragen",
+  "triggerHint": "{shortcut} · Frag Claude zu meiner Arbeit",
+  "triggerHintTouch": "Frag Claude zu meiner Arbeit"
 }

@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "项目",
+    "actions": "操作",
+    "recent": "最近",
+    "ask": "提问"
+  },
+  "keywords": {
+    "projects": "项目 作品 构建 应用 仓库 project work build app repository",
+    "actions": "操作 执行 运行 action run do",
+    "copyLink": "复制 链接 网址 分享 copy link url share",
+    "openCv": "简历 下载 cv resume download",
+    "viewSource": "源码 源代码 代码 github source code",
+    "copyEmail": "邮箱 电子邮件 地址 联系 复制 email address contact copy",
+    "backToTop": "顶部 返回 向上 滚动 scroll top up",
+    "ask": "提问 问题 回答 ask question answer",
+    "fit": "职位 岗位 匹配 契合 职位描述 要求 JD 招聘 job role fit description requirements"
+  },
+  "actions": {
+    "copyLink": "复制本页链接",
+    "openCv": "打开 CV（PDF）",
+    "viewSource": "查看本站源码",
+    "copyEmail": "复制邮箱地址",
+    "backToTop": "返回顶部",
+    "linkCopied": "链接已复制",
+    "emailCopied": "邮箱地址已复制",
+    "clipboardUnavailable": "无法访问剪贴板"
+  },
+  "ask": {
+    "option": "向 Claude 提问：“{query}”",
+    "start": "向 Claude 提问任何问题…",
+    "resume": "继续：“{title}”",
+    "suggestions": {
+      "strongest": "他最出色的项目是哪一个？",
+      "stack": "他最常用哪些技术？",
+      "experience": "他有哪些工程经验？",
+      "live": "他现在在做什么？"
+    },
+    "inputLabel": "你的问题",
+    "placeholder": "问问 Muhammad 的作品……",
+    "back": "返回",
+    "answerLabel": "回答",
+    "thinking": "正在阅读网站内容……",
+    "ready": "回答已生成",
+    "enterRetry": "按 Enter 键重试。",
+    "disclaimer": "由 Claude 根据本站内容撰写，可能有误。",
+    "errors": {
+      "unavailable": "提问功能暂时不可用。",
+      "rateLimited": "问题有点多啦，请稍等片刻。",
+      "budget": "提问功能今天先休息了，明天再来试试吧。",
+      "offline": "你已离线，提问功能需要网络连接。",
+      "invalid": "这个问题太短或太长了。",
+      "failed": "出了点问题。"
+    },
+    "optionsLabel": "来源与后续问题",
+    "sources": "来源",
+    "followups": "接着问",
+    "live": "实时",
+    "meta": "{facts, number} 条事实 · {steps, plural, =0 {无实时检查} other {# 次实时检查}} · {seconds} 秒 · {model}",
+    "sourceLabels": {
+      "github": "GitHub 动态",
+      "progress": "项目进度",
+      "work": "当前工作",
+      "bench": "日常工具",
+      "stack": "技术栈",
+      "site": "本站如何构建"
+    },
+    "trace": {
+      "label": "已执行步骤",
+      "plan": "计划",
+      "snapshot": "已存快照",
+      "get_github_activity": {
+        "running": "正在查看 GitHub 实时动态…",
+        "done": "GitHub：{commits, plural, other {# 次提交}}，今年 {contributions, plural, other {# 次贡献}}，最长连续 {streak, plural, other {# 天}}",
+        "failed": "无法获取 GitHub 动态"
+      },
+      "get_project_progress": {
+        "running": "正在读取实时项目看板…",
+        "done": "项目看板：已跟踪 {tracked, number} 个，整体完成 {overall, number}%",
+        "failed": "无法获取项目看板"
+      },
+      "get_current_work": {
+        "running": "正在查看当前工作…",
+        "done": "当前工作：{prs, plural, other {# 个未合并的 pull request}}，{pushes, plural, other {# 次近期推送}}",
+        "failed": "无法获取当前工作"
+      },
+      "other": {
+        "running": "正在检查…",
+        "done": "已检查",
+        "failed": "无法完成检查"
+      }
+    },
+    "chat": {
+      "sidebar": "对话",
+      "newChat": "新对话",
+      "fit": "检查职位描述",
+      "commands": "命令",
+      "noChats": "你的对话会显示在这里。",
+      "turns": "{count, plural, other {# 个问题}}",
+      "introTitle": "了解穆罕默德的作品",
+      "introBody": "回答均来自本站自身的内容，并附有来源。可在下方输入你自己的问题，或从以下问题开始。",
+      "tryAsking": "试着问问",
+      "followupPlaceholder": "继续追问…",
+      "send": "发送",
+      "stop": "停止回答",
+      "stopped": "已停止。"
+    }
+  },
+  "fit": {
+    "command": "对照他的经历检查职位描述",
+    "title": "岗位匹配检查",
+    "inputLabel": "职位描述",
+    "placeholder": "粘贴职位描述…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Enter 开始检查",
+    "submit": "检查匹配度",
+    "running": "正在阅读岗位要求…",
+    "tooShort": "请再多粘贴一些职位描述（至少 {min, number} 个字符）。",
+    "rowsLabel": "岗位要求",
+    "summary": "{strong} 项充分 · {partial} 项部分 · {gap} 项未展示",
+    "verdicts": {
+      "strong": "充分",
+      "partial": "部分",
+      "gap": "未展示"
+    },
+    "ready": "匹配检查已完成",
+    "disclaimer": "“未展示”表示本站没有提及，并不代表他不具备该能力。内容由 Claude 根据本站信息生成，可能有误。"
+  }
+}

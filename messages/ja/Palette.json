@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "移動 ジャンプ 行く ページ ナビゲート go jump route page",
     "language": "言語 翻訳 ロケール 切り替え language translate locale"
-  }
+  },
+  "triggerTitle": "検索と質問",
+  "triggerHint": "{shortcut} · 私の仕事についてClaudeに質問",
+  "triggerHintTouch": "私の仕事についてClaudeに質問"
 }

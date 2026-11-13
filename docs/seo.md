@@ -1174,8 +1174,16 @@ and read what it says:
    to aim for — a note that introduces itself in one paragraph of the right
    length needs nothing else. Where the opening paragraph is not a summary (a
    reference line, a table, a heading), the test fails naming the document and
-   the length, and the fix is a curated entry in that file's `CURATED` map, not
+   the length, and the fix is a curated entry under `meta.curated` in `messages/en/Notes.json`
+   (read by that file as `CURATED`), not
    a rewrite of the document's first line to suit a search engine.
+
+3. **The translations.** Run `npm run notes:translate` after adding or
+   editing a note. Only new and changed blocks are sent, so an edit to an
+   existing note costs a few blocks per locale. `npm run notes:translate --
+   --check` exits non-zero while any block is untranslated. A curated
+   description is a catalogue message (`Notes.meta.curated.<slug>`), so it
+   also needs `npm run i18n:translate -- --ns Notes`.
 
 Do not add a curated entry pre-emptively for a document that does not need one:
 it is an override, and an override written beside a paragraph that already
@@ -1233,6 +1241,14 @@ document rather than an incomplete one:
   "this tab only" or "until you clear it" from that field, so getting it
   backwards is a small, specific lie about how long something is kept.
 - Nothing is disclosed that the site no longer stores.
+
+**Call storage by its literal shape.** The test finds storage by the text
+`localStorage.getItem(...)` / `setItem` / `removeItem`, optionally after
+`window.`. A key read through an injected object (`store.getItem(KEY)`) or a
+wrapper that takes the storage as an argument is invisible to it, and the key
+ships undisclosed. That nearly happened with the ⌘K palette's Recent list
+(#41, 2026-11-09). Wrap the call in `try`, but name `window.localStorage` at
+the call site.
 
 It found three key families the hand audit had missed when it was first written
 — `github-stats:lastGood:<username>`,
@@ -2167,6 +2183,36 @@ marks these routes `translated: false`, and `isTranslated()` is the only thing
 that reads the flag. The English islands render inside an `EnglishOnly` wrapper
 carrying `lang="en" dir="ltr"`, so a screen reader switches voice.
 
+**Decision (owner, 2026-11-10): the notes are translated after all.** Visitors
+who switched language found the note pages and the `/notes` summaries still in
+English, and the owner asked for every line to follow the locale. The cost
+named above is real, so the design is built around it. Each document is
+translated a markdown block at a time, and a table a row at a time, into
+`docs/i18n/<locale>/<doc>.json`, keyed by a hash of the English block
+(`src/lib/notes/segments.js`). An edit makes only its own blocks stale, and
+`npm run notes:translate` sends only those. What changed for discovery:
+
+- `/notes` dropped `translated: false`, and `/notes/[slug]` passes
+  `translated: true`. Each locale URL is canonical in its own language, with
+  the full hreflang set, and each note is a twenty-URL cluster in the sitemap.
+  The cluster's `lastmod` also watches `docs/i18n/` and `messages/`.
+- The `TechArticle` node describes the locale's own document: a prefixed
+  `@id` and `url`, and that locale's `inLanguage`. A translation is a
+  different text at a different address, unlike `#project`, which is one
+  entity described in many languages.
+- The description comes from the same source in every language (curated,
+  opening paragraph or composed), decided from the English. The curated
+  strings and the composed sentence moved to `messages/en/Notes.json` under
+  `meta` so that they can be translated. The 110–160 window is measured in
+  Latin characters and would push dense scripts onto the fallback.
+- A block not yet re-translated renders in English inside a `lang="en"`
+  island, and a notice above the note says so. A stale passage therefore
+  reads as an honest English paragraph, not as a false hreflang claim: the
+  locale page is still a translation, with a few passages behind.
+- The alternates `Link` header stays off (`alternateLinks: false`). The
+  privacy policy is still English-only and the header still cannot tell.
+- The share-card images stay English, for the shaping reason below.
+
 ### Open Graph text per locale; the card images stay English
 
 `og:title`, `og:description`, `og:url` and `og:locale` follow the page's locale,
@@ -2389,6 +2435,29 @@ so the savings are now the ceiling.
   LCP moves from about 0.1 s to 1.4–3 s. This is a consent-UX timing choice
   for the owner, not a loading one.
 
+### The sitewide ⌘K palette (issue #41, 2026-11-09)
+
+The palette moved from three pages (each bundling its own copy) to every
+route, so its loading split was decided per piece:
+
+- **Eager:** `SitePalette` (the ⌘K listener, the contributor registry, the
+  trigger). The shortcut has to work as soon as the page is interactive.
+- **Deferred:** the panel with its ranked matcher, warmed in idle time and on
+  pointer-over, focus or touch on the trigger; the Ask view and its stream
+  client, warmed when the palette opens; the palette's own copy, a deferred
+  message namespace fetched in idle time so no route's i18n budget moved.
+  `deferredChunks` holds all seven modules out of the static graph.
+- **Server prop, not an import:** the project list. Importing `projectsData`
+  would have put all of `data.js` into every first load. The layout builds a
+  slim `{ id, name, hint, keywords }` list, already localised.
+- **Not server-rendered:** the trigger. Drawn round on the server and widened
+  into the shortcut pill on hydration, it would have been a layout shift.
+
+**Measured (same machine, `npm run test:bundle`, this branch against `main`
+@ `fc37364`):** +3.0 to +3.6 kB gzip on most sub-pages, +0.2 kB on `/`, +1.6 kB
+on `/uses`, which no longer bundles a palette of its own. Every route stayed
+within budget, and the budget was not re-baselined.
+
 ## 20. framer-motion on LazyMotion (issue #200)
 
 ### The estimate was re-measured before it was built
@@ -2549,3 +2618,145 @@ routes whose committed ceiling was already tighter than measured + 10 % keep it.
   `useAnimation` cards, and `/uses`' count-ups, cost only their own routes.
   Moving them would mean reworking each piece of choreography for a
   route-local gain of up to 16 kB.
+
+## 21. Ask: the site answering for itself (issue #41)
+
+`/llms.txt` (issue #32, W3) states the site's own summary for an assistant that
+chooses to fetch it. Ask goes one step further: a visitor types a question into
+the ⌘K palette and gets an answer from Claude, through the Vercel AI Gateway,
+written only from what this site says. The audience is the same as the brief's:
+a recruiter with ninety seconds.
+
+### Decision: the whole corpus in the prompt, no retrieval
+
+The grounding document (`src/lib/ask/corpus.js`) is derived at build from
+`IDENTITY`, the route registry, `projectsData`, `journeyData` and the `/uses`
+bench, the same sources as `/llms.txt`, so it cannot drift from the pages.
+It is a few thousand tokens. **Rejected: embeddings and a vector store.**
+Retrieval would add moving parts whose only job is to choose which few hundred
+of those tokens to send, and every one of them is a new way to leave out the
+line that answers the question. `tests/unit/askCorpus.test.js` fails if any
+project, indexable route or journey entry is missing from the document.
+
+### Decision: links by schema, labels by the client
+
+The model can point at a page only through one tool, `open_page`, whose
+`href` is a JSON Schema `enum` of the site's real paths. The server re-checks
+each call against the same set, drops duplicates and stops at three. It sends
+the client only the href, and the client labels it from its own route and
+project registry. Nothing the model writes becomes a URL or link text, so a
+question crafted to plant an off-site or `javascript:` link has no field to put
+it in. The answer itself is rendered as text nodes, never as markup.
+**Rejected: link markers in the prose.** Then the model would be writing the
+links.
+
+### Decision: a cached prompt, no thinking, a cheap model
+
+**Measured 2026-11-09 against the gateway, `anthropic/claude-haiku-5.5`, one
+question twice:** the system prompt sits behind an Anthropic `cacheControl`
+breakpoint. It is byte-identical across requests because the visitor's language
+and page travel in the user turn instead. The second call read 6,454 of its
+6,553 input tokens from cache. With the provider's default the model reasoned
+before answering, 217 output tokens. With `reasoning: 'none'` the same answer
+took 92, and the round trip about 2.4 s. `temperature` is not sent: this model
+ignores it and warns on every call. `ASK_MODEL` changes the model without a
+deploy.
+
+### Decision: two budgets, because one cannot bound cost
+
+A per-visitor sliding window (6 a minute, keyed by a truncated SHA-256 of the
+IP, never the IP) stops one person. It cannot stop a thousand addresses, so a
+global daily counter (`ASK_DAILY_LIMIT`, default 300) closes Ask for everyone
+until UTC midnight once it is reached. The count is taken before the model is
+called, so a flood keeps the breaker shut instead of probing it. Both are in
+`src/lib/ask/ratelimit.js`, on Upstash when it is configured and in memory
+otherwise. Both are disclosed on `/privacy`, and the question itself is neither
+stored nor logged: error logs carry the error's name and status only.
+
+### Out of scope, and still open
+
+- **Multi-turn chat.** One question, one answer, by decision. A conversation
+  is a different product, with a different cost and abuse model.
+- **Answer quality over time.** Nothing measures whether answers stay
+  accurate as the data changes. The corpus test proves the facts are present,
+  not that the model uses them well. An eval set of recruiter questions is the
+  next step if Ask earns one.
+
+### Revised (2026-11-10): an agent that shows its work
+
+The first version answered from the facts alone. On review the owner asked
+for more, and the result is a small agent. Each change below was chosen
+because it is checkable, not because it looks impressive.
+
+**Live tools, in process.** Three tools answer what a static registry cannot:
+GitHub activity, project completion from the issue boards, and the work in
+focus this fortnight (`src/lib/ask/liveTools.js`). Each calls the existing
+route handler (`/api/github-stats`, `/api/project-progress`, `/api/work-status`)
+inside the same request, so it shares that route's cache, rate-limit guards
+and fallback. Ask adds no GitHub code and no traffic a page view would not
+already cause. A tool never throws. A handler slower than six seconds is
+`unavailable`, and a bundled snapshot is marked not live, which the
+instructions oblige the model to say. The loop stops after four model calls,
+or as soon as the follow-ups are offered.
+
+**Citations replace the link tool.** The corpus became a registry of citable
+facts with stable ids (`src/lib/ask/corpus.js`). The model cites each claim as
+`[[P2]]`, and a streaming parser (`src/lib/ask/citations.js`) turns each valid id
+into a citation and drops the rest. A fast-check property holds it to giving
+the same result however the stream is cut. Each source's link comes from the
+registry and is checked again in the browser. **Rejected: keeping
+`open_page`.** With citations the model no longer needs to write a link at
+all, and every link the visitor can follow is one this file chose.
+
+**The trace.** Each live check is shown as it runs and with what it found. A
+sentence the model writes before reaching for a tool is its plan. The server
+retracts it, and the client moves it into the trace rather than leaving it at
+the top of the answer.
+
+**The fit check.** A pasted job description is assessed one requirement at a
+time as structured output (`Output.array`). Each row is a verdict, one
+evidence sentence and the facts it rests on, and those ids are limited by a
+JSON Schema `enum`. The third verdict is "not shown", never "missing": a gap
+means the site does not mention it. A gap carries no evidence by
+construction. One check counts as three questions against the daily breaker.
+
+**The grounding was the real fix.** The first live fit check marked i18n and
+Vercel as gaps. It was correct about the corpus and wrong about the owner,
+because no fact said so. Three facts were added, all derived rather than
+typed: each project's languages from `src/data/project-languages.json`, the
+`/uses` stack, and an account of this site's own engineering whose versions
+come from `package.json` and whose test counts come from the generated
+`tests/*-cases.json`.
+
+**Measured (2026-11-10, live gateway, `claude-haiku-5.5`):** a two-tool Ask
+answered with six cited sources and three follow-ups in 4.3 s on the
+production code path. A fit check against a real full-stack posting returned
+eight rows in 3.5 s, 5 strong, 2 partial and 1 not shown. Against the dev
+server under heavy load the same runs took 17.6 s and 4.9 s, which is dev
+compilation, not the model. First-load JS grew by about 0.8 kB a route for
+the restyled trigger. The agent UI, the fit panel and the stream client are
+deferred chunks.
+
+### Revised (2026-11-11): conversations, laid out as a chat
+
+**Decision (owner, 2026-11-11).** The owner found two dead ends: opening Ask
+showed only suggested questions, and once an answer came there was no way
+back to the command list. So the "one question, one answer" line above is
+reversed on the client. The Ask view is now a chat. Conversations sit in a
+sidebar, the thread runs down the right with the options to pick under the
+latest answer, and a composer is pinned at the bottom. "Commands" (or Esc)
+returns to the full list, and a "Continue" row there reopens the thread.
+
+What did not change is the cost and abuse model that line was protecting.
+Each question is still one bounded request, with the same per-minute and
+daily limits. A follow-up still carries at most the last two completed turns
+of its own conversation, validated again on the server. A longer
+conversation therefore costs no more per question than a fresh one.
+
+Conversations live in memory for the life of the page
+(`src/components/commandPalette/askSession.js`), not in browser storage, so
+a reload starts clean and `/privacy` has nothing new to disclose. Storing
+them was rejected: that would mean keeping a visitor's questions on their
+device for a portfolio's convenience. The store ships in the deferred
+palette chunks, so no route's first load grows.
+

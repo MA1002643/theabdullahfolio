@@ -9,6 +9,17 @@
     "title": "NOTA",
     "breadcrumb": "Trilha de navegação",
     "allNotes": "Todas as notas",
-    "source": "Fonte: {source} · {count, plural, one {{n} linha} other {{n} linhas}}"
+    "source": "Fonte: {source} · {count, plural, one {{n} linha} other {{n} linhas}}",
+    "partial": "Algumas passagens abaixo ainda não foram traduzidas e por isso aparecem em inglês.",
+    "crumbs": {
+      "home": "Início",
+      "notes": "Notas"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Por que cada decisão de descoberta neste site foi tomada, o que foi descartado e quanto custou — o registro de engenharia mantido junto ao código."
+    },
+    "composed": "Registro de decisão de engenharia — {title}. {n} linhas da própria documentação deste repositório."
   }
 }

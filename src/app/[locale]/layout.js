@@ -17,6 +17,8 @@ import ConsentProvider from '@/components/privacy/ConsentProvider';
 import ConsentedAnalytics from '@/components/privacy/ConsentedAnalytics';
 import PrivacyGate from '@/components/privacy/PrivacyGate';
 import LocaleSuggestion from '@/components/i18n/LocaleSuggestion';
+import SitePalette from '@/components/commandPalette/SitePalette';
+import { paletteProjects } from '@/lib/palette/projects';
 import JsonLd from '@/components/seo/JsonLd';
 import IntlScope from '@/i18n/IntlScope';
 import { fontVariableClasses, scriptFontStyle } from '@/i18n/fonts';
@@ -222,6 +224,13 @@ export default async function LocaleLayout({ children, params }) {
                         #82). A suggestion, never a redirect. Inside the
                         loader's inert boundary like every other control. */}
                     <LocaleSuggestion />
+                    {/* The ONE ⌘K palette (issue #41), on every route and the
+                        404. Inside the transition provider so its jumps take
+                        the Ember Passage, and inside the loader's inert
+                        boundary like every other control. The project list is
+                        built HERE, on the server, already localised, so
+                        data.js never reaches the client for it. */}
+                    <SitePalette projects={await paletteProjects(locale)} />
                   </PageTransitionProvider>
                   {/* The two floating CONTROLS live inside LoaderWrapper for its
                       `inert` boundary: while the opaque intro loader covers the

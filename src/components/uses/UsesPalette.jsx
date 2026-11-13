@@ -2,25 +2,24 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createTranslator, useLocale } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
-import CommandPalette from '@/components/commandPalette/CommandPalette';
-import { routeActions, routesExcept } from '@/components/commandPalette/routes';
+import { usePaletteActions } from '@/components/commandPalette/registry';
 import { profileGithubUrl } from '@/components/footer/footer-data';
-import { usePageTransition } from '@/components/pageTransition/PageTransitionProvider';
 import { useGuestbookPrefs } from '@/hooks/useGuestbookPrefs';
 import { togglePref } from '@/lib/guestbook/prefs';
 import { intlTag } from '@/i18n/format';
 import { DEFAULT_LOCALE } from '@/i18n/locales';
 
-// /uses' action set for the shared CommandPalette — the JourneyPalette seam:
-// the palette component knows nothing about this page. Plate jumps land on
+// /uses' commands for the sitewide ⌘K palette — the JourneyPalette seam:
+// the palette component knows nothing about this page, and since issue #41
+// the page contributes these to the one palette the root layout mounts
+// (usePaletteActions) rather than mounting its own. That palette supplies the
+// route jumps, so this list has none. Plate jumps land on
 // the plate's own `id` (scroll-mt clears the home-button island); reduced
 // motion is read with matchMedia AT PERFORM TIME, because the action list is
 // memoed once and a perform-time read can never go stale. "Copy my editor
 // settings" writes the very lines the EditorFrame renders — one array, so
-// what you see is what you copy. Route jumps go through the Ember Passage via
-// usePageTransition().navigate, degrading to router.push without a provider.
+// what you see is what you copy.
 export const USES_PLATES = [
   { slug: 'machine', ordinal: '00', label: 'The machine', keywords: 'hardware laptop macbook display phone' },
   { slug: 'bench', ordinal: '01', label: 'The bench', keywords: 'editor vscode terminal shell fonts settings' },
@@ -50,7 +49,6 @@ export function buildUsesActions({
   ordinal = (o) => o,
   frameLines,
   motionOn,
-  go,
   copyText,
   openExternal,
   toggleMotion,
@@ -83,7 +81,6 @@ export function buildUsesActions({
       keywords: 'repos github source code open',
       perform: () => openExternal(`${profileGithubUrl}?tab=repositories`),
     },
-    ...routeActions(routesExcept('/uses'), go),
     {
       id: 'toggle-motion',
       label: t('toggleMotion'),
@@ -98,8 +95,9 @@ export function buildUsesActions({
 // The palette's own copy is fetched, not shipped (issue #82, the 8 kB
 // budget): it is only read once a visitor opens ⌘K, and in the longer
 // locales it was what held /uses over. The fetch starts at mount, so it is
-// in long before a hand reaches the shortcut; until it is, the palette still
-// offers every route jump and only this page's own actions are missing.
+// in long before a hand reaches the shortcut; until it is, the sitewide
+// palette still offers everything else and only this page's own actions are
+// missing.
 // A failed chunk falls back to English, and a failed English chunk leaves
 // the route jumps alone.
 const pending = new Map();
@@ -142,19 +140,15 @@ function usePaletteTranslator(locale) {
   );
 }
 
+const NONE = [];
+
 export default function UsesPalette({ frame }) {
-  const router = useRouter();
-  const { navigate } = usePageTransition();
   const prefs = useGuestbookPrefs();
   const locale = useLocale();
   const t = usePaletteTranslator(locale);
 
   const actions = useMemo(() => {
-    const go = (href, label) => {
-      if (navigate) navigate(href, { label });
-      else router.push(href);
-    };
-    if (!t) return routeActions(routesExcept('/uses'), go);
+    if (!t) return NONE;
     const copyText = async (text) => {
       try {
         await navigator.clipboard.writeText(text);
@@ -173,12 +167,12 @@ export default function UsesPalette({ frame }) {
       ordinal: locale === 'en' ? undefined : (o) => two.format(Number(o)),
       frameLines: frame.lines,
       motionOn: prefs.motion,
-      go,
       copyText,
       openExternal,
       toggleMotion: () => togglePref('motion'),
     });
-  }, [navigate, router, prefs.motion, frame.lines, t, locale]);
+  }, [prefs.motion, frame.lines, t, locale]);
 
-  return <CommandPalette actions={actions} />;
+  usePaletteActions('uses', actions);
+  return null;
 }

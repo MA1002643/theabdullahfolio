@@ -87,3 +87,4 @@ service-account-key*.json
 
 # The pseudo-locale catalogue: generated from messages/en by `npm run i18n:pseudo`
 messages/en-XA/
+docs/i18n/en-XA/

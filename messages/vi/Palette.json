@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "đi tới chuyển trang điều hướng đường dẫn go jump route page",
     "language": "ngôn ngữ dịch bản dịch vùng language translate locale"
-  }
+  },
+  "triggerTitle": "Tìm kiếm & Hỏi đáp",
+  "triggerHint": "{shortcut} · Hỏi Claude về các dự án của tôi",
+  "triggerHintTouch": "Hỏi Claude về các dự án của tôi"
 }

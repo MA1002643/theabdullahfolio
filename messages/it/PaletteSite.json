@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "projects": "Progetti",
+    "actions": "Azioni",
+    "recent": "Recenti",
+    "ask": "Chiedi"
+  },
+  "keywords": {
+    "projects": "progetti progetto lavoro lavori build app applicazione repository project work",
+    "actions": "azione azioni esegui fai action run do",
+    "copyLink": "copia link url condividi collegamento copy share",
+    "openCv": "cv curriculum resume scarica apri download",
+    "viewSource": "sorgente sorgenti codice source code github",
+    "copyEmail": "email e-mail indirizzo posta contatto copia contact copy",
+    "backToTop": "inizio su in alto scorri top up scroll",
+    "ask": "chiedi domanda risposta ask question answer",
+    "fit": "lavoro ruolo posizione adattamento compatibilità fit annuncio descrizione requisiti candidatura"
+  },
+  "actions": {
+    "copyLink": "Copia il link di questa pagina",
+    "openCv": "Apri il CV (PDF)",
+    "viewSource": "Vedi il codice sorgente del sito",
+    "copyEmail": "Copia l'indirizzo email",
+    "backToTop": "Torna su",
+    "linkCopied": "Link copiato",
+    "emailCopied": "Indirizzo email copiato",
+    "clipboardUnavailable": "Impossibile accedere agli appunti"
+  },
+  "ask": {
+    "option": "Chiedi a Claude: «{query}»",
+    "start": "Chiedi qualsiasi cosa a Claude…",
+    "resume": "Continua: «{title}»",
+    "suggestions": {
+      "strongest": "Qual è il suo progetto più solido?",
+      "stack": "Quali tecnologie usa di più?",
+      "experience": "Che esperienza ingegneristica ha?",
+      "live": "Su cosa sta lavorando in questo momento?"
+    },
+    "inputLabel": "La tua domanda",
+    "placeholder": "Chiedi del lavoro di Muhammad…",
+    "back": "indietro",
+    "answerLabel": "Risposta",
+    "thinking": "Leggo il sito…",
+    "ready": "Risposta pronta",
+    "enterRetry": "Premi Invio per riprovare.",
+    "disclaimer": "Scritta da Claude a partire dai contenuti di questo sito. Può contenere errori.",
+    "errors": {
+      "unavailable": "Chiedi non è disponibile al momento.",
+      "rateLimited": "Quante domande! Concedi un attimo di pausa.",
+      "budget": "Chiedi si riposa per oggi. Riprova domani.",
+      "offline": "Sei offline. Chiedi ha bisogno di una connessione.",
+      "invalid": "La domanda è troppo corta o troppo lunga.",
+      "failed": "Non ha funzionato."
+    },
+    "optionsLabel": "Fonti e domande di approfondimento",
+    "sources": "Fonti",
+    "followups": "Chiedi anche",
+    "live": "live",
+    "meta": "{facts, number} fatti · {steps, plural, =0 {nessun controllo live} one {# controllo live} other {# controlli live}} · {seconds} s · {model}",
+    "sourceLabels": {
+      "github": "Attività su GitHub",
+      "progress": "Avanzamento dei progetti",
+      "work": "Lavoro attuale",
+      "bench": "Strumenti di ogni giorno",
+      "stack": "Stack tecnologico",
+      "site": "Come è costruito questo sito"
+    },
+    "trace": {
+      "label": "Passaggi eseguiti",
+      "plan": "Piano",
+      "snapshot": "copia salvata",
+      "get_github_activity": {
+        "running": "Controllo l'attività live su GitHub…",
+        "done": "GitHub: {commits, plural, one {# commit} many {# di commit} other {# commit}}, {contributions, plural, one {# contributo} many {# di contributi} other {# contributi}} quest'anno, serie più lunga di {streak, plural, one {# giorno} many {# di giorni} other {# giorni}}",
+        "failed": "Attività su GitHub non disponibile"
+      },
+      "get_project_progress": {
+        "running": "Leggo le bacheche dei progetti live…",
+        "done": "Bacheche di progetto: {tracked, number} monitorate, {overall, number}% completato in totale",
+        "failed": "Bacheche dei progetti non disponibili"
+      },
+      "get_current_work": {
+        "running": "Controllo il lavoro attuale…",
+        "done": "Lavoro in corso: {prs, plural, one {# pull request aperta} many {# di pull request aperte} other {# pull request aperte}}, {pushes, plural, one {# push recente} many {# di push recenti} other {# push recenti}}",
+        "failed": "Lavoro attuale non disponibile"
+      },
+      "other": {
+        "running": "Controllo…",
+        "done": "Controllato",
+        "failed": "Controllo non disponibile"
+      }
+    },
+    "chat": {
+      "sidebar": "Conversazioni",
+      "newChat": "Nuova conversazione",
+      "fit": "Verifica un annuncio",
+      "commands": "Comandi",
+      "noChats": "Le tue conversazioni appariranno qui.",
+      "turns": "{count, plural, one {# domanda} many {# di domande} other {# domande}}",
+      "introTitle": "Chiedi del lavoro di Muhammad",
+      "introBody": "Le risposte arrivano dai contenuti di questo sito, con le fonti. Scrivi la tua domanda qui sotto, oppure parti da una di queste.",
+      "tryAsking": "Prova a chiedere",
+      "followupPlaceholder": "Fai un'altra domanda…",
+      "send": "Invia",
+      "stop": "Interrompi la risposta",
+      "stopped": "Interrotta."
+    }
+  },
+  "fit": {
+    "command": "Confronta un annuncio di lavoro con la sua esperienza",
+    "title": "Verifica di compatibilità con il ruolo",
+    "inputLabel": "Descrizione del lavoro",
+    "placeholder": "Incolla una descrizione del lavoro…",
+    "counter": "{count, number} / {max, number}",
+    "shortcut": "{key} + Invio per verificare",
+    "submit": "Verifica",
+    "running": "Leggo il ruolo…",
+    "tooShort": "Incolla un po' più della descrizione del lavoro (almeno {min, number} caratteri).",
+    "rowsLabel": "Requisiti",
+    "summary": "{strong} solidi · {partial} parziali · {gap} non mostrati",
+    "verdicts": {
+      "strong": "Solido",
+      "partial": "Parziale",
+      "gap": "Non mostrato"
+    },
+    "ready": "Verifica di compatibilità pronta",
+    "disclaimer": "«Non mostrato» significa che il sito non ne parla, non che lui non sappia farlo. Scritto da Claude a partire dai contenuti del sito: può contenere errori."
+  }
+}

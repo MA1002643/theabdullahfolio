@@ -267,7 +267,7 @@ describe('metadata contract — note pages', () => {
         outOfBounds
           .map((e) => `  ${e.slug} → ${e.length}: ${e.description}`)
           .join('\n') +
-        `\n\nAdd a curated entry to CURATED in src/lib/seo/noteMeta.js — the ` +
+        `\n\nAdd a curated entry under meta.curated in messages/en/Notes.json — the ` +
         `composed fallback carries the title, so it cannot fit every one.`,
     ).toEqual([]);
   });

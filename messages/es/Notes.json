@@ -9,6 +9,17 @@
     "title": "NOTA",
     "breadcrumb": "Ruta de navegación",
     "allNotes": "Todas las notas",
-    "source": "Fuente: {source} · {count, plural, one {{n} línea} many {{n} líneas} other {{n} líneas}}"
+    "source": "Fuente: {source} · {count, plural, one {{n} línea} many {{n} líneas} other {{n} líneas}}",
+    "partial": "Algunos pasajes de abajo aún no están traducidos, por eso aparecen en inglés.",
+    "crumbs": {
+      "home": "Inicio",
+      "notes": "Notas"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Por qué se tomó cada decisión de visibilidad en este sitio, qué se descartó y cuánto costó: el registro técnico que acompaña al código."
+    },
+    "composed": "Registro de decisiones de ingeniería — {title}. {n} líneas de la propia documentación de este repositorio."
   }
 }

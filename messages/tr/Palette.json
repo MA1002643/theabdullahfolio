@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "git geç yönlendir rota sayfa gezin",
     "language": "dil çevir çeviri yerel ayar lisan"
-  }
+  },
+  "triggerTitle": "Ara ve Sor",
+  "triggerHint": "{shortcut} · Claude'a çalışmalarımı sor",
+  "triggerHintTouch": "Claude'a çalışmalarımı sor"
 }

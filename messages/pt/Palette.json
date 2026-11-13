@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "ir pular rota página navegar abrir",
     "language": "idioma língua traduzir tradução locale"
-  }
+  },
+  "triggerTitle": "Buscar e perguntar",
+  "triggerHint": "{shortcut} · Pergunte ao Claude sobre meu trabalho",
+  "triggerHintTouch": "Pergunte ao Claude sobre meu trabalho"
 }

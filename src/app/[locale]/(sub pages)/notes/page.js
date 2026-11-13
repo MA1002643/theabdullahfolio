@@ -16,7 +16,7 @@ import { routeFor } from '@/lib/seo/site';
 const ROUTE = routeFor('/notes');
 
 export function generateMetadata({ params }) {
-  return routeMetadata(ROUTE.path, params, { translated: false });
+  return routeMetadata(ROUTE.path, params);
 }
 
 // Server component, read at build time with synchronous `fs` — the same
@@ -25,7 +25,7 @@ export function generateMetadata({ params }) {
 export default async function NotesIndexPage({ params }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const copy = await routeCopy(ROUTE.path, 'en');
+  const copy = await routeCopy(ROUTE.path, locale);
   const t = await getTranslations({ locale, namespace: 'Notes' });
   // Only the five DISPLAY fields cross into the client component below.
   // `readNotes()` carries each document's full `markdown` — 67KB for
@@ -37,10 +37,14 @@ export default async function NotesIndexPage({ params }) {
   // visitor's locale and could disagree with the server's markup. It is the
   // URL locale's format (issue #82: Persian digits on /fa/notes), and `lines`
   // itself travels too so the "line/lines" word can take the right plural.
-  const notes = readNotes().map(({ slug, title, summary, lines, source }) => ({
+  // `titleLang` / `summaryLang` travel too: a string whose block has no
+  // translation yet is still English, and the card marks it so.
+  const notes = readNotes({ locale }).map(({ slug, title, summary, lines, source, titleLang, summaryLang }) => ({
     slug,
     title,
     summary,
+    titleLang,
+    summaryLang,
     source,
     lines,
     linesLabel: lines.toLocaleString(intlTag(locale)),
@@ -54,6 +58,7 @@ export default async function NotesIndexPage({ params }) {
           path: ROUTE.path,
           name: copy.title,
           description: copy.description,
+          locale,
         })}
       />
 

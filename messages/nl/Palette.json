@@ -11,5 +11,8 @@
   "keywords": {
     "navigate": "ga navigeer navigeren spring pagina route bestemming",
     "language": "taal talen vertalen vertaling locale language"
-  }
+  },
+  "triggerTitle": "Zoek en vraag",
+  "triggerHint": "{shortcut} · Vraag Claude naar mijn werk",
+  "triggerHintTouch": "Vraag Claude naar mijn werk"
 }

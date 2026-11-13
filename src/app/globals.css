@@ -7617,6 +7617,19 @@ li:has(.journey-lift :focus-visible) .journey-connector {
   line-height: 1.7;
 }
 
+/* Translated notes (2026-11-10). Code is the repository's own text in every
+   language, so it reads left to right even inside an Arabic or Hebrew
+   paragraph: isolated, so the bidi algorithm cannot reorder a path's slashes
+   or a command's flags around it. */
+.note-prose code,
+.note-prose pre {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.note-prose pre {
+  text-align: start;
+}
+
 .note-prose h2,
 .note-prose h3,
 .note-prose h4 {

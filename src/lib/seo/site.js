@@ -310,10 +310,9 @@ const ROUTE_DEFINITIONS = [
     // goes looking, not the page anyone should land on first.
     priority: 0.6,
     indexable: true,
-    // English-only by decision (issue #82): the engineering decision records
-    // in docs/ are not translated, so every locale's /notes URL canonicalises
-    // here and the sitemap lists no locale alternates for it.
-    translated: false,
+    // Translated (2026-11-10). It was English-only by decision under issue
+    // #82; the documents now carry per-block translations in docs/i18n/, so
+    // the index lists them in every locale like any other page.
     sources: [
       // Named as FILES rather than as `src/app/(sub pages)/notes`, for the
       // reason the `/projects` entry above gives: the note detail routes live

@@ -9,6 +9,17 @@
     "title": "NOT",
     "breadcrumb": "Gezinti yolu",
     "allNotes": "Tüm notlar",
-    "source": "Kaynak: {source} · {count, plural, other {{n} satır}}"
+    "source": "Kaynak: {source} · {count, plural, other {{n} satır}}",
+    "partial": "Aşağıdaki bazı bölümler henüz çevrilmedi, bu yüzden İngilizce olarak gösteriliyor.",
+    "crumbs": {
+      "home": "Ana sayfa",
+      "notes": "Notlar"
+    }
+  },
+  "meta": {
+    "curated": {
+      "discoverability": "Bu sitedeki her keşfedilebilirlik kararının neden alındığı, nelerin elendiği ve bedelinin ne olduğu — kodun yanında tutulan mühendislik kaydı."
+    },
+    "composed": "Mühendislik karar kaydı — {title}. Bu deponun kendi dokümantasyonundan {n} satır."
   }
 }
