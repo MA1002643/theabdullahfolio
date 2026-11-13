@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { intlTag } from '@/i18n/format';
 import { usePaletteActions } from '@/components/commandPalette/registry';
 import { journeyData } from '@/app/data';
-import { resumeUrl } from '@/components/footer/footer-data';
 
 // /journey's commands for the sitewide ⌘K palette — the same seam
 // GuestbookPalette cut for issue #40: the palette component knows nothing
@@ -55,18 +54,9 @@ export default function JourneyPalette() {
         keywords: 'overlap atlas bars concurrent grid gantt',
         perform: () => jumpTo('journey-atlas'),
       },
-      {
-        id: 'open-cv',
-        label: t('palette.openCv'),
-        hint: t('palette.openCvHint'),
-        section: t('palette.section'),
-        keywords: 'resume résumé cv paper download pdf',
-        // noreferrer as well as noopener — the same policy as the repo's
-        // rel="noopener noreferrer" anchors, so the opened page is not sent
-        // the referrer either (moot for this same-origin PDF; the policy
-        // travels with the call if the target ever moves off-origin).
-        perform: () => window.open(resumeUrl, '_blank', 'noopener,noreferrer'),
-      },
+      // No "Open the CV" here: the sitewide Actions group already offers
+      // `open-cv` on every route. A second command with the same id gave two
+      // rows one DOM id, so selecting the second resolved to the first.
     ];
   }, [t, locale]);
 

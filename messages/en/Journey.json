@@ -70,8 +70,6 @@
     "section": "Journey",
     "jumpYear": "Jump to {year}",
     "eraHint": "era",
-    "jumpAtlas": "Jump to the overlap atlas",
-    "openCv": "Open the CV (PDF)",
-    "openCvHint": "the paper version"
+    "jumpAtlas": "Jump to the overlap atlas"
   }
 }

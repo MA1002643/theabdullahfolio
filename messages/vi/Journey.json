@@ -70,8 +70,6 @@
     "section": "Hành trình",
     "jumpYear": "Chuyển đến {year}",
     "eraHint": "giai đoạn",
-    "jumpAtlas": "Chuyển đến atlas chồng lấn",
-    "openCv": "Mở CV (PDF)",
-    "openCvHint": "bản giấy"
+    "jumpAtlas": "Chuyển đến atlas chồng lấn"
   }
 }

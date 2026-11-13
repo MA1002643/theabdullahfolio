@@ -4,6 +4,7 @@ import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import SitePalette from '@/components/commandPalette/SitePalette';
+import JourneyPalette from '@/components/journey/JourneyPalette';
 import { resetPaletteRegistry, usePaletteActions } from '@/components/commandPalette/registry';
 import { resetAskSession } from '@/components/commandPalette/askSession';
 import { RECENTS_KEY } from '@/lib/palette/recents';
@@ -142,6 +143,42 @@ describe('SitePalette — one palette, every page', () => {
     await screen.findByRole('dialog');
     await waitFor(() => expect(options()[0]).toHaveTextContent('AfaaqX'));
     expect(options()[0].id).toBe('palette-opt-recent:project-2');
+  });
+
+  // Regression: Recent copies were appended AFTER the palette localized its
+  // route jumps, so a remembered route showed its English label in German.
+  it('shows a remembered route jump in Recent in the page’s language', async () => {
+    window.localStorage.setItem(RECENTS_KEY, JSON.stringify(['go-journey']));
+    const { user } = setup({ locale: 'de' });
+    // open() waits on the English dialog name; this one is German.
+    await hotkey(user);
+    await screen.findByRole('dialog');
+    await waitFor(() => expect(options()[0]).toHaveTextContent(/^Werdegang/));
+    const first = options()[0];
+    expect(first.id).toBe('palette-opt-recent:go-journey');
+    expect(first).toHaveTextContent(/^Werdegang/);
+    expect(first).not.toHaveTextContent(/^Journey/);
+    // Still in Recent, and the Navigate row keeps its own id.
+    expect(first.previousElementSibling).toHaveTextContent('Zuletzt');
+    expect(document.querySelectorAll('[id="palette-opt-go-journey"]')).toHaveLength(1);
+  });
+
+  // Regression: /journey contributed its own `open-cv`, the same id as the
+  // sitewide action, so two rows shared one DOM id and selecting the second
+  // made aria-activedescendant resolve to the first.
+  it('gives every row a unique id on /journey, with a single Open CV command', async () => {
+    nav.pathname = '/journey';
+    const user = userEvent.setup();
+    renderWithIntl(
+      <>
+        <JourneyPalette />
+        <SitePalette projects={PROJECTS} />
+      </>,
+    );
+    await open(user);
+    const ids = options().map((o) => o.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(options().filter((o) => /^Open (the )?CV/.test(o.textContent))).toHaveLength(1);
   });
 
   it('opens from the trigger and gives focus back to it on Escape', async () => {

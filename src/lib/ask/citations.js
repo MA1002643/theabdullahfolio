@@ -18,9 +18,13 @@
 // tests/property/askCitations.property.test.js).
 
 const ID_SHAPE = /^[A-Za-z][A-Za-z0-9]*(?::[A-Za-z0-9_-]+)?$/;
-// The longest id the registry mints is well under this; a "[[" followed by
-// more than this many characters without "]]" is not a marker.
-const MAX_MARKER = 48;
+// The longest a whole marker, "[[" through "]]", may be; the longest id the
+// registry mints is well under it. The SAME cutoff applies whether the marker
+// arrived in one delta or several: a completed span longer than this is plain
+// text, and an unclosed one is released as text as soon as it can no longer
+// close within it. Checking only the unclosed case made the result depend on
+// where the stream happened to be cut.
+export const MAX_MARKER = 48;
 
 export function createCitationParser(isCitable) {
   let buffer = '';
@@ -50,9 +54,13 @@ export function createCitationParser(isCitable) {
       text(buffer.slice(0, open));
       buffer = buffer.slice(open);
       const close = buffer.indexOf(']]', 2);
-      if (close === -1) {
-        if (!final && buffer.length <= MAX_MARKER) return out; // wait for more
-        // Never closed (or too long to be one): plain text.
+      // Still open: hold it only while a "]]" could yet close it within
+      // MAX_MARKER. With `buffer.length` characters already in and no "]]",
+      // the shortest completion is one more character (a held "]"), so a
+      // buffer of MAX_MARKER or more can never become a marker.
+      if (close === -1 && !final && buffer.length < MAX_MARKER) return out; // wait for more
+      if (close === -1 || close + 2 > MAX_MARKER) {
+        // Never closed, or too long to be one: plain text.
         text(buffer.slice(0, 2));
         buffer = buffer.slice(2);
         continue;

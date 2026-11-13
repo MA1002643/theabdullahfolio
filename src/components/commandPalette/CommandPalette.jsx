@@ -108,6 +108,19 @@ export default function CommandPalette({
     return [...out, ...languages];
   }, [actions, includeLanguages, locale, switchTo, t, tLocale, tNav]);
 
+  // Recent entries are copies of actions made BEFORE the pass above, so a
+  // route jump in Recent still carries its raw navKey and English label.
+  // Resolve each against the localized list by the id it stands for, keeping
+  // only its own distinct id (`recent:<id>`) and the Recent section.
+  const localizedRecent = useMemo(() => {
+    if (!recent?.length) return [];
+    const byId = new Map(localized.map((a) => [a.id, a]));
+    return recent.map((r) => {
+      const source = byId.get(r.recentOf ?? r.id);
+      return source ? { ...source, id: r.id, recentOf: r.recentOf, section: r.section } : r;
+    });
+  }, [recent, localized]);
+
   // The Ask row's label and the Recent group both depend on the query, which
   // lives in the list engine, so the engine is handed a BUILDER and calls it
   // with the query in the same render it ranks the result.
@@ -115,7 +128,7 @@ export default function CommandPalette({
     const list = [];
     // Recent sits first, and only while nothing is typed: once there is a
     // query the ranked list is the better answer.
-    if (recent?.length && !query.trim()) list.push(...recent);
+    if (localizedRecent.length && !query.trim()) list.push(...localizedRecent);
     list.push(...localized);
     if (ask) {
       if (!query.trim() && current) {
@@ -178,7 +191,7 @@ export default function CommandPalette({
       }
     }
     return list;
-  }, [localized, recent, ask, current, openAsk]);
+  }, [localized, localizedRecent, ask, current, openAsk]);
 
   const pal = useCommandPalette(buildActions, controller);
 

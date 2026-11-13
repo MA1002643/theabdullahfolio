@@ -70,8 +70,6 @@
     "section": "الرحلة",
     "jumpYear": "الانتقال إلى {year}",
     "eraHint": "حقبة",
-    "jumpAtlas": "الانتقال إلى أطلس التداخل",
-    "openCv": "فتح الـ CV (PDF)",
-    "openCvHint": "النسخة الورقية"
+    "jumpAtlas": "الانتقال إلى أطلس التداخل"
   }
 }

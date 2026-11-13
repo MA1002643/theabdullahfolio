@@ -70,8 +70,6 @@
     "section": "Droga",
     "jumpYear": "Przejdź do {year}",
     "eraHint": "epoka",
-    "jumpAtlas": "Przejdź do atlasu nakładania się",
-    "openCv": "Otwórz CV (PDF)",
-    "openCvHint": "wersja papierowa"
+    "jumpAtlas": "Przejdź do atlasu nakładania się"
   }
 }

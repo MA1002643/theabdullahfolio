@@ -70,8 +70,6 @@
     "section": "Perjalanan",
     "jumpYear": "Loncat ke {year}",
     "eraHint": "era",
-    "jumpAtlas": "Loncat ke atlas tumpang tindih",
-    "openCv": "Buka CV (PDF)",
-    "openCvHint": "versi kertas"
+    "jumpAtlas": "Loncat ke atlas tumpang tindih"
   }
 }

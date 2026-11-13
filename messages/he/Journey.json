@@ -70,8 +70,6 @@
     "section": "המסע",
     "jumpYear": "מעבר ל-{year}",
     "eraHint": "תקופה",
-    "jumpAtlas": "מעבר לאטלס החפיפות",
-    "openCv": "פתיחת ה-CV (PDF)",
-    "openCvHint": "הגרסה המודפסת"
+    "jumpAtlas": "מעבר לאטלס החפיפות"
   }
 }

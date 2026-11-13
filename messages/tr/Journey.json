@@ -70,8 +70,6 @@
     "section": "Yolculuk",
     "jumpYear": "{year} yılına git",
     "eraHint": "dönem",
-    "jumpAtlas": "Örtüşme atlasına git",
-    "openCv": "CV'yi aç (PDF)",
-    "openCvHint": "kâğıt sürüm"
+    "jumpAtlas": "Örtüşme atlasına git"
   }
 }

@@ -70,8 +70,6 @@
     "section": "Percorso",
     "jumpYear": "Vai al {year}",
     "eraHint": "epoca",
-    "jumpAtlas": "Vai all'atlante delle sovrapposizioni",
-    "openCv": "Apri il CV (PDF)",
-    "openCvHint": "la versione cartacea"
+    "jumpAtlas": "Vai all'atlante delle sovrapposizioni"
   }
 }
