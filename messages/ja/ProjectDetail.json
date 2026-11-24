@@ -10,48 +10,118 @@
     "projects": "プロジェクト"
   },
   "loading": "プロジェクトを読み込み中",
-  "intro": {
-    "fallbackName": "プロジェクト名",
-    "fallbackDescription": "革新的で高速、そして未来的なウェブソリューション。",
-    "linksLabel": "{name}のリンク",
-    "liveDemo": "ライブデモ<sr>（新しいタブで開きます）</sr>",
-    "source": "GitHubでソースを見る<sr>（新しいタブで開きます）</sr>"
+  "chapters": {
+    "overview": "概要",
+    "statement": "課題",
+    "walkthrough": "ウォークスルー",
+    "gallery": "ギャラリー",
+    "architecture": "アーキテクチャ",
+    "notes": "制作ノート",
+    "outcomes": "成果",
+    "stack": "使用技術"
   },
-  "screen": {
-    "boot": {
-      "bios": "BIOSを初期化しています...",
-      "hardware": "ハードウェアを検出しています...",
-      "os": "オペレーティングシステムを読み込んでいます..."
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
+    "linksLabel": "{name}のリンク",
+    "liveDemo": "ライブデモ<sr>(新しいタブで開きます)</sr>",
+    "source": "GitHubでソースを見る<sr>(新しいタブで開きます)</sr>",
+    "private": "非公開リポジトリ"
+  },
+  "facts": {
+    "label": "プロジェクト情報",
+    "role": "役割",
+    "timeline": "期間",
+    "timelineOngoing": "{start}～現在",
+    "timelineRange": "{start}～{end}",
+    "category": "カテゴリ",
+    "started": "開始",
+    "repository": "リポジトリ",
+    "public": "GitHubで公開",
+    "private": "非公開",
+    "live": "公開サイト"
+  },
+  "shortForm": {
+    "pending": "このプロジェクトの詳細なケーススタディは執筆中です。それまでは、要点のみをこのページに掲載しています。"
+  },
+  "stack": {
+    "lead": "GitHubの集計によるリポジトリ内の言語です。",
+    "groups": {
+      "languages": "言語",
+      "frameworks": "フレームワーク",
+      "libraries": "ライブラリ",
+      "tooling": "テストとツール"
     },
-    "tagline": "次世代のデジタルクラフトマンシップで、あなたのアイデアを形にします。",
-    "badgeFullstack": "フルスタック",
-    "tools": "ツールとフレームワーク",
-    "overview": "プロジェクト概要",
-    "overviewLead": "このプラットフォームは、統合ダッシュボードとリアルタイム分析によって、ECのワークフローを効率化します。",
-    "overviewBody": "複数のツールを管理する煩雑さを、一元化された直感的なインターフェースで解消します。",
-    "features": "機能",
-    "feature": {
-      "auth": {
-        "title": "認証",
-        "desc": "安全なログインとユーザーアクセス。"
+    "version": "バージョン {version}",
+    "derived": "バージョンはサイトのビルド時にロックファイルから読み取っています。そのため、このデプロイで実際に動いているものと一致します。"
+  },
+  "gallery": {
+    "region": "{title}(スクロール可能)"
+  },
+  "architecture": {
+    "listLabel": "システムの構成要素"
+  },
+  "notes": {
+    "read": "ノートを読む"
+  },
+  "outcomes": {
+    "derived": "手入力ではなく、デプロイ時にビルドから集計しています。"
+  },
+  "index": {
+    "nav": "章",
+    "position": "第{n}章 / 全{total}章",
+    "close": "閉じる",
+    "skip": "章の目次へスキップ"
+  },
+  "palette": {
+    "section": "このプロジェクト",
+    "jump": "{title}へ移動",
+    "demo": "ライブデモを開く",
+    "source": "このプロジェクトのソースを見る"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "訪問者",
+        "detail": "あらゆるブラウザ、あらゆる言語"
       },
-      "payments": {
-        "title": "決済",
-        "desc": "統合された決済ゲートウェイ。"
+      "edge": {
+        "title": "Vercelエッジ",
+        "detail": "ロケールのルーティング"
       },
-      "chat": {
-        "title": "ライブチャット",
-        "desc": "ユーザーとの即時コミュニケーション。"
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components、プリレンダリング済み"
       },
-      "admin": {
-        "title": "管理パネル",
-        "desc": "コンテンツ管理をシンプルに。"
+      "content": {
+        "title": "コンテンツ",
+        "detail": "data.jsとメッセージカタログ"
+      },
+      "notes": {
+        "title": "エンジニアリングノート",
+        "detail": "docs/*.md を /notes で配信"
+      },
+      "client": {
+        "title": "クライアントアイランド",
+        "detail": "LazyMotion、⌘Kパレット"
+      },
+      "api": {
+        "title": "APIルート",
+        "detail": "認証情報はサーバー内にとどめます"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "ゲストブック、レート制限"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "リポジトリ、進捗"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "質問、メッセージの推敲"
       }
-    },
-    "liveDemo": "ライブデモ",
-    "github": "GitHub",
-    "demoLabel": "{name}のライブデモを開く",
-    "sourceLabel": "GitHubで{name}のソースを見る"
+    }
   },
   "meta": {
     "dated": "{name} — {description}。{category}の開発で、{when}に開始。{visibility, select, private {非公開リポジトリ} other {公開リポジトリ}}で、GitHubボードからリアルタイムで進捗を追跡しています。",

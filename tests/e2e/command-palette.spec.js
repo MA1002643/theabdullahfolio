@@ -22,7 +22,7 @@ const ANSWER = ndjson([
   { type: 'step', id: 't1', tool: 'get_github_activity', status: 'running' },
   { type: 'step', id: 't1', tool: 'get_github_activity', status: 'done', data: { live: true, commits: 1502, contributionsLastYear: 1809, longestStreakDays: 253 } },
   { type: 'text', text: 'He built AfaaqX, a multi-tenant business system ' },
-  { type: 'source', id: 'P2', kind: 'project', href: '/projects/2', label: 'AfaaqX' },
+  { type: 'source', id: 'P2', kind: 'project', href: '/projects/afaaqx', label: 'AfaaqX' },
   { type: 'cite', id: 'P2' },
   { type: 'text', text: ', with Stripe payments.' },
   { type: 'source', id: 'X', kind: 'page', href: 'https://evil.example/' },
@@ -32,7 +32,7 @@ const ANSWER = ndjson([
 ]);
 const FIT = ndjson([
   { type: 'meta', facts: 42, model: 'anthropic/claude-haiku-5.5' },
-  { type: 'source', id: 'P1', kind: 'project', href: '/projects/1', label: 'theabdullahfolio' },
+  { type: 'source', id: 'P1', kind: 'project', href: '/projects/theabdullahfolio', label: 'theabdullahfolio' },
   { type: 'fit-row', row: { requirement: 'React and Next.js', verdict: 'strong', evidence: 'A Next.js 16 portfolio.', sources: ['P1'] } },
   { type: 'fit-row', row: { requirement: 'AWS', verdict: 'gap', evidence: '', sources: [] } },
   { type: 'done', ms: 3000, steps: 2 },
@@ -73,7 +73,7 @@ test.describe('the sitewide ⌘K palette', { tag: '@cross-browser' }, () => {
     await search(page).fill('afaaq');
     await expect(page.getByRole('option', { name: /AfaaqX/ })).toHaveAttribute('aria-selected', 'true');
     await search(page).press('Enter');
-    await expect(page).toHaveURL(/\/projects\/2$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/projects\/afaaqx$/, { timeout: 15_000 });
   });
 
   test('a page’s own commands appear only on that page', async ({ page, browserName }) => {
@@ -115,7 +115,7 @@ test.describe('the sitewide ⌘K palette', { tag: '@cross-browser' }, () => {
 
     await field.press('ArrowDown');
     await field.press('Enter');
-    await expect(page).toHaveURL(/\/projects\/2$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/projects\/afaaqx$/, { timeout: 15_000 });
   });
 
   test('the fit check assesses a pasted job description', async ({ page, browserName }) => {
@@ -134,7 +134,7 @@ test.describe('the sitewide ⌘K palette', { tag: '@cross-browser' }, () => {
     await expect(results).toContainText('1 strong · 0 partial · 1 not shown');
     await expect(results.getByRole('listitem')).toHaveCount(2);
     await results.getByRole('button', { name: 'theabdullahfolio' }).click();
-    await expect(page).toHaveURL(/\/projects\/1$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/projects\/theabdullahfolio$/, { timeout: 15_000 });
   });
 });
 

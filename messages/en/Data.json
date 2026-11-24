@@ -215,5 +215,240 @@
         "detail": "Pixel probes, reduced-motion emulation and the e2e gate all run against real Chromium"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Design & engineering",
+      "thesis": "A personal site built like a product: served in twenty languages, verified by a layered test plan, and with every decision written up in public.",
+      "heroAlt": "The theabdullahfolio home page: the name in orange above a laptop on a lantern-lit stone path, ringed by navigation buttons, under a live GitHub status bar.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio is the portfolio you are reading. It is a Next.js site that doubles as its own case study: each page is a working sample of how I build software, from the first byte a visitor downloads to the notes that explain why it was built that way.",
+          "facts": {
+            "stack": {
+              "label": "Stack",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Status",
+              "value": "Live, in active development"
+            }
+          }
+        },
+        "statement": {
+          "title": "The problem",
+          "body": "Most portfolios are brochures. They list what someone has made, but never show how it was made. This one had to be the evidence itself: as accountable as a product, as accessible as a public service, and open to anyone who wants to check the work."
+        },
+        "walkthrough": {
+          "title": "How a visit works",
+          "steps": {
+            "arrive": {
+              "title": "Arrive",
+              "body": "The home page paints its name and a ring of destinations first. Animation features arrive afterwards in their own chunk, so nothing a visitor needs waits for motion to download.",
+              "alt": "The home page with its orbit of navigation buttons around the name."
+            },
+            "language": {
+              "title": "Read in your language",
+              "body": "Every page is served in twenty languages. Four of them read right to left, and the layout mirrors with them: margins, arrows, motion and typed input all follow the reader’s direction.",
+              "alt": "The about page in Arabic, laid out right to left."
+            },
+            "palette": {
+              "title": "Move by keyboard",
+              "body": "A command palette on every page reaches each route, project and section by typing. It also has an Ask panel that answers questions about the work and cites the page each answer came from.",
+              "alt": "The command palette open over the projects page, listing the site’s routes."
+            },
+            "receipts": {
+              "title": "Check the receipts",
+              "body": "The engineering notes are published as pages, and the uses page reads its figures from the build itself: the test counts, the dependency versions and the deployment pipeline.",
+              "alt": "The uses page: the machine and the editor bench, each row confirmed by the owner."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Screens",
+          "items": {
+            "about": {
+              "alt": "The about page: the most-used languages and GitHub statistics, read live from GitHub, beside the years-in-the-craft card.",
+              "caption": "About: live counts from GitHub and the CV."
+            },
+            "journey": {
+              "alt": "The journey page: a timeline of study and work.",
+              "caption": "Journey: the timeline, era by era."
+            },
+            "projects": {
+              "alt": "The projects listing with category tabs.",
+              "caption": "Projects: filtered by category."
+            },
+            "notes": {
+              "alt": "An engineering note rendered as a long-form page.",
+              "caption": "Notes: decisions, written up in public."
+            },
+            "japanese": {
+              "alt": "The journey page in Japanese.",
+              "caption": "Japanese: line breaking without spaces."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Architecture",
+          "body": "Pages are rendered on the server and prerendered at build wherever they can be. Content and translations are files in the repository, and live figures come through a few small API routes. Each of those routes keeps its credentials on the server."
+        },
+        "stack": {
+          "title": "Built with",
+          "body": "A mainstream stack kept deliberately small: one framework, one styling system, one translation library, and a handful of libraries that each do one job.",
+          "items": {
+            "javascript": {
+              "body": "ES modules end to end; JSDoc types where a signature earns one.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "One stylesheet with logical properties only, scaled from a single fluid factor.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Fragment shaders for the home scene, the aurora and the ember passage.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Build, verification and CI scripts.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router and Server Components; every route prerendered at build.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Server Components carry the words; client islands carry the motion.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Utilities for layout and spacing; the site’s own voices live in one stylesheet.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "Twenty locales with ICU messages and a message budget per route.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion: the animation engine arrives after first paint, or not at all, and the page is whole either way.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Ask and the fit check, streamed through the Vercel AI Gateway to Claude.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "The guestbook, the live location and every rate limit.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "The home scene and the aurora, through React Three Fiber, loaded only where they play.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "The contact form’s fields and validation.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "GitHub and Google sign-in for the guestbook.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Toasts for the forms and the project list.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "The interface icons, one inline SVG each.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Renders the engineering notes from Markdown at build.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "Delivers the contact form over SMTP.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "The unit, property, component and API layers.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "End-to-end, accessibility, visual and performance layers, in real browsers.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "WCAG 2.2 AA on every route, at two widths.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Property tests for the parsers, the rankers and the chapter lists.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Mutation testing on the critical logic.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Core Web Vitals and accessibility rules on every commit.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Tests, Lighthouse, visual baselines and dependency updates.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Hosting, previews, analytics and the AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "The runtime, pinned by engines and .nvmrc.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Craft notes",
+          "items": {
+            "lazy-motion": {
+              "title": "Motion that is allowed to arrive late",
+              "body": "The animation engine left every first load. Elements describe their end state in props, so a page that never receives the motion chunk is still complete. Rejected: shipping the whole library up front."
+            },
+            "languages": {
+              "title": "Twenty languages, four right to left",
+              "body": "Copy is translated by message, then validated for placeholders and plurals. Layout uses logical properties only. Rejected: an English site with a translate button."
+            },
+            "testing": {
+              "title": "A test plan that is published",
+              "body": "Unit, property, mutation, component, API, end-to-end, accessibility, visual, performance and security layers, each written down with what it does not catch. Rejected: coverage as the goal."
+            },
+            "restraint": {
+              "title": "Words before WebGL",
+              "body": "This page used to be a 3D laptop on a tree stump. It now explains the work instead of staging it, and three.js has left the route. Rejected: a scene that hid the content and cost a GPU."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Outcomes",
+          "items": {
+            "languages": {
+              "label": "Languages served"
+            },
+            "rtl": {
+              "label": "Read right to left"
+            },
+            "vitest": {
+              "label": "Vitest test cases"
+            },
+            "browser": {
+              "label": "Browser test cases"
+            },
+            "notes": {
+              "label": "Published engineering notes"
+            }
+          }
+        }
+      }
+    }
   }
 }

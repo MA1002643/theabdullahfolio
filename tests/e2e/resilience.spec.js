@@ -49,7 +49,7 @@ test.use({ allowedErrors: [[/^console\.error:/]] });
 const WEBGL_MARKER = 'isWebGLRenderer';
 
 test.describe('a lazy chunk fails to load (flaky network after first paint)', () => {
-  for (const path of ['/contact', '/about', '/', '/projects/1']) {
+  for (const path of ['/contact', '/about', '/', '/projects/theabdullahfolio']) {
     test(`${path} keeps working without its deferred code`, async ({ page }) => {
       let loaded = false;
       const aborted = [];

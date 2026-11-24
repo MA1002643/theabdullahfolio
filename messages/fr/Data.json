@@ -215,5 +215,240 @@
         "detail": "Sondes de pixels, émulation de la réduction des animations et barrière e2e s’exécutent toutes sur un vrai Chromium"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Design et ingénierie",
+      "thesis": "Un site personnel conçu comme un produit : servi en vingt langues, vérifié par un plan de tests en couches, et dont chaque décision est documentée publiquement.",
+      "heroAlt": "La page d’accueil de theabdullahfolio : le nom en orange au-dessus d’un ordinateur portable posé sur un chemin de pierre éclairé par une lanterne, entouré de boutons de navigation, sous une barre d’état GitHub en direct.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio est le portfolio que vous êtes en train de lire. C’est un site Next.js qui sert aussi de sa propre étude de cas : chaque page est un exemple concret de ma manière de construire des logiciels, du premier octet téléchargé par le visiteur jusqu’aux notes qui expliquent pourquoi il a été conçu ainsi.",
+          "facts": {
+            "stack": {
+              "label": "Stack",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Statut",
+              "value": "En ligne, en développement actif"
+            }
+          }
+        },
+        "statement": {
+          "title": "Le problème",
+          "body": "La plupart des portfolios sont des brochures. Ils énumèrent ce que quelqu’un a réalisé, sans jamais montrer comment. Celui-ci devait être la preuve elle-même : aussi responsable qu’un produit, aussi accessible qu’un service public, et ouvert à quiconque souhaite vérifier le travail."
+        },
+        "walkthrough": {
+          "title": "Le déroulement d’une visite",
+          "steps": {
+            "arrive": {
+              "title": "Arriver",
+              "body": "La page d’accueil affiche d’abord son nom et une couronne de destinations. Les fonctions d’animation arrivent ensuite dans leur propre lot de code, de sorte que rien de ce dont le visiteur a besoin n’attend le téléchargement des animations.",
+              "alt": "La page d’accueil avec son orbite de boutons de navigation autour du nom."
+            },
+            "language": {
+              "title": "Lire dans votre langue",
+              "body": "Chaque page est servie en vingt langues. Quatre d’entre elles se lisent de droite à gauche, et la mise en page s’inverse avec elles : marges, flèches, animations et saisie suivent toutes le sens de lecture.",
+              "alt": "La page « À propos » en arabe, disposée de droite à gauche."
+            },
+            "palette": {
+              "title": "Naviguer au clavier",
+              "body": "Une palette de commandes, présente sur chaque page, permet d’atteindre en tapant chaque route, projet et section. Elle propose aussi un panneau « Demander » qui répond aux questions sur le travail et cite la page d’où provient chaque réponse.",
+              "alt": "La palette de commandes ouverte sur la page des projets, listant les routes du site."
+            },
+            "receipts": {
+              "title": "Vérifier les preuves",
+              "body": "Les notes d’ingénierie sont publiées sous forme de pages, et la page « Uses » tire ses chiffres du build lui-même : le nombre de tests, les versions des dépendances et le pipeline de déploiement.",
+              "alt": "La page « Uses » : la machine et l’établi de l’éditeur, chaque ligne confirmée par son propriétaire."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Écrans",
+          "items": {
+            "about": {
+              "alt": "La page « À propos » : les langages les plus utilisés et les statistiques GitHub, lus en direct depuis GitHub, à côté de la carte des années de métier.",
+              "caption": "À propos : des chiffres en direct issus de GitHub et du CV."
+            },
+            "journey": {
+              "alt": "La page « Parcours » : une chronologie des études et du travail.",
+              "caption": "Parcours : la chronologie, époque par époque."
+            },
+            "projects": {
+              "alt": "La liste des projets avec ses onglets de catégories.",
+              "caption": "Projets : filtrés par catégorie."
+            },
+            "notes": {
+              "alt": "Une note d’ingénierie présentée sous forme de page longue.",
+              "caption": "Notes : des décisions, documentées publiquement."
+            },
+            "japanese": {
+              "alt": "La page « Parcours » en japonais.",
+              "caption": "Japonais : des retours à la ligne sans espaces."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Architecture",
+          "body": "Les pages sont rendues côté serveur et prérendues au build chaque fois que c’est possible. Le contenu et les traductions sont des fichiers du dépôt, et les chiffres en direct passent par quelques petites routes d’API. Chacune de ces routes garde ses identifiants côté serveur."
+        },
+        "stack": {
+          "title": "Construit avec",
+          "body": "Une pile technique courante, volontairement réduite : un framework, un système de styles, une bibliothèque de traduction, et une poignée de bibliothèques qui ne font chacune qu’une seule chose.",
+          "items": {
+            "javascript": {
+              "body": "Modules ES de bout en bout ; types JSDoc là où une signature le justifie.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "Une seule feuille de style, avec uniquement des propriétés logiques, dimensionnée à partir d’un unique facteur fluide.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Fragment shaders pour la scène d’accueil, l’aurore et le passage de braise.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Scripts de build, de vérification et d’intégration continue.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router et Server Components ; chaque route est prérendue au build.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Les Server Components portent le texte ; les îlots clients portent le mouvement.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Des utilitaires pour la mise en page et l’espacement ; les voix propres au site vivent dans une seule feuille de style.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "Vingt langues avec des messages ICU et un budget de messages par route.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion : le moteur d’animation arrive après le premier affichage, ou pas du tout, et la page reste complète dans les deux cas.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Ask et le test d’adéquation, diffusés en streaming vers Claude via la Vercel AI Gateway.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "Le livre d’or, la position en direct et chaque limite de débit.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "La scène d’accueil et l’aurore, via React Three Fiber, chargées uniquement là où elles s’exécutent.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "Les champs et la validation du formulaire de contact.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "Connexion GitHub et Google pour le livre d’or.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Notifications toast pour les formulaires et la liste des projets.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "Les icônes de l’interface, chacune en SVG inline.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Génère les notes d’ingénierie à partir de Markdown au build.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "Envoie le formulaire de contact par SMTP.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "Les couches de tests unitaires, de propriétés, de composants et d’API.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "Couches de tests de bout en bout, d’accessibilité, visuels et de performance, dans de vrais navigateurs.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "WCAG 2.2 AA sur chaque route, à deux largeurs.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Tests de propriétés pour les analyseurs, les classements et les listes de chapitres.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Tests de mutation sur la logique critique.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Règles Core Web Vitals et d’accessibilité à chaque commit.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Tests, Lighthouse, références visuelles et mises à jour des dépendances.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Hébergement, préversions, statistiques d’audience et AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "L’environnement d’exécution, verrouillé par engines et .nvmrc.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Notes d’artisanat",
+          "items": {
+            "lazy-motion": {
+              "title": "Une animation qui peut arriver en retard",
+              "body": "Le moteur d’animation a quitté le premier chargement. Les éléments décrivent leur état final dans leurs props : une page qui ne reçoit jamais le lot d’animation reste donc complète. Écarté : livrer toute la bibliothèque d’emblée."
+            },
+            "languages": {
+              "title": "Vingt langues, dont quatre de droite à gauche",
+              "body": "Les textes sont traduits message par message, puis validés quant aux paramètres et aux pluriels. La mise en page n’utilise que des propriétés logiques. Écarté : un site en anglais avec un bouton de traduction."
+            },
+            "testing": {
+              "title": "Un plan de tests publié",
+              "body": "Des couches unitaire, par propriétés, par mutation, composant, API, de bout en bout, accessibilité, visuelle, performance et sécurité, chacune documentée avec ce qu’elle ne détecte pas. Écarté : faire de la couverture un objectif."
+            },
+            "restraint": {
+              "title": "Des mots avant le WebGL",
+              "body": "Cette page était autrefois un ordinateur portable en 3D posé sur une souche. Elle explique désormais le travail au lieu de le mettre en scène, et three.js a quitté la route. Écarté : une scène qui masquait le contenu et sollicitait un GPU."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Résultats",
+          "items": {
+            "languages": {
+              "label": "Langues proposées"
+            },
+            "rtl": {
+              "label": "Lues de droite à gauche"
+            },
+            "vitest": {
+              "label": "Cas de test Vitest"
+            },
+            "browser": {
+              "label": "Cas de test navigateur"
+            },
+            "notes": {
+              "label": "Notes d’ingénierie publiées"
+            }
+          }
+        }
+      }
+    }
   }
 }

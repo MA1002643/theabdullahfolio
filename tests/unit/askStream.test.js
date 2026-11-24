@@ -35,7 +35,7 @@ describe('askEvents — citations', () => {
     ]);
     expect(without(events, 'done')).toEqual([
       { type: 'text', text: 'He built AfaaqX ' },
-      { type: 'source', id: 'P2', kind: 'project', href: '/projects/2', label: 'name-of-P2' },
+      { type: 'source', id: 'P2', kind: 'project', href: '/projects/afaaqx', label: 'name-of-P2' },
       { type: 'cite', id: 'P2' },
       { type: 'text', text: ' and more ' },
       { type: 'cite', id: 'P2' },

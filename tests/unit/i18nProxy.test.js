@@ -90,7 +90,7 @@ describe('proxy matcher', () => {
   const [pattern] = config.matcher;
   const matches = (path) => new RegExp(`^${pattern}$`).test(path);
 
-  it.each(['/', '/about', '/ar/projects/3', '/ogham', '/apiary'])('runs on page path %s', (path) => {
+  it.each(['/', '/about', '/ar/projects/culina', '/ogham', '/apiary'])('runs on page path %s', (path) => {
     expect(matches(path)).toBe(true);
   });
 

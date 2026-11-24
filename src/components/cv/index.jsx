@@ -3,6 +3,7 @@ import { Link } from '@/i18n/navigation';
 import { journeyData, projectsData } from '@/app/data';
 import { localizeCategory, localizeJourneyEntry, localizeProject } from '@/i18n/data';
 import { getDataT } from '@/i18n/getDataT';
+import { projectPath } from '@/lib/projects/paths';
 import { DEFAULT_LOCALE } from '@/i18n/locales';
 
 import {
@@ -443,7 +444,7 @@ export default async function Cv({ cv: model, locale = DEFAULT_LOCALE }) {
                 <h3 className={`text-base print:text-black ${EMBER_NAME}`}>
                   <Link
                     className="underline decoration-[#ff6d05]/40 underline-offset-4 transition-colors hover:text-[#ffd27d] hover:decoration-[#ffd27d]/60"
-                    href={`/projects/${project.id}`}
+                    href={projectPath(project)}
                   >
                     {project.name}
                   </Link>

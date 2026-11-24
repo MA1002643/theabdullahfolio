@@ -10,48 +10,118 @@
     "projects": "Projecten"
   },
   "loading": "Project laden",
-  "intro": {
-    "fallbackName": "Projectnaam",
-    "fallbackDescription": "Innovatieve, snelle en toekomstgerichte weboplossingen.",
+  "chapters": {
+    "overview": "Overzicht",
+    "statement": "Het probleem",
+    "walkthrough": "Rondleiding",
+    "gallery": "Galerij",
+    "architecture": "Architectuur",
+    "notes": "Vakmanschap",
+    "outcomes": "Resultaten",
+    "stack": "Gebouwd met"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "Links van {name}",
     "liveDemo": "Livedemo<sr> (opent in een nieuw tabblad)</sr>",
-    "source": "Broncode op GitHub<sr> (opent in een nieuw tabblad)</sr>"
+    "source": "Broncode op GitHub<sr> (opent in een nieuw tabblad)</sr>",
+    "private": "Privérepository"
   },
-  "screen": {
-    "boot": {
-      "bios": "BIOS wordt geïnitialiseerd...",
-      "hardware": "Hardware wordt gedetecteerd...",
-      "os": "Besturingssysteem wordt geladen..."
+  "facts": {
+    "label": "Projectgegevens",
+    "role": "Rol",
+    "timeline": "Looptijd",
+    "timelineOngoing": "{start} – heden",
+    "timelineRange": "{start} – {end}",
+    "category": "Categorie",
+    "started": "Gestart",
+    "repository": "Repository",
+    "public": "Openbaar op GitHub",
+    "private": "Privé",
+    "live": "Live site"
+  },
+  "shortForm": {
+    "pending": "Er wordt nog gewerkt aan een volledige casestudy van dit project. Tot die tijd vind je op deze pagina de belangrijkste punten."
+  },
+  "stack": {
+    "lead": "Talen in de repository, zoals GitHub ze telt.",
+    "groups": {
+      "languages": "Talen",
+      "frameworks": "Frameworks",
+      "libraries": "Libraries",
+      "tooling": "Testen & tooling"
     },
-    "tagline": "Jouw ideeën versterkt met digitaal vakmanschap van de nieuwste generatie.",
-    "badgeFullstack": "Fullstack",
-    "tools": "Tools & frameworks",
-    "overview": "Projectoverzicht",
-    "overviewLead": "Dit platform stroomlijnt e-commerceprocessen met één centraal dashboard en live analyses.",
-    "overviewBody": "Het neemt de complexiteit van het beheren van meerdere tools weg met een centrale, intuïtieve interface.",
-    "features": "Functies",
-    "feature": {
-      "auth": {
-        "title": "Authenticatie",
-        "desc": "Veilig inloggen en gebruikerstoegang."
+    "version": "Versie {version}",
+    "derived": "Versies worden bij het bouwen van de site uit het lockfile gelezen, dus het zijn precies de versies die deze deployment draait."
+  },
+  "gallery": {
+    "region": "{title}, scrollbaar"
+  },
+  "architecture": {
+    "listLabel": "Het systeem, onderdeel voor onderdeel"
+  },
+  "notes": {
+    "read": "Lees de notitie"
+  },
+  "outcomes": {
+    "derived": "Geteld uit de build tijdens het uitrollen, niet met de hand ingevuld."
+  },
+  "index": {
+    "nav": "Hoofdstukken",
+    "position": "Hoofdstuk {n} van {total}",
+    "close": "Sluiten",
+    "skip": "Ga naar de hoofdstukkenlijst"
+  },
+  "palette": {
+    "section": "Dit project",
+    "jump": "Ga naar {title}",
+    "demo": "Open de livedemo",
+    "source": "Bekijk de broncode van dit project"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "Bezoeker",
+        "detail": "Elke browser, elke taal"
       },
-      "payments": {
-        "title": "Betalingen",
-        "desc": "Geïntegreerde betaalprovider."
+      "edge": {
+        "title": "Vercel edge",
+        "detail": "Routering op taal"
       },
-      "chat": {
-        "title": "Livechat",
-        "desc": "Directe communicatie met gebruikers."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, vooraf gerenderd"
       },
-      "admin": {
-        "title": "Beheerpaneel",
-        "desc": "Eenvoudig contentbeheer."
+      "content": {
+        "title": "Inhoud",
+        "detail": "data.js en berichtencatalogi"
+      },
+      "notes": {
+        "title": "Engineeringnotities",
+        "detail": "docs/*.md, beschikbaar op /notes"
+      },
+      "client": {
+        "title": "Clientislands",
+        "detail": "LazyMotion, ⌘K-palet"
+      },
+      "api": {
+        "title": "API-routes",
+        "detail": "Inloggegevens blijven op de server"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "Gastenboek, rate limits"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "Repositories, voortgang"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "Vragen stellen, berichten verfijnen"
       }
-    },
-    "liveDemo": "Livedemo",
-    "github": "GitHub",
-    "demoLabel": "Open de livedemo van {name}",
-    "sourceLabel": "Bekijk de broncode van {name} op GitHub"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. {category}-project, gestart in {when}. {visibility, select, private {Privérepository} other {Openbare repository}}, live bijgehouden via het GitHub-bord.",

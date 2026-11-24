@@ -215,5 +215,240 @@
         "detail": "像素探测、减弱动态效果模拟和端到端关卡检查，全部在真实的 Chromium 上运行"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "设计与工程",
+      "thesis": "一个按产品标准打造的个人网站：支持二十种语言，经分层测试计划验证，每一项决策都公开记录。",
+      "heroAlt": "theabdullahfolio 首页：橙色的姓名位于笔记本电脑上方，电脑置于灯笼照亮的石径上，四周环绕着导航按钮，下方是实时的 GitHub 状态栏。",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio 就是您正在阅读的这个作品集。它是一个 Next.js 网站，同时也是自己的案例研究：每个页面都是我构建软件方式的实际样本，从访客下载的第一个字节，到解释为何这样构建的笔记。",
+          "facts": {
+            "stack": {
+              "label": "技术栈",
+              "value": "Next.js、React、next-intl、framer-motion、Vercel"
+            },
+            "status": {
+              "label": "状态",
+              "value": "已上线，持续开发中"
+            }
+          }
+        },
+        "statement": {
+          "title": "问题所在",
+          "body": "大多数作品集只是宣传册。它们罗列一个人做过什么，却从不展示是怎么做出来的。这个网站必须本身就是证据：像产品一样可追责，像公共服务一样无障碍，并向任何想检验成果的人开放。"
+        },
+        "walkthrough": {
+          "title": "一次访问如何进行",
+          "steps": {
+            "arrive": {
+              "title": "到达",
+              "body": "首页首先渲染姓名和一圈目的地入口。动画功能随后在独立的代码块中加载，因此访客所需的任何内容都不必等待动效下载。",
+              "alt": "首页：导航按钮环绕在姓名周围。"
+            },
+            "language": {
+              "title": "用您的语言阅读",
+              "body": "每个页面都提供二十种语言版本。其中四种从右向左阅读，版面也随之镜像：页边距、箭头、动效和键入的文字都遵循读者的阅读方向。",
+              "alt": "阿拉伯语版的“关于”页面，采用从右向左的排版。"
+            },
+            "palette": {
+              "title": "用键盘导航",
+              "body": "每个页面都有命令面板，输入文字即可跳转到任一路由、项目和板块。它还有一个“提问”面板，可回答有关作品的问题，并注明每个答案出自哪个页面。",
+              "alt": "在项目页面上方打开的命令面板，列出了网站的各个路由。"
+            },
+            "receipts": {
+              "title": "查验凭据",
+              "body": "工程笔记以页面形式发布，而“使用工具”页面的数据直接取自构建本身：测试数量、依赖版本和部署流水线。",
+              "alt": "“使用工具”页面：设备与编辑器工作台，每一行都经所有者确认。"
+            }
+          }
+        },
+        "gallery": {
+          "title": "界面截图",
+          "items": {
+            "about": {
+              "alt": "“关于”页面：从 GitHub 实时读取的常用语言和统计数据，旁边是“从业年限”卡片。",
+              "caption": "关于：来自 GitHub 和 CV 的实时数据。"
+            },
+            "journey": {
+              "alt": "“历程”页面：学习与工作的时间线。",
+              "caption": "历程：按时期展开的时间线。"
+            },
+            "projects": {
+              "alt": "带有分类标签的项目列表。",
+              "caption": "项目：按类别筛选。"
+            },
+            "notes": {
+              "alt": "以长文页面呈现的一篇工程笔记。",
+              "caption": "笔记：公开记录的决策。"
+            },
+            "japanese": {
+              "alt": "日语版的“历程”页面。",
+              "caption": "日语：无空格文本的换行处理。"
+            }
+          }
+        },
+        "architecture": {
+          "title": "架构",
+          "body": "页面在服务器端渲染，并尽可能在构建时预渲染。内容和翻译都是仓库中的文件，实时数据则通过几个小型 API 路由获取。这些路由都把凭据保存在服务器端。"
+        },
+        "stack": {
+          "title": "技术栈",
+          "body": "一套主流技术栈，刻意保持精简：一个框架、一套样式体系、一个翻译库，外加少数几个各司其职的库。",
+          "items": {
+            "javascript": {
+              "body": "全程使用 ES 模块；仅在函数签名值得标注时才添加 JSDoc 类型。",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "单一样式表，只使用逻辑属性，并由一个流式系数统一缩放。",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "用于首页场景、极光和余烬通道的片元着色器。",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "构建、验证与 CI 脚本。",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router 与 Server Components；每条路由都在构建时预渲染。",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Server Components 承载文字，客户端孤岛承载动效。",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "工具类负责布局与间距；站点自己的各种“声音”则集中在一份样式表里。",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "二十种语言区域，采用 ICU 消息格式，并为每条路由设定消息预算。",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion：动画引擎在首次绘制之后才加载，甚至可以完全不加载，页面始终完整。",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "“提问”和匹配度检查，经由 Vercel AI Gateway 以流式方式连接到 Claude。",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "留言簿、实时位置以及所有速率限制。",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "首页场景与极光，通过 React Three Fiber 实现，仅在需要播放的地方加载。",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "联系表单的字段与校验。",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "留言簿的 GitHub 与 Google 登录。",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "表单和项目列表的轻提示。",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "界面图标，每个都是一个内联 SVG。",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "在构建时将 Markdown 编写的工程笔记渲染成页面。",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "通过 SMTP 投递联系表单。",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "单元、属性、组件和 API 各层测试。",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "在真实浏览器中运行端到端、无障碍、视觉和性能各层测试。",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "每条路由在两种宽度下均符合 WCAG 2.2 AA。",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "针对解析器、排序器和章节列表的属性测试。",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "对关键逻辑进行变异测试。",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "每次提交都会检查 Core Web Vitals 与无障碍规则。",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "测试、Lighthouse、视觉基线与依赖更新。",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "托管、预览、分析以及 AI Gateway。",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "运行时环境，由 engines 和 .nvmrc 锁定版本。",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "工艺笔记",
+          "items": {
+            "lazy-motion": {
+              "title": "允许迟到的动效",
+              "body": "动画引擎已不再随首次加载下载。元素在 props 中描述自己的最终状态，因此即使页面始终没有收到动效代码块，内容依然完整。已否决：一开始就交付整个库。"
+            },
+            "languages": {
+              "title": "二十种语言，四种从右向左",
+              "body": "文案按消息逐条翻译，再校验占位符和复数形式。布局只使用逻辑属性。已否决：英文网站加一个翻译按钮。"
+            },
+            "testing": {
+              "title": "公开发布的测试计划",
+              "body": "单元、属性、变异、组件、API、端到端、无障碍、视觉、性能和安全各层测试，每一层都写明了它无法发现的问题。已否决：把覆盖率当作目标。"
+            },
+            "restraint": {
+              "title": "文字先于 WebGL",
+              "body": "这个页面过去是树桩上的一台 3D 笔记本电脑。现在它改为讲解作品，而不是搭台表演，three.js 也已从该路由中移除。已否决：遮住内容、还要占用 GPU 的场景。"
+            }
+          }
+        },
+        "outcomes": {
+          "title": "成果",
+          "items": {
+            "languages": {
+              "label": "提供的语言"
+            },
+            "rtl": {
+              "label": "从右向左阅读"
+            },
+            "vitest": {
+              "label": "Vitest 测试用例"
+            },
+            "browser": {
+              "label": "浏览器测试用例"
+            },
+            "notes": {
+              "label": "已发布的工程笔记"
+            }
+          }
+        }
+      }
+    }
   }
 }

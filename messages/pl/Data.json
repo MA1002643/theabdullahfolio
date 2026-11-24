@@ -215,5 +215,240 @@
         "detail": "Sondy pikseli, emulacja ograniczonego ruchu i bramka e2e działają na prawdziwym Chromium"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Projektowanie i inżynieria",
+      "thesis": "Osobista strona zbudowana jak produkt: dostępna w dwudziestu językach, sprawdzana wielowarstwowym planem testów, z każdą decyzją opisaną publicznie.",
+      "heroAlt": "Strona główna theabdullahfolio: imię w kolorze pomarańczowym nad laptopem na kamiennej ścieżce oświetlonej latarniami, otoczonym przyciskami nawigacji, pod paskiem statusu GitHub na żywo.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio to portfolio, które właśnie czytasz. To strona w Next.js, która jest też własnym studium przypadku: każda podstrona pokazuje w praktyce, jak tworzę oprogramowanie – od pierwszego bajtu pobranego przez odwiedzającego po notatki wyjaśniające, dlaczego zbudowałem ją w ten sposób.",
+          "facts": {
+            "stack": {
+              "label": "Stos",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Status",
+              "value": "Działa, w aktywnym rozwoju"
+            }
+          }
+        },
+        "statement": {
+          "title": "Problem",
+          "body": "Większość portfolio to broszury. Wymieniają, co ktoś stworzył, ale nie pokazują, jak to powstało. Ta strona miała być samym dowodem: równie rzetelna jak produkt, równie dostępna jak usługa publiczna i otwarta dla każdego, kto chce sprawdzić tę pracę."
+        },
+        "walkthrough": {
+          "title": "Jak wygląda wizyta",
+          "steps": {
+            "arrive": {
+              "title": "Wejście",
+              "body": "Strona główna najpierw wyświetla imię i krąg miejsc docelowych. Funkcje animacji docierają później, w osobnym fragmencie, więc nic, czego potrzebuje odwiedzający, nie czeka na pobranie animacji.",
+              "alt": "Strona główna z orbitą przycisków nawigacji wokół imienia."
+            },
+            "language": {
+              "title": "Czytaj w swoim języku",
+              "body": "Każda strona jest dostępna w dwudziestu językach. Cztery z nich czyta się od prawej do lewej, a układ odbija się razem z nimi: marginesy, strzałki, animacje i wpisywany tekst podążają za kierunkiem czytelnika.",
+              "alt": "Strona „O mnie” po arabsku, w układzie od prawej do lewej."
+            },
+            "palette": {
+              "title": "Nawigacja z klawiatury",
+              "body": "Paleta poleceń na każdej stronie pozwala przejść do dowolnej podstrony, projektu i sekcji po wpisaniu kilku znaków. Ma też panel Zapytaj, który odpowiada na pytania o tę pracę i wskazuje stronę, z której pochodzi każda odpowiedź.",
+              "alt": "Paleta poleceń otwarta nad stroną projektów, z listą podstron serwisu."
+            },
+            "receipts": {
+              "title": "Sprawdź dowody",
+              "body": "Notatki inżynierskie są publikowane jako strony, a strona „Używam” czerpie swoje dane z samego procesu budowania: liczby testów, wersje zależności i potok wdrożeniowy.",
+              "alt": "Strona „Używam”: komputer i stanowisko edytora, każdy wiersz potwierdzony przez właściciela."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Ekrany",
+          "items": {
+            "about": {
+              "alt": "Strona „O mnie”: najczęściej używane języki i statystyki GitHub, pobierane na żywo z GitHub, obok karty z liczbą lat w zawodzie.",
+              "caption": "O mnie: dane na żywo z GitHub i z CV."
+            },
+            "journey": {
+              "alt": "Strona „Droga”: oś czasu nauki i pracy.",
+              "caption": "Droga: oś czasu, epoka po epoce."
+            },
+            "projects": {
+              "alt": "Lista projektów z zakładkami kategorii.",
+              "caption": "Projekty: filtrowane według kategorii."
+            },
+            "notes": {
+              "alt": "Notatka inżynierska wyświetlona jako długa strona.",
+              "caption": "Notatki: decyzje opisane publicznie."
+            },
+            "japanese": {
+              "alt": "Strona „Droga” po japońsku.",
+              "caption": "Japoński: łamanie wierszy bez spacji."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Architektura",
+          "body": "Strony są renderowane na serwerze i, gdzie tylko to możliwe, wstępnie generowane podczas budowania. Treści i tłumaczenia to pliki w repozytorium, a dane na żywo docierają przez kilka małych tras API. Każda z tych tras trzyma swoje poświadczenia po stronie serwera."
+        },
+        "stack": {
+          "title": "Z czego zbudowano",
+          "body": "Popularny stos, celowo utrzymany w małym rozmiarze: jeden framework, jeden system stylów, jedna biblioteka tłumaczeń i garstka bibliotek, z których każda robi jedną rzecz.",
+          "items": {
+            "javascript": {
+              "body": "Moduły ES od początku do końca; typy JSDoc tam, gdzie sygnatura na nie zasługuje.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "Jeden arkusz stylów wyłącznie z właściwościami logicznymi, skalowany jednym płynnym współczynnikiem.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Shadery fragmentów dla sceny na stronie głównej, zorzy polarnej i żarzącego się przejścia.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Skrypty budowania, weryfikacji i CI.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router i Server Components; każda trasa jest renderowana wstępnie podczas budowania.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Server Components niosą słowa, a wyspy po stronie klienta niosą ruch.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Klasy użytkowe do układu i odstępów; własne głosy strony mieszkają w jednym arkuszu stylów.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "Dwadzieścia wersji językowych z komunikatami ICU i budżetem komunikatów na każdą trasę.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion: silnik animacji pojawia się po pierwszym wyrenderowaniu albo wcale, a strona jest kompletna w obu przypadkach.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Funkcja „Zapytaj” i sprawdzenie dopasowania, strumieniowane do Claude przez Vercel AI Gateway.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "Księga gości, lokalizacja na żywo i każdy limit zapytań.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "Scena na stronie głównej i zorza polarna przez React Three Fiber, ładowane tylko tam, gdzie się odtwarzają.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "Pola i walidacja formularza kontaktowego.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "Logowanie przez GitHub i Google do księgi gości.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Powiadomienia typu toast dla formularzy i listy projektów.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "Ikony interfejsu, każda jako jedno wbudowane SVG.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Renderuje notatki inżynierskie z Markdowna podczas budowania.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "Dostarcza formularz kontaktowy przez SMTP.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "Warstwy testów jednostkowych, własności, komponentów i API.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "Warstwy testów end-to-end, dostępności, wizualnych i wydajnościowych, w prawdziwych przeglądarkach.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "WCAG 2.2 AA na każdej trasie, w dwóch szerokościach.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Testy własności dla parserów, rankerów i list rozdziałów.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Testy mutacyjne krytycznej logiki.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Reguły Core Web Vitals i dostępności przy każdym commicie.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Testy, Lighthouse, wzorce wizualne i aktualizacje zależności.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Hosting, podglądy, analityka i AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "Środowisko uruchomieniowe, przypięte przez engines i .nvmrc.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Notatki warsztatowe",
+          "items": {
+            "lazy-motion": {
+              "title": "Animacja, która może się spóźnić",
+              "body": "Silnik animacji przestał być częścią pierwszego ładowania. Elementy opisują swój stan końcowy we właściwościach, więc strona, która nigdy nie otrzyma fragmentu z animacją, nadal jest kompletna. Odrzucone: wysyłanie całej biblioteki od razu."
+            },
+            "languages": {
+              "title": "Dwadzieścia języków, cztery od prawej do lewej",
+              "body": "Treści są tłumaczone komunikat po komunikacie, a następnie sprawdzane pod kątem zmiennych i liczby mnogiej. Układ używa wyłącznie właściwości logicznych. Odrzucone: angielska strona z przyciskiem tłumaczenia."
+            },
+            "testing": {
+              "title": "Opublikowany plan testów",
+              "body": "Warstwy: jednostkowa, własności, mutacyjna, komponentów, API, end-to-end, dostępności, wizualna, wydajnościowa i bezpieczeństwa – każda opisana wraz z tym, czego nie wychwytuje. Odrzucone: pokrycie kodu jako cel."
+            },
+            "restraint": {
+              "title": "Słowa przed WebGL",
+              "body": "Ta strona była kiedyś trójwymiarowym laptopem na pniu drzewa. Teraz wyjaśnia pracę zamiast ją inscenizować, a three.js opuściło tę trasę. Odrzucone: scena, która zasłaniała treść i obciążała GPU."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Wyniki",
+          "items": {
+            "languages": {
+              "label": "Dostępne języki"
+            },
+            "rtl": {
+              "label": "Czytane od prawej do lewej"
+            },
+            "vitest": {
+              "label": "Przypadki testowe Vitest"
+            },
+            "browser": {
+              "label": "Przypadki testów w przeglądarce"
+            },
+            "notes": {
+              "label": "Opublikowane notatki inżynierskie"
+            }
+          }
+        }
+      }
+    }
   }
 }

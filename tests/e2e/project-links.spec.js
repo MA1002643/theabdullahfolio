@@ -5,26 +5,25 @@ import { expect, settle, test } from '../support/test.js';
 //
 // "Live Demo" and "GitHub" were rendered on every project page by a component
 // that took `href` and ignored it: two buttons that did nothing. They are now
-// real links, in two places on purpose: pointer-only copies on the 3D laptop
-// screen, and an accessible pair in normal flow (the intro), because a link
-// projected with CSS 3D transforms is not where its layout box says it is.
+// real links in the case study's hero (issue #31), inside a navigation
+// landmark named for the project. (Until #31 there was also a pointer-only
+// copy on the 3D laptop screen; the scene is gone.)
 
-for (const { id, name, demo, source, privateRepo } of projectsLinksFixture()) {
+for (const { path, name, demo, source, privateRepo } of projectsLinksFixture()) {
   if (!source) {
     // A private project: its repository answers 404 to visitors, so no link
-    // to it may render, neither in the intro nor on the laptop screen.
-    test(`/projects/${id} publishes no link to its private repository`, { tag: '@cross-browser' }, async ({ page }) => {
-      await page.goto(`/projects/${id}`);
+    // to it may render, and with nothing to link to there is no links landmark.
+    test(`${path} publishes no link to its private repository`, { tag: '@cross-browser' }, async ({ page }) => {
+      await page.goto(path);
       await settle(page);
-      await page.waitForTimeout(3000); // the laptop boot sequence, then its buttons
       await expect(page.getByRole('navigation', { name: `${name} links` })).toHaveCount(0);
       await expect(page.locator(`a[href^="${privateRepo}"]`)).toHaveCount(0);
     });
     continue;
   }
 
-  test(`/projects/${id} links to its real ${demo ? 'demo and ' : ''}source`, { tag: '@cross-browser' }, async ({ page }) => {
-    await page.goto(`/projects/${id}`);
+  test(`${path} links to its real ${demo ? 'demo and ' : ''}source`, { tag: '@cross-browser' }, async ({ page }) => {
+    await page.goto(path);
     await settle(page);
     const nav = page.getByRole('navigation', { name: `${name} links` });
     const sourceLink = nav.getByRole('link', { name: /Source on GitHub/ });
@@ -44,8 +43,7 @@ for (const { id, name, demo, source, privateRepo } of projectsLinksFixture()) {
 }
 
 test('no link on a project page points nowhere', async ({ page }) => {
-  await page.goto('/projects/1');
+  await page.goto('/projects/theabdullahfolio');
   await settle(page);
-  await page.waitForTimeout(3000); // the laptop boot sequence, then its buttons
   await expect(page.locator('a[href="#"]')).toHaveCount(0);
 });

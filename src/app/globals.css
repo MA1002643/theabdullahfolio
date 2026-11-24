@@ -9352,3 +9352,1289 @@ li:has(.journey-lift :focus-visible) .journey-connector {
 :is(.uses-title):is(:lang(ar), :lang(fa), :lang(ur), :lang(hi)) {
   line-height: 1.35;
 }
+
+/* ══ /projects/[id] — the case study (issue #31; reworked at the owner's
+   review, 2026-11-15) ═══════════════════════════════════════════════════════
+   A long-read in place of the old 3D scene. The page now shares the About
+   page's material language: every card wears the `.abt-frame` gold hairline
+   and orangered glow over the `.cs-card` slate interior, headings keep the
+   home title's flat #ff6d05, labels the #ffaa2a eyebrow amber, and the quiet
+   voices are the About golds (#f4e3b8 cream, #d4af7a muted, #b8946a soft).
+   #8a8a8a stays the measured contrast floor on this ground, never lower, and
+   nothing glows beyond the shared frame.
+
+   The ground is the route's own (`.cs-backdrop`, rendered by Backdrop.jsx):
+   a fixed slate base, a blurred copy of the project's hero as an ambient
+   bloom, a drafting grid, two ember pools that breathe in CSS and drift with
+   scroll (BackdropPools.jsx), then a vignette that deepens under the
+   reading so every voice keeps its floor.
+
+   Logical properties only (logicalCss): every inline-axis side mirrors under
+   right to left with no extra rule; the chapter dividers and the stack rules
+   are symmetric gradients so they need no mirror. `overflow: clip`, never
+   `hidden`, on anything that holds a sticky child (hidden makes a scroll
+   container and breaks `position: sticky`).
+
+   Fixed chrome this route shares the viewport with: ProjectsBtn top-start
+   (z-50), NowPlaying bottom-start (z-50), the sibling nav top-end on focus
+   (z-60), the intro loader (9999). The phone index pill sits bottom-centre at
+   z-55 and its sheet at z-70. */
+
+.cs-page {
+  --cs-accent: #ff6d05;
+  --cs-eyebrow: #ffaa2a;
+  --cs-ink: #f4f4f4;
+  --cs-cream: #f4e3b8;
+  --cs-warm: #ead9b0;
+  --cs-gold: #d4af7a;
+  --cs-gold-soft: #b8946a;
+  --cs-body: #d4d4d4;
+  --cs-muted: #8a8a8a;
+  --cs-hairline: rgb(255 205 91 / 0.55);
+  --cs-rule: rgb(255 205 91 / 0.18);
+  --cs-gutter: clamp(1rem, 0.5rem + 2.5vw, 2.5rem);
+  position: relative;
+  overflow-x: clip;
+  color: var(--cs-body);
+}
+
+/* ── The route's ground (Backdrop.jsx) ───────────────────────────────────── */
+.cs-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: clip;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(36 26 16 / 0.55), transparent 62%),
+    linear-gradient(to bottom, #0b0e17, #070a12 45%, #05070d);
+}
+/* The project's own hero, blurred far past recognition: ambient light, not a
+   picture. Oversized so the blur never shows a hard edge. `screen` so the
+   light only ever lifts the slate, never muddies it. */
+.cs-backdrop__bloom {
+  position: absolute;
+  inset: -14%;
+  opacity: 0.55;
+  filter: blur(80px) saturate(1.3);
+  mix-blend-mode: screen;
+}
+.cs-backdrop__bloom-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Drafting grid in two orders: the 56px cadence the walkthrough stage draws
+   its rings on, and a major line every four cells (224px — the rails' tick
+   cadence, so the two register by construction). Brightest under the hero,
+   held to a whisper for the rest of the read rather than fading to nothing:
+   the reading should sit on a sheet, not in a void. All 1px axis lines,
+   symmetric by construction. */
+.cs-backdrop__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgb(255 205 91 / 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 205 91 / 0.1) 1px, transparent 1px),
+    linear-gradient(to right, rgb(255 205 91 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 205 91 / 0.045) 1px, transparent 1px);
+  background-size:
+    224px 224px,
+    224px 224px,
+    56px 56px,
+    56px 56px;
+  -webkit-mask-image: radial-gradient(130% 100% at 50% 0%, rgb(0 0 0 / 0.95), rgb(0 0 0 / 0.45) 55%, rgb(0 0 0 / 0.22) 100%);
+  mask-image: radial-gradient(130% 100% at 50% 0%, rgb(0 0 0 / 0.95), rgb(0 0 0 / 0.45) 55%, rgb(0 0 0 / 0.22) 100%);
+}
+/* The sheet's margin rails: two gold hairlines bracketing the 80rem reading
+   column, with a station tick crossing each on the major grid's 224px
+   cadence (both originate at the viewport top, so they register without
+   coordination). One `inset-inline` value sets both sides, so the pair is
+   symmetric and mirrors under right to left for free; on a narrow screen the
+   max() collapses them to a quiet sheet edge just outside the gutter. */
+.cs-backdrop__rails {
+  position: absolute;
+  inset-block: 0;
+  inset-inline: max(0.75rem, calc(50% - 41.5rem));
+  border-inline: 1px solid rgb(255 205 91 / 0.16);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 6rem, black calc(100% - 6rem), rgb(0 0 0 / 0.35));
+  mask-image: linear-gradient(to bottom, transparent, black 6rem, black calc(100% - 6rem), rgb(0 0 0 / 0.35));
+}
+.cs-backdrop__rails::before,
+.cs-backdrop__rails::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: 9px;
+  background: repeating-linear-gradient(to bottom, rgb(255 205 91 / 0.3) 0 1px, transparent 1px 224px);
+}
+.cs-backdrop__rails::before {
+  inset-inline-start: -5px;
+}
+.cs-backdrop__rails::after {
+  inset-inline-end: -5px;
+}
+/* Ember pools. The OUTER element's transform belongs to framer (scroll
+   drift, BackdropPools.jsx); the slow breathing lives on the inner <i>, so
+   the two never fight over one property. */
+.cs-backdrop__pool {
+  position: absolute;
+}
+.cs-backdrop__pool--a {
+  inset-block-start: -12%;
+  inset-inline-start: -8%;
+  width: 54vmax;
+  height: 54vmax;
+}
+.cs-backdrop__pool--b {
+  inset-block-end: -18%;
+  inset-inline-end: -10%;
+  width: 62vmax;
+  height: 62vmax;
+}
+.cs-backdrop__pool i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgb(255 109 5 / 0.17), rgb(255 109 5 / 0.06) 42%, transparent 68%);
+  animation: cs-pool-breathe 11s ease-in-out infinite;
+}
+.cs-backdrop__pool--b i {
+  background: radial-gradient(closest-side, rgb(255 170 42 / 0.13), rgb(255 109 5 / 0.05) 46%, transparent 72%);
+  animation-duration: 14s;
+  animation-delay: -4s;
+}
+@keyframes cs-pool-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+}
+/* Deepens the ground under the reading: the hero sits in the bloom's light,
+   the chapters on darker slate, so every voice clears its floor — but no
+   longer crushed to featureless black, so the sheet's grid, rails and grain
+   survive the whole read. */
+.cs-backdrop__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(90% 60% at 50% 110%, rgb(3 4 8 / 0.55), transparent 60%),
+    linear-gradient(to bottom, rgb(5 7 12 / 0.24) 0, rgb(5 7 12 / 0.6) 70vh, rgb(5 7 12 / 0.72) 100%);
+}
+/* Film grain, last in the stack so it dithers every gradient under it: an
+   inline SVG turbulence tile, so it costs no request and never animates.
+   At 5% it reads as material rather than noise, and it is what keeps the
+   slate's long dark ramps from banding on 8-bit displays. */
+.cs-backdrop__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* ── Shared type ─────────────────────────────────────────────────────────── */
+.cs-eyebrow {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cs-eyebrow);
+}
+/* The chapter's two-digit ordinal, over the heading. Decorative (aria-hidden
+   in Chapter.jsx), in the reader's own digits. */
+.cs-chapter__num {
+  margin: 0 0 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--cs-gold-soft);
+  font-variant-numeric: tabular-nums;
+}
+.cs-h2 {
+  margin: 0 0 1.75rem;
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--cs-accent);
+}
+/* Headings take focus from the index and the palette (tabIndex -1). A
+   programmatic focus shows no ring; a keyboard one does. */
+.cs-chapter h2:focus:not(:focus-visible) {
+  outline: none;
+}
+.cs-lede {
+  max-width: 60ch;
+  margin: 0;
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.3125rem);
+  line-height: 1.65;
+  color: var(--cs-warm);
+}
+.cs-body {
+  max-width: 62ch;
+  margin: 0;
+  line-height: 1.7;
+  color: var(--cs-body);
+}
+.cs-muted {
+  color: var(--cs-muted);
+}
+.cs-link {
+  color: var(--cs-eyebrow);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  transition: color 160ms ease;
+}
+.cs-link:hover {
+  color: var(--cs-accent);
+}
+.cs-link:focus-visible,
+.cs-cta:focus-visible,
+.cs-index__link:focus-visible,
+.cs-index__pill:focus-visible,
+.cs-index__sheet-link:focus-visible,
+.cs-index__close:focus-visible,
+.cs-gallery__native:focus-visible,
+.cs-gallery__item:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: 3px;
+  border-radius: 0.375rem;
+}
+/* The pill wears `.abt-frame` in the markup (Hero.jsx), so its border AND
+   its hover are the ⌘K Search & Ask trigger's by construction (owner,
+   2026-11-20): the shared rule brightens the ember glow on hover and
+   nothing here fills the background, so there is no longer a transition to
+   fight. Declaring border or box-shadow here would silently win over the
+   layered frame rule — don't. */
+.cs-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.375rem;
+  border-radius: 999px;
+  color: var(--cs-accent);
+  font-weight: 600;
+}
+.cs-skip:focus {
+  position: fixed;
+  top: 1rem;
+  inset-inline-end: 1rem;
+  z-index: 61;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  background: #111;
+  color: #fff;
+  outline: 2px solid var(--cs-accent);
+}
+
+/* The page's card interior: the About card's slate, minus its backdrop-blur
+   (nothing sits behind these cards but the fixed ground, so the blur would
+   cost paint for no visible change — and backdrop-filter inside the
+   diagram's <foreignObject> is exactly the combination the Linux WebKit
+   nightly crashes on). Pairs with `.abt-frame`, which brings the gold
+   hairline, the rest glow and the hover bloom from the About page's own
+   rule, so the two pages can never drift apart. */
+.cs-card {
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 30% 0%, rgb(244 227 184 / 0.05), transparent 55%),
+    linear-gradient(135deg, rgb(10 13 24 / 0.93), rgb(3 7 20 / 0.88));
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+/* The header spans the article's full width so the media (M2, HeroMedia.jsx)
+   can lay out full bleed; only the TEXT is constrained, via .cs-hero__inner.
+   Not 100vw: .cs-page clips horizontal overflow at its own edge (it sits
+   inside <main>'s padding), so a viewport-wide child would be visibly cut —
+   and a vw bleed sideways-scrolls under classic scrollbars and in RTL.
+   75rem = the previous 80rem box minus its two gutters at their widest, so
+   the column is byte-identical to before and to .cs-body-grid's content. */
+.cs-hero {
+  padding-block: clamp(6.5rem, 4rem + 8vh, 10rem) 2rem;
+}
+.cs-hero__inner,
+.cs-hero__probe {
+  inline-size: min(100% - 2 * var(--cs-gutter), 75rem);
+  margin-inline: auto;
+}
+/* Zero-height twin of the column inside the full-bleed frame: HeroMedia
+   reads its clientWidth as the settle target, so the JS measures the page's
+   own CSS instead of restating it. */
+.cs-hero__probe {
+  block-size: 0;
+}
+.cs-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 56rem;
+}
+.cs-hero__title {
+  margin: 0;
+  font-size: clamp(2.75rem, 1.25rem + 6.5vw, 6.25rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--cs-accent);
+  overflow-wrap: anywhere;
+}
+.cs-hero__thesis {
+  max-width: 40ch;
+  margin: 0;
+  font-size: clamp(1.125rem, 0.95rem + 0.8vw, 1.5rem);
+  line-height: 1.5;
+  color: var(--cs-warm);
+}
+/* HeroTitle splits text into word masks: the word rises inside its mask. */
+.cs-mask {
+  display: inline-block;
+  overflow: clip;
+  padding-block-end: 0.08em;
+  vertical-align: bottom;
+}
+.cs-mask__inner {
+  display: inline-block;
+}
+.cs-hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* Full bleed by construction: a block child of the full-width .cs-hero. */
+.cs-bleed {
+  margin-block-start: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+}
+/* The hero media wears the frame's rest state by value, not by class: its
+   border-radius is animated inline (HeroMedia.jsx), and `.abt-frame`'s hover
+   transition would fight the scroll-driven style. Change `.abt-frame` and
+   change this pair with it. */
+.cs-hero-media {
+  position: relative;
+  overflow: clip;
+  transform-origin: 50% 0;
+  border: 1px solid var(--cs-hairline);
+  background: #10131f;
+  box-shadow:
+    0 0 0 #ff8400,
+    0 0 0 #ffaa2a,
+    0 0 6px orangered,
+    0 24px 80px rgb(0 0 0 / 0.5);
+}
+/* The hero cinemagraph (owner, 2026-11-19): a WebGL canvas over the still,
+   same pixels where its masks are zero, so the crossfade is seamless. It
+   only fades in once its first frame is drawn (`is-live`); a chunk, texture
+   or context that never arrives leaves the still exactly as it was. Hidden
+   under reduced motion in CSS too, although HeroMedia never mounts it
+   there (the Ember Passage pattern: the code is not even downloaded). */
+.cs-hero-media__fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+.cs-hero-media__fx.is-live {
+  opacity: 1;
+}
+/* The live-recording loop shares the fx overlay's fade; cover (the canvas
+   never needed it) guards against a rounding letterbox at odd widths. */
+video.cs-hero-media__fx {
+  object-fit: cover;
+}
+
+/* ── Body: index + chapters ──────────────────────────────────────────────── */
+.cs-body-grid {
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: var(--cs-gutter);
+}
+.cs-chapters {
+  min-width: 0;
+}
+.cs-chapter {
+  position: relative;
+  padding-block: clamp(4rem, 3rem + 5vw, 7.5rem);
+  /* Clears ProjectsBtn when a jump lands the chapter at the top. */
+  scroll-margin-block-start: 5.5rem;
+}
+/* The chapter divider: an ember line in place of the old flat hairline.
+   Symmetric, so it mirrors under right to left by doing nothing. It starts
+   unlit and IGNITES from its centre when the chapter enters (ChapterReveal
+   flags `data-cs-entered` on its wrapper) — centre-out because the gradient
+   is symmetric, so RTL again mirrors by doing nothing. A no-JS reader gets
+   it lit by the <noscript> rule CaseStudy.jsx emits. */
+.cs-chapter::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 170 42 / 0.35) 18%,
+    rgb(255 109 5 / 0.5) 50%,
+    rgb(255 170 42 / 0.35) 82%,
+    transparent
+  );
+  box-shadow: 0 0 12px rgb(255 109 5 / 0.25);
+  transform: scaleX(0);
+  transition: transform 1100ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cs-chapter:has([data-cs-entered])::before {
+  transform: scaleX(1);
+}
+
+@media (min-width: 1024px) {
+  .cs-body-grid {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: clamp(2.5rem, 1rem + 4vw, 5rem);
+  }
+  .cs-index {
+    position: sticky;
+    top: 7rem;
+    align-self: start;
+    padding-block-start: clamp(4rem, 3rem + 5vw, 7.5rem);
+  }
+}
+
+/* ── Chapter index (M11) ─────────────────────────────────────────────────── */
+.cs-index__rail {
+  position: relative;
+  display: none;
+  border-inline-start: 1px solid var(--cs-rule);
+}
+.cs-index__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Every row is the same height: the indicator moves by `n × 100 %` of its
+   own height, so this one value keeps the two in step. */
+.cs-index__list li,
+.cs-index__indicator {
+  height: 2.5rem;
+}
+.cs-index__list li {
+  display: flex;
+  align-items: center;
+}
+.cs-index__indicator {
+  position: absolute;
+  top: 0;
+  inset-inline-start: -1px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--cs-accent);
+  box-shadow: 0 0 8px rgb(255 109 5 / 0.8);
+}
+.cs-index__link {
+  display: block;
+  padding-inline: 1rem;
+  font-size: 0.875rem;
+  color: var(--cs-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 160ms ease;
+}
+/* Hover and current both speak in the title's ember (owner, 2026-11-19):
+   the rail's indicator and the row's position already tell the two apart. */
+.cs-index__link:hover {
+  color: var(--cs-accent);
+}
+.cs-index__link[aria-current] {
+  color: var(--cs-accent);
+}
+
+.cs-index__pill {
+  position: fixed;
+  inset-block-end: max(1rem, env(safe-area-inset-bottom));
+  inset-inline: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: calc(100vw - 9rem);
+  margin-inline: auto;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--cs-hairline);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgb(12 15 26 / 0.97), rgb(4 8 20 / 0.95));
+  color: var(--cs-cream);
+  font-size: 0.875rem;
+  box-shadow:
+    0 0 6px orangered,
+    0 6px 24px rgb(0 0 0 / 0.45);
+}
+.cs-index__pill-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cs-eyebrow);
+}
+.cs-index__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  background: rgb(0 0 0 / 0.6);
+}
+.cs-index__sheet {
+  width: 100%;
+  max-height: 75vh;
+  overflow-y: auto;
+  padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  border-start-start-radius: 1.25rem;
+  border-start-end-radius: 1.25rem;
+  border-block-start: 1px solid rgb(255 205 91 / 0.35);
+  background: #0e1120;
+}
+.cs-index__sheet ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cs-index__sheet-link {
+  display: block;
+  padding: 0.875rem 0.5rem;
+  border-block-end: 1px solid rgb(255 205 91 / 0.08);
+  color: var(--cs-warm);
+}
+.cs-index__sheet-link[aria-current] {
+  color: var(--cs-accent);
+}
+.cs-index__close {
+  width: 100%;
+  margin-block-start: 1rem;
+  padding: 0.875rem;
+  border: 1px solid rgb(255 205 91 / 0.4);
+  border-radius: 0.75rem;
+  color: var(--cs-cream);
+}
+
+@media (min-width: 1024px) {
+  .cs-index__rail {
+    display: block;
+  }
+  .cs-index__pill,
+  .cs-index__backdrop {
+    display: none;
+  }
+}
+
+/* ── Overview: the facts plate ───────────────────────────────────────────── */
+.cs-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: 1.25rem 2rem;
+  margin: 2.5rem 0 0;
+  padding: 1.5rem 1.75rem;
+}
+/* The item anchors its filament (FactsPlate.jsx): the 1px line is absolute,
+   over the row gap, so it adds no height — the resting plate lays out
+   exactly as it did before the entrance existed. */
+.cs-facts__item {
+  position: relative;
+}
+.cs-facts__label {
+  margin-block-end: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--cs-accent);
+}
+/* The entrance's hot filament: scaleX is framer's, drawn from the reading
+   start (`:dir()` per the file's RTL rule — an engine without it draws from
+   the left, which only an entrance-watcher could notice). Colour and
+   transform are inline from FactsPlate.jsx; it ends transparent. */
+.cs-facts__filament {
+  position: absolute;
+  inset-block-start: -0.75rem;
+  inset-inline: 0;
+  block-size: 1px;
+  transform-origin: left center;
+}
+.cs-facts__filament:dir(rtl) {
+  transform-origin: right center;
+}
+.cs-facts__value {
+  margin: 0;
+  color: var(--cs-cream);
+  overflow-wrap: anywhere;
+}
+
+/* ── Statement (M4): pinned, filled word by word ─────────────────────────── */
+/* More than a viewport of scroll for the fill to span (the /about lesson). */
+.cs-statement {
+  height: 220vh;
+}
+.cs-statement__pin {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  min-height: 100vh;
+}
+.cs-statement__text {
+  max-width: 24ch;
+  margin: 0;
+  font-size: clamp(1.75rem, 1rem + 3vw, 3.25rem);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+/* ── Walkthrough (M5) ────────────────────────────────────────────────────── */
+.cs-walk__steps {
+  display: grid;
+  gap: 3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cs-walk__inline {
+  margin-block-end: 1.25rem;
+  overflow: clip;
+  border: 1px solid var(--cs-hairline);
+  border-radius: 0.75rem;
+  box-shadow:
+    0 0 0 #ff8400,
+    0 0 0 #ffaa2a,
+    0 0 6px orangered;
+}
+.cs-walk__title {
+  margin: 0.5rem 0 0.75rem;
+  font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem);
+  font-weight: 600;
+  color: var(--cs-accent);
+  transition: color 240ms ease;
+}
+/* Prose wears the Architect-of-Enchantment ramp (step copy: owner,
+   2026-11-15; extended to the page's other prose voices: owner,
+   2026-11-19): the same four stops as `.text-fire-amber`, clipped to the
+   glyphs, and — like `.gb-fire-ink` — with NO glow filter, because this is
+   body copy at reading size. Besides the walkthrough steps it carries the
+   overview lede, the facts' values, the architecture paragraph, the
+   diagram node details, the phone architecture list's details, the
+   stack tiles' role lines, the stack's lockfile note, the craft notes'
+   bodies, the outcomes tiles' labels and the outcomes' derived note; the hero
+   thesis gets the same ramp per word (HeroTitle `fire`), because its words
+   animate individually and a parent clip over moving children is the About
+   tilt-card GPU bug. One clip per element is safe here: the reveals fade
+   an ANCESTOR (Rise on the <p>, the diagram's node group) as a unit,
+   never a child span inside the clip. The exceptions animate the clipped
+   element ITSELF, for exactly the GPU reason above: the facts plate's
+   values RISE inside masks (FactsPlate.jsx), so the ramp sits on
+   `.cs-facts__fill`, the mask's inner span, and the craft-note bodies
+   (NoteCard.jsx) and the outcomes' derived note (Rise as="p") rise as the
+   clipped element in one piece. The outcomes labels sit inside tiles that
+   Rise as a unit, like the stack roles. */
+.cs-walk__step .cs-body,
+.cs-lede,
+.cs-facts__fill,
+.cs-architecture .cs-body,
+.cs-diagram__detail,
+.cs-architecture__list .cs-muted,
+.cs-stack__role,
+.cs-stack__note,
+.cs-notes__body,
+.cs-outcomes__label,
+.cs-outcomes__note {
+  background-image: linear-gradient(
+    180deg,
+    #ffd27d 0%,
+    #ffbb55 40%,
+    #ffaa2a 70%,
+    #ff6d05 100%
+  );
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+/* A link inside a facts value keeps a solid fill: `-webkit-text-fill-color`
+   inherits into it, and a transparent link paints no underline (the
+   decoration follows `currentColor`). */
+.cs-facts__value .cs-link {
+  background: none;
+  color: var(--cs-eyebrow);
+  -webkit-text-fill-color: var(--cs-eyebrow);
+}
+.cs-facts__value .cs-link:hover {
+  color: var(--cs-accent);
+  -webkit-text-fill-color: var(--cs-accent);
+}
+.cs-walk__panel {
+  display: none;
+}
+/* The frame takes the screenshots' own 1440×900 ratio (the Walkthrough
+   <Image> dimensions) instead of filling the 70vh panel: a cover-fit in a
+   near-square box threw away almost half of each screenshot's width. With
+   the ratios equal, cover IS an exact fit — the whole screen shows. */
+.cs-walk__frame {
+  position: relative;
+  width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1440 / 900;
+  overflow: clip;
+  border: 1px solid var(--cs-hairline);
+  border-radius: 1rem;
+  background: #10131f;
+  box-shadow:
+    0 0 0 #ff8400,
+    0 0 0 #ffaa2a,
+    0 0 6px orangered,
+    0 18px 60px rgb(0 0 0 / 0.45);
+}
+.cs-walk__slide {
+  position: absolute;
+  inset: 0;
+}
+.cs-walk__count {
+  position: absolute;
+  inset-block-end: 1rem;
+  inset-inline-end: 1rem;
+  margin: 0;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid rgb(255 170 42 / 0.5);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.72);
+  color: var(--cs-cream);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .cs-walk {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: clamp(2rem, 1rem + 3vw, 4rem);
+  }
+  .cs-walk__steps {
+    gap: 0;
+  }
+  .cs-walk__step {
+    display: flex;
+    align-items: center;
+    min-height: 70vh;
+  }
+  .cs-walk__step:not([data-active]) .cs-walk__title {
+    color: var(--cs-muted);
+  }
+  .cs-walk__inline {
+    display: none;
+  }
+  .cs-walk__panel {
+    position: sticky;
+    top: 15vh;
+    display: flex;
+    align-items: center;
+    align-self: start;
+    height: 70vh;
+  }
+  /* The panel's stage (owner, 2026-11-15): concentric gold rings on the
+     drafting grid's 56px cadence — the home hero's ground rings, under the
+     screens they orbit — beneath a warm ember bloom, faded out by a radial
+     mask. Static and symmetric: nothing to stop under reduced motion (the
+     panel is gone there anyway) and nothing to mirror under right to left.
+     sticky always makes a stacking context, so z-index -1 stays inside it:
+     behind the frame, above the page ground. */
+  .cs-walk__panel::before {
+    content: '';
+    position: absolute;
+    inset: -18% -22%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(42% 38% at 50% 50%, rgb(255 109 5 / 0.2), rgb(255 109 5 / 0.07) 55%, transparent 76%),
+      radial-gradient(70% 62% at 50% 50%, rgb(255 170 42 / 0.07), transparent 72%),
+      repeating-radial-gradient(circle at 50% 50%, rgb(255 205 91 / 0.09) 0 1px, transparent 1px 56px);
+    -webkit-mask-image: radial-gradient(58% 54% at 50% 50%, rgb(0 0 0 / 0.95), rgb(0 0 0 / 0.4) 58%, transparent 80%);
+    mask-image: radial-gradient(58% 54% at 50% 50%, rgb(0 0 0 / 0.95), rgb(0 0 0 / 0.4) 58%, transparent 80%);
+  }
+}
+
+/* ── Gallery (M6) ────────────────────────────────────────────────────────── */
+.cs-gallery__native {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(85%, 40rem);
+  gap: 1.5rem;
+  padding-block-end: 1rem;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: x mandatory;
+}
+.cs-gallery__item {
+  margin: 0;
+  scroll-snap-align: start;
+}
+.cs-gallery__media {
+  aspect-ratio: 16 / 10;
+  overflow: clip;
+  border: 1px solid var(--cs-hairline);
+  border-radius: 0.75rem;
+  background: #10131f;
+  box-shadow:
+    0 0 0 #ff8400,
+    0 0 0 #ffaa2a,
+    0 0 6px orangered;
+}
+.cs-gallery__caption {
+  margin-block-start: 0.75rem;
+  font-size: 0.9375rem;
+  /* The title's ember, not the gold (owner, 2026-11-19). */
+  color: var(--cs-accent);
+}
+.cs-gallery__pinned {
+  position: relative;
+}
+.cs-gallery__sticky {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  height: 100vh;
+  overflow: clip;
+}
+.cs-gallery__track {
+  display: flex;
+  gap: 2rem;
+  width: max-content;
+}
+.cs-gallery__track .cs-gallery__item {
+  flex: none;
+  width: min(50vw, 44rem);
+}
+
+/* ── Architecture (M7) ───────────────────────────────────────────────────── */
+.cs-architecture__figure {
+  margin: 2.5rem 0 0;
+}
+.cs-diagram {
+  position: relative;
+}
+.cs-diagram__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.cs-diagram__edge {
+  fill: none;
+  stroke: var(--cs-accent);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px rgb(255 109 5 / 0.5));
+}
+/* Where a wire meets a box. */
+.cs-diagram__port {
+  fill: var(--cs-eyebrow);
+}
+/* The node cards are HTML in <foreignObject> so labels WRAP in every
+   language (SVG <text> cannot). The slot is padded past the card so the
+   `.abt-frame` glow is not clipped; the well centres the card so one that
+   grows a line stays centred on its node. */
+.cs-diagram__slot {
+  overflow: visible;
+}
+.cs-diagram__well {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cs-diagram__node {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.75rem;
+  text-align: center;
+}
+.cs-diagram__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  /* The title's ember (owner, 2026-11-19), like the chapter headings. */
+  color: var(--cs-accent);
+}
+.cs-diagram__detail {
+  font-size: 12px;
+  line-height: 1.3;
+  /* Fill comes from the shared ramp rule above (owner, 2026-11-19). */
+  overflow-wrap: anywhere;
+}
+/* Under 640px the 1080-unit drawing would print its labels at ~5px. The list
+   below is the same system in text, so it carries the chapter there. */
+@media (max-width: 639px) {
+  .cs-diagram {
+    display: none;
+  }
+}
+.cs-architecture__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 0.75rem 2rem;
+  margin: 2rem 0 0;
+  padding-inline-start: 1.25rem;
+  font-size: 0.9375rem;
+}
+.cs-architecture__list li::marker {
+  color: var(--cs-eyebrow);
+}
+.cs-architecture__part {
+  /* The title's ember (owner, 2026-11-19), matching the diagram's node
+     titles: under 640px this list IS the architecture presentation. */
+  color: var(--cs-accent);
+}
+/* Where the drawing shows, the list said the same thing twice on screen
+   (owner, 2026-11-19: remove it). It stays in the DOM because it is the
+   aria-hidden drawing's only text equivalent — for a screen reader, a
+   crawler and a no-JS reader — so it is visually hidden here, not removed,
+   and under 640px (drawing gone, above) it still carries the chapter. */
+@media (min-width: 640px) {
+  .cs-architecture__list {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ── Craft notes ─────────────────────────────────────────────────────────── */
+.cs-notes__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Frame and interior come from `.abt-frame .cs-card`; only layout lives
+   here. The numeral sits at the reading-end corner, clear of the title. */
+.cs-notes__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.6rem 1.5rem 1.4rem;
+}
+.cs-notes__num {
+  position: absolute;
+  inset-block-start: 1.1rem;
+  inset-inline-end: 1.25rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--cs-gold-soft);
+  font-variant-numeric: tabular-nums;
+}
+/* The note titles speak in the page title's ember and the bodies in the
+   lead paragraph's fire ink (owner request, 2026-11-23 — the same voices
+   the stack tiles took that morning). The accent on the card slate is the
+   `.cs-h2`/`.cs-outcomes__value` pairing CI already holds to a11y 1.0. */
+.cs-notes__title {
+  margin: 0;
+  padding-inline-end: 3rem;
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--cs-accent);
+}
+/* Drawn from the reading-start edge as the card enters (NoteCard.jsx): the
+   stack rules' ember hairline voice, a notch brighter so 1px reads on the
+   card slate. The draw is scaleX, so the origin must mirror under RTL. */
+.cs-notes__rule {
+  display: block;
+  height: 1px;
+  background: rgb(255 205 91 / 0.4);
+  box-shadow: 0 0 6px rgb(255 109 5 / 0.22);
+  transform-origin: left center;
+}
+.cs-notes__rule:dir(rtl) {
+  transform-origin: right center;
+}
+.cs-notes__link {
+  margin-block-start: auto;
+  padding-block-start: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+/* ── Outcomes (M8) ───────────────────────────────────────────────────────── */
+.cs-outcomes__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: 1.25rem;
+  margin: 0;
+}
+/* The label comes first in the source (a <dt> before its <dd>); the figure
+   reads first on screen. Tile frame + interior from the shared classes. */
+.cs-outcomes__item {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  padding: 1.3rem 1.4rem 1.2rem;
+  border-radius: 0.9rem;
+}
+/* Fire ink (the shared ramp above): a later `color` here would repaint
+   over the clip in Firefox, so this rule stays colourless. */
+.cs-outcomes__label {
+  font-size: 0.9375rem;
+}
+.cs-outcomes__value {
+  margin: 0;
+  font-size: clamp(2.25rem, 1.4rem + 2.6vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--cs-accent);
+  /* The count-up repaints digits: equal widths keep the line still. */
+  font-variant-numeric: tabular-nums;
+}
+.cs-outcomes__note {
+  margin: 2rem 0 0;
+  font-size: 0.875rem;
+}
+
+/* ── Built with ──────────────────────────────────────────────────────────── */
+.cs-stack__lead {
+  max-width: 60ch;
+}
+.cs-stack__group {
+  margin-block-start: 2.5rem;
+}
+.cs-stack__head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+.cs-stack__cat {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cs-eyebrow);
+}
+/* Flat and symmetric on purpose: it needs no mirror. */
+.cs-stack__rule {
+  flex: 1;
+  height: 1px;
+  background: rgb(255 170 42 / 0.22);
+  box-shadow: 0 0 6px rgb(255 109 5 / 0.18);
+}
+.cs-stack__tally {
+  font-size: 0.8125rem;
+  color: var(--cs-gold-soft);
+  font-variant-numeric: tabular-nums;
+}
+.cs-stack__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* Each tile is choreographed (owner request, 2026-11-23). At rest the chip
+   keeps the page's gold material while the mark wears its brand colour
+   (`--mark`, set per tile in Stack.jsx; a monogram tile sets none and every
+   fallback below lands on the page gold). On hover the tile lifts, the chip
+   pops on a small overshoot and takes the brand colour into its border,
+   wash and under-light, and the technology's own colour blooms down from
+   the tile's top edge — colour and luminance, not sheen. The bloom gradient
+   is centred so it needs no mirror; the chip's tilt points, so it is
+   mirrored under `:dir(rtl)` on its own selector. The transition list must
+   name box-shadow too, or it would override `.abt-frame`'s and snap the
+   frame's hover bloom. The lift is the CSS `translate` property, not
+   `transform`: the tile is a `Rise` (m.li), and framer leaves an inline
+   `transform` after the entrance that beats any hover transform rule
+   (measured live — the lift never applied). `translate` composes with it
+   and framer never writes it. */
+.cs-stack__tile {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.9rem;
+  transition:
+    translate 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease-in-out;
+}
+.cs-stack__tile:hover {
+  translate: 0 -0.25rem;
+}
+.cs-stack__tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    color-mix(in srgb, var(--mark, #ffaa2a) 14%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+.cs-stack__tile:hover::before {
+  opacity: 1;
+}
+.cs-stack__icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgb(255 205 91 / 0.25);
+  border-radius: 0.65rem;
+  background: rgb(255 170 42 / 0.08);
+  color: var(--mark, #ffc46a);
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.cs-stack__tile:hover .cs-stack__icon {
+  transform: scale(1.1) rotate(-3deg);
+  border-color: color-mix(in srgb, var(--mark, #ffcd5b) 55%, transparent);
+  background-color: color-mix(in srgb, var(--mark, #ffaa2a) 14%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--mark, #ff6d05) 28%, transparent);
+}
+.cs-stack__tile:hover .cs-stack__icon:dir(rtl) {
+  transform: scale(1.1) rotate(3deg);
+}
+.cs-stack__glyph {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+.cs-stack__monogram {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.cs-stack__text {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.cs-stack__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* The tile pair repeats the chapter's own voices (owner request,
+   2026-11-23): the name in the page title's ember, the role in the lede's
+   gold→ember ramp — the role joins the fire-ink selector list above, so
+   its fill IS the lead paragraph's, by construction. */
+.cs-stack__name {
+  font-weight: 600;
+  color: var(--cs-accent);
+}
+.cs-stack__version {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid rgb(255 170 42 / 0.4);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--cs-eyebrow);
+  font-variant-numeric: tabular-nums;
+}
+.cs-stack__role {
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+.cs-stack__note {
+  margin: 2rem 0 0;
+  font-size: 0.875rem;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+/* Nothing pins (the statement renders at full colour and the walkthrough
+   shows each image inline — the components already branch on the
+   preference), nothing breathes, and the micro-transitions stand down. */
+@media (prefers-reduced-motion: reduce) {
+  .cs-statement {
+    height: auto;
+  }
+  .cs-statement__pin {
+    position: static;
+    min-height: 0;
+  }
+  .cs-backdrop__pool i {
+    animation: none;
+  }
+  .cs-index__link,
+  .cs-link,
+  .cs-cta,
+  .cs-walk__title,
+  .cs-stack__tile,
+  .cs-stack__tile::before,
+  .cs-stack__icon {
+    transition: none;
+  }
+  /* The brand tint may still appear; nothing may move. */
+  .cs-stack__tile:hover {
+    translate: none;
+  }
+  .cs-stack__tile:hover .cs-stack__icon {
+    transform: none;
+  }
+  .cs-chapter::before {
+    transform: none;
+    transition: none;
+  }
+  .cs-hero-media__fx {
+    display: none;
+  }
+}
+
+/* ── Scripts ─────────────────────────────────────────────────────────────── */
+/* Tracking and capitals break joining scripts and mean nothing in CJK. */
+:is(.cs-eyebrow, .cs-stack__cat, .cs-chapter__num):is(
+    :lang(ar),
+    :lang(fa),
+    :lang(ur),
+    :lang(he),
+    :lang(hi),
+    :lang(zh),
+    :lang(ja),
+    :lang(ko)
+  ) {
+  letter-spacing: normal;
+  text-transform: none;
+}
+/* Marks above and below the letter need more room than Latin capitals. */
+.cs-hero__title:is(:lang(ar), :lang(fa), :lang(ur), :lang(hi)) {
+  line-height: 1.3;
+  letter-spacing: normal;
+}

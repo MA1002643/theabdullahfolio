@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { projectsData } from '@/app/data';
 import { absoluteUrl } from '@/lib/seo/canonical';
+import { projectPath } from '@/lib/projects/paths';
 import { CV_ASSET, ROUTES } from '@/lib/seo/site';
 
 // ── The test that keeps the sitemap honest ──────────────────────────────────
@@ -733,7 +734,7 @@ describe('sitemap contents', () => {
       expect(urls).toContain(absoluteUrl(route.path));
     }
     for (const project of projectsData) {
-      expect(urls).toContain(absoluteUrl(`/projects/${project.id}`));
+      expect(urls).toContain(absoluteUrl(projectPath(project)));
     }
     // Vacuity guard: an empty corpus would satisfy the loop below while the
     // count check above silently absorbed the difference.
@@ -797,7 +798,7 @@ describe('sitemap contents', () => {
     const projectStamps = new Set(
       projectsData.map(
         (project) =>
-          byUrl.get(absoluteUrl(`/projects/${project.id}`)).lastModified,
+          byUrl.get(absoluteUrl(projectPath(project))).lastModified,
       ),
     );
     expect(projectStamps.size).toBe(1);
@@ -884,8 +885,9 @@ describe('project detail sources', () => {
     // Guard on the guard. Every assertion here is "everything imported is
     // watched", which passes vacuously if the regex matches nothing — a
     // reformatted import block or a moved file would turn this green while
-    // proving nothing.
-    expect(imported.length).toBeGreaterThanOrEqual(4);
+    // proving nothing. Two since issue #31: the page imports the JSON-LD
+    // component and the case study, which renders everything else.
+    expect(imported.length).toBeGreaterThanOrEqual(2);
 
     const unwatched = imported.filter(
       (specifier) =>

@@ -7,7 +7,7 @@
 //   {"type":"retract"}                      the text so far was a plan, not the answer
 //   {"type":"text","text":"He built AfaaqX "}
 //   {"type":"cite","id":"P2"}               a citation at this point in the text
-//   {"type":"source","id":"P2","kind":"project","href":"/projects/2"}
+//   {"type":"source","id":"P2","kind":"project","href":"/projects/afaaqx"}
 //   {"type":"followups","questions":["…","…"]}
 //   {"type":"fit-row","row":{"requirement":"…","verdict":"strong","evidence":"…","sources":["P2"]}}
 //   {"type":"done","ms":3900,"steps":2}

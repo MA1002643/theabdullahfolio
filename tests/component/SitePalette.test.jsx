@@ -136,7 +136,7 @@ describe('SitePalette — one palette, every page', () => {
     await open(user);
     await user.type(input(), 'afaaq');
     await user.keyboard('{Enter}');
-    expect(passage.navigate).toHaveBeenCalledWith('/projects/2', { label: 'AfaaqX' });
+    expect(passage.navigate).toHaveBeenCalledWith('/projects/afaaqx', { label: 'AfaaqX' });
     expect(JSON.parse(window.localStorage.getItem(RECENTS_KEY))).toEqual(['project-2']);
 
     await hotkey(user);
@@ -214,7 +214,7 @@ describe('SitePalette — Ask, the research assistant', () => {
     { type: 'step', id: 't1', tool: 'get_github_activity', status: 'done', data: { live: true, commits: 1502, contributionsLastYear: 1809, longestStreakDays: 253 } },
     { type: 'step', id: 't2', tool: 'get_current_work', status: 'done', data: { live: false, activePullRequests: 8, recentPushes: 1 } },
     { type: 'text', text: 'He built AfaaqX, a multi-tenant system ' },
-    { type: 'source', id: 'P2', kind: 'project', href: '/projects/2', label: 'AfaaqX' },
+    { type: 'source', id: 'P2', kind: 'project', href: '/projects/afaaqx', label: 'AfaaqX' },
     { type: 'cite', id: 'P2' },
     { type: 'text', text: ', and has 1,502 commits ' },
     { type: 'source', id: 'L:github', kind: 'live', href: '/about' },
@@ -284,7 +284,7 @@ describe('SitePalette — Ask, the research assistant', () => {
     await ask(user);
     await waitFor(() => expect(askOptions()).toHaveLength(4));
     await user.keyboard('{ArrowDown}{Enter}');
-    expect(passage.navigate).toHaveBeenCalledWith('/projects/2', { label: 'AfaaqX' });
+    expect(passage.navigate).toHaveBeenCalledWith('/projects/afaaqx', { label: 'AfaaqX' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
@@ -446,7 +446,7 @@ describe('SitePalette — the fit check', () => {
   const JOB = `Senior Frontend Engineer. React, TypeScript, Next.js, Playwright, accessibility, AWS. ${'You will own features end to end. '.repeat(8)}`;
   const FIT = [
     { type: 'meta', facts: 42, model: 'm' },
-    { type: 'source', id: 'P1', kind: 'project', href: '/projects/1', label: 'theabdullahfolio' },
+    { type: 'source', id: 'P1', kind: 'project', href: '/projects/theabdullahfolio', label: 'theabdullahfolio' },
     { type: 'fit-row', row: { requirement: 'React and Next.js', verdict: 'strong', evidence: 'A Next.js 16 portfolio.', sources: ['P1'] } },
     { type: 'fit-row', row: { requirement: 'Accessibility', verdict: 'partial', evidence: 'axe in every language.', sources: [] } },
     { type: 'fit-row', row: { requirement: 'AWS', verdict: 'gap', evidence: '', sources: [] } },
@@ -474,7 +474,7 @@ describe('SitePalette — the fit check', () => {
     expect(screen.getByText(/“Not shown” means this site does not mention it/)).toBeInTheDocument();
 
     await user.click(within(results).getByRole('button', { name: 'theabdullahfolio' }));
-    expect(passage.navigate).toHaveBeenCalledWith('/projects/1', { label: 'theabdullahfolio' });
+    expect(passage.navigate).toHaveBeenCalledWith('/projects/theabdullahfolio', { label: 'theabdullahfolio' });
   });
 
   it('goes straight to the fit check when a job description is pasted into the palette', async () => {

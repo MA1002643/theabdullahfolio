@@ -41,7 +41,6 @@
     "test:all": "npm run lint && npm run test:coverage && npm run build && npm run test:bundle && playwright test --project=chromium --project=mobile-chrome --project=a11y --project=security --project=perf"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.40.0",

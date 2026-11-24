@@ -13,7 +13,7 @@
 //
 //     https://ma.codes/#person   ← the one Person node, defined once
 //     https://ma.codes/#website  ← WebSite, author → #person
-//     https://ma.codes/projects/3#project
+//     https://ma.codes/projects/culina#project
 //                                ← SoftwareSourceCode, author → #person
 //
 // Now "who wrote culina" and "who owns ma.codes" resolve to the SAME node, and
@@ -43,6 +43,7 @@
 
 import { DEFAULT_LOCALE, localeInfo, localizePath } from '@/i18n/locales';
 import { absoluteUrl } from './canonical';
+import { projectPath } from '@/lib/projects/paths';
 import { CV_ASSET, IDENTITY, ORIGIN, legalOrgName } from './site';
 import { linkedInUrl, profileGithubUrl } from '@/components/footer/footer-data';
 
@@ -51,7 +52,8 @@ import { linkedInUrl, profileGithubUrl } from '@/components/footer/footer-data';
 // hardcodes the strings would pass while the graph was broken.
 export const PERSON_ID = `${ORIGIN}/#person`;
 export const WEBSITE_ID = `${ORIGIN}/#website`;
-export const projectId = (id) => `${absoluteUrl(`/projects/${id}`)}#project`;
+// Keyed by the project record: its @id follows its public URL (/projects/<slug>).
+export const projectId = (project) => `${absoluteUrl(projectPath(project))}#project`;
 
 // ── Locale (issue #82) ──────────────────────────────────────────────────────
 // Every page builder below takes an optional `locale`. Omitted or 'en', the
@@ -305,9 +307,9 @@ export function projectsCollection(projects, { locale, name = 'Projects' } = {})
         // 1-based: schema.org positions are ordinals, and a 0 is treated as
         // missing by several consumers.
         position: index + 1,
-        url: pageUrl(`/projects/${project.id}`, locale),
+        url: pageUrl(projectPath(project), locale),
         name: project.name,
-        item: ref(projectId(project.id)),
+        item: ref(projectId(project)),
       })),
     },
   };
@@ -337,14 +339,14 @@ export function projectPage(
   project,
   { programmingLanguage, locale, description = project.description, crumbs = {} } = {},
 ) {
-  const url = pageUrl(`/projects/${project.id}`, locale);
+  const url = pageUrl(projectPath(project), locale);
 
   return {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'SoftwareSourceCode',
-        '@id': projectId(project.id),
+        '@id': projectId(project),
         url,
         name: project.name,
         description,
@@ -376,7 +378,7 @@ export function projectPage(
         [
           { name: crumbs.home ?? 'Home', path: '/' },
           { name: crumbs.projects ?? 'Projects', path: '/projects' },
-          { name: project.name, path: `/projects/${project.id}` },
+          { name: project.name, path: projectPath(project) },
         ],
         locale,
       ),

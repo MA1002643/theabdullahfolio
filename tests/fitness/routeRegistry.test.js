@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ROUTES } from '@/lib/seo/site';
 import { projectsData } from '@/app/data';
+import { projectPath } from '@/lib/projects/paths';
 import { readNotes } from '@/lib/notes/readNotes';
 
 import { DYNAMIC_SAMPLES, STATIC_ROUTES } from '../support/routes.js';
@@ -19,9 +20,15 @@ describe('route registry ⇄ browser-suite route list', () => {
   });
 
   it('samples a dynamic route that genuinely exists', () => {
-    const [project, ...notes] = DYNAMIC_SAMPLES;
-    const projectId = Number(project.split('/').pop());
-    expect(projectsData.map((p) => p.id)).toContain(projectId);
+    // Split by template: /projects/theabdullahfolio (a case study) and /projects/afaaqx (the
+    // short form) are both samples since issue #31.
+    const projects = DYNAMIC_SAMPLES.filter((r) => r.startsWith('/projects/'));
+    const notes = DYNAMIC_SAMPLES.filter((r) => !r.startsWith('/projects/'));
+    expect(projects.length).toBeGreaterThan(0);
+    // Addressed by slug since the #31 follow-up, exactly as the site links them.
+    for (const project of projects) {
+      expect(projectsData.map(projectPath)).toContain(project);
+    }
     const slugs = readNotes().map((n) => n.slug);
     for (const note of notes) {
       expect(note).toMatch(/^\/notes\//);

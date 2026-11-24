@@ -10,48 +10,118 @@
     "projects": "پراجیکٹس"
   },
   "loading": "پراجیکٹ لوڈ ہو رہا ہے",
-  "intro": {
-    "fallbackName": "پراجیکٹ کا نام",
-    "fallbackDescription": "جدید، تیز رفتار اور مستقبل بیں ویب حل۔",
+  "chapters": {
+    "overview": "جائزہ",
+    "statement": "مسئلہ",
+    "walkthrough": "تفصیلی جائزہ",
+    "gallery": "گیلری",
+    "architecture": "ساخت",
+    "notes": "دستکاری کے نوٹس",
+    "outcomes": "نتائج",
+    "stack": "استعمال شدہ ٹیکنالوجیز"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "{name} کے لنکس",
     "liveDemo": "لائیو ڈیمو<sr> (نئے ٹیب میں کھلتا ہے)</sr>",
-    "source": "GitHub پر سورس<sr> (نئے ٹیب میں کھلتا ہے)</sr>"
+    "source": "GitHub پر سورس<sr> (نئے ٹیب میں کھلتا ہے)</sr>",
+    "private": "نجی ریپوزٹری"
   },
-  "screen": {
-    "boot": {
-      "bios": "BIOS شروع ہو رہا ہے...",
-      "hardware": "ہارڈویئر کی شناخت ہو رہی ہے...",
-      "os": "آپریٹنگ سسٹم لوڈ ہو رہا ہے..."
+  "facts": {
+    "label": "پراجیکٹ کے حقائق",
+    "role": "کردار",
+    "timeline": "مدت",
+    "timelineOngoing": "{start} – تاحال",
+    "timelineRange": "{start} – {end}",
+    "category": "زمرہ",
+    "started": "آغاز",
+    "repository": "ریپوزٹری",
+    "public": "GitHub پر عوامی",
+    "private": "نجی",
+    "live": "لائیو سائٹ"
+  },
+  "shortForm": {
+    "pending": "اس پراجیکٹ کا مکمل کیس اسٹڈی لکھا جا رہا ہے۔ تب تک اس صفحے پر بنیادی معلومات دی گئی ہیں۔"
+  },
+  "stack": {
+    "lead": "ریپوزٹری میں استعمال ہونے والی زبانیں، جیسا کہ GitHub شمار کرتا ہے۔",
+    "groups": {
+      "languages": "زبانیں",
+      "frameworks": "فریم ورکس",
+      "libraries": "لائبریریاں",
+      "tooling": "ٹیسٹنگ اور ٹولز"
     },
-    "tagline": "اگلی نسل کی ڈیجیٹل مہارت سے آپ کے خیالات کو تقویت۔",
-    "badgeFullstack": "فل اسٹیک",
-    "tools": "ٹولز اور فریم ورکس",
-    "overview": "پراجیکٹ کا جائزہ",
-    "overviewLead": "یہ پلیٹ فارم ایک متحدہ ڈیش بورڈ اور لائیو اینالیٹکس کے ذریعے ای کامرس کے کام کے بہاؤ کو آسان بناتا ہے۔",
-    "overviewBody": "یہ ایک مرکزی اور سہل انٹرفیس فراہم کر کے متعدد ٹولز کو سنبھالنے کی پیچیدگی ختم کرتا ہے۔",
-    "features": "خصوصیات",
-    "feature": {
-      "auth": {
-        "title": "توثیق",
-        "desc": "محفوظ لاگ اِن اور صارف تک رسائی۔"
+    "version": "ورژن {version}",
+    "derived": "ورژن سائٹ بنتے وقت لاک فائل سے خودکار طور پر پڑھے جاتے ہیں، اس لیے یہی وہ ورژن ہیں جو اس ڈیپلائمنٹ میں چل رہے ہیں۔"
+  },
+  "gallery": {
+    "region": "{title}، اسکرول کے قابل"
+  },
+  "architecture": {
+    "listLabel": "نظام، حصہ بہ حصہ"
+  },
+  "notes": {
+    "read": "نوٹ پڑھیں"
+  },
+  "outcomes": {
+    "derived": "ڈیپلائے کے وقت بلڈ سے گنا گیا ہے، ہاتھ سے نہیں لکھا گیا۔"
+  },
+  "index": {
+    "nav": "ابواب",
+    "position": "باب {n} از {total}",
+    "close": "بند کریں",
+    "skip": "ابواب کی فہرست پر جائیں"
+  },
+  "palette": {
+    "section": "یہ پراجیکٹ",
+    "jump": "{title} پر جائیں",
+    "demo": "لائیو ڈیمو کھولیں",
+    "source": "اس پراجیکٹ کا سورس دیکھیں"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "زائر",
+        "detail": "کوئی بھی براؤزر، کوئی بھی زبان"
       },
-      "payments": {
-        "title": "ادائیگیاں",
-        "desc": "مربوط پیمنٹ گیٹ وے۔"
+      "edge": {
+        "title": "Vercel ایج",
+        "detail": "زبان کے مطابق روٹنگ"
       },
-      "chat": {
-        "title": "لائیو چیٹ",
-        "desc": "صارفین سے فوری رابطہ۔"
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "سرور کمپونینٹس، پہلے سے رینڈر شدہ"
       },
-      "admin": {
-        "title": "ایڈمن پینل",
-        "desc": "مواد کا آسان انتظام۔"
+      "content": {
+        "title": "مواد",
+        "detail": "data.js اور پیغامات کے کیٹلاگ"
+      },
+      "notes": {
+        "title": "انجینئرنگ نوٹس",
+        "detail": "docs/*.md، /notes پر دستیاب"
+      },
+      "client": {
+        "title": "کلائنٹ آئی لینڈز",
+        "detail": "LazyMotion، ⌘K پیلیٹ"
+      },
+      "api": {
+        "title": "API روٹس",
+        "detail": "اسناد سرور پر ہی رہتی ہیں"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "مہمانوں کی کتاب، ریٹ لمٹس"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "ریپوزٹریز، پیش رفت"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "سوال پوچھیں، پیغام کی اصلاح"
       }
-    },
-    "liveDemo": "لائیو ڈیمو",
-    "github": "GitHub",
-    "demoLabel": "{name} کا لائیو ڈیمو کھولیں",
-    "sourceLabel": "GitHub پر {name} کا سورس دیکھیں"
+    }
   },
   "meta": {
     "dated": "{name} — {description}۔ {category} پراجیکٹ، آغاز: {when}۔ {visibility, select, private {نجی ریپوزٹری} other {عوامی ریپوزٹری}}، جس کی پیش رفت براہِ راست اس کے GitHub بورڈ سے دیکھی جاتی ہے۔",

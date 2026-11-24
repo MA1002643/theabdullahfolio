@@ -49,6 +49,47 @@ export function localizeProject(project, t) {
   };
 }
 
+/**
+ * A project's `caseStudy` (issue #31) with its prose in the reader's language.
+ * Keys mirror scripts/i18n-data.mjs: chapter TYPE, then each entry's `id`.
+ * Everything that is not prose (srcs, hrefs, sizes, `derive`) is untouched,
+ * and a missing translation falls back to the English literal field by field.
+ */
+export function localizeCaseStudy(project, t) {
+  const cs = project?.caseStudy;
+  if (!cs || isEnglish(t)) return cs ?? null;
+  const base = `caseStudies.${project.id}`;
+  const f = (key, fallback) => (fallback == null ? fallback : field(t, `${base}.${key}`, fallback));
+  const list = (entries, at, keys) =>
+    entries?.map((entry) => {
+      const out = { ...entry };
+      for (const k of keys) if (entry[k] != null) out[k] = f(`${at}.${entry.id}.${k}`, entry[k]);
+      return out;
+    });
+  return {
+    ...cs,
+    role: f('role', cs.role),
+    thesis: f('thesis', cs.thesis),
+    hero: cs.hero ? { ...cs.hero, alt: f('heroAlt', cs.hero.alt) } : cs.hero,
+    chapters: cs.chapters.map((c) => {
+      const at = `chapters.${c.type}`;
+      return {
+        ...c,
+        title: f(`${at}.title`, c.title),
+        body: f(`${at}.body`, c.body),
+        facts: list(c.facts, `${at}.facts`, ['label', 'value']),
+        steps: c.steps?.map((s) => ({
+          ...s,
+          title: f(`${at}.steps.${s.id}.title`, s.title),
+          body: f(`${at}.steps.${s.id}.body`, s.body),
+          media: s.media ? { ...s.media, alt: f(`${at}.steps.${s.id}.alt`, s.media.alt) } : s.media,
+        })),
+        items: list(c.items, `${at}.items`, ['title', 'body', 'label', 'alt', 'caption']),
+      };
+    }),
+  };
+}
+
 export function localizeCategory(category, t) {
   if (isEnglish(t)) return category;
   return field(t, `categories.${category}`, category);

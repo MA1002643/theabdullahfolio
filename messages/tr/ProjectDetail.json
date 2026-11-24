@@ -10,48 +10,118 @@
     "projects": "Projeler"
   },
   "loading": "Proje yükleniyor",
-  "intro": {
-    "fallbackName": "Proje adı",
-    "fallbackDescription": "Yenilikçi, hızlı ve geleceğe dönük web çözümleri.",
+  "chapters": {
+    "overview": "Genel bakış",
+    "statement": "Sorun",
+    "walkthrough": "Adım adım tur",
+    "gallery": "Galeri",
+    "architecture": "Mimari",
+    "notes": "Zanaat notları",
+    "outcomes": "Sonuçlar",
+    "stack": "Kullanılanlar"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "{name} bağlantıları",
     "liveDemo": "Canlı demo<sr> (yeni sekmede açılır)</sr>",
-    "source": "GitHub'da kaynak kod<sr> (yeni sekmede açılır)</sr>"
+    "source": "GitHub'da kaynak<sr> (yeni sekmede açılır)</sr>",
+    "private": "Özel depo"
   },
-  "screen": {
-    "boot": {
-      "bios": "BIOS başlatılıyor...",
-      "hardware": "Donanım algılanıyor...",
-      "os": "İşletim sistemi yükleniyor..."
+  "facts": {
+    "label": "Proje bilgileri",
+    "role": "Rol",
+    "timeline": "Süreç",
+    "timelineOngoing": "{start} – günümüz",
+    "timelineRange": "{start} – {end}",
+    "category": "Kategori",
+    "started": "Başlangıç",
+    "repository": "Depo",
+    "public": "GitHub'da herkese açık",
+    "private": "Özel",
+    "live": "Canlı site"
+  },
+  "shortForm": {
+    "pending": "Bu proje için kapsamlı bir vaka çalışması hazırlanıyor. O zamana kadar bu sayfada projenin temel bilgileri yer alıyor."
+  },
+  "stack": {
+    "lead": "Depodaki diller, GitHub'ın hesapladığı şekilde.",
+    "groups": {
+      "languages": "Diller",
+      "frameworks": "Framework'ler",
+      "libraries": "Kütüphaneler",
+      "tooling": "Test ve araçlar"
     },
-    "tagline": "Fikirlerine yeni nesil dijital işçilikle güç katıyoruz.",
-    "badgeFullstack": "Fullstack",
-    "tools": "Araçlar ve Framework'ler",
-    "overview": "Proje Genel Bakışı",
-    "overviewLead": "Bu platform, tek bir panel ve canlı analitikle e-ticaret iş akışlarını kolaylaştırır.",
-    "overviewBody": "Merkezi ve sezgisel bir arayüz sunarak birden fazla aracı yönetmenin karmaşıklığını ortadan kaldırır.",
-    "features": "Özellikler",
-    "feature": {
-      "auth": {
-        "title": "Kimlik doğrulama",
-        "desc": "Güvenli giriş ve kullanıcı erişimi."
+    "version": "Sürüm {version}",
+    "derived": "Sürümler, site derlenirken lockfile'dan okunur; yani burada gördüklerin bu yayında gerçekten çalışan sürümlerdir."
+  },
+  "gallery": {
+    "region": "{title}, kaydırılabilir"
+  },
+  "architecture": {
+    "listLabel": "Sistem, parça parça"
+  },
+  "notes": {
+    "read": "Notu oku"
+  },
+  "outcomes": {
+    "derived": "Yayın sırasında derlemeden otomatik sayıldı, elle yazılmadı."
+  },
+  "index": {
+    "nav": "Bölümler",
+    "position": "Bölüm {n} / {total}",
+    "close": "Kapat",
+    "skip": "Bölüm dizinine geç"
+  },
+  "palette": {
+    "section": "Bu proje",
+    "jump": "{title} bölümüne git",
+    "demo": "Canlı demoyu aç",
+    "source": "Bu projenin kaynağını görüntüle"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "Ziyaretçi",
+        "detail": "Her tarayıcı, her dil"
       },
-      "payments": {
-        "title": "Ödemeler",
-        "desc": "Entegre ödeme geçidi."
+      "edge": {
+        "title": "Vercel edge",
+        "detail": "Dil yönlendirmesi"
       },
-      "chat": {
-        "title": "Canlı sohbet",
-        "desc": "Anlık kullanıcı iletişimi."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, önceden oluşturulmuş"
       },
-      "admin": {
-        "title": "Yönetim paneli",
-        "desc": "Kolaylaştırılmış içerik yönetimi."
+      "content": {
+        "title": "İçerik",
+        "detail": "data.js ve mesaj katalogları"
+      },
+      "notes": {
+        "title": "Mühendislik notları",
+        "detail": "docs/*.md, /notes adresinden sunulur"
+      },
+      "client": {
+        "title": "İstemci adacıkları",
+        "detail": "LazyMotion, ⌘K paleti"
+      },
+      "api": {
+        "title": "API rotaları",
+        "detail": "Kimlik bilgileri sunucuda kalır"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "Ziyaretçi defteri, hız sınırları"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "Depolar, ilerleme"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "Soru sor, mesajı iyileştir"
       }
-    },
-    "liveDemo": "Canlı demo",
-    "github": "GitHub",
-    "demoLabel": "{name} canlı demosunu aç",
-    "sourceLabel": "{name} kaynak kodunu GitHub'da görüntüle"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. {category} projesi, başlangıç: {when}. {visibility, select, private {Özel depo} other {Herkese açık depo}}, GitHub panosundan canlı olarak takip ediliyor.",

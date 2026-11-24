@@ -215,5 +215,240 @@
         "detail": "Kiểm tra điểm ảnh, giả lập giảm chuyển động và cổng kiểm thử e2e đều chạy trên Chromium thật"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Thiết kế & kỹ thuật",
+      "thesis": "Một trang cá nhân được xây dựng như một sản phẩm: phục vụ bằng hai mươi ngôn ngữ, được kiểm chứng bằng kế hoạch kiểm thử nhiều lớp, và mọi quyết định đều được ghi lại công khai.",
+      "heroAlt": "Trang chủ theabdullahfolio: tên màu cam phía trên một chiếc laptop đặt trên con đường đá sáng đèn lồng, xung quanh là các nút điều hướng, bên dưới là thanh trạng thái GitHub trực tiếp.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio chính là portfolio bạn đang đọc. Đây là một trang Next.js đồng thời đóng vai trò nghiên cứu điển hình của chính nó: mỗi trang là một mẫu thực tế về cách tôi xây dựng phần mềm, từ byte đầu tiên khách truy cập tải về cho đến những ghi chú giải thích vì sao nó được làm như vậy.",
+          "facts": {
+            "stack": {
+              "label": "Công nghệ",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Trạng thái",
+              "value": "Đang hoạt động, tiếp tục phát triển"
+            }
+          }
+        },
+        "statement": {
+          "title": "Vấn đề",
+          "body": "Phần lớn portfolio chỉ như tờ rơi giới thiệu. Chúng liệt kê những gì một người đã làm, nhưng không bao giờ cho thấy nó được làm ra như thế nào. Trang này phải là bằng chứng của chính nó: có trách nhiệm như một sản phẩm, dễ tiếp cận như một dịch vụ công, và mở cho bất kỳ ai muốn kiểm tra công việc."
+        },
+        "walkthrough": {
+          "title": "Một lượt truy cập diễn ra thế nào",
+          "steps": {
+            "arrive": {
+              "title": "Đến trang",
+              "body": "Trang chủ hiển thị tên và một vòng các điểm đến trước tiên. Các tính năng hoạt ảnh đến sau, trong một gói riêng, nên không có gì khách truy cập cần phải chờ hiệu ứng chuyển động tải xong.",
+              "alt": "Trang chủ với vòng quỹ đạo các nút điều hướng quanh tên."
+            },
+            "language": {
+              "title": "Đọc bằng ngôn ngữ của bạn",
+              "body": "Mọi trang đều được phục vụ bằng hai mươi ngôn ngữ. Bốn trong số đó đọc từ phải sang trái, và bố cục cũng đảo theo: lề, mũi tên, chuyển động và cả nội dung nhập đều theo hướng đọc của bạn.",
+              "alt": "Trang giới thiệu bằng tiếng Ả Rập, bố cục từ phải sang trái."
+            },
+            "palette": {
+              "title": "Di chuyển bằng bàn phím",
+              "body": "Bảng lệnh có mặt trên mọi trang, cho phép bạn gõ để đến từng trang, dự án và mục. Bảng này còn có khung Hỏi đáp trả lời các câu hỏi về công việc và dẫn nguồn trang mà mỗi câu trả lời lấy thông tin.",
+              "alt": "Bảng lệnh mở trên trang dự án, liệt kê các trang của website."
+            },
+            "receipts": {
+              "title": "Kiểm tra bằng chứng",
+              "body": "Các ghi chú kỹ thuật được xuất bản thành trang, và trang uses lấy số liệu trực tiếp từ quá trình build: số lượng test, phiên bản các thư viện phụ thuộc và quy trình triển khai.",
+              "alt": "Trang uses: chiếc máy và bàn làm việc với trình soạn thảo, từng dòng đều được chủ nhân xác nhận."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Màn hình",
+          "items": {
+            "about": {
+              "alt": "Trang giới thiệu: các ngôn ngữ dùng nhiều nhất và thống kê GitHub, đọc trực tiếp từ GitHub, bên cạnh thẻ số năm trong nghề.",
+              "caption": "Giới thiệu: số liệu trực tiếp từ GitHub và CV."
+            },
+            "journey": {
+              "alt": "Trang hành trình: dòng thời gian học tập và làm việc.",
+              "caption": "Hành trình: dòng thời gian, từng giai đoạn một."
+            },
+            "projects": {
+              "alt": "Danh sách dự án với các tab danh mục.",
+              "caption": "Dự án: lọc theo danh mục."
+            },
+            "notes": {
+              "alt": "Một ghi chú kỹ thuật được hiển thị dưới dạng trang bài viết dài.",
+              "caption": "Ghi chú: các quyết định, được viết lại công khai."
+            },
+            "japanese": {
+              "alt": "Trang hành trình bằng tiếng Nhật.",
+              "caption": "Tiếng Nhật: ngắt dòng khi không có khoảng trắng."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Kiến trúc",
+          "body": "Các trang được render trên máy chủ và được prerender lúc build ở bất cứ đâu có thể. Nội dung và bản dịch là các tệp trong kho mã, còn số liệu trực tiếp đi qua một vài API route nhỏ. Mỗi route đó đều giữ thông tin xác thực của mình ở phía máy chủ."
+        },
+        "stack": {
+          "title": "Được xây dựng với",
+          "body": "Một bộ công nghệ phổ biến, được giữ gọn có chủ đích: một framework, một hệ thống tạo kiểu, một thư viện dịch thuật, và một số ít thư viện mà mỗi thư viện chỉ làm một việc.",
+          "items": {
+            "javascript": {
+              "body": "ES modules từ đầu đến cuối; kiểu JSDoc ở những chữ ký hàm xứng đáng có chúng.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "Một stylesheet duy nhất chỉ dùng thuộc tính logic, được co giãn từ một hệ số linh hoạt duy nhất.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Fragment shader cho cảnh trang chủ, cực quang và đoạn chuyển màu than hồng.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Các script build, kiểm chứng và CI.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router và Server Components; mọi route đều được dựng sẵn khi build.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Server Components đảm nhận phần chữ; các client island đảm nhận chuyển động.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Các utility cho bố cục và khoảng cách; phần giọng điệu riêng của trang nằm trong một stylesheet.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "Hai mươi ngôn ngữ với thông điệp ICU và ngân sách thông điệp cho từng route.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion: engine hoạt ảnh đến sau lần hiển thị đầu tiên, hoặc không đến, và trang vẫn trọn vẹn trong cả hai trường hợp.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Tính năng Hỏi đáp và kiểm tra độ phù hợp, truyền trực tiếp qua Vercel AI Gateway tới Claude.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "Sổ lưu bút, vị trí trực tiếp và mọi giới hạn tần suất.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "Cảnh trang chủ và cực quang, qua React Three Fiber, chỉ được tải ở nơi chúng chạy.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "Các trường và phần xác thực của biểu mẫu liên hệ.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "Đăng nhập bằng GitHub và Google cho sổ lưu bút.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Thông báo toast cho các biểu mẫu và danh sách dự án.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "Các biểu tượng giao diện, mỗi biểu tượng là một SVG nội tuyến.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Biên dịch các ghi chú kỹ thuật từ Markdown khi build.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "Gửi biểu mẫu liên hệ qua SMTP.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "Các tầng kiểm thử đơn vị, thuộc tính, thành phần và API.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "Các tầng kiểm thử đầu cuối, khả năng truy cập, giao diện và hiệu năng, trên trình duyệt thật.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "WCAG 2.2 AA trên mọi route, ở hai độ rộng màn hình.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Kiểm thử thuộc tính cho các bộ phân tích cú pháp, bộ xếp hạng và danh sách chương.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Kiểm thử đột biến cho phần logic trọng yếu.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Các quy tắc về Core Web Vitals và khả năng truy cập ở mỗi commit.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Kiểm thử, Lighthouse, ảnh chuẩn giao diện và cập nhật phụ thuộc.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Lưu trữ, bản xem trước, analytics và AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "Môi trường chạy, được cố định bởi engines và .nvmrc.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Ghi chú nghề",
+          "items": {
+            "lazy-motion": {
+              "title": "Chuyển động được phép đến muộn",
+              "body": "Công cụ hoạt ảnh đã rời khỏi lần tải đầu tiên. Các phần tử mô tả trạng thái cuối của chúng trong props, nên một trang không bao giờ nhận được gói chuyển động vẫn hoàn chỉnh. Đã loại bỏ: gửi toàn bộ thư viện ngay từ đầu."
+            },
+            "languages": {
+              "title": "Hai mươi ngôn ngữ, bốn ngôn ngữ từ phải sang trái",
+              "body": "Nội dung được dịch theo từng thông điệp, sau đó được kiểm tra placeholder và số nhiều. Bố cục chỉ dùng các thuộc tính logic. Đã loại bỏ: một trang tiếng Anh kèm nút dịch."
+            },
+            "testing": {
+              "title": "Một kế hoạch kiểm thử được công bố",
+              "body": "Các lớp kiểm thử đơn vị, thuộc tính, đột biến, thành phần, API, đầu cuối, khả năng truy cập, hình ảnh, hiệu năng và bảo mật, mỗi lớp đều được ghi rõ những gì nó không bắt được. Đã loại bỏ: lấy độ phủ làm mục tiêu."
+            },
+            "restraint": {
+              "title": "Chữ trước WebGL",
+              "body": "Trang này từng là một chiếc laptop 3D đặt trên gốc cây. Giờ nó giải thích công việc thay vì dàn dựng cảnh, và three.js đã rời khỏi route. Đã loại bỏ: một cảnh che mất nội dung mà lại tốn GPU."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Kết quả",
+          "items": {
+            "languages": {
+              "label": "Ngôn ngữ được phục vụ"
+            },
+            "rtl": {
+              "label": "Đọc từ phải sang trái"
+            },
+            "vitest": {
+              "label": "Ca kiểm thử Vitest"
+            },
+            "browser": {
+              "label": "Ca kiểm thử trên trình duyệt"
+            },
+            "notes": {
+              "label": "Ghi chú kỹ thuật đã xuất bản"
+            }
+          }
+        }
+      }
+    }
   }
 }

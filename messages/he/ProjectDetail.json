@@ -10,48 +10,118 @@
     "projects": "פרויקטים"
   },
   "loading": "טוען את הפרויקט",
-  "intro": {
-    "fallbackName": "שם הפרויקט",
-    "fallbackDescription": "פתרונות ווב חדשניים, מהירים ופוטוריסטיים.",
+  "chapters": {
+    "overview": "סקירה",
+    "statement": "הבעיה",
+    "walkthrough": "סיור בפרויקט",
+    "gallery": "גלריה",
+    "architecture": "ארכיטקטורה",
+    "notes": "הערות מלאכה",
+    "outcomes": "תוצאות",
+    "stack": "נבנה עם"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "קישורים של {name}",
     "liveDemo": "הדגמה חיה<sr> (נפתחת בלשונית חדשה)</sr>",
-    "source": "קוד המקור ב-GitHub<sr> (נפתח בלשונית חדשה)</sr>"
+    "source": "קוד המקור ב-GitHub<sr> (נפתח בלשונית חדשה)</sr>",
+    "private": "מאגר פרטי"
   },
-  "screen": {
-    "boot": {
-      "bios": "מאתחל BIOS...",
-      "hardware": "מזהה חומרה...",
-      "os": "טוען מערכת הפעלה..."
+  "facts": {
+    "label": "עובדות על הפרויקט",
+    "role": "תפקיד",
+    "timeline": "ציר זמן",
+    "timelineOngoing": "{start} – כיום",
+    "timelineRange": "{start} – {end}",
+    "category": "קטגוריה",
+    "started": "התחלה",
+    "repository": "מאגר",
+    "public": "ציבורי ב-GitHub",
+    "private": "פרטי",
+    "live": "אתר חי"
+  },
+  "shortForm": {
+    "pending": "מקרה בוחן מלא לפרויקט הזה נמצא בכתיבה. בינתיים, העמוד הזה כולל את עיקרי הדברים."
+  },
+  "stack": {
+    "lead": "השפות במאגר, כפי ש-GitHub סופר אותן.",
+    "groups": {
+      "languages": "שפות",
+      "frameworks": "פרימוורקים",
+      "libraries": "ספריות",
+      "tooling": "בדיקות וכלים"
     },
-    "tagline": "מעצימים את הרעיונות שלכם בעבודת מלאכה דיגיטלית מהדור הבא.",
-    "badgeFullstack": "Fullstack",
-    "tools": "כלים ופריימוורקים",
-    "overview": "סקירת הפרויקט",
-    "overviewLead": "הפלטפורמה הזו מייעלת תהליכי עבודה בקמעונאות מקוונת באמצעות לוח בקרה אחוד ונתוני ניתוח בזמן אמת.",
-    "overviewBody": "היא פותרת את המורכבות של ניהול כלים רבים בעזרת ממשק מרכזי ואינטואיטיבי.",
-    "features": "תכונות",
-    "feature": {
-      "auth": {
-        "title": "אימות זהות",
-        "desc": "התחברות מאובטחת וגישת משתמשים."
+    "version": "גרסה {version}",
+    "derived": "הגרסאות נקראות מקובץ ה-lockfile בעת בניית האתר, ולכן אלו הגרסאות שהפריסה הזו מריצה בפועל."
+  },
+  "gallery": {
+    "region": "{title}, ניתן לגלילה"
+  },
+  "architecture": {
+    "listLabel": "המערכת, חלק אחר חלק"
+  },
+  "notes": {
+    "read": "לקריאת ההערה"
+  },
+  "outcomes": {
+    "derived": "נספר מתוך הבנייה בזמן הפריסה, לא הוקלד ידנית."
+  },
+  "index": {
+    "nav": "פרקים",
+    "position": "פרק {n} מתוך {total}",
+    "close": "סגירה",
+    "skip": "דילוג לאינדקס הפרקים"
+  },
+  "palette": {
+    "section": "הפרויקט הזה",
+    "jump": "מעבר אל {title}",
+    "demo": "פתיחת ההדגמה החיה",
+    "source": "הצגת קוד המקור של הפרויקט"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "מבקר",
+        "detail": "כל דפדפן, כל שפה"
       },
-      "payments": {
-        "title": "תשלומים",
-        "desc": "שער תשלומים משולב."
+      "edge": {
+        "title": "Vercel edge",
+        "detail": "ניתוב לפי שפה"
       },
-      "chat": {
-        "title": "צ׳אט חי",
-        "desc": "תקשורת מיידית עם משתמשים."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, מרונדרים מראש"
       },
-      "admin": {
-        "title": "פאנל ניהול",
-        "desc": "שליטה פשוטה בתוכן."
+      "content": {
+        "title": "תוכן",
+        "detail": "data.js וקטלוגי הודעות"
+      },
+      "notes": {
+        "title": "הערות הנדסה",
+        "detail": "docs/*.md, מוגשים בכתובת /notes"
+      },
+      "client": {
+        "title": "איי לקוח",
+        "detail": "LazyMotion, פלטת ⌘K"
+      },
+      "api": {
+        "title": "נתיבי API",
+        "detail": "פרטי הגישה נשארים בשרת"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "ספר אורחים, מגבלות קצב"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "מאגרים, התקדמות"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "שאלות, ליטוש הודעות"
       }
-    },
-    "liveDemo": "הדגמה חיה",
-    "github": "GitHub",
-    "demoLabel": "פתיחת ההדגמה החיה של {name}",
-    "sourceLabel": "צפייה בקוד המקור של {name} ב-GitHub"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. פרויקט {category}, שהחל ב-{when}. {visibility, select, private {מאגר פרטי} other {מאגר ציבורי}}, במעקב חי מלוח ה-GitHub שלו.",

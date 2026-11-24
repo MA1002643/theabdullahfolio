@@ -15,7 +15,7 @@ const id = fc.constantFrom('P2', 'J:indie', 'L:github', 'R:contact');
 const event = fc.oneof(
   unicodeText.map((text) => ({ type: 'text', text })),
   id.map((i) => ({ type: 'cite', id: i })),
-  fc.record({ id, href: fc.constantFrom('/', '/projects/2', '/journey') }).map((s) => ({
+  fc.record({ id, href: fc.constantFrom('/', '/projects/afaaqx', '/journey') }).map((s) => ({
     type: 'source',
     id: s.id,
     kind: 'project',

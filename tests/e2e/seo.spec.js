@@ -433,7 +433,7 @@ test.describe('structured data', () => {
   test('project pages carry a repository and a breadcrumb trail', async ({
     request,
   }) => {
-    const html = await (await request.get('/projects/1')).text();
+    const html = await (await request.get('/projects/theabdullahfolio')).text();
     const block = html.match(
       /<script id="ld-project" type="application\/ld\+json">([\s\S]*?)<\/script>/,
     )?.[1];
@@ -452,12 +452,12 @@ test.describe('structured data', () => {
   });
 
   test('sibling project links are in the raw HTML (F8)', async ({ request }) => {
-    const html = await (await request.get('/projects/5')).text();
+    const html = await (await request.get('/projects/colophon')).text();
     const links = new Set(internalLinks(html));
 
     expect(links).toContain('/projects');
-    expect(links).toContain('/projects/4');
-    expect(links).toContain('/projects/6');
+    expect(links).toContain('/projects/muhammadabdullah-portfolio');
+    expect(links).toContain('/projects/dhun');
   });
 
   test('the sibling nav becomes visible when a keyboard reaches it', async ({
@@ -468,7 +468,7 @@ test.describe('structured data', () => {
     // user could tab onto a control clipped to a 1px box — no visible focus, no
     // indication of the destination. Nothing asserted it, which is exactly why
     // it survived to review.
-    await page.goto('/projects/5');
+    await page.goto('/projects/colophon');
     // The intro loader holds the page inert until it reveals (issue #92), as
     // an opaque overlay should: a keyboard cannot reach what it cannot see.
     await page.waitForFunction(() => window.__loaderDone === true);
@@ -534,7 +534,7 @@ test.describe('structured data', () => {
   }) => {
     // The panel is placed top-RIGHT because every other corner is taken on this
     // route. If it ever moves, this catches it covering a control a user needs.
-    await page.goto('/projects/5');
+    await page.goto('/projects/colophon');
     // Past the loader's inert boundary first (see above): focus on an inert
     // link is a no-op, and a still-clipped 1px nav overlaps nothing, so this
     // test would pass without measuring the revealed panel at all.

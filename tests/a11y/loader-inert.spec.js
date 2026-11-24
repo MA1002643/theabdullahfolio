@@ -76,7 +76,7 @@ test('the page stays inert until the intro loader is removed, through the reveal
 // page must never go inert, the reveal signal must still fire so gated
 // entrances play, and `loaderSeen` stays unwritten so a later first landing on
 // `/` still gets the intro.
-for (const path of ['/about', '/qualifications', '/projects/1']) {
+for (const path of ['/about', '/qualifications', '/projects/theabdullahfolio']) {
   test(`${path}: a visit entering here gets no intro loader`, async ({ page }) => {
     const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
     const html = await response.text();

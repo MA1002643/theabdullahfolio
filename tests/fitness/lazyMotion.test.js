@@ -183,13 +183,12 @@ describe('framer-motion on LazyMotion', () => {
 
   // drei's <Html> renders its children in a separate React root, which does
   // not inherit the layout's LazyMotion: an `m.*` inside it has no renderer
-  // and stays at its `initial` style (the laptop screen's boot sequence sat
-  // at opacity 0). Every file that mounts <Html> gives it its own provider.
+  // and stays at its `initial` style (the old project-page laptop screen's
+  // boot sequence sat at opacity 0). Every file that mounts <Html> gives it
+  // its own provider. No file mounts one since issue #31 removed that scene,
+  // so today the rule is dormant; it stays for the next drei <Html>.
   it('gives every drei <Html> root its own motion provider', () => {
     const users = SOURCES.filter((file) => /<Html\b/.test(stripComments(read(file))));
-    expect(users, 'The walk must find the laptop screen, or this rule guards nothing.').toContain(
-      'src/components/project-detail/laptop-model.jsx',
-    );
     const offenders = users.filter((file) => {
       const source = stripComments(read(file));
       return [...source.matchAll(/<Html\b[^>]*>([\s\S]*?)<\/Html>/g)].some(([, body]) => !/<MotionFeatures>/.test(body));

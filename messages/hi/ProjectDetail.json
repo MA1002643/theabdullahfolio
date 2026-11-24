@@ -10,48 +10,118 @@
     "projects": "प्रोजेक्ट"
   },
   "loading": "प्रोजेक्ट लोड हो रहा है",
-  "intro": {
-    "fallbackName": "प्रोजेक्ट का नाम",
-    "fallbackDescription": "नवीन, तेज़ और भविष्योन्मुखी वेब समाधान।",
+  "chapters": {
+    "overview": "अवलोकन",
+    "statement": "समस्या",
+    "walkthrough": "वॉकथ्रू",
+    "gallery": "गैलरी",
+    "architecture": "आर्किटेक्चर",
+    "notes": "क्राफ़्ट नोट्स",
+    "outcomes": "नतीजे",
+    "stack": "किससे बना है"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "{name} के लिंक",
     "liveDemo": "लाइव डेमो<sr> (नए टैब में खुलता है)</sr>",
-    "source": "GitHub पर सोर्स<sr> (नए टैब में खुलता है)</sr>"
+    "source": "GitHub पर सोर्स<sr> (नए टैब में खुलता है)</sr>",
+    "private": "प्राइवेट रिपॉज़िटरी"
   },
-  "screen": {
-    "boot": {
-      "bios": "BIOS शुरू हो रहा है...",
-      "hardware": "हार्डवेयर की पहचान हो रही है...",
-      "os": "ऑपरेटिंग सिस्टम लोड हो रहा है..."
+  "facts": {
+    "label": "प्रोजेक्ट के तथ्य",
+    "role": "भूमिका",
+    "timeline": "समय-सीमा",
+    "timelineOngoing": "{start} – अब तक",
+    "timelineRange": "{start} – {end}",
+    "category": "श्रेणी",
+    "started": "शुरुआत",
+    "repository": "रिपॉज़िटरी",
+    "public": "GitHub पर सार्वजनिक",
+    "private": "प्राइवेट",
+    "live": "लाइव साइट"
+  },
+  "shortForm": {
+    "pending": "इस प्रोजेक्ट का पूरा केस स्टडी लिखा जा रहा है। तब तक इस पेज पर इसकी मुख्य जानकारी दी गई है।"
+  },
+  "stack": {
+    "lead": "रिपॉज़िटरी में प्रयुक्त भाषाएँ, जैसा GitHub गिनता है।",
+    "groups": {
+      "languages": "भाषाएँ",
+      "frameworks": "फ्रेमवर्क",
+      "libraries": "लाइब्रेरी",
+      "tooling": "टेस्टिंग और टूलिंग"
     },
-    "tagline": "अगली पीढ़ी की डिजिटल कारीगरी से आपके विचारों को साकार करना।",
-    "badgeFullstack": "Fullstack",
-    "tools": "टूल्स और फ्रेमवर्क",
-    "overview": "प्रोजेक्ट का अवलोकन",
-    "overviewLead": "यह प्लेटफ़ॉर्म एक एकीकृत डैशबोर्ड और लाइव एनालिटिक्स के ज़रिए ई-कॉमर्स वर्कफ़्लो को सरल बनाता है।",
-    "overviewBody": "यह एक केंद्रीकृत और सहज इंटरफ़ेस देकर कई टूल्स को संभालने की जटिलता को दूर करता है।",
-    "features": "विशेषताएँ",
-    "feature": {
-      "auth": {
-        "title": "ऑथेंटिकेशन",
-        "desc": "सुरक्षित लॉगिन और यूज़र एक्सेस।"
+    "version": "वर्शन {version}",
+    "derived": "वर्शन lockfile से साइट बनते समय अपने-आप पढ़े जाते हैं, इसलिए यही वे वर्शन हैं जो इस डिप्लॉयमेंट में चल रहे हैं।"
+  },
+  "gallery": {
+    "region": "{title}, स्क्रॉल करने योग्य"
+  },
+  "architecture": {
+    "listLabel": "सिस्टम, हिस्सा-दर-हिस्सा"
+  },
+  "notes": {
+    "read": "नोट पढ़ें"
+  },
+  "outcomes": {
+    "derived": "डिप्लॉय के समय बिल्ड से गिने गए, हाथ से नहीं लिखे गए।"
+  },
+  "index": {
+    "nav": "अध्याय",
+    "position": "अध्याय {n} / {total}",
+    "close": "बंद करें",
+    "skip": "अध्याय सूची पर जाएँ"
+  },
+  "palette": {
+    "section": "यह प्रोजेक्ट",
+    "jump": "{title} पर जाएँ",
+    "demo": "लाइव डेमो खोलें",
+    "source": "इस प्रोजेक्ट का सोर्स देखें"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "विज़िटर",
+        "detail": "कोई भी ब्राउज़र, कोई भी भाषा"
       },
-      "payments": {
-        "title": "पेमेंट",
-        "desc": "इंटीग्रेटेड पेमेंट गेटवे।"
+      "edge": {
+        "title": "Vercel edge",
+        "detail": "लोकेल रूटिंग"
       },
-      "chat": {
-        "title": "लाइव चैट",
-        "desc": "यूज़र से तुरंत संवाद।"
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, प्रीरेंडर किए हुए"
       },
-      "admin": {
-        "title": "एडमिन पैनल",
-        "desc": "कंटेंट पर आसान नियंत्रण।"
+      "content": {
+        "title": "कंटेंट",
+        "detail": "data.js और मैसेज कैटलॉग"
+      },
+      "notes": {
+        "title": "इंजीनियरिंग नोट्स",
+        "detail": "docs/*.md, /notes पर उपलब्ध"
+      },
+      "client": {
+        "title": "क्लाइंट आइलैंड्स",
+        "detail": "LazyMotion, ⌘K पैलेट"
+      },
+      "api": {
+        "title": "API रूट्स",
+        "detail": "क्रेडेंशियल सर्वर पर ही रहते हैं"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "गेस्टबुक, रेट लिमिट"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "रिपॉज़िटरी, प्रगति"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "सवाल पूछना, संदेश सुधारना"
       }
-    },
-    "liveDemo": "लाइव डेमो",
-    "github": "GitHub",
-    "demoLabel": "{name} का लाइव डेमो खोलें",
-    "sourceLabel": "GitHub पर {name} का सोर्स देखें"
+    }
   },
   "meta": {
     "dated": "{name} — {description}। {category} बिल्ड, शुरुआत: {when}। {visibility, select, private {प्राइवेट रिपॉज़िटरी} other {पब्लिक रिपॉज़िटरी}}, जिसे उसके GitHub बोर्ड से लाइव ट्रैक किया जाता है।",

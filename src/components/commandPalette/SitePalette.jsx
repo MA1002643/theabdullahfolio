@@ -18,6 +18,7 @@ import { SITE_ROUTES } from './routes';
 import { isApplePlatform } from './shortcut';
 import { buildSiteActions } from './siteActions';
 import { usePaletteSiteCopy } from './usePaletteSiteCopy';
+import { projectPath } from '@/lib/projects/paths';
 
 // The ONE ⌘K palette (issue #41), mounted by the root layout on every route,
 // in every locale, the 404 included. Before #41 three pages each mounted a
@@ -149,8 +150,9 @@ export default function SitePalette({ projects = [] }) {
     (source) => {
       const href = source?.href;
       const route = SITE_ROUTES.find((r) => r.href === href);
-      const projectId = /^\/projects\/(\d+)$/.exec(href ?? '')?.[1];
-      const project = projectId && projects.find((p) => String(p.id) === projectId);
+      // An exact match against a real project's path (/projects/<slug>),
+      // never a pattern: anything else is not a project page and is dropped.
+      const project = href ? projects.find((p) => projectPath(p) === href) : undefined;
       if (!route && !project) return {};
       const id = source.id ?? '';
       if (id.startsWith('L:') && t) {

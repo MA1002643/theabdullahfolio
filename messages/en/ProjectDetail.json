@@ -10,36 +10,88 @@
     "projects": "Projects"
   },
   "loading": "Loading project",
-  "intro": {
-    "fallbackName": "Project Name",
-    "fallbackDescription": "Innovative, fast, and futuristic web solutions.",
+  "chapters": {
+    "overview": "Overview",
+    "statement": "The problem",
+    "walkthrough": "Walkthrough",
+    "gallery": "Gallery",
+    "architecture": "Architecture",
+    "notes": "Craft notes",
+    "outcomes": "Outcomes",
+    "stack": "Built with"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "{name} links",
     "liveDemo": "Live demo<sr> (opens in a new tab)</sr>",
-    "source": "Source on GitHub<sr> (opens in a new tab)</sr>"
+    "source": "Source on GitHub<sr> (opens in a new tab)</sr>",
+    "private": "Private repository"
   },
-  "screen": {
-    "boot": {
-      "bios": "Initializing BIOS...",
-      "hardware": "Detecting hardware...",
-      "os": "Loading operating system..."
+  "facts": {
+    "label": "Project facts",
+    "role": "Role",
+    "timeline": "Timeline",
+    "timelineOngoing": "{start} – present",
+    "timelineRange": "{start} – {end}",
+    "category": "Category",
+    "started": "Started",
+    "repository": "Repository",
+    "public": "Public on GitHub",
+    "private": "Private",
+    "live": "Live site"
+  },
+  "shortForm": {
+    "pending": "A full case study for this project is being written. Until then, this page holds its essentials."
+  },
+  "stack": {
+    "lead": "Languages in the repository, as GitHub counts them.",
+    "groups": {
+      "languages": "Languages",
+      "frameworks": "Frameworks",
+      "libraries": "Libraries",
+      "tooling": "Testing & tooling"
     },
-    "tagline": "Empowering your ideas with next-gen digital craftsmanship.",
-    "badgeFullstack": "Fullstack",
-    "tools": "Tools & Frameworks",
-    "overview": "Project Overview",
-    "overviewLead": "This platform streamlines e-commerce workflows through a unified dashboard and live analytics.",
-    "overviewBody": "It solves the complexity of managing multiple tools by offering a centralized, intuitive interface.",
-    "features": "Features",
-    "feature": {
-      "auth": { "title": "Authentication", "desc": "Secure login and user access." },
-      "payments": { "title": "Payments", "desc": "Integrated payment gateway." },
-      "chat": { "title": "Live Chat", "desc": "Instant user communication." },
-      "admin": { "title": "Admin Panel", "desc": "Simplified content control." }
-    },
-    "liveDemo": "Live Demo",
-    "github": "GitHub",
-    "demoLabel": "Open the {name} live demo",
-    "sourceLabel": "View {name} source on GitHub"
+    "version": "Version {version}",
+    "derived": "Versions are read from the lockfile when the site is built, so they are the ones this deployment runs."
+  },
+  "gallery": {
+    "region": "{title}, scrollable"
+  },
+  "architecture": {
+    "listLabel": "The system, part by part"
+  },
+  "notes": {
+    "read": "Read the note"
+  },
+  "outcomes": {
+    "derived": "Counted from the build at deploy time, not typed by hand."
+  },
+  "index": {
+    "nav": "Chapters",
+    "position": "Chapter {n} of {total}",
+    "close": "Close",
+    "skip": "Skip to the chapter index"
+  },
+  "palette": {
+    "section": "This project",
+    "jump": "Jump to {title}",
+    "demo": "Open the live demo",
+    "source": "View this project’s source"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": { "title": "Visitor", "detail": "Any browser, any language" },
+      "edge": { "title": "Vercel edge", "detail": "Locale routing" },
+      "app": { "title": "Next.js App Router", "detail": "Server Components, prerendered" },
+      "content": { "title": "Content", "detail": "data.js and message catalogues" },
+      "notes": { "title": "Engineering notes", "detail": "docs/*.md, served at /notes" },
+      "client": { "title": "Client islands", "detail": "LazyMotion, ⌘K palette" },
+      "api": { "title": "API routes", "detail": "Credentials stay on the server" },
+      "kv": { "title": "Upstash Redis", "detail": "Guestbook, rate limits" },
+      "github": { "title": "GitHub API", "detail": "Repositories, progress" },
+      "gateway": { "title": "AI Gateway", "detail": "Ask, message refine" }
+    }
   },
   "meta": {
     "dated": "{name} — {description}. {category} build, started {when}. {visibility, select, private {Private repository} other {Public repository}}, tracked live from its GitHub board.",

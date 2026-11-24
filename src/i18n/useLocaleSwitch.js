@@ -28,7 +28,7 @@ export function hasLocaleChoice() {
 
 /**
  * Switch the CURRENT page to another locale, keeping the path, query and hash —
- * a visitor reading /projects/3 in English lands on /ar/projects/3, not on the
+ * a visitor reading /projects/culina in English lands on /ar/projects/culina, not on the
  * Arabic homepage.
  *
  * A soft navigation, deliberately: `<html lang dir>` and the font chain live in

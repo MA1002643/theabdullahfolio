@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-import { createElement } from 'react';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { canCreateWebGL, resetWebGLSupportCache } from '@/lib/webglSupport';
@@ -60,30 +59,3 @@ describe('canCreateWebGL', () => {
   });
 });
 
-describe('SceneLoader without WebGL', () => {
-  it('renders no scene, so three.js is never asked', async () => {
-    vi.resetModules();
-    vi.doMock('next/dynamic', async () => {
-      const { createElement: h } = await import('react');
-      return {
-        default: () => () => h('div', { 'data-testid': 'project-scene' }),
-      };
-    });
-    vi.doMock('next-intl', () => ({ useTranslations: () => (key) => key }));
-    vi.doMock('@/i18n/useDirection', () => ({
-      useDirection: () => ({ dir: 'ltr', isRtl: false }),
-    }));
-    let webgl = false;
-    vi.doMock('@/lib/webglSupport', () => ({ canCreateWebGL: () => webgl }));
-    const { default: SceneLoader } =
-      await import('@/components/project-detail/scene-loader');
-
-    const view = render(createElement(SceneLoader, { links: {} }));
-    expect(view.queryByTestId('project-scene')).toBe(null);
-
-    cleanup();
-    webgl = true;
-    const withGl = render(createElement(SceneLoader, { links: {} }));
-    expect(withGl.queryByTestId('project-scene')).not.toBe(null);
-  });
-});

@@ -1,12 +1,12 @@
 {
-  "suites": 23,
-  "cases": 436,
+  "suites": 24,
+  "cases": 460,
   "byDir": {
-    "tests/a11y": 128,
-    "tests/e2e": 221,
-    "tests/i18n": 16,
-    "tests/perf": 30,
-    "tests/security": 33,
+    "tests/a11y": 136,
+    "tests/e2e": 233,
+    "tests/i18n": 17,
+    "tests/perf": 32,
+    "tests/security": 34,
     "tests/visual": 8
   }
 }
