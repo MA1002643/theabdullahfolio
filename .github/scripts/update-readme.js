@@ -99,7 +99,6 @@ const v = {
   threeMinor: minorVersion(deps['three']),
   threeLabel: threeLabel(deps['three']),
   fiber: minorVersion(deps['@react-three/fiber']),
-  drei: minorVersion(deps['@react-three/drei']),
   framer: major(deps['framer-motion']),
   framerMinor: minorVersion(deps['framer-motion']),
 
@@ -161,15 +160,13 @@ const STACK_CORE = `<p>
 const STACK_3D = `<p>
   <img src="https://img.shields.io/badge/Three.js-${v.threeLabel}-000000?style=flat-square&logo=threedotjs" alt="Three.js ${v.threeLabel}" />
   <img src="https://img.shields.io/badge/@react--three/fiber-${v.fiber}-white?style=flat-square" alt="@react-three/fiber ${v.fiber}" />
-  <img src="https://img.shields.io/badge/@react--three/drei-${v.drei}-white?style=flat-square" alt="@react-three/drei ${v.drei}" />
   <img src="https://img.shields.io/badge/Framer_Motion-${v.framerMinor}-FF0055?style=flat-square&logo=framer" alt="Framer Motion ${v.framerMinor}" />
 </p>
 
 | Technology | Version | Role |
 |------------|---------|------|
-| [Three.js](https://threejs.org/) | \`^${v.threeMinor}\` | WebGL 3D scene rendering |
+| [Three.js](https://threejs.org/) | \`^${v.threeMinor}\` | WebGL rendering for the aurora dust behind the sub-pages |
 | [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) | \`^${v.fiber}\` | React reconciler for Three.js |
-| [@react-three/drei](https://github.com/pmndrs/drei) | \`^${v.drei}\` | OrbitControls, Environment presets, HTML overlays |
 | [Framer Motion](https://www.framer.com/motion/) | \`^${v.framerMinor}\` | AnimatePresence, scroll transforms, spring physics, stagger orchestration |`;
 
 const STACK_DATA = `| Technology | Version | Role |

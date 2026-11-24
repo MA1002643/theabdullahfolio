@@ -10,48 +10,118 @@
     "projects": "Projekte"
   },
   "loading": "Projekt wird geladen",
-  "intro": {
-    "fallbackName": "Projektname",
-    "fallbackDescription": "Innovative, schnelle und zukunftsweisende Weblösungen.",
-    "linksLabel": "Links zu {name}",
-    "liveDemo": "Live-Demo<sr> (öffnet in einem neuen Tab)</sr>",
-    "source": "Quellcode auf GitHub<sr> (öffnet in einem neuen Tab)</sr>"
+  "chapters": {
+    "overview": "Überblick",
+    "statement": "Das Problem",
+    "walkthrough": "Rundgang",
+    "gallery": "Galerie",
+    "architecture": "Architektur",
+    "notes": "Handwerksnotizen",
+    "outcomes": "Ergebnisse",
+    "stack": "Gebaut mit"
   },
-  "screen": {
-    "boot": {
-      "bios": "BIOS wird initialisiert ...",
-      "hardware": "Hardware wird erkannt ...",
-      "os": "Betriebssystem wird geladen ..."
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
+    "linksLabel": "Links zu {name}",
+    "liveDemo": "Live-Demo<sr> (öffnet in neuem Tab)</sr>",
+    "source": "Quellcode auf GitHub<sr> (öffnet in neuem Tab)</sr>",
+    "private": "Privates Repository"
+  },
+  "facts": {
+    "label": "Projektdaten",
+    "role": "Rolle",
+    "timeline": "Zeitraum",
+    "timelineOngoing": "{start} – heute",
+    "timelineRange": "{start} – {end}",
+    "category": "Kategorie",
+    "started": "Beginn",
+    "repository": "Repository",
+    "public": "Öffentlich auf GitHub",
+    "private": "Privat",
+    "live": "Live-Seite"
+  },
+  "shortForm": {
+    "pending": "Eine ausführliche Fallstudie zu diesem Projekt entsteht gerade. Bis dahin findest du hier das Wesentliche."
+  },
+  "stack": {
+    "lead": "Sprachen im Repository, so wie GitHub sie zählt.",
+    "groups": {
+      "languages": "Sprachen",
+      "frameworks": "Frameworks",
+      "libraries": "Bibliotheken",
+      "tooling": "Tests & Tooling"
     },
-    "tagline": "Deine Ideen, getragen von digitalem Handwerk der nächsten Generation.",
-    "badgeFullstack": "Fullstack",
-    "tools": "Tools & Frameworks",
-    "overview": "Projektübersicht",
-    "overviewLead": "Diese Plattform vereinfacht E-Commerce-Abläufe mit einem zentralen Dashboard und Live-Analysen.",
-    "overviewBody": "Sie nimmt die Komplexität, mehrere Tools parallel zu verwalten, und bietet stattdessen eine zentrale, intuitive Oberfläche.",
-    "features": "Funktionen",
-    "feature": {
-      "auth": {
-        "title": "Authentifizierung",
-        "desc": "Sicherer Login und Benutzerzugriff."
+    "version": "Version {version}",
+    "derived": "Die Versionen werden beim Build der Seite aus der Lockfile gelesen – es sind also genau die, die dieses Deployment ausführt."
+  },
+  "gallery": {
+    "region": "{title}, scrollbar"
+  },
+  "architecture": {
+    "listLabel": "Das System, Teil für Teil"
+  },
+  "notes": {
+    "read": "Notiz lesen"
+  },
+  "outcomes": {
+    "derived": "Beim Deployment aus dem Build gezählt, nicht von Hand eingetragen."
+  },
+  "index": {
+    "nav": "Kapitel",
+    "position": "Kapitel {n} von {total}",
+    "close": "Schließen",
+    "skip": "Zum Kapitelverzeichnis springen"
+  },
+  "palette": {
+    "section": "Dieses Projekt",
+    "jump": "Zu {title} springen",
+    "demo": "Live-Demo öffnen",
+    "source": "Quellcode dieses Projekts ansehen"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "Besucher",
+        "detail": "Jeder Browser, jede Sprache"
       },
-      "payments": {
-        "title": "Zahlungen",
-        "desc": "Integriertes Zahlungs-Gateway."
+      "edge": {
+        "title": "Vercel Edge",
+        "detail": "Routing nach Sprache"
       },
-      "chat": {
-        "title": "Live-Chat",
-        "desc": "Direkte Kommunikation mit Nutzern."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, vorgerendert"
       },
-      "admin": {
-        "title": "Admin-Bereich",
-        "desc": "Vereinfachte Verwaltung von Inhalten."
+      "content": {
+        "title": "Inhalte",
+        "detail": "data.js und Nachrichtenkataloge"
+      },
+      "notes": {
+        "title": "Engineering-Notizen",
+        "detail": "docs/*.md, ausgeliefert unter /notes"
+      },
+      "client": {
+        "title": "Client-Inseln",
+        "detail": "LazyMotion, ⌘K-Palette"
+      },
+      "api": {
+        "title": "API-Routen",
+        "detail": "Zugangsdaten bleiben auf dem Server"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "Gästebuch, Ratenlimits"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "Repositories, Fortschritt"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "Fragen, Nachrichten verfeinern"
       }
-    },
-    "liveDemo": "Live-Demo",
-    "github": "GitHub",
-    "demoLabel": "Live-Demo von {name} öffnen",
-    "sourceLabel": "Quellcode von {name} auf GitHub ansehen"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. {category}-Projekt, gestartet {when}. {visibility, select, private {Privates Repository} other {Öffentliches Repository}}, live über das GitHub-Board nachverfolgt.",

@@ -23,9 +23,10 @@ import { STATIC_PRESENCE } from './staticMotion';
 // while the page hydrates (src/lib/motion/loadFeatures.js), so in practice the
 // wait is a fraction of a frame on a warm connection.
 //
-// A separate React root (drei's <Html>, which mounts the laptop screen on
-// /projects/[id]) inherits none of this context, so it renders its own
-// <MotionFeatures>. The loader is memoised, so that costs no second download.
+// A separate React root (a portal into a new root, or drei's <Html>, which
+// mounted the old /projects/[id] laptop screen until issue #31) inherits none
+// of this context, so it renders its own <MotionFeatures>. The loader is
+// memoised, so that costs no second download.
 
 // When the loader gives up on the chunk (src/lib/motion/loadFeatures.js), the
 // subtree is mounted again in STATIC mode: `MotionConfig isStatic` plus the

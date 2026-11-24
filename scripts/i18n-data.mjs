@@ -70,7 +70,58 @@ const bench = Object.fromEntries(
   usesData.bench.map((row) => [slug(row.role), { role: row.role, detail: row.detail }]),
 );
 
-const data = { projects, categories, journey, uses: { machine, bench } };
+// Case-study prose (issue #31), keyed by project id, then chapter TYPE (each
+// appears once per project), then each entry's own `id`. Only visitor-facing
+// prose is mirrored: srcs, hrefs, dimensions and `derive` keys are not copy.
+// Every array entry MUST carry an `id`; a missing one fails here rather than
+// silently keying a translation by position.
+const keyed = (list, where, pick) =>
+  Object.fromEntries(
+    (list ?? []).map((entry) => {
+      if (!entry?.id) throw new Error(`i18n-data: ${where} has an entry with no \`id\``);
+      return [entry.id, pick(entry)];
+    }),
+  );
+
+const chapterCopy = (projectId, chapter) => {
+  const where = `projects[${projectId}].caseStudy.${chapter.type}`;
+  const out = {};
+  if (chapter.title) out.title = chapter.title;
+  if (chapter.body) out.body = chapter.body;
+  if (chapter.facts) out.facts = keyed(chapter.facts, where, (f) => ({ label: f.label, value: f.value }));
+  if (chapter.steps)
+    out.steps = keyed(chapter.steps, where, (s) => ({
+      title: s.title,
+      body: s.body,
+      ...(s.media?.alt ? { alt: s.media.alt } : {}),
+    }));
+  if (chapter.items)
+    out.items = keyed(chapter.items, where, (item) =>
+      Object.fromEntries(
+        ['title', 'body', 'label', 'alt', 'caption'].filter((k) => item[k]).map((k) => [k, item[k]]),
+      ),
+    );
+  return out;
+};
+
+const caseStudies = Object.fromEntries(
+  projectsData
+    .filter((p) => p.caseStudy)
+    .map((p) => {
+      const cs = p.caseStudy;
+      return [
+        String(p.id),
+        {
+          ...(cs.role ? { role: cs.role } : {}),
+          ...(cs.thesis ? { thesis: cs.thesis } : {}),
+          ...(cs.hero?.alt ? { heroAlt: cs.hero.alt } : {}),
+          chapters: Object.fromEntries(cs.chapters.map((c) => [c.type, chapterCopy(p.id, c)])),
+        },
+      ];
+    }),
+);
+
+const data = { projects, categories, journey, uses: { machine, bench }, caseStudies };
 const navLinks = Object.fromEntries(BtnList.map((b) => [b.icon, b.label]));
 
 const serialise = (value) => `${JSON.stringify(value, null, 2)}\n`;

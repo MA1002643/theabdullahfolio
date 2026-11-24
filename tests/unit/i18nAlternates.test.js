@@ -14,7 +14,7 @@ const cluster = (path) =>
   LOCALES.map((l) => ({ locale: l.code, ...alternatesFor(path, { locale: l.code }) }));
 
 describe('alternatesFor — translated pages', () => {
-  it.each(['/', '/about', '/projects/3'])('%s lists all 20 locales plus x-default', (path) => {
+  it.each(['/', '/about', '/projects/culina'])('%s lists all 20 locales plus x-default', (path) => {
     for (const page of cluster(path)) {
       expect(Object.keys(page.languages)).toHaveLength(21);
       expect(page.languages['x-default']).toBe(path === '/' ? ORIGIN : `${ORIGIN}${path}`);

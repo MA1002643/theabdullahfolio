@@ -31,6 +31,10 @@ const DEFERRED = {
   // The /about dialogs: a third of that route's own code before #55.
   'src/components/about/ExperienceBreakdownModal.jsx': [],
   'src/components/about/ProjectProgressPopup.jsx': [],
+  // The case-study hero cinemagraph (#31, owner 2026-11-19): ambient WebGL
+  // over the hero still, warmed in idle time by HeroMedia, never downloaded
+  // under reduced motion or without WebGL.
+  'src/components/case-study/HeroSceneEffect.jsx': [],
   // framer-motion's animation features (issue #200), loaded after the first
   // paint by src/lib/motion/loadFeatures.js.
   'src/lib/motion/features.js': [],
@@ -66,6 +70,7 @@ const ENTRIES = [
   'src/components/pageTransition/passageRuntime.js',
   'src/components/about/ExperienceBreakdownModal.jsx',
   'src/components/about/ProjectProgressPopup.jsx',
+  'src/components/case-study/HeroSceneEffect.jsx',
   'src/lib/motion/features.js',
   'src/lib/motion/layoutFeatures.js',
   'src/components/commandPalette/CommandPalette.jsx',

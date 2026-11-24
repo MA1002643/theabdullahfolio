@@ -10,7 +10,7 @@
 //   R:<key>     a page of the site     → its path
 //   U:bench     the day-to-day tools   → /uses
 //   U:stack     languages, frameworks, libraries and tools he uses → /uses
-//   S:site      how this website itself is engineered → /projects/1
+//   S:site      how this website itself is engineered → /projects/theabdullahfolio
 //   L:github    live GitHub activity   → /about      (from a tool, per request)
 //   L:progress  live project progress  → /projects   (from a tool, per request)
 //   L:work      what he is doing now   → /          (from a tool, per request)
@@ -43,6 +43,7 @@ import { LOCALES } from '@/i18n/locales';
 import pkg from '../../../package.json';
 import vitestCases from '../../../tests/vitest-cases.json';
 import browserCases from '../../../tests/browser-cases.json';
+import { projectPath } from '@/lib/projects/paths';
 
 const routeKey = (path) => (path === '/' ? 'home' : path.slice(1).replace(/\//g, '-'));
 const journeySlug = (j) => j.id.replace(/^j-/, '');
@@ -70,7 +71,7 @@ function buildFacts() {
     facts.push({
       id: `P${p.id}`,
       kind: 'project',
-      href: `/projects/${p.id}`,
+      href: projectPath(p),
       projectId: p.id,
       text:
         `Project "${p.name}": ${p.description}. Category: ${p.category}. ` +
@@ -98,7 +99,9 @@ function buildFacts() {
     .join('; ');
   if (stack) facts.push({ id: 'U:stack', kind: 'tools', href: '/uses', text: `Technologies he works with — ${stack}.` });
 
-  facts.push({ id: 'S:site', kind: 'project', href: '/projects/1', projectId: 1, text: siteEngineering() });
+  // The site itself is project 1; its page is addressed by slug like every other.
+  const site = projectsData.find((p) => p.id === 1);
+  facts.push({ id: 'S:site', kind: 'project', href: projectPath(site), projectId: 1, text: siteEngineering() });
   return facts;
 }
 

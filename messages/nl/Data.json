@@ -215,5 +215,240 @@
         "detail": "Pixelmetingen, emulatie van beperkte beweging en de e2e-gate draaien allemaal op echte Chromium"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Ontwerp & engineering",
+      "thesis": "Een persoonlijke site die is gebouwd als een product: beschikbaar in twintig talen, getoetst met een gelaagd testplan en met elke beslissing openbaar uitgeschreven.",
+      "heroAlt": "De homepage van theabdullahfolio: de naam in oranje boven een laptop op een stenen pad vol lantaarnlicht, omringd door navigatieknoppen, onder een live GitHub-statusbalk.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio is het portfolio dat je nu leest. Het is een Next.js-site die tegelijk zijn eigen casestudy is: elke pagina is een werkend voorbeeld van hoe ik software bouw, van de eerste byte die een bezoeker downloadt tot de notities die uitleggen waarom het zo is gebouwd.",
+          "facts": {
+            "stack": {
+              "label": "Stack",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Status",
+              "value": "Live, in actieve ontwikkeling"
+            }
+          }
+        },
+        "statement": {
+          "title": "Het probleem",
+          "body": "De meeste portfolio's zijn brochures. Ze laten zien wat iemand heeft gemaakt, maar nooit hoe het is gemaakt. Deze site moest zelf het bewijs zijn: even verantwoord als een product, even toegankelijk als een publieke dienst en open voor iedereen die het werk wil controleren."
+        },
+        "walkthrough": {
+          "title": "Zo werkt een bezoek",
+          "steps": {
+            "arrive": {
+              "title": "Aankomen",
+              "body": "De homepage toont eerst de naam en een ring van bestemmingen. Animaties volgen daarna in een eigen chunk, zodat niets wat een bezoeker nodig heeft hoeft te wachten tot de bewegingscode is gedownload.",
+              "alt": "De homepage met een baan van navigatieknoppen rond de naam."
+            },
+            "language": {
+              "title": "Lees in je eigen taal",
+              "body": "Elke pagina is beschikbaar in twintig talen. Vier daarvan worden van rechts naar links gelezen en de lay-out spiegelt mee: marges, pijlen, beweging en getypte invoer volgen allemaal de richting van de lezer.",
+              "alt": "De over-mij-pagina in het Arabisch, van rechts naar links opgemaakt."
+            },
+            "palette": {
+              "title": "Navigeer met het toetsenbord",
+              "body": "Een opdrachtenpalet op elke pagina brengt je door te typen naar elke route, elk project en elke sectie. Het heeft ook een Ask-paneel dat vragen over het werk beantwoordt en bij elk antwoord de pagina vermeldt waaruit het komt.",
+              "alt": "Het opdrachtenpalet geopend boven de projectenpagina, met een lijst van de routes van de site."
+            },
+            "receipts": {
+              "title": "Controleer de bewijzen",
+              "body": "De engineeringnotities zijn als pagina's gepubliceerd en de uses-pagina haalt haar cijfers uit de build zelf: het aantal tests, de versies van de afhankelijkheden en de deploymentpipeline.",
+              "alt": "De uses-pagina: de machine en de editorwerkbank, elke rij bevestigd door de eigenaar."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Schermen",
+          "items": {
+            "about": {
+              "alt": "De over-mij-pagina: de meestgebruikte talen en GitHub-statistieken, live uit GitHub gelezen, naast de kaart met jaren in het vak.",
+              "caption": "Over mij: live cijfers uit GitHub en het CV."
+            },
+            "journey": {
+              "alt": "De Journey-pagina: een tijdlijn van studie en werk.",
+              "caption": "Journey: de tijdlijn, tijdperk voor tijdperk."
+            },
+            "projects": {
+              "alt": "Het projectenoverzicht met categorietabs.",
+              "caption": "Projecten: gefilterd op categorie."
+            },
+            "notes": {
+              "alt": "Een engineeringnotitie weergegeven als lange pagina.",
+              "caption": "Notities: beslissingen, openbaar uitgeschreven."
+            },
+            "japanese": {
+              "alt": "De Journey-pagina in het Japans.",
+              "caption": "Japans: regelafbreking zonder spaties."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Architectuur",
+          "body": "Pagina's worden op de server gerenderd en bij de build vooraf gerenderd waar dat kan. Content en vertalingen zijn bestanden in de repository en live cijfers komen via een paar kleine API-routes. Elk van die routes houdt zijn inloggegevens op de server."
+        },
+        "stack": {
+          "title": "Gebouwd met",
+          "body": "Een gangbare stack, bewust klein gehouden: één framework, één stylingsysteem, één vertaalbibliotheek en een handvol bibliotheken die elk één taak doen.",
+          "items": {
+            "javascript": {
+              "body": "ES-modules van begin tot eind; JSDoc-types waar een signatuur dat verdient.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "Eén stylesheet met uitsluitend logische eigenschappen, geschaald vanuit één vloeiende factor.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Fragment shaders voor de homescène, de aurora en de gloeiende overgang.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Scripts voor build, verificatie en CI.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router en Server Components; elke route wordt tijdens de build vooraf gerenderd.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Server Components dragen de tekst; client-eilanden dragen de beweging.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Utilities voor layout en witruimte; de eigen stemmen van de site wonen in één stylesheet.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "Twintig talen met ICU-berichten en een berichtenbudget per route.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion: de animatie-engine komt na de eerste weergave, of helemaal niet, en de pagina is in beide gevallen compleet.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Ask en de fitcheck, gestreamd via de Vercel AI Gateway naar Claude.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "Het gastenboek, de live locatie en elke rate limit.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "De homescène en de aurora, via React Three Fiber, alleen geladen waar ze draaien.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "De velden en validatie van het contactformulier.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "Inloggen met GitHub en Google voor het gastenboek.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Toasts voor de formulieren en de projectlijst.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "De interfacepictogrammen, elk één inline SVG.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Rendert de engineeringnotities tijdens de build vanuit Markdown.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "Verzendt het contactformulier via SMTP.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "De unit-, property-, component- en API-lagen.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "End-to-end-, toegankelijkheids-, visuele en prestatielagen, in echte browsers.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "WCAG 2.2 AA op elke route, bij twee breedtes.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Property-tests voor de parsers, de rankers en de hoofdstuklijsten.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Mutatietesten op de kritieke logica.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Regels voor Core Web Vitals en toegankelijkheid bij elke commit.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Tests, Lighthouse, visuele baselines en dependency-updates.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Hosting, previews, analytics en de AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "De runtime, vastgepind via engines en .nvmrc.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Vakmanschapsnotities",
+          "items": {
+            "lazy-motion": {
+              "title": "Beweging die mag laat aankomen",
+              "body": "De animatie-engine is uit elke eerste lading gehaald. Elementen beschrijven hun eindstaat in props, dus een pagina die de bewegingschunk nooit ontvangt is nog steeds compleet. Verworpen: de hele bibliotheek vooraf meeleveren."
+            },
+            "languages": {
+              "title": "Twintig talen, vier van rechts naar links",
+              "body": "Teksten worden per bericht vertaald en daarna gevalideerd op placeholders en meervouden. De lay-out gebruikt uitsluitend logische eigenschappen. Verworpen: een Engelstalige site met een vertaalknop."
+            },
+            "testing": {
+              "title": "Een testplan dat openbaar is",
+              "body": "Unit-, property-, mutatie-, component-, API-, end-to-end-, toegankelijkheids-, visuele, performance- en beveiligingslagen, elk uitgeschreven met wat het niet opvangt. Verworpen: dekking als doel."
+            },
+            "restraint": {
+              "title": "Woorden vóór WebGL",
+              "body": "Deze pagina was vroeger een 3D-laptop op een boomstronk. Nu legt ze het werk uit in plaats van het in scène te zetten, en three.js is van de route verdwenen. Verworpen: een scène die de inhoud verborg en een GPU kostte."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Resultaten",
+          "items": {
+            "languages": {
+              "label": "Beschikbare talen"
+            },
+            "rtl": {
+              "label": "Van rechts naar links gelezen"
+            },
+            "vitest": {
+              "label": "Vitest-testcases"
+            },
+            "browser": {
+              "label": "Browsertestcases"
+            },
+            "notes": {
+              "label": "Gepubliceerde engineeringnotities"
+            }
+          }
+        }
+      }
+    }
   }
 }

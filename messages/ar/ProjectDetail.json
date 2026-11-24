@@ -10,48 +10,118 @@
     "projects": "المشاريع"
   },
   "loading": "جارٍ تحميل المشروع",
-  "intro": {
-    "fallbackName": "اسم المشروع",
-    "fallbackDescription": "حلول ويب مبتكرة وسريعة ومستقبلية.",
-    "linksLabel": "روابط {name}",
-    "liveDemo": "العرض المباشر<sr> (يُفتح في علامة تبويب جديدة)</sr>",
-    "source": "الشيفرة المصدرية على GitHub<sr> (يُفتح في علامة تبويب جديدة)</sr>"
+  "chapters": {
+    "overview": "نظرة عامة",
+    "statement": "المشكلة",
+    "walkthrough": "جولة تفصيلية",
+    "gallery": "المعرض",
+    "architecture": "البنية",
+    "notes": "ملاحظات الصنعة",
+    "outcomes": "النتائج",
+    "stack": "بُني باستخدام"
   },
-  "screen": {
-    "boot": {
-      "bios": "جارٍ تهيئة BIOS...",
-      "hardware": "جارٍ اكتشاف العتاد...",
-      "os": "جارٍ تحميل نظام التشغيل..."
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
+    "linksLabel": "روابط {name}",
+    "liveDemo": "العرض المباشر<sr> (يفتح في تبويب جديد)</sr>",
+    "source": "الشيفرة على GitHub<sr> (تفتح في تبويب جديد)</sr>",
+    "private": "مستودع خاص"
+  },
+  "facts": {
+    "label": "معلومات المشروع",
+    "role": "الدور",
+    "timeline": "المدة الزمنية",
+    "timelineOngoing": "{start} – الآن",
+    "timelineRange": "{start} – {end}",
+    "category": "الفئة",
+    "started": "البداية",
+    "repository": "المستودع",
+    "public": "عام على GitHub",
+    "private": "خاص",
+    "live": "الموقع المباشر"
+  },
+  "shortForm": {
+    "pending": "تُكتب حاليًا دراسة حالة كاملة لهذا المشروع. وإلى حين اكتمالها، تضم هذه الصفحة أهم ما فيه."
+  },
+  "stack": {
+    "lead": "اللغات في المستودع، بحسب ما يحتسبه GitHub.",
+    "groups": {
+      "languages": "اللغات",
+      "frameworks": "أطر العمل",
+      "libraries": "المكتبات",
+      "tooling": "الاختبار والأدوات"
     },
-    "tagline": "نمنح أفكارك قوة حرفية رقمية من الجيل القادم.",
-    "badgeFullstack": "Fullstack",
-    "tools": "الأدوات والأطر البرمجية",
-    "overview": "نظرة عامة على المشروع",
-    "overviewLead": "تبسّط هذه المنصة سير عمل التجارة الإلكترونية عبر لوحة تحكم موحدة وتحليلات مباشرة.",
-    "overviewBody": "وهي تعالج تعقيد إدارة أدوات متعددة بتوفير واجهة مركزية وسهلة الاستخدام.",
-    "features": "الميزات",
-    "feature": {
-      "auth": {
-        "title": "المصادقة",
-        "desc": "تسجيل دخول آمن وإدارة وصول المستخدمين."
+    "version": "الإصدار {version}",
+    "derived": "تُقرأ أرقام الإصدارات من ملف القفل عند بناء الموقع، فهي الإصدارات نفسها التي يعمل بها هذا النشر."
+  },
+  "gallery": {
+    "region": "{title}، قابل للتمرير"
+  },
+  "architecture": {
+    "listLabel": "النظام، جزءًا جزءًا"
+  },
+  "notes": {
+    "read": "اقرأ الملاحظة"
+  },
+  "outcomes": {
+    "derived": "تُحتسب من عملية البناء وقت النشر، ولا تُكتب يدويًا."
+  },
+  "index": {
+    "nav": "الفصول",
+    "position": "الفصل {n} من {total}",
+    "close": "إغلاق",
+    "skip": "تخطَّ إلى فهرس الفصول"
+  },
+  "palette": {
+    "section": "هذا المشروع",
+    "jump": "انتقل إلى {title}",
+    "demo": "افتح العرض المباشر",
+    "source": "اعرض شيفرة هذا المشروع"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "الزائر",
+        "detail": "أي متصفح وأي لغة"
       },
-      "payments": {
-        "title": "المدفوعات",
-        "desc": "بوابة دفع متكاملة."
+      "edge": {
+        "title": "حافة Vercel",
+        "detail": "توجيه اللغات"
       },
-      "chat": {
-        "title": "الدردشة المباشرة",
-        "desc": "تواصل فوري مع المستخدمين."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "مكونات الخادم، مُصيَّرة مسبقًا"
       },
-      "admin": {
-        "title": "لوحة الإدارة",
-        "desc": "تحكم مبسّط في المحتوى."
+      "content": {
+        "title": "المحتوى",
+        "detail": "data.js وفهارس الرسائل"
+      },
+      "notes": {
+        "title": "ملاحظات هندسية",
+        "detail": "docs/*.md، تُعرض في /notes"
+      },
+      "client": {
+        "title": "جزر العميل",
+        "detail": "LazyMotion، لوحة ⌘K"
+      },
+      "api": {
+        "title": "مسارات API",
+        "detail": "تبقى بيانات الاعتماد على الخادم"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "دفتر الزوار، حدود الطلبات"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "المستودعات والتقدم"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "السؤال وتحسين الرسائل"
       }
-    },
-    "liveDemo": "العرض المباشر",
-    "github": "GitHub",
-    "demoLabel": "افتح العرض المباشر لمشروع {name}",
-    "sourceLabel": "اعرض الشيفرة المصدرية لمشروع {name} على GitHub"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. مشروع {category}، بدأ في {when}. {visibility, select, private {مستودع خاص} other {مستودع عام}}، ويُتابَع مباشرةً من لوحة GitHub الخاصة به.",

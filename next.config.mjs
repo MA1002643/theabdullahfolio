@@ -1,4 +1,8 @@
 import createNextIntlPlugin from 'next-intl/plugin';
+// Relative paths: the `@/` alias does not resolve in the config file.
+import { projectsData } from './src/app/data.js';
+import { DEFAULT_LOCALE, ROUTED_LOCALE_CODES } from './src/i18n/locales.js';
+import { projectRedirects } from './src/lib/projects/paths.js';
 
 // ANALYZE=true npm run build → per-chunk treemaps in .next*/analyze/ (issue
 // #40 Phase 6 budget evidence). Inert in every normal build and on Vercel.
@@ -130,6 +134,15 @@ const nextConfig = {
         destination: 'https://ma.codes/:path*',
         permanent: true,
       },
+      // The project pages moved from `/projects/<id>` to `/projects/<slug>`
+      // (issue #31 follow-up). Every old URL, in every locale, answers a
+      // permanent redirect to its new address, so shared links and search
+      // results keep working and pass their weight on. Generated from the
+      // data, so a new project needs nothing here.
+      ...projectRedirects(
+        projectsData,
+        ROUTED_LOCALE_CODES.filter((code) => code !== DEFAULT_LOCALE),
+      ),
     ];
   },
   async headers() {

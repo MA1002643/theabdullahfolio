@@ -1,0 +1,23 @@
+{
+  "chapters.overview": "Heading of a section of a project case study, also listed in the chapter index and the ⌘K palette. Short: one to three words.",
+  "chapters.statement": "Heading of the section that states the problem the project solved. Short: one to three words.",
+  "chapters.stack": "Heading of the section listing the languages, frameworks, libraries and tools the project is made with. Short: one to three words, as in 'Built with'.",
+  "stack.groups.tooling": "Heading of a group of tiles: the test runners, linters and services used to build and ship the project. Keep it short.",
+  "stack.version": "Read by screen readers only, before a software version number such as 16.4.6. {version} is that number.",
+  "stack.derived": "A small note under the tiles: the version numbers are read automatically from the project's dependency lockfile when the site is published, not typed by hand.",
+  "hero.eyebrow": "A small all-capitals line above the project name: category · year · role. Keep the ' · ' separators and the order of the three placeholders unless your language needs another order.",
+  "hero.eyebrowShort": "The same small line without the role: category · year. Keep the ' · ' separator.",
+  "hero.linksLabel": "Screen-reader name of the group of the project's outbound links. {name} is the project's name, which is never translated.",
+  "hero.liveDemo": "A link. The words inside <sr>…</sr> are read only by screen readers; keep the tag, and keep the visible words first so voice-control users can say them.",
+  "hero.source": "A link to the code on GitHub. Keep 'GitHub' as written. The words inside <sr>…</sr> are read only by screen readers; keep the tag, and keep the visible words first.",
+  "facts.timelineOngoing": "A date range that has not ended. {start} is a month and year already formatted for your language.",
+  "facts.timelineRange": "A date range. {start} and {end} are a month and year already formatted for your language.",
+  "gallery.region": "Screen-reader name of a horizontally scrollable strip of screenshots. It starts with the visible section heading, {title}; keep {title} first.",
+  "index.nav": "Name of the list of a page's sections (the chapter index). One word if possible.",
+  "index.position": "Shown on a small button on phones: which section the reader is in. {n} and {total} are numbers.",
+  "index.skip": "A link for keyboard users that appears when focused and jumps to the chapter index.",
+  "palette.section": "Heading of a group of commands in the ⌘K command palette that act on the project page being read.",
+  "palette.jump": "A command in the ⌘K palette that scrolls to a section. {title} is the section's heading.",
+  "outcomes.derived": "A small note under a row of figures: the numbers are computed automatically from the code when the site is published, not written by hand.",
+  "stack.lead": "A small note above the list of programming languages used in the project's repository. 'GitHub' stays as written."
+}

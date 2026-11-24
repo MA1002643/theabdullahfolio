@@ -28,6 +28,7 @@
 // on disk with no registry entry fails CI.
 
 import { projectsData } from '@/app/data';
+import { projectPath } from '@/lib/projects/paths';
 import { NOTES_I18N_DIR, readNotes } from '@/lib/notes/readNotes';
 import { LOCALES } from '@/i18n/locales';
 import { absoluteUrl, alternatesFor } from '@/lib/seo/canonical';
@@ -49,14 +50,15 @@ export const dynamic = 'force-static';
 // data file, so the answer is identical for each and would otherwise cost 11
 // git spawns to learn that.
 //
-// `src/components/project-detail`, NOT `src/components/projects`. The two are a
-// sibling pair with confusingly similar names and this list named the wrong one
-// until 2026-09-12. `components/projects` renders the /projects LISTING — the
-// cards, the filter tabs, the scene behind them — and is already the listing
-// route's own `sources` entry in site.js; the detail route imports nothing from
-// it. The detail route renders out of `components/project-detail` (the aurora,
-// the lantern sweep, the intro headline, the scene loader and the WebGL scene
-// behind it).
+// `src/components/case-study`, NOT `src/components/projects`. The two are
+// easy to confuse, and until 2026-09-12 this list named the wrong directory
+// (then `components/project-detail`, the 3D scene issue #31 replaced).
+// `components/projects` renders the /projects LISTING (the cards, the filter
+// tabs, the scene behind them) and is already the listing route's own
+// `sources` entry in site.js; the detail route imports nothing from it. The
+// detail route renders out of `components/case-study` (the chapters, the
+// index, the palette commands), its chapter derivation and build-time figures
+// in `lib/caseStudy`, and the motion tokens in `lib/motion/caseStudy.js`.
 //
 // Naming the listing directory here broke `<lastmod>` in BOTH directions, which
 // is why it is worth a paragraph. A change to the detail scene, intro or loader
@@ -81,7 +83,11 @@ export const dynamic = 'force-static';
 export const PROJECT_SOURCES = [
   'src/app/[locale]/(sub pages)/projects/[id]/page.js',
   'src/app/data.js',
-  'src/components/project-detail',
+  'src/components/case-study',
+  'src/lib/caseStudy',
+  'src/lib/motion/caseStudy.js',
+  // Every project URL is built here; a change rewrites all eleven addresses.
+  'src/lib/projects/paths.js',
   // Detail-only, and therefore listed here rather than in either shared set:
   // `projectMetaDescription()` composes each project's meta description from
   // the record's own facts instead of reusing its on-page blurb, so a change to
@@ -106,11 +112,6 @@ export const PROJECT_SOURCES = [
   // Next composes the two, so no dependency walk can reach them.
   'src/app/[locale]/(sub pages)/projects/[id]/opengraph-image.js',
   'src/app/[locale]/(sub pages)/projects/[id]/twitter-image.js',
-  // The 3D scene's environment map. `project-detail/scene.jsx` loads it by URL
-  // string (`<Environment files="/hdri/…">`), so no import walk reaches it, and
-  // replacing it relights the scene on all eleven pages. Self-hosted in #92
-  // (it was fetched from raw.githack.com); a literal asset, listed by hand.
-  'public/hdri/dikhololo_night_1k.hdr',
   ...SHARED_ROUTE_SOURCES,
   // These eleven live inside the `(sub pages)` group too, so they render the
   // group layout, its footer and its two nav links, and take their metadata
@@ -194,7 +195,7 @@ export default function sitemap() {
 
   const projectLastModified = lastModifiedFor([...PROJECT_SOURCES, ...MESSAGE_SOURCES]);
   const projectEntries = projectsData.flatMap((project) =>
-    localized(`/projects/${project.id}`, {
+    localized(projectPath(project), {
       lastModified: projectLastModified,
       changeFrequency: 'monthly',
       // Below the /projects listing (0.9) that collects them, above /my-past.

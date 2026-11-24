@@ -37,6 +37,418 @@ export const projectsData = [
     // usable board would set `repo: null` and render as "Not tracked" —
     // every current project has one, so none do today.
     repo: 'MA1002643/theabdullahfolio',
+    // The case study (issue #31). Optional on every project: present, the
+    // /projects/[id] page renders the full long-read; absent, it renders the
+    // short form (hero, overview, stack, next project) from the fields above.
+    //
+    // Chapters render in ARRAY ORDER, and the chapter index, the reading
+    // anchors (`#chapter-<type>`), the ⌘K jumps and Ask's citations all derive
+    // from this one array (src/lib/caseStudy/chapters.js), so reordering,
+    // adding or removing a chapter is an edit here and nowhere else. A type
+    // appears at most once. Every step, item and fact carries a stable `id`:
+    // translations are keyed by it, never by position, so reordering does not
+    // re-point a translation at the wrong entry (scripts/i18n-data.mjs).
+    //
+    // Prose here is the English source; npm run i18n:data mirrors it into
+    // messages/en/Data.json for translation. Outcome figures are NOT typed:
+    // `derive` names a build-time source (src/lib/caseStudy/figures.js), so a
+    // count cannot drift from the thing it counts (CLAUDE.md §2).
+    caseStudy: {
+      role: 'Design & engineering',
+      timeline: { start: '2025-07', end: null },
+      thesis:
+        'A personal site built like a product: served in twenty languages, verified by a layered test plan, and with every decision written up in public.',
+      hero: {
+        src: '/projects/theabdullahfolio/hero.webp',
+        alt: 'The theabdullahfolio home page: the name in orange above a laptop on a lantern-lit stone path, ringed by navigation buttons, under a live GitHub status bar.',
+        width: 1600,
+        height: 1000,
+        // The hero as a live recording (owner, 2026-11-21), superseding the
+        // 2026-11-19 shader cinemagraph: a screen capture of the real
+        // homepage, loop-closed at one full orbit label cycle (~40 s at
+        // 9°/s), so the lanterns flicker, the lake moves and the navigation
+        // ring actually orbits. hero.webp above IS the loop's first frame
+        // (exported from the same encoded master), so the video taking over
+        // cannot pop. The rung boundary is painted CSS px × dpr (capped 2),
+        // picked in JS (HeroSceneLoop) because <source media> is only
+        // honoured inside <picture>. Paths only: nothing here reaches the
+        // i18n mirror.
+        video: {
+          sources: [
+            {
+              max: 1280,
+              webm: '/projects/theabdullahfolio/hero-loop-960.webm',
+              mp4: '/projects/theabdullahfolio/hero-loop-960.mp4',
+            },
+            {
+              max: Infinity,
+              webm: '/projects/theabdullahfolio/hero-loop.webm',
+              mp4: '/projects/theabdullahfolio/hero-loop.mp4',
+            },
+          ],
+        },
+      },
+      chapters: [
+        {
+          type: 'overview',
+          body: 'theabdullahfolio is the portfolio you are reading. It is a Next.js site that doubles as its own case study: each page is a working sample of how I build software, from the first byte a visitor downloads to the notes that explain why it was built that way.',
+          facts: [
+            { id: 'stack', label: 'Stack', value: 'Next.js, React, next-intl, framer-motion, Vercel' },
+            { id: 'status', label: 'Status', value: 'Live, in active development' },
+          ],
+        },
+        {
+          type: 'statement',
+          title: 'The problem',
+          body: 'Most portfolios are brochures. They list what someone has made, but never show how it was made. This one had to be the evidence itself: as accountable as a product, as accessible as a public service, and open to anyone who wants to check the work.',
+        },
+        {
+          type: 'walkthrough',
+          title: 'How a visit works',
+          steps: [
+            {
+              id: 'arrive',
+              title: 'Arrive',
+              body: 'The home page paints its name and a ring of destinations first. Animation features arrive afterwards in their own chunk, so nothing a visitor needs waits for motion to download.',
+              media: {
+                src: '/projects/theabdullahfolio/walk-arrive.webp',
+                alt: 'The home page with its orbit of navigation buttons around the name.',
+              },
+            },
+            {
+              id: 'language',
+              title: 'Read in your language',
+              body: 'Every page is served in twenty languages. Four of them read right to left, and the layout mirrors with them: margins, arrows, motion and typed input all follow the reader’s direction.',
+              media: {
+                src: '/projects/theabdullahfolio/walk-language.webp',
+                alt: 'The about page in Arabic, laid out right to left.',
+              },
+            },
+            {
+              id: 'palette',
+              title: 'Move by keyboard',
+              body: 'A command palette on every page reaches each route, project and section by typing. It also has an Ask panel that answers questions about the work and cites the page each answer came from.',
+              media: {
+                src: '/projects/theabdullahfolio/walk-palette.webp',
+                alt: 'The command palette open over the projects page, listing the site’s routes.',
+              },
+            },
+            {
+              id: 'receipts',
+              title: 'Check the receipts',
+              body: 'The engineering notes are published as pages, and the uses page reads its figures from the build itself: the test counts, the dependency versions and the deployment pipeline.',
+              media: {
+                src: '/projects/theabdullahfolio/walk-receipts.webp',
+                alt: 'The uses page: the machine and the editor bench, each row confirmed by the owner.',
+              },
+            },
+          ],
+        },
+        {
+          type: 'gallery',
+          title: 'Screens',
+          items: [
+            {
+              id: 'about',
+              src: '/projects/theabdullahfolio/screen-about.webp',
+              alt: 'The about page: the most-used languages and GitHub statistics, read live from GitHub, beside the years-in-the-craft card.',
+              caption: 'About: live counts from GitHub and the CV.',
+            },
+            {
+              id: 'journey',
+              src: '/projects/theabdullahfolio/screen-journey.webp',
+              alt: 'The journey page: a timeline of study and work.',
+              caption: 'Journey: the timeline, era by era.',
+            },
+            {
+              id: 'projects',
+              src: '/projects/theabdullahfolio/screen-projects.webp',
+              alt: 'The projects listing with category tabs.',
+              caption: 'Projects: filtered by category.',
+            },
+            {
+              id: 'notes',
+              src: '/projects/theabdullahfolio/screen-notes.webp',
+              alt: 'An engineering note rendered as a long-form page.',
+              caption: 'Notes: decisions, written up in public.',
+            },
+            {
+              id: 'japanese',
+              src: '/projects/theabdullahfolio/screen-japanese.webp',
+              alt: 'The journey page in Japanese.',
+              caption: 'Japanese: line breaking without spaces.',
+            },
+          ],
+        },
+        {
+          type: 'architecture',
+          title: 'Architecture',
+          body: 'Pages are rendered on the server and prerendered at build wherever they can be. Content and translations are files in the repository, and live figures come through a few small API routes. Each of those routes keeps its credentials on the server.',
+          diagram: 'theabdullahfolio',
+        },
+        {
+          // "Built with" (owner review, 2026-11-15; it replaced the "Next
+          // project" hand-off). A flat list, each item in one of the four
+          // STACK_GROUPS (src/lib/caseStudy/chapters.js), so the Data
+          // catalogue mirrors `label` and `body` by id like any other
+          // chapter. No version is typed here: `pkg` names the dependency
+          // and src/lib/caseStudy/versions.js reads the installed version
+          // from package-lock.json at build; `derive: 'node'` reads the
+          // runtime major from `engines`. `icon` is a slug in
+          // src/components/case-study/stackIcons.js; an item without one
+          // shows a monogram.
+          type: 'stack',
+          title: 'Built with',
+          body: 'A mainstream stack kept deliberately small: one framework, one styling system, one translation library, and a handful of libraries that each do one job.',
+          items: [
+            {
+              id: 'javascript',
+              group: 'languages',
+              label: 'JavaScript',
+              body: 'ES modules end to end; JSDoc types where a signature earns one.',
+              icon: 'javascript',
+            },
+            {
+              id: 'css',
+              group: 'languages',
+              label: 'CSS',
+              body: 'One stylesheet with logical properties only, scaled from a single fluid factor.',
+              icon: 'css',
+            },
+            {
+              id: 'glsl',
+              group: 'languages',
+              label: 'GLSL',
+              body: 'Fragment shaders for the home scene, the aurora and the ember passage.',
+              icon: 'glsl',
+            },
+            {
+              id: 'shell',
+              group: 'languages',
+              label: 'Shell',
+              body: 'Build, verification and CI scripts.',
+              icon: 'shell',
+            },
+            {
+              id: 'next',
+              group: 'frameworks',
+              label: 'Next.js',
+              pkg: 'next',
+              body: 'App Router and Server Components; every route prerendered at build.',
+              icon: 'next',
+            },
+            {
+              id: 'react',
+              group: 'frameworks',
+              label: 'React',
+              pkg: 'react',
+              body: 'Server Components carry the words; client islands carry the motion.',
+              icon: 'react',
+            },
+            {
+              id: 'tailwind',
+              group: 'frameworks',
+              label: 'Tailwind CSS',
+              pkg: 'tailwindcss',
+              body: 'Utilities for layout and spacing; the site’s own voices live in one stylesheet.',
+              icon: 'tailwind',
+            },
+            {
+              id: 'next-intl',
+              group: 'frameworks',
+              label: 'next-intl',
+              pkg: 'next-intl',
+              body: 'Twenty locales with ICU messages and a message budget per route.',
+            },
+            {
+              id: 'framer-motion',
+              group: 'libraries',
+              label: 'Framer Motion',
+              pkg: 'framer-motion',
+              body: 'LazyMotion: the animation engine arrives after first paint, or not at all, and the page is whole either way.',
+              icon: 'framer',
+            },
+            {
+              id: 'ai-sdk',
+              group: 'libraries',
+              label: 'AI SDK',
+              pkg: 'ai',
+              body: 'Ask and the fit check, streamed through the Vercel AI Gateway to Claude.',
+              icon: 'anthropic',
+            },
+            {
+              id: 'upstash',
+              group: 'libraries',
+              label: 'Upstash Redis',
+              pkg: '@upstash/redis',
+              body: 'The guestbook, the live location and every rate limit.',
+              icon: 'upstash',
+            },
+            {
+              id: 'three',
+              group: 'libraries',
+              label: 'three.js',
+              pkg: 'three',
+              body: 'The home scene and the aurora, through React Three Fiber, loaded only where they play.',
+              icon: 'three',
+            },
+            {
+              id: 'react-hook-form',
+              group: 'libraries',
+              label: 'React Hook Form',
+              pkg: 'react-hook-form',
+              body: 'The contact form’s fields and validation.',
+              icon: 'reacthookform',
+            },
+            {
+              id: 'auth',
+              group: 'libraries',
+              label: 'Auth.js',
+              pkg: 'next-auth',
+              body: 'GitHub and Google sign-in for the guestbook.',
+            },
+            {
+              id: 'sonner',
+              group: 'libraries',
+              label: 'Sonner',
+              pkg: 'sonner',
+              body: 'Toasts for the forms and the project list.',
+            },
+            {
+              id: 'lucide',
+              group: 'libraries',
+              label: 'Lucide',
+              pkg: 'lucide-react',
+              body: 'The interface icons, one inline SVG each.',
+              icon: 'lucide',
+            },
+            {
+              id: 'marked',
+              group: 'libraries',
+              label: 'marked',
+              pkg: 'marked',
+              body: 'Renders the engineering notes from Markdown at build.',
+              icon: 'markdown',
+            },
+            {
+              id: 'nodemailer',
+              group: 'libraries',
+              label: 'Nodemailer',
+              pkg: 'nodemailer',
+              body: 'Delivers the contact form over SMTP.',
+            },
+            {
+              id: 'vitest',
+              group: 'tooling',
+              label: 'Vitest',
+              pkg: 'vitest',
+              body: 'The unit, property, component and API layers.',
+              icon: 'vitest',
+            },
+            {
+              id: 'playwright',
+              group: 'tooling',
+              label: 'Playwright',
+              pkg: '@playwright/test',
+              body: 'End-to-end, accessibility, visual and performance layers, in real browsers.',
+            },
+            {
+              id: 'axe',
+              group: 'tooling',
+              label: 'axe-core',
+              pkg: '@axe-core/playwright',
+              body: 'WCAG 2.2 AA on every route, at two widths.',
+            },
+            {
+              id: 'fast-check',
+              group: 'tooling',
+              label: 'fast-check',
+              pkg: 'fast-check',
+              body: 'Property tests for the parsers, the rankers and the chapter lists.',
+            },
+            {
+              id: 'stryker',
+              group: 'tooling',
+              label: 'Stryker',
+              pkg: '@stryker-mutator/core',
+              body: 'Mutation testing on the critical logic.',
+              icon: 'stryker',
+            },
+            {
+              id: 'eslint',
+              group: 'tooling',
+              label: 'ESLint',
+              pkg: 'eslint',
+              body: 'Core Web Vitals and accessibility rules on every commit.',
+              icon: 'eslint',
+            },
+            {
+              id: 'github-actions',
+              group: 'tooling',
+              label: 'GitHub Actions',
+              body: 'Tests, Lighthouse, visual baselines and dependency updates.',
+              icon: 'githubactions',
+            },
+            {
+              id: 'vercel',
+              group: 'tooling',
+              label: 'Vercel',
+              body: 'Hosting, previews, analytics and the AI Gateway.',
+              icon: 'vercel',
+            },
+            {
+              id: 'node',
+              group: 'tooling',
+              label: 'Node.js',
+              derive: 'node',
+              body: 'The runtime, pinned by engines and .nvmrc.',
+              icon: 'node',
+            },
+          ],
+        },
+        {
+          type: 'notes',
+          title: 'Craft notes',
+          items: [
+            {
+              id: 'lazy-motion',
+              title: 'Motion that is allowed to arrive late',
+              body: 'The animation engine left every first load. Elements describe their end state in props, so a page that never receives the motion chunk is still complete. Rejected: shipping the whole library up front.',
+              href: '/notes/discoverability',
+            },
+            {
+              id: 'languages',
+              title: 'Twenty languages, four right to left',
+              body: 'Copy is translated by message, then validated for placeholders and plurals. Layout uses logical properties only. Rejected: an English site with a translate button.',
+              href: '/notes/multilingual',
+            },
+            {
+              id: 'testing',
+              title: 'A test plan that is published',
+              body: 'Unit, property, mutation, component, API, end-to-end, accessibility, visual, performance and security layers, each written down with what it does not catch. Rejected: coverage as the goal.',
+              href: '/notes/testing',
+            },
+            {
+              id: 'restraint',
+              title: 'Words before WebGL',
+              body: 'This page used to be a 3D laptop on a tree stump. It now explains the work instead of staging it, and three.js has left the route. Rejected: a scene that hid the content and cost a GPU.',
+              href: '/notes/discoverability',
+            },
+          ],
+        },
+        {
+          type: 'outcomes',
+          title: 'Outcomes',
+          items: [
+            { id: 'languages', label: 'Languages served', derive: 'locales' },
+            { id: 'rtl', label: 'Read right to left', derive: 'rtlLocales' },
+            { id: 'vitest', label: 'Vitest test cases', derive: 'vitestCases' },
+            { id: 'browser', label: 'Browser test cases', derive: 'browserCases' },
+            { id: 'notes', label: 'Published engineering notes', derive: 'notes' },
+          ],
+        },
+      ],
+    },
   },
   {
     id: 2,

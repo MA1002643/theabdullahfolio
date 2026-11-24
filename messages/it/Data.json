@@ -215,5 +215,240 @@
         "detail": "Sonde sui pixel, emulazione del movimento ridotto e il gate e2e girano tutti su Chromium reale"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Design e ingegneria",
+      "thesis": "Un sito personale costruito come un prodotto: disponibile in venti lingue, verificato da un piano di test a più livelli e con ogni decisione documentata pubblicamente.",
+      "heroAlt": "La home page di theabdullahfolio: il nome in arancione sopra un laptop su un sentiero di pietra illuminato da lanterne, circondato da pulsanti di navigazione, sotto una barra di stato GitHub in tempo reale.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio è il portfolio che stai leggendo. È un sito Next.js che funge anche da case study di sé stesso: ogni pagina è un esempio concreto di come costruisco il software, dal primo byte scaricato dal visitatore fino alle note che spiegano perché è stato fatto così.",
+          "facts": {
+            "stack": {
+              "label": "Stack",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Stato",
+              "value": "Online, in sviluppo attivo"
+            }
+          }
+        },
+        "statement": {
+          "title": "Il problema",
+          "body": "La maggior parte dei portfolio sono brochure. Elencano ciò che qualcuno ha realizzato, ma non mostrano mai come. Questo doveva essere la prova stessa: affidabile come un prodotto, accessibile come un servizio pubblico e aperto a chiunque voglia verificare il lavoro."
+        },
+        "walkthrough": {
+          "title": "Come funziona una visita",
+          "steps": {
+            "arrive": {
+              "title": "Arrivo",
+              "body": "La home page mostra per prima il nome e un anello di destinazioni. Le funzioni di animazione arrivano dopo, in un chunk a parte, così nulla di ciò che serve al visitatore aspetta il download del movimento.",
+              "alt": "La home page con la sua orbita di pulsanti di navigazione attorno al nome."
+            },
+            "language": {
+              "title": "Leggi nella tua lingua",
+              "body": "Ogni pagina è disponibile in venti lingue. Quattro si leggono da destra a sinistra e il layout si specchia di conseguenza: margini, frecce, movimento e input da tastiera seguono la direzione di lettura.",
+              "alt": "La pagina «Chi sono» in arabo, impaginata da destra a sinistra."
+            },
+            "palette": {
+              "title": "Muoviti con la tastiera",
+              "body": "Una palette di comandi, presente in ogni pagina, raggiunge ogni percorso, progetto e sezione digitando. Include anche un pannello Chiedi che risponde a domande sul lavoro e cita la pagina da cui proviene ogni risposta.",
+              "alt": "La palette di comandi aperta sulla pagina dei progetti, con l'elenco delle sezioni del sito."
+            },
+            "receipts": {
+              "title": "Controlla le prove",
+              "body": "Le note di ingegneria sono pubblicate come pagine e la pagina «Uso» ricava i suoi dati dalla build stessa: il numero di test, le versioni delle dipendenze e la pipeline di rilascio.",
+              "alt": "La pagina «Uso»: la macchina e la postazione dell'editor, con ogni riga confermata dal proprietario."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Schermate",
+          "items": {
+            "about": {
+              "alt": "La pagina «Chi sono»: i linguaggi più usati e le statistiche GitHub, lette in tempo reale da GitHub, accanto alla scheda degli anni di esperienza nel mestiere.",
+              "caption": "Chi sono: numeri in tempo reale da GitHub e dal CV."
+            },
+            "journey": {
+              "alt": "La pagina del percorso: una linea del tempo di studio e lavoro.",
+              "caption": "Percorso: la linea del tempo, epoca per epoca."
+            },
+            "projects": {
+              "alt": "L'elenco dei progetti con schede per categoria.",
+              "caption": "Progetti: filtrati per categoria."
+            },
+            "notes": {
+              "alt": "Una nota di ingegneria resa come pagina di lettura estesa.",
+              "caption": "Note: decisioni documentate pubblicamente."
+            },
+            "japanese": {
+              "alt": "La pagina del percorso in giapponese.",
+              "caption": "Giapponese: a capo senza spazi."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Architettura",
+          "body": "Le pagine sono renderizzate sul server e prerenderizzate in fase di build, dove possibile. Contenuti e traduzioni sono file nel repository e i dati in tempo reale arrivano tramite poche piccole route API. Ognuna di queste route tiene le proprie credenziali sul server."
+        },
+        "stack": {
+          "title": "Costruito con",
+          "body": "Uno stack mainstream, tenuto volutamente ridotto: un framework, un sistema di stile, una libreria di traduzione e una manciata di librerie che fanno ciascuna un solo lavoro.",
+          "items": {
+            "javascript": {
+              "body": "Moduli ES da cima a fondo; tipi JSDoc dove una firma se li merita.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "Un unico foglio di stile con sole proprietà logiche, scalato da un solo fattore fluido.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Fragment shader per la scena della home, l'aurora e il passaggio di brace.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Script di build, verifica e CI.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router e Server Components; ogni route è prerenderizzata in fase di build.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "I Server Components portano le parole; le isole client portano il movimento.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Utility per layout e spaziature; le voci proprie del sito vivono in un unico foglio di stile.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "Venti lingue con messaggi ICU e un budget di messaggi per ogni route.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion: il motore delle animazioni arriva dopo il primo paint, o non arriva affatto, e la pagina è completa in ogni caso.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Ask e il fit check, in streaming attraverso il Vercel AI Gateway fino a Claude.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "Il guestbook, la posizione in tempo reale e ogni rate limit.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "La scena della home e l'aurora, tramite React Three Fiber, caricate solo dove vengono riprodotte.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "I campi e la validazione del modulo di contatto.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "Accesso con GitHub e Google per il guestbook.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Toast per i moduli e per l'elenco dei progetti.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "Le icone dell'interfaccia, un SVG inline ciascuna.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Genera le note di ingegneria da Markdown in fase di build.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "Invia il modulo di contatto via SMTP.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "I livelli di test unitari, di proprietà, di componente e di API.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "Livelli end-to-end, di accessibilità, visivi e di prestazioni, in browser reali.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "WCAG 2.2 AA su ogni route, a due larghezze.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Property test per i parser, i ranker e gli elenchi dei capitoli.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Mutation testing sulla logica critica.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Regole su Core Web Vitals e accessibilità a ogni commit.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Test, Lighthouse, baseline visive e aggiornamenti delle dipendenze.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Hosting, anteprime, analytics e l'AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "Il runtime, fissato tramite engines e .nvmrc.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Note di mestiere",
+          "items": {
+            "lazy-motion": {
+              "title": "Un movimento che può arrivare in ritardo",
+              "body": "Il motore di animazione è uscito dal primo caricamento. Gli elementi descrivono il loro stato finale nelle props, quindi una pagina che non riceve mai il chunk di movimento è comunque completa. Scartato: caricare subito l'intera libreria."
+            },
+            "languages": {
+              "title": "Venti lingue, quattro da destra a sinistra",
+              "body": "I testi sono tradotti messaggio per messaggio, poi validati per segnaposto e plurali. Il layout usa solo proprietà logiche. Scartato: un sito in inglese con un pulsante di traduzione."
+            },
+            "testing": {
+              "title": "Un piano di test pubblicato",
+              "body": "Livelli di unit, property, mutation, componenti, API, end-to-end, accessibilità, visual, prestazioni e sicurezza, ciascuno descritto insieme a ciò che non intercetta. Scartato: la copertura come obiettivo."
+            },
+            "restraint": {
+              "title": "Prima le parole, poi WebGL",
+              "body": "Questa pagina era un laptop 3D su un ceppo d'albero. Ora spiega il lavoro invece di metterlo in scena e three.js ha lasciato la route. Scartato: una scena che nascondeva i contenuti e costava una GPU."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Risultati",
+          "items": {
+            "languages": {
+              "label": "Lingue disponibili"
+            },
+            "rtl": {
+              "label": "Lette da destra a sinistra"
+            },
+            "vitest": {
+              "label": "Test case Vitest"
+            },
+            "browser": {
+              "label": "Test case nel browser"
+            },
+            "notes": {
+              "label": "Note di ingegneria pubblicate"
+            }
+          }
+        }
+      }
+    }
   }
 }

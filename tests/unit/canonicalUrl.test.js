@@ -24,7 +24,7 @@ describe('absoluteUrl — leading slashes cannot become a host', () => {
   it.each([
     ['//about', `${ORIGIN}/about`],
     ['///about', `${ORIGIN}/about`],
-    ['////projects/1', `${ORIGIN}/projects/1`],
+    ['////projects/theabdullahfolio', `${ORIGIN}/projects/theabdullahfolio`],
     // The degenerate forms: nothing but slashes is still the root.
     ['//', ORIGIN],
     ['///', ORIGIN],
@@ -65,12 +65,12 @@ describe('absoluteUrl — the documented rules', () => {
   it.each([
     // Site-relative, the ordinary case.
     ['/about', `${ORIGIN}/about`],
-    ['/projects/1', `${ORIGIN}/projects/1`],
+    ['/projects/theabdullahfolio', `${ORIGIN}/projects/theabdullahfolio`],
     // A missing leading slash is supplied.
     ['about', `${ORIGIN}/about`],
     // The site serves no trailing slashes, so canonicals carry none.
-    ['/projects/1/', `${ORIGIN}/projects/1`],
-    ['/projects/1///', `${ORIGIN}/projects/1`],
+    ['/projects/theabdullahfolio/', `${ORIGIN}/projects/theabdullahfolio`],
+    ['/projects/theabdullahfolio///', `${ORIGIN}/projects/theabdullahfolio`],
     // ...except the root, which is the bare origin rather than `ORIGIN + '/'`.
     ['/', ORIGIN],
   ])('%s → %s', (input, expected) => {

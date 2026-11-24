@@ -171,7 +171,7 @@ describe('per-surface documents', () => {
       // 1-based ordinals: several consumers treat position 0 as missing.
       expect(element.position).toBe(index + 1);
       // A REFERENCE to the node defined on the detail page, not a copy of it.
-      expect(element.item['@id']).toBe(projectId(projectsData[index].id));
+      expect(element.item['@id']).toBe(projectId(projectsData[index]));
       expect(Object.keys(element.item)).toEqual(['@id']);
     });
     expectNoNullish(pruneEmpty(doc));
@@ -184,7 +184,7 @@ describe('per-surface documents', () => {
       (node) => node['@type'] === 'SoftwareSourceCode',
     );
 
-    expect(code['@id']).toBe(projectId(project.id));
+    expect(code['@id']).toBe(projectId(project));
     expect(code.codeRepository).toBe(`https://github.com/${project.repo}`);
     // Straight from data.js — the repository's creation date, not invented.
     expect(code.dateCreated).toBe(project.date);

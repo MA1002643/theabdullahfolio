@@ -11,6 +11,7 @@
 // Navigate is offered: those labels come from the global Nav catalogue.
 
 import { routeActions, routesExcept } from './routes';
+import { projectPath } from '@/lib/projects/paths';
 
 export function buildSiteActions({
   t,
@@ -26,15 +27,17 @@ export function buildSiteActions({
   if (!t) return navigate;
 
   const projectSection = t('sections.projects');
+  // The id stays `project-<numeric id>` even though the URL is the slug:
+  // Recent stores ids, and renaming one drops it from every visitor's Recent.
   const projectActions = projects
-    .filter((p) => `/projects/${p.id}` !== pathname)
+    .filter((p) => projectPath(p) !== pathname)
     .map((p) => ({
       id: `project-${p.id}`,
       label: p.name,
       hint: p.hint,
       section: projectSection,
       keywords: `${p.keywords} ${t('keywords.projects')} project`,
-      perform: () => go(`/projects/${p.id}`, p.name),
+      perform: () => go(projectPath(p), p.name),
     }));
 
   const section = t('sections.actions');

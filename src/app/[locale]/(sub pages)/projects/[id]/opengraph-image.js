@@ -3,11 +3,12 @@ import { projectsData } from '@/app/data';
 import { projectCard, sectionCard } from '@/lib/og/card';
 import { ogFonts } from '@/lib/og/assets';
 import { localeParams } from '@/i18n/staticParams';
+import { projectBySlug, projectSlug } from '@/lib/projects/paths';
 
 // Per-project share poster (issue #88 v2, tier 2). The route segment's
 // generateStaticParams + dynamicParams=false mean one card per project
 // is rendered AT BUILD TIME and served static — sharing
-// ma.codes/projects/3 unfurls that project's own poster at zero runtime
+// ma.codes/projects/culina unfurls that project's own poster at zero runtime
 // cost.
 export const alt = 'Project card · Muhammad Abdullah — ma.codes';
 export const size = { width: 1200, height: 630 };
@@ -23,16 +24,18 @@ export const contentType = 'image/png';
 // NOTHING, and with the set closed every project's card answered 404 in every
 // language: the og:image each project page advertised was dead from the
 // multilingual merge (#188) until 2026-11-07.
+//
+// The segment is the project's slug, as on the page (src/lib/projects/paths.js).
 export function generateStaticParams() {
   return localeParams().flatMap(({ locale }) =>
-    projectsData.map((p) => ({ locale, id: String(p.id) })),
+    projectsData.map((p) => ({ locale, id: projectSlug(p) })),
   );
 }
 export const dynamicParams = false;
 
 export default async function Image({ params }) {
-  const { id } = await params;
-  const project = projectsData.find((p) => String(p.id) === String(id));
+  const { id: slug } = await params;
+  const project = projectBySlug(projectsData, slug);
 
   // dynamicParams=false makes this unreachable, but a metadata image
   // should degrade to the generic card rather than ever failing a build.

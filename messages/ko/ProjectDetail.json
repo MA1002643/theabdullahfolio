@@ -10,48 +10,118 @@
     "projects": "프로젝트"
   },
   "loading": "프로젝트를 불러오는 중",
-  "intro": {
-    "fallbackName": "프로젝트 이름",
-    "fallbackDescription": "혁신적이고 빠르며 미래지향적인 웹 솔루션.",
-    "linksLabel": "{name} 링크",
-    "liveDemo": "라이브 데모<sr>(새 탭에서 열림)</sr>",
-    "source": "GitHub 소스<sr>(새 탭에서 열림)</sr>"
+  "chapters": {
+    "overview": "개요",
+    "statement": "해결할 문제",
+    "walkthrough": "둘러보기",
+    "gallery": "갤러리",
+    "architecture": "아키텍처",
+    "notes": "제작 노트",
+    "outcomes": "성과",
+    "stack": "사용 기술"
   },
-  "screen": {
-    "boot": {
-      "bios": "BIOS 초기화 중...",
-      "hardware": "하드웨어 감지 중...",
-      "os": "운영 체제 불러오는 중..."
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
+    "linksLabel": "{name} 링크",
+    "liveDemo": "라이브 데모<sr> (새 탭에서 열기)</sr>",
+    "source": "GitHub 소스<sr> (새 탭에서 열기)</sr>",
+    "private": "비공개 저장소"
+  },
+  "facts": {
+    "label": "프로젝트 정보",
+    "role": "역할",
+    "timeline": "기간",
+    "timelineOngoing": "{start} – 현재",
+    "timelineRange": "{start} – {end}",
+    "category": "분류",
+    "started": "시작",
+    "repository": "저장소",
+    "public": "GitHub에 공개",
+    "private": "비공개",
+    "live": "라이브 사이트"
+  },
+  "shortForm": {
+    "pending": "이 프로젝트의 전체 사례 연구를 작성하고 있어요. 그때까지는 이 페이지에 핵심 내용만 담았습니다."
+  },
+  "stack": {
+    "lead": "GitHub 집계 기준으로 본 저장소의 사용 언어예요.",
+    "groups": {
+      "languages": "언어",
+      "frameworks": "프레임워크",
+      "libraries": "라이브러리",
+      "tooling": "테스트 및 도구"
     },
-    "tagline": "차세대 디지털 장인정신으로 여러분의 아이디어에 힘을 더합니다.",
-    "badgeFullstack": "풀스택",
-    "tools": "도구 및 프레임워크",
-    "overview": "프로젝트 개요",
-    "overviewLead": "이 플랫폼은 통합 대시보드와 실시간 분석으로 이커머스 업무 흐름을 간소화합니다.",
-    "overviewBody": "여러 도구를 따로 관리해야 하는 번거로움을 중앙화된 직관적인 인터페이스로 해결합니다.",
-    "features": "주요 기능",
-    "feature": {
-      "auth": {
-        "title": "인증",
-        "desc": "안전한 로그인과 사용자 접근 관리."
+    "version": "버전 {version}",
+    "derived": "버전 정보는 사이트를 빌드할 때 락파일에서 읽어 오기 때문에, 현재 배포본이 실제로 실행하는 버전과 같아요."
+  },
+  "gallery": {
+    "region": "{title}, 스크롤 가능"
+  },
+  "architecture": {
+    "listLabel": "시스템 구성 요소별 설명"
+  },
+  "notes": {
+    "read": "노트 읽기"
+  },
+  "outcomes": {
+    "derived": "직접 입력한 값이 아니라 배포 시점에 빌드에서 집계한 수치예요."
+  },
+  "index": {
+    "nav": "목차",
+    "position": "{total}개 중 {n}번째 챕터",
+    "close": "닫기",
+    "skip": "챕터 목차로 건너뛰기"
+  },
+  "palette": {
+    "section": "이 프로젝트",
+    "jump": "{title}(으)로 이동",
+    "demo": "라이브 데모 열기",
+    "source": "이 프로젝트의 소스 보기"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "방문자",
+        "detail": "모든 브라우저, 모든 언어"
       },
-      "payments": {
-        "title": "결제",
-        "desc": "통합 결제 게이트웨이."
+      "edge": {
+        "title": "Vercel 엣지",
+        "detail": "로케일 라우팅"
       },
-      "chat": {
-        "title": "실시간 채팅",
-        "desc": "사용자와 즉시 소통."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "서버 컴포넌트, 사전 렌더링"
       },
-      "admin": {
-        "title": "관리자 패널",
-        "desc": "간편한 콘텐츠 관리."
+      "content": {
+        "title": "콘텐츠",
+        "detail": "data.js와 메시지 카탈로그"
+      },
+      "notes": {
+        "title": "엔지니어링 노트",
+        "detail": "docs/*.md, /notes에서 제공"
+      },
+      "client": {
+        "title": "클라이언트 아일랜드",
+        "detail": "LazyMotion, ⌘K 팔레트"
+      },
+      "api": {
+        "title": "API 라우트",
+        "detail": "자격 증명은 서버에만 보관"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "방명록, 요청 제한"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "저장소, 진행 상황"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "질문하기, 메시지 다듬기"
       }
-    },
-    "liveDemo": "라이브 데모",
-    "github": "GitHub",
-    "demoLabel": "{name} 라이브 데모 열기",
-    "sourceLabel": "GitHub에서 {name} 소스 보기"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. {category} 프로젝트이며 {when}에 시작했어요. {visibility, select, private {비공개 저장소} other {공개 저장소}}이며, GitHub 보드에서 실시간으로 진행 상황을 확인할 수 있어요.",

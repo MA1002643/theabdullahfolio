@@ -29,6 +29,10 @@ import { read, stripComments, walk } from '../support/source.js';
 const PRELOAD_ALLOWED = {
   'src/app/[locale]/(home)/page.js': 'the home backdrop is the LCP on a phone (the <h1> is on desktop)',
   'src/components/qualifications/Carousel.jsx': 'the centre certificate is the LCP of /qualifications on a phone',
+  // Measured 2026-11-15 (issue #31), /projects/theabdullahfolio, first and returning visit:
+  // the LCP entry is this <img> at both 1440×900 (294,445 px²) and 390×844
+  // (70,665 px²). Only rendered for a project with a case-study hero.
+  'src/components/case-study/HeroMedia.jsx': 'the case-study hero is the LCP of /projects/<id> at 1440×900 and 390×844',
 };
 
 const SOURCES = walk('src', /\.(m?js|jsx)$/);

@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 const pending = { ...IDLE, status: 'pending', question: 'q' };
-const src = (id, href = '/projects/2') => ({ type: 'source', id, kind: 'project', href });
+const src = (id, href = '/projects/afaaqx') => ({ type: 'source', id, kind: 'project', href });
 
 describe('applyEvents', () => {
   it('builds the answer as text and citation segments, with sources in first-cited order', () => {
@@ -48,7 +48,7 @@ describe('applyEvents', () => {
       { type: 'step', id: 't1', tool: 'get_github_activity', status: 'running' },
       { type: 'step', id: 't1', tool: 'get_github_activity', status: 'done', data: { commits: 9 } },
       { type: 'text', text: 'He has 9 commits ' },
-      src('P1', '/projects/1'),
+      src('P1', '/projects/theabdullahfolio'),
       { type: 'cite', id: 'P1' },
     ]);
     expect(s.trace).toEqual([

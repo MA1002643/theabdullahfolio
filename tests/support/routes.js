@@ -28,8 +28,12 @@ export const STATIC_ROUTES = [
  * the same template as the note before it, but its content is not: it is the
  * page most of its readers arrive at from outside, and its wide tables and code
  * blocks are exactly what the axe and keyboard layers check on a phone.
+ *
+ * `/projects/afaaqx` is the project template's other form (issue #31): a project
+ * with no `caseStudy` renders the short form (overview, next project), and
+ * AfaaqX has no language data, so it also covers a page without a Stack.
  */
-export const DYNAMIC_SAMPLES = ['/projects/1', '/notes/discoverability', '/notes/testing'];
+export const DYNAMIC_SAMPLES = ['/projects/theabdullahfolio', '/projects/afaaqx', '/notes/discoverability', '/notes/testing'];
 
 export const ALL_ROUTES = [...STATIC_ROUTES, ...DYNAMIC_SAMPLES];
 

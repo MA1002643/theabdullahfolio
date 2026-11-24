@@ -215,5 +215,240 @@
         "detail": "Pixel-Prüfungen, Reduced-Motion-Emulation und das E2E-Gate laufen alle gegen echtes Chromium"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Design & Engineering",
+      "thesis": "Eine persönliche Website, gebaut wie ein Produkt: in zwanzig Sprachen ausgeliefert, durch einen mehrschichtigen Testplan abgesichert und mit jeder Entscheidung öffentlich dokumentiert.",
+      "heroAlt": "Die Startseite von theabdullahfolio: der Name in Orange über einem Laptop auf einem von Laternen beleuchteten Steinweg, umringt von Navigationsbuttons, darunter eine Live-Statusleiste von GitHub.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio ist das Portfolio, das du gerade liest. Es ist eine Next.js-Website, die zugleich ihre eigene Fallstudie ist: Jede Seite ist ein funktionierendes Beispiel dafür, wie ich Software baue – vom ersten Byte, das ein Besucher lädt, bis zu den Notizen, die erklären, warum es so gebaut wurde.",
+          "facts": {
+            "stack": {
+              "label": "Stack",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Status",
+              "value": "Online, in aktiver Entwicklung"
+            }
+          }
+        },
+        "statement": {
+          "title": "Das Problem",
+          "body": "Die meisten Portfolios sind Broschüren. Sie listen auf, was jemand gemacht hat, zeigen aber nie, wie es entstanden ist. Dieses hier sollte der Beleg selbst sein: so verlässlich wie ein Produkt, so zugänglich wie ein öffentlicher Dienst und offen für alle, die die Arbeit prüfen möchten."
+        },
+        "walkthrough": {
+          "title": "So läuft ein Besuch ab",
+          "steps": {
+            "arrive": {
+              "title": "Ankommen",
+              "body": "Die Startseite zeigt zuerst den Namen und einen Ring aus Zielen. Animationsfunktionen folgen danach in einem eigenen Chunk, sodass nichts, was Besucher brauchen, auf den Download von Bewegung warten muss.",
+              "alt": "Die Startseite mit dem Kreis aus Navigationsbuttons um den Namen."
+            },
+            "language": {
+              "title": "In deiner Sprache lesen",
+              "body": "Jede Seite wird in zwanzig Sprachen ausgeliefert. Vier davon werden von rechts nach links gelesen, und das Layout spiegelt sich mit: Ränder, Pfeile, Bewegung und Eingaben folgen der Leserichtung.",
+              "alt": "Die Über-mich-Seite auf Arabisch, von rechts nach links gesetzt."
+            },
+            "palette": {
+              "title": "Mit der Tastatur navigieren",
+              "body": "Eine Befehlspalette auf jeder Seite erreicht per Tippen jede Route, jedes Projekt und jeden Abschnitt. Sie hat außerdem ein Fragen-Panel, das Fragen zur Arbeit beantwortet und die Seite nennt, aus der jede Antwort stammt.",
+              "alt": "Die geöffnete Befehlspalette über der Projektseite mit der Liste der Routen der Website."
+            },
+            "receipts": {
+              "title": "Belege prüfen",
+              "body": "Die Engineering-Notizen sind als Seiten veröffentlicht, und die Uses-Seite liest ihre Zahlen direkt aus dem Build: die Testanzahl, die Versionen der Abhängigkeiten und die Deployment-Pipeline.",
+              "alt": "Die Uses-Seite: der Rechner und der Editor-Arbeitsplatz, jede Zeile vom Besitzer bestätigt."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Screens",
+          "items": {
+            "about": {
+              "alt": "Die Über-mich-Seite: die meistgenutzten Sprachen und GitHub-Statistiken, live von GitHub gelesen, neben der Karte mit den Jahren im Handwerk.",
+              "caption": "Über mich: Live-Zahlen von GitHub und aus dem CV."
+            },
+            "journey": {
+              "alt": "Die Werdegang-Seite: eine Zeitleiste aus Studium und Arbeit.",
+              "caption": "Werdegang: die Zeitleiste, Epoche für Epoche."
+            },
+            "projects": {
+              "alt": "Die Projektübersicht mit Kategorie-Tabs.",
+              "caption": "Projekte: nach Kategorie gefiltert."
+            },
+            "notes": {
+              "alt": "Eine Engineering-Notiz als Langform-Seite dargestellt.",
+              "caption": "Notizen: Entscheidungen, öffentlich dokumentiert."
+            },
+            "japanese": {
+              "alt": "Die Werdegang-Seite auf Japanisch.",
+              "caption": "Japanisch: Zeilenumbruch ohne Leerzeichen."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Architektur",
+          "body": "Seiten werden auf dem Server gerendert und, wo immer möglich, beim Build vorab gerendert. Inhalte und Übersetzungen sind Dateien im Repository, und Live-Zahlen kommen über ein paar kleine API-Routen. Jede dieser Routen hält ihre Zugangsdaten auf dem Server."
+        },
+        "stack": {
+          "title": "Gebaut mit",
+          "body": "Ein gängiger Stack, bewusst klein gehalten: ein Framework, ein Styling-System, eine Übersetzungsbibliothek und eine Handvoll Bibliotheken, die jeweils genau eine Aufgabe erledigen.",
+          "items": {
+            "javascript": {
+              "body": "ES-Module durchgehend; JSDoc-Typen dort, wo eine Signatur sie verdient.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "Ein einziges Stylesheet, ausschließlich mit logischen Eigenschaften, skaliert aus einem einzigen fluiden Faktor.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Fragment-Shader für die Startszene, die Aurora und die Glutpassage.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Skripte für Build, Verifikation und CI.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router und Server Components; jede Route wird beim Build vorgerendert.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Server Components tragen die Worte, Client-Inseln die Bewegung.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Utilities für Layout und Abstände; die eigenen Stimmen der Seite leben in einem einzigen Stylesheet.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "Zwanzig Sprachen mit ICU-Nachrichten und einem Nachrichtenbudget pro Route.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion: Die Animations-Engine kommt nach dem ersten Paint oder gar nicht, und die Seite ist in beiden Fällen vollständig.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Die Fragefunktion und der Fit-Check, per Stream über das Vercel AI Gateway an Claude.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "Das Gästebuch, der Live-Standort und jedes Rate-Limit.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "Die Startszene und die Aurora, über React Three Fiber, nur dort geladen, wo sie laufen.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "Die Felder und die Validierung des Kontaktformulars.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "Anmeldung mit GitHub und Google für das Gästebuch.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Toasts für die Formulare und die Projektliste.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "Die Icons der Oberfläche, jeweils ein Inline-SVG.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Rendert die Engineering-Notizen beim Build aus Markdown.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "Versendet das Kontaktformular per SMTP.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "Die Ebenen für Unit-, Property-, Komponenten- und API-Tests.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "Ebenen für End-to-End-, Barrierefreiheits-, visuelle und Performance-Tests, in echten Browsern.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "WCAG 2.2 AA auf jeder Route, bei zwei Breiten.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Property-Tests für die Parser, die Ranker und die Kapitellisten.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Mutationstests für die kritische Logik.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Regeln zu Core Web Vitals und Barrierefreiheit bei jedem Commit.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Tests, Lighthouse, visuelle Baselines und Abhängigkeits-Updates.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Hosting, Vorschauen, Analytics und das AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "Die Laufzeitumgebung, festgelegt über engines und .nvmrc.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Handwerksnotizen",
+          "items": {
+            "lazy-motion": {
+              "title": "Bewegung darf später eintreffen",
+              "body": "Die Animations-Engine wurde aus dem Erstladen entfernt. Elemente beschreiben ihren Endzustand in Props, daher ist eine Seite, die den Motion-Chunk nie erhält, trotzdem vollständig. Verworfen: die ganze Bibliothek von Anfang an auszuliefern."
+            },
+            "languages": {
+              "title": "Zwanzig Sprachen, vier von rechts nach links",
+              "body": "Texte werden nachrichtenweise übersetzt und anschließend auf Platzhalter und Pluralformen geprüft. Das Layout nutzt ausschließlich logische Eigenschaften. Verworfen: eine englische Website mit Übersetzen-Button."
+            },
+            "testing": {
+              "title": "Ein veröffentlichter Testplan",
+              "body": "Unit-, Property-, Mutation-, Komponenten-, API-, End-to-End-, Barrierefreiheits-, visuelle, Performance- und Sicherheitsebenen, jeweils mit dem Vermerk, was sie nicht abfangen. Verworfen: Testabdeckung als Ziel."
+            },
+            "restraint": {
+              "title": "Worte vor WebGL",
+              "body": "Diese Seite war früher ein 3D-Laptop auf einem Baumstumpf. Jetzt erklärt sie die Arbeit, statt sie zu inszenieren, und three.js hat die Route verlassen. Verworfen: eine Szene, die den Inhalt verbarg und eine GPU kostete."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Ergebnisse",
+          "items": {
+            "languages": {
+              "label": "Ausgelieferte Sprachen"
+            },
+            "rtl": {
+              "label": "Von rechts nach links gelesen"
+            },
+            "vitest": {
+              "label": "Vitest-Testfälle"
+            },
+            "browser": {
+              "label": "Browser-Testfälle"
+            },
+            "notes": {
+              "label": "Veröffentlichte Engineering-Notizen"
+            }
+          }
+        }
+      }
+    }
   }
 }

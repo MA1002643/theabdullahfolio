@@ -46,7 +46,9 @@ export const ROUTE_NAMESPACES = {
   '/cv': ['Cv'],
   '/notes': ['Notes'],
   '/projects': ['Projects', 'Data.projects', 'Data.categories'],
-  '/projects/[id]': ['ProjectDetail'],
+  // None since issue #31: the case study resolves every string on the server
+  // and hands its client islands (index, palette commands) plain props.
+  '/projects/[id]': [],
   '/qualifications': ['Qualifications'],
   '/journey': ['Journey', 'Data.journey'],
   '/uses': ['Uses', 'Data.uses'],
@@ -57,8 +59,12 @@ export const ROUTE_NAMESPACES = {
   '/notes/[slug]': ['Notes'],
 };
 
-/** Server-only namespaces: metadata, never needed by a client component. */
-export const SERVER_NAMESPACES = ['Meta'];
+/**
+ * Server-only namespaces, never needed by a client component: metadata, and
+ * since issue #31 the project page's copy (CaseStudy.jsx resolves it all on
+ * the server and passes its islands plain strings).
+ */
+export const SERVER_NAMESPACES = ['Meta', 'ProjectDetail'];
 
 /**
  * Namespaces no route hands down whole. `UsesTools` holds a description for

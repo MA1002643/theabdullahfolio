@@ -215,5 +215,240 @@
         "detail": "Piksel sondaları, azaltılmış hareket emülasyonu ve uçtan uca kapısı gerçek Chromium üzerinde çalışır"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Tasarım ve mühendislik",
+      "thesis": "Bir ürün gibi inşa edilmiş kişisel bir site: yirmi dilde sunuluyor, katmanlı bir test planıyla doğrulanıyor ve her karar herkesin görebileceği şekilde yazıya dökülüyor.",
+      "heroAlt": "theabdullahfolio ana sayfası: turuncu renkteki isim, fenerlerle aydınlatılmış taş bir patikadaki dizüstü bilgisayarın üzerinde yer alıyor; çevresinde gezinme düğmeleri, altında ise canlı bir GitHub durum çubuğu var.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio, şu an okuduğun portfolyo. Kendi vaka çalışması olarak da işleyen bir Next.js sitesi: her sayfa, yazılımı nasıl geliştirdiğimin çalışan bir örneği. Ziyaretçinin indirdiği ilk bayttan, her şeyin neden bu şekilde yapıldığını anlatan notlara kadar.",
+          "facts": {
+            "stack": {
+              "label": "Teknoloji",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Durum",
+              "value": "Yayında, aktif geliştirme sürüyor"
+            }
+          }
+        },
+        "statement": {
+          "title": "Sorun",
+          "body": "Çoğu portfolyo bir broşürden ibaret. Birinin neler yaptığını sıralıyor ama nasıl yapıldığını asla göstermiyor. Bu site kanıtın kendisi olmalıydı: bir ürün kadar hesap verebilir, bir kamu hizmeti kadar erişilebilir ve işi denetlemek isteyen herkese açık."
+        },
+        "walkthrough": {
+          "title": "Bir ziyaret nasıl işler",
+          "steps": {
+            "arrive": {
+              "title": "Varış",
+              "body": "Ana sayfa önce ismi ve çevresindeki hedef halkasını çizer. Animasyon özellikleri ardından kendi paketiyle gelir; böylece ziyaretçinin ihtiyaç duyduğu hiçbir şey hareketin inmesini beklemez.",
+              "alt": "İsmin çevresinde yörünge gibi dizilmiş gezinme düğmeleriyle ana sayfa."
+            },
+            "language": {
+              "title": "Kendi dilinde oku",
+              "body": "Her sayfa yirmi dilde sunuluyor. Bunlardan dördü sağdan sola okunuyor ve yerleşim de onlarla birlikte aynalanıyor: kenar boşlukları, oklar, hareket ve yazılan girdi okurun yönünü izliyor.",
+              "alt": "Hakkımda sayfasının sağdan sola yerleşimli Arapça sürümü."
+            },
+            "palette": {
+              "title": "Klavyeyle gez",
+              "body": "Her sayfadaki komut paleti, yazarak her sayfaya, projeye ve bölüme ulaşmanı sağlar. Ayrıca işler hakkındaki soruları yanıtlayan ve her yanıtın hangi sayfadan geldiğini belirten bir Sor paneli de var.",
+              "alt": "Projeler sayfasının üzerinde açık komut paleti; sitenin sayfalarını listeliyor."
+            },
+            "receipts": {
+              "title": "Kanıtlara bak",
+              "body": "Mühendislik notları sayfa olarak yayımlanıyor; kullandıklarım sayfası ise rakamlarını doğrudan derlemeden okuyor: test sayıları, bağımlılık sürümleri ve dağıtım hattı.",
+              "alt": "Kullandıklarım sayfası: makine ve editör tezgâhı; her satır sahibi tarafından onaylanmış."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Ekranlar",
+          "items": {
+            "about": {
+              "alt": "Hakkımda sayfası: GitHub'dan canlı okunan en çok kullanılan diller ve GitHub istatistikleri, yanında zanaattaki yıllar kartı.",
+              "caption": "Hakkımda: GitHub'dan ve CV'den canlı sayılar."
+            },
+            "journey": {
+              "alt": "Yolculuk sayfası: eğitim ve çalışma hayatının zaman çizelgesi.",
+              "caption": "Yolculuk: dönem dönem zaman çizelgesi."
+            },
+            "projects": {
+              "alt": "Kategori sekmeleriyle projeler listesi.",
+              "caption": "Projeler: kategoriye göre filtrelenmiş."
+            },
+            "notes": {
+              "alt": "Uzun biçimli bir sayfa olarak görüntülenen mühendislik notu.",
+              "caption": "Notlar: herkese açık yazılmış kararlar."
+            },
+            "japanese": {
+              "alt": "Yolculuk sayfasının Japonca sürümü.",
+              "caption": "Japonca: boşluksuz satır bölme."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Mimari",
+          "body": "Sayfalar sunucuda oluşturuluyor ve mümkün olan her yerde derleme sırasında önceden üretiliyor. İçerik ve çeviriler depodaki dosyalardan oluşuyor; canlı veriler ise birkaç küçük API rotasından geliyor. Bu rotaların her biri kimlik bilgilerini sunucuda tutuyor."
+        },
+        "stack": {
+          "title": "Neyle yapıldı",
+          "body": "Bilinçli olarak küçük tutulmuş yaygın bir yığın: tek bir framework, tek bir stil sistemi, tek bir çeviri kütüphanesi ve her biri yalnızca tek işi yapan birkaç kütüphane.",
+          "items": {
+            "javascript": {
+              "body": "Baştan sona ES modülleri; bir imza hak ettiğinde JSDoc tipleri.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "Yalnızca mantıksal özellikler kullanan tek bir stil dosyası; tek bir akışkan çarpandan ölçeklenir.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Ana sahne, aurora ve kor geçişi için fragment shader'lar.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Derleme, doğrulama ve CI betikleri.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router ve Server Components; her rota derleme sırasında önceden oluşturulur.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Server Components metni taşır; istemci adacıkları hareketi taşır.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Yerleşim ve boşluklar için yardımcı sınıflar; sitenin kendi sesleri tek bir stil dosyasında yaşar.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "ICU mesajlarıyla yirmi dil ve rota başına bir mesaj bütçesi.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion: animasyon motoru ilk boyamadan sonra gelir ya da hiç gelmez; sayfa her iki durumda da eksiksizdir.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Sor özelliği ve uyum kontrolü, Vercel AI Gateway üzerinden Claude'a akış olarak iletilir.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "Ziyaretçi defteri, canlı konum ve tüm hız sınırları.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "Ana sahne ve aurora, React Three Fiber üzerinden; yalnızca oynatıldıkları yerde yüklenir.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "İletişim formunun alanları ve doğrulaması.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "Ziyaretçi defteri için GitHub ve Google ile giriş.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Formlar ve proje listesi için bildirim mesajları.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "Arayüz simgeleri; her biri tek bir satır içi SVG.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Mühendislik notlarını derleme sırasında Markdown'dan oluşturur.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "İletişim formunu SMTP üzerinden iletir.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "Birim, özellik, bileşen ve API katmanları.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "Uçtan uca, erişilebilirlik, görsel ve performans katmanları; gerçek tarayıcılarda.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "Her rotada iki genişlikte WCAG 2.2 AA.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Ayrıştırıcılar, sıralayıcılar ve bölüm listeleri için özellik testleri.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Kritik mantıkta mutasyon testi.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Her commit'te Core Web Vitals ve erişilebilirlik kuralları.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Testler, Lighthouse, görsel temel çizgiler ve bağımlılık güncellemeleri.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Barındırma, önizlemeler, analitik ve AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "Çalışma ortamı; engines ve .nvmrc ile sabitlenmiştir.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Zanaat notları",
+          "items": {
+            "lazy-motion": {
+              "title": "Geç gelmesine izin verilen hareket",
+              "body": "Animasyon motoru ilk yüklemeden çıkarıldı. Öğeler son hallerini prop'larla tanımlıyor; bu yüzden hareket paketi hiç gelmese bile sayfa eksiksiz kalıyor. Reddedilen: kütüphanenin tamamını baştan göndermek."
+            },
+            "languages": {
+              "title": "Yirmi dil, dördü sağdan sola",
+              "body": "Metinler mesaj bazında çevriliyor, ardından yer tutucular ve çoğul biçimleri açısından doğrulanıyor. Yerleşimde yalnızca mantıksal özellikler kullanılıyor. Reddedilen: çeviri düğmesi olan İngilizce bir site."
+            },
+            "testing": {
+              "title": "Yayımlanmış bir test planı",
+              "body": "Birim, özellik tabanlı, mutasyon, bileşen, API, uçtan uca, erişilebilirlik, görsel, performans ve güvenlik katmanları; her biri neyi yakalayamadığıyla birlikte yazılı. Reddedilen: hedef olarak kapsama oranı."
+            },
+            "restraint": {
+              "title": "WebGL'den önce sözcükler",
+              "body": "Bu sayfa eskiden kütük üzerinde duran 3B bir dizüstü bilgisayardı. Artık işi sahnelemek yerine anlatıyor ve three.js bu rotadan çıktı. Reddedilen: içeriği gizleyen ve bir GPU'ya mal olan bir sahne."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Sonuçlar",
+          "items": {
+            "languages": {
+              "label": "Sunulan dil"
+            },
+            "rtl": {
+              "label": "Sağdan sola okunan"
+            },
+            "vitest": {
+              "label": "Vitest test senaryosu"
+            },
+            "browser": {
+              "label": "Tarayıcı test senaryosu"
+            },
+            "notes": {
+              "label": "Yayımlanmış mühendislik notu"
+            }
+          }
+        }
+      }
+    }
   }
 }

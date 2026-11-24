@@ -67,7 +67,7 @@ describe('localizePath — English stays unprefixed', () => {
     ['/about', 'en', '/about'],
     ['/', 'ar', '/ar'],
     ['/about', 'ar', '/ar/about'],
-    ['/projects/3', 'ja', '/ja/projects/3'],
+    ['/projects/culina', 'ja', '/ja/projects/culina'],
     ['/about', undefined, '/about'],
   ])('%s in %s → %s', (path, code, expected) => {
     expect(localizePath(path, code)).toBe(expected);

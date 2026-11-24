@@ -4,8 +4,8 @@ import { m } from "framer-motion"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { useRouter } from "@/i18n/navigation"
 import TransitionLink from "@/components/pageTransition/TransitionLink"
-import { warmProjectScene } from "@/components/project-detail/scene-loader"
 import { fluid, fluidText } from "@/lib/fluidScale"
+import { projectPath } from "@/lib/projects/paths"
 import { saveProjectFilterHandoff } from "@/lib/projectFilterHandoff"
 import { useLocale } from "next-intl"
 import { DEFAULT_LOCALE } from "@/i18n/locales"
@@ -63,7 +63,9 @@ const isConstrainedConnection = () => {
   )
 }
 
-const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
+const ProjectLayout = ({ name, slug, description, date, demoLink, category }) => {
+  // /projects/<slug> (src/lib/projects/paths.js), never the numeric id.
+  const href = projectPath({ name, slug })
   const router = useRouter()
   const locale = useLocale()
   const prefersReducedMotion = useReducedMotion()
@@ -79,18 +81,14 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   }
 
   // Warm the destination while the visitor is still deciding (issue #83).
-  // <Link> prefetches the route in-viewport, and warmProjectScene starts the
-  // three.js chunk download that next/dynamic would otherwise only begin
-  // after navigation. Both calls dedupe, so re-hovering costs nothing.
-  // onTouchStart is the mobile "intent" signal — it fires a beat before
-  // click, which is enough to get the request going. On Save-Data / 2G we
-  // stand down entirely: hover is a hint, not a click, and a speculative
-  // ~1 MB scene chunk is exactly the spend that preference asks us to skip —
-  // those visitors pay the chunk on navigation itself, as before this branch.
+  // The prefetch dedupes, so re-hovering costs nothing. onTouchStart is the
+  // mobile "intent" signal: it fires a beat before click, which is enough to
+  // get the request going. On Save-Data / 2G we stand down entirely: hover is
+  // a hint, not a click. (Until issue #31 this also started the 3D scene's
+  // three.js chunk; the case study has no such chunk.)
   const warmDetail = () => {
     if (isConstrainedConnection()) return
-    router.prefetch(`/projects/${id}`)
-    warmProjectScene()
+    router.prefetch(href)
   }
 
   // Text roles are semantic classes in globals.css (issue #27 §5) — no
@@ -112,7 +110,7 @@ const ProjectLayout = ({ id, name, description, date, demoLink, category }) => {
   return (
     <ProjectLink
       variants={prefersReducedMotion ? reducedItem : item}
-      href={`/projects/${id}`}
+      href={href}
       transitionLabel={name}
       onClick={handleClick}
       onMouseEnter={warmDetail}

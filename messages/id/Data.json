@@ -215,5 +215,240 @@
         "detail": "Probe piksel, emulasi reduced-motion, dan gerbang e2e semuanya dijalankan pada Chromium asli"
       }
     }
+  },
+  "caseStudies": {
+    "1": {
+      "role": "Desain & rekayasa",
+      "thesis": "Situs pribadi yang dibangun seperti sebuah produk: tersedia dalam dua puluh bahasa, diverifikasi melalui rencana pengujian berlapis, dan setiap keputusannya ditulis secara terbuka.",
+      "heroAlt": "Beranda theabdullahfolio: nama berwarna oranye di atas sebuah laptop di jalan setapak batu yang diterangi lentera, dikelilingi tombol navigasi, di bawah bilah status GitHub langsung.",
+      "chapters": {
+        "overview": {
+          "body": "theabdullahfolio adalah portofolio yang sedang Anda baca. Situs ini dibangun dengan Next.js dan sekaligus menjadi studi kasusnya sendiri: setiap halaman adalah contoh nyata cara saya membangun perangkat lunak, mulai dari byte pertama yang diunduh pengunjung hingga catatan yang menjelaskan mengapa situs ini dibuat dengan cara tersebut.",
+          "facts": {
+            "stack": {
+              "label": "Stack",
+              "value": "Next.js, React, next-intl, framer-motion, Vercel"
+            },
+            "status": {
+              "label": "Status",
+              "value": "Aktif, dalam pengembangan berkelanjutan"
+            }
+          }
+        },
+        "statement": {
+          "title": "Masalahnya",
+          "body": "Sebagian besar portofolio hanyalah brosur. Isinya daftar karya seseorang, tetapi tidak pernah menunjukkan bagaimana karya itu dibuat. Portofolio ini harus menjadi buktinya sendiri: akuntabel seperti sebuah produk, mudah diakses seperti layanan publik, dan terbuka bagi siapa saja yang ingin memeriksa pekerjaannya."
+        },
+        "walkthrough": {
+          "title": "Cara kerja sebuah kunjungan",
+          "steps": {
+            "arrive": {
+              "title": "Tiba",
+              "body": "Beranda menampilkan nama dan lingkaran tujuan lebih dulu. Fitur animasi menyusul dalam chunk tersendiri, sehingga tidak ada yang dibutuhkan pengunjung yang menunggu animasi selesai diunduh.",
+              "alt": "Beranda dengan orbit tombol navigasi yang mengelilingi nama."
+            },
+            "language": {
+              "title": "Baca dalam bahasa Anda",
+              "body": "Setiap halaman tersedia dalam dua puluh bahasa. Empat di antaranya dibaca dari kanan ke kiri, dan tata letak ikut berbalik: margin, panah, gerakan, hingga input ketikan mengikuti arah baca pembaca.",
+              "alt": "Halaman tentang dalam bahasa Arab, dengan tata letak kanan ke kiri."
+            },
+            "palette": {
+              "title": "Bernavigasi dengan keyboard",
+              "body": "Palet perintah di setiap halaman menjangkau setiap rute, proyek, dan bagian cukup dengan mengetik. Palet ini juga memiliki panel Tanya yang menjawab pertanyaan tentang karya saya dan menyebutkan halaman sumber setiap jawaban.",
+              "alt": "Palet perintah terbuka di atas halaman proyek, menampilkan daftar rute situs."
+            },
+            "receipts": {
+              "title": "Periksa buktinya",
+              "body": "Catatan rekayasa diterbitkan sebagai halaman, dan halaman uses membaca angkanya langsung dari proses build: jumlah pengujian, versi dependensi, dan alur deployment.",
+              "alt": "Halaman uses: mesin dan meja kerja editor, dengan setiap baris dikonfirmasi oleh pemiliknya."
+            }
+          }
+        },
+        "gallery": {
+          "title": "Tampilan layar",
+          "items": {
+            "about": {
+              "alt": "Halaman tentang: bahasa yang paling sering digunakan dan statistik GitHub, dibaca langsung dari GitHub, di samping kartu lama berkarya.",
+              "caption": "Tentang: angka langsung dari GitHub dan CV."
+            },
+            "journey": {
+              "alt": "Halaman perjalanan: lini masa studi dan pekerjaan.",
+              "caption": "Perjalanan: lini masa, era demi era."
+            },
+            "projects": {
+              "alt": "Daftar proyek dengan tab kategori.",
+              "caption": "Proyek: disaring menurut kategori."
+            },
+            "notes": {
+              "alt": "Sebuah catatan rekayasa yang ditampilkan sebagai halaman artikel panjang.",
+              "caption": "Catatan: keputusan yang ditulis secara terbuka."
+            },
+            "japanese": {
+              "alt": "Halaman perjalanan dalam bahasa Jepang.",
+              "caption": "Jepang: pemenggalan baris tanpa spasi."
+            }
+          }
+        },
+        "architecture": {
+          "title": "Arsitektur",
+          "body": "Halaman dirender di server dan dirender lebih dulu saat build jika memungkinkan. Konten dan terjemahan berupa berkas di repositori, sedangkan angka langsung diambil melalui beberapa rute API kecil. Setiap rute tersebut menyimpan kredensialnya di server."
+        },
+        "stack": {
+          "title": "Dibangun dengan",
+          "body": "Tumpukan teknologi arus utama yang sengaja dijaga tetap kecil: satu framework, satu sistem penataan gaya, satu pustaka terjemahan, dan segelintir pustaka yang masing-masing mengerjakan satu tugas.",
+          "items": {
+            "javascript": {
+              "body": "ES modules dari ujung ke ujung; tipe JSDoc di tempat sebuah signature memang layak memilikinya.",
+              "label": "JavaScript"
+            },
+            "css": {
+              "body": "Satu stylesheet yang hanya memakai properti logis, diskalakan dari satu faktor fluid.",
+              "label": "CSS"
+            },
+            "glsl": {
+              "body": "Fragment shader untuk scene beranda, aurora, dan lorong bara.",
+              "label": "GLSL"
+            },
+            "shell": {
+              "body": "Skrip build, verifikasi, dan CI.",
+              "label": "Shell"
+            },
+            "next": {
+              "body": "App Router dan Server Components; setiap rute di-prerender saat build.",
+              "label": "Next.js"
+            },
+            "react": {
+              "body": "Server Components membawa teksnya; client island membawa geraknya.",
+              "label": "React"
+            },
+            "tailwind": {
+              "body": "Utility untuk tata letak dan jarak; gaya khas situs ini tersimpan dalam satu stylesheet.",
+              "label": "Tailwind CSS"
+            },
+            "next-intl": {
+              "body": "Dua puluh locale dengan pesan ICU dan anggaran pesan per rute.",
+              "label": "next-intl"
+            },
+            "framer-motion": {
+              "body": "LazyMotion: mesin animasi baru dimuat setelah first paint, atau tidak sama sekali, dan halaman tetap utuh dalam kedua kasus.",
+              "label": "Framer Motion"
+            },
+            "ai-sdk": {
+              "body": "Fitur Tanya dan cek kecocokan, di-stream melalui Vercel AI Gateway ke Claude.",
+              "label": "AI SDK"
+            },
+            "upstash": {
+              "body": "Buku tamu, lokasi langsung, dan setiap pembatasan laju.",
+              "label": "Upstash Redis"
+            },
+            "three": {
+              "body": "Scene beranda dan aurora, melalui React Three Fiber, dimuat hanya di tempat keduanya diputar.",
+              "label": "three.js"
+            },
+            "react-hook-form": {
+              "body": "Kolom isian dan validasi formulir kontak.",
+              "label": "React Hook Form"
+            },
+            "auth": {
+              "body": "Masuk dengan GitHub dan Google untuk buku tamu.",
+              "label": "Auth.js"
+            },
+            "sonner": {
+              "body": "Toast untuk formulir dan daftar proyek.",
+              "label": "Sonner"
+            },
+            "lucide": {
+              "body": "Ikon antarmuka, masing-masing satu SVG inline.",
+              "label": "Lucide"
+            },
+            "marked": {
+              "body": "Merender catatan rekayasa dari Markdown saat build.",
+              "label": "marked"
+            },
+            "nodemailer": {
+              "body": "Mengirimkan formulir kontak melalui SMTP.",
+              "label": "Nodemailer"
+            },
+            "vitest": {
+              "body": "Lapisan pengujian unit, properti, komponen, dan API.",
+              "label": "Vitest"
+            },
+            "playwright": {
+              "body": "Lapisan pengujian end-to-end, aksesibilitas, visual, dan performa, di browser sungguhan.",
+              "label": "Playwright"
+            },
+            "axe": {
+              "body": "WCAG 2.2 AA pada setiap rute, di dua lebar layar.",
+              "label": "axe-core"
+            },
+            "fast-check": {
+              "body": "Pengujian properti untuk parser, ranker, dan daftar bab.",
+              "label": "fast-check"
+            },
+            "stryker": {
+              "body": "Mutation testing pada logika kritis.",
+              "label": "Stryker"
+            },
+            "eslint": {
+              "body": "Aturan Core Web Vitals dan aksesibilitas pada setiap commit.",
+              "label": "ESLint"
+            },
+            "github-actions": {
+              "body": "Pengujian, Lighthouse, baseline visual, dan pembaruan dependensi.",
+              "label": "GitHub Actions"
+            },
+            "vercel": {
+              "body": "Hosting, pratinjau, analitik, dan AI Gateway.",
+              "label": "Vercel"
+            },
+            "node": {
+              "body": "Runtime, dikunci lewat engines dan .nvmrc.",
+              "label": "Node.js"
+            }
+          }
+        },
+        "notes": {
+          "title": "Catatan pengerjaan",
+          "items": {
+            "lazy-motion": {
+              "title": "Animasi yang boleh datang belakangan",
+              "body": "Mesin animasi tidak lagi ikut dimuat pada pemuatan pertama. Elemen mendeskripsikan kondisi akhirnya lewat props, sehingga halaman yang tidak pernah menerima chunk animasi tetap utuh. Ditolak: mengirim seluruh pustaka sejak awal."
+            },
+            "languages": {
+              "title": "Dua puluh bahasa, empat kanan ke kiri",
+              "body": "Teks diterjemahkan per pesan, lalu divalidasi untuk placeholder dan bentuk jamak. Tata letak hanya memakai properti logis. Ditolak: situs berbahasa Inggris dengan tombol terjemahan."
+            },
+            "testing": {
+              "title": "Rencana pengujian yang dipublikasikan",
+              "body": "Lapisan unit, properti, mutasi, komponen, API, end-to-end, aksesibilitas, visual, performa, dan keamanan, masing-masing dituliskan beserta hal yang tidak dapat ditangkapnya. Ditolak: cakupan sebagai tujuan."
+            },
+            "restraint": {
+              "title": "Kata-kata sebelum WebGL",
+              "body": "Halaman ini dulunya laptop 3D di atas tunggul pohon. Kini halaman ini menjelaskan pekerjaannya, bukan memanggungkannya, dan three.js sudah keluar dari rute ini. Ditolak: adegan yang menyembunyikan konten dan membebani GPU."
+            }
+          }
+        },
+        "outcomes": {
+          "title": "Hasil",
+          "items": {
+            "languages": {
+              "label": "Bahasa tersedia"
+            },
+            "rtl": {
+              "label": "Dibaca kanan ke kiri"
+            },
+            "vitest": {
+              "label": "Kasus uji Vitest"
+            },
+            "browser": {
+              "label": "Kasus uji browser"
+            },
+            "notes": {
+              "label": "Catatan rekayasa terbit"
+            }
+          }
+        }
+      }
+    }
   }
 }

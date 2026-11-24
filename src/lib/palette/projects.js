@@ -19,6 +19,8 @@ export async function paletteProjects(locale) {
     const keywords = [...new Set([local.description, p.description, category, p.category])]
       .filter(Boolean)
       .join(' ');
-    return { id: p.id, name: p.name, hint: category, keywords };
+    // `slug` rides along only when data.js pins one; projectPath() falls back
+    // to the lowercased name, which the row already carries.
+    return { id: p.id, name: p.name, ...(p.slug ? { slug: p.slug } : {}), hint: category, keywords };
   });
 }

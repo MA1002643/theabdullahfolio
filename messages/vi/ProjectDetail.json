@@ -10,48 +10,118 @@
     "projects": "Dự án"
   },
   "loading": "Đang tải dự án",
-  "intro": {
-    "fallbackName": "Tên dự án",
-    "fallbackDescription": "Giải pháp web đổi mới, nhanh và hướng tới tương lai.",
-    "linksLabel": "Liên kết của {name}",
-    "liveDemo": "Bản demo trực tiếp<sr> (mở trong tab mới)</sr>",
-    "source": "Mã nguồn trên GitHub<sr> (mở trong tab mới)</sr>"
+  "chapters": {
+    "overview": "Tổng quan",
+    "statement": "Vấn đề",
+    "walkthrough": "Lược qua dự án",
+    "gallery": "Hình ảnh",
+    "architecture": "Kiến trúc",
+    "notes": "Ghi chép kỹ thuật",
+    "outcomes": "Kết quả",
+    "stack": "Công nghệ sử dụng"
   },
-  "screen": {
-    "boot": {
-      "bios": "Đang khởi tạo BIOS...",
-      "hardware": "Đang dò tìm phần cứng...",
-      "os": "Đang tải hệ điều hành..."
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
+    "linksLabel": "Liên kết của {name}",
+    "liveDemo": "Xem bản demo<sr> (mở trong tab mới)</sr>",
+    "source": "Mã nguồn trên GitHub<sr> (mở trong tab mới)</sr>",
+    "private": "Kho mã riêng tư"
+  },
+  "facts": {
+    "label": "Thông tin dự án",
+    "role": "Vai trò",
+    "timeline": "Thời gian",
+    "timelineOngoing": "{start} – nay",
+    "timelineRange": "{start} – {end}",
+    "category": "Danh mục",
+    "started": "Bắt đầu",
+    "repository": "Kho mã",
+    "public": "Công khai trên GitHub",
+    "private": "Riêng tư",
+    "live": "Trang đang chạy"
+  },
+  "shortForm": {
+    "pending": "Bản nghiên cứu điển hình đầy đủ cho dự án này đang được biên soạn. Trong lúc chờ, trang này nêu những điểm cốt lõi."
+  },
+  "stack": {
+    "lead": "Các ngôn ngữ trong kho mã, theo cách GitHub thống kê.",
+    "groups": {
+      "languages": "Ngôn ngữ",
+      "frameworks": "Framework",
+      "libraries": "Thư viện",
+      "tooling": "Kiểm thử & công cụ"
     },
-    "tagline": "Hiện thực hóa ý tưởng của bạn bằng tay nghề số thế hệ mới.",
-    "badgeFullstack": "Fullstack",
-    "tools": "Công cụ & Framework",
-    "overview": "Tổng quan dự án",
-    "overviewLead": "Nền tảng này tinh gọn quy trình thương mại điện tử thông qua một bảng điều khiển thống nhất và phân tích theo thời gian thực.",
-    "overviewBody": "Nền tảng giải quyết sự phức tạp khi phải quản lý nhiều công cụ bằng một giao diện tập trung, trực quan.",
-    "features": "Tính năng",
-    "feature": {
-      "auth": {
-        "title": "Xác thực",
-        "desc": "Đăng nhập an toàn và kiểm soát quyền truy cập của người dùng."
+    "version": "Phiên bản {version}",
+    "derived": "Số phiên bản được đọc từ lockfile khi trang được build, nên đó chính là các phiên bản mà bản triển khai này đang chạy."
+  },
+  "gallery": {
+    "region": "{title}, có thể cuộn ngang"
+  },
+  "architecture": {
+    "listLabel": "Hệ thống, từng phần một"
+  },
+  "notes": {
+    "read": "Đọc ghi chép"
+  },
+  "outcomes": {
+    "derived": "Được đếm từ bản build khi triển khai, không nhập tay."
+  },
+  "index": {
+    "nav": "Chương",
+    "position": "Chương {n}/{total}",
+    "close": "Đóng",
+    "skip": "Chuyển đến mục lục các chương"
+  },
+  "palette": {
+    "section": "Dự án này",
+    "jump": "Chuyển đến {title}",
+    "demo": "Mở bản demo",
+    "source": "Xem mã nguồn dự án này"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "Khách truy cập",
+        "detail": "Mọi trình duyệt, mọi ngôn ngữ"
       },
-      "payments": {
-        "title": "Thanh toán",
-        "desc": "Tích hợp cổng thanh toán."
+      "edge": {
+        "title": "Vercel edge",
+        "detail": "Định tuyến theo ngôn ngữ"
       },
-      "chat": {
-        "title": "Trò chuyện trực tiếp",
-        "desc": "Liên lạc với người dùng tức thì."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, dựng sẵn"
       },
-      "admin": {
-        "title": "Trang quản trị",
-        "desc": "Quản lý nội dung đơn giản hơn."
+      "content": {
+        "title": "Nội dung",
+        "detail": "data.js và các bộ thông điệp"
+      },
+      "notes": {
+        "title": "Ghi chép kỹ thuật",
+        "detail": "docs/*.md, phục vụ tại /notes"
+      },
+      "client": {
+        "title": "Client islands",
+        "detail": "LazyMotion, bảng lệnh ⌘K"
+      },
+      "api": {
+        "title": "API routes",
+        "detail": "Thông tin xác thực luôn ở phía máy chủ"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "Sổ lưu bút, giới hạn tần suất"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "Kho mã, tiến độ"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "Hỏi đáp, trau chuốt tin nhắn"
       }
-    },
-    "liveDemo": "Demo trực tiếp",
-    "github": "GitHub",
-    "demoLabel": "Mở bản demo trực tiếp của {name}",
-    "sourceLabel": "Xem mã nguồn {name} trên GitHub"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. Bản dựng {category}, bắt đầu {when}. {visibility, select, private {Kho lưu trữ riêng tư} other {Kho lưu trữ công khai}}, được theo dõi trực tiếp từ bảng GitHub của dự án.",

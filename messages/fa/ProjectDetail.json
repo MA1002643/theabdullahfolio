@@ -10,48 +10,118 @@
     "projects": "پروژه‌ها"
   },
   "loading": "در حال بارگذاری پروژه",
-  "intro": {
-    "fallbackName": "نام پروژه",
-    "fallbackDescription": "راهکارهای وب نوآورانه، سریع و آینده‌نگر.",
-    "linksLabel": "پیوندهای {name}",
-    "liveDemo": "دموی زنده<sr> (در زبانه جدید باز می‌شود)</sr>",
-    "source": "کد منبع در GitHub<sr> (در زبانه جدید باز می‌شود)</sr>"
+  "chapters": {
+    "overview": "نمای کلی",
+    "statement": "مسئله",
+    "walkthrough": "مرور گام‌به‌گام",
+    "gallery": "گالری",
+    "architecture": "معماری",
+    "notes": "یادداشت‌های کار",
+    "outcomes": "نتایج",
+    "stack": "ساخته‌شده با"
   },
-  "screen": {
-    "boot": {
-      "bios": "در حال راه‌اندازی BIOS...",
-      "hardware": "در حال شناسایی سخت‌افزار...",
-      "os": "در حال بارگذاری سیستم‌عامل..."
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
+    "linksLabel": "پیوندهای {name}",
+    "liveDemo": "نمونهٔ زنده<sr> (در زبانهٔ جدید باز می‌شود)</sr>",
+    "source": "کد منبع در GitHub<sr> (در زبانهٔ جدید باز می‌شود)</sr>",
+    "private": "مخزن خصوصی"
+  },
+  "facts": {
+    "label": "اطلاعات پروژه",
+    "role": "نقش",
+    "timeline": "بازهٔ زمانی",
+    "timelineOngoing": "{start} – اکنون",
+    "timelineRange": "{start} – {end}",
+    "category": "دسته‌بندی",
+    "started": "شروع",
+    "repository": "مخزن",
+    "public": "عمومی در GitHub",
+    "private": "خصوصی",
+    "live": "سایت زنده"
+  },
+  "shortForm": {
+    "pending": "مطالعهٔ موردی کامل این پروژه در دست نگارش است. تا آن زمان، این صفحه شامل نکات اصلی آن است."
+  },
+  "stack": {
+    "lead": "زبان‌های موجود در مخزن، بر پایهٔ شمارش GitHub.",
+    "groups": {
+      "languages": "زبان‌ها",
+      "frameworks": "فریم‌ورک‌ها",
+      "libraries": "کتابخانه‌ها",
+      "tooling": "آزمون و ابزارها"
     },
-    "tagline": "ایده‌های شما را با هنر و مهارت دیجیتال نسل بعد توانمند می‌کنیم.",
-    "badgeFullstack": "فول‌استک",
-    "tools": "ابزارها و فریمورک‌ها",
-    "overview": "نمای کلی پروژه",
-    "overviewLead": "این پلتفرم جریان‌های کاری تجارت الکترونیک را با یک داشبورد یکپارچه و تحلیل‌های زنده ساده می‌کند.",
-    "overviewBody": "این پروژه با ارائه یک رابط متمرکز و روشن، پیچیدگی مدیریت چندین ابزار را از میان برمی‌دارد.",
-    "features": "ویژگی‌ها",
-    "feature": {
-      "auth": {
-        "title": "احراز هویت",
-        "desc": "ورود امن و کنترل دسترسی کاربران."
+    "version": "نسخه {version}",
+    "derived": "شماره نسخه‌ها هنگام ساخت سایت از فایل قفل (lockfile) خوانده می‌شود، پس همان نسخه‌هایی هستند که این استقرار اجرا می‌کند."
+  },
+  "gallery": {
+    "region": "{title}، قابل پیمایش"
+  },
+  "architecture": {
+    "listLabel": "سامانه، بخش به بخش"
+  },
+  "notes": {
+    "read": "خواندن یادداشت"
+  },
+  "outcomes": {
+    "derived": "هنگام استقرار از روی خروجی ساخت شمارش شده است، نه با دست نوشته شده."
+  },
+  "index": {
+    "nav": "فصل‌ها",
+    "position": "فصل {n} از {total}",
+    "close": "بستن",
+    "skip": "پرش به فهرست فصل‌ها"
+  },
+  "palette": {
+    "section": "این پروژه",
+    "jump": "رفتن به {title}",
+    "demo": "باز کردن نمونهٔ زنده",
+    "source": "مشاهدهٔ کد منبع این پروژه"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "بازدیدکننده",
+        "detail": "هر مرورگر، هر زبان"
       },
-      "payments": {
-        "title": "پرداخت",
-        "desc": "درگاه پرداخت یکپارچه."
+      "edge": {
+        "title": "لبهٔ Vercel",
+        "detail": "مسیریابی بر پایهٔ زبان"
       },
-      "chat": {
-        "title": "گفتگوی زنده",
-        "desc": "ارتباط آنی با کاربران."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components، پیش‌رندرشده"
       },
-      "admin": {
-        "title": "پنل مدیریت",
-        "desc": "مدیریت ساده محتوا."
+      "content": {
+        "title": "محتوا",
+        "detail": "data.js و کاتالوگ‌های پیام"
+      },
+      "notes": {
+        "title": "یادداشت‌های مهندسی",
+        "detail": "docs/*.md، ارائه‌شده در /notes"
+      },
+      "client": {
+        "title": "جزیره‌های کلاینت",
+        "detail": "LazyMotion، پالت ⌘K"
+      },
+      "api": {
+        "title": "مسیرهای API",
+        "detail": "اعتبارنامه‌ها روی سرور می‌مانند"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "دفتر مهمان، محدودیت نرخ"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "مخزن‌ها، پیشرفت"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "پرسش، پالایش پیام"
       }
-    },
-    "liveDemo": "دموی زنده",
-    "github": "GitHub",
-    "demoLabel": "باز کردن دموی زنده {name}",
-    "sourceLabel": "مشاهده کد منبع {name} در GitHub"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. پروژه {category}، شروع در {when}. {visibility, select, private {مخزن خصوصی} other {مخزن عمومی}}، با پیگیری زنده از برد GitHub آن.",

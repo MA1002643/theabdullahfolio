@@ -16,6 +16,7 @@ import {
 } from '@/lib/ask/corpus';
 import { ASK_LIMITS, askable, normaliseQuestion, sanitiseHistory } from '@/lib/ask/limits';
 import { ROUTES } from '@/lib/seo/site';
+import { projectPath } from '@/lib/projects/paths';
 import pkg from '../../package.json';
 import vitestCases from '../vitest-cases.json';
 
@@ -37,7 +38,7 @@ describe('the fact registry', () => {
   it('points every fact at a real page of the site', () => {
     const pages = new Set([
       ...ROUTES.filter((r) => r.indexable).map((r) => r.path),
-      ...projectsData.map((p) => `/projects/${p.id}`),
+      ...projectsData.map(projectPath),
     ]);
     for (const f of FACTS) expect(pages.has(f.href), `${f.id} → ${f.href}`).toBe(true);
     expect([...LINKABLE_PATHS].every((h) => pages.has(h))).toBe(true);
@@ -71,7 +72,8 @@ describe('the fact registry', () => {
 
 describe('linkable paths', () => {
   it('refuse anything that is not a fact’s page', () => {
-    for (const bad of ['https://evil.example', '//evil.example', 'javascript:alert(1)', '/projects/999', '/about?x', '', null]) {
+    // `/projects/1` is the old numeric URL: a redirect now, not a fact's page.
+    for (const bad of ['https://evil.example', '//evil.example', 'javascript:alert(1)', '/projects/999', '/projects/1', '/about?x', '', null]) {
       expect(isLinkable(bad)).toBe(false);
     }
   });

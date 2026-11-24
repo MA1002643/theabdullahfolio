@@ -10,48 +10,118 @@
     "projects": "Projets"
   },
   "loading": "Chargement du projet",
-  "intro": {
-    "fallbackName": "Nom du projet",
-    "fallbackDescription": "Des solutions web innovantes, rapides et résolument futuristes.",
+  "chapters": {
+    "overview": "Aperçu",
+    "statement": "Le problème",
+    "walkthrough": "Visite guidée",
+    "gallery": "Galerie",
+    "architecture": "Architecture",
+    "notes": "Notes d’atelier",
+    "outcomes": "Résultats",
+    "stack": "Réalisé avec"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "Liens de {name}",
     "liveDemo": "Démo en ligne<sr> (s’ouvre dans un nouvel onglet)</sr>",
-    "source": "Code source sur GitHub<sr> (s’ouvre dans un nouvel onglet)</sr>"
+    "source": "Code source sur GitHub<sr> (s’ouvre dans un nouvel onglet)</sr>",
+    "private": "Dépôt privé"
   },
-  "screen": {
-    "boot": {
-      "bios": "Initialisation du BIOS...",
-      "hardware": "Détection du matériel...",
-      "os": "Chargement du système d’exploitation..."
+  "facts": {
+    "label": "Infos sur le projet",
+    "role": "Rôle",
+    "timeline": "Période",
+    "timelineOngoing": "{start} – aujourd’hui",
+    "timelineRange": "{start} – {end}",
+    "category": "Catégorie",
+    "started": "Début",
+    "repository": "Dépôt",
+    "public": "Public sur GitHub",
+    "private": "Privé",
+    "live": "Site en ligne"
+  },
+  "shortForm": {
+    "pending": "Une étude de cas complète de ce projet est en cours de rédaction. D’ici là, cette page en présente l’essentiel."
+  },
+  "stack": {
+    "lead": "Langages du dépôt, tels que GitHub les comptabilise.",
+    "groups": {
+      "languages": "Langages",
+      "frameworks": "Frameworks",
+      "libraries": "Bibliothèques",
+      "tooling": "Tests et outils"
     },
-    "tagline": "Donner vie à vos idées grâce à un savoir-faire numérique de nouvelle génération.",
-    "badgeFullstack": "Fullstack",
-    "tools": "Outils et frameworks",
-    "overview": "Présentation du projet",
-    "overviewLead": "Cette plateforme simplifie les flux de travail e-commerce grâce à un tableau de bord unifié et à des analyses en temps réel.",
-    "overviewBody": "Elle élimine la complexité liée à la gestion de multiples outils en proposant une interface centralisée et intuitive.",
-    "features": "Fonctionnalités",
-    "feature": {
-      "auth": {
-        "title": "Authentification",
-        "desc": "Connexion sécurisée et gestion des accès utilisateurs."
+    "version": "Version {version}",
+    "derived": "Les versions sont lues dans le fichier de verrouillage lors de la compilation du site : ce sont donc bien celles qu’exécute ce déploiement."
+  },
+  "gallery": {
+    "region": "{title}, défilement horizontal"
+  },
+  "architecture": {
+    "listLabel": "Le système, pièce par pièce"
+  },
+  "notes": {
+    "read": "Lire la note"
+  },
+  "outcomes": {
+    "derived": "Calculé à partir du build lors du déploiement, et non saisi à la main."
+  },
+  "index": {
+    "nav": "Chapitres",
+    "position": "Chapitre {n} sur {total}",
+    "close": "Fermer",
+    "skip": "Aller à l’index des chapitres"
+  },
+  "palette": {
+    "section": "Ce projet",
+    "jump": "Aller à {title}",
+    "demo": "Ouvrir la démo en ligne",
+    "source": "Voir le code source de ce projet"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "Visiteur",
+        "detail": "N’importe quel navigateur, n’importe quelle langue"
       },
-      "payments": {
-        "title": "Paiements",
-        "desc": "Passerelle de paiement intégrée."
+      "edge": {
+        "title": "Edge Vercel",
+        "detail": "Routage par langue"
       },
-      "chat": {
-        "title": "Chat en direct",
-        "desc": "Communication instantanée avec les utilisateurs."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, prérendus"
       },
-      "admin": {
-        "title": "Panneau d’administration",
-        "desc": "Gestion simplifiée des contenus."
+      "content": {
+        "title": "Contenu",
+        "detail": "data.js et catalogues de messages"
+      },
+      "notes": {
+        "title": "Notes d’ingénierie",
+        "detail": "docs/*.md, servis sur /notes"
+      },
+      "client": {
+        "title": "Îlots clients",
+        "detail": "LazyMotion, palette ⌘K"
+      },
+      "api": {
+        "title": "Routes d’API",
+        "detail": "Les identifiants restent côté serveur"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "Livre d’or, limites de débit"
+      },
+      "github": {
+        "title": "API GitHub",
+        "detail": "Dépôts, avancement"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "Questions, reformulation des messages"
       }
-    },
-    "liveDemo": "Démo en ligne",
-    "github": "GitHub",
-    "demoLabel": "Ouvrir la démo en ligne de {name}",
-    "sourceLabel": "Voir le code source de {name} sur GitHub"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. Projet {category}, démarré {when}. {visibility, select, private {Dépôt privé} other {Dépôt public}}, suivi en direct depuis son tableau GitHub.",

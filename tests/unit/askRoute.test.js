@@ -299,7 +299,7 @@ describe('POST /api/ask — the fit check', () => {
       { requirement: 'React', verdict: 'strong', evidence: 'Next.js and React portfolio.', sources: ['P1'] },
       { requirement: 'AWS', verdict: 'gap', evidence: '', sources: [] },
     ]);
-    expect(events.find((e) => e.type === 'source')).toMatchObject({ id: 'P1', href: '/projects/1' });
+    expect(events.find((e) => e.type === 'source')).toMatchObject({ id: 'P1', href: '/projects/theabdullahfolio' });
   });
 });
 

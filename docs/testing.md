@@ -151,6 +151,34 @@ matters for the Ember Passage provider: a reduced-motion visitor's first effect
 schedules the runtime download before hydration reports the real preference,
 and the re-render that follows must cancel it before idle arrives.
 
+Project URLs are built in one place, `src/lib/projects/paths.js`, since the
+#31 follow-up moved them from `/projects/<id>` to `/projects/<slug>`.
+`projectPaths.test.js` pins it: the slug is the lowercased name unless a
+record pins one, a lookup matches only the exact slug, the build-time check
+rejects a colliding, unsafe or all-digit slug, and the redirect list sends
+every old URL in every locale permanently to its slug, never onto itself.
+`tests/e2e/project-slugs.spec.js` proves on a production server that the old
+URLs answer 308, the slug page carries its own canonical, and an unknown or
+mis-cased slug is a 404.
+
+The project page's chapter list (#31) is one derivation that feeds the
+rendered sections, the chapter index, the ⌘K jumps and Ask, so
+`caseStudyChapters.property.test.js` holds it for any subset and order of
+authored chapters: the authored order is kept with nothing appended, no
+anchor repeats, the short form opens on the overview and lists a "Built
+with" only when there are languages, and `groupStack` loses no stack item,
+invents none, and keeps the display order (the hand-off chapter left at the
+owner's review of 2026-11-15, so nothing closes the list any more).
+`caseStudyChapters.test.js` pins the concrete cases beside it: the
+build-time validator's messages (a stack item without a real group or a
+label fails the build), the wrapped sibling order, every outcome figure
+derived from a real source rather than typed, every stack version read from
+the lockfile rather than typed (and a stack item naming a package that is
+not a dependency fails), every named tile icon drawn from the inline set,
+every diagram node labelled, every edge between real nodes with both of its
+ports landing on a box edge (`pathEnds`), and every image the case studies
+name present in `public/`.
+
 Two property suites guard the sitewide ⌘K palette (#41).
 `paletteMatch.property.test.js` holds the ranked matcher to its contract for
 any list and query, over an alphabet with case, accents and spaces so random
@@ -209,7 +237,18 @@ content mounted afterwards, and the layout provider. A gate that opens after
 the give-up still reveals what it gates, which the file checks on the real
 components the review named: `PageTitle` behind the intro loader, a `/uses`
 `Plate` behind its viewport trigger, the preference centre opened behind a
-nested `<AnimatePresence>`, a guestbook card with its depth blur off, the `/about` paragraph's scrubbed words, and the `/journey` dial turning with the elected era.
+nested `<AnimatePresence>`, a guestbook card with its depth blur off, the `/about` paragraph's scrubbed words, the `/journey` dial turning with the elected era, and on `/projects/[id]` a chapter's rise, the problem statement's word fill (full colour, never frozen at the muted end) and the phone chapter sheet.
+
+`caseStudy.test.jsx` drives the project page's interactive parts by role
+and label (#31). The chapter index's links are real anchors; a jump scrolls
+(instantly under reduced motion, read at click time), writes the
+`#chapter-…` fragment and focuses the heading, and a modified click is left
+to the browser. The phone sheet is a modal dialog: focus moves in, Tab wraps
+both ways, Escape closes it and focus returns to the pill. The hero's links
+keep their visible words first, sit in a landmark named for the project, and
+a private repository gets neither a link nor an empty landmark. The page's
+⌘K commands jump in page order, skip a source command that would duplicate
+the sitewide "View source", and share no id with any sitewide command.
 `arcSweepDelayedFeatures.test.jsx` plays the `/about` arcs before the
 features land, against the real `m`, and keeps the old `useAnimation` shape
 as a case that pins the defect (its controls are lost).
@@ -771,6 +810,15 @@ future finding that genuinely needs its owner; anything not on it fails.
 | Review (#41, citation cutoff) | `MAX_MARKER` bounded only a marker still waiting for `]]`, so `[[P2` + 50 spaces + `]]` was a citation in one delta and literal text when `]]` arrived separately. The chunking property never noticed: its generator rarely built a span that long, and its oracle had no cutoff. | The cutoff applies to completed and open markers alike. `askCitations.test.js` covers both chunkings; the property generator now pads across the cutoff and its oracle models it. |
 | Review (#41, spending limit) | Without Redis, `/api/ask` fell back to module-scoped counters. On a serverless deployment each instance has its own, and a cold start resets it, so `ASK_DAILY_LIMIT` capped one instance per boot rather than the deployment: scaling out or restarting bought more questions. | In-memory limits are allowed only under `NODE_ENV` development and test; anywhere else with no shared store the route answers 503 `unconfigured` before reading the body, and both limiter gates fail closed on their own. `askRoute.test.js` pins the refusal under production (malformed body included, model never called, reason logged once), the limiter counting nothing while refusing, and dev still answering. |
 | Component (#207, sonner 2) | The suite never reset sonner's toast store, which is module state that outlives every `<Toaster>`. Harmless under sonner 1. Sonner 2 replays every still-active toast to a newly mounted `<Toaster>`, so the previous test's "Message sent successfully!" reappeared in the next test, and four `ContactForm` cases failed on "found multiple elements". Each passed alone. | `tests/support/setup-component.js` calls `toast.dismiss()` after `cleanup()` in its `afterEach`, so every component test starts with an empty store. |
+| Unit / component (#31 follow-up, Ask citations) | Moving project pages to `/projects/<slug>` left the palette's source allowlist matching `/^\/projects\/(\d+)$/`, so every project Ask cited would have been dropped as "not a real page". Two `SitePalette` cases failed (a missing source hint, a missing source button). | The allowlist matches a project's exact path from `src/lib/projects/paths.js`, never a pattern. `askCorpus` now also refuses the old `/projects/1` as linkable. |
+| Review (#31, axe `list`) | The case study's chapter index put its sliding indicator `<span>` directly inside the `<ol>`, which may hold only `<li>`: axe's `list` rule would have failed on every project page. | The indicator is the list's sibling inside a wrapper. `caseStudy.test.jsx` asserts the list's children are all `<li>`. |
+| Browser (#31, missing images) | `data.js` named ten case-study screenshots under `public/projects/theabdullahfolio/` that did not exist. Every check passed while the page printed alt text where each image belonged. Seen only in a screenshot of the page. | The screenshots were captured from the live site. `caseStudyChapters.test.js` fails on any case-study image path missing from `public/`. |
+| E2E (#31, links landmark) | The new hero labelled a plain list instead of a navigation landmark, so screen-reader users lost the jump to a project's outbound links that the old intro had, and a private project would have shown a landmark with nothing to navigate to. `project-links.spec.js` failed on all four project cases. | The hero renders a `<nav>` named for the project, only when it has a link. `caseStudy.test.jsx` covers both. |
+| Review (#31, nested pin) | The statement chapter's `<section>` carried the same `cs-statement` class as the pinned box `StatementFill` renders inside it, so the 220vh scroll window would have stacked twice. | The section takes `cs-chapter--statement`; only the pinned box is tall. |
+| Owner review (#31, diagram overflow) | The architecture diagram's labels were SVG `<text>`, which cannot wrap: three English details already ran past their 168-unit boxes, and no test measured rendered text against its box, so every layer passed while the drawing printed words outside their rectangles. A German or Russian translation would have overrun further. | Nodes are HTML in `<foreignObject>` cards that wrap and grow; `caseStudyChapters.test.js` now at least pins both ends of every wire to a box edge (`pathEnds`), and the overflow class of defect is closed by construction rather than measured. |
+| Owner report (#31, inert settle) | The hero's M2 scroll settle shipped wired to a geometry of one: no CSS ever laid `.cs-bleed` out wider than the column it was measured against, so `column / bleed` was 1, the "full-bleed image settles into the content column" effect rendered a static image, and only the corner radius crept in with scroll. Every suite stayed green because nothing asserted the settle target was ever below 1; the owner saw it by scrolling the page. | `.cs-hero` spans the article and only the text keeps the column (`.cs-hero__inner`), so the media lays out full bleed by construction; the target is measured from `.cs-hero__probe`, a zero-height twin of the column, and the same scroll progress compensates the layout gap the shrink frees (negative `margin-bottom`, from `offsetHeight`, which ignores the element's own margin). `heroMediaSettle.test.jsx` pins the geometry and fails on a target of 1. |
+| Component (#31, still scale) | The settle's still branch (reduced motion, static mode) passed `scale` to an `m.div` as a plain style number. Framer reads a plain transform number only at mount and never re-syncs it, so the target measured after hydration never reached the DOM — `transform: none`, full bleed — while the radius and margin on the same element, which framer does re-sync, updated to their framed values: a mixed, wrong state no eye would reliably catch. Found by the new test, not by review. | The still branch renders a plain `div` with an explicit `transform: scale()` string (nothing animates there, so framer adds nothing); `heroMediaSettle.test.jsx` asserts the measured scale lands in the transform, and `motionStaticFallback.test.jsx` pins the framed end state when the features chunk never arrives. |
+| Code read (#31, molten headings) | Two comments (reveal.jsx, HeroTitle.jsx) promised a `<noscript>` rule "CaseStudy.jsx emits" for the entrances' hidden server poses — and no such rule existed anywhere: zero `<noscript>` in the served page, so a reader with scripts off got every `data-cs-rise` and `data-cs-clip` entrance frozen at opacity 0 / masked / clipped shut, the page's whole body. Every layer stayed green because none renders without JavaScript. Found while building the chapter headings' molten entrance, which would have widened the gap. | CaseStudy.jsx now really emits the rule (entrances shown, clips open, dividers lit); the molten word fills are pure CSS, so those headings simply stay hot for a no-JS reader. `chapterHeading.test.jsx` pins the server pose the rule undoes. |
 | Component / Unit (#208, jsdom 31) | Three tests pinned the *authored* CSS string of an inline style (`inset(0 0% 0 0)`, `calc(100% - 1px)`, a two-argument `translate()`). jsdom 31 serialises styles the way CSSOM and browsers do (`0` → `0px`, a `calc()` nested in `max()` loses its `calc`, `translate(x, 0px)` → `translate(x)`), so five cases failed against unchanged components, and Navigation's regex returned `null`. | **new** `tests/support/css.js` `cssValue(prop, value)` runs the expected value through the same DOM serialiser, and the clip assertions compare against it exactly. Navigation's `translate` parser takes an optional second argument. |
 
 ## Maintenance

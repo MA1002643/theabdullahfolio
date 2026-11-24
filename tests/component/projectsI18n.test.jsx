@@ -20,11 +20,6 @@ vi.mock('next/image', () => ({
   // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
   default: ({ fill, priority, placeholder, blurDataURL, sizes, fetchPriority, ...props }) => <img {...props} />,
 }));
-// The scene loader pulls next/dynamic + the three.js chunk; the cards only
-// call its warm-up on hover.
-vi.mock('@/components/project-detail/scene-loader', () => ({
-  warmProjectScene: () => {},
-}));
 // TransitionLink is the Stone Passage choreography; a plain anchor is the
 // part these tests read.
 vi.mock('@/components/pageTransition/TransitionLink', async () => {
@@ -46,8 +41,7 @@ vi.mock('@/hooks/useReducedMotion', () => ({ useReducedMotion: () => true }));
 const { default: ProjectList } = await import('@/components/projects');
 const { formatCardDate } = await import('@/components/projects/ProjectLayout');
 const { default: Carousel, CARDS } = await import('@/components/qualifications/Carousel');
-const { default: ProjectIntro } = await import('@/components/project-detail/project-intro');
-const { default: LoadingStatus } = await import('@/components/project-detail/loading-status');
+const { default: LoadingStatus } = await import('@/components/case-study/LoadingStatus');
 const { default: ScrollHijackCategories } = await import('@/components/shared/ScrollHijackCategories');
 const { projectsData } = await import('@/app/data');
 
@@ -156,23 +150,9 @@ describe('ScrollHijackCategories formatLabel', () => {
   });
 });
 
-describe('/projects/[id] intro', () => {
-  const links = { name: 'culina', demo: 'https://example.com', source: 'https://github.com/x/culina' };
-
-  // The DOM is the pre-i18n markup exactly (text, then an sr-only span whose
-  // text opens with a space). jsdom's name computation trims that span's
-  // leading space where a browser keeps it, hence the optional whitespace.
-  it('keeps the English link names, sr-only tail included', () => {
-    renderWithIntl(<ProjectIntro name="culina" description="AI-powered recipe discovery platform" links={links} />);
-    expect(screen.getByRole('navigation', { name: 'culina links' })).toBeInTheDocument();
-    console.log('NAMES', screen.getAllByRole('link').map((l) => JSON.stringify(require('dom-accessibility-api').computeAccessibleName(l))));
-    expect(screen.getByRole('link', { name: /^Live demo\s?\(opens in a new tab\)$/ })).toHaveAttribute('href', links.demo);
-    expect(screen.getByRole('link', { name: /^Source on GitHub\s?\(opens in a new tab\)$/ })).toHaveAttribute(
-      'href',
-      links.source,
-    );
-  });
-
+// The case-study hero's outbound links are covered in
+// tests/component/caseStudy.test.jsx (issue #31).
+describe('/projects/[id] loading fallback', () => {
   it('labels the loading fallback', () => {
     renderWithIntl(<LoadingStatus />);
     expect(screen.getByRole('status', { name: 'Loading project' })).toBeInTheDocument();

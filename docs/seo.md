@@ -922,8 +922,9 @@ verified by adding a throwaway route and watching it go red.
 worth checking against the route's own imports rather than reasoning from the
 name. `/projects/[id]` had been watching `src/components/projects` — the
 `/projects` LISTING directory, and the correct value for the entry directly above
-it — while the detail route renders out of the sibling
-`src/components/project-detail`. A wrong-but-real path does not fail anything: it
+it — while the detail route rendered out of the sibling
+`src/components/project-detail` (since issue #31, `src/components/case-study`
+and `src/lib/caseStudy`). A wrong-but-real path does not fail anything: it
 produces a perfectly well-formed `<lastmod>` carrying another file's date, which
 goes stale when the route changes *and* moves when something unrelated does. Only
 the project route's list is pinned against its imports on disk (the `project
@@ -2357,6 +2358,14 @@ holds the rendered page to it on every route at both sizes: every preloaded
 image is an LCP candidate at one of them, and an LCP image is never lazy. Both
 were run against `main` first and failed there.
 
+*(Added 2026-11-15, issue #31.)* A third `preload` joined the allowlist: the
+case-study hero (`HeroMedia.jsx`). It was measured before it was allowed. On
+`/projects/1` it is the LCP entry at both 1440×900 and 390×844, for a first
+visit and for a returning one. On the first measurement it was not, but only
+because the image files did not exist yet: the LCP fell to the privacy
+notice's paragraph and to the thesis line. Every other project page renders
+the short form, with no hero image and no preload.
+
 **Measured after (same build pipeline, same probe):** image preloads fell
 from 32 to 4. The LCP element is unchanged on every route. `/qualifications`
 on a phone, whose certificate no longer shares bandwidth with a backdrop,
@@ -2566,10 +2575,11 @@ single converted page reads as a zero saving.
   from `src/components/about/arcSweep.js` and remount once per play, and
   framer plays a mount entrance it missed when the features arrive.
 - **A separate React root needs its own provider.** drei's `<Html>` (the
-  laptop screen on `/projects/[id]`) mounts in a root that inherits no
-  context, so it wraps its children in `<MotionFeatures>`. The loader is
-  memoised, so that costs no second download. `tests/fitness/lazyMotion.test.js`
-  requires it for every `<Html>`.
+  laptop screen on `/projects/[id]`, until issue #31 replaced that scene)
+  mounted in a root that inherits no context, so it wrapped its children in
+  `<MotionFeatures>`. The loader is memoised, so that costs no second
+  download. `tests/fitness/lazyMotion.test.js` requires it for every
+  `<Html>`. No file mounts one today, so the rule is dormant until the next.
 - **Until the features land**, an element shows its `initial` style, and when
   they land framer plays the entrance it missed (`manuallyAnimateOnMount`,
   pinned by `tests/component/lazyMotionFirstPaint.test.jsx`). That is the same
@@ -2768,3 +2778,623 @@ them was rejected: that would mean keeping a visitor's questions on their
 device for a portfolio's convenience. The store ships in the deferred
 palette chunks, so no route's first load grows.
 
+## 22. Project pages that explain the work (issue #31)
+
+**Before.** Every `/projects/<id>` page was a fixed, full-screen three.js
+scene: a laptop on a tree stump, with the project's name and a four-word
+subtitle as the only text. A crawler and a screen reader got those two lines
+and a hidden list of sibling links (§10's `sr-only` nav, added so the pages
+were not a dead end). The case for the work was not on the page at all.
+
+**Decision (issue #31, 2026-11-15).** The page is a long-read case study,
+rendered on the server. Each chapter is a real `<section>` with its own
+`<h2>` and a stable `#chapter-<type>` fragment, so a chapter can be linked
+and shared. The project name is the page's only `<h1>`. A project with a
+`caseStudy` in `src/app/data.js` renders its authored chapters. Every other
+project renders the short form from the fields it already has (overview,
+the repository's languages when known, the next project), so no project page
+is thinner than it was.
+
+What it changes for discoverability:
+
+- **Every word is HTML in the first response.** The chapters, the facts, the
+  diagram's text equivalent and the outcome figures are server-rendered. The
+  client islands only animate, track scroll, and run the chapter index and
+  the palette commands, and they receive plain strings. The route now loads
+  no client messages at all (`ProjectDetail` is a server-only namespace).
+- **three.js left the route**, and `@react-three/drei` left the project,
+  since nothing else used it. The LCP is now a measured image or text, not a
+  canvas (§19).
+- **Figures are derived, not typed.** An outcome names a `derive` key and
+  `src/lib/caseStudy/figures.js` reads it at build: the locale registry, the
+  generated test counts, the notes corpus. The CLAUDE.md rule against
+  hand-copied numbers applies to page copy as much as to this document.
+- **`<lastmod>` follows the template.** `PROJECT_SOURCES` in
+  `src/app/sitemap.js` watches `src/components/case-study`, `src/lib/caseStudy`
+  and the motion tokens instead of the deleted scene directory.
+
+**Rejected:** keeping the scene behind a toggle, or above the case study.
+Either way the route would still pay for a WebGL chunk and a GPU to stage a
+laptop, and the first screen would still say nothing about the project.
+
+**Cost.** The flagship's screenshots are files in the repository
+(`public/projects/theabdullahfolio/`), captured from the live site, and they
+go stale as the site changes. `tests/unit/caseStudyChapters.test.js` fails if
+one goes missing; nothing checks that one still looks like the page.
+
+### Revised (2026-11-15): projects addressed by name
+
+**Decision (owner, 2026-11-15).** A project's URL is its name, not its
+position in the data: `/projects/theabdullahfolio`, `/projects/culina`, not
+`/projects/1`. A URL that says what it is reads better in a search result and
+in a shared link, and it no longer changes meaning if `data.js` is reordered.
+
+- **One builder.** `src/lib/projects/paths.js` is the only place a project
+  URL is made: the slug is the lowercased name, or a `slug` the record pins.
+  The page, its canonical and structured data (`@id` included), the sitemap,
+  `llms.txt`, the share images, the cards, the ⌘K palette and Ask's
+  citations all call it. The build fails on a slug that collides, needs
+  escaping, or is all digits.
+- **The old URLs redirect, permanently.** Each `/projects/<id>`, in English
+  and under every locale prefix, answers 308 to its slug from
+  `next.config.mjs` (generated from the data, so a new project needs nothing
+  there). A 308 tells crawlers the move is final, so the old URLs' ranking
+  moves with them; leaving them to 404 would have thrown it away.
+- **One address each.** The match is exact, so `/projects/AfaaqX` is a 404,
+  not a second copy of `/projects/afaaqx`.
+- **What did not move.** The ⌘K command ids stay `project-<number>`: Recent
+  stores ids, and renaming them would empty every visitor's Recent. The route
+  folder is still `[id]`, because route patterns elsewhere are keyed on it.
+
+**Cost.** Renaming a project now moves its URL unless the record pins a
+`slug` first. Set one before any rename.
+
+### Revised (2026-11-15): the page dressed to the About page's standard
+
+**Decision (owner review, 2026-11-15).** The first build of #31 was typeset
+but bare: no ground of its own, grey hairline cards, SVG labels that ran out
+of their boxes, and a "Next project" hand-off closing every read. Four
+changes, none of which alter what a crawler gets (every word is still server
+HTML in the first response):
+
+- **A backdrop unique to each project.** `Backdrop.jsx` renders a fixed
+  stack: slate ground, the project's own hero image blurred into ambient
+  light (the same URL `HeroMedia` loads, so it costs no second download), a
+  drafting grid, two ember pools drifting with scroll (`BackdropPools.jsx`,
+  one hop from `scrollY`, still under reduced motion and in static mode),
+  and a vignette that keeps every text voice above its contrast floor.
+  Decorative throughout; the bloom is `eager` + `fetchPriority="low"`,
+  never the LCP.
+- **One frame, shared with /about.** Every card — facts plate, walkthrough
+  panel, gallery media, diagram nodes, craft notes, outcome tiles, stack
+  tiles — wears the literal `.abt-frame` class plus a `.cs-card` slate
+  interior (no backdrop-blur: nothing sits behind them but the fixed
+  ground). Change the About frame and this page follows, by construction.
+- **Diagram nodes are HTML now.** SVG `<text>` cannot wrap, and three
+  English details already overran their 168-unit boxes. Each node is a
+  `<foreignObject>` card: labels wrap in all twenty languages, the card
+  grows if a translation needs a third line, and the wiring mirrors under
+  right to left so a request still travels in the reading direction. The
+  text equivalent below is unchanged, so assistive tech and crawlers lose
+  nothing.
+- **"Built with" replaced "Next project".** The hand-off card linked a
+  sibling a reader could already reach from the listing; the recruiter
+  question it ignored was "what is this made of?". The new chapter groups
+  languages, frameworks, libraries and tooling as tiles whose version chips
+  are read from `package-lock.json` at build (`src/lib/caseStudy/versions.js`
+  — the /uses bill-of-materials source), so a version can never be typed or
+  drift. The short form feeds the repository's GitHub languages through the
+  same tiles. Brand marks are inline Simple Icons from `react-icons`
+  (already a dependency), server-rendered: no icon CDN, nothing new for the
+  privacy inventory, no client bytes.
+
+**Rejected:** keeping the hand-off alongside the stack (two closing
+chapters is one too many; the sibling links remain in the sr-only nav and
+the listing), and icon CDNs (`skillicons.dev` style) for the tiles — an
+external request per logo on a page that otherwise makes none.
+
+**Cost.** The ordinals the chapters now wear ("01"…"08") are visual only
+(`aria-hidden`), so the index, the palette and the headings keep saying the
+same words; and the bloom means the backdrop's light depends on each
+project's hero staying roughly representative of its page.
+
+### Revised (2026-11-18): the walkthrough made legible
+
+**Decision (owner review, 2026-11-18).** Three defects in "How a visit
+works", all fixed in CSS alone — no markup, no new bytes, nothing a crawler
+sees changes:
+
+- **The screenshots fit their frame now.** The pinned panel's frame was a
+  fixed 70 vh box — nearly square at 1440×900 — while every walkthrough
+  screenshot is 1440×900 (16:10), so `object-fit: cover` threw away almost
+  half of each screen's width: the Arabic About page showed as an
+  unreadable centre slice. The frame now takes the screenshots' own
+  `aspect-ratio` and centres in the pin, which makes cover an exact fit.
+  The lesson generalises: when a cover crop looks wrong, correct the
+  *container's* ratio rather than switching to `contain` and letterboxing.
+- **The step voices joined the fire.** Titles were cream and the copy the
+  grey `--cs-body`, the two voices the rest of the page had already left
+  behind. Titles now carry the chapter-heading ember (`--cs-accent`), and
+  the copy wears the Architect-of-Enchantment four-stop ramp clipped to
+  the glyphs — with no glow, the `.gb-fire-ink` rule for gradient ink at
+  reading size. One clip on the `<p>` is safe here because the reveal
+  fades the whole subtree, never a child span inside the clip (the About
+  tilt-card GPU bug needs per-child opacity under a parent clip).
+- **A stage under the screens.** The panel sat on bare ground. A
+  `::before` now draws concentric gold rings on the drafting grid's 56 px
+  cadence — the home hero's ground rings, under the screens that orbit
+  them — beneath a warm ember bloom, faded out by a radial mask. Static
+  and symmetric by construction: nothing breathes (so nothing to stop
+  under reduced motion, where the panel is replaced by inline images
+  anyway) and nothing to mirror under right to left.
+
+**Rejected:** `object-fit: contain` inside the tall frame (letterboxing
+that reads as a mistake), and widening the media column to keep the frame's
+old height (more churn for a few pixels of width).
+
+**Cost.** The frame's ratio (`1440 / 900`) is typed in CSS while the
+`<Image>` dimensions are typed in `Walkthrough.jsx`; a future screenshot
+set in a different shape must change both, or cover starts cropping again.
+
+### Revised (2026-11-19): one voice for the prose, and the hero learns to move
+
+**Decision (owner review, 2026-11-19).** Three changes, on the same page:
+
+- **The fire ramp is now the page's prose voice, not one chapter's.** The
+  Architect-of-Enchantment four stops the walkthrough copy took on
+  2026-11-18 now also carry the hero thesis, the overview lede, the
+  overview facts' values, the architecture paragraph, the diagram node
+  details and the phone architecture list's details — one grouped CSS
+  rule, so the stops cannot drift between voices. The thesis is the one
+  exception in mechanism: its words rise individually inside masks, so a
+  parent clip would hit the About tilt-card GPU bug, and it takes the ramp
+  PER WORD instead (`HeroTitle fire`, the contact intro's `wordFill`
+  pattern, which also restores the reading-order gold→ember darkening).
+  The remaining voices moved to the title's ember (`--cs-accent`): gallery
+  captions, diagram node titles, the phone list's part names, and the
+  chapter index's hover and current states (the sliding indicator still
+  tells current from hovered). The Live demo button's border left the
+  ember for the shared frame gold (`#ffcd5bcc`), pairing it with the ⌘K
+  trigger it sits diagonal to — by value, like `.cs-hero-media`, because
+  its hover animates the shadow the shared class would transition.
+- **The architecture list stepped off the screen, not out of the DOM.**
+  Beside the drawing it said the same ten things twice, and the owner
+  asked for it to go. But the SVG is `aria-hidden` — the list is its ONLY
+  text equivalent — and under 640px the drawing is `display: none` and
+  the list is the whole chapter. So at ≥640px the list is visually hidden
+  (the sr-only recipe), not removed: a screen reader, a crawler and a
+  no-JS reader still get the system part by part, and a phone still gets
+  the chapter.
+- **The hero still became a cinemagraph.** A deferred WebGL canvas
+  (`HeroSceneEffect`, warmed by `HeroMedia` in idle time) draws the same
+  image over the `<Image>` and animates only inside hand-authored masks
+  (`hero.effect` in `data.js`, fractions of the frame): the lake either
+  side of the pier ripples, the fog over the water drifts, the lantern
+  flames breathe by MODULATING the baked glow (never adding a hue — the
+  ember-swarm additive-colour lesson). Outside every mask the shader
+  returns the exact texel, so the canvas is pixel-identical to the still
+  and its fade-in is invisible. Every failure leaves the still: reduced
+  motion never downloads the chunk (the Ember Passage pattern), no WebGL
+  never mounts it, a lost context or failed texture withdraws the canvas,
+  and the rAF loop stops off-screen and in hidden tabs. Measured: between
+  two frames 1.3 s apart, changed pixels confine to the authored water
+  and mist bands (max per-pixel delta 32/765 — it breathes, it does not
+  churn), and the floating UI buttons were measured and kept OUT of the
+  masks (the left lake box stops at y 0.635 for the phone button at
+  0.265, 0.68).
+
+**Rejected:** deleting the architecture list outright (strips the chapter
+from assistive tech and phones); a parent-level clip on the thesis (the
+GPU bug above); an animated video hero (bytes on the LCP path, and a second
+encode to keep in step with the still); SVG `feTurbulence` displacement
+(CPU-bound and janky at this size).
+
+**Cost.** The cinemagraph masks are typed against THIS hero image: a new
+hero still needs its regions re-authored or `effect` removed (the page then
+simply shows the still). The dev-only lesson that cost an hour: a canvas
+has one WebGL context for life, and React StrictMode re-runs the mount
+effect on the same element — a `loseContext()` in cleanup hands the second
+mount a dead context, which read as "no WebGL" and withdrew the canvas for
+good. The cleanup now leaves the context to die with the element.
+
+### Revised (2026-11-20): the Live demo pill joins the shared frame outright
+
+**Decision (owner, 2026-11-20).** The Live demo button's border and hover
+are now the ⌘K trigger's by construction: the pill wears the literal
+`.abt-frame` class, and `.cs-cta` no longer declares a border, glow or
+hover of its own. The 2026-11-19 revision had copied the frame gold by
+value because the pill's hover then filled it solid ember and animated the
+very shadow the shared class transitions. The owner asked for the
+trigger's hover too — the glow brightening, no fill — which removed the
+conflict and with it the only reason to copy: one rule now owns both
+frames, and they cannot drift.
+
+**Rejected:** copying the hover's shadow stack by value beside the copied
+border (two more literals to keep in step with a rule that exists
+precisely to be shared).
+
+**Cost.** `.cs-cta` is unlayered while the shared frame rule sits in a
+layer: any border or box-shadow typed back into `.cs-cta` silently wins
+over the frame. The rule carries a comment saying so.
+
+### Revised (2026-11-21): the hero recording — the page itself, moving
+
+**Decision (owner, 2026-11-21).** The still-plus-shader cinemagraph gave
+the hero breath, but the owner asked for the real thing: the homepage
+visibly alive — the lantern flames flickering, the lake moving, and the
+navigation ring actually orbiting. No shader over a still can orbit the
+buttons: that is real UI in motion, not displacement. So the hero media is
+now a screen recording of the live page (headful Chrome at 1600×1000,
+against production, consent and the orbit tip pre-seeded so nothing pops
+over the scene), loop-closed and layered over the still under the
+cinemagraph's own fail-safe contract (`HeroSceneLoop.jsx`; the shader path
+remains in `HeroMedia` for a hero that only has a still).
+
+- **The loop is one full orbit label cycle, measured.** The ambient ring
+  turns at 9°/s with eight distinct buttons, so the scene only truly
+  repeats every ~40 s. Candidate loop points were found by pixel-matching
+  frames over the orbit band: the best pair sat 39.96 s apart at 75k SSD —
+  at that moment's own adjacent-frame noise floor (65k), so the seam
+  differs no more than any ordinary frame step — where the best two-slot
+  10 s pair scored 413k: positions align at 10 s, but the wrong icons
+  occupy the pills. The seam is closed with `close-loop.mjs`'s exact-wrap
+  construction (the final frame IS a master frame, consecutive with frame
+  0 — never an xfade blend that exists nowhere in the master) under a
+  ~0.5 s lead-in blend for the residual flame and water noise, plus its
+  flat-QP lesson so the loop's IDR frame cannot read as a periodic
+  "refresh"; the matched seam frames agree down to the live header's
+  "36s ago".
+- **The still is the loop's first frame.** `hero.webp` is exported from
+  the same encoded master, so the video's fade-in reads as "the picture
+  starts moving" — the invisible-takeover rule the cinemagraph satisfied
+  by returning the identical texel outside every mask.
+- **Rungs and gates.** 960×600 below a painted width of 1280 px
+  (CSS px × dpr, capped at 2), 1600×1000 above, picked in JS because
+  `<source media>` is only honoured inside `<picture>` (the /projects
+  SceneVideo lesson); within a rung the VP9 webm / H.264 mp4 choice is
+  left to `<source>`. Encoded sizes at 2026-11-21: 2.1 / 4.7 MB (1600)
+  and 0.6 / 1.5 MB (960). Reduced motion, static mode and a device
+  asking for less (Save-Data, ≤4 cores or ≤4 GB — `useSceneGate`'s
+  signals) never download a byte; the element mounts in idle time after
+  the LCP still has painted; playback pauses off-screen and in hidden
+  tabs; and any failure — sources exhausted, a decode error, or a
+  `NotAllowedError` autoplay refusal — unmounts the layer, leaving the
+  still as the page.
+
+**Rejected:** extending the shader (masks displace pixels; an orbit moves
+UI); an `<iframe>` of the homepage (a second live copy of the site inside
+itself — uncacheable, focusable, and recursive on this very page); and
+re-authoring the cinemagraph masks against a new still (the ask was real
+motion, not better fakery).
+
+**Cost.** The recording is a moment in time: the loop's live GitHub header
+shows the figures and focus issue of the day it was captured, and a
+homepage redesign dates the whole clip. The full pipeline is committed —
+`scripts/scene/record-case-hero.mjs` (headful capture, consent and the
+orbit tip pre-seeded) then `scripts/scene/finish-case-hero.mjs` (loop
+pair, exact seam, every rung, and the matching `hero.webp`) — so a
+re-record is two commands, not an afternoon of archaeology.
+
+### Revised (2026-11-21): the ground becomes a drafted sheet
+
+**Decision (owner, 2026-11-21).** The 2026-11-15 backdrop was built but
+barely visible: the vignette crushed everything past the first viewport
+to near-featureless black, the drafting grid sat below perceptual
+threshold and was masked away by mid-page, and the two ember pools were
+diffuse enough to read as smudge. Most of a ~15,000 px read happened in a
+void, and the long dark gradient ramps banded on 8-bit displays. The
+rework keeps the same stack and the same idea — the page takes its light
+from its own hero — and makes the ground legible as a *drafted sheet*,
+in CSS alone (one new static layer pair in `Backdrop.jsx`, no new client
+code, no new requests):
+
+- **Margin rails** (`.cs-backdrop__rails`): two gold hairlines bracketing
+  the 80 rem reading column, with a station tick crossing each on the
+  major grid's cadence. One `inset-inline` value places both, so the pair
+  is symmetric and mirrors under right to left with no extra rule; on a
+  narrow screen the `max()` collapses them to a quiet sheet edge outside
+  the gutter.
+- **The grid gains a second order and stops dying.** The 56 px cadence
+  the walkthrough stage draws its rings on is unchanged; a major line
+  every four cells (224 px — the rails' tick cadence, both measured from
+  the viewport's top edge, so they register by construction) gives the
+  sheet architecture, and the mask now holds a whisper of grid to the
+  bottom of the viewport instead of fading to nothing at 85 %.
+- **Film grain** (`.cs-backdrop__grain`): an inline-SVG turbulence tile at
+  5 %, last in the stack so it dithers every gradient under it — which is
+  what actually kills the banding. Static by nature: nothing for reduced
+  motion or framer's static mode to stop, and no request (a data URI).
+- **The light is deliberate now.** The bloom gets the `screen` blend the
+  original note already claimed (so the project's light only ever lifts
+  the slate), and the pools tighten — smaller radii, shorter falloff,
+  slightly higher peaks — so they read as lamplight, not haze. The
+  vignette relaxes (0.74 → 0.6 at 70 vh, 0.85 → 0.72 at the bottom): the
+  reading still sits on darker ground than the hero, but the sheet
+  survives the whole scroll. `#8a8a8a` stays comfortably above its floor —
+  the ground only got darker *relative to the text* wherever it matters,
+  and the measured floor was taken against lighter grounds than these.
+
+**Rejected:** a scroll-progress fill on the rails (the chapter index
+already says where the reader is; a second indicator is decoration doing
+a job twice), and any aurora/glow treatment (the owner's standing taste:
+no glow, no neon — light here is ambient, never an effect).
+
+**Cost.** The rails and major grid are opinions about where the column
+sits: a future layout that widens the reading measure past 80 rem must
+move `.cs-backdrop__rails`' `calc(50% - 41.5rem)` with it, or the sheet
+will visibly disagree with its own content.
+
+### Revised (2026-11-21): the hero settle, wired to real geometry
+
+**Decision (owner report, 2026-11-21).** The hero's scroll settle — M2's
+"full-bleed image settles into the content column" — had shipped wired to
+a geometry of one. Nothing in CSS ever laid `.cs-bleed` out wider than
+the column it was measured against, so the measured target
+(`column / bleed`) was exactly 1, the image never moved, and only its
+corner radius crept in with scroll: the owner scrolled the page and saw a
+static picture. The settle is now real, by construction rather than by
+measurement:
+
+- **The header spans the article; only the text keeps the column.**
+  `.cs-hero` lost its `max-width` and gutters; the text sits in
+  `.cs-hero__inner` (`min(100% − 2·gutter, 75rem)`, the exact column the
+  old box produced), and the media, a plain block child of the full-width
+  header, is full bleed because nothing constrains it. Not `100vw`:
+  `.cs-page` clips horizontal overflow at its own edge (it sits inside
+  `<main>`'s padding), so a viewport-wide child would be visibly cut —
+  and a vw breakout is the exact overhang class that sideways-scrolls
+  under classic scrollbars and in right-to-left reading.
+- **The target is the page's own CSS.** `.cs-hero__probe`, a zero-height
+  twin of the inner column rendered inside the bleed frame, is what
+  `HeroMedia` measures: the settle lands flush with the chapter content
+  below because both widths come from one shared rule, not from a number
+  retyped in JS.
+- **The freed height is given back in the same hop.** A transform never
+  changes layout, so the shrink alone would open a
+  `(1 − target) × height` hole before the first chapter (~450px on a
+  1920 screen). The same scroll progress drives a negative
+  `margin-bottom`, measured from the media's `offsetHeight` — which
+  ignores the element's own margin, where reading the frame's height
+  back would feed the margin into its own measurement.
+- **Measured (dev, 2026-11-21).** At 1440×900: 1312px bleed settles to
+  the 1200px column (scale 0.9146, matching `column/bleed` to six
+  figures), the visual radius lands at 16.0px, the page pulls up 70px,
+  and the settled card clears the first chapter by 32px. At 390×844:
+  374 → 339. Horizontal overflow is zero in English and in Arabic, and
+  reduced motion renders the framed end state as plain values with the
+  recording never mounted.
+- **A framer lesson, caught by the new test.** The still branch (reduced
+  motion, static mode) had passed `scale` to an `m.div` as a plain style
+  number; framer reads a plain transform number only at mount and never
+  re-syncs it, so the post-hydration measurement rendered
+  `transform: none` while the radius and margin beside it — which framer
+  does re-sync — updated: a mixed state. The still branch is now a plain
+  `div` with an explicit `transform: scale()` string; nothing animates
+  there, so framer was adding nothing but the trap.
+
+**Rejected:** a `100vw` negative-margin breakout (clipped by `.cs-page`,
+and the RTL/scrollbar overhang above); laying the media out framed and
+scaling UP to full bleed (the state at scroll 0 would no longer be the
+server's own markup, so hydration would jump the LCP); and leaving the
+hole below the shrink as "breathing room" (viewport-dependent, and ~450px
+of void on a wide screen).
+
+**Cost.** The settle writes one `margin-bottom` per scrolled frame for
+the first 0.6 viewports, which is a layout write, not a composite — cheap
+here (everything below is normal flow), but it is the one scroll-linked
+layout mutation on the site, and a future chapter that measures itself on
+scroll should be checked against it. And the probe is a twin, not a
+reference: `.cs-hero__inner` and `.cs-hero__probe` share one width rule
+precisely so they cannot drift — a future column change must keep them on
+that shared rule.
+
+### Revised (2026-11-21): the facts labels join the title's ember
+
+**Decision (owner request, 2026-11-21).** The overview plate's headings
+(Role, Timeline, Stack, Status) move from the amber label voice
+(`--cs-eyebrow`) to the title's ember (`--cs-accent`) — the same voice the
+2026-11-19 revision gave the gallery captions, diagram node titles and the
+chapter index states, so the plate's labels now sit in that list rather
+than beside it. One token in `.cs-facts__label`; the values keep the prose
+ramp. Measured on the plate's ground the ember reads at 6.1:1, above the
+4.5:1 small-text floor the a11y gate enforces.
+
+### Revised (2026-11-22): the chapter headings pour in molten and cool
+
+**Decision (owner request, 2026-11-22).** The eight chapter headings had the
+generic entrance — a 24px rise-and-fade every site has — and the owner asked
+for one worth watching. They now arrive in the page's own material: when a
+chapter enters the viewport its ember divider ignites from the centre
+outward, the numeral rises out of a mask, and the title's words pour up out
+of per-word masks already wearing the gold→ember ramp in reading order, each
+cooling to the solid title accent as it lands. The resting page is
+colour-identical to before — the entrance is the only moment a heading is
+liquid.
+
+- **Transform only, never opacity.** The mask hides the text (the hero
+  title's mechanism), so a contrast audit never meets a half-faded heading,
+  and the words are cut with `wordChunks` — a pure function of the
+  characters — so Arabic keeps its joins and a CJK title cuts identically
+  on server and client (the /ja/about #418 lesson). Each word owns its own
+  clip (the About tilt-card GPU lesson).
+- **The cool is a gradient the engine can interpolate.** Each word's hot
+  slice and the flat accent target are both two-stop `rgb()` gradients, so
+  framer tweens them stop-for-stop; measured in Chrome the first stop walks
+  210→197→154→118→109 and lands exactly on `rgb(255, 109, 5)`
+  (`--cs-accent`, the ramp's own last stop by construction).
+- **One state, per-value timing (the LazyMotion rule).** The rise and the
+  later cool are two delays on one `shown` flip, so static mode renders the
+  landed, cooled pose from props. The divider's ignition is a CSS
+  transition keyed on a `data-cs-entered` attribute the reveal scope sets —
+  no framer features at all — and it draws centre-out because the gradient
+  is symmetric, so right-to-left mirrors it by doing nothing.
+- **The `<noscript>` rule finally exists.** Two comments had promised a
+  rule "CaseStudy.jsx emits" for the entrances' hidden server poses; no
+  such rule was ever shipped, so a reader with scripts off got the whole
+  body frozen at its hidden pose (defects table). CaseStudy.jsx now emits
+  it; a no-JS reader's headings simply stay molten, because the ramp is
+  pure CSS.
+
+**Rejected:** reusing the hero's plain word rise unchanged (the complaint
+was precisely that the entrance read as nothing); per-character splitting
+(breaks joining scripts — the site splits by shaped word on principle); a
+leading-edge glow or blur-to-sharp pass (the taste line this site holds:
+no filters on reading-size text, and a per-frame filter paint besides).
+
+**Cost.** Each heading is now ~3 spans per word instead of one element,
+and the cool animates `background-image`, a paint per frame for ~0.8s per
+word on a handful of words — nothing measurable against the page's WebGL
+neighbours. The cool's end colour is typed in `ChapterHeading.jsx` as the
+ramp's last stop; if `--cs-accent` ever moves, `fireRamp.js` and that
+constant move together or the headings cool to the wrong ember.
+
+### Revised (2026-11-23): the facts plate writes its ledger
+
+**Decision (owner request, 2026-11-23).** The overview read as the flattest
+moment on the page: a lede and the Role / Timeline / Stack / Status plate,
+both arriving on the generic block rise — and the plate is the one block a
+recruiter actually scans. Its ledger is now written in front of the reader
+(`FactsPlate.jsx`). The plate rises exactly as it always did, and then,
+fact by fact in reading order, a 1px filament draws across the slot above
+the fact at the eyebrow ember, the label and the fire-ramped value pour up
+out of transform-only masks, and the filament cools to the same hue at
+zero alpha. The resting plate is identical to before — the filament sits
+absolutely over the row gap (no layout) and ends transparent, so the
+entrance leaves no ornament behind.
+
+- **The ramp rides the mover.** The values' gold→ember fill moved from the
+  `<dd>` to `.cs-facts__fill` on the mask's inner span — the element that
+  translates — because a parent `background-clip: text` over moving
+  children is the About tilt-card GPU bug: it paints wrong only on real
+  GPUs, where headless CI cannot see it. A clip on the moving element
+  itself is the chapter headings' own pattern, and the stylesheet's
+  "ancestor fades, children never move" comment now names this exception.
+- **One state, per-value timing (the LazyMotion rule).** The filament's
+  draw and its later cool are two delays on one `shown` flip, like the
+  headings' rise-then-cool: no controls, no MotionValues. Static mode
+  renders the written plate with the filaments burnt out
+  (`motionStaticFallback.test.jsx` pins it), and reduced motion collapses
+  every duration to zero — measured at rest within 180ms of entering view.
+- **Direction is CSS's job.** The filament scales from the reading start
+  via `transform-origin` with a `:dir(rtl)` override — measured in `/ar`
+  resolving to the element's right edge — so the component needs no
+  direction hook at all, and an engine without `:dir()` keeps the LTR
+  draw, which only an entrance-watcher could notice.
+
+**Rejected:** a permanent rule above each fact (it changes the resting
+design and re-baselines the visual set for the sake of an entrance); a
+character scramble or split-flap on the values (the footer's Manifest
+board owns that voice on this site, and a scramble mangles joined
+scripts); one scanline igniting the whole plate (reads wrong the moment
+the grid wraps to a single column, where reading order and geometry
+disagree).
+
+**Cost.** The plate is a client island of masked spans (~3 per fact)
+instead of one `Rise`, and each filament's cool animates
+`background-color` for ~0.8s — a non-layout paint, nothing beside the
+page's WebGL neighbours. The hot and cooled colours are typed in
+`FactsPlate.jsx` as the eyebrow ember (`#ffaa2a`, the ramp's 70% stop); if
+that stop ever moves, the constants move with it or the filaments draw in
+a stranger's colour.
+
+### Revised (2026-11-23): the stack tiles find their voices
+
+**Decision (owner request, 2026-11-23).** The "Built with" tiles read in
+one undifferentiated gold: name, role and mark all within a few steps of
+each other. Now each tile repeats the chapter's own voices — the name in
+the page title's ember (`--cs-accent`), the role line in the lead
+paragraph's own paint, which is the gold→ember fire-ink ramp rather than
+its declared `--cs-warm` (the first pass matched the declared colour and
+visibly missed, because `.cs-lede` is painted by `background-clip: text`);
+the role joins the `.cs-lede` clip selector list, so the two can never
+drift — and every brand mark wears its real colour instead of the page's.
+The chapter's closing lockfile note leaves `--cs-muted` grey — the
+measured contrast floor — for the same ramp, exactly as the architecture
+list's muted details did: the markup keeps `cs-muted` and the later
+fire-ink rule wins the paint. The colour is one CSS custom property
+per tile (`--mark`, from `STACK_ICON_COLORS` in `stackIcons.js`): the
+glyph, the chip's hover border and wash, and a new hover bloom all derive
+from it with `color-mix()`, so a tile is tinted in its technology's own
+colour everywhere by construction. On hover the tile lifts 4px, the chip
+pops on a small overshoot with a −3° tilt (mirrored under `:dir(rtl)`),
+and the brand colour blooms down from the tile's top edge — colour and
+luminance, never a sheen sweep, which this site has rejected before.
+Marks whose brand hex is black or near-black (Next.js, Vercel, GitHub,
+Express, Markdown, Three.js, Prisma) take the page ink, the way those
+brands render themselves on dark grounds; Anthropic takes its own
+terracotta, and SQLite and WebGL take the brighter tone from the same
+logo because their flat hex goes muddy on the slate. Monogram tiles set
+no `--mark` and keep the page gold through the `var()` fallbacks. All of
+it is CSS on the existing markup: no new bytes, no new client code, and
+the entrance stagger is unchanged. Reduced motion keeps the colours but
+stands every transform and transition down, in the chapter's existing
+reduced-motion block.
+
+**Rejected:** brand-colouring the resting chip border and wash too (the
+grid becomes a sticker sheet; the rest state keeps the page's one gold
+material and the brand colour is the reward for attention), and a light
+sweep across the card (sheen is off this site's palette by standing
+decision).
+
+**Cost.** The one-material rule for marks is given up deliberately: the
+tiles now carry forty-odd brand colours on a page that otherwise speaks
+three, held in check by the resting chip staying gold. The colour map is
+hand-kept against simple-icons' canonical values, pinned only by a unit
+test that every slug has one — a wrong hex would pass CI and show.
+
+### Revised (2026-11-24): the craft notes take the same voices, and reveal as a set
+
+**Decision (owner request, 2026-11-24).** The same two corrections the
+stack tiles took the day before, applied to the craft-note cards: the
+note titles move from cream to the page title's ember (`--cs-accent` —
+the `.cs-h2`/`.cs-outcomes__value` pairing the Lighthouse gate already
+holds to a11y 1.0 on this slate), and the bodies join the `.cs-lede`
+fire-ink clip selector list, so they are painted by the lead paragraph's
+actual gold→ember ramp rather than a token that merely approximates it.
+The clip sits on the `<p>` that itself rises as one piece — the
+FactsPlate exception to the "fade an ancestor, never a child inside the
+clip" rule, for the same GPU reason.
+
+With the voices lifted, the entrance was the weak remainder: four
+identical `Rise` fades keyed to the chapter's top, which on a phone
+played the lower cards while they were still off screen. Each card is
+now a client island (`NoteCard.jsx`) that reveals when *it* enters the
+viewport, as a cascade in the page's one rhythm (`dur.slow`, `ease.out`,
+`stagger.line` steps): frame, then title, numeral, a 1px ember hairline
+drawn from the reading-start edge (`scaleX`, origin mirrored on its own
+`:dir(rtl)` selector), body, link. A few px of scroll-linked drift, at a
+different rate per column, floats the cards over the drafting ground.
+Every trigger is state bound to `animate`, so static mode lands each
+card at its target the moment its observer fires; the drift is the one
+MotionValue style and is switched off in static mode and under reduced
+motion rather than left frozen mid-float; the `<noscript>` reveal rule
+already covers the new elements through `data-cs-rise`.
+
+**Rejected:** scrubbing the reveal to scroll position (a card-grid read
+in a flick of the wheel spans too little scroll — the /about Architect
+lesson), hover tilt on the cards (the About tilt-card GPU bug sits
+exactly on a clip-text child), and any sheen or glow beyond the existing
+frame bloom (off this site's palette by standing decision).
+
+**Cost.** The chapter's cards are client islands now — the words are
+still server HTML, but the cascade costs a small component where a
+shared primitive used to do; and the cream title voice leaves the page's
+card set, so the numeral's gold is the only non-ember accent left on
+these cards.
+
+### Revised (2026-11-24): the outcomes speak the fire ink too
+
+**Decision (owner request, 2026-11-24).** The outcome tiles' labels
+("Languages served" and the rest) and the chapter's closing derived
+note ("Counted from the build at deploy time, not typed by hand") take
+the craft-note bodies' colour: both join the `.cs-lede` fire-ink clip
+selector list, the same way the stack roles and the lockfile note did,
+rather than copying a hex that would miss the actual paint. The label
+rule drops its `--cs-gold`, because a later `color` repaints over the
+clip in Firefox; the note's markup keeps `cs-muted` and the later
+fire-ink rule wins, the `.cs-stack__note` precedent exactly. Both
+carriers sit safely under the clip rule's own contract: the labels are
+clipped children of tiles that `Rise` as a unit, and the note rises as
+the clipped element itself in one piece. With this, `--cs-gold` and
+`--cs-muted` leave the chapter and the figures' ember over fire-ink
+labels is the stack tiles' established pairing.

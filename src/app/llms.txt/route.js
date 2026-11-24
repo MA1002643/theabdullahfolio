@@ -23,6 +23,7 @@
 
 import { projectsData } from '@/app/data';
 import { absoluteUrl } from '@/lib/seo/canonical';
+import { projectPath } from '@/lib/projects/paths';
 import { CV_ASSET, IDENTITY, ORIGIN, ROUTES } from '@/lib/seo/site';
 import { linkedInUrl, profileGithubUrl } from '@/components/footer/footer-data';
 
@@ -90,7 +91,7 @@ function buildBrief() {
       ? 'private repository'
       : `https://github.com/${project.repo}`;
     lines.push(
-      `- [${project.name}](${absoluteUrl(`/projects/${project.id}`)}) — ` +
+      `- [${project.name}](${absoluteUrl(projectPath(project))}) — ` +
         `${project.description}. Category: ${project.category}. ` +
         `Created ${project.date}. Source: ${repo}`,
     );

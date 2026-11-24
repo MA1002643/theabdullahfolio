@@ -1,4 +1,3 @@
-import Image from "next/image"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import IntlScope from "@/i18n/IntlScope"
@@ -11,25 +10,30 @@ import { languagesFor } from "@/lib/seo/projectLanguages"
 import { localizedProjectMetaDescription } from "@/lib/seo/projectMeta"
 import { getDataT } from "@/i18n/getDataT"
 import { localizeProject } from "@/i18n/data"
-import bg from "../../../../../../public/background/home-bg.webp"
-import LanternSweep from "@/components/project-detail/lantern-sweep"
-import ProjectIntro from "@/components/project-detail/project-intro"
-import SceneLoader from "@/components/project-detail/scene-loader"
+import CaseStudy from "@/components/case-study/CaseStudy"
+import Backdrop from "@/components/case-study/Backdrop"
+import { siblingsOf } from "@/lib/caseStudy/chapters"
+import { assertProjectSlugs, projectBySlug, projectPath, projectSlug } from "@/lib/projects/paths"
 
-// Server Component on purpose (issue #83). This page used to be one big
-// "use client" module that imported three / @react-three/* directly, which
-// made the WebGL bundle part of the route's entry chunk: a click on
-// /projects couldn't commit the navigation until all of it had downloaded,
-// so the listing page just sat there frozen. Now the page is a server shell
-// (background, lantern sweep, title) and the Canvas lives behind the dynamic
-// ssr:false boundary in scene-loader.jsx, so the shell paints immediately
-// and three.js streams in underneath. Keep any new heavy client imports on
-// that side of the boundary.
+// Server Component on purpose. Since issue #31 the page is a long-read case
+// study (src/components/case-study/): every word is server HTML, and only the
+// motion, the chapter index and the palette commands are client islands.
+// Keep heavy client imports out of this route; anything large a chapter needs
+// is deferred (CLAUDE.md §5).
 
+// The URL segment is the project's SLUG, not its numeric id: /projects/
+// theabdullahfolio, not /projects/1 (src/lib/projects/paths.js). The folder
+// keeps its `[id]` name because route patterns elsewhere (the registry, the
+// message budget, the tests) are keyed on `/projects/[id]`; read the param as
+// "the project's identifier in the URL". The old numeric URLs answer a
+// permanent redirect from next.config.mjs.
+//
 // Every project page is knowable at build time — prerender them all so the
-// navigation serves static HTML instead of rendering on demand.
+// navigation serves static HTML instead of rendering on demand. A slug that
+// collides or needs escaping fails the build here.
 export function generateStaticParams() {
-    return projectsData.map((p) => ({ id: String(p.id) }))
+    assertProjectSlugs(projectsData)
+    return projectsData.map((p) => ({ id: projectSlug(p) }))
 }
 
 // Reject params outside generateStaticParams at the ROUTING layer. This is
@@ -48,8 +52,8 @@ export const dynamicParams = false
 // restated wholesale via the shared helper so siteName/type/locale
 // survive the page-level override.
 export async function generateMetadata({ params }) {
-    const { id, locale } = await params
-    const project = projectsData.find((p) => String(p.id) === String(id))
+    const { id: slug, locale } = await params
+    const project = projectBySlug(projectsData, slug)
     if (!project) return {}
     return sectionMetadata({
         locale,
@@ -68,33 +72,21 @@ export async function generateMetadata({ params }) {
             t: await getTranslations({ locale, namespace: "ProjectDetail" }),
             dataT: await getDataT(locale),
         }),
-        path: `/projects/${project.id}`,
+        path: projectPath(project),
     })
 }
 
 export default async function ProjectDetailPage({ params }) {
     // `params` is a Promise from Next 15.
-    const { id, locale } = await params
+    const { id: slug, locale } = await params
     setRequestLocale(locale)
-    // Strict integer-string check before lookup. Two reasons:
-    //   1. parseInt was permissive — parseInt("1abc", 10) === 1,
-    //      so /projects/1abc would silently resolve to project 1
-    //      with HTTP 200. Number("1abc") returns NaN instead, and
-    //      Number.isInteger(NaN) is false, so we notFound() it.
-    //   2. The `String(parsedId) === id` round-trip also rejects
-    //      non-canonical forms (/projects/01, /projects/1.0,
-    //      /projects/1e0) that Number() would otherwise accept —
-    //      every valid project has exactly ONE canonical URL,
-    //      preventing duplicate-content URLs from being indexed.
-    const parsedId = Number(id)
-    const isStrictInteger =
-        Number.isInteger(parsedId) && String(parsedId) === id
-    const project = isStrictInteger
-        ? projectsData.find((p) => p.id === parsedId)
-        : undefined
+    // An EXACT slug match: every project has one canonical URL, so a
+    // differently-cased or padded form (/projects/AfaaqX, /projects/culina-)
+    // is not a second address for the same page. dynamicParams=false already
+    // rejects those at routing; this stays as defense in depth.
+    const project = projectBySlug(projectsData, slug)
 
-    // Invalid / non-existent project id (e.g. /projects/9999,
-    // /projects/abc, /projects/1abc, /projects/01). `notFound()`
+    // Unknown project (e.g. /projects/nope, /projects/9999). `notFound()`
     // throws NEXT_NOT_FOUND which bubbles up to the root
     // app/not-found.js boundary, so the user lands on the void
     // /glitch 404 with the correct HTTP 404 status, and the
@@ -118,22 +110,8 @@ export default async function ProjectDetailPage({ params }) {
     // a clamp: a clamp would make projects 1 and 11 each have only one
     // neighbour, and those two are precisely the pages a listing-page failure
     // would strand.
-    // The project's two outbound links (issue #92). `demoLink` falls back to
-    // the repository for projects with no live site, so a "Live demo" that is
-    // only the repo again is dropped rather than shown twice under two names.
-    //
-    // A `private: true` record keeps `repo` for internal tracking (the progress
-    // popup, the language data), but that URL answers 404 to every visitor, so
-    // it is never published as "Source on GitHub", in the intro or on the
-    // laptop. The demo is compared against the repo URL, not against `source`,
-    // so a private repo cannot come back in as a "Live demo" either.
-    const repoUrl = project.repo ? `https://github.com/${project.repo}` : null
-    const source = project.private ? null : repoUrl
-    const links = {
-        name: project.name,
-        source,
-        demo: project.demoLink && project.demoLink !== repoUrl ? project.demoLink : null,
-    }
+    // (The project's outbound links, with the private-repository rule, are
+    // built in CaseStudy.jsx since issue #31.)
 
     // Translated copy (issue #82). The project NAME is a proper name and is
     // never translated; the four-word description is, through the generated
@@ -142,10 +120,7 @@ export default async function ProjectDetailPage({ params }) {
     const dataT = await getDataT(locale)
     const description = localizeProject(project, dataT).description
 
-    const index = projectsData.findIndex((p) => p.id === project.id)
-    const previous =
-        projectsData[(index - 1 + projectsData.length) % projectsData.length]
-    const next = projectsData[(index + 1) % projectsData.length]
+    const { previous, next } = siblingsOf(projectsData, project)
 
     return (
         <IntlScope locale={locale} route="/projects/[id]">
@@ -221,65 +196,27 @@ export default async function ProjectDetailPage({ params }) {
                 <Link href="/projects" prefetch={false}>
                     {t("siblingNav.all")}
                 </Link>
-                <Link href={`/projects/${previous.id}`} prefetch={false}>
+                <Link href={projectPath(previous)} prefetch={false}>
                     {t("siblingNav.previous", { name: previous.name })}
                 </Link>
-                <Link href={`/projects/${next.id}`} prefetch={false}>
+                <Link href={projectPath(next)} prefetch={false}>
                     {t("siblingNav.next", { name: next.name })}
                 </Link>
             </nav>
 
-            {/* Your Original Background Image - Full Screen */}
-            {/* alt="" — decorative: screen readers skip it entirely instead of
-                announcing "background, image" (matches the loading.js fallback) */}
-            <Image
-                src={bg}
-                alt=""
-                fill
-                loading="eager"
-                fetchPriority="low"
-                className="fixed top-0 left-0 w-full h-full object-cover object-center -z-10"
-            />
-            <div
-                className="relative w-full h-screen overflow-hidden"
-                style={{
-                    height: "100vh",
-                    width: "100vw",
-                    position: "fixed",
-                    top: 0,
-                    left: 0,
-                }}
-            >
+            {/* The page's own ground (owner review 2026-11-15; reworked into
+                a drafted sheet 2026-11-21): a fixed slate stack lit by a
+                blurred copy of this project's hero image, a two-order
+                drafting grid, margin rails bracketing the reading column,
+                two ember pools and film grain (Backdrop.jsx). Decorative
+                throughout, and never the LCP. The loading.js fallback renders
+                the same stack without the bloom, so the swap is seamless. */}
+            <Backdrop media={project.caseStudy?.hero ?? null} />
 
-                {/* Lantern placed BETWEEN background and canvas — stacked by
-                    DOM order (bg is -z-10, the canvas below has z-0, this stays
-                    z-auto in between).
-
-                    `AuroraParallaxBackground` used to sit here and was removed:
-                    its three layers had no content but a background-image, and
-                    all three files (/aurora-band-1.png, /aurora-band-2.png,
-                    /fog.png) have never existed in this repository — no commit
-                    in the history ever added them. So it rendered three empty
-                    divs while costing three 404s per page view AND a
-                    `mousemove` listener that called setState on every pointer
-                    move across the viewport.
-
-                    Caught by the Lighthouse budget's `errors-in-console` audit
-                    (issue #32). If the aurora is ever wanted, it needs the three
-                    assets committed first — the component was deleted, not
-                    disabled, precisely so that restoring it cannot silently
-                    reproduce the invisible version. */}
-                <div className="absolute inset-0 pointer-events-none">
-                    <LanternSweep />
-                </div>
-
-                {/* 3D Canvas — streams in via the dynamic ssr:false chunk */}
-                <SceneLoader links={links} />
-
-                {/* Overlay UI */}
-                <ProjectIntro name={project.name} description={description} links={links} />
-            </div>
-
+            {/* The case study (issue #31). It replaced the 3D laptop scene:
+                the page now explains the work instead of staging it, its text
+                is server HTML, and three.js has left the route. */}
+            <CaseStudy project={project} locale={locale} />
         </IntlScope>
     )
 }

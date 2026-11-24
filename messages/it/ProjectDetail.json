@@ -10,48 +10,118 @@
     "projects": "Progetti"
   },
   "loading": "Caricamento del progetto",
-  "intro": {
-    "fallbackName": "Nome del progetto",
-    "fallbackDescription": "Soluzioni web innovative, veloci e futuristiche.",
+  "chapters": {
+    "overview": "Panoramica",
+    "statement": "Il problema",
+    "walkthrough": "Percorso guidato",
+    "gallery": "Galleria",
+    "architecture": "Architettura",
+    "notes": "Note di mestiere",
+    "outcomes": "Risultati",
+    "stack": "Costruito con"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "Link di {name}",
     "liveDemo": "Demo live<sr> (si apre in una nuova scheda)</sr>",
-    "source": "Codice su GitHub<sr> (si apre in una nuova scheda)</sr>"
+    "source": "Codice su GitHub<sr> (si apre in una nuova scheda)</sr>",
+    "private": "Repository privato"
   },
-  "screen": {
-    "boot": {
-      "bios": "Inizializzazione del BIOS...",
-      "hardware": "Rilevamento dell'hardware...",
-      "os": "Caricamento del sistema operativo..."
+  "facts": {
+    "label": "Dati del progetto",
+    "role": "Ruolo",
+    "timeline": "Periodo",
+    "timelineOngoing": "{start} – oggi",
+    "timelineRange": "{start} – {end}",
+    "category": "Categoria",
+    "started": "Avvio",
+    "repository": "Repository",
+    "public": "Pubblico su GitHub",
+    "private": "Privato",
+    "live": "Sito online"
+  },
+  "shortForm": {
+    "pending": "Il case study completo di questo progetto è in preparazione. Nel frattempo, questa pagina ne raccoglie l'essenziale."
+  },
+  "stack": {
+    "lead": "Linguaggi nel repository, secondo il conteggio di GitHub.",
+    "groups": {
+      "languages": "Linguaggi",
+      "frameworks": "Framework",
+      "libraries": "Librerie",
+      "tooling": "Test e strumenti"
     },
-    "tagline": "Diamo forza alle tue idee con un artigianato digitale di nuova generazione.",
-    "badgeFullstack": "Fullstack",
-    "tools": "Strumenti e framework",
-    "overview": "Panoramica del progetto",
-    "overviewLead": "Questa piattaforma semplifica i flussi di lavoro dell'e-commerce con una dashboard unificata e analisi in tempo reale.",
-    "overviewBody": "Risolve la complessità di gestire più strumenti offrendo un'interfaccia centralizzata e intuitiva.",
-    "features": "Funzionalità",
-    "feature": {
-      "auth": {
-        "title": "Autenticazione",
-        "desc": "Accesso sicuro e gestione degli utenti."
+    "version": "Versione {version}",
+    "derived": "Le versioni vengono lette dal lockfile durante la build del sito, quindi corrispondono a quelle in uso in questo deployment."
+  },
+  "gallery": {
+    "region": "{title}, scorrevole"
+  },
+  "architecture": {
+    "listLabel": "Il sistema, pezzo per pezzo"
+  },
+  "notes": {
+    "read": "Leggi la nota"
+  },
+  "outcomes": {
+    "derived": "Conteggiati dalla build al momento del deploy, non scritti a mano."
+  },
+  "index": {
+    "nav": "Capitoli",
+    "position": "Capitolo {n} di {total}",
+    "close": "Chiudi",
+    "skip": "Vai all'indice dei capitoli"
+  },
+  "palette": {
+    "section": "Questo progetto",
+    "jump": "Vai a {title}",
+    "demo": "Apri la demo live",
+    "source": "Vedi il codice di questo progetto"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "Visitatore",
+        "detail": "Qualsiasi browser, qualsiasi lingua"
       },
-      "payments": {
-        "title": "Pagamenti",
-        "desc": "Gateway di pagamento integrato."
+      "edge": {
+        "title": "Edge di Vercel",
+        "detail": "Instradamento per lingua"
       },
-      "chat": {
-        "title": "Chat live",
-        "desc": "Comunicazione immediata con gli utenti."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, prerenderizzati"
       },
-      "admin": {
-        "title": "Pannello di amministrazione",
-        "desc": "Gestione dei contenuti semplificata."
+      "content": {
+        "title": "Contenuti",
+        "detail": "data.js e cataloghi dei messaggi"
+      },
+      "notes": {
+        "title": "Note di ingegneria",
+        "detail": "docs/*.md, pubblicati su /notes"
+      },
+      "client": {
+        "title": "Isole client",
+        "detail": "LazyMotion, palette ⌘K"
+      },
+      "api": {
+        "title": "Route API",
+        "detail": "Le credenziali restano sul server"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "Libro degli ospiti, rate limit"
+      },
+      "github": {
+        "title": "API di GitHub",
+        "detail": "Repository, avanzamento"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "Domande, rifinitura dei messaggi"
       }
-    },
-    "liveDemo": "Demo live",
-    "github": "GitHub",
-    "demoLabel": "Apri la demo live di {name}",
-    "sourceLabel": "Vedi il codice di {name} su GitHub"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. Progetto {category}, avviato {when}. {visibility, select, private {Repository privato} other {Repository pubblico}}, monitorato in tempo reale dalla sua board su GitHub.",

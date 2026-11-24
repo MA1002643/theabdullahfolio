@@ -45,11 +45,11 @@ describe('buildSiteActions', () => {
   });
 
   it('lists every project, except the one being viewed, and navigates to it', () => {
-    const { actions, deps } = build({ pathname: '/projects/2' });
+    const { actions, deps } = build({ pathname: '/projects/afaaqx' });
     const projects = actions.filter((a) => a.section === 'Projects');
     expect(projects.map((a) => a.label)).toEqual(['theabdullahfolio']);
     projects[0].perform();
-    expect(deps.go).toHaveBeenCalledWith('/projects/1', 'theabdullahfolio');
+    expect(deps.go).toHaveBeenCalledWith('/projects/theabdullahfolio', 'theabdullahfolio');
   });
 
   it('wires each action to its side effect', () => {

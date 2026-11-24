@@ -10,48 +10,118 @@
     "projects": "Proyek"
   },
   "loading": "Memuat proyek",
-  "intro": {
-    "fallbackName": "Nama Proyek",
-    "fallbackDescription": "Solusi web yang inovatif, cepat, dan futuristik.",
+  "chapters": {
+    "overview": "Ringkasan",
+    "statement": "Masalahnya",
+    "walkthrough": "Penelusuran",
+    "gallery": "Galeri",
+    "architecture": "Arsitektur",
+    "notes": "Catatan teknis",
+    "outcomes": "Hasil",
+    "stack": "Dibangun dengan"
+  },
+  "hero": {
+    "eyebrow": "{category} · {year} · {role}",
+    "eyebrowShort": "{category} · {year}",
     "linksLabel": "Tautan {name}",
     "liveDemo": "Demo langsung<sr> (terbuka di tab baru)</sr>",
-    "source": "Kode sumber di GitHub<sr> (terbuka di tab baru)</sr>"
+    "source": "Kode sumber di GitHub<sr> (terbuka di tab baru)</sr>",
+    "private": "Repositori privat"
   },
-  "screen": {
-    "boot": {
-      "bios": "Menginisialisasi BIOS...",
-      "hardware": "Mendeteksi perangkat keras...",
-      "os": "Memuat sistem operasi..."
+  "facts": {
+    "label": "Fakta proyek",
+    "role": "Peran",
+    "timeline": "Rentang waktu",
+    "timelineOngoing": "{start} – sekarang",
+    "timelineRange": "{start} – {end}",
+    "category": "Kategori",
+    "started": "Dimulai",
+    "repository": "Repositori",
+    "public": "Publik di GitHub",
+    "private": "Privat",
+    "live": "Situs langsung"
+  },
+  "shortForm": {
+    "pending": "Studi kasus lengkap untuk proyek ini sedang disusun. Sementara itu, halaman ini memuat hal-hal pokoknya."
+  },
+  "stack": {
+    "lead": "Bahasa dalam repositori, sesuai penghitungan GitHub.",
+    "groups": {
+      "languages": "Bahasa",
+      "frameworks": "Framework",
+      "libraries": "Pustaka",
+      "tooling": "Pengujian & perkakas"
     },
-    "tagline": "Mewujudkan ide Anda lewat keahlian digital generasi berikutnya.",
-    "badgeFullstack": "Fullstack",
-    "tools": "Alat & Framework",
-    "overview": "Ikhtisar Proyek",
-    "overviewLead": "Platform ini menyederhanakan alur kerja e-commerce melalui dasbor terpadu dan analitik langsung.",
-    "overviewBody": "Platform ini mengatasi kerumitan mengelola banyak alat dengan menghadirkan antarmuka terpusat yang intuitif.",
-    "features": "Fitur",
-    "feature": {
-      "auth": {
-        "title": "Autentikasi",
-        "desc": "Login aman dan akses pengguna."
+    "version": "Versi {version}",
+    "derived": "Versi dibaca dari lockfile saat situs dibangun, sehingga angkanya sama dengan yang dijalankan oleh deployment ini."
+  },
+  "gallery": {
+    "region": "{title}, dapat digulir"
+  },
+  "architecture": {
+    "listLabel": "Sistem, bagian demi bagian"
+  },
+  "notes": {
+    "read": "Baca catatan"
+  },
+  "outcomes": {
+    "derived": "Dihitung dari proses build saat deploy, bukan diketik manual."
+  },
+  "index": {
+    "nav": "Bab",
+    "position": "Bab {n} dari {total}",
+    "close": "Tutup",
+    "skip": "Langsung ke indeks bab"
+  },
+  "palette": {
+    "section": "Proyek ini",
+    "jump": "Buka {title}",
+    "demo": "Buka demo langsung",
+    "source": "Lihat kode sumber proyek ini"
+  },
+  "diagrams": {
+    "theabdullahfolio": {
+      "visitor": {
+        "title": "Pengunjung",
+        "detail": "Peramban apa pun, bahasa apa pun"
       },
-      "payments": {
-        "title": "Pembayaran",
-        "desc": "Gerbang pembayaran terintegrasi."
+      "edge": {
+        "title": "Vercel edge",
+        "detail": "Perutean locale"
       },
-      "chat": {
-        "title": "Obrolan Langsung",
-        "desc": "Komunikasi pengguna secara instan."
+      "app": {
+        "title": "Next.js App Router",
+        "detail": "Server Components, dirender di awal"
       },
-      "admin": {
-        "title": "Panel Admin",
-        "desc": "Kontrol konten yang lebih sederhana."
+      "content": {
+        "title": "Konten",
+        "detail": "data.js dan katalog pesan"
+      },
+      "notes": {
+        "title": "Catatan rekayasa",
+        "detail": "docs/*.md, disajikan di /notes"
+      },
+      "client": {
+        "title": "Client islands",
+        "detail": "LazyMotion, palet ⌘K"
+      },
+      "api": {
+        "title": "API routes",
+        "detail": "Kredensial tetap di server"
+      },
+      "kv": {
+        "title": "Upstash Redis",
+        "detail": "Buku tamu, pembatasan laju"
+      },
+      "github": {
+        "title": "GitHub API",
+        "detail": "Repositori, progres"
+      },
+      "gateway": {
+        "title": "AI Gateway",
+        "detail": "Tanya, penyempurnaan pesan"
       }
-    },
-    "liveDemo": "Demo Langsung",
-    "github": "GitHub",
-    "demoLabel": "Buka demo langsung {name}",
-    "sourceLabel": "Lihat kode sumber {name} di GitHub"
+    }
   },
   "meta": {
     "dated": "{name} — {description}. Proyek {category}, dimulai {when}. {visibility, select, private {Repositori privat} other {Repositori publik}}, dipantau langsung dari papan GitHub-nya.",
